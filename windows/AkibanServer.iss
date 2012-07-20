@@ -26,8 +26,10 @@ Name: "installsvc\auto"; Description: "Start with Windows"; Flags: unchecked
 Name: "start"; Description: "Start now"
 
 [Dirs]
-Name: "{code:DataDir}\data"
-Name: "{code:DataDir}\log"
+Name: "{code:DataDir}\data"; Permissions: users-modify; Tasks: not installsvc
+Name: "{code:DataDir}\data"; Tasks: installsvc
+Name: "{code:DataDir}\log"; Permissions: users-modify; Tasks: not installsvc
+Name: "{code:DataDir}\log"; Permissions: users-readexec; Tasks: installsvc 
 
 [Files]
 Source: "LICENSE.txt"; DestDir: "{app}"
@@ -44,9 +46,10 @@ Name: "{group}\Monitor Service"; Filename: "{app}\bin\akserver.cmd"; Parameters:
 Name: "{group}\Uninstall Akiban Server"; Filename: "{uninstallexe}"
 
 [Run]
-Filename: "{app}\bin\akserver.cmd"; Parameters: "install -m {code:InstallMode}";  WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Tasks: installsvc
-Filename: "{app}\bin\akserver.cmd"; Parameters: "start";  WorkingDir: "{app}"; StatusMsg: "Starting service ..."; Tasks: start and installsvc
-Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; StatusMsg: "Starting database ..."; Tasks: start and not installsvc
+;See StartNow() below.
+;Filename: "{app}\bin\akserver.cmd"; Parameters: "install -m {code:InstallMode}";  WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Tasks: installsvc
+;Filename: "{app}\bin\akserver.cmd"; Parameters: "start";  WorkingDir: "{app}"; StatusMsg: "Starting service ..."; Tasks: start and installsvc
+;Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; StatusMsg: "Starting database ..."; Tasks: start and not installsvc
 
 [UninstallRun]
 Filename: "{app}\bin\akserver.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Tasks: installsvc
@@ -96,6 +99,23 @@ end;
 function RunServiceAsUser(): Boolean;
 begin
   Result := IsTaskSelected('installsvc') and not IsTaskSelected('installsvc\system');
+end;
+
+function InstallMode(Param: String): String;
+var
+  Mode: String;
+  Username: String;
+begin
+  if IsTaskSelected('installsvc\auto') then
+    Mode := 'auto'
+  else
+    Mode := 'manual';
+  if RunServiceAsUser() then begin
+    Username := ServiceAccountPage.Values[0];
+    if (Pos('\', Username) = 0) then Username := '.\' + Username;
+    Mode := Mode + ' -su ' + Username + ' ' + ServiceAccountPage.Values[1];
+  end;
+  Result := Mode;
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -159,11 +179,28 @@ begin
   end;
 end;
 
+procedure StartNow();
+var
+  Command, Dir, Params: String;
+  ResultCode: Integer;
+begin
+  Command := ExpandConstant('{app}\bin\akserver.cmd');
+  Dir := ExpandConstant('{app}');
+  if IsTaskSelected('installsvc') then begin
+    Params := 'install -m ' + InstallMode('');
+    if Exec(Command, Params, Dir, SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      if IsTaskSelected('start') then
+        Exec(Command, 'start', Dir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end else if IsTaskSelected('start') then
+    ExecAsOriginalUser(Command, 'window', Dir, SW_HIDE, ewNoWait, ResultCode);
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
     EditFile(ExpandConstant('{app}\config\log4j.properties'));
     EditFile(ExpandConstant('{app}\config\server.properties'));
+    StartNow();
   end;
 end;
 
@@ -183,21 +220,4 @@ end;
 function DataDir(Param: String): String;
 begin
   Result := DataDirPage.Values[0];
-end;
-
-function InstallMode(Param: String): String;
-var
-  Mode: String;
-  Username: String;
-begin
-  if IsTaskSelected('installsvc\auto') then
-    Mode := 'auto'
-  else
-    Mode := 'manual';
-  if RunServiceAsUser() then begin
-    Username := ServiceAccountPage.Values[0];
-    if (Pos('\', Username) = 0) then Username := '.\' + Username;
-    Mode := Mode + ' -su ' + Username + ' ' + ServiceAccountPage.Values[1];
-  end;
-  Result := Mode;
 end;

@@ -85,7 +85,7 @@ public final class BoundFieldExpression implements Expression {
     @Override
     public String name()
     {
-        return "BOUND";
+        return "Bound";
     }
 
     @Override

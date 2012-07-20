@@ -46,7 +46,8 @@ public abstract class StoreAdapter
                                           Index index,
                                           IndexKeyRange keyRange,
                                           API.Ordering ordering,
-                                          IndexScanSelector scanSelector);
+                                          IndexScanSelector scanSelector,
+                                          boolean usePValues);
 
     public abstract <HKEY extends com.akiban.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
 
@@ -68,7 +69,8 @@ public abstract class StoreAdapter
                                 RowType rowType,
                                 API.Ordering ordering,
                                 API.SortOption sortOption,
-                                InOutTap loadTap);
+                                InOutTap loadTap,
+                                boolean usePValues);
 
     public long getQueryTimeoutSec() {
         return config.queryTimeoutSec();

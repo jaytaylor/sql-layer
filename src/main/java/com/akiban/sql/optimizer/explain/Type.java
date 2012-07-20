@@ -29,8 +29,8 @@ package com.akiban.sql.optimizer.explain;
  * <b>Type</b>
  * Reflects object's type/class
  * Can be useful for those formatters that want to format
- * scan_xyz_operators' explainer differently from insert_operator's explainer, 
- * or to format functions' differently from binary operators (such as +, -, LIKE, ILIKE, etc
+ * scan_xyz_operator's explainer differently from insert_operator's explainer, 
+ * or to format functions differently from binary operators (such as +, -, LIKE, ILIKE, etc)
  * 
  * <b>GeneralType</b>
  * Refects each class of Explainers
@@ -47,6 +47,7 @@ public enum Type
     FUNCTION(GeneralType.EXPRESSION), 
     BINARY_OPERATOR(GeneralType.EXPRESSION),
     SUBQUERY(GeneralType.EXPRESSION),
+    LITERAL(GeneralType.EXPRESSION),
         
     // OPERATORS
     //--------------------------------------------------------------------------
@@ -58,13 +59,14 @@ public enum Type
     FLATTEN_OPERATOR(GeneralType.OPERATOR),
     LIMIT_OPERATOR(GeneralType.OPERATOR),
     NESTED_LOOPS(GeneralType.OPERATOR),
-    IF_ELSE(GeneralType.OPERATOR),
+    IF_EMPTY(GeneralType.OPERATOR),
     UNION_ALL(GeneralType.OPERATOR),
     SORT(GeneralType.OPERATOR),
     FILTER(GeneralType.OPERATOR),
     PROJECT(GeneralType.OPERATOR),
     SELECT_HKEY(GeneralType.OPERATOR),
     PHYSICAL_OPERATOR(GeneralType.OPERATOR), // could be broken down to scan_operator, sort operator, etc?
+    ORDERED(GeneralType.OPERATOR),
     
     // ROWTYPE    
     //--------------------------------------------------------------------------
@@ -74,7 +76,7 @@ public enum Type
     //--------------------------------------------------------------------------
     FLOATING_POINT(GeneralType.SCALAR_VALUE),
     EXACT_NUMERIC(GeneralType.SCALAR_VALUE),
-    STRING(GeneralType.SCALAR_VALUE)
+    STRING(GeneralType.SCALAR_VALUE),
     ;
     
     private final GeneralType generalType;

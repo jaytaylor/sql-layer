@@ -84,6 +84,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
+import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -445,7 +447,7 @@ public class OperatorAssembler extends BaseRule
             protected TPreparedExpression existsExpression(Operator operator, RowType outerRowType,
                                                            RowType innerRowType,
                                                            int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ExistsSubqueryTExpression(operator, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
@@ -459,7 +461,7 @@ public class OperatorAssembler extends BaseRule
             protected TPreparedExpression scalarSubqueryExpression(Operator operator, TPreparedExpression innerExpression,
                                                                    RowType outerRowType, RowType innerRowType,
                                                                    int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ScalarSubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
@@ -759,7 +761,8 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleIndexKeyRange(indexScan, null),
                                                         assembleIndexOrdering(indexScan, indexRowType),
-                                                        selector);
+                                                        selector,
+                                                        usePValues);
                 stream.rowType = indexRowType;
             }
             else {
@@ -780,7 +783,8 @@ public class OperatorAssembler extends BaseRule
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
                                                           assembleIndexOrdering(indexScan, indexRowType),
-                                                          selector);
+                                                          selector,
+                                                          usePValues);
                     if (stream.operator == null) {
                         stream.operator = scan;
                         stream.rowType = indexRowType;
@@ -1218,7 +1222,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
                                                             ordering, sortOption, maxrows);
             else
-                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption);
+                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption, usePValues);
         }
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,

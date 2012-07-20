@@ -27,6 +27,8 @@
 package com.akiban.server.types3.common.types;
 
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.types3.TBundle;
 import com.akiban.server.types3.TClass;
@@ -79,7 +81,14 @@ public abstract class TString extends TClass
             }
             break;
         case COLLATION:
-            // TODO plug into AkCollator factory
+            AkCollator collator = AkCollatorFactory.getAkCollator((int)value);
+            if (collator == null) {
+                logger.warn("unknown collator for id " + value + " (" + ((int)value) + ')');
+                output.append(value);
+            }
+            else {
+                output.append(collator.getName());
+            }
             break;
         }
     }

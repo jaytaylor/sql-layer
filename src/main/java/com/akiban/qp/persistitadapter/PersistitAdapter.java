@@ -87,11 +87,13 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector selector)
+    public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
+                                 IndexScanSelector selector, boolean usePValues)
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(context, schema.indexRowType(index), keyRange, ordering, selector);
+            cursor = new PersistitIndexCursor(context, schema.indexRowType(index), keyRange, ordering,
+                    selector, usePValues);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -110,9 +112,10 @@ public class PersistitAdapter extends StoreAdapter
                        RowType rowType,
                        API.Ordering ordering,
                        API.SortOption sortOption,
-                       InOutTap loadTap)
+                       InOutTap loadTap,
+                       boolean usePValues)
     {
-        return new SorterToCursorAdapter(this, context, input, rowType, ordering, sortOption, loadTap);
+        return new SorterToCursorAdapter(this, context, input, rowType, ordering, sortOption, loadTap, usePValues);
     }
 
     @Override

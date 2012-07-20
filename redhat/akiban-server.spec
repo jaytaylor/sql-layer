@@ -5,7 +5,7 @@
 %define relname %{name}-%{version}-%{release}
 
 Name:           akiban-server
-Version:        1.3.0
+Version:        1.4.0
 Release:        REVISION%{?dist}
 Epoch:		EPOCH
 Summary:        Akiban Server is the main server for the Akiban Orthogonal Architecture.
@@ -57,10 +57,10 @@ cp -p redhat/LICENSE.txt ${RPM_BUILD_ROOT}/usr/share/%{username}
 cp -p redhat/*.tag ${RPM_BUILD_ROOT}/usr/share/%{username}
 cp -p redhat/postgresql.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 
-cp -p target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
-cp -p redhat/akiban-client-tools-1.3.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-client-tools-1.3.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
+cp -p target/akiban-server-1.4.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-server-1.4.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p redhat/akiban-client-tools-1.3.1-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-client-tools-1.3.1-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
 
 mv redhat/akdump ${RPM_BUILD_ROOT}/usr/bin
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin

@@ -180,7 +180,8 @@ public final class OperatorTestHelper {
                                      Index index,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
-                                     IndexScanSelector selector)
+                                     IndexScanSelector selector,
+                                     boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }
@@ -220,7 +221,8 @@ public final class OperatorTestHelper {
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,
-                           InOutTap loadTap)
+                           InOutTap loadTap,
+                           boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }

@@ -23,25 +23,13 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.t3expressions;
+package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.persistit.Key;
 
-import java.util.Collection;
-import java.util.Set;
-
-public interface T3ScalarsRegistry {
-    Collection<TValidatedOverload> getOverloads(String name);
-
-    /**
-     * Find the registered cast going from source to taret.
-     * @param source Type to cast from
-     * @param target Type to cast to
-     * @return Return matching cast or <tt>null</tt> if none
-     */
-    TCast cast(TClass source, TClass target);
-
-    Set<TClass> stronglyCastableTo(TClass tClass);
+public interface SortKeySource<S> {
+    void attach(Key key, int i, AkType fieldType, TInstance tInstance);
+    S asSource();
 }

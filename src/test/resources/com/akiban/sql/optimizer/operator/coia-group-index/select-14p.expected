@@ -2,7 +2,7 @@ PhysicalSelect[VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHAR
   Map_NestedLoops
     Sort_InsertionLimited(values([VARCHAR]), 4, SUPPRESS_DUPLICATES)
       ValuesScan_Default[ImmutableRow[1234], Bindable[Variable(pos=0)], Bindable[Variable(pos=1)], Bindable[Variable(pos=2)]]
-    project([Field(2), Field(5), Field(6)])
+    project(Field(2), Field(5), Field(6))
       Flatten_HKeyOrdered(test.orders INNER test.items)
         AncestorLookup_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) -> [test.orders, test.items])
           IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Literal(Smith), Bound(3,Field(0))],<=UnboundExpressions[Literal(Smith), Bound(3,Field(0))]))

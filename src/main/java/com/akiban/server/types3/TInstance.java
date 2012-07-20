@@ -90,8 +90,10 @@ public final class TInstance {
 
     @Override
     public String toString() {
-        String className = tclass.name().unqualifiedName();
+        String className = tclass.name().toString();
         int nattrs = tclass.nAttributes();
+        if (nattrs == 0)
+            return className;
         // assume 5 digits per attribute as a wild guess. If it's wrong, no biggie. 2 chars for open/close paren
         int capacity = className.length() + 2 + (5*nattrs);
         StringBuilder sb = new StringBuilder(capacity);

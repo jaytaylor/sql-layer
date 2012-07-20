@@ -24,20 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
-
-import java.util.Collection;
-
-public interface ExpressionRegistry
-{
-    Collection<? extends TAggregator> aggregators();
-    Collection<TValidatedOverload> overloads();
-    Collection<TCast> casts();
-    Collection<TClass> tclasses();
+public interface T3RegistryMXBean {
+    String describeTypes();
+    String describeCasts();
+    String describeScalars();
+    String describeAggregates();
+    String describeAll();
 }

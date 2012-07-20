@@ -1,4 +1,4 @@
 PhysicalSelect[_SQL_COL_1:DOUBLE NOT NULL]
-  project([Arith(/ -> Field(3), Literal(100) -> DOUBLE)])
+  project(Field(3) / 100)
     Filter_Default([test.items])
       GroupScan_Default(full scan on _akiban_customers)

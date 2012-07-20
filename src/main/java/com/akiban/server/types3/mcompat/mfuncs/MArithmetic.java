@@ -27,10 +27,17 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -39,6 +46,8 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.service.Scalar;
+
+import java.util.List;
 
 public class MArithmetic {   
 
@@ -102,12 +111,17 @@ public class MArithmetic {
         }
     };
      
-    public static final TOverload ADD_DECIMAL = new TArithmetic("plus", MNumeric.DECIMAL, (TInstance)null) { // TODO instance
+    public static final TOverload ADD_DECIMAL = new DecimalArithmetic("plus") {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
                         .add((BigDecimalWrapper)inputs.get(0).getObject())
                         .add((BigDecimalWrapper)inputs.get(1).getObject()));
+        }
+
+        @Override
+        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
+            return plusOrMinusArithmetic(arg0Precision, arg0Scale, arg1Precision, arg1Scale);
         }
     };
     
@@ -157,13 +171,18 @@ public class MArithmetic {
         }
     };
      
-   public static final TOverload SUBTRACT_DECIMAL = new TArithmetic("minus", MNumeric.DECIMAL, (TInstance)null) { // TODO
+   public static final TOverload SUBTRACT_DECIMAL = new DecimalArithmetic("minus") { // TODO
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
                         .add((BigDecimalWrapper)inputs.get(0).getObject())
                         .subtract((BigDecimalWrapper)inputs.get(1).getObject()));
         }
+
+       @Override
+       protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
+           return plusOrMinusArithmetic(arg0Precision, arg0Scale, arg1Precision, arg1Scale);
+       }
     };
     
     // (Regular) Divide functions
@@ -232,7 +251,7 @@ public class MArithmetic {
         }
     };
 
-   public static final TOverload DIVIDE_DECIMAL = new TArithmetic("div", MNumeric.DECIMAL, (TInstance)null) { // TODO
+   public static final TOverload DIVIDE_DECIMAL = new DecimalArithmetic("div") { // TODO
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
@@ -241,7 +260,12 @@ public class MArithmetic {
                                  context.outputTInstance().attribute(  // get the scale computed
                                         MBigDecimal.Attrs.SCALE))); // during expr generation time
         }
-    };
+
+       @Override
+       protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
+           throw new UnsupportedOperationException(); // TODO
+       }
+   };
     
     // Multiply functions
    public static final TOverload MULTIPLY_TINYINT = new TArithmetic("times", MNumeric.TINYINT, MNumeric.INT.instance(7)) {
@@ -289,12 +313,61 @@ public class MArithmetic {
         }
     };
     
-   public static final TOverload MULTIPLY_DECIMAL = new TArithmetic("times", MNumeric.DECIMAL, (TInstance)null) { // TODO
+   public static final TOverload MULTIPLY_DECIMAL = new DecimalArithmetic("times") { // TODO
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();
             long a1 = inputs.get(1).getInt64();
             output.putInt64(a0 * a1);
         }
-    };
+
+       @Override
+       protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
+           return packPrecisionAndScale(arg0Precision + arg1Precision, arg0Scale + arg1Scale);
+       }
+   };
+
+   // TODO this should extend some base class that TArithmetic also extends, rather than extending TArithmetic
+   // but ignoring its TInstance field
+   private abstract static class DecimalArithmetic extends TArithmetic {
+       @Override
+       public TOverloadResult resultType() {
+           return TOverloadResult.custom(new TCustomOverloadResult() {
+               @Override
+               public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                   TInstance arg0 = inputs.get(0).instance();
+                   TInstance arg1 = inputs.get(1).instance();
+
+                   int arg0Precision = arg0.attribute(Attrs.PRECISION);
+                   int arg0Scale = arg0.attribute(Attrs.SCALE);
+
+                   int arg1Precision = arg1.attribute(Attrs.PRECISION);
+                   int arg1Scale = arg1.attribute(Attrs.SCALE);
+                   long resultPrecisionAndScale = precisionAndScale(arg0Precision, arg0Scale, arg1Precision, arg1Scale);
+                   int resultPrecision = (int)(resultPrecisionAndScale >> 32);
+                   int resultScale = (int)resultPrecisionAndScale;
+                   return MNumeric.DECIMAL.instance(resultPrecision, resultScale);
+               }
+           });
+       }
+
+       protected abstract long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale);
+
+       static long packPrecisionAndScale(int precision, int scale) {
+           long result = precision;
+           result <<= 32;
+           result |= scale;
+           return result;
+       }
+
+       static long plusOrMinusArithmetic(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale){
+           int maxScale = Math.max(arg0Scale, arg1Precision);
+           int maxPrecision = Math.max(arg0Precision, arg1Precision);
+           return packPrecisionAndScale(maxPrecision + maxScale, maxScale);
+       }
+
+       protected DecimalArithmetic(String overloadName) {
+            super(overloadName, MNumeric.DECIMAL, (TInstance) null);
+       }
+   }
 }

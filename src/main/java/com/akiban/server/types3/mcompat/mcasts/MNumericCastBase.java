@@ -661,7 +661,7 @@ public class MNumericCastBase
         public FromInt32ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_8), auto, c);
+                  checkType(target, PUnderlying.INT_16), auto, c);
         }
 
         @Override
