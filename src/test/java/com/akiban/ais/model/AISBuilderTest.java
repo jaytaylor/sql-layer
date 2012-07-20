@@ -28,6 +28,7 @@ package com.akiban.ais.model;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Iterator;
 import java.util.List;
@@ -1482,4 +1483,16 @@ public class AISBuilderTest
         
     }
 
+    @Test
+    public void tableIdOffsetAfterExplicit() {
+        AISBuilder builder = new AISBuilder();
+        builder.setTableIdOffset(10);
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test", "_akiban_t1", 15);
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        assertTrue("tableIdOffset above 15", builder.getTableIdOffset() > 15);
+    }
 }

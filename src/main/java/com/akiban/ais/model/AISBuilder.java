@@ -315,8 +315,8 @@ public class AISBuilder {
         Group group = Group.create(ais, groupName);
         groupTable.setGroup(group);
         groupTable.setTreeName(nameGenerator.generateGroupTreeName(group));
-        if(tableIdGenerator < groupTableID) {
-            tableIdGenerator = groupTableID;
+        if(tableIdGenerator <= groupTableID) {
+            tableIdGenerator = groupTableID + 1;
         }
     }
 
