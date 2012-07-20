@@ -91,7 +91,9 @@ public class ScalarSubqueryTExpression extends SubqueryTExpression
     @Override
     public TEvaluatableExpression build()
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return new InnerEvaluation(subquery(),
+                                   expression,
+                                   outerRowType(), innerRowType(),
+                                   bindingPosition());
     }
-    
 }
