@@ -540,7 +540,7 @@ public class ConstantFolder extends BaseRule
                 ConditionExpression condition = conditions.get(i);
                 Constantness c = isConstant(condition);
                 if (c != Constantness.VARIABLE) {
-                    if (getBoolean((ConstantExpression)condition))
+                    if (getBoolean((ConstantExpression)condition) == Boolean.TRUE)
                         conditions.remove(i);
                     else
                         return false;
