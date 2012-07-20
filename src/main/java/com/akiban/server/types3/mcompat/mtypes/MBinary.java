@@ -25,8 +25,14 @@
  */
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.*;
+import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.IllegalNameException;
+import com.akiban.server.types3.TAttributeValues;
+import com.akiban.server.types3.TAttributesDeclaration;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
@@ -34,7 +40,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
-import com.akiban.util.AkibanAppender;
+import java.util.Arrays;
 
 public final class MBinary extends SimpleDtdTClass {
 
@@ -47,6 +53,21 @@ public final class MBinary extends SimpleDtdTClass {
     
     public enum Attrs implements Attribute {
         LENGTH
+    }
+
+    @Override
+    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
+    {
+        byte[] bytes = in.getBytes();
+        int expectedLength = context.outputTInstance().attribute(Attrs.LENGTH);
+        if (bytes.length > expectedLength)
+        {
+            out.putBytes(Arrays.copyOf(bytes, expectedLength));
+            context.reportTruncate("BINARY string of LENGTH: " + bytes.length,
+                                   "BINARY string of LENGTH: " + expectedLength);
+        }
+        else
+            out.putBytes(bytes);
     }
 
     @Override
@@ -71,7 +92,7 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     @Override
-    public void putSafety(QueryContext context, TInstance sourceInstance, PValueSource sourceValue,
+    public void putSafety(TExecutionContext context, TInstance sourceInstance, PValueSource sourceValue,
                           TInstance targetInstance, PValueTarget targetValue) {
         targetValue.putBytes(sourceValue.getBytes());
     }
@@ -103,7 +124,7 @@ public final class MBinary extends SimpleDtdTClass {
     }
     
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, Attrs.class, NumericFormatter.FORMAT.BYTES, 1, 1, -1, PUnderlying.BYTES, typeId);
+        super(MBundle.INSTANCE.id(), name, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, null, typeId);
         this.defaultLength = defaultLength;
     }
         

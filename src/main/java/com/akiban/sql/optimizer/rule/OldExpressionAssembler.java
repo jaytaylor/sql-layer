@@ -101,7 +101,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         if (toType == null) return expr;
         if (!toType.equals(operand.getAkType()))
         {
-            // Do type conversion.         
+            // Do type conversion.
             TypeId id = castExpression.getSQLtype().getTypeId(); 
             if (id.isIntervalTypeId())
                 expr = new IntervalCastExpression(expr, id);
@@ -135,6 +135,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         return expr;
     }
 
+    @Override
     public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;

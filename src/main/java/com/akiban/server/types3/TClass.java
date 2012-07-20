@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
@@ -49,6 +48,8 @@ public abstract class TClass {
     public abstract TFactory factory();
 
     public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
+
+    public abstract void fromObject (TExecutionContext contextForErrors, PValueSource in, PValueTarget out);
 
     public void selfCast(TExecutionContext context,
                          TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
@@ -105,7 +106,7 @@ public abstract class TClass {
         output.append(value);
     }
 
-    public abstract void putSafety(QueryContext context,
+    public abstract void putSafety(TExecutionContext context,
                         TInstance sourceInstance,
                         PValueSource sourceValue,
                         TInstance targetInstance,

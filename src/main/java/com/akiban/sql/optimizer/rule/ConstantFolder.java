@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -50,6 +51,16 @@ import java.util.*;
 public class ConstantFolder extends BaseRule 
 {
     private static final Logger logger = LoggerFactory.getLogger(ConstantFolder.class);
+    
+    private final boolean usePValues;
+    
+    public ConstantFolder() {
+        this(Types3Switch.ON);
+    }
+
+    public ConstantFolder(boolean usePValues) {
+        this.usePValues = usePValues;
+    }
 
     @Override
     protected Logger getLogger() {
@@ -58,14 +69,14 @@ public class ConstantFolder extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        Folder folder = new Folder(planContext);
+        Folder folder = usePValues ? new NewFolder(planContext) : new OldFolder(planContext);
         while (folder.foldConstants());
         folder.finishAggregates();
     }
 
-    static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
+    private static abstract class Folder implements PlanVisitor, ExpressionRewriteVisitor {
         private final PlanContext planContext;
-        private final OldExpressionAssembler expressionAssembler;
+        protected final ExpressionAssembler<?> expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
         private Set<AggregateSource> changedAggregates = null;
         private enum State { FOLDING, AGGREGATES };
@@ -74,13 +85,19 @@ public class ConstantFolder extends BaseRule
         private Map<ConditionExpression,Boolean> topLevelConditions = 
             new IdentityHashMap<ConditionExpression,Boolean>();
 
-        public Folder(PlanContext planContext) {
+        protected Folder(PlanContext planContext, ExpressionAssembler<?> expressionAssembler) {
             this.planContext = planContext;
-            this.expressionAssembler = new OldExpressionAssembler(planContext.getRulesContext());
+            this.expressionAssembler = expressionAssembler;
         }
-
-        public void setFoldingState() {
-            this.state = State.FOLDING;
+        
+        public ExpressionNode foldConstants(ExpressionNode fromNode) {
+            do {
+                state = State.FOLDING;
+                changed = false;
+                topLevelConditions.clear();
+                fromNode = fromNode.accept(this);
+            } while (changed);
+            return fromNode;
         }
 
         /** Return <code>true</code> if substantial enough changes were made that
@@ -215,38 +232,7 @@ public class ConstantFolder extends BaseRule
             else if ("if".equals(fname))
                 return ifFunction(fun);
 
-            TPreptimeValue preptimeValue = fun.getPreptimeValue();
-            if (preptimeValue != null) {
-                return (preptimeValue.value() == null)
-                        ? fun
-                        : new ConstantExpression(preptimeValue);
-            }
-            else {
-                boolean allConstant = true, anyNull = false;
-                for (ExpressionNode operand : fun.getOperands()) {
-                    switch (isConstant(operand)) {
-                    case NULL:
-                        anyNull = true;
-                        /* falls through */
-                    case VARIABLE:
-                        allConstant = false;
-                        break;
-                    }
-                }
-                if (allConstant && isIdempotent(fun))
-                    return evalNow(fun);
-
-                if (anyNull)
-                    switch(expressionAssembler.getFunctionRegistry().composer(fname).getNullTreating())
-                    {
-                        case REMOVE:       return removeNull(fun);
-                        case RETURN_NULL: return new BooleanConstantExpression(null,
-                                                         fun.getSQLtype(),
-                                                         fun.getSQLsource());
-                    }
-
-                return fun;
-            }
+            return genericFunctionExpression(fun);
         }
 
         protected ConditionExpression logicalFunctionCondition(LogicalFunctionCondition lfun) {
@@ -255,15 +241,15 @@ public class ConstantFolder extends BaseRule
                 ConditionExpression left = lfun.getLeft();
                 ConditionExpression right = lfun.getRight();
                 if (isConstant(left) == Constantness.CONSTANT) {
-                    Boolean lv = (Boolean)((ConstantExpression)left).getValue();
-                    if (lv.booleanValue())
+                    boolean lv = getBoolean((ConstantExpression) left);
+                    if (lv)
                         return right; // TRUE AND X -> X
                     else
                         return left; // FALSE AND X -> FALSE
                 }
                 if (isConstant(right) == Constantness.CONSTANT) {
-                    Boolean rv = (Boolean)((ConstantExpression)right).getValue();
-                    if (rv.booleanValue())
+                    boolean rv = getBoolean((ConstantExpression) right);
+                    if (rv)
                         return left; // X AND TRUE -> X
                     else
                         return right; // X AND FALSE -> FALSE
@@ -273,15 +259,15 @@ public class ConstantFolder extends BaseRule
                 ConditionExpression left = lfun.getLeft();
                 ConditionExpression right = lfun.getRight();
                 if (isConstant(left) == Constantness.CONSTANT) {
-                    Boolean lv = (Boolean)((ConstantExpression)left).getValue();
-                    if (lv.booleanValue())
+                    boolean lv = getBoolean((ConstantExpression) left);
+                    if (lv)
                         return left; // TRUE OR X -> TRUE
                     else
                         return right; // FALSE OR X -> X
                 }
                 if (isConstant(right) == Constantness.CONSTANT) {
-                    Boolean rv = (Boolean)((ConstantExpression)right).getValue();
-                    if (rv.booleanValue())
+                    boolean rv = (Boolean)((ConstantExpression)right).getValue();
+                    if (rv)
                         return right; // X OR TRUE -> TRUE
                     else
                         return left; // X OR FALSE -> X
@@ -295,7 +281,7 @@ public class ConstantFolder extends BaseRule
                                                          lfun.getSQLtype(), 
                                                          lfun.getSQLsource());
                 if (c == Constantness.CONSTANT)
-                    return new BooleanConstantExpression((((ConstantExpression)cond).getValue() != Boolean.TRUE),
+                    return new BooleanConstantExpression(!getBoolean((ConstantExpression)cond),
                                                          lfun.getSQLtype(), 
                                                          lfun.getSQLsource());
             }
@@ -305,6 +291,7 @@ public class ConstantFolder extends BaseRule
         protected boolean isIdempotent(FunctionExpression fun) {
             // TODO: Nice to get this from some functions repository
             // associated with their implementations.
+            // Why do we even need this? Why can't we just know if the function is const?
             String fname = fun.getFunction();
             return !("currentDate".equals(fname) ||
                      "currentTime".equals(fname) ||
@@ -387,7 +374,7 @@ public class ConstantFolder extends BaseRule
             List<ExpressionNode> operands = fun.getOperands();
             Constantness c = isConstant(operands.get(0));
             if (c != Constantness.VARIABLE) {
-              if (((ConstantExpression)operands.get(0)).getValue() == Boolean.TRUE)
+              if (getBoolean((ConstantExpression)operands.get(0)))
                 return operands.get(1);
               else
                 return operands.get(2);
@@ -453,30 +440,6 @@ public class ConstantFolder extends BaseRule
                                                   col.getSQLtype(), AkType.NULL, col.getSQLsource());
             }
             return col;
-        }
-
-         
-        protected ExpressionNode removeNull(FunctionExpression fun)
-        {
-            List<ExpressionNode> operands = fun.getOperands();
-                       
-            if (operands.isEmpty())
-                return new BooleanConstantExpression(null, 
-                                                     fun.getSQLtype(), 
-                                                     fun.getSQLsource());
-              int i = 0;
-              while (i < operands.size())
-              {
-                  ExpressionNode operand = operands.get(i);
-                  Constantness c = isConstant(operand);
-                  if (c == Constantness.NULL)
-                  {
-                      operands.remove(i);
-                      continue;
-                  }
-                  i++;
-              }
-            return fun;
         }
 
         protected void selectNode(Select select) {
@@ -577,7 +540,7 @@ public class ConstantFolder extends BaseRule
                 ConditionExpression condition = conditions.get(i);
                 Constantness c = isConstant(condition);
                 if (c != Constantness.VARIABLE) {
-                    if (((ConstantExpression)condition).getValue() == Boolean.TRUE)
+                    if (getBoolean((ConstantExpression)condition) == Boolean.TRUE)
                         conditions.remove(i);
                     else
                         return false;
@@ -594,7 +557,7 @@ public class ConstantFolder extends BaseRule
          */
         protected boolean isTrueOrUnknown(ConditionExpression expr) {
             if (expr instanceof ConstantExpression) {
-                Object value = ((ConstantExpression)expr).getValue();
+                Boolean value = getBoolean((ConstantExpression)expr);
                 return ((value == null) ||
                         (value == Boolean.TRUE));
             }
@@ -624,7 +587,7 @@ public class ConstantFolder extends BaseRule
          */
         protected boolean isFalseOrUnknown(ConditionExpression expr) {
             if (expr instanceof ConstantExpression) {
-                Object value = ((ConstantExpression)expr).getValue();
+                Boolean value = getBoolean((ConstantExpression)expr);
                 return ((value == null) ||
                         (value == Boolean.FALSE));
             }
@@ -708,7 +671,7 @@ public class ConstantFolder extends BaseRule
             if ((inner != null) &&
                 (isConstant(inner) == Constantness.CONSTANT) &&
                 ((empty == SubqueryEmptiness.NON_EMPTY) ||
-                 (((ConstantExpression)inner).getValue() == Boolean.FALSE))) {
+                 (!getBoolean((ConstantExpression)inner)))) {
                 // Constant false: if it's empty, it's false. If it
                 // selects something, that projects false. False
                 // either way.
@@ -825,15 +788,6 @@ public class ConstantFolder extends BaseRule
 
         protected static enum Constantness { VARIABLE, CONSTANT, NULL }
 
-        protected Constantness isConstant(ExpressionNode expr) {
-            if (expr.isConstant())
-                return ((((ConstantExpression)expr).getValue() == null) ? 
-                        Constantness.NULL :
-                        Constantness.CONSTANT);
-            else 
-                return Constantness.VARIABLE;
-        }
-
         protected ExpressionNode evalNow(ExpressionNode node) {
             try {
                 return expressionAssembler.evalNow(planContext, node);
@@ -841,6 +795,122 @@ public class ConstantFolder extends BaseRule
             catch (Exception ex) {
             }
             return node;
+        }
+        
+        protected abstract ExpressionNode genericFunctionExpression(FunctionExpression fun);
+        protected abstract Boolean getBoolean(ConstantExpression expression);
+        protected abstract Constantness isConstant(ExpressionNode expr);
+    }
+
+    private static final class OldFolder extends Folder {
+        private OldExpressionAssembler oldExpressionAssembler;
+        
+        public OldFolder(PlanContext planContext) {
+            this(planContext, new OldExpressionAssembler(planContext.getRulesContext()));
+        }
+        
+        private OldFolder(PlanContext planContext, OldExpressionAssembler expressionAssembler) {
+            super(planContext, expressionAssembler);
+            this.oldExpressionAssembler = expressionAssembler;
+        }
+
+        @Override
+        protected ExpressionNode genericFunctionExpression(FunctionExpression fun) {
+            boolean allConstant = true, anyNull = false;
+            for (ExpressionNode operand : fun.getOperands()) {
+                switch (isConstant(operand)) {
+                case NULL:
+                    anyNull = true;
+                    /* falls through */
+                case VARIABLE:
+                    allConstant = false;
+                    break;
+                }
+            }
+            if (allConstant && isIdempotent(fun))
+                return evalNow(fun);
+
+            if (anyNull)
+                switch(oldExpressionAssembler.getFunctionRegistry().composer(fun.getFunction()).getNullTreating())
+                {
+                case REMOVE:       return removeNull(fun);
+                case RETURN_NULL: return new BooleanConstantExpression(null,
+                        fun.getSQLtype(),
+                        fun.getSQLsource());
+                }
+
+            return fun;
+        }
+
+        @Override
+        protected Boolean getBoolean(ConstantExpression expression) {
+            assert expression != null; // this way, a NPE in the next line unambiguously means getValue() returned null
+            return (Boolean) expression.getValue();
+        }
+        
+        @Override
+        protected Constantness isConstant(ExpressionNode expr) {
+            if (expr.isConstant())
+                return ((((ConstantExpression)expr).getValue() == null) ?
+                        Constantness.NULL :
+                        Constantness.CONSTANT);
+            else
+                return Constantness.VARIABLE;
+        }
+
+        private ExpressionNode removeNull(FunctionExpression fun)
+        {
+            List<ExpressionNode> operands = fun.getOperands();
+
+            if (operands.isEmpty())
+                return new BooleanConstantExpression(null,
+                        fun.getSQLtype(),
+                        fun.getSQLsource());
+            int i = 0;
+            while (i < operands.size())
+            {
+                ExpressionNode operand = operands.get(i);
+                Constantness c = isConstant(operand);
+                if (c == Constantness.NULL)
+                {
+                    operands.remove(i);
+                    continue;
+                }
+                i++;
+            }
+            return fun;
+        }
+    }
+
+    public static final class NewFolder extends Folder {
+        public NewFolder(PlanContext planContext) {
+            super(planContext, new NewExpressionAssembler(planContext.getRulesContext()));
+        }
+
+        @Override
+        protected ExpressionNode genericFunctionExpression(FunctionExpression fun) {
+            TPreptimeValue preptimeValue = fun.getPreptimeValue();
+            return (preptimeValue.value() == null)
+                    ? fun
+                    : new ConstantExpression(preptimeValue);
+        }
+
+        @Override
+        protected Boolean getBoolean(ConstantExpression expression) {
+            PValueSource value = expression.getPreptimeValue().value();
+            return value.isNull()
+                    ? null
+                    : value.getBoolean();
+        }
+
+        @Override
+        protected Constantness isConstant(ExpressionNode expr) {
+            PValueSource value = expr.getPreptimeValue().value();
+            if (value == null)
+                return Constantness.VARIABLE;
+            return value.isNull()
+                    ? Constantness.NULL
+                    : Constantness.CONSTANT;
         }
     }
 

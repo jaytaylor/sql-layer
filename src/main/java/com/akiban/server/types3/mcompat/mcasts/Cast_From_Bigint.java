@@ -33,6 +33,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -64,15 +65,15 @@ public class Cast_From_Bigint
     
     public static final TCast TO_TINYINT = new FromInt64ToInt8(MNumeric.BIGINT, MNumeric.TINYINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_TINYINT = new FromInt64ToInt16(MNumeric.BIGINT, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_TINYINT = new FromInt64ToUnsignedInt8(MNumeric.BIGINT, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
 
     public static final TCast TO_SMALLINT = new FromInt64ToInt16(MNumeric.BIGINT, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
 
-    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt64ToInt32(MNumeric.BIGINT, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt64ToUnsignedInt16(MNumeric.BIGINT, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_MEDIUM_INT = new FromInt64ToInt32(MNumeric.BIGINT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToUnsignedInt32(MNumeric.BIGINT, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT, true, Constantness.UNKNOWN);
     
@@ -179,6 +180,20 @@ public class Cast_From_Bigint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Long.toString(source.getInt64()));
+        }
+    };
+    
+    public static final TCast TO_AK_BOOLEAN = new TCastBase(MNumeric.BIGINT, AkBool.INSTANCE, false, Constantness.UNKNOWN) {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput,
+                                        TInstance specifiedTarget) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            boolean value = source.getInt64() != 0;
+            target.putBool(value);
         }
     };
 }
