@@ -42,7 +42,7 @@ class SortCursorUnidirectionalLexicographic<S> extends SortCursorUnidirectional<
                                                                IterationHelper iterationHelper,
                                                                IndexKeyRange keyRange,
                                                                API.Ordering ordering,
-                                                               SortKeyAdapter<S> sortKeyAdapter)
+                                                               SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         return new SortCursorUnidirectionalLexicographic<S>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
@@ -53,13 +53,13 @@ class SortCursorUnidirectionalLexicographic<S> extends SortCursorUnidirectional<
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering,
-                                                  SortKeyAdapter<S> sortKeyAdapter)
+                                                  SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         super(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     @Override
-    protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S> keyAdapter)
+    protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S, ?> keyAdapter)
     {
         BoundExpressions startExpressions = null;
         if (startBoundColumns == 0 || start == null) {

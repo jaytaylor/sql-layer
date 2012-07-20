@@ -26,16 +26,15 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
 import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
 
-abstract class MixedOrderScanState
+abstract class MixedOrderScanState<S>
 {
     public abstract boolean startScan() throws PersistitException;
 
-    public abstract boolean jump(ValueSource fieldValue) throws PersistitException;
+    public abstract boolean jump(S fieldValue) throws PersistitException;
 
     public final int field()
     {

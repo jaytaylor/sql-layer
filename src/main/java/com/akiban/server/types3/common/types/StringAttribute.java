@@ -26,7 +26,11 @@
 
 package com.akiban.server.types3.common.types;
 
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TInstance;
+import com.akiban.sql.types.CharacterTypeAttributes;
+import com.akiban.sql.types.CharacterTypeAttributes.CollationDerivation;
 
 public enum StringAttribute implements Attribute
 {
@@ -39,4 +43,27 @@ public enum StringAttribute implements Attribute
     CHARSET,
     
     COLLATION
+    ;
+
+    public static CharacterTypeAttributes characterTypeAttributes(TInstance tInstance) {
+        Object cacheRaw = tInstance.getMetaData();
+        if (cacheRaw != null) {
+            return (CharacterTypeAttributes) cacheRaw;
+        }
+        CharacterTypeAttributes result;
+        int charsetId = tInstance.attribute(CHARSET);
+        String charsetName = StringFactory.Charset.values()[charsetId].name();
+        int collationId = tInstance.attribute(COLLATION);
+        if (collationId == -1) {
+            result = new CharacterTypeAttributes(charsetName, null, null);
+        }
+        else {
+            // TODO add implicit-vs-explicit
+            String collationName = AkCollatorFactory.getAkCollator(collationId).getName();
+            CollationDerivation derivation = CollationDerivation.IMPLICIT;
+            result = new CharacterTypeAttributes(charsetName, collationName, derivation);
+        }
+        tInstance.setMetaData(result);
+        return result;
+    }
 }

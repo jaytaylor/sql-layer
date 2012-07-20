@@ -29,3 +29,5 @@ two-groups: group and non-group joins
 two-groups-indexed: two groups with condition on one
 
 left-outer-index-usage: Outer join with a later condition that could be incorrectly serviced by index scan (bug980957)
+
+collating-index: collation cannot be covering

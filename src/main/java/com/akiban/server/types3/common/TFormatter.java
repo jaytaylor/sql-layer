@@ -23,16 +23,22 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
+package com.akiban.server.types3.common;
+
+import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TInstance;
-import com.persistit.Key;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.AkibanAppender;
 
-public interface SortKeyTarget<S> {
-    void attach(Key key);
-    void append(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
-    void append(S source, AkType akType, TInstance tInstance, AkCollator collator);
-    void append(S source, AkCollator collator, TInstance tInstance);
+public class TFormatter {
+
+    public static enum FORMAT implements TClassFormatter {
+        BOOL {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(Boolean.toString(source.getBoolean()));
+            }
+        }
+    }
 }
