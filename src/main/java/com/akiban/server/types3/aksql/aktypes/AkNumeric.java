@@ -30,6 +30,7 @@ import com.akiban.server.types3.TParsers;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.aksql.AkBundle;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -55,7 +56,7 @@ public class AkNumeric {
                                        PUnderlying underlying,
                                        TParser parser)
     {
-        return new NoAttrTClass(AkBundle.INSTANCE.id(), name, formatter, internalVersion, serialVersion, size,
+        return new NoAttrTClass(AkBundle.INSTANCE.id(), name, AkCategory.INTEGER, formatter, internalVersion, serialVersion, size,
                 underlying, parser, TypeId.INTEGER_ID);
     }
 }

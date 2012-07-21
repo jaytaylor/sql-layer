@@ -35,6 +35,7 @@ import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -55,6 +56,7 @@ public abstract class TString extends TClass
     {
         super(bundle.id(),
                 name,
+                AkCategory.STRING_CHAR,
                 StringAttribute.class,
                 FORMAT.STRING,
                 1,

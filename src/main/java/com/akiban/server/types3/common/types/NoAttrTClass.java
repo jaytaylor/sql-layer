@@ -59,9 +59,9 @@ public class NoAttrTClass extends SimpleDtdTClass {
     protected void validate(TInstance instance) {
     }
 
-    public NoAttrTClass(TBundleID bundle, String name, TClassFormatter formatter, int internalRepVersion,
+    public NoAttrTClass(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, int internalRepVersion,
                            int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
-        super(bundle, name, formatter, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
+        super(bundle, name, category, formatter, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
                 pUnderlying, parser, typeId);
     }
 

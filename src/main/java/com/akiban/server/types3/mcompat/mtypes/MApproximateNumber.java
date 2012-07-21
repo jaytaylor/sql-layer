@@ -34,6 +34,7 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.TParsers;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.types.DoubleAttribute;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
@@ -150,7 +151,7 @@ public class MApproximateNumber extends SimpleDtdTClass
 
     private MApproximateNumber(String name, TypeId typeId, PUnderlying underlying, TParser parser)
     {
-        super(MBundle.INSTANCE.id(), name, NumericFormatter.FORMAT.DOUBLE,
+        super(MBundle.INSTANCE.id(), name, AkCategory.FLOATING, NumericFormatter.FORMAT.DOUBLE,
                 DoubleAttribute.class,
                 1, 1, 8,
                 underlying, parser, typeId);

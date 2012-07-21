@@ -257,12 +257,13 @@ public abstract class TClass {
 
      protected <A extends Enum<A> & Attribute> TClass(TBundleID bundle,
             String name,
+            Enum<?> category,
             Class<A> enumClass,
             TClassFormatter formatter,
             int internalRepVersion, int serializationVersion, int serializationSize,
             PUnderlying pUnderlying)
      {
-        this(new TName(bundle, name),
+        this(new TName(bundle, name, category),
                 enumClass,
                 formatter,
                 internalRepVersion, serializationVersion, serializationSize,

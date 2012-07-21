@@ -131,7 +131,7 @@ public class OverloadResolverTest {
         private static final TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
 
         public TestClassBase(String name, PUnderlying pUnderlying) {
-            super(TEST_BUNDLE_ID, name, null, 1, 1, 1, pUnderlying, null, null);
+            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, null);
         }
     }
 
