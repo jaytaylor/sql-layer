@@ -108,7 +108,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             buffer = new StringBuilder();
             int insertMaxRowCount;
             try {
-                insertMaxRowCount = (int)context.getValue(2).getInt();
+                insertMaxRowCount = (int)context.getValue(2).getLong();
             }
             catch (BindingNotSetException ex) {
                 insertMaxRowCount = 1;
