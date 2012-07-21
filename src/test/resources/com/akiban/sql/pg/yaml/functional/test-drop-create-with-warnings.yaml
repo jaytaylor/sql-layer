@@ -15,8 +15,8 @@
 #--- # so such table to drop
 #- DropTable: t1;
 #- error: [42501]
-#---
-#- DropTable: if exists t1;
+---
+- DropTable: if exists t1;
 #- warnings_count: 1
 #- warnings: [['42501', 'Cannot find the table `test`.`t1`']]
-...
+#...
