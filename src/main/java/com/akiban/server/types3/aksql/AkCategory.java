@@ -34,6 +34,5 @@ public enum AkCategory {
     STRING_BINARY,
     STRING_CHAR,
     DATE_TIME,
-    SPACIAL,
     OTHER
 }
