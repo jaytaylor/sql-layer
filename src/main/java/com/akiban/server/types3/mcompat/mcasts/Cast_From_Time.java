@@ -85,11 +85,6 @@ public class Cast_From_Time {
     public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIME, MString.VARCHAR, false, Constantness.UNKNOWN) {
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             target.putObject(MDatetimes.parseTime((String) source.getObject(), context));
         }
@@ -97,11 +92,6 @@ public class Cast_From_Time {
     
     public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, false, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -112,11 +102,6 @@ public class Cast_From_Time {
     
     public static final TCast TO_DATE = new TCastBase(MDatetimes.TIME, MDatetimes.DATE, false, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -128,12 +113,6 @@ public class Cast_From_Time {
     
     public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.TIME, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
     {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)

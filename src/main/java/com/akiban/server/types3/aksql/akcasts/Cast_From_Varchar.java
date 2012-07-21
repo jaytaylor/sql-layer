@@ -29,9 +29,6 @@ package com.akiban.server.types3.aksql.akcasts;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.aksql.aktypes.AkString;
@@ -45,11 +42,6 @@ public class Cast_From_Varchar
 {
     public static final TCast TO_BOOLEAN = new TCastBase(AkString.VARCHAR, AkBool.INSTANCE, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -60,11 +52,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_SMALLINT = new TCastBase(AkString.VARCHAR, AkNumeric.SMALLINT, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -77,12 +64,6 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             INT.parse(context, source, target);
@@ -91,11 +72,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.BIGINT, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -106,11 +82,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.U_BIGINT, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -121,11 +92,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_DOUBLE = new TCastBase(AkString.VARCHAR, AkNumeric.DOUBLE, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)

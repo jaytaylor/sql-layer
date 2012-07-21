@@ -45,12 +45,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.round(Byte.MAX_VALUE, Byte.MIN_VALUE, 
@@ -68,12 +62,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.round(Short.MAX_VALUE, 0, 
@@ -87,12 +75,6 @@ public class MNumericCastBase
         {
             super(checkType(source, PUnderlying.DOUBLE),
                   checkType(target, PUnderlying.INT_16), auto, c);
-        }
-        
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
@@ -112,12 +94,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.round(Integer.MAX_VALUE, 0,
@@ -131,12 +107,6 @@ public class MNumericCastBase
         {
             super(checkType(source, PUnderlying.DOUBLE),
                   checkType(source, PUnderlying.INT_32), auto, c);
-        }
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
@@ -156,12 +126,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64((long)CastUtils.round(Long.MAX_VALUE, 0,
@@ -178,12 +142,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64((long)CastUtils.round(Long.MAX_VALUE, Long.MIN_VALUE,
@@ -197,12 +155,6 @@ public class MNumericCastBase
         {
             super(checkType(source, PUnderlying.DOUBLE),
                   checkType(source, PUnderlying.BYTES), auto, c);
-        }
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
@@ -223,12 +175,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Double.toString(source.getDouble()));
@@ -243,11 +189,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.STRING), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -264,11 +205,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt8(), context));
@@ -283,11 +219,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_16), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -304,11 +235,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt8(), context));
@@ -323,11 +249,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_32), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -344,11 +265,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt8(), context));
@@ -363,11 +279,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -384,11 +295,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt8());
@@ -403,11 +309,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.BYTES), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -424,11 +325,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Short.toString(source.getInt16()));
@@ -443,11 +339,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_8), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -464,11 +355,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt16(), context));
@@ -481,12 +367,6 @@ public class MNumericCastBase
         {
             super(checkType(source, PUnderlying.INT_16),
                   checkType(target, PUnderlying.INT_16), auto, c);
-        }
-        
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
@@ -505,11 +385,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt16(), context));
@@ -524,11 +399,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_32), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -545,11 +415,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt16(), context));
@@ -564,11 +429,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -585,11 +445,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt16());
@@ -604,11 +459,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.BYTES), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -625,11 +475,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Integer.toString(source.getInt32()));
@@ -644,11 +489,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_8), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -665,11 +505,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt32(), context));
@@ -684,11 +519,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_16), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -705,11 +535,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt32(), context));
@@ -724,11 +549,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_32), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -745,11 +565,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt32(), context));
@@ -764,11 +579,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -785,11 +595,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt32());
@@ -804,11 +609,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.BYTES), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -825,11 +625,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Long.toString(source.getInt64()));
@@ -844,11 +639,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_8), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -865,11 +655,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt64(), context));
@@ -884,11 +669,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_16), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -905,11 +685,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt64(), context));
@@ -924,11 +699,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_32), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -945,11 +715,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt64(), context));
@@ -964,11 +729,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -985,11 +745,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt64());
@@ -1004,11 +759,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.BYTES), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
