@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.regex.Pattern;
@@ -53,6 +54,11 @@ public final class TName {
     public TBundleID bundleId() {
         return bundleID;
     }
+    
+    public String category() {
+        Enum<?> c = (category == null) ? AkCategory.OTHER : category;
+        return c.name();
+    }
 
     // object interface
 
@@ -77,14 +83,16 @@ public final class TName {
         return bundleID + "_ " + name;
     }
 
-    public TName(TBundleID bundleID, String name) {
+    public TName(TBundleID bundleID, String name, Enum<?> category) {
         ArgumentValidation.notNull("bundle", bundleID);
         ArgumentValidation.notNull("name", name);
         this.bundleID = bundleID;
         this.name = normalizeName(name);
+        this.category = category;
     }
 
     private final TBundleID bundleID;
     private final String name;
+    private final Enum<?> category;
     private static final Pattern WORD_VALIDATION = Pattern.compile("[a-zA-Z][a-zA-Z0-9]*");
 }

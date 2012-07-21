@@ -335,6 +335,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             List<Map<String,Comparable<?>>> result = new ArrayList<Map<String,Comparable<?>>>(tClasses.size());
             for (TClass tClass : tClasses) {
                 Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
+                map.put("category", tClass.name().category());
                 buildTName("bundle", "name", tClass, map);
                 map.put("internalVersion", tClass.internalRepresentationVersion());
                 map.put("serializationVersion", tClass.serializationVersion());

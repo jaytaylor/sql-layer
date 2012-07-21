@@ -43,9 +43,9 @@ public abstract class SimpleDtdTClass extends TClassBase {
         this.typeId = typeId;
     }
 
-    protected <A extends Enum<A> & Attribute>SimpleDtdTClass(TBundleID bundle, String name,  TClassFormatter formatter, Class<A> enumClass, int internalRepVersion,
+    protected <A extends Enum<A> & Attribute>SimpleDtdTClass(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, Class<A> enumClass, int internalRepVersion,
                               int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
-        super(bundle, name, enumClass, formatter, internalRepVersion, serializationVersion, serializationSize, pUnderlying, parser);
+        super(bundle, name, category, enumClass, formatter, internalRepVersion, serializationVersion, serializationSize, pUnderlying, parser);
         this.typeId = typeId;
     }
 

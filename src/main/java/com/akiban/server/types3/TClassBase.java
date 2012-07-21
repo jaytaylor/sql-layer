@@ -36,6 +36,7 @@ public abstract class TClassBase extends TClass
     
     protected <A extends Enum<A> & Attribute> TClassBase(TBundleID bundle,
             String name,
+            Enum<?> category,
             Class<A> enumClass,
             TClassFormatter formatter,
             int internalRepVersion, int sVersion, int sSize,
@@ -44,6 +45,7 @@ public abstract class TClassBase extends TClass
      {
          super(bundle,
                name,
+               category,
                enumClass,
                formatter,
                internalRepVersion,
