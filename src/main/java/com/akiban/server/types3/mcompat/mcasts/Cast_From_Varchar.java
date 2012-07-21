@@ -29,9 +29,6 @@ package com.akiban.server.types3.mcompat.mcasts;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -77,19 +74,9 @@ public class Cast_From_Varchar
             TINYINT.parse(context, source, target);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
     };
     public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT_UNSIGNED, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -99,11 +86,6 @@ public class Cast_From_Varchar
     };
     public static final TCast TO_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -113,11 +95,6 @@ public class Cast_From_Varchar
     };
     public static final TCast TO_UNSIGNED_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -127,11 +104,6 @@ public class Cast_From_Varchar
     };
     public static final TCast TO_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -141,11 +113,6 @@ public class Cast_From_Varchar
     };
     public static final TCast TO_UNSIGNED_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -155,11 +122,6 @@ public class Cast_From_Varchar
     };
     public static final TCast TO_INT = new TCastBase(MString.VARCHAR, MNumeric.INT, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -169,11 +131,6 @@ public class Cast_From_Varchar
     };
     public static final TCast TO_UNSIGNED_INT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -183,11 +140,6 @@ public class Cast_From_Varchar
     };
     public static final TCast TO_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -197,11 +149,6 @@ public class Cast_From_Varchar
     };
     public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -229,11 +176,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -244,11 +186,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_DECIMAL = new TCastBase(MString.VARCHAR, MNumeric.DECIMAL, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -259,11 +196,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -276,12 +208,6 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             DATETIME.parse(context, source, target);
@@ -290,11 +216,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_TIME = new TCastBase(MString.VARCHAR, MDatetimes.TIME, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -307,12 +228,6 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             TIMESTAMP.parse(context, source, target);
@@ -321,11 +236,6 @@ public class Cast_From_Varchar
     
     public static final TCast TO_YEAR = new TCastBase(MString.VARCHAR, MDatetimes.YEAR, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
