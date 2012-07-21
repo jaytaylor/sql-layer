@@ -54,7 +54,7 @@ public final class TName {
         return bundleID;
     }
     
-    public String category() {
+    public String categoryName() {
         return (category == null) ? "OTHER" : category.name();
     }
 
