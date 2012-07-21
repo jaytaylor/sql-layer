@@ -33,6 +33,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -40,7 +41,6 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -81,7 +81,6 @@ public class ServerValueEncoder
     private PrintWriter printWriter;
     private AkibanAppender appender;
     private FromObjectValueSource objectSource;
-    private AppenderPValueTarget appenderTarget;
     private PValue stringPValue;
 
     public ServerValueEncoder(String encoding) {
@@ -100,7 +99,6 @@ public class ServerValueEncoder
             appender = AkibanAppender.of(byteStream, printWriter);
         else
             appender = AkibanAppender.of(printWriter);
-        appenderTarget = new AppenderPValueTarget(appender);
     }
 
     public ServerValueEncoder(String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
@@ -234,11 +232,12 @@ public class ServerValueEncoder
     /** Append the given value to the buffer. */
     public void appendPValue(PValueSource value, ServerType type, boolean binary) 
             throws IOException {
-        if (type.getInstance().typeClass() == MBinary.VARBINARY)
+        TClass tClass = type.getInstance().typeClass();
+        if (tClass == MBinary.VARBINARY)
             getByteStream().write(value.getBytes());
         else {
             assert !binary : "can only binary encode VARBINARY";
-            appenderTarget.putValueSource(value);
+            tClass.format(type.getInstance(), value, appender);
         }
     }
     

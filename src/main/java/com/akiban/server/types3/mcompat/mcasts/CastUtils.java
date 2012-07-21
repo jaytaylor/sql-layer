@@ -184,7 +184,7 @@ public final class CastUtils
         // first attempt
         try
         {
-            return CastUtils.getInRange(Long.parseLong(st), max, min, context);
+            return CastUtils.getInRange(max, min, Long.parseLong(st), context);
         }
         catch (NumberFormatException e)
         {
@@ -192,7 +192,7 @@ public final class CastUtils
         }
 
         // second attempt
-        return CastUtils.getInRange(Long.parseLong(truncated), max, min, context);
+        return CastUtils.getInRange(max, min, Long.parseLong(truncated), context);
     }
     
     /**

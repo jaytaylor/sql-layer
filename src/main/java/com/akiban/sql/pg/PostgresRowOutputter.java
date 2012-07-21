@@ -27,9 +27,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.row.Row;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
