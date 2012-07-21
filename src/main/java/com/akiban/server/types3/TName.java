@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.regex.Pattern;
@@ -56,8 +55,7 @@ public final class TName {
     }
     
     public String category() {
-        Enum<?> c = (category == null) ? AkCategory.OTHER : category;
-        return c.name();
+        return (category == null) ? "OTHER" : category.name();
     }
 
     // object interface
