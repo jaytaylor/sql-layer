@@ -35,9 +35,13 @@ import java.io.IOException;
  */
 public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
 {
+    private boolean withNewline;
+
     public PostgresDirectObjectCopier(PostgresQueryContext context,
-                                      PostgresBaseStatement statement) {
+                                      PostgresBaseStatement statement,
+                                      boolean withNewline) {
         super(context, statement);
+        this.withNewline = withNewline;
     }
 
     @Override
@@ -51,7 +55,8 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
             if (field != null)
                 encoder.appendObject(field, type, false);
         }
-        encoder.appendString("\n");
+        if (withNewline)
+            encoder.appendString("\n");
         messenger.writeByteStream(encoder.getByteStream());
         messenger.sendMessage();
     }
