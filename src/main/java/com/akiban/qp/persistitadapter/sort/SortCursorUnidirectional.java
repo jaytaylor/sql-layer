@@ -137,7 +137,7 @@ class SortCursorUnidirectional<S> extends SortCursor
             BoundExpressions loExpressions = lo.boundExpressions(context);
             BoundExpressions hiExpressions = hi.boundExpressions(context);
             for (int f = 0; f < endBoundColumns - 1; f++) {
-                keyAdapter.checkConstraints(loExpressions, hiExpressions, f);
+                keyAdapter.checkConstraints(loExpressions, hiExpressions, tInstances, f);
             }
             /*
                 Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
