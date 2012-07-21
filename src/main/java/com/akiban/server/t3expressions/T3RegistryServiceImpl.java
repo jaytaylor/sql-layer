@@ -57,7 +57,6 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -335,8 +334,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             List<Map<String,Comparable<?>>> result = new ArrayList<Map<String,Comparable<?>>>(tClasses.size());
             for (TClass tClass : tClasses) {
                 Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
-                map.put("category", tClass.name().category());
                 buildTName("bundle", "name", tClass, map);
+                map.put("category", tClass.name().category());
                 map.put("internalVersion", tClass.internalRepresentationVersion());
                 map.put("serializationVersion", tClass.serializationVersion());
                 map.put("fixedSize", tClass.hasFixedSerializationSize() ? tClass.fixedSerializationSize() : null);
