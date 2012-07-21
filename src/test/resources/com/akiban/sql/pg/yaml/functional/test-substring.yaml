@@ -34,7 +34,7 @@
 - output: [['yzt'], ['yzt']]
 --- # test index out of bound
 - Statement: SELECT SUBSTRING('ABC', 4 ) from all_types;
-- output: [[null], [null]]
+- output: [[''], ['']]
 --- # test empty string
 - Statement: SELECT SUBSTRING('', 2, 0) from all_types;
 - output: [[''], ['']]
