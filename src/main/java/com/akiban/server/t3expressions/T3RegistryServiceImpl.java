@@ -347,6 +347,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
                 public int compare(Map<String, Comparable<?>> o1, Map<String, Comparable<?>> o2) {
                     return ComparisonChain.start()
                             .compare(o1.get("bundle"), o2.get("bundle"))
+                            .compare(o1.get("category"), o2.get("category"))
                             .compare(o1.get("name"), o2.get("name"))
                             .result();
                 }
