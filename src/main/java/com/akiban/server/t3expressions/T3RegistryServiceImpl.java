@@ -328,6 +328,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             for (TClass tClass : tClasses) {
                 Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
                 buildTName("bundle", "name", tClass, map);
+                map.put("category", tClass.name().categoryName());
                 map.put("internalVersion", tClass.internalRepresentationVersion());
                 map.put("serializationVersion", tClass.serializationVersion());
                 map.put("fixedSize", tClass.hasFixedSerializationSize() ? tClass.fixedSerializationSize() : null);
@@ -338,6 +339,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
                 public int compare(Map<String, Comparable<?>> o1, Map<String, Comparable<?>> o2) {
                     return ComparisonChain.start()
                             .compare(o1.get("bundle"), o2.get("bundle"))
+                            .compare(o1.get("category"), o2.get("category"))
                             .compare(o1.get("name"), o2.get("name"))
                             .result();
                 }

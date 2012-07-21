@@ -34,6 +34,7 @@ import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.TParsers;
 import com.akiban.server.types3.TypeDeclarationException;
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.types.NumericAttribute;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
@@ -48,7 +49,7 @@ public class MNumeric extends SimpleDtdTClass {
     protected MNumeric(String name, TClassFormatter formatter, int serializationSize, PUnderlying pUnderlying,
                        int defaultWidth, TParser parser)
     {
-        super(MBundle.INSTANCE.id(), name, 
+        super(MBundle.INSTANCE.id(), name, AkCategory.INTEGER,
                 formatter,
                 NumericAttribute.class,
                 1, 1, serializationSize, 
