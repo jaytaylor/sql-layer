@@ -23,10 +23,6 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.akiban.server.types3;
 
 import com.akiban.server.types3.pvalue.PValueSource;
