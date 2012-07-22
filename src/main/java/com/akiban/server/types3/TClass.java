@@ -106,7 +106,7 @@ public abstract class TClass {
         }
     }
 
-    public void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+    protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
         PValueTargets.copyFrom(in, out, cacher(), typeInstance);
     }
 
@@ -142,11 +142,11 @@ public abstract class TClass {
         return createInstance(4, arg0, arg1, arg2, arg3);
     }
 
-    public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+    protected void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
         writeCanonical(inValue, inInstance, out);
     }
 
-    public void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+    protected void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
         writeCanonical(inValue, typeInstance, out);
     }
 

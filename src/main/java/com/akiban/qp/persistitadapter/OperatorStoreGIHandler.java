@@ -37,7 +37,6 @@ import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -80,8 +79,7 @@ class OperatorStoreGIHandler {
                 if (Types3Switch.ON) {
                     PValueSource source = row.pvalue(flattenedIndex);
                     TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
-                    TClass sourceClass = sourceInstance.typeClass();
-                    sourceClass.writeCollating(source, sourceInstance, pTarget.expectingType(column));
+                    sourceInstance.writeCollating(source, pTarget.expectingType(column));
                 }
                 else {
                     ValueSource source = row.eval(flattenedIndex);

@@ -136,8 +136,7 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
 
         @Override
         public void append(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
-            TClass tClass = tInstance.typeClass();
-            tClass.writeCollating(source, tInstance, target);
+            tInstance.writeCollating(source, target);
         }
 
         @Override
