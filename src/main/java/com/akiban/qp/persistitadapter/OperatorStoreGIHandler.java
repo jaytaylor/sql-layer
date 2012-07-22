@@ -74,14 +74,14 @@ class OperatorStoreGIHandler {
                 assert ! irc.isInHKey(i);
 
                 final int flattenedIndex = irc.getFieldPosition(i);
-                Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
 
                 if (Types3Switch.ON) {
                     PValueSource source = row.pvalue(flattenedIndex);
                     TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
-                    sourceInstance.writeCollating(source, pTarget.expectingType(column));
+                    sourceInstance.writeCollating(source, pTarget);
                 }
                 else {
+                    Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
                     ValueSource source = row.eval(flattenedIndex);
                     Converters.convert(source, target.expectingType(column));
                 }
@@ -154,7 +154,6 @@ class OperatorStoreGIHandler {
 
     private static long tableBitmap(GroupIndex groupIndex, Row row) {
         long result = 0;
-         int indexFromEnd = 0;
          for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
                 !(table == null || table.equals(END));
                 table = table.parentTable()
@@ -162,7 +161,6 @@ class OperatorStoreGIHandler {
             if (row.containsRealRowOf(table)) {
                 result |= 1 << table.getDepth();
             }
-            ++indexFromEnd;
         }
         return result;
     }

@@ -129,9 +129,7 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
         public void append(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances,
                            AkCollator[] collators)
         {
-            TInstance tInstance = tInstances[f];
-            target.expectingType(source.getUnderlyingType());
-            append(source, null, tInstance, null);
+            append(source, null, tInstances[f], null);
         }
 
         @Override
