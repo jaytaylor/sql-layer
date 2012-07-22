@@ -40,6 +40,8 @@ import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueSources;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
@@ -71,7 +73,9 @@ public class CompareExpression extends AbstractBinaryExpression {
 
     @Override
     public Explainer getExplainer () {
-        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+        Explainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
+        return ex;
     }
     
     @Override

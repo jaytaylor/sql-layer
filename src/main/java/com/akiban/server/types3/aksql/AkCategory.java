@@ -24,12 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.server.types3.aksql;
 
-import com.akiban.server.types3.TAggregator;
-
-import java.util.Collection;
-
-public interface T3AggregatesRegistry {
-    Collection<? extends TAggregator> getAggregates(String name);
+public enum AkCategory {
+    LOGIC,
+    INTEGER,
+    DECIMAL,
+    FLOATING,
+    STRING_BINARY,
+    STRING_CHAR,
+    DATE_TIME
 }

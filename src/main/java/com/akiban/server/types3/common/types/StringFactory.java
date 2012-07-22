@@ -56,6 +56,11 @@ public class StringFactory implements TFactory
             return charset;
         }
         
+        public static String of (int ordinal)
+        {
+            return Charset.values()[ordinal].name();
+        }
+
         private static final Map<String,Charset> lookupMap = createLookupMap();
 
         private static Map<String, Charset> createLookupMap() {

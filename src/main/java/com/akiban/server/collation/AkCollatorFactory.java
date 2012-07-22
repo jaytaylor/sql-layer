@@ -71,6 +71,11 @@ public class AkCollatorFactory {
 
     private volatile static Mode mode = Mode.LOOSE; // default for unit tests
 
+    /*
+     * Note: used only in a single-threaded unit test.
+     */
+    private static int cacheHits;
+
     public enum Mode {
         STRICT, LOOSE, DISABLED
     }
@@ -101,19 +106,21 @@ public class AkCollatorFactory {
      */
     public static void setCollationMode(String modeString) {
         try {
-            mode = Mode.valueOf(modeString.toUpperCase());
+            setCollationMode(Mode.valueOf(modeString.toUpperCase()));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Collation mode must be STRICT, LOOSE or DISABLED: " + modeString);
         }
     }
-    
+
     public static void setCollationMode(Mode m) {
         if (m == null) {
             throw new NullPointerException();
         }
+        collationIdMap.clear();
+        collatorMap.clear();
         mode = m;
     }
-    
+
     public static Mode getCollationMode() {
         return mode;
     }
@@ -126,31 +133,32 @@ public class AkCollatorFactory {
         if (mode == Mode.DISABLED || name == null) {
             return UCS_BINARY_COLLATOR;
         }
-        
+
+        SoftReference<AkCollator> ref = collatorMap.get(name);
+        if (ref != null) {
+            AkCollator akCollator = ref.get();
+            if (akCollator != null) {
+                cacheHits++;
+                return akCollator;
+            }
+        }
+
         final String idAndScheme = schemeForName(name);
         if (idAndScheme == null) {
             if (mode == Mode.LOOSE) {
-                return UCS_BINARY_COLLATOR;
+                return mapToBinary(name);
             } else {
                 throw new InvalidCollationException(name);
             }
         }
-        
+
         final Matcher matcher = SCHEMA_PATTERN.matcher(idAndScheme);
         if (!matcher.matches()) {
             throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
         }
         final String scheme = matcher.group(2);
         if (scheme.startsWith(UCS_BINARY)) {
-            return UCS_BINARY_COLLATOR;
-        }
-
-        SoftReference<AkCollator> ref = collatorMap.get(scheme);
-        if (ref != null) {
-            AkCollator akCollator = ref.get();
-            if (akCollator != null) {
-                return akCollator;
-            }
+            return mapToBinary(name);
         }
 
         synchronized (collatorMap) {
@@ -177,7 +185,7 @@ public class AkCollatorFactory {
             return akCollator;
         }
     }
-
+    
     public static AkCollator getAkCollator(final int collatorId) {
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
         AkCollator collator = (ref == null ? null : ref.get());
@@ -191,6 +199,8 @@ public class AkCollatorFactory {
                     return getAkCollator(entry.getKey().toString());
                 }
             }
+        } else {
+            cacheHits++;
         }
         return collator;
     }
@@ -241,10 +251,24 @@ public class AkCollatorFactory {
         return collator;
     }
 
+    private static AkCollator mapToBinary(final String name) {
+        collatorMap.put(name, new SoftReference<AkCollator>(UCS_BINARY_COLLATOR));
+        return UCS_BINARY_COLLATOR;
+    }
+
     private synchronized static String schemeForName(final String name) {
         final String lcname = name.toLowerCase();
         String scheme = collationNameProperties.getProperty(lcname);
         return scheme;
     }
 
+    /**
+     * Intended only for unit tests.
+     * 
+     * @return Number of times either getAkCollator() method has returned a
+     *         cached value.
+     */
+    static int getCacheHits() {
+        return cacheHits;
+    }
 }

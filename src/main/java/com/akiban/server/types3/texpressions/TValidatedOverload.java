@@ -30,6 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
@@ -38,7 +39,9 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.SparseArray;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class TValidatedOverload implements TOverload {
 
@@ -64,6 +67,11 @@ public final class TValidatedOverload implements TOverload {
         overload.evaluate(context, inputs, output);
     }
 
+    @Override
+    public String toString(List<? extends TPreparedExpression> inputs, TInstance resultType) {
+        return overload.toString(inputs, resultType);
+    }
+
     // TOverload methods (cached)
 
     @Override
@@ -74,6 +82,23 @@ public final class TValidatedOverload implements TOverload {
     @Override
     public TOverloadResult resultType() {
         return resultStrategy;
+    }
+
+    // Redefine toString
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(overload.overloadName()).append('(');
+        for (int i = 0, nPos = positionalInputs(), nDesc = inputSetDescriptions.length; i < nDesc; ++i) {
+            sb.append(inputSetDescriptions[i]);
+            if (i == nPos)
+                sb.append("...");
+            if (i+1 < nDesc)
+                sb.append(", ");
+        }
+        sb.append(") -> ").append(resultStrategy);
+        return sb.toString();
     }
 
     // TValidatedOverload methods
@@ -151,15 +176,40 @@ public final class TValidatedOverload implements TOverload {
         this.varargs = localVarargInputs;
         this.resultStrategy = overload.resultType();
         this.pickingSet = localPickingInputs;
+        this.inputSetDescriptions = createInputSetDescriptions(inputSetsByPos, pickingSet, varargs);
     }
 
-    @Override
-    public String toString() {
-        return overload.toString();
-    }
-
-    private boolean stronglyCastable(TClass tClass, TClass tClass1) {
-        throw new UnsupportedOperationException(); // TODO
+    private static String[] createInputSetDescriptions(List<TInputSet> inputSetsByPos,
+                                                       TInputSet pickingSet, TInputSet varargInputSet)
+    {
+        int nInputsRaw = inputSetsByPos.size();
+        int nInputsExtended = (varargInputSet == null) ? nInputsRaw : (nInputsRaw + 1);
+        String[] result = new String[nInputsExtended];
+        Map<TInputSet,String> map = new HashMap<TInputSet, String>(nInputsRaw);
+        int anyCount = 0;
+        // if the picking input set is T, it's always T (not T#1 etc)
+        if (pickingSet != null && pickingSet.targetType() == null) {
+            map.put(pickingSet, "T");
+            ++anyCount;
+        }
+        for (int i = 0; i < nInputsExtended; i++) {
+            TInputSet inputSet = (i == nInputsRaw) ? varargInputSet : inputSetsByPos.get(i);
+            String description = map.get(inputSet);
+            if (description == null) {
+                TClass inputTClass = inputSet.targetType();
+                if (inputTClass == null) {
+                    description = "T";
+                    if (anyCount > 0)
+                        description += ('#' + anyCount);
+                    ++anyCount;
+                } else {
+                    description = inputTClass.toString();
+                }
+                map.put(inputSet, description);
+            }
+            result[i] = description;
+        }
+        return result;
     }
     
     private final TOverload overload;
@@ -168,6 +218,11 @@ public final class TValidatedOverload implements TOverload {
     private final TOverloadResult resultStrategy;
     private final TInputSet varargs;
     private final TInputSet pickingSet;
+    /**
+     * A description of each input, indexed by its position. If there is a vararg input, its index is
+     * one greater than the 0-indexing of positions.
+     */
+    private final String[] inputSetDescriptions;
 
     private static class InvalidOverloadException extends RuntimeException {
         private InvalidOverloadException(String message) {

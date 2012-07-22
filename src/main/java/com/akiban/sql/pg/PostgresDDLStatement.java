@@ -100,30 +100,30 @@ public class PostgresDDLStatement implements PostgresStatement
         try {
             switch (ddl.getNodeType()) {
             case NodeTypes.CREATE_SCHEMA_NODE:
-                SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl);
+                SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl, context);
                 break;
             case NodeTypes.DROP_SCHEMA_NODE:
-                SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl);
+                SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl, context);
                 break;
             case NodeTypes.CREATE_TABLE_NODE:
-                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl);
+                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl, context);
                 break;
             case NodeTypes.DROP_TABLE_NODE:
-                TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl);
+                TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl, context);
                 break;
             case NodeTypes.CREATE_VIEW_NODE:
                 ViewDDL.createView(ddlFunctions, session, schema, (CreateViewNode)ddl,
-                                   server.getBinderContext());
+                                   server.getBinderContext(), context);
                 break;
             case NodeTypes.DROP_VIEW_NODE:
                 ViewDDL.dropView(ddlFunctions, session, schema, (DropViewNode)ddl,
-                                 server.getBinderContext());
+                                 server.getBinderContext(), context);
                 break;
             case NodeTypes.CREATE_INDEX_NODE:
                 IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
                 break;
             case NodeTypes.DROP_INDEX_NODE:
-                IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
+                IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);
                 break;
             case NodeTypes.ALTER_TABLE_NODE:
             {

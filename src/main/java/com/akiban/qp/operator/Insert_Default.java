@@ -124,7 +124,7 @@ class Insert_Default implements UpdatePlannable {
     @Override
     public Explainer getExplainer()
     {
-        return new DUIOperatorExplainer("INSERT", inputOperator);
+        return new DUIOperatorExplainer("Insert", inputOperator);
     }
 
     // Inner classes

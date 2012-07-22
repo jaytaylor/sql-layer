@@ -26,14 +26,13 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 public class AkString extends TString
@@ -45,5 +44,19 @@ public class AkString extends TString
     private AkString (String name, int serialisationSize)
     {
         super(TypeId.VARCHAR_ID, AkBundle.INSTANCE, name, serialisationSize);
+    }
+
+    @Override
+    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
+    {
+        int expectedLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
+        int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
+        int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
+        
+        String inStr = in.getString();
+        out.putString(expectedLen >= inStr.length()
+                                ? inStr
+                                : inStr.substring(0, expectedLen)
+                      , AkCollatorFactory.getAkCollator(collatorId));
     }
 }

@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
@@ -84,6 +85,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
+import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -138,6 +141,8 @@ public class OperatorAssembler extends BaseRule
         List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
                                          ColumnExpressionToIndex fieldOffsets);
         T[] createNulls(Index index, int nkeys);
+        Operator ifEmptyNulls(Operator input, RowType rowType,
+                              InputPreservationOption inputPreservation);
     }
 
     private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Object>() {
@@ -193,6 +198,12 @@ public class OperatorAssembler extends BaseRule
 
         @Override
         public Object[] createNulls(Index index, int nkeys) {
+            return null;
+        }
+
+        @Override
+        public Operator ifEmptyNulls(Operator input, RowType rowType,
+                                     InputPreservationOption inputPreservation) {
             return null;
         }
     };
@@ -269,6 +280,16 @@ public class OperatorAssembler extends BaseRule
                                                              RowType innerRowType,
                                                              int bindingPosition);
             protected abstract T field(RowType rowType, int position);
+            protected abstract T nullExpression(RowType rowType, int i);
+
+
+            protected List<? extends T> createNulls(RowType rowType) {
+                int nfields = rowType.nFields();
+                List<T> result = new ArrayList<T>(nfields);
+                for (int i = 0; i < nfields; ++i)
+                    result.add(nullExpression(rowType, i));
+                return result;
+            }
 
             @Override
             public T assembleSubqueryExpression(SubqueryExpression sexpr) {
@@ -419,6 +440,17 @@ public class OperatorAssembler extends BaseRule
             protected Expression[] array(int size) {
                 return new Expression[size];
             }
+
+            @Override
+            public Operator ifEmptyNulls(Operator input, RowType rowType,
+                                         InputPreservationOption inputPreservation) {
+                return API.ifEmpty_Default(input, rowType, createNulls(rowType), null, inputPreservation);
+            }
+
+            @Override
+            protected Expression nullExpression(RowType rowType, int i) {
+                return LiteralExpression.forNull();
+            }
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
@@ -445,7 +477,7 @@ public class OperatorAssembler extends BaseRule
             protected TPreparedExpression existsExpression(Operator operator, RowType outerRowType,
                                                            RowType innerRowType,
                                                            int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ExistsSubqueryTExpression(operator, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
@@ -459,7 +491,7 @@ public class OperatorAssembler extends BaseRule
             protected TPreparedExpression scalarSubqueryExpression(Operator operator, TPreparedExpression innerExpression,
                                                                    RowType outerRowType, RowType innerRowType,
                                                                    int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ScalarSubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
@@ -476,6 +508,17 @@ public class OperatorAssembler extends BaseRule
             @Override
             protected TPreparedExpression[] array(int size) {
                 return new TPreparedExpression[size];
+            }
+
+            @Override
+            public Operator ifEmptyNulls(Operator input, RowType rowType,
+                                         InputPreservationOption inputPreservation) {
+                return API.ifEmpty_Default(input, rowType, null, createNulls(rowType), inputPreservation);
+            }
+
+            @Override
+            protected TPreparedExpression nullExpression(RowType rowType, int i) {
+                return new TNullExpression(rowType.typeInstanceAt(i));
             }
         }
 
@@ -759,7 +802,8 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleIndexKeyRange(indexScan, null),
                                                         assembleIndexOrdering(indexScan, indexRowType),
-                                                        selector);
+                                                        selector,
+                                                        usePValues);
                 stream.rowType = indexRowType;
             }
             else {
@@ -780,7 +824,8 @@ public class OperatorAssembler extends BaseRule
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
                                                           assembleIndexOrdering(indexScan, indexRowType),
-                                                          selector);
+                                                          selector,
+                                                          usePValues);
                     if (stream.operator == null) {
                         stream.operator = scan;
                         stream.rowType = indexRowType;
@@ -1218,7 +1263,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
                                                             ordering, sortOption, maxrows);
             else
-                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption);
+                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption, usePValues);
         }
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,
@@ -1247,9 +1292,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleNullIfEmpty(RowStream stream) {
-            Expression[] nulls = new Expression[stream.rowType.nFields()];
-            Arrays.fill(nulls, LiteralExpression.forNull());
-            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.KEEP_INPUT);
+            stream.operator = partialAssembler.ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.KEEP_INPUT);
             return stream;
         }
 
@@ -1260,9 +1303,7 @@ public class OperatorAssembler extends BaseRule
             // figure out an interesting non-null value for each
             // AkType in the row. All that really matters is that the
             // row is there.
-            Expression[] nulls = new Expression[stream.rowType.nFields()];
-            Arrays.fill(nulls, LiteralExpression.forNull());
-            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.DISCARD_INPUT);
+            stream.operator = partialAssembler.ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.DISCARD_INPUT);
             return stream;
         }
 

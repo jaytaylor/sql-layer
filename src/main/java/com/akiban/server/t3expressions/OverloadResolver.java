@@ -25,6 +25,7 @@
  */
 package com.akiban.server.t3expressions;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.types3.TAggregator;
@@ -38,6 +39,7 @@ import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -66,20 +68,10 @@ public final class OverloadResolver {
         }
     }
 
-    private final T3ScalarsRegistry registry;
-    private final T3AggregatesRegistry aggregatesRegistry;
+    private final T3RegistryService registry;
 
-    /**
-     * For testing. Aggregates will not work.
-     * @param registry the scalar registry
-     */
-    OverloadResolver(T3ScalarsRegistry registry) {
-        this(registry, null);
-    }
-
-    public OverloadResolver(T3ScalarsRegistry registry, T3AggregatesRegistry aggregatesRegistry) {
+    public OverloadResolver(T3RegistryService registry) {
         this.registry = registry;
-        this.aggregatesRegistry = aggregatesRegistry;
     }
 
     public TCast getTCast(TInstance source, TInstance target) {
@@ -114,13 +106,13 @@ public final class OverloadResolver {
             return tClass1;
 
         // Alright, neither is null and they're both different. Try the hard way.
-        Set<TClass> t1Targets = registry.stronglyCastableTo(tClass1);
-        Set<TClass> t2Targets = registry.stronglyCastableTo(tClass2);
+        Set<? extends TClass> t1Targets = registry.stronglyCastableTo(tClass1);
+        Set<? extends TClass> t2Targets = registry.stronglyCastableTo(tClass2);
 
         // TODO: The following is not very efficient -- opportunity for optimization?
 
         // Sets.intersection works best when the first arg is smaller, so do that.
-        Set<TClass> set1, set2;
+        Set<? extends TClass> set1, set2;
         if (t1Targets.size() < t2Targets.size()) {
             set1 = t1Targets;
             set2 = t2Targets;
@@ -129,7 +121,7 @@ public final class OverloadResolver {
             set1 = t2Targets;
             set2 = t1Targets;
         }
-        Set<TClass> castGroup = Sets.intersection(set1, set2); // N^2 operation number 1
+        Set<? extends TClass> castGroup = Sets.intersection(set1, set2); // N^2 operation number 1
 
         // The cast group is the set of type classes such that for each element C of castGroup, both tClass1 and tClass2
         // can be strongly cast to C. castGroup is thus the set of common types for { tClass1, tClass2 }. We now need
@@ -164,14 +156,41 @@ public final class OverloadResolver {
     }
 
     public TAggregator getAggregation(String name, TClass inputType) {
-        List<TAggregator> candidates = new ArrayList<TAggregator>(aggregatesRegistry.getAggregates(name));
-        for (TAggregator candidate : candidates) {
+        List<TAggregator> candidates = new ArrayList<TAggregator>(registry.getAggregates(name));
+        for (Iterator<TAggregator> iterator = candidates.iterator(); iterator.hasNext(); ) {
+            TAggregator candidate = iterator.next();
             TClass expectedInput = candidate.getTypeClass();
             if (expectedInput == null || expectedInput.equals(inputType)) // null means input type is irrelevant
                 return candidate;
-            // TODO use casting types, etc
+            if (!isStrong(registry.cast(inputType, expectedInput)))
+                iterator.remove();
         }
-        throw new OverloadException("no appropriate aggregate found for " + name + "(" + inputType + ")");
+        // At this point, all of the aggregators can be strongly casted to. Find the most specific one.
+        // First, a quick check to see if there is one one or none.
+        int nCandidates = candidates.size();
+        if (nCandidates == 0)
+            throw new OverloadException("no appropriate aggregate found for " + name + "(" + inputType + ")");
+        if (nCandidates == 1)
+            return candidates.get(0);
+        Set<TClass> aggrRequiredTClasses = new HashSet<TClass>(nCandidates);
+        for (TAggregator candidate : candidates) {
+            TClass aggrRequiredTClass = candidate.getTypeClass();
+            boolean added = aggrRequiredTClasses.add(aggrRequiredTClass);
+            assert added : "multiple aggregates of " + name + " expect " + aggrRequiredTClass;
+        }
+        TAggregator result = null;
+        for (TAggregator candidate : candidates) {
+            TClass aggrRequiredTClass = candidate.getTypeClass();
+            if (isMostSpecific(aggrRequiredTClass, aggrRequiredTClasses)) {
+                if (result != null)
+                    throw new AkibanInternalException("two most-specific aggregates found for "
+                            + name + "(" + inputType + ") -- this should not be possible!");
+                result = candidate;
+            }
+        }
+        if (result == null)
+            throw new OverloadException("no appropriate aggregate found for " + name + "(" + inputType + ")");
+        return result;
     }
 
     private OverloadResult inputBasedResolution(List<? extends TPreptimeValue> inputs,
@@ -209,7 +228,7 @@ public final class OverloadResolver {
         return buildResult(resolvedOverload, inputs);
     }
 
-    private boolean isMostSpecific(TClass candidate, Set<TClass> castGroup) {
+    private boolean isMostSpecific(TClass candidate, Set<? extends TClass> castGroup) {
         for (TClass inner : castGroup) {
             if (candidate.equals(inner))
                 continue;

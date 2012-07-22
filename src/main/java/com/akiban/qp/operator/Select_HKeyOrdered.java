@@ -34,12 +34,8 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.server.types3.texpressions.TPreparedExpressions;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -100,8 +96,7 @@ class Select_HKeyOrdered extends Operator
     @Override
     public String toString()
     {
-        Object toStringPredicate = (predicate == null) ? pPredicate : predicate;
-        return String.format("%s(%s, %s)", getClass().getSimpleName(), predicateRowType, toStringPredicate);
+        return Format.Describe(this.getExplainer());
     }
 
     // Operator interface
@@ -176,9 +171,12 @@ class Select_HKeyOrdered extends Operator
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("SELECT HKEY ORDERED"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("Select_HKeyOrdered"));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
-        att.put(Label.PREDICATE, predicate.getExplainer());
+        if (predicate != null)
+            att.put(Label.PREDICATE, predicate.getExplainer());
+        else
+            att.put(Label.PREDICATE, TPreparedExpressions.getExplainer(pPredicate));
         return new OperationExplainer(Type.SELECT_HKEY, att);
     }
 

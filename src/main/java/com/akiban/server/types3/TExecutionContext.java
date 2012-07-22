@@ -182,7 +182,7 @@ public final class TExecutionContext {
 
     // state
 
-    TExecutionContext(SparseArray<Object> preptimeCache,
+    public TExecutionContext(SparseArray<Object> preptimeCache,
                       List<TInstance> inputTypes,
                       TInstance outputType,
                       QueryContext queryContext,

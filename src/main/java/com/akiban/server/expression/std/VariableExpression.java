@@ -88,7 +88,7 @@ public final class VariableExpression implements Expression {
     @Override
     public String name()
     {
-        return "VARIABLE";
+        return "Variable";
     }
 
     @Override

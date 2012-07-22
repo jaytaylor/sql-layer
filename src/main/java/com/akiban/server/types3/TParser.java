@@ -23,21 +23,12 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.types3;
 
-package com.akiban.server.types3.service;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
-
-import java.util.Collection;
-
-public interface ExpressionRegistry
+public interface TParser
 {
-    Collection<? extends TAggregator> aggregators();
-    Collection<TValidatedOverload> overloads();
-    Collection<TCast> casts();
-    Collection<TClass> tclasses();
+    public void parse (TExecutionContext context, PValueSource in, PValueTarget out);
 }

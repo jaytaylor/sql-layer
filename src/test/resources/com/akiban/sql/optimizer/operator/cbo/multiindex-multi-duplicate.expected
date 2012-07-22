@@ -1,5 +1,5 @@
 PhysicalSelect[quan:int[INT], quan:int[INT]]
-  project([Field(8), Field(15)])
+  project(Field(8), Field(15))
     Product_NestedLoops(flatten(flatten(test.customers, test.orders), test.items) x flatten(flatten(test.customers, test.orders), test.items))
       Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
         Flatten_HKeyOrdered(test.customers INNER test.orders)
@@ -10,5 +10,5 @@ PhysicalSelect[quan:int[INT], quan:int[INT]]
       Filter_Default([flatten(flatten(test.customers, test.orders), test.items)])
         Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
           Flatten_HKeyOrdered(test.customers INNER test.orders)
-            Select_HKeyOrdered(test.items, Field(2) == Literal(4567))
+            Select_HKeyOrdered(Field(2) == '4567')
               BranchLookup_Nested(_akiban_customers test.customers -> test.orders)

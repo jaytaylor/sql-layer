@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Singleton
+
 public class FunctionRegistryImpl implements FunctionRegistry
 {
     private static final Logger logger = LoggerFactory.getLogger(FunctionRegistryImpl.class);
@@ -108,7 +108,15 @@ public class FunctionRegistryImpl implements FunctionRegistry
     }
 
     private void rejectTOverload(TOverload overload, Throwable e) {
-        logger.error("rejecting overload " + overload + " from " +  overload.getClass(), e);
+        StringBuilder sb = new StringBuilder("rejecting overload ");
+        Class<?> overloadClass = overload == null ? null : overload.getClass();
+        try {
+            sb.append(overload).append(' ');
+        } catch (Exception e1) {
+            logger.error("couldn't toString overload: " + overload);
+        }
+        sb.append("from ").append(overloadClass);
+        logger.error(sb.toString(), e);
     }
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)

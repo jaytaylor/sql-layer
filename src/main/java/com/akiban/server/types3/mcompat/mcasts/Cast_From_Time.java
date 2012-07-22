@@ -60,19 +60,19 @@ public class Cast_From_Time {
     
     public static final TCast TO_TINYINT = new FromInt32ToInt8(MDatetimes.TIME, MNumeric.TINYINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_TINYINT = new FromInt32ToInt16(MDatetimes.TIME, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_TINYINT = new FromInt32ToUnsignedInt8(MDatetimes.TIME, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
 
     public static final TCast TO_SMALLINT = new FromInt32ToInt16(MDatetimes.TIME, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt32ToUnsignedInt16(MDatetimes.TIME, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToUnsignedInt32(MDatetimes.TIME, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_INT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.INT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_INT = new FromInt32ToUnsignedInt32(MDatetimes.TIME, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.BIGINT, false, Constantness.UNKNOWN);
 
@@ -85,11 +85,6 @@ public class Cast_From_Time {
     public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIME, MString.VARCHAR, false, Constantness.UNKNOWN) {
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             target.putObject(MDatetimes.parseTime((String) source.getObject(), context));
         }
@@ -97,11 +92,6 @@ public class Cast_From_Time {
     
     public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, false, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -112,11 +102,6 @@ public class Cast_From_Time {
     
     public static final TCast TO_DATE = new TCastBase(MDatetimes.TIME, MDatetimes.DATE, false, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -128,12 +113,6 @@ public class Cast_From_Time {
     
     public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.TIME, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
     {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)

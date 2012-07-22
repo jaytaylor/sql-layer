@@ -272,7 +272,7 @@ public class API
      * tableType
      * @param indexType the index to scan
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
      */
     @Deprecated
     @SuppressWarnings("deprecation")
@@ -288,7 +288,7 @@ public class API
      * @param indexType the index to scan
      * @param reverse whether to scan in reverse order
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
      */
     @Deprecated
     @SuppressWarnings("deprecation")
@@ -308,7 +308,7 @@ public class API
      * @param reverse whether to scan in reverse order
      * @param indexKeyRange the scan range
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
      */
     @Deprecated
     @SuppressWarnings("deprecation")
@@ -317,7 +317,14 @@ public class API
         if (indexKeyRange == null) {
             indexKeyRange = IndexKeyRange.unbounded(indexType, usePValues);
         }
-        return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
+        return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType(), usePValues);
+    }
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             boolean reverse,
+                                             IndexKeyRange indexKeyRange,
+                                             UserTableRowType innerJoinUntilRowType)
+    {
+        return indexScan_Default(indexType, reverse, indexKeyRange, innerJoinUntilRowType, Types3Switch.ON);
     }
 
     /**
@@ -327,20 +334,21 @@ public class API
      * @param indexKeyRange the scan range
      * @param innerJoinUntilRowType the table after which the scan should start using LEFT JOIN GI semantics.
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
      */
     @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
-                                             UserTableRowType innerJoinUntilRowType)
+                                             UserTableRowType innerJoinUntilRowType,
+                                             boolean usePVals)
     {
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
             ordering.append(new FieldExpression(indexType, f), !reverse);
         }
-        return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
+        return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType, usePVals);
     }
 
     /**
@@ -350,27 +358,36 @@ public class API
      * @param indexKeyRange the scan range
      * @param indexScanSelector
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector, boolean)}
      */
     @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
-                                             IndexScanSelector indexScanSelector)
+                                             IndexScanSelector indexScanSelector,
+                                             boolean usePVals)
     {
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
             ordering.append(new FieldExpression(indexType, f), !reverse);
         }
-        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, usePVals);
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
                                              IndexKeyRange indexKeyRange,
                                              Ordering ordering)
     {
-        return indexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType());
+        return indexScan_Default(indexType, indexKeyRange, ordering, Types3Switch.ON);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             boolean usePVals)
+    {
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType(), usePVals);
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
@@ -378,11 +395,20 @@ public class API
                                              Ordering ordering,
                                              UserTableRowType innerJoinUntilRowType)
     {
+        return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType, Types3Switch.ON);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             UserTableRowType innerJoinUntilRowType,
+                                             boolean usePVals)
+    {
         return indexScan_Default(indexType,
                                  indexKeyRange,
                                  ordering,
                                  IndexScanSelector.leftJoinAfter(indexType.index(),
-                                                                 innerJoinUntilRowType.userTable()));
+                                                                 innerJoinUntilRowType.userTable()), usePVals);
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
@@ -390,7 +416,17 @@ public class API
                                              Ordering ordering,
                                              IndexScanSelector indexScanSelector)
     {
-        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, Types3Switch.ON);
+    }
+
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             IndexScanSelector indexScanSelector,
+                                             boolean usePVals)
+    {
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, usePVals);
     }
 
     // Select
@@ -475,12 +511,21 @@ public class API
         return new Sort_InsertionLimited(inputOperator, sortType, ordering, sortOption, limit);
     }
 
+    public static Operator sort_Tree(Operator inputOperator,
+                                     RowType sortType,
+                                     Ordering ordering,
+                                     SortOption sortOption)
+    {
+        return new Sort_Tree(inputOperator, sortType, ordering, sortOption, Types3Switch.ON);
+    }
+
     public static Operator sort_Tree(Operator inputOperator, 
                                      RowType sortType, 
                                      Ordering ordering, 
-                                     SortOption sortOption)
+                                     SortOption sortOption,
+                                     boolean usePVals)
     {
-        return new Sort_Tree(inputOperator, sortType, ordering, sortOption);
+        return new Sort_Tree(inputOperator, sortType, ordering, sortOption, usePVals);
     }
 
     public static Ordering ordering()
@@ -512,9 +557,17 @@ public class API
 
     public static Operator ifEmpty_Default(Operator input, RowType rowType,
                                            List<? extends Expression> expressions,
+                                           List<? extends TPreparedExpression> pExpressions,
                                            InputPreservationOption inputPreservation)
     {
-        return new IfEmpty_Default(input, rowType, expressions, inputPreservation);
+        return new IfEmpty_Default(input, rowType, expressions, pExpressions, inputPreservation);
+    }
+
+    public static Operator ifEmpty_Default(Operator input, RowType rowType,
+                                           List<? extends Expression> expressions,
+                                           InputPreservationOption inputPreservation)
+    {
+        return new IfEmpty_Default(input, rowType, expressions, null, inputPreservation);
     }
 
     // Union

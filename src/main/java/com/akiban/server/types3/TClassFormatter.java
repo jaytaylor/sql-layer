@@ -23,25 +23,12 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.t3expressions;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.AkibanAppender;
 
-import java.util.Collection;
-import java.util.Set;
-
-public interface T3ScalarsRegistry {
-    Collection<TValidatedOverload> getOverloads(String name);
-
-    /**
-     * Find the registered cast going from source to taret.
-     * @param source Type to cast from
-     * @param target Type to cast to
-     * @return Return matching cast or <tt>null</tt> if none
-     */
-    TCast cast(TClass source, TClass target);
-
-    Set<TClass> stronglyCastableTo(TClass tClass);
+public interface TClassFormatter {
+    
+    public void format(TInstance instance, PValueSource source, AkibanAppender out);
 }

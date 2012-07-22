@@ -36,6 +36,7 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.SparseArray;
 
@@ -150,11 +151,17 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void setValue(int index, Object value, AkType type)
+    public void setValue(int index, Object value, AkType type, boolean usePValues)
     {
-        FromObjectValueSource source = new FromObjectValueSource();
-        source.setReflectively(value);
-        setValue(index, source, type);
+        if (usePValues) {
+            PValueSource source = PValueSources.fromObject(value, type).value();
+            setPValue(index, source);
+        }
+        else {
+            FromObjectValueSource source = new FromObjectValueSource();
+            source.setReflectively(value);
+            setValue(index, source, type);
+        }
     }
 
     @Override
