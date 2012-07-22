@@ -97,8 +97,7 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
 
     @Override
     public long compare(TInstance tInstance, PValueSource one, PValueSource two) {
-        TClass tClass = tInstance.typeClass();
-        return tClass.compare(tInstance, one, tInstance, two);
+        return TClass.compare(tInstance, one, tInstance, two);
     }
 
     @Override

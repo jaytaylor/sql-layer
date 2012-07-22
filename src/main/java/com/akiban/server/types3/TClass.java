@@ -55,8 +55,16 @@ public abstract class TClass {
                          TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
         target.putValueSource(source); // TODO make abstract
     }
+    
+    public static int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+        TClass classA = instanceA.typeClass();
+        TClass classB = instanceB.typeClass();
+        if (classA != classB)
+            throw new IllegalArgumentException("can't compare " + instanceA + " and " + instanceB);
+        return classA.doCompare(instanceA, sourceA, instanceB, sourceB);
+    }
 
-    public int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
         if (sourceA.isNull())
             return sourceB.isNull() ? 0 : -1;
         if (sourceB.isNull())
