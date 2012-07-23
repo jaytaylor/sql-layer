@@ -28,6 +28,7 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -400,6 +401,37 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.CHECK_AND_FIX_INDEXES, thrown);
+        }
+    }
+
+    @Override
+    public void createSequence(Session session, Sequence sequence) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CREATE_SEQUENCE);
+            delegate.createSequence(session, sequence);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_SEQUENCE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_SEQUENCE, thrown);
+        }
+        
+    }
+
+    @Override
+    public void dropSequence(Session session, Sequence sequence) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.DROP_SEQUENCE);
+            delegate.dropSequence(session, sequence);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.DROP_SEQUENCE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.DROP_SEQUENCE, thrown);
         }
     }
 }

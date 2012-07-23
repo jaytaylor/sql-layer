@@ -501,6 +501,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         }
     }
+    
+    public void createSequence(Session session, Sequence sequence) {
+        schemaManager().createSequence (session, sequence);
+    }
+   
+    public void dropSequence(Session session, Sequence sequence) {
+        store().deleteSequences(session, Collections.singleton(sequence));
+        schemaManager().dropSequence(session, sequence);
+    }
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, IndexStatisticsService indexStatisticsService) {
         super(middleman, schemaManager, store, treeService);

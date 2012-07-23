@@ -86,7 +86,8 @@ public class AISBuilder {
             long start, long increment,
             long minValue, long maxValue, boolean cycle) {
         LOG.info("sequence: {}.{} ", schemaName,sequenceName);
-        Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
+        Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
+        identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
     }
     
     public void userTable(String schemaName, String tableName) {
@@ -139,7 +140,7 @@ public class AISBuilder {
         column.setDefaultIdentity(defaultIdentity);
         Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
         column.setIdentityGenerator(identityGenerator);
-        identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
+        //identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
     }
 
     public void index(String schemaName, String tableName, String indexName,
