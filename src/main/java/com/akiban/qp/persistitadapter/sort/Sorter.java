@@ -132,11 +132,12 @@ public class Sorter
     private void createKey(Row row)
     {
         key.clear();
-        int sortFields = ordering.sortColumns() - (sorterAdapter.preserveDuplicates() ? 1 : 0);
+        boolean preserveDuplicates = sorterAdapter.preserveDuplicates();
+        int sortFields = ordering.sortColumns() - (preserveDuplicates ? 1 : 0);
         for (int i = 0; i < sortFields; i++) {
             sorterAdapter.evaluateToKey(row, i);
         }
-        if (sorterAdapter.preserveDuplicates()) {
+        if (preserveDuplicates) {
             key.append(rowCount++);
         }
     }
@@ -219,13 +220,13 @@ public class Sorter
             return exchange;
         }
 
-        SorterIterationHelper(SorterAdapter.PersistitValueAdapater valueAdapater)
+        SorterIterationHelper(SorterAdapter.PersistitValueSourceAdapater valueAdapater)
         {
             this.valueAdapater = valueAdapater;
             valueAdapater.attach(value);
         }
 
-        private final SorterAdapter.PersistitValueAdapater valueAdapater;
+        private final SorterAdapter.PersistitValueSourceAdapater valueAdapater;
     }
 
     // public so that tests can see it

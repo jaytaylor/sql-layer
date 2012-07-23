@@ -72,7 +72,7 @@ public final class OldSorterAdapter extends SorterAdapter<ValueSource, Expressio
     }
 
     @Override
-    protected PersistitValueAdapater createValueAdapter() {
+    protected PersistitValueSourceAdapater createValueAdapter() {
         return new InternalAdapter();
     }
 
@@ -91,7 +91,7 @@ public final class OldSorterAdapter extends SorterAdapter<ValueSource, Expressio
         super(OldExpressionsSortKeyAdapter.INSTANCE);
     }
     
-    private class InternalAdapter implements PersistitValueAdapater {
+    private class InternalAdapter implements PersistitValueSourceAdapater {
         @Override
         public void attach(Value value) {
             valueSource.attach(value);

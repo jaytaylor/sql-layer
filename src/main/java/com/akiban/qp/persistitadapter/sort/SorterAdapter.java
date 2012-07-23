@@ -57,14 +57,11 @@ abstract class SorterAdapter<S,E,V> {
             // Append a count field as a sort key, to ensure key uniqueness for Persisit. By setting
             // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
             // into a less efficient mixed-mode sort.
-            
-//            this.ordering.append(DUMMY_EXPRESSION, DUMMY_T_EXPRESSION, ordering.ascending(0));
             appendDummy(ordering);
         }
         
         int nsort = ordering.sortColumns();
         this.evaluations = new ArrayList<V>(nsort);
-//        this.orderingTypes = new AkType[nsort];
         this.oOrderingTypes = aktypes(nsort);
         this.tOrderingTypes = tinstances(nsort);
         this.orderingCollators = new AkCollator[nsort];
@@ -106,7 +103,7 @@ abstract class SorterAdapter<S,E,V> {
     protected abstract S evaluateRow(V evaluation, Row row);
     protected abstract void attachValueTarget(Value value);
 
-    protected abstract PersistitValueAdapater createValueAdapter();
+    protected abstract PersistitValueSourceAdapater createValueAdapter();
     private final SortKeyAdapter<S,E> sortKeyAdapter;
 
     private final SortKeyTarget<S> keyTarget;
@@ -124,7 +121,7 @@ abstract class SorterAdapter<S,E,V> {
 
     protected abstract void putFieldToTarget(S value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes);
 
-    public interface PersistitValueAdapater {
+    public interface PersistitValueSourceAdapater {
         void attach(Value value);
         void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes);
     }
