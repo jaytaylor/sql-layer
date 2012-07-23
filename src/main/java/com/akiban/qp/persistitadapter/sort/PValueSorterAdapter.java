@@ -18,17 +18,17 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.PersistitValuePValueSource;
+import com.akiban.server.PersistitValuePValueTarget;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Value;
 
 final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExpression, TEvaluatableExpression> {
@@ -78,12 +78,12 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
 
     @Override
     protected PersistitValueSourceAdapater createValueAdapter() {
-        throw new UnsupportedOperationException(); // TODO
+        return new InternalPAdapter();
     }
 
     @Override
     protected void putFieldToTarget(PValueSource value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
-        throw new UnsupportedOperationException(); // TODO
+        valueTarget.putValueSource(value);
     }
 
     PValueSorterAdapter() {
@@ -91,11 +91,22 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
     }
     
     private class InternalPAdapter implements PersistitValueSourceAdapater {
-        private final PersistitValuePValueSource valueSource =
+
+        @Override
+        public void attach(Value value) {
+            valueSource.attach(value);
+        }
+
+        @Override
+        public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
+            valueSource.getReady();
+            row.pvalueAt(i).putValueSource(valueSource);
+        }
+
+        private final PersistitValuePValueSource valueSource = new PersistitValuePValueSource();
     }
     
-    private final PersistitValuePValueTarget valueTarget
-            = 
+    private final PersistitValuePValueTarget valueTarget = new PersistitValuePValueTarget();
     
     private static final TPreparedExpression DUMMY_EXPRESSION = new TNullExpression(MNumeric.BIGINT.instance());
 }

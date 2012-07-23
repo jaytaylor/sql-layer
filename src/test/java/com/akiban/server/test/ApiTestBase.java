@@ -74,6 +74,7 @@ import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
@@ -1017,5 +1018,13 @@ public class ApiTestBase {
                 return null;
             }
         });
+    }
+    
+    protected boolean usingPValues() {
+        return Types3Switch.ON && testSupportsPValues();
+    }
+    
+    protected boolean testSupportsPValues() {
+        return false;
     }
 }
