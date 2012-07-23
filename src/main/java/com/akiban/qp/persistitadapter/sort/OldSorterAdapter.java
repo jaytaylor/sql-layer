@@ -32,7 +32,7 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Value;
 
-public final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, ExpressionEvaluation> {
+final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, ExpressionEvaluation> {
     @Override
     protected void appendDummy(API.Ordering ordering) {
         ordering.append(DUMMY_EXPRESSION, null, ordering.ascending(0));
@@ -87,7 +87,7 @@ public final class OldSorterAdapter extends SorterAdapter<ValueSource, Expressio
         Converters.convert(value, valueTarget);
     }
 
-    public OldSorterAdapter() {
+    OldSorterAdapter() {
         super(OldExpressionsSortKeyAdapter.INSTANCE);
     }
     

@@ -62,7 +62,7 @@ public class Sorter
         this.value = exchange.getValue();
         this.rowFields = rowType.nFields();
         sorterAdapter = usePValues
-                ? null
+                ? new PValueSorterAdapter()
                 : new OldSorterAdapter();
         sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, sortOption);
         this.loadTap = loadTap;
@@ -200,7 +200,7 @@ public class Sorter
         @Override
         public Row row()
         {
-            ValuesHolderRow row = new ValuesHolderRow(rowType);
+            ValuesHolderRow row = new ValuesHolderRow(rowType, usePValues);
             value.setStreamMode(true);
             for (int i = 0; i < rowFields; i++) {
                 valueAdapater.putToHolders(row, i, sorterAdapter.oFieldTypes(), sorterAdapter.tFieldTypes());
