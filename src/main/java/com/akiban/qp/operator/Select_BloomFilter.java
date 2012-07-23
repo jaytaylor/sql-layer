@@ -145,6 +145,13 @@ class Select_BloomFilter extends Operator
         this.collators = collators;
     }
 
+    // For use by this class
+
+    private AkCollator collator(int f)
+    {
+        return collators == null ? null : collators.get(f);
+    }
+
     // Class state
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Select_BloomFilter open");
@@ -265,9 +272,10 @@ class Select_BloomFilter extends Operator
         private int hashProjectedRow(Row row)
         {
             int hash = 0;
-            for (ExpressionEvaluation fieldEval : fieldEvals) {
+            for (int f = 0; f < fieldEvals.size(); f++) {
+                ExpressionEvaluation fieldEval = fieldEvals.get(f);
                 fieldEval.of(row);
-                hash = hash ^ ValueSourceHasher.hash(fieldEval.eval());
+                hash = hash ^ ValueSourceHasher.hash(fieldEval.eval(), collator(f));
             }
             return hash;
         }

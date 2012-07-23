@@ -38,6 +38,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
 import org.junit.Before;
@@ -45,9 +46,9 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
-import static org.junit.Assert.fail;
 
 // Like Select_BloomFilterIT, but testing with case-insensitive strings
 
@@ -77,6 +78,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         fabIndexRowType = fRowType.indexRowType(fab);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        ciCollator = dRowType.userTable().getColumn("a").getCollator();
         db = new NewRow[]{
 /*
             // Test 0: No d or f rows
@@ -256,6 +258,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
 
     public Operator plan(long testId)
     {
+        List<AkCollator> collators = Arrays.asList(ciCollator, ciCollator);
         // loadFilter loads the filter with F rows containing the given testId.
         Operator loadFilter = project_Default(
             select_HKeyOrdered(
@@ -311,8 +314,15 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                         Arrays.asList(
                             Expressions.field(dIndexRowType, 1),
                             Expressions.field(dIndexRowType, 2)),
+                        // collators
+                        collators,
                         // filterBindingPosition
-                        0)),
+                        0),
+                    // collators
+                    collators,
+                    // usePValues
+                    false
+                    ),
                 dIndexRowType,
                 Arrays.asList(
                     Expressions.field(dIndexRowType, 0),   // test_id

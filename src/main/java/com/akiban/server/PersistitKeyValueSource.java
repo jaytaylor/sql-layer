@@ -39,7 +39,7 @@ import com.persistit.Key;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class PersistitKeyValueSource implements ValueSource {
+public final class PersistitKeyValueSource extends ValueSource {
 
     private AkCollator collator = null;
 
@@ -203,7 +203,20 @@ public final class PersistitKeyValueSource implements ValueSource {
     public AkType getConversionType() {
         return akType;
     }
-    
+
+    @Override
+    public long hash(AkCollator collator)
+    {
+        long hash;
+        if (collator == null) {
+            hash = super.hash(collator);
+        } else {
+            key.indexTo(depth);
+            hash = collator.hashCode(key);
+        }
+        return hash;
+    }
+
     // object interface
 
     @Override

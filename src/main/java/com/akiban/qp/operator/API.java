@@ -711,11 +711,12 @@ public class API
                                              Operator streamInput)
     {
         return new Using_BloomFilter(filterInput,
-                filterRowType,
-                estimatedRowCount,
-                filterBindingPosition,
-                streamInput,
-                Types3Switch.ON);
+                                     filterRowType,
+                                     estimatedRowCount,
+                                     filterBindingPosition,
+                                     streamInput,
+                                     null,
+                                     Types3Switch.ON);
     }
 
     public static Operator using_BloomFilter(Operator filterInput,

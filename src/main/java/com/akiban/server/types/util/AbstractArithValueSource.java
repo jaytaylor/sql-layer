@@ -39,7 +39,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public abstract class AbstractArithValueSource implements ValueSource
+public abstract class AbstractArithValueSource extends ValueSource
 {   
     // abstract methods
     protected abstract long rawLong ();

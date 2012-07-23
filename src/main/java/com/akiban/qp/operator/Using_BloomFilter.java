@@ -143,6 +143,13 @@ class Using_BloomFilter extends Operator
         this.usePValues = usePValues;
     }
 
+    // For use by this class
+
+    private AkCollator collator(int f)
+    {
+        return collators == null ? null : collators.get(f);
+    }
+
     // Class state
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Using_BloomFilter open");
@@ -264,7 +271,7 @@ class Using_BloomFilter extends Operator
                     }
                     else {
                         ValueSource valueSource = row.eval(f);
-                        h = h ^ ValueSourceHasher.hash(valueSource);
+                        h = h ^ ValueSourceHasher.hash(valueSource, collator(f));
                     }
                 }
                 filter.add(h);

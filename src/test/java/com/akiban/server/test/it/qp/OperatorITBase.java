@@ -44,6 +44,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
@@ -481,6 +482,7 @@ public class OperatorITBase extends ITBase
     protected NewRow[] emptyDB = new NewRow[0];
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;
+    protected AkCollator ciCollator;
     protected int customerOrdinal;
     protected int orderOrdinal;
     protected int itemOrdinal;
