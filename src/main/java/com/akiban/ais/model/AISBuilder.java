@@ -140,7 +140,6 @@ public class AISBuilder {
         column.setDefaultIdentity(defaultIdentity);
         Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
         column.setIdentityGenerator(identityGenerator);
-        //identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
     }
 
     public void index(String schemaName, String tableName, String indexName,
