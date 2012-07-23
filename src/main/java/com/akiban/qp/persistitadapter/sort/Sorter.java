@@ -31,26 +31,13 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.PersistitValueValueSource;
-import com.akiban.server.PersistitValueValueTarget;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.*;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Sorter
@@ -72,34 +59,12 @@ public class Sorter
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
         this.exchange = exchange(adapter, sortTreeName);
         this.key = exchange.getKey();
-        this.keyTarget = new PersistitKeyValueTarget();
-        this.keyTarget.attach(this.key);
         this.value = exchange.getValue();
-        this.valueTarget = new PersistitValueValueTarget();
-        this.valueTarget.attach(this.value);
         this.rowFields = rowType.nFields();
-        this.fieldTypes = new AkType[this.rowFields];
-        for (int i = 0; i < rowFields; i++) {
-            fieldTypes[i] = rowType.typeAt(i);
-        }
-        preserveDuplicates = sortOption == API.SortOption.PRESERVE_DUPLICATES;
-        if (preserveDuplicates) {
-            // Append a count field as a sort key, to ensure key uniqueness for Persisit. By setting
-            // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
-            // into a less efficient mixed-mode sort.
-            this.ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
-        }
-        int nsort = this.ordering.sortColumns();
-        this.evaluations = new ArrayList<ExpressionEvaluation>(nsort);
-        this.orderingTypes = new AkType[nsort];
-        this.orderingCollators = new AkCollator[nsort];
-        for (int i = 0; i < nsort; i++) {
-            orderingTypes[i] = this.ordering.type(i);
-            orderingCollators[i] = this.ordering.collator(i);
-            ExpressionEvaluation evaluation = this.ordering.expression(i).evaluation();
-            evaluation.of(context);
-            evaluations.add(evaluation);
-        }
+        sorterAdapter = usePValues
+                ? null
+                : new OldSorterAdapter();
+        sorterAdapter.init(rowType, ordering, key, value, context, sortOption);
         this.loadTap = loadTap;
         this.usePValues = usePValues;
     }
@@ -159,21 +124,19 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        return SortCursor.create(context, null, ordering, new SorterIterationHelper(), usePValues);
+        return SortCursor.create(context, null, ordering,
+                new SorterIterationHelper(sorterAdapter.createValueAdapter()),
+                usePValues);
     }
 
     private void createKey(Row row)
     {
         key.clear();
-        int sortFields = ordering.sortColumns() - (preserveDuplicates ? 1 : 0);
+        int sortFields = ordering.sortColumns() - (sorterAdapter.preserveDuplicates() ? 1 : 0);
         for (int i = 0; i < sortFields; i++) {
-            ExpressionEvaluation evaluation = evaluations.get(i);
-            evaluation.of(row);
-            ValueSource keySource = evaluation.eval();
-            keyTarget.expectingType(orderingTypes[i], orderingCollators[i]);
-            Converters.convert(keySource, keyTarget);
+            sorterAdapter.evaluateToKey(row, i);
         }
-        if (preserveDuplicates) {
+        if (sorterAdapter.preserveDuplicates()) {
             key.append(rowCount++);
         }
     }
@@ -183,9 +146,7 @@ public class Sorter
         value.clear();
         value.setStreamMode(true);
         for (int i = 0; i < rowFields; i++) {
-            ValueSource field = row.eval(i);
-            valueTarget.expectingType(fieldTypes[i]);
-            Converters.convert(field, valueTarget);
+            sorterAdapter.evaluateToTarget(row, i);
         }
     }
 
@@ -211,7 +172,6 @@ public class Sorter
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(Sorter.class);
-    private static final Expression DUMMY_EXPRESSION = LiteralExpression.forNull();
     private static final String SORT_TREE_NAME_PREFIX = "sort.";
     private static final AtomicLong SORTER_ID_GENERATOR = new AtomicLong(0);
     private static final Session.Key<TempVolumeState> TEMP_VOLUME_STATE = Session.Key.named("TEMP_VOLUME_STATE");
@@ -222,20 +182,15 @@ public class Sorter
     final Cursor input;
     final RowType rowType;
     final API.Ordering ordering;
-    final boolean preserveDuplicates;
-    final List<ExpressionEvaluation> evaluations;
     final QueryContext context;
     final Key key;
     final Value value;
-    final PersistitKeyValueTarget keyTarget;
-    final PersistitValueValueTarget valueTarget;
     final int rowFields;
-    final AkType fieldTypes[], orderingTypes[];
     private final boolean usePValues;
-    final AkCollator orderingCollators[];
     Exchange exchange;
     long rowCount = 0;
     private final InOutTap loadTap;
+    private final SorterAdapter<?,?,?> sorterAdapter;
 
     // Inner classes
 
@@ -247,9 +202,7 @@ public class Sorter
             ValuesHolderRow row = new ValuesHolderRow(rowType);
             value.setStreamMode(true);
             for (int i = 0; i < rowFields; i++) {
-                ValueHolder valueHolder = row.holderAt(i);
-                valueSource.expectedType(fieldTypes[i]);
-                valueHolder.copyFrom(valueSource);
+                valueAdapater.putToHolders(row, i, sorterAdapter.oFieldTypes(), sorterAdapter.tFieldTypes());
             }
             return row;
         }
@@ -266,13 +219,13 @@ public class Sorter
             return exchange;
         }
 
-        SorterIterationHelper()
+        SorterIterationHelper(SorterAdapter.PersistitValueAdapater valueAdapater)
         {
-            valueSource = new PersistitValueValueSource();
-            valueSource.attach(value);
+            this.valueAdapater = valueAdapater;
+            valueAdapater.attach(value);
         }
 
-        private final PersistitValueValueSource valueSource;
+        private final SorterAdapter.PersistitValueAdapater valueAdapater;
     }
 
     // public so that tests can see it
