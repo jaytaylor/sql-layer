@@ -75,6 +75,7 @@ public class Flatten extends BasePlanWithInput
         int leftmostLeft = joinTypes.indexOf(JoinType.LEFT);
         if (leftmostLeft < 0)
             leftmostLeft = joinTypes.size();
+        assert (rightmostRight < leftmostLeft);
         return new HashSet<TableSource>(tableSources.subList(rightmostRight + 1,
                                                              leftmostLeft + 1));
     }
