@@ -193,9 +193,8 @@ public class ASTStatementLoader extends BaseRule
             else {
                 // No explicit column list: use DDL order.
                 List<Column> aisColumns = targetTable.getTable().getColumns();
-                // TODO: Warning? Error?
                 if (ncols > aisColumns.size())
-                    ncols = aisColumns.size();
+                    throw new InsertWrongCountException(aisColumns.size(), ncols);
                 targetColumns = new ArrayList<Column>(ncols);
                 for (int i = 0; i < ncols; i++) {
                     targetColumns.add(aisColumns.get(i));
