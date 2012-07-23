@@ -220,9 +220,6 @@ class SortCursorMixedOrder<S,E> extends SortCursor
             keyColumns = ordering.sortColumns();
             boundColumns = 0;
             tInstances = sortKeyAdapter.createTInstances(orderingColumns);
-            if (tInstances != null) {
-                // TODO
-            }
         } else {
             keyColumns = keyRange.indexRowType().index().indexRowComposition().getLength();
             boundColumns = keyRange.boundColumns();
