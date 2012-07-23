@@ -64,7 +64,7 @@ public class Sorter
         sorterAdapter = usePValues
                 ? null
                 : new OldSorterAdapter();
-        sorterAdapter.init(rowType, ordering, key, value, context, sortOption);
+        sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, sortOption);
         this.loadTap = loadTap;
         this.usePValues = usePValues;
     }
