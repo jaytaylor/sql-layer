@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.row.Row;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
@@ -77,4 +78,7 @@ abstract class SortKeyAdapter<S, E> {
     public abstract boolean isNull(S source);
 
     public abstract S eval(Row row, int field);
+
+    public abstract void setOrderingMetadata(int orderingIndex, Ordering ordering, int tInstancesOffset,
+                                             TInstance[] tInstances);
 }

@@ -215,10 +215,11 @@ class SortCursorMixedOrder<S,E> extends SortCursor
         this.sortKeyAdapter = sortKeyAdapter;
         // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
         // IndexRowType in that case, so an IndexKeyRange can't be created.
+        int orderingColumns = orderingColumns();
         if (keyRange == null) {
             keyColumns = ordering.sortColumns();
             boundColumns = 0;
-            tInstances = sortKeyAdapter.createTInstances(boundColumns);
+            tInstances = sortKeyAdapter.createTInstances(orderingColumns);
             if (tInstances != null) {
                 // TODO
             }
@@ -228,12 +229,15 @@ class SortCursorMixedOrder<S,E> extends SortCursor
 
             collators = sortKeyAdapter.createAkCollators(boundColumns);
             akTypes = sortKeyAdapter.createAkTypes(boundColumns);
-            tInstances = sortKeyAdapter.createTInstances(boundColumns);
+            tInstances = sortKeyAdapter.createTInstances(boundColumns + orderingColumns);
             List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
             for (int f = 0; f < boundColumns; f++) {
                 Column column = indexColumns.get(f).getColumn();
                 sortKeyAdapter.setColumnMetadata(column, f, akTypes, collators, tInstances);
             }
+        }
+        for (int i = 0; i < orderingColumns; ++i) {
+            sortKeyAdapter.setOrderingMetadata(i, ordering, boundColumns, tInstances);
         }
     }
 

@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
@@ -115,6 +116,12 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
     @Override
     public ValueSource eval(Row row, int field) {
         return row.eval(field);
+    }
+
+    @Override
+    public void setOrderingMetadata(int orderingIndex, API.Ordering ordering, int tInstancesOffset,
+                                    TInstance[] tInstances) {
+        // nothing to do
     }
 
     private static class OldExpressionsSortKeyTarget implements SortKeyTarget<ValueSource> {
