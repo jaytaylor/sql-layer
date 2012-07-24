@@ -958,7 +958,7 @@ public class API
             return copy;
         }
         
-        private boolean usingPVals() {
+        public boolean usingPVals() {
             return tExpressions != null;
         }
         
