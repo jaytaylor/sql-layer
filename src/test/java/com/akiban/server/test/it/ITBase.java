@@ -49,7 +49,17 @@ public abstract class ITBase extends ApiTestBase {
         super(suffix);
     }
 
+    protected void compareRowsCaseInsensitive(RowBase[] expected, Cursor cursor)
+    {
+        compareRows(expected, cursor, true);
+    }
+
     protected void compareRows(RowBase[] expected, Cursor cursor)
+    {
+        compareRows(expected, cursor, false);
+    }
+
+    protected void compareRows(RowBase[] expected, Cursor cursor, boolean caseInsensitive)
     {
         List<ShareHolder<Row>> actualRows = new ArrayList<ShareHolder<Row>>(); // So that result is viewable in debugger
         try {
@@ -58,7 +68,7 @@ public abstract class ITBase extends ApiTestBase {
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
                 assertTrue(String.format("failed test %d < %d (more rows than expected)", count, expected.length), count < expected.length);
-                if(!equal(expected[count], actualRow)) {
+                if(!equal(expected[count], actualRow, caseInsensitive)) {
                     String expectedString = expected[count] == null ? "null" : expected[count].toString();
                     String actualString = actualRow == null ? "null" : actualRow.toString();
                     assertEquals("row " + count, expectedString, actualString);
@@ -78,16 +88,22 @@ public abstract class ITBase extends ApiTestBase {
         assertEquals(expected.length, actualRows.size());
     }
 
-    protected boolean equal(RowBase expected, RowBase actual)
+    protected boolean equal(RowBase expected, RowBase actual, boolean caseInsensitive)
     {
         ToObjectValueTarget target = new ToObjectValueTarget();
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
             Object expectedField = target.convertFromSource(expected.eval(i));
             Object actualField = target.convertFromSource(actual.eval(i));
-            equal =
-                expectedField == actualField || // handles case in which both are null
-                expectedField != null && actualField != null && expectedField.equals(actualField);
+            if (expectedField == null && actualField == null) {
+                equal = true;
+            } else if (expectedField == null || actualField == null) {
+                equal = false;
+            } else if (caseInsensitive && expectedField instanceof String && actualField instanceof String) {
+                equal = ((String) expectedField).toUpperCase().equals(((String) actualField).toUpperCase());
+            } else {
+                equal =expectedField.equals(actualField);
+            }
         }
         return equal;
     }

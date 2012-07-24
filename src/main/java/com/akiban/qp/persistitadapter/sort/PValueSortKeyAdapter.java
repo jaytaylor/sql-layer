@@ -71,7 +71,10 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
     }
 
     @Override
-    public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f) {
+    public void checkConstraints(BoundExpressions loExpressions,
+                                 BoundExpressions hiExpressions,
+                                 int f,
+                                 AkCollator collator) {
         PValueSource loValueSource = loExpressions.pvalue(f);
         PValueSource hiValueSource = hiExpressions.pvalue(f);
         if (loValueSource.isNull() && hiValueSource.isNull()) {

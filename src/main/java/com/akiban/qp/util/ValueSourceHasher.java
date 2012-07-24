@@ -26,13 +26,14 @@
 
 package com.akiban.qp.util;
 
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.ByteSource;
 
 public class ValueSourceHasher
 {
-    public static int hash(ValueSource valueSource, AkCollator collator)
+    public static int hash(StoreAdapter adapter, ValueSource valueSource, AkCollator collator)
     {
         // TODO: Add hash() to ValueSource?
         if (valueSource.isNull()) {
@@ -62,12 +63,10 @@ public class ValueSourceHasher
                 hash = valueSource.getLong();
                 break;
             case VARCHAR:
-                // hash = valueSource.getString().hashCode();
-                hash = valueSource.hash(collator);
+                hash = valueSource.hash(adapter, collator);
                 break;
             case TEXT:
-                // hash = valueSource.getText().hashCode();
-                hash = valueSource.hash(collator);
+                hash = valueSource.hash(adapter, collator);
                 break;
             case TIME:
                 hash = valueSource.getTime();

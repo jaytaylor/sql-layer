@@ -271,7 +271,7 @@ class Using_BloomFilter extends Operator
                     }
                     else {
                         ValueSource valueSource = row.eval(f);
-                        h = h ^ ValueSourceHasher.hash(valueSource, collator(f));
+                        h = h ^ ValueSourceHasher.hash(adapter(), valueSource, collator(f));
                     }
                 }
                 filter.add(h);

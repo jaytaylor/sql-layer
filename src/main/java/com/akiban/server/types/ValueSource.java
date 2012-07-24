@@ -27,6 +27,7 @@
 package com.akiban.server.types;
 
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.Quote;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.util.AkibanAppender;
@@ -85,8 +86,11 @@ public abstract class ValueSource {
 
     public abstract AkType getConversionType();
 
-    public long hash(AkCollator collator)
+    public long hash(StoreAdapter adapter, AkCollator collator)
     {
-        return getString().hashCode();
+        return
+            collator == null
+            ? getString().hashCode()
+            : adapter.hash(this, collator);
     }
 }

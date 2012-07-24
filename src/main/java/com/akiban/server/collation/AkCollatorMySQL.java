@@ -27,8 +27,11 @@ package com.akiban.server.collation;
 
 import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
+import com.persistit.exception.ConversionException;
 
 public class AkCollatorMySQL extends AkCollator {
+
+    private static boolean TESTING = false;
 
     private final int[] weightTable = new int[256];
     private final int[] decodeTable = new int[256];
@@ -78,8 +81,19 @@ public class AkCollatorMySQL extends AkCollator {
     }
 
     @Override
-    public String decode(Key key) {
-        throw new UnsupportedOperationException("Unable to decode a collator sort key");
+    public String decode(Key key)
+    {
+        if (TESTING) {
+            String decoded;
+            try {
+                decoded = key.decode().toString();
+            } catch (ConversionException ce) {
+                decoded = key.decodeDisplayable(false);
+            }
+            return decoded;
+        } else {
+            throw new UnsupportedOperationException("Unable to decode a collator sort key");
+        }
     }
 
     @Override
@@ -204,5 +218,9 @@ public class AkCollatorMySQL extends AkCollator {
     @Override
     public int hashCode(Key key) {
         return CStringKeyCoder.hashCode(getCollationId(), key);
+    }
+
+    public static void useForTesting() {
+        TESTING = true;
     }
 }

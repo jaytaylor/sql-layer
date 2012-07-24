@@ -25,6 +25,7 @@
  */
 package com.akiban.server.collation;
 
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
@@ -72,7 +73,17 @@ public abstract class AkCollator {
      * Compare two string values: Comparable<ValueSource>
      */
     final public int compare(ValueSource value1, ValueSource value2) {
-        return compare(value1.getString(), value2.getString());
+        boolean persistit1 = value1 instanceof PersistitKeyValueSource;
+        boolean persistit2 = value2 instanceof PersistitKeyValueSource;
+        if (persistit1 && persistit2) {
+            return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
+        } else if (persistit1) {
+            return ((PersistitKeyValueSource) value1).compare(this, value2.getString());
+        } else if (persistit2) {
+            return -((PersistitKeyValueSource) value2).compare(this, value1.getString());
+        } else {
+            return compare(value1.getString(), value2.getString());
+        }
     }
 
     /**
@@ -109,7 +120,7 @@ public abstract class AkCollator {
      * Compute the has of a collated string-valued Key segment. Let K be the
      * bytes comprising the key segment currently referenced by
      * {@link Key#getDepth()}. Let s1, s2, ... be string for which
-     * {@link Key#append(String)} produces the segment K (for case-insensitive
+     * {@link Key#append(Object)} produces the segment K (for case-insensitive
      * collations there are usually many such strings). Then hash(s1), hash(s2),
      * ... and hash(key) are all equal.
      * 

@@ -36,11 +36,17 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.util.ValueSourceHasher;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.collation.AkCollatorMySQL;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.types.AkType;
+import com.persistit.Key;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,6 +55,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
+import static org.junit.Assert.assertTrue;
 
 // Like Select_BloomFilterIT, but testing with case-insensitive strings
 
@@ -57,6 +64,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     @Before
     public void before()
     {
+        AkCollatorMySQL.useForTesting();
         // Tables are Driving (D) and Filtering (F). Find Filtering rows with a given test id, yielding
         // a set of (a, b) rows. Then find Driving rows matching a and b.
         d = createTable(
@@ -80,27 +88,25 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         queryContext = queryContext(adapter);
         ciCollator = dRowType.userTable().getColumn("a").getCollator();
         db = new NewRow[]{
-/*
             // Test 0: No d or f rows
             // Test 1: No f rows
-            createNewRow(f, 1L, 10L, 100L),
+            createNewRow(f, 1L, "xy", 100L),
             // Test 2: No d rows
-            createNewRow(f, 2L, 20L, 200L),
+            createNewRow(f, 2L, "xy", 200L),
             // Test 3: 1 d row, no matching f rows
-            createNewRow(d, 3L, 30L, 300L),
-            createNewRow(f, 3L, 31L, 300L),
-            createNewRow(f, 3L, 30L, 301L),
+            createNewRow(d, 3L, "xy", "A"),
+            createNewRow(f, 3L, "xz", "A"),
+            createNewRow(f, 3L, "xy", "B"),
             // Test 4: 1 d row, 1 matching f rows
-            createNewRow(d, 4L, 40L, 400L),
-            createNewRow(f, 4L, 40L, 400L),
-            createNewRow(f, 4L, 41L, 400L),
-            createNewRow(f, 4L, 40L, 401L),
+            createNewRow(d, 4L, "xy", "a"),
+            createNewRow(f, 4L, "XY", "A"),
+            createNewRow(f, 4L, "XZ", "A"),
+            createNewRow(f, 4L, "XY", "B"),
             // Test 5: multiple d rows, no matching f rows
-            createNewRow(d, 5L, 50L, 500L),
-            createNewRow(d, 5L, 51L, 501L),
-            createNewRow(f, 5L, 50L, 501L),
-            createNewRow(f, 5L, 51L, 500L),
-*/
+            createNewRow(d, 5L, "xy", "a"),
+            createNewRow(d, 5L, "xz", "b"),
+            createNewRow(f, 5L, "XY", "B"),
+            createNewRow(f, 5L, "XZ", "A"),
             // Test 6: multiple d rows, multiple f rows, multiple matches
             createNewRow(d, 6L, "xy", "A"),
             createNewRow(d, 6L, "XY", "aB"),
@@ -118,36 +124,35 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         use(db);
     }
 
-    // Test argument validation
+    // Test ValueSourceHasher
 
-/*
     @Test
-    public void testBadInputs()
+    public void testValueSourceHasher()
     {
-        try {
-            using_BloomFilter(null, customerRowType, 10, 0, groupScan_Default(coi));
-            fail();
-        } catch (IllegalArgumentException e) {
+        AkCollator caseInsensitiveCollator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
+        AkCollator binaryCollator = AkCollatorFactory.getAkCollator(AkCollatorFactory.UCS_BINARY);
+        PersistitKeyValueSource source = new PersistitKeyValueSource();
+        long hash_AB;
+        long hash_ab;
+        Key key = adapter.newKey();
+        {
+            binaryCollator.append(key.clear(), "AB");
+            source.attach(key, 0, AkType.VARCHAR, binaryCollator);
+            hash_AB = ValueSourceHasher.hash(adapter, source, binaryCollator);
+            binaryCollator.append(key.clear(), "ab");
+            source.attach(key, 0, AkType.VARCHAR, binaryCollator);
+            hash_ab = ValueSourceHasher.hash(adapter, source, binaryCollator);
+            assertTrue(hash_AB != hash_ab);
+
         }
-        try {
-            using_BloomFilter(groupScan_Default(coi), null, 10, 0, groupScan_Default(coi));
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
-        try {
-            using_BloomFilter(groupScan_Default(coi), customerRowType, -1, 0, groupScan_Default(coi));
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
-        try {
-            using_BloomFilter(groupScan_Default(coi), customerRowType, 10, -1, groupScan_Default(coi));
-            fail();
-        } catch (IllegalArgumentException e) {
-        }
-        try {
-            using_BloomFilter(groupScan_Default(coi), customerRowType, 10, -1, null);
-            fail();
-        } catch (IllegalArgumentException e) {
+        {
+            caseInsensitiveCollator.append(key.clear(), "AB");
+            source.attach(key, 0, AkType.VARCHAR, caseInsensitiveCollator);
+            hash_AB = ValueSourceHasher.hash(adapter, source, caseInsensitiveCollator);
+            caseInsensitiveCollator.append(key.clear(), "ab");
+            source.attach(key, 0, AkType.VARCHAR, caseInsensitiveCollator);
+            hash_ab = ValueSourceHasher.hash(adapter, source, caseInsensitiveCollator);
+            assertTrue(hash_AB == hash_ab);
         }
     }
 
@@ -159,7 +164,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(0);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -168,7 +173,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(1);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -177,7 +182,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(2);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -186,7 +191,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(3);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -194,9 +199,9 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     {
         Operator plan = plan(4);
         RowBase[] expected = new RowBase[] {
-            row(outputRowType, 4L, 40L, 400L),
+            row(outputRowType, 4L, "xy", "a"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -205,19 +210,18 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(5);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
-*/
 
     @Test
     public void test6()
     {
         Operator plan = plan(6);
         RowBase[] expected = new RowBase[] {
-            row(outputRowType, 6L, "XY", "aB"),
-            row(outputRowType, 6L, "Xy", "Ac"),
+            row(outputRowType, 6L, "xy", "ab"),
+            row(outputRowType, 6L, "xy", "ac"),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -226,7 +230,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(7);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -235,7 +239,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(8);
         RowBase[] expected = new RowBase[] {
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -248,12 +252,12 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
             public RowBase[] firstExpectedRows()
             {
                 return new RowBase[] {
-                    row(outputRowType, 6L, 61L, 601L),
-                    row(outputRowType, 6L, 62L, 602L),
+                    row(outputRowType, 6L, "xy", "ab"),
+                    row(outputRowType, 6L, "xy", "ac"),
                 };
             }
         };
-        testCursorLifecycle(plan, testCase);
+        testCursorLifecycleCaseInsensitive(plan, testCase);
     }
 
     public Operator plan(long testId)

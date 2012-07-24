@@ -41,7 +41,10 @@ abstract class SortKeyAdapter<S, E> {
     public abstract void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators,
                                            TInstance[] tInstances);
 
-    public abstract void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f);
+    public abstract void checkConstraints(BoundExpressions loExpressions,
+                                          BoundExpressions hiExpressions,
+                                          int f,
+                                          AkCollator collator);
 
     public abstract S[] createSourceArray(int size);
     public abstract S get(BoundExpressions boundExpressions, int f);

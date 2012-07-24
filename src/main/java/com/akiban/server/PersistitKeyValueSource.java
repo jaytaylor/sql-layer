@@ -39,6 +39,8 @@ import com.persistit.Key;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import static java.lang.Math.min;
+
 public final class PersistitKeyValueSource extends ValueSource {
 
     private AkCollator collator = null;
@@ -204,17 +206,37 @@ public final class PersistitKeyValueSource extends ValueSource {
         return akType;
     }
 
-    @Override
-    public long hash(AkCollator collator)
+    // PersistitKeyValueSource interface
+
+    public Key key()
     {
-        long hash;
-        if (collator == null) {
-            hash = super.hash(collator);
-        } else {
-            key.indexTo(depth);
-            hash = collator.hashCode(key);
-        }
-        return hash;
+        return key;
+    }
+
+    public int depth()
+    {
+        return depth;
+    }
+
+    public int compare(PersistitKeyValueSource that)
+    {
+        that.key.indexTo(that.depth);
+        int thatPosition = that.key.getIndex();
+        that.key.indexTo(that.depth + 1);
+        int thatEnd = that.key.getIndex();
+        return compareOneKeySegment(that.key.getEncodedBytes(), thatPosition, thatEnd);
+    }
+
+    public int compare(AkCollator collator, String string)
+    {
+        Key thatKey = new Key(key);
+        thatKey.clear();
+        collator.append(thatKey, string);
+        thatKey.indexTo(0);
+        int thatPosition = thatKey.getIndex();
+        thatKey.indexTo(1);
+        int thatEnd = thatKey.getIndex();
+        return compareOneKeySegment(thatKey.getEncodedBytes(), thatPosition, thatEnd);
     }
 
     // object interface
@@ -251,12 +273,31 @@ public final class PersistitKeyValueSource extends ValueSource {
         }
         return valueHolder;
     }
-    
+
+    private int compareOneKeySegment(byte[] thatBytes, int thatPosition, int thatEnd)
+    {
+        this.key.indexTo(this.depth);
+        int thisPosition = this.key.getIndex();
+        this.key.indexTo(this.depth + 1);
+        int thisEnd = this.key.getIndex();
+        byte[] thisBytes = this.key.getEncodedBytes();
+        // Compare until end or mismatch
+        int n = min(thisEnd - thisPosition, thatEnd - thatPosition);
+        int end = thisPosition + n;
+        while (thisPosition < end) {
+            int c = thisBytes[thisPosition++] - thatBytes[thatPosition++];
+            if (c != 0) {
+                return c;
+            }
+        }
+        return thisEnd - thatEnd;
+    }
+
     private void clear() {
         needsDecoding = true;
     }
 
-    // object state
+    // Object state
 
     private Key key;
     private int depth;

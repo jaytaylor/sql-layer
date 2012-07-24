@@ -159,6 +159,16 @@ public class OperatorITBase extends ITBase
 
     protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase)
     {
+        testCursorLifecycle(scan, testCase, false);
+    }
+
+    protected void testCursorLifecycleCaseInsensitive(Operator scan, CursorLifecycleTestCase testCase)
+    {
+        testCursorLifecycle(scan, testCase, true);
+    }
+
+    protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase, boolean caseInsensitive)
+    {
         Cursor cursor = cursor(scan, queryContext);
         // Check idle following creation
         assertTrue(cursor.isIdle());
@@ -179,7 +189,7 @@ public class OperatorITBase extends ITBase
         if (testCase.hKeyComparison()) {
             compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor);
         } else {
-            compareRows(testCase.firstExpectedRows(), cursor);
+            compareRows(testCase.firstExpectedRows(), cursor, caseInsensitive);
         }
         assertTrue(cursor.isIdle());
         // Check close during iteration.
@@ -198,7 +208,7 @@ public class OperatorITBase extends ITBase
         if (testCase.hKeyComparison()) {
             compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor);
         } else {
-            compareRows(testCase.secondExpectedRows(), cursor);
+            compareRows(testCase.secondExpectedRows(), cursor, caseInsensitive);
         }
         assertTrue(cursor.isIdle());
         // Check close of idle cursor is permitted

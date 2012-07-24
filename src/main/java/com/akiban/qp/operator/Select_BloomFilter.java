@@ -275,7 +275,7 @@ class Select_BloomFilter extends Operator
             for (int f = 0; f < fieldEvals.size(); f++) {
                 ExpressionEvaluation fieldEval = fieldEvals.get(f);
                 fieldEval.of(row);
-                hash = hash ^ ValueSourceHasher.hash(fieldEval.eval(), collator(f));
+                hash = hash ^ ValueSourceHasher.hash(adapter(), fieldEval.eval(), collator(f));
             }
             return hash;
         }
