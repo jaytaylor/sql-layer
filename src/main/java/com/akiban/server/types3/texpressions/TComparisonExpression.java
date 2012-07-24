@@ -124,7 +124,7 @@ public final class TComparisonExpression implements TPreparedExpression {
             cmpI = collator.compare(leftString, rightString);
         }
         else {
-            cmpI = tClass.compare(leftInstance, leftSource, rightInstance, rightSource);
+            cmpI = TClass.compare(leftInstance, leftSource, rightInstance, rightSource);
         }
         final Comparison actualComparison;
         if (cmpI == 0)
