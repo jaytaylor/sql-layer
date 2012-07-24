@@ -58,9 +58,11 @@ import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 public class PostgresDDLStatement implements PostgresStatement
 {
     private DDLStatementNode ddl;
+    private boolean usePVals;
 
-    public PostgresDDLStatement(DDLStatementNode ddl) {
+    public PostgresDDLStatement(DDLStatementNode ddl, boolean usePVals) {
         this.ddl = ddl;
+        this.usePVals = usePVals;
     }
 
     @Override
@@ -90,7 +92,7 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();

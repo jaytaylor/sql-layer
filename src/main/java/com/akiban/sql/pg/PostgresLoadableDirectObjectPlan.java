@@ -44,9 +44,10 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     private Object[] args;
     private DirectObjectPlan plan;
     private boolean useCopy;
+    private boolean usePVals;
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
-                                               Object[] args)
+                                               Object[] args, boolean usePVals)
     {
         super(loadablePlan.columnNames(),
               loadablePlan.columnTypes(),
@@ -55,6 +56,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
 
         plan = loadablePlan.plan();
         useCopy = plan.useCopyData();
+        this.usePVals = usePVals;
     }
     
     @Override
@@ -88,7 +90,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();

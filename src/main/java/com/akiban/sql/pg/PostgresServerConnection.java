@@ -675,7 +675,8 @@ public class PostgresServerConnection extends ServerSessionBase
         // Statement cache depends on some connection settings.
         statementCache = server.getStatementCache(Arrays.asList(format,
                                                                 parserKeys,
-                                                                Boolean.valueOf(getProperty("cbo"))),
+                                                                Boolean.valueOf(getProperty("cbo")),
+                                                                Boolean.valueOf(getProperty("newtypes"))),
                                                   aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
@@ -733,8 +734,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean success = false;
         try {
             sessionTracer.beginEvent(EventTypes.EXECUTE);
-            boolean usePVals = getBooleanProperty("newtypes", Types3Switch.ON);
-            rowsProcessed = pstmt.execute(context, maxrows, usePVals);
+            rowsProcessed = pstmt.execute(context, maxrows);
             success = true;
         }
         finally {
