@@ -772,10 +772,14 @@ public class API
     }
 
     // Insert
-
     public static UpdatePlannable insert_Default(Operator inputOperator)
     {
-        return new Insert_Default(inputOperator);
+        return insert_Default(inputOperator, Types3Switch.ON);
+    }
+
+    public static UpdatePlannable insert_Default(Operator inputOperator, boolean usePVals)
+    {
+        return new Insert_Default(inputOperator, usePVals);
     }
 
 

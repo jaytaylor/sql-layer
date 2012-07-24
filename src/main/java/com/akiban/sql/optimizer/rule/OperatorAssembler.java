@@ -676,7 +676,7 @@ public class OperatorAssembler extends BaseRule
             }
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
-            UpdatePlannable plan = API.insert_Default(stream.operator);
+            UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 

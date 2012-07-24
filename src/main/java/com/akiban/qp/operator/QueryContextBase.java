@@ -243,7 +243,7 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void checkConstraints(Row row) throws InvalidOperationException {
-        row.rowType().constraintChecker().checkConstraints(row);
+    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException {
+        row.rowType().constraintChecker().checkConstraints(row, usePValues);
     }
 }

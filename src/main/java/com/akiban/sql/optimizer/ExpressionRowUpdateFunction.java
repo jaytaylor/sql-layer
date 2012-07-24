@@ -90,6 +90,11 @@ public class ExpressionRowUpdateFunction implements UpdateFunction
         return result;
     }
 
+    @Override
+    public boolean usePValues() {
+        return pExpressions != null;
+    }
+
     /* Object */
 
     @Override
