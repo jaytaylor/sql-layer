@@ -201,4 +201,18 @@
 ---
 - Statement: DELETE from all_types
 
+---
+- Statement: INSERT INTO all_types VALUES(null, 1234)
+---
+- Statement: SELECT * from all_types
+- output: [[null, 1234, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]]
+---
+- Statement: DELETE from all_types
+
+---
+- CreateTable: t1 (c1 char(2))
+---
+- Statement: INSERT INTO t1 VALUES ('m', 'f')
+- error: [42512]
+
 ...
