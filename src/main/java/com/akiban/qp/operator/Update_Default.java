@@ -173,7 +173,7 @@ class Update_Default implements UpdatePlannable {
                     if (updateFunction.rowIsSelected(oldRow)) {
                         Row newRow = updateFunction.evaluate(oldRow, context);
                         context.checkConstraints(newRow, usePValues);
-                        adapter().updateRow(oldRow, newRow);
+                        adapter().updateRow(oldRow, newRow, usePValues);
                         ++modified;
                     }
                 }

@@ -793,9 +793,9 @@ public class API
     
     // Delete
 
-    public static UpdatePlannable delete_Default(Operator inputOperator)
+    public static UpdatePlannable delete_Default(Operator inputOperator, boolean usePValues)
     {
-        return new Delete_Default(inputOperator);
+        return new Delete_Default(inputOperator, usePValues);
     }
 
     // Execution interface

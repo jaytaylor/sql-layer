@@ -699,7 +699,7 @@ public class OperatorAssembler extends BaseRule
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
-            UpdatePlannable plan = API.delete_Default(stream.operator);
+            UpdatePlannable plan = API.delete_Default(stream.operator, usePValues);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
