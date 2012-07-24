@@ -673,6 +673,7 @@ public class OperatorAssembler extends BaseRule
                         row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
                     }
                 }
+                insertsP = Arrays.asList(row);
             }
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
