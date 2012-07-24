@@ -52,6 +52,11 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
 
     @Override
     public void put(PValueSource source, NewRow into, AkType akType, int f) {
+
+        // TODO efficiency warning
+        // NewRow and its users are pretty flexible about typse, so let's just convert everything to a String.
+        // It's not efficient, but it works.
+
         if (source.isNull()) {
             into.put(f, null);
             return;
