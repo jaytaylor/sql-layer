@@ -29,10 +29,33 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
 
-interface RowDataCreator<S> {
-    S eval(RowBase row, int f);
-    boolean isNull(S source);
-    S createId(long id);
-    void put(S source, NewRow into, AkType akType, int f);
+final class OldRowDataCreator implements RowDataCreator<ValueSource> {
+
+    @Override
+    public ValueSource eval(RowBase row, int f) {
+        return row.eval(f);
+    }
+
+    @Override
+    public boolean isNull(ValueSource source) {
+        return source.isNull();
+    }
+
+    @Override
+    public ValueSource createId(long id) {
+        FromObjectValueSource objectSource = new FromObjectValueSource();
+        objectSource.setExplicitly(id, AkType.LONG);
+        return objectSource;
+    }
+
+    @Override
+    public void put(ValueSource source, NewRow into, AkType akType, int f) {
+        into.put(f, target.convertFromSource(source));
+    }
+
+    private ToObjectValueTarget target = new ToObjectValueTarget();
 }

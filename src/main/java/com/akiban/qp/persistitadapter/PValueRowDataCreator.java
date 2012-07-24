@@ -29,10 +29,28 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 
-interface RowDataCreator<S> {
-    S eval(RowBase row, int f);
-    boolean isNull(S source);
-    S createId(long id);
-    void put(S source, NewRow into, AkType akType, int f);
+public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
+    @Override
+    public PValueSource eval(RowBase row, int f) {
+        return row.pvalue(f);
+    }
+
+    @Override
+    public boolean isNull(PValueSource source) {
+        return source.isNull();
+    }
+
+    @Override
+    public PValueSource createId(long id) {
+        return new PValue(id);
+    }
+
+    @Override
+    public void put(PValueSource source, NewRow into, AkType akType, int f) {
+        into.put(f, PValueSources.toObject(source, akType));
+    }
 }

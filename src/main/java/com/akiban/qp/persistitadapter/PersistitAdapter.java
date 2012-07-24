@@ -229,19 +229,20 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     private RowDataCreator<?> rowDataCreator(boolean usePValues) {
-        throw new UnsupportedOperationException(); // TODO
+        return usePValues
+                ? new PValueRowDataCreator()
+                : new OldRowDataCreator();
     }
 
     private <S> RowData oldRowData (RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow) row).rowData();
         }
-//        ToObjectValueTarget target = new ToObjectValueTarget();
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             S source = creator.eval(row, i);
-            creator.put(source, niceRow, i);
-//            niceRow.put(i, target.convertFromSource(source));
+            AkType type = rowDef.getFieldDef(i).getType().akType();
+            creator.put(source, niceRow, type, i);
         }
         return niceRow.toRowData();
     }
@@ -251,7 +252,7 @@ public class PersistitAdapter extends StoreAdapter
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow) row).rowData();
         }
-//        ToObjectValueTarget target = new ToObjectValueTarget();
+//
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             S source = creator.eval(row, i);
@@ -261,8 +262,6 @@ public class PersistitAdapter extends StoreAdapter
             if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
                     rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
                 long value = rowDef.table().getColumn(i).getIdentityGenerator().nextValue(treeService);
-//                FromObjectValueSource objectSource = new FromObjectValueSource();
-//                objectSource.setExplicitly(value, AkType.LONG);
                 source = creator.createId(value);
             }
 
@@ -271,16 +270,13 @@ public class PersistitAdapter extends StoreAdapter
                     Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
                     long value = sequence.nextValue(treeService);
                     source = creator.createId(value);
-//                    FromObjectValueSource objectSource = new FromObjectValueSource();
-//                    objectSource.setExplicitly(value, AkType.LONG);
-//                    source = objectSource;
                 }
                 // TODO: If not an identityGenerator, insert the column default value.
             }
 
             // TODO: Validate column Check Constraints.
-            creator.put(source, niceRow, i);
-//            niceRow.put(i, target.convertFromSource(source));
+            AkType type = rowDef.getFieldDef(i).getType().akType();
+            creator.put(source, niceRow, type, i);
         }
         return niceRow.toRowData();
     }
