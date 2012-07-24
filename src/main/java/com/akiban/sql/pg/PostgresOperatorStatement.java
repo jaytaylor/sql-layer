@@ -30,7 +30,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
@@ -65,6 +64,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         super(columnNames, columnTypes, parameterTypes);
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
+        this.usesPValues = usesPValues;
     }
 
     public boolean usesPValues() {
