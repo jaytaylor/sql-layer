@@ -53,6 +53,7 @@ public class Flatten extends BasePlanWithInput
         this.tableNodes = tableNodes;
         this.tableSources = tableSources;
         this.joinTypes = joinTypes;
+        assert (joinTypes.size() == tableSources.size() - 1);
     }
 
     public List<TableNode> getTableNodes() {
@@ -67,19 +68,16 @@ public class Flatten extends BasePlanWithInput
         return joinTypes;
     }
 
-    /** Get the tables involved in an initial sequence of inner joins. */
+    /** Get the tables involved in the sequence of inner joins, after
+     * any RIGHTs and before any LEFTs. */
     public Set<TableSource> getInnerJoinedTables() {
-        Set<TableSource> result = new HashSet<TableSource>();
-        for (int i = 0; i < tableSources.size(); i++) {
-            if (i > 0) {
-                if (joinTypes.get(i-1) != JoinType.INNER)
-                    break;
-            }
-            TableSource table = tableSources.get(i);
-            if (table != null)
-                result.add(table);
-        }
-        return result;
+        int rightmostRight = joinTypes.lastIndexOf(JoinType.RIGHT); // or -1
+        int leftmostLeft = joinTypes.indexOf(JoinType.LEFT);
+        if (leftmostLeft < 0)
+            leftmostLeft = joinTypes.size();
+        assert (rightmostRight < leftmostLeft);
+        return new HashSet<TableSource>(tableSources.subList(rightmostRight + 1,
+                                                             leftmostLeft + 1));
     }
 
     @Override
