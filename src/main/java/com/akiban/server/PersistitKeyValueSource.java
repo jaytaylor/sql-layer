@@ -282,7 +282,9 @@ public final class PersistitKeyValueSource extends ValueSource {
         int thisEnd = this.key.getIndex();
         byte[] thisBytes = this.key.getEncodedBytes();
         // Compare until end or mismatch
-        int n = min(thisEnd - thisPosition, thatEnd - thatPosition);
+        int thisN = thisEnd - thisPosition;
+        int thatN = thatEnd - thatPosition;
+        int n = min(thisN, thatN);
         int end = thisPosition + n;
         while (thisPosition < end) {
             int c = thisBytes[thisPosition++] - thatBytes[thatPosition++];
@@ -290,7 +292,7 @@ public final class PersistitKeyValueSource extends ValueSource {
                 return c;
             }
         }
-        return thisEnd - thatEnd;
+        return thisN - thatN;
     }
 
     private void clear() {

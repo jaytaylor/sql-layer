@@ -1215,16 +1215,8 @@ public class OperatorAssembler extends BaseRule
               impl = Distinct.Implementation.SORT;
             switch (impl) {
             case PRESORTED:
-                PlanNode input = distinct.getInput();
-                if (input instanceof Sort) {
-                    input = ((Sort)input).getInput();
-                }
-                if (input instanceof Project) {
-                    List<AkCollator> collators = new ArrayList<AkCollator>();
-                    Project project = (Project) input;
-                    for (ExpressionNode expressionNode : project.getFields()) {
-                        collators.add(expressionNode.getCollator());
-                    }
+                List<AkCollator> collators = findCollators(distinct.getInput());
+                if (collators != null) {
                     stream.operator = API.distinct_Partial(stream.operator, stream.rowType, collators, usePValues);
                 } else {
                     throw new UnsupportedOperationException(String.format(
@@ -1237,6 +1229,32 @@ public class OperatorAssembler extends BaseRule
                 break;
             }
             return stream;
+        }
+
+        // Hack to handle some easy and common cases until types3.
+        private List<AkCollator> findCollators(PlanNode node)
+        {
+            if (node instanceof Sort) {
+                return findCollators(((Sort)node).getInput());
+            } else if (node instanceof MapJoin) {
+                return findCollators(((MapJoin)node).getInner());
+            } else if (node instanceof Project) {
+                List<AkCollator> collators = new ArrayList<AkCollator>();
+                Project project = (Project) node;
+                for (ExpressionNode expressionNode : project.getFields()) {
+                    collators.add(expressionNode.getCollator());
+                }
+                return collators;
+            } else if (node instanceof IndexScan) {
+                List<AkCollator> collators = new ArrayList<AkCollator>();
+                IndexScan indexScan = (IndexScan) node;
+                for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
+                    collators.add(indexColumn.getColumn().getCollator());
+                }
+                return collators;
+            } else {
+                return null;
+            }
         }
 
         protected RowStream assembleSort(Sort sort) {
