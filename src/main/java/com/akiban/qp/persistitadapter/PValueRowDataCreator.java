@@ -31,7 +31,8 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.util.ByteSource;
+import com.akiban.util.WrappingByteSource;
 
 public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
     @Override
@@ -51,6 +52,49 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
 
     @Override
     public void put(PValueSource source, NewRow into, AkType akType, int f) {
-        into.put(f, PValueSources.toObject(source, akType));
+        if (source.isNull()) {
+            into.put(f, null);
+            return;
+        }
+
+        final String s;
+        switch (source.getUnderlyingType()) {
+        case BOOL:
+            s = Boolean.toString(source.getBoolean());
+            break;
+        case INT_8:
+            s = Byte.toString(source.getInt8());
+            break;
+        case INT_16:
+            s = Short.toString(source.getInt16());
+            break;
+        case UINT_16:
+            s = Character.toString(source.getUInt16());
+            break;
+        case INT_32:
+            s = Integer.toString(source.getInt16());
+            break;
+        case INT_64:
+            s = Long.toString(source.getInt64());
+            break;
+        case FLOAT:
+            s = Float.toString(source.getFloat());
+            break;
+        case DOUBLE:
+            s = Double.toString(source.getDouble());
+            break;
+        case STRING:
+            s = source.getString();
+            break;
+        default:
+            throw new AssertionError(source.getUnderlyingType());
+
+        case BYTES:
+            // bytes are a special case, in that they're not easily to-stringable
+            ByteSource byteSource = new WrappingByteSource(source.getBytes());
+            into.put(f, byteSource);
+            return;
+        }
+        into.put(f, s);
     }
 }
