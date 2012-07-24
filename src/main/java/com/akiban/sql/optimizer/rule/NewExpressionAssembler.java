@@ -46,6 +46,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
+import com.akiban.server.types3.texpressions.TInExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
@@ -180,7 +181,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     protected TPreparedExpression in(TPreparedExpression lhs, List<TPreparedExpression> rhs) {
-        throw new UnsupportedOperationException(); // TODO
+        return TInExpression.prepare(lhs, rhs);
     }
 
     @Override
