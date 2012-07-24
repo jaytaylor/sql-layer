@@ -381,7 +381,7 @@ public class TableDDLTest {
         }
 
         @Override
-        public void dropSequence(Session session, Sequence sequence) {
+        public void dropSequence(Session session, TableName sequenceName) {
         }
     } // END class DDLFunctionsMock
 

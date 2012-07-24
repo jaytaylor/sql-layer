@@ -29,7 +29,6 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.DropSequenceNode;
@@ -63,7 +62,6 @@ public class SequenceDDL {
                                         DropSequenceNode dropSequence) {
         final String schemaName = dropSequence.getObjectName().getSchemaName() != null ? dropSequence.getObjectName().getSchemaName() : defaultSchemaName;
         final TableName sequenceName = TableName.create(schemaName, dropSequence.getObjectName().getTableName());
-        final Sequence sequence = ddlFunctions.getAIS(session).getSequence(sequenceName);
         
         // TODO: Re-enable this when the IF [NOT] EXIST checking needs to be done
         // And is put in to the parser and parser nodes. 
@@ -71,6 +69,6 @@ public class SequenceDDL {
         //if (sequence == null) {
         //    throw new NoSuchSequenceException (sequenceName);
         //}
-        ddlFunctions.dropSequence(session, sequence);
+        ddlFunctions.dropSequence(session, sequenceName);
     }
 }

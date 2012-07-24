@@ -421,11 +421,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropSequence(Session session, Sequence sequence) {
+    public void dropSequence(Session session, TableName sequenceName) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.DROP_SEQUENCE);
-            delegate.dropSequence(session, sequence);
+            delegate.dropSequence(session, sequenceName);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.DROP_SEQUENCE, t);

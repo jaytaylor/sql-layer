@@ -686,7 +686,7 @@ public class AlterTableDDLTest {
         }
 
         @Override
-        public void dropSequence(Session session, Sequence sequence) {
+        public void dropSequence(Session session, TableName sequenceName) {
             throw new UnsupportedOperationException();
         }
     }
