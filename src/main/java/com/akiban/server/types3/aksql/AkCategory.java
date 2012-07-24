@@ -23,12 +23,15 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.AkibanAppender;
+package com.akiban.server.types3.aksql;
 
-public interface TClassFormatter {
-    
-    public void format(TInstance instance, PValueSource source, AkibanAppender out);
+public enum AkCategory {
+    LOGIC,
+    INTEGER,
+    DECIMAL,
+    FLOATING,
+    STRING_BINARY,
+    STRING_CHAR,
+    DATE_TIME
 }

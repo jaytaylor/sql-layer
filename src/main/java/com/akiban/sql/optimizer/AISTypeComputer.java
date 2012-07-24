@@ -110,10 +110,18 @@ public class AISTypeComputer extends TypeComputer
         else {
             // TODO: Could also add casts here to make types consistent.
         }
-        if (result.getNodeType() == NodeTypes.UNION_NODE) {
-            UnionNode union = (UnionNode)result;
-            pushType(union.getLeftResultSet(), i, type);
-            pushType(union.getRightResultSet(), i, type);
+        switch (result.getNodeType()) {
+        case NodeTypes.ROWS_RESULT_SET_NODE:
+            for (ResultSetNode row : ((RowsResultSetNode)result).getRows()) {
+                pushType(row, i, type);
+            }
+            break;
+        case NodeTypes.UNION_NODE:
+        case NodeTypes.INTERSECT_OR_EXCEPT_NODE:
+            SetOperatorNode setop = (SetOperatorNode)result;
+            pushType(setop.getLeftResultSet(), i, type);
+            pushType(setop.getRightResultSet(), i, type);
+            break;
         }
     }
 

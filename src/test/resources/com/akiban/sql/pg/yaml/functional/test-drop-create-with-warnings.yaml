@@ -1,4 +1,8 @@
 # test conditonal create
+# Bug:1028014 
+---
+- Properties: all
+- suppressed: true
 ---
 - CreateTable:  IF NOT EXISTS t1 (ff double);
 - warnings_count: 0

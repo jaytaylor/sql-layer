@@ -26,9 +26,23 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 public final class TInstance {
+    
+    public void writeCanonical(PValueSource in, PValueTarget out) {
+        tclass.writeCanonical(in, this, out);
+    }
+    
+    public void writeCollating(PValueSource in, PValueTarget out) {
+        tclass.writeCollating(in, this, out);
+    }
+    
+    public void readCanonical(PValueSource in, PValueTarget out) {
+        tclass.readCanonical(in, this, out);
+    }
     
     public int attribute(Attribute attribute) {
         if (enumClass != attribute.getClass())

@@ -47,18 +47,37 @@ abstract class SortKeyAdapter<S, E> {
                                           AkCollator collator);
 
     public abstract S[] createSourceArray(int size);
-    public abstract S get(BoundExpressions boundExpressions, int f);
 
+    public abstract S get(BoundExpressions boundExpressions, int f);
     public abstract SortKeyTarget<S> createTarget();
+
     public abstract SortKeySource<S> createSource(TInstance tInstance);
-    
     public abstract long compare(TInstance tInstance, S one, S two);
     public abstract E createComparison(TInstance tInstance, AkCollator collator, S one, Comparison comparison, S two);
+
     public abstract boolean evaluateComparison(E comparison);
     
     public boolean areEqual(TInstance tInstance, AkCollator collator, S one, S two) {
         E expr = createComparison(tInstance, collator, one, Comparison.EQ, two);
         return evaluateComparison(expr);
+    }
+
+    public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, TInstance[] instances,
+                                 int f)
+    {
+        S loValueSource = get(loExpressions, f);
+        S hiValueSource = get(hiExpressions, f);
+        if (isNull(loValueSource) && isNull(hiValueSource)) {
+            // OK, they're equal
+        } else if (isNull(loValueSource) || isNull(hiValueSource)) {
+            throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
+        } else {
+            TInstance tInstance = (instances == null) ? null : instances[f];
+            long comparison = compare(tInstance, loValueSource, hiValueSource);
+            if (comparison != 0) {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 
     public abstract boolean isNull(S source);

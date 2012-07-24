@@ -83,7 +83,8 @@ public class PostgresServerStatement implements PostgresStatement {
         try {
             doOperation(server);
         } catch (Exception e) {
-            LOG.error("Execute command failed: " + e.getMessage());
+            if (!(e instanceof ConnectionTerminatedException))
+                LOG.error("Execute command failed: " + e.getMessage());
             if (e instanceof IOException)
                 throw (IOException)e;
             else if (e instanceof InvalidOperationException) {
@@ -95,8 +96,10 @@ public class PostgresServerStatement implements PostgresStatement {
     }
     
     protected void doOperation (PostgresServerSession session) throws Exception {
-        PostgresServer server = ((PostgresServerConnection)session).getServer();
+        PostgresServerConnection current = (PostgresServerConnection)session;
+        PostgresServer server = current.getServer();
         Integer sessionId = statement.getSessionID();
+        String completeCurrent = null;
         /*
          * Note: Caution when adding new types and check execution under ROLLBACK, see getTransactionAbortedMode()
          */
@@ -117,25 +120,50 @@ public class PostgresServerStatement implements PostgresStatement {
             break;
         case DISCONNECT_SESSION:
         case KILL_SESSION:
-            if (sessionId == null) {
-                for (Integer sesId : server.getCurrentSessions()) {
-                    sendCompleteClosed(server.getConnection(sesId), "your session being disconnected");
-                    server.killConnection(sesId);
+            {
+                String msg = "your session being disconnected";
+                if (sessionId == null) {
+                    for (Integer sesId : server.getCurrentSessions()) {
+                        PostgresServerConnection conn = server.getConnection(sesId);
+                        if (conn == current)
+                            completeCurrent = msg;
+                        else {
+                            sendCompleteClosed(conn, msg);
+                            server.killConnection(sesId);
+                        }
+                    }
                 }
-            }
-            if (server.getConnection(sessionId) != null) {
-                sendCompleteClosed(server.getConnection(sessionId), "your session being disconnected");
-                server.killConnection(sessionId);
+                else {
+                    PostgresServerConnection conn = server.getConnection(sessionId);
+                    if (conn == current)
+                        completeCurrent = msg;
+                    else if (conn != null) {
+                        sendCompleteClosed(conn, msg);
+                        server.killConnection(sessionId);
+                    }
+                    // TODO: Else no such session error?
+                }
             }
             break;
         case SHUTDOWN:
-            for (Integer sesId : server.getCurrentSessions()) {
-                sendCompleteClosed(server.getConnection(sesId), "Akiban server being shutdown");
-                server.killConnection(sesId);
+            {
+                String msg = "Akiban server being shutdown";
+                for (Integer sesId : server.getCurrentSessions()) {
+                    PostgresServerConnection conn = server.getConnection(sesId);
+                    if (conn == current)
+                        completeCurrent = msg;
+                    else {
+                        sendCompleteClosed(server.getConnection(sesId), msg);
+                        server.killConnection(sesId);
+                    }
+                }
+                shutdown(session, statement.isShutdownImmediate());
             }
-            shutdown(session, statement.isShutdownImmediate());
             break;
         }
+        // Now finally do what was indicated for the current connection.
+        if (completeCurrent != null)
+            throw new ConnectionTerminatedException(completeCurrent);
     }
 
     protected void setVariable(PostgresServerSession server, String variable, String value) {
@@ -156,8 +184,18 @@ public class PostgresServerStatement implements PostgresStatement {
         session.sendErrorResponse(PostgresMessages.QUERY_TYPE, ex, ex.getCode(), ex.getMessage());
     }
     
-    protected void shutdown (PostgresServerSession server, boolean immediate) throws Exception {
-        MBeanServer jmxServer = ManagementFactory.getPlatformMBeanServer();
-        jmxServer.invoke(new ObjectName ("com.akiban:type=SHUTDOWN"), "shutdown", new Object[0], new String[0]);
+    protected void shutdown (final PostgresServerSession server, final boolean immediate) throws Exception {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    MBeanServer jmxServer = ManagementFactory.getPlatformMBeanServer();
+                    jmxServer.invoke(new ObjectName ("com.akiban:type=SHUTDOWN"), "shutdown", new Object[0], new String[0]);
+                }
+                catch (Exception ex) {
+                    LOG.error("Shutdown failed", ex);
+                }
+            }
+        }.start();
     }
 }

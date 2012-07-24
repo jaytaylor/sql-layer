@@ -85,6 +85,8 @@ public final class PersistitKeyValueTarget implements ValueTarget {
                                  bytesToCopy);
                 // We just wrote to Key internals. Invalidate cached state
                 key.setEncodedSize(targetSize + bytesToCopy);
+            } else if (valueSource.isNull()) {
+                key.append(null);
             } else {
                 collator.append(key, valueSource.getString());
             }

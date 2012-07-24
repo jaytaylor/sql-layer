@@ -26,9 +26,9 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.AkibanAppender;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-public interface TClassFormatter {
-    
-    public void format(TInstance instance, PValueSource source, AkibanAppender out);
+public interface TParser
+{
+    public void parse (TExecutionContext context, PValueSource in, PValueTarget out);
 }

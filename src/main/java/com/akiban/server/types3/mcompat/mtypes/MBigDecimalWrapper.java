@@ -33,6 +33,8 @@ import java.math.RoundingMode;
 
 public class MBigDecimalWrapper implements BigDecimalWrapper {
 
+    public static MBigDecimalWrapper ZERO = new MBigDecimalWrapper(BigDecimal.ZERO);
+
     private BigDecimal value;
 
     public MBigDecimalWrapper(BigDecimal value) {
