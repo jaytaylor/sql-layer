@@ -278,7 +278,8 @@ public class SubqueryFlattener
                 (selectNode.getHavingClause() != null))
                 return false;
         }
-        else if (fromSubquery.getSubquery() instanceof UnionNode) {
+        else if ((fromSubquery.getSubquery() instanceof SetOperatorNode) ||
+                 (fromSubquery.getSubquery() instanceof RowsResultSetNode)) {
             return false;
         }
         if ((fromSubquery.getOrderByList() != null) ||

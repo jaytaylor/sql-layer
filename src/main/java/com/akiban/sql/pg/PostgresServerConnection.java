@@ -221,6 +221,9 @@ public class PostgresServerConnection extends ServerSessionBase
                     logError("Query canceled", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
+                } catch (ConnectionTerminatedException ex) {
+                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                    stop();
                 } catch (InvalidOperationException ex) {
                     logError("Error in query", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());

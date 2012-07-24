@@ -30,10 +30,12 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.IndexTreeNameIsNullException;
+import com.akiban.server.error.SequenceTreeNameIsNullException;
 import com.akiban.server.error.TableTreeNameIsNullException;
 
 import java.util.Collection;
@@ -56,6 +58,9 @@ public class TreeNamesAreNotNull implements AISValidation {
                 checkIndex(index);
             }
         }
+        for (Sequence sequence: ais.getSequences().values()) {
+            checkSequence(sequence);
+        }
     }
 
     private static void checkTable(Table table) {
@@ -76,6 +81,12 @@ public class TreeNamesAreNotNull implements AISValidation {
     private static void checkIndex(Index index) {
         if(index.getTreeName() == null) {
             throw new IndexTreeNameIsNullException(index);
+        }
+    }
+    
+    private static void checkSequence(Sequence sequence) {
+        if (sequence.getTreeName() == null) {
+            throw new SequenceTreeNameIsNullException(sequence);
         }
     }
 }
