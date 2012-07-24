@@ -66,6 +66,7 @@ import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
@@ -73,6 +74,7 @@ import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
+import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
@@ -616,6 +618,29 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             firstPass = false;
         }
         return ddlList;
+    }
+
+    /** Add the Sequence to the current AIS */
+    @Override
+    public void createSequence(Session session, Sequence sequence) {
+        checkSequenceName (sequence.getSequenceName(), false);
+        AkibanInformationSchema newAIS = AISMerge.mergeSequence(this.getAis(), sequence);
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
+        try {
+            sequence.setStartWithAccumulator(treeService);
+        } catch (PersistitException e) {
+            LOG.error("Setting sequence starting value for sequence {} failed", sequence.getSequenceName().getDescription());
+            throw new PersistitAdapterException(e);
+        }
+    }
+    
+    /** Drop the given sequence from the current AIS. */
+    @Override
+    public void dropSequence(Session session, Sequence sequence) {
+        checkSequenceName (sequence.getSequenceName(), true);
+        List<TableName> emptyList = new ArrayList<TableName>(0);
+        final AkibanInformationSchema newAIS = removeTablesFromAIS(emptyList, Collections.singleton(sequence.getSequenceName()));
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
 
     @Override
@@ -1218,6 +1243,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
     }
 
+    private void checkSequenceName (TableName sequenceName, boolean shouldExist) {
+        checkAISSchema (sequenceName, false);
+        final boolean exists = getAis().getSequence(sequenceName) != null;
+        if (shouldExist && !exists) {
+            throw new NoSuchSequenceException(sequenceName);
+        }
+        if (!shouldExist && exists) {
+            throw new DuplicateSequenceNameException(sequenceName);
+        }
+    }
     private void checkAndSerialize(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema) throws PersistitException {
         if(serializationType == SerializationType.NONE) {
             serializationType = DEFAULT_SERIALIZATION;
