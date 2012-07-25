@@ -317,11 +317,7 @@ public final class PValueSources {
             case DOUBLE:
             case BYTES:
             case STRING:
-                try {
-                    v = Long.parseLong(valueSource.getString());
-                } catch (NumberFormatException e) {
-                    throw e; // TODO just a debug point! Remove this try-catch
-                }
+                v = Long.parseLong(valueSource.getString());
                 break;
             default:
                 throw new AssertionError(valueSource.getUnderlyingType());

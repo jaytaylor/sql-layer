@@ -107,7 +107,7 @@ public class OrphanResolutionIT extends OperatorITBase
     private BindableRow parentRow(int pid, int px)
     {
         return BindableRow.of(parentRowType, Arrays.asList(Expressions.literal(pid, AkType.INT),
-                                                           Expressions.literal(px, AkType.INT)));
+                                                           Expressions.literal(px, AkType.INT)), null);
     }
 
     private int parent;
