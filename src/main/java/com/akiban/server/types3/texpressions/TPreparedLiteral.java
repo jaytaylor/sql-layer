@@ -41,7 +41,7 @@ public final class TPreparedLiteral implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
+    public TEvaluatableExpression build(QueryContext queryContext) {
         return new Evaluation(value);
     }
 

@@ -64,15 +64,15 @@ public final class TPreparedFunction implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
+    public TEvaluatableExpression build(QueryContext queryContext) {
         List<TEvaluatableExpression> children = new ArrayList<TEvaluatableExpression>(inputs.size());
         for (TPreparedExpression input : inputs)
-            children.add(input.build());
+            children.add(input.build(queryContext));
         return new TEvaluatableFunction(
                 overload,
                 resultType,
                 children,
-                preptimeContext.createExecutionContext());
+                preptimeContext.createExecutionContext(queryContext));
     }
 
     @Override

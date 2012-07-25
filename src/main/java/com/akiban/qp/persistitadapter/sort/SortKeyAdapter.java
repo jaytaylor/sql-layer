@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
@@ -50,10 +51,10 @@ abstract class SortKeyAdapter<S, E> {
     public abstract long compare(TInstance tInstance, S one, S two);
 
     public abstract E createComparison(TInstance tInstance, S one, Comparison comparison, S two);
-    public abstract boolean evaluateComparison(E comparison);
-    public boolean areEqual(TInstance tInstance, S one, S two) {
+    public abstract boolean evaluateComparison(E comparison, QueryContext queryContext);
+    public boolean areEqual(TInstance tInstance, S one, S two, QueryContext queryContext) {
         E expr = createComparison(tInstance, one, Comparison.EQ, two);
-        return evaluateComparison(expr);
+        return evaluateComparison(expr, queryContext);
     }
 
     public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, TInstance[] instances,

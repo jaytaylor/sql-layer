@@ -70,11 +70,11 @@ public final class TComparisonExpression implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
+    public TEvaluatableExpression build(QueryContext queryContext) {
         TInstance leftInstance = left.resultType();
-        TEvaluatableExpression leftEval = left.build();
+        TEvaluatableExpression leftEval = left.build(queryContext);
         TInstance rightInstance = right.resultType();
-        TEvaluatableExpression rightEval = right.build();
+        TEvaluatableExpression rightEval = right.build(queryContext);
         return new CompareEvaluation(leftInstance, leftEval, comparison, rightInstance, rightEval, collator);
     }
 

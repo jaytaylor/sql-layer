@@ -114,7 +114,7 @@ public abstract class TOverloadBase implements TOverload {
 
         finishPreptimePhase(context);
 
-        TExecutionContext execContext = context.createExecutionContext();
+        TExecutionContext execContext = context.createExecutionContext(null);
         LazyList<PValueSource> inputValues = new LazyListBase<PValueSource>() {
             @Override
             public PValueSource get(int i) {

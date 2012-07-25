@@ -104,7 +104,7 @@ public class Conv extends TOverloadBase
                 TPreptimeValue fromBase = inputs.get(1);
                 TPreptimeValue toBase = inputs.get(2);
                 
-                int strPre = context.createExecutionContext()
+                int strPre = context.createExecutionContext(null)
                            .inputTInstanceAt(0).attribute(StringAttribute.LENGTH);
                 
                 // if toBase and fromBase are not available yet,

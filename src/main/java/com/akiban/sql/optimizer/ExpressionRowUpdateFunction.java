@@ -67,7 +67,7 @@ public class ExpressionRowUpdateFunction implements UpdateFunction
                 assert expressions == null : "can't have both expression types";
                 TPreparedExpression expression = pExpressions.get(i);
                 if (expression != null) {
-                    TEvaluatableExpression evaluation = expression.build();
+                    TEvaluatableExpression evaluation = expression.build(context);
                     evaluation.with(original);
                     evaluation.with(context);
                     evaluation.evaluate();

@@ -33,5 +33,5 @@ import com.akiban.server.types3.TPreptimeValue;
 public interface TPreparedExpression {
     TPreptimeValue evaluateConstant(QueryContext queryContext);
     TInstance resultType();
-    TEvaluatableExpression build();
+    TEvaluatableExpression build(QueryContext queryContext);
 }

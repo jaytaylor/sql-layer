@@ -36,7 +36,9 @@ public final class TPreptimeContext {
         this.outputType = outputType;
     }
 
-    public TExecutionContext createExecutionContext() {
+    public TExecutionContext createExecutionContext(QueryContext queryContext) {
+        if (queryContext == null)
+            queryContext = this.queryContext;
         return new TExecutionContext(preptimeCache, inputTypes, outputType, 
                 queryContext,
                 null, null, null); // TODO pass in
