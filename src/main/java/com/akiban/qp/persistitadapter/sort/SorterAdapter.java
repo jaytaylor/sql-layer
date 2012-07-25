@@ -113,7 +113,7 @@ abstract class SorterAdapter<S,E,V> {
     protected abstract S evaluateRow(V evaluation, Row row);
     protected abstract void attachValueTarget(Value value);
 
-    protected abstract PersistitValueSourceAdapater createValueAdapter();
+    protected abstract PersistitValueSourceAdapter createValueAdapter();
     private final SortKeyAdapter<S,E> sortKeyAdapter;
 
     private final SortKeyTarget<S> keyTarget;
@@ -131,8 +131,8 @@ abstract class SorterAdapter<S,E,V> {
 
     protected abstract void putFieldToTarget(S value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes);
 
-    public interface PersistitValueSourceAdapater {
+    public interface PersistitValueSourceAdapter {
         void attach(Value value);
-        void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes);
+        void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes);
     }
 }

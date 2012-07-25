@@ -87,7 +87,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
     }
 
     @Override
-    protected PersistitValueSourceAdapater createValueAdapter() {
+    protected PersistitValueSourceAdapter createValueAdapter() {
         return new InternalPAdapter();
     }
 
@@ -100,7 +100,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
         super(PValueSortKeyAdapter.INSTANCE);
     }
     
-    private class InternalPAdapter implements PersistitValueSourceAdapater {
+    private class InternalPAdapter implements PersistitValueSourceAdapter {
 
         @Override
         public void attach(Value value) {
@@ -108,7 +108,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
         }
 
         @Override
-        public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
+        public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes) {
             valueSource.getReady();
             row.pvalueAt(i).putValueSource(valueSource);
         }
