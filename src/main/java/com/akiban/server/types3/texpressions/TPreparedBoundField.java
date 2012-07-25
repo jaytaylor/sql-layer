@@ -35,7 +35,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 
 public final class TPreparedBoundField implements TPreparedExpression {
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return new TPreptimeValue(resultType());
     }
 
@@ -45,8 +45,8 @@ public final class TPreparedBoundField implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
-        return new InnerEvaluation(fieldExpression.build(), rowPosition);
+    public TEvaluatableExpression build(QueryContext queryContext) {
+        return new InnerEvaluation(fieldExpression.build(null), rowPosition);
     }
 
     @Override

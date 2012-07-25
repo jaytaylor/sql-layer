@@ -40,7 +40,7 @@ import java.util.Collections;
 
 public final class TCastExpression implements TPreparedExpression {
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         PValue value;
         if (inputValue.value() == null) {
             value = null;
@@ -58,9 +58,9 @@ public final class TCastExpression implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
+    public TEvaluatableExpression build(QueryContext queryContext) {
         TExecutionContext context = preptimeContext.createExecutionContext();
-        return new CastEvaluation(input.build(), context, cast);
+        return new CastEvaluation(input.build(null), context, cast);
     }
 
     @Override
@@ -71,7 +71,7 @@ public final class TCastExpression implements TPreparedExpression {
     public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance) {
         this.input = input;
         this.cast = cast;
-        inputValue = input.evaluateConstant();
+        inputValue = input.evaluateConstant(null);
         this.targetInstance = targetInstance;
         this.preptimeContext = new TPreptimeContext(Collections.singletonList(input.resultType()), targetInstance);
     }

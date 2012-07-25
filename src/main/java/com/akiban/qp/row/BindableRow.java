@@ -56,7 +56,7 @@ public abstract class BindableRow {
             assert expressions == null : "can't have both style of expressions";
             ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", pExpressions.size());
             for (TPreparedExpression expression : pExpressions) {
-                TPreptimeValue tpv = expression.evaluateConstant();
+                TPreptimeValue tpv = expression.evaluateConstant(null);
                 if (tpv.value() == null)
                     return new BindingExpressions(rowType, null, pExpressions);
             }
@@ -226,7 +226,7 @@ public abstract class BindableRow {
         @Override
         public PValueSource next() {
             TPreparedExpression expression = expressions.next();
-            TPreptimeValue ptv = expression.evaluateConstant();
+            TPreptimeValue ptv = expression.evaluateConstant(null);
             assert ptv != null && ptv.value() != null
                     : "not constant: " + expression + " with prepare-time value of " + ptv;
             return ptv.value();

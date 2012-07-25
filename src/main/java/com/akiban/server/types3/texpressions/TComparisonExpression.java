@@ -42,14 +42,14 @@ import com.akiban.server.types3.pvalue.PValueSources;
 
 public final class TComparisonExpression implements TPreparedExpression {
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         // First check both sides. If either is a constant null, the result is null
-        TPreptimeValue leftPrep = left.evaluateConstant();
+        TPreptimeValue leftPrep = left.evaluateConstant(null);
         PValueSource oneVal = leftPrep.value();
         if (oneVal != null && oneVal.isNull())
             return new TPreptimeValue(AkBool.INSTANCE.instance(), PValueSources.getNullSource(PUnderlying.BOOL));
 
-        TPreptimeValue rightPrep = right.evaluateConstant();
+        TPreptimeValue rightPrep = right.evaluateConstant(null);
         PValueSource twoVal = rightPrep.value();
         if (twoVal != null && twoVal.isNull())
             return new TPreptimeValue(AkBool.INSTANCE.instance(), PValueSources.getNullSource(PUnderlying.BOOL));
@@ -70,11 +70,11 @@ public final class TComparisonExpression implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
+    public TEvaluatableExpression build(QueryContext queryContext) {
         TInstance leftInstance = left.resultType();
-        TEvaluatableExpression leftEval = left.build();
+        TEvaluatableExpression leftEval = left.build(null);
         TInstance rightInstance = right.resultType();
-        TEvaluatableExpression rightEval = right.build();
+        TEvaluatableExpression rightEval = right.build(null);
         return new CompareEvaluation(leftInstance, leftEval, comparison, rightInstance, rightEval, collator);
     }
 

@@ -49,11 +49,11 @@ public final class TPreparedFunction implements TPreparedExpression {
     }
 
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return overload.evaluateConstant(preptimeContext, new LazyListBase<TPreptimeValue>() {
             @Override
             public TPreptimeValue get(int i) {
-                return inputs.get(i).evaluateConstant();
+                return inputs.get(i).evaluateConstant(null);
             }
 
             @Override
@@ -64,10 +64,10 @@ public final class TPreparedFunction implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
+    public TEvaluatableExpression build(QueryContext queryContext) {
         List<TEvaluatableExpression> children = new ArrayList<TEvaluatableExpression>(inputs.size());
         for (TPreparedExpression input : inputs)
-            children.add(input.build());
+            children.add(input.build(null));
         return new TEvaluatableFunction(
                 overload,
                 resultType,

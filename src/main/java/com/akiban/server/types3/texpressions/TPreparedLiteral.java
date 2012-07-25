@@ -41,12 +41,12 @@ public final class TPreparedLiteral implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
+    public TEvaluatableExpression build(QueryContext queryContext) {
         return new Evaluation(value);
     }
 
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return new TPreptimeValue(tInstance, value);
     }
 

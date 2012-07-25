@@ -27,6 +27,7 @@
 package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
@@ -64,7 +65,7 @@ public class ExistsSubqueryTExpression extends SubqueryTExpression
     }
 
     @Override
-    public TEvaluatableExpression build()
+    public TEvaluatableExpression build(QueryContext queryContext)
     {
         return new InnerEvaluation(subquery(),
                                    outerRowType(), innerRowType(),

@@ -27,13 +27,14 @@
 package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.util.ArgumentValidation;
 
 abstract class SubqueryTExpression implements TPreparedExpression {
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return new TPreptimeValue(resultType());
     }
 

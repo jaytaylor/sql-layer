@@ -39,7 +39,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 public final class TPreparedParameter implements TPreparedExpression {
 
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return new TPreptimeValue(tInstance);
     }
 
@@ -49,7 +49,7 @@ public final class TPreparedParameter implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build() {
+    public TEvaluatableExpression build(QueryContext queryContext) {
         return new InnerEvaluation(position, tInstance);
     }
 

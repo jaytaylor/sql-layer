@@ -54,7 +54,7 @@ public class NoArgFuncs
         private final TInstance RESULT_TYPE = MApproximateNumber.DOUBLE.instance();
         
         @Override
-        public TPreptimeValue evaluateConstant()
+        public TPreptimeValue evaluateConstant(QueryContext queryContext)
         {
             return PREP_VAL;
         }
@@ -66,7 +66,7 @@ public class NoArgFuncs
         }
 
         @Override
-        public TEvaluatableExpression build()
+        public TEvaluatableExpression build(QueryContext queryContext)
         {
             return new TEvaluatableExpression()
             {
