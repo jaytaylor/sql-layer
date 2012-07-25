@@ -221,7 +221,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;
         TPreparedExpression expr = assembleExpression(node, null, null);
-        TPreptimeValue preptimeValue = expr.evaluateConstant(null);
+        TPreptimeValue preptimeValue = expr.evaluateConstant(planContext.getQueryContext());
         if (preptimeValue == null)
             throw new AkibanInternalException("required constant expression: " + expr);
         PValueSource valueSource = preptimeValue.value();

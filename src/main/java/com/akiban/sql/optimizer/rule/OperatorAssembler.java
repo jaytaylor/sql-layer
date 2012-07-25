@@ -905,7 +905,7 @@ public class OperatorAssembler extends BaseRule
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = oldPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
                 List<TPreparedExpression> tExprs = newPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
-                bindableRows.add(BindableRow.of(stream.rowType, expressions, tExprs));
+                bindableRows.add(BindableRow.of(stream.rowType, expressions, tExprs, planContext.getQueryContext()));
             }
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 

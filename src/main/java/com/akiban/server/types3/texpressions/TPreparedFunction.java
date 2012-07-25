@@ -49,11 +49,11 @@ public final class TPreparedFunction implements TPreparedExpression {
     }
 
     @Override
-    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
+    public TPreptimeValue evaluateConstant(final QueryContext queryContext) {
         return overload.evaluateConstant(preptimeContext, new LazyListBase<TPreptimeValue>() {
             @Override
             public TPreptimeValue get(int i) {
-                return inputs.get(i).evaluateConstant(null);
+                return inputs.get(i).evaluateConstant(queryContext);
             }
 
             @Override

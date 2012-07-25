@@ -44,23 +44,24 @@ public abstract class BindableRow {
 
     // BindableRow class interface
 
-    public static BindableRow of(RowType rowType, List<? extends Expression> expressions) {
-        return of(rowType,  expressions, null);
+    public static BindableRow of(RowType rowType, List<? extends Expression> expressions, QueryContext queryContext) {
+        return of(rowType,  expressions, null, queryContext);
     }
 
     public static BindableRow of(RowType rowType, List<? extends Expression> expressions,
-                                 List<? extends TPreparedExpression> pExpressions) {
+                                 List<? extends TPreparedExpression> pExpressions,
+                                 QueryContext queryContext) {
         Iterator<? extends ValueSource> oldVals;
         Iterator<? extends PValueSource> newVals;
         if (pExpressions != null) {
             assert expressions == null : "can't have both style of expressions";
             ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", pExpressions.size());
             for (TPreparedExpression expression : pExpressions) {
-                TPreptimeValue tpv = expression.evaluateConstant(null);
+                TPreptimeValue tpv = expression.evaluateConstant(queryContext);
                 if (tpv.value() == null)
                     return new BindingExpressions(rowType, null, pExpressions);
             }
-            newVals = new PExpressionEvaluator(pExpressions);
+            newVals = new PExpressionEvaluator(pExpressions, queryContext);
             oldVals = null;
         }
         else if (expressions != null) {
@@ -226,7 +227,7 @@ public abstract class BindableRow {
         @Override
         public PValueSource next() {
             TPreparedExpression expression = expressions.next();
-            TPreptimeValue ptv = expression.evaluateConstant(null);
+            TPreptimeValue ptv = expression.evaluateConstant(context);
             assert ptv != null && ptv.value() != null
                     : "not constant: " + expression + " with prepare-time value of " + ptv;
             return ptv.value();
@@ -237,12 +238,14 @@ public abstract class BindableRow {
             throw new UnsupportedOperationException();
         }
 
-        private PExpressionEvaluator(Collection<? extends TPreparedExpression> expressions)
+        private PExpressionEvaluator(Collection<? extends TPreparedExpression> expressions, QueryContext context)
         {
             this.expressions = expressions.iterator();
+            this.context = context;
         }
 
         private final Iterator<? extends TPreparedExpression> expressions;
+        private final QueryContext context;
     }
 
     private static class Delegating extends BindableRow {

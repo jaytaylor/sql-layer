@@ -41,6 +41,7 @@ import java.util.Collections;
 public final class TCastExpression implements TPreparedExpression {
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
+        TPreptimeValue inputValue = input.evaluateConstant(queryContext);
         PValue value;
         if (inputValue.value() == null) {
             value = null;
@@ -71,13 +72,11 @@ public final class TCastExpression implements TPreparedExpression {
     public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance) {
         this.input = input;
         this.cast = cast;
-        inputValue = input.evaluateConstant(null);
         this.targetInstance = targetInstance;
         this.preptimeContext = new TPreptimeContext(Collections.singletonList(input.resultType()), targetInstance);
     }
 
 
-    private final TPreptimeValue inputValue;
     private final TInstance targetInstance;
     private final TPreparedExpression input;
     private final TCast cast;
@@ -107,14 +106,12 @@ public final class TCastExpression implements TPreparedExpression {
         }
 
         private CastEvaluation(TEvaluatableExpression inputEval, TExecutionContext context, TCast cast) {
-            this.context = context;
             this.inputEval = inputEval;
             this.cast = cast;
             this.value = new PValue(context.outputTInstance().typeClass().underlyingType());
         }
 
         private final TEvaluatableExpression inputEval;
-        private final TExecutionContext context;
         private final TCast cast;
         private final PValue value;
     }

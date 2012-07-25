@@ -44,12 +44,12 @@ public final class TComparisonExpression implements TPreparedExpression {
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         // First check both sides. If either is a constant null, the result is null
-        TPreptimeValue leftPrep = left.evaluateConstant(null);
+        TPreptimeValue leftPrep = left.evaluateConstant(queryContext);
         PValueSource oneVal = leftPrep.value();
         if (oneVal != null && oneVal.isNull())
             return new TPreptimeValue(AkBool.INSTANCE.instance(), PValueSources.getNullSource(PUnderlying.BOOL));
 
-        TPreptimeValue rightPrep = right.evaluateConstant(null);
+        TPreptimeValue rightPrep = right.evaluateConstant(queryContext);
         PValueSource twoVal = rightPrep.value();
         if (twoVal != null && twoVal.isNull())
             return new TPreptimeValue(AkBool.INSTANCE.instance(), PValueSources.getNullSource(PUnderlying.BOOL));
