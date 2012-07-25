@@ -29,12 +29,10 @@ package com.akiban.server.types3.common.funcs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -43,7 +41,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import com.akiban.server.types3.texpressions.std.NoArgExpression;
 
 public class SequenceNextValue extends TOverloadBase {
 
@@ -80,7 +77,6 @@ public class SequenceNextValue extends TOverloadBase {
     @Override
     protected void doEvaluate(TExecutionContext context,
             LazyList<? extends PValueSource> inputs, PValueTarget output) {
-
         String schema = inputs.get(0).isNull() ? "test" : inputs.get(0).getString();
         String sequence = inputs.get(1).getString();
         logger.warn("Sequence loading : "+ schema + "." + sequence);
