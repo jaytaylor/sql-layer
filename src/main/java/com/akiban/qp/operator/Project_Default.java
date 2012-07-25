@@ -86,7 +86,8 @@ class Project_Default extends Operator
     @Override
     public String toString()
     {
-        return Format.Describe(this.getExplainer());
+        Format f = new Format(true);
+        return f.Describe(this.getExplainer());
     }
 
     // Operator interface

@@ -26,14 +26,19 @@
 
 package com.akiban.sql.optimizer.explain;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.util.SqlLiteralValueFormatter;
 import com.akiban.sql.optimizer.explain.Type.GeneralType;
-import java.util.Map;
 
 public class Format {
+    
+    private boolean verbose = true;
+    
+    public Format(boolean verbose)
+    {
+        this.verbose = verbose;
+    }
 
-    public static String Describe(Explainer explainer) {
+    public static String Describe(Explainer explainer)
+    {
         StringBuilder sb = new StringBuilder("");
         describe(explainer, sb);
         return sb.toString();
@@ -184,6 +189,7 @@ public class Format {
             case LOOKUP_OPERATOR:
                 if (name.equals("Ancestor Lookup Default"))
                 {
+                    
                     describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
                     sb.append(" -> ");
                     for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
@@ -332,6 +338,7 @@ public class Format {
                     sb.append("INTO");
                     describe(atts.get(Label.TABLE_TYPE).get(0), sb);
                 }
+                // TODO: "Update"
                 break;
             default:
                 throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
