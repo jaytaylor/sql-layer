@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.Expression;
 import com.akiban.junit.NamedParameterizedRunner;
@@ -46,7 +47,8 @@ import static org.junit.Assert.*;
 public class ConvertTZExpressionTest extends ComposedExpressionTestBase
 {
     private static boolean alreadyExc = false;
-    
+    private static final LongExtractor extractor = Extractors.getLongExtractor(AkType.DATETIME);
+
     private final String dt;
     private final String from;
     private final String to;
@@ -65,8 +67,9 @@ public class ConvertTZExpressionTest extends ComposedExpressionTestBase
     {
         ParameterizationBuilder b = new ParameterizationBuilder();
         
-        param(b, "2009-12-12", "-6:00", "+5:00", 20091212110000L);
+        param(b, "2009-12-12 00:00:00", "-06:00", "+05:00", 20091212110000L);
         param(b, "2004-01-01 12:00:00", "GMT", "MET", 20040101130000L);
+        param(b, "2003-06-01 12:59:59", "-01:00", "+10:00", 20030601235959L);
 
         return b.asList();
     }
@@ -79,10 +82,11 @@ public class ConvertTZExpressionTest extends ComposedExpressionTestBase
     @Test
     public void test()
     {
+        alreadyExc = true;
         Expression date = dt == null
                           ? LiteralExpression.forNull()
                           : new LiteralExpression(AkType.DATETIME, 
-                                                  Extractors.getLongExtractor(AkType.DATETIME).getLong(dt));
+                                                 extractor.getLong(dt));
         
         Expression frm = from == null
                           ? LiteralExpression.forNull()
@@ -97,7 +101,8 @@ public class ConvertTZExpressionTest extends ComposedExpressionTestBase
         if (expected == null)
             assertTrue("Top should be NULL ", top.isNull());
         else
-            assertEquals(expected.longValue(), top.getDateTime());
+            assertEquals(extractor.asString(expected.longValue()), 
+                         extractor.asString(top.getDateTime()));
     }
     
     @Override

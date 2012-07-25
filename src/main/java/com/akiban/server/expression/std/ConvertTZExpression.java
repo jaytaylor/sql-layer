@@ -91,14 +91,14 @@ public class ConvertTZExpression extends AbstractTernaryExpression
             long ymd[] = Extractors.getLongExtractor(AkType.DATETIME).getYearMonthDayHourMinuteSecond(dt.getDateTime());
 
             String fromTz = from.getString();
-            String toTz = from.getString();
-            
+            String toTz = to.getString();
+
             try
             {
                 DateTime date = new DateTime((int)ymd[0], (int)ymd[1], (int)ymd[2],
                                              (int)ymd[3], (int)ymd[4], (int)ymd[5], 0,
                                              DateTimeZone.forID(fromTz));
-            
+                
                 valueHolder().putDateTime(date.withZone(DateTimeZone.forID(toTz)));
             }
             catch (IllegalArgumentException e)
