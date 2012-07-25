@@ -135,7 +135,7 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
 
     }
 
-    // @Override
+    @Override
     public boolean isZeroByteFree() throws ConversionException {
         return true;
     }
