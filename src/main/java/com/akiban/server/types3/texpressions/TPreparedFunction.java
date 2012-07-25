@@ -113,6 +113,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
         @Override
         public void with(QueryContext context) {
+            this.context.setQueryContext(context);
             for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
                 TEvaluatableExpression input = inputs.get(i);
                 input.with(context);

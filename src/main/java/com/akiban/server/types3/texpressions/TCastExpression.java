@@ -29,14 +29,10 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-
-import java.util.Collections;
 
 public final class TCastExpression implements TPreparedExpression {
     @Override
@@ -60,8 +56,7 @@ public final class TCastExpression implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        TExecutionContext context = preptimeContext.createExecutionContext();
-        return new CastEvaluation(input.build(), context, cast);
+        return new CastEvaluation(input.build(), cast);
     }
 
     @Override
@@ -73,15 +68,12 @@ public final class TCastExpression implements TPreparedExpression {
         this.input = input;
         this.cast = cast;
         this.targetInstance = targetInstance;
-        this.preptimeContext = new TPreptimeContext(Collections.singletonList(input.resultType()), targetInstance,
-                queryContext);
     }
 
 
     private final TInstance targetInstance;
     private final TPreparedExpression input;
     private final TCast cast;
-    private final TPreptimeContext preptimeContext;
 
     private static class CastEvaluation implements TEvaluatableExpression {
         @Override
@@ -106,10 +98,10 @@ public final class TCastExpression implements TPreparedExpression {
             inputEval.with(context);
         }
 
-        private CastEvaluation(TEvaluatableExpression inputEval, TExecutionContext context, TCast cast) {
+        private CastEvaluation(TEvaluatableExpression inputEval, TCast cast) {
             this.inputEval = inputEval;
             this.cast = cast;
-            this.value = new PValue(context.outputTInstance().typeClass().underlyingType());
+            this.value = new PValue(cast.targetClass().underlyingType());
         }
 
         private final TEvaluatableExpression inputEval;
