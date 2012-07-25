@@ -23,15 +23,17 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.types3.texpressions;
+import com.akiban.ais.model.TableName;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
+public class NoSuchSequenceException extends BaseSQLException {
+    public NoSuchSequenceException (String schemaName, String sequenceName) {
+        super (ErrorCode.NO_SUCH_SEQUENCE, schemaName, sequenceName, null);
+    }
+    
+    public NoSuchSequenceException (TableName sequenceName) {
+        super (ErrorCode.NO_SUCH_SEQUENCE, sequenceName.getSchemaName(), sequenceName.getTableName(), null);
+    }
 
-public interface TPreparedExpression {
-    TPreptimeValue evaluateConstant(QueryContext queryContext);
-    TInstance resultType();
-    TEvaluatableExpression build();
 }

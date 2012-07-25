@@ -139,6 +139,8 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case TRUNCATE_TABLE:
             case UPDATE_TABLE_STATISTICS:
             case CHECK_AND_FIX_INDEXES:
+            case CREATE_SEQUENCE:
+            case DROP_SEQUENCE:
                 return true;
 
             case GET_AIS:

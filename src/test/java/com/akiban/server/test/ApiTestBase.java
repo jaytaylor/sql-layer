@@ -819,7 +819,6 @@ public class ApiTestBase {
             view.getTableColumnReferences().clear();
         }
         for(View view : ddl().getAIS(session()).getViews().values()) {
-            System.err.println("Dropping view: " + view.getName());
             ddl().dropView(session(), view.getName());
         }
 
