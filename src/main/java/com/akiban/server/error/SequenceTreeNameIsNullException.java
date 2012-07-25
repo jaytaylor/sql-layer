@@ -23,15 +23,15 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.types3.texpressions;
+import com.akiban.ais.model.Sequence;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
+public class SequenceTreeNameIsNullException extends InvalidOperationException {
 
-public interface TPreparedExpression {
-    TPreptimeValue evaluateConstant(QueryContext queryContext);
-    TInstance resultType();
-    TEvaluatableExpression build();
+    public SequenceTreeNameIsNullException(Sequence sequence) {
+        super(ErrorCode.SEQUENCE_TREE_NAME_NULL, 
+                sequence.getSequenceName().getSchemaName(),
+                sequence.getSequenceName().getTableName());
+    }
 }

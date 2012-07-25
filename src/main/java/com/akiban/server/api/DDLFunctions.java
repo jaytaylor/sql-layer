@@ -206,4 +206,18 @@ public interface DDLFunctions {
      * @param viewName the name of the view to drop
      */
     void dropView(Session session, TableName viewName);
+    
+    /**
+     * Create a sequence, an independent number generator.
+     * @param session
+     * @param sequence
+     */
+    void createSequence(Session session, Sequence sequence);
+    
+    /**
+     * Drop a user created sequence.
+     * @param session
+     * @param sequence
+     */
+    void dropSequence(Session session, TableName sequenceName);
 }

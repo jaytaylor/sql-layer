@@ -134,4 +134,9 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
         return collator.decodeSortKeyBytes(rawBytes, index + 1, end - index - 1);
 
     }
+
+    // @Override
+    public boolean isZeroByteFree() throws ConversionException {
+        return true;
+    }
 }

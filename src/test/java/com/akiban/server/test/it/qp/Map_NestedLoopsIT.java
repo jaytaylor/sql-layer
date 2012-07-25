@@ -49,7 +49,6 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import org.junit.Before;
 import org.junit.Test;
@@ -321,7 +320,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
         if (Types3Switch.ON) {
             expressions = null;
             pExpressions = Arrays.asList((TPreparedExpression) new TPreparedLiteral(
-                    MNumeric.INT.instance(), new PValue(x)));
+                    MNumeric.INT.instance(), new PValue(x)), null);
         }
         else {
             expressions = Arrays.asList((Expression) new LiteralExpression(AkType.INT, x));
