@@ -74,7 +74,7 @@ import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.plan.TableSource;
-import com.akiban.sql.optimizer.rule.ConstantFolder.Folder;
+import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
@@ -98,13 +98,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
     static class ResolvingVistor implements PlanVisitor, ExpressionRewriteVisitor {
 
-        private Folder folder;
+        private NewFolder folder;
         private OverloadResolver resolver;
 
 
         ResolvingVistor(PlanContext context) {
-            folder = new Folder(context);
-            folder.setFoldingState();
+            folder = new NewFolder(context);
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             resolver = src.getOverloadResolver();
         }
@@ -169,7 +168,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 n = handleConstantExpression((ConstantExpression) n);
             else
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
-            n = folder.visit(n);
+
+            n = folder.foldConstants(n);
             
             return n;
         }

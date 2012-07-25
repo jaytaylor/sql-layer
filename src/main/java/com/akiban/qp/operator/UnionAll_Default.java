@@ -327,7 +327,9 @@ final class UnionAll_Default extends Operator {
             if (!inputRow.rowType().equals(currentInputRowType)) {
                 throw new WrongRowTypeException(inputRow, currentInputRowType);
             }
-            assert inputRow.rowType().equals(currentInputRowType) : inputRow.rowType() + " != " + currentInputRowType;
+            if (currentInputRowType == outputRowType) {
+                return inputRow;
+            }
             MasqueradingRow row;
             if (rowHolder.isEmpty() || rowHolder.isShared()) {
                 row = new MasqueradingRow(outputRowType, inputRow);

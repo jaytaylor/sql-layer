@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
@@ -50,17 +49,37 @@ public abstract class TClass {
 
     public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
+    public abstract void fromObject (TExecutionContext contextForErrors, PValueSource in, PValueTarget out);
+
     public void selfCast(TExecutionContext context,
                          TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
         target.putValueSource(source); // TODO make abstract
     }
+    
+    public static int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+        TClass classA = instanceA.typeClass();
+        TClass classB = instanceB.typeClass();
+        if (classA != classB)
+            throw new IllegalArgumentException("can't compare " + instanceA + " and " + instanceB);
 
-    public int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
         if (sourceA.isNull())
             return sourceB.isNull() ? 0 : -1;
         if (sourceB.isNull())
             return 1;
+        return classA.doCompare(instanceA, sourceA, instanceB, sourceB);
+    }
 
+    /**
+     * Compares two values, assuming neither is null. The call site (<tt>TClass.compare</tt>) will handle the case
+     * that either or both sources is null.
+     * @param instanceA the first operand's instance
+     * @param sourceA the first operand's value, which will not represent a null PValueSource
+     * @param instanceB the second operand's instance
+     * @param sourceB the second operand's value, which will not represent a null PValueSource
+     * @return -1 if sourceA is less than sourceB; 0 if they're equal; 1 if sourceA is greater than sourceB
+     * @see TClass#compare(TInstance, PValueSource, TInstance, PValueSource)
+     */
+    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
         if (sourceA.hasCacheValue() && sourceB.hasCacheValue()) {
             Object objectA = sourceA.getObject();
             if (objectA instanceof Comparable<?>) {
@@ -97,7 +116,7 @@ public abstract class TClass {
         }
     }
 
-    public void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+    protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
         PValueTargets.copyFrom(in, out, cacher(), typeInstance);
     }
 
@@ -105,7 +124,7 @@ public abstract class TClass {
         output.append(value);
     }
 
-    public abstract void putSafety(QueryContext context,
+    public abstract void putSafety(TExecutionContext context,
                         TInstance sourceInstance,
                         PValueSource sourceValue,
                         TInstance targetInstance,
@@ -133,11 +152,11 @@ public abstract class TClass {
         return createInstance(4, arg0, arg1, arg2, arg3);
     }
 
-    public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+    protected void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
         writeCanonical(inValue, inInstance, out);
     }
 
-    public void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+    protected void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
         writeCanonical(inValue, typeInstance, out);
     }
 
@@ -256,12 +275,13 @@ public abstract class TClass {
 
      protected <A extends Enum<A> & Attribute> TClass(TBundleID bundle,
             String name,
+            Enum<?> category,
             Class<A> enumClass,
             TClassFormatter formatter,
             int internalRepVersion, int serializationVersion, int serializationSize,
             PUnderlying pUnderlying)
      {
-        this(new TName(bundle, name),
+        this(new TName(bundle, name, category),
                 enumClass,
                 formatter,
                 internalRepVersion, serializationVersion, serializationSize,

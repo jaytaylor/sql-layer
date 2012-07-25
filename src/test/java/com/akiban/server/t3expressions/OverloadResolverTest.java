@@ -35,10 +35,8 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -133,7 +131,7 @@ public class OverloadResolverTest {
         private static final TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
 
         public TestClassBase(String name, PUnderlying pUnderlying) {
-            super(TEST_BUNDLE_ID, name, null, 1, 1, 1, pUnderlying, null);
+            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, null);
         }
     }
 
@@ -144,11 +142,6 @@ public class OverloadResolverTest {
 
         public TestCastBase(TClass source, TClass target, boolean isAutomatic) {
             super(source, target, isAutomatic, Constantness.UNKNOWN);
-        }
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget) {
-            throw new UnsupportedOperationException();
         }
 
         @Override

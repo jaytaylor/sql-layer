@@ -342,9 +342,10 @@ public class ProtobufReaderWriterTest {
     
     @Test
     public void sequenceSimple () {
+        TableName seqName = new TableName (SCHEMA, "Sequence-1");
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.defaultSchema(SCHEMA);
-        builder.sequence("Sequence-1");
+        builder.sequence(seqName.getTableName());
         AkibanInformationSchema inAIS = builder.ais();
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "Sequence-1")));
@@ -354,7 +355,7 @@ public class ProtobufReaderWriterTest {
         assertEquals(Long.MIN_VALUE, sequence.getMinValue());
         assertEquals(Long.MAX_VALUE, sequence.getMaxValue());
         assertTrue(!sequence.isCycle());
-        assertNull (sequence.getTreeName());
+        assertNotNull (sequence.getTreeName());
         assertNull (sequence.getAccumIndex());
     }
     
@@ -370,7 +371,7 @@ public class ProtobufReaderWriterTest {
         assertEquals(42, sequence.getStartsWith());
         assertEquals(-2, sequence.getIncrement());
         assertTrue(sequence.isCycle());
-        assertNull (sequence.getTreeName());
+        assertNotNull (sequence.getTreeName());
         assertNull (sequence.getAccumIndex());
     }
     

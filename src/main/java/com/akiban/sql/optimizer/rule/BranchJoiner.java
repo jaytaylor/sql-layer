@@ -267,15 +267,18 @@ public class BranchJoiner extends BaseRule
         List<TableSource> tableSources = new ArrayList<TableSource>();
         List<TableNode> tableNodes = new ArrayList<TableNode>();
         List<JoinType> joinTypes = new ArrayList<JoinType>();
+        JoinType joinType = null;
         ConditionList joinConditions = new ConditionList(0);
         TableGroupJoinNode table = leafTable;
         while (true) {
             if (isRequired(table)) {
                 assert !isPending(table);
+                if (joinType != null) 
+                    joinTypes.add(joinType);
                 tableSources.add(table.getTable());
                 tableNodes.add(table.getTable().getTable());
                 if (table != rootTable) {
-                    joinTypes.add(table.getParentJoinType());
+                    joinType = table.getParentJoinType();
                     if (table.getJoinConditions() != null) {
                         for (ConditionExpression joinCondition : table.getJoinConditions()) {
                             if (joinCondition.getImplementation() != ConditionExpression.Implementation.GROUP_JOIN) {

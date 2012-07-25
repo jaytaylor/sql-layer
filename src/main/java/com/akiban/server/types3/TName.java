@@ -53,6 +53,10 @@ public final class TName {
     public TBundleID bundleId() {
         return bundleID;
     }
+    
+    public String categoryName() {
+        return (category == null) ? "OTHER" : category.name();
+    }
 
     // object interface
 
@@ -77,14 +81,16 @@ public final class TName {
         return bundleID + "_ " + name;
     }
 
-    public TName(TBundleID bundleID, String name) {
+    public TName(TBundleID bundleID, String name, Enum<?> category) {
         ArgumentValidation.notNull("bundle", bundleID);
         ArgumentValidation.notNull("name", name);
         this.bundleID = bundleID;
         this.name = normalizeName(name);
+        this.category = category;
     }
 
     private final TBundleID bundleID;
     private final String name;
+    private final Enum<?> category;
     private static final Pattern WORD_VALIDATION = Pattern.compile("[a-zA-Z][a-zA-Z0-9]*");
 }

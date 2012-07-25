@@ -71,29 +71,6 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
     }
 
     @Override
-    public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f) {
-        PValueSource loValueSource = loExpressions.pvalue(f);
-        PValueSource hiValueSource = hiExpressions.pvalue(f);
-        if (loValueSource.isNull() && hiValueSource.isNull()) {
-            // OK, they're equal
-        } else if (loValueSource.isNull() || hiValueSource.isNull()) {
-            throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
-        } else {
-            TPreparedExpression loEQHi =
-                    new TComparisonExpression(
-                            new TPreparedLiteral(null, loValueSource),
-                            Comparison.EQ,
-                            new TPreparedLiteral(null, hiValueSource)
-                    );
-            TEvaluatableExpression eval = loEQHi.build();
-            eval.evaluate();
-            if (!eval.resultValue().getBoolean()) {
-                throw new IllegalArgumentException();
-            }
-        }
-    }
-
-    @Override
     public PValueSource[] createSourceArray(int size) {
         return new PValueSource[size];
     }
@@ -120,8 +97,7 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
 
     @Override
     public long compare(TInstance tInstance, PValueSource one, PValueSource two) {
-        TClass tClass = tInstance.typeClass();
-        return tClass.compare(tInstance, one, tInstance, two);
+        return TClass.compare(tInstance, one, tInstance, two);
     }
 
     @Override
@@ -153,15 +129,12 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
         public void append(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances,
                            AkCollator[] collators)
         {
-            TInstance tInstance = tInstances[f];
-            target.expectingType(source.getUnderlyingType());
-            append(source, null, tInstance, null);
+            append(source, null, tInstances[f], null);
         }
 
         @Override
         public void append(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
-            TClass tClass = tInstance.typeClass();
-            tClass.writeCollating(source, tInstance, target);
+            tInstance.writeCollating(source, target);
         }
 
         @Override

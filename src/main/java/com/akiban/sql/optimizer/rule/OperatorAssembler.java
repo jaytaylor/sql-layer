@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
@@ -140,6 +141,8 @@ public class OperatorAssembler extends BaseRule
         List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
                                          ColumnExpressionToIndex fieldOffsets);
         T[] createNulls(Index index, int nkeys);
+        Operator ifEmptyNulls(Operator input, RowType rowType,
+                              InputPreservationOption inputPreservation);
     }
 
     private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Object>() {
@@ -195,6 +198,12 @@ public class OperatorAssembler extends BaseRule
 
         @Override
         public Object[] createNulls(Index index, int nkeys) {
+            return null;
+        }
+
+        @Override
+        public Operator ifEmptyNulls(Operator input, RowType rowType,
+                                     InputPreservationOption inputPreservation) {
             return null;
         }
     };
@@ -271,6 +280,16 @@ public class OperatorAssembler extends BaseRule
                                                              RowType innerRowType,
                                                              int bindingPosition);
             protected abstract T field(RowType rowType, int position);
+            protected abstract T nullExpression(RowType rowType, int i);
+
+
+            protected List<? extends T> createNulls(RowType rowType) {
+                int nfields = rowType.nFields();
+                List<T> result = new ArrayList<T>(nfields);
+                for (int i = 0; i < nfields; ++i)
+                    result.add(nullExpression(rowType, i));
+                return result;
+            }
 
             @Override
             public T assembleSubqueryExpression(SubqueryExpression sexpr) {
@@ -421,6 +440,17 @@ public class OperatorAssembler extends BaseRule
             protected Expression[] array(int size) {
                 return new Expression[size];
             }
+
+            @Override
+            public Operator ifEmptyNulls(Operator input, RowType rowType,
+                                         InputPreservationOption inputPreservation) {
+                return API.ifEmpty_Default(input, rowType, createNulls(rowType), null, inputPreservation);
+            }
+
+            @Override
+            protected Expression nullExpression(RowType rowType, int i) {
+                return LiteralExpression.forNull();
+            }
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
@@ -478,6 +508,17 @@ public class OperatorAssembler extends BaseRule
             @Override
             protected TPreparedExpression[] array(int size) {
                 return new TPreparedExpression[size];
+            }
+
+            @Override
+            public Operator ifEmptyNulls(Operator input, RowType rowType,
+                                         InputPreservationOption inputPreservation) {
+                return API.ifEmpty_Default(input, rowType, null, createNulls(rowType), inputPreservation);
+            }
+
+            @Override
+            protected TPreparedExpression nullExpression(RowType rowType, int i) {
+                return new TNullExpression(rowType.typeInstanceAt(i));
             }
         }
 
@@ -1251,9 +1292,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleNullIfEmpty(RowStream stream) {
-            Expression[] nulls = new Expression[stream.rowType.nFields()];
-            Arrays.fill(nulls, LiteralExpression.forNull());
-            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.KEEP_INPUT);
+            stream.operator = partialAssembler.ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.KEEP_INPUT);
             return stream;
         }
 
@@ -1264,9 +1303,7 @@ public class OperatorAssembler extends BaseRule
             // figure out an interesting non-null value for each
             // AkType in the row. All that really matters is that the
             // row is there.
-            Expression[] nulls = new Expression[stream.rowType.nFields()];
-            Arrays.fill(nulls, LiteralExpression.forNull());
-            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.DISCARD_INPUT);
+            stream.operator = partialAssembler.ifEmptyNulls(stream.operator, stream.rowType, API.InputPreservationOption.DISCARD_INPUT);
             return stream;
         }
 

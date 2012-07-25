@@ -86,7 +86,8 @@ public class AISBuilder {
             long start, long increment,
             long minValue, long maxValue, boolean cycle) {
         LOG.info("sequence: {}.{} ", schemaName,sequenceName);
-        Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
+        Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
+        identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
     }
     
     public void userTable(String schemaName, String tableName) {
@@ -139,7 +140,6 @@ public class AISBuilder {
         column.setDefaultIdentity(defaultIdentity);
         Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
         column.setIdentityGenerator(identityGenerator);
-        identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
     }
 
     public void index(String schemaName, String tableName, String indexName,
@@ -305,14 +305,19 @@ public class AISBuilder {
 
     // API for describing groups
 
-    public void createGroup(String groupName, String groupSchemaName,
-            String groupTableName) {
-        LOG.info("createGroup: " + groupName + " -> " + groupSchemaName + "."
-                + groupTableName);
-        GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);
+    public void createGroup(String groupName, String groupSchemaName, String groupTableName) {
+        createGroup(groupName, groupSchemaName, groupTableName, tableIdGenerator++);
+    }
+
+    public void createGroup(String groupName, String groupSchemaName, String groupTableName, int groupTableID) {
+        LOG.info("createGroup: {} -> {}.{} ({})", new Object[]{groupName, groupSchemaName, groupTableName, groupTableID});
+        GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, groupTableID);
         Group group = Group.create(ais, groupName);
         groupTable.setGroup(group);
         groupTable.setTreeName(nameGenerator.generateGroupTreeName(group));
+        if(tableIdGenerator <= groupTableID) {
+            tableIdGenerator = groupTableID + 1;
+        }
     }
 
     public void deleteGroup(String groupName) {

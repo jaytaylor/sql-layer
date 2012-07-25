@@ -43,6 +43,7 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.SubqueryExpression;
 import org.slf4j.Logger;
 
@@ -51,6 +52,8 @@ import java.util.Arrays;
 import java.util.List;
 
 abstract class ExpressionAssembler<T> {
+
+    public abstract ConstantExpression evalNow(PlanContext planContext, ExpressionNode node);
 
     protected abstract T assembleFunction(ExpressionNode functionNode,
                                           String functionName,

@@ -557,9 +557,17 @@ public class API
 
     public static Operator ifEmpty_Default(Operator input, RowType rowType,
                                            List<? extends Expression> expressions,
+                                           List<? extends TPreparedExpression> pExpressions,
                                            InputPreservationOption inputPreservation)
     {
-        return new IfEmpty_Default(input, rowType, expressions, inputPreservation);
+        return new IfEmpty_Default(input, rowType, expressions, pExpressions, inputPreservation);
+    }
+
+    public static Operator ifEmpty_Default(Operator input, RowType rowType,
+                                           List<? extends Expression> expressions,
+                                           InputPreservationOption inputPreservation)
+    {
+        return new IfEmpty_Default(input, rowType, expressions, null, inputPreservation);
     }
 
     // Union

@@ -26,14 +26,22 @@
 
 package com.akiban.server.types3.common.types;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.StringTruncationException;
-import com.akiban.server.types3.*;
+import com.akiban.server.expression.std.ExpressionTypes;
+import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TClassFormatter;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
@@ -51,6 +59,7 @@ public abstract class TString extends TClass
     {
         super(bundle.id(),
                 name,
+                AkCategory.STRING_CHAR,
                 StringAttribute.class,
                 FORMAT.STRING,
                 1,
@@ -68,6 +77,16 @@ public abstract class TString extends TClass
                 out.append(source.getString());
             }
         }
+    }
+
+    @Override
+    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+        CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
+        CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
+        AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
+        if (collator == null)
+            throw new AkibanInternalException("couldn't merge collators for " + instanceA + " and " + instanceB);
+        return collator.compare(sourceA.getString(), sourceB.getString());
     }
 
     @Override
@@ -114,7 +133,7 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public void putSafety(QueryContext context, 
+    public void putSafety(TExecutionContext context, 
                           TInstance sourceInstance,
                           PValueSource sourceValue,
                           TInstance targetInstance,

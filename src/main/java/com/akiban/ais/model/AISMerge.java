@@ -105,11 +105,8 @@ public class AISMerge {
         LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
 
         final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
-        if(TableName.INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName())) {
-            builder.setTableIdOffset(getISTableIdOffset());
-        } else {
-            builder.setTableIdOffset(getUserTableIDOffset(sourceTable.getName()));
-        }
+        final boolean isISTable = TableName.INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName());
+        builder.setTableIdOffset(isISTable ? getISTableIdOffset() : getUserTableIDOffset(sourceTable.getName()));
 
         if (sourceTable.getParentJoin() != null) {
             String parentSchemaName = sourceTable.getParentJoin().getParent().getName().getSchemaName();
@@ -132,8 +129,9 @@ public class AISMerge {
             builder.basicSchemaIsComplete();            
             builder.createGroup(groupName, 
                     sourceTable.getName().getSchemaName(), 
-                    groupTableName);
-            builder.addTableToGroup(groupName, 
+                    groupTableName,
+                    getNextTableID(isISTable));
+            builder.addTableToGroup(groupName,
                     sourceTable.getName().getSchemaName(), 
                     sourceTable.getName().getTableName());
         } else {
@@ -309,6 +307,11 @@ public class AISMerge {
         while(isTableIDSet.contains(nextID) || userTableIDSet.contains(nextID)) {
             nextID += 1;
         }
+        if(isISTable) {
+            isTableIDSet.add(nextID);
+        } else {
+            userTableIDSet.add(nextID);
+        }
         return nextID;
     }
 
@@ -410,4 +413,14 @@ public class AISMerge {
         }
         newAIS.addView(newView);
     }
+    
+    public static AkibanInformationSchema mergeSequence (AkibanInformationSchema oldAIS,
+                                                            Sequence sequence)
+    {
+        AkibanInformationSchema newAIS = copyAIS (oldAIS);
+        newAIS.addSequence(sequence);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }    
 }

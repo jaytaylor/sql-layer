@@ -70,25 +70,6 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
     }
 
     @Override
-    public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f) {
-        ValueSource loValueSource = loExpressions.eval(f);
-        ValueSource hiValueSource = hiExpressions.eval(f);
-        if (loValueSource.isNull() && hiValueSource.isNull()) {
-            // OK, they're equal
-        } else if (loValueSource.isNull() || hiValueSource.isNull()) {
-            throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
-        } else {
-            Expression loEQHi =
-                    Expressions.compare(Expressions.valueSource(loValueSource),
-                            Comparison.EQ,
-                            Expressions.valueSource(hiValueSource));
-            if (!loEQHi.evaluation().eval().getBool()) {
-                throw new IllegalArgumentException();
-            }
-        }
-    }
-
-    @Override
     public ValueSource[] createSourceArray(int size) {
         return new ValueSource[size];
     }
