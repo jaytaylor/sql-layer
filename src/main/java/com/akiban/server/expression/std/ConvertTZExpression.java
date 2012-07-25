@@ -65,7 +65,6 @@ public class ConvertTZExpression extends AbstractTernaryExpression
             
             return ExpressionTypes.DATETIME;
         }
-        
     };
 
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
@@ -85,10 +84,10 @@ public class ConvertTZExpression extends AbstractTernaryExpression
                     || (to = third()).isNull())
                 return NullValueSource.only();
 
-            if (dt.getDateTime() / 1000000 == 0L) // zero date
-                return NullValueSource.only();
-
             long ymd[] = Extractors.getLongExtractor(AkType.DATETIME).getYearMonthDayHourMinuteSecond(dt.getDateTime());
+            
+            if (ymd[0] * ymd[1] * ymd[2] == 0L) // zero dates. (year of 0 is not tolerated)
+                return NullValueSource.only();
 
             String fromTz = adjustTz(from.getString());
             String toTz = adjustTz(to.getString());
@@ -108,6 +107,16 @@ public class ConvertTZExpression extends AbstractTernaryExpression
             return valueHolder();
         }
         
+        /**
+         * joda datetimezone is in the form:
+         * [<PLUS>] | <MINUS>]<NUMBER><NUMBER><COLON><NUMBER><NUMBER>
+         * 
+         * 1 digit number is not use.
+         * 
+         * This prepend 0 to make it 2 digit number
+         * @param st
+         * @return 
+         */
         static String adjustTz(String st)
         {
             if (!st.isEmpty() && st.contains(":"))
