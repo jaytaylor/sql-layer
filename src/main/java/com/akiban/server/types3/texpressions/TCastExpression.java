@@ -69,11 +69,12 @@ public final class TCastExpression implements TPreparedExpression {
         return input.toString(); // for backwards compatibility in OperatorCompilerTest, don't actually print the cast
     }
 
-    public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance) {
+    public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance, QueryContext queryContext) {
         this.input = input;
         this.cast = cast;
         this.targetInstance = targetInstance;
-        this.preptimeContext = new TPreptimeContext(Collections.singletonList(input.resultType()), targetInstance);
+        this.preptimeContext = new TPreptimeContext(Collections.singletonList(input.resultType()), targetInstance,
+                queryContext);
     }
 
 

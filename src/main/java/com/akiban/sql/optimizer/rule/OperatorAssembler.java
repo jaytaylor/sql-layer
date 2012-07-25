@@ -31,6 +31,7 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
@@ -454,8 +455,8 @@ public class OperatorAssembler extends BaseRule
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
-            private NewPartialAssembler(RulesContext context) {
-                super(new NewExpressionAssembler(context));
+            private NewPartialAssembler(RulesContext context, QueryContext queryContext) {
+                super(new NewExpressionAssembler(context, queryContext));
             }
 
             @Override
@@ -536,7 +537,7 @@ public class OperatorAssembler extends BaseRule
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
             if (usePValues) {
-                newPartialAssembler = new NewPartialAssembler(rulesContext);
+                newPartialAssembler = new NewPartialAssembler(rulesContext, this.planContext.getQueryContext());
                 oldPartialAssembler = nullAssembler();
                 partialAssembler = newPartialAssembler;
             }
