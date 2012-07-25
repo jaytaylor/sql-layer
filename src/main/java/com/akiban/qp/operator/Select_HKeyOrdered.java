@@ -300,7 +300,7 @@ class Select_HKeyOrdered extends Operator
             this.input = input;
             if (predicate == null) {
                 this.evaluation = null;
-                this.pEvaluation = pPredicate.build(null);
+                this.pEvaluation = pPredicate.build();
             }
             else {
                 this.evaluation = predicate.evaluation();

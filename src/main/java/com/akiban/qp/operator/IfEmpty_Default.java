@@ -326,7 +326,7 @@ class IfEmpty_Default extends Operator
                 this.oEvaluations = null;
                 this.pEvaluations = new ArrayList<TEvaluatableExpression>(pExpressions.size());
                 for (TPreparedExpression outerJoinRowExpressions : pExpressions) {
-                    TEvaluatableExpression eval = outerJoinRowExpressions.build(null);
+                    TEvaluatableExpression eval = outerJoinRowExpressions.build();
                     pEvaluations.add(eval);
                 }
             } else {
