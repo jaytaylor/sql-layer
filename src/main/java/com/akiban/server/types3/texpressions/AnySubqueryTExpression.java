@@ -27,7 +27,6 @@
 package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types3.TInstance;
@@ -43,8 +42,8 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
     }
 
     @Override
-    public TEvaluatableExpression build(QueryContext queryContext) {
-        TEvaluatableExpression child = expression.build(queryContext);
+    public TEvaluatableExpression build() {
+        TEvaluatableExpression child = expression.build();
         return new InnerEvaluatable(subquery(), child, outerRowType(), innerRowType(), bindingPosition());
     }
 

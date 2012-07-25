@@ -45,8 +45,8 @@ public final class TPreparedBoundField implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build(QueryContext queryContext) {
-        return new InnerEvaluation(fieldExpression.build(queryContext), rowPosition);
+    public TEvaluatableExpression build() {
+        return new InnerEvaluation(fieldExpression.build(), rowPosition);
     }
 
     @Override

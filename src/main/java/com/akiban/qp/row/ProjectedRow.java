@@ -152,7 +152,7 @@ public class ProjectedRow extends AbstractRow
             return null;
         List<PValueSource> result = new ArrayList<PValueSource>(pExpressions.size());
         for (TPreparedExpression expression : pExpressions) {
-            TEvaluatableExpression eval = expression.build(context);
+            TEvaluatableExpression eval = expression.build();
             eval.with(row);
             eval.with(context);
             eval.evaluate();

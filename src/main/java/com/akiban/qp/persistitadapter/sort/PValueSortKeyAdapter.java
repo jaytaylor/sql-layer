@@ -110,7 +110,7 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
 
     @Override
     public boolean evaluateComparison(TPreparedExpression comparison, QueryContext queryContext) {
-        TEvaluatableExpression eval = comparison.build(queryContext);
+        TEvaluatableExpression eval = comparison.build();
         eval.evaluate();
         return eval.resultValue().getBoolean();
     }

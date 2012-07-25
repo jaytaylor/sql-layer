@@ -46,7 +46,7 @@ public final class TPreparedField implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build(QueryContext queryContext) {
+    public TEvaluatableExpression build() {
         return new Evaluation(typeInstance.typeClass().underlyingType(), fieldIndex);
     }
 

@@ -58,7 +58,7 @@ public class ExpressionRow extends AbstractRow
             assert expressions == null : "can't have both types be non-null";
             this.pEvaluations = new ArrayList<TEvaluatableExpression>(pExpressions.size());
             for (TPreparedExpression expression : pExpressions) {
-                TEvaluatableExpression evaluation = expression.build(context);
+                TEvaluatableExpression evaluation = expression.build();
                 evaluation.with(context);
                 this.pEvaluations.add(evaluation);
             }

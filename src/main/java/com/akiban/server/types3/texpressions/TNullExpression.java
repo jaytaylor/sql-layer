@@ -45,7 +45,7 @@ public final class TNullExpression implements TPreparedExpression {
 
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
-        TEvaluatableExpression eval = build(queryContext);
+        TEvaluatableExpression eval = build();
         return new TPreptimeValue(tInstance, eval.resultValue());
     }
 
@@ -55,7 +55,7 @@ public final class TNullExpression implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build(QueryContext queryContext) {
+    public TEvaluatableExpression build() {
         TEvaluatableExpression result = evaluationsByUnderlying.get(tInstance.typeClass().underlyingType());
         assert result != null : tInstance;
         return result;

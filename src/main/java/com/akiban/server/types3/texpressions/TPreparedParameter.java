@@ -49,7 +49,7 @@ public final class TPreparedParameter implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build(QueryContext queryContext) {
+    public TEvaluatableExpression build() {
         return new InnerEvaluation(position, tInstance);
     }
 

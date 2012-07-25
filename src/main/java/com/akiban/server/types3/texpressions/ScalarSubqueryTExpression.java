@@ -27,7 +27,6 @@
 package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.SubqueryTooManyRowsException;
@@ -57,7 +56,7 @@ public class ScalarSubqueryTExpression extends SubqueryTExpression
                 out.putNull();
             else
             {
-                TEvaluatableExpression eval = expression.build(queryContext());
+                TEvaluatableExpression eval = expression.build();
                 
                 eval.with(queryContext());
                 eval.with(row);
@@ -90,7 +89,7 @@ public class ScalarSubqueryTExpression extends SubqueryTExpression
     }
 
     @Override
-    public TEvaluatableExpression build(QueryContext queryContext)
+    public TEvaluatableExpression build()
     {
         return new InnerEvaluation(subquery(),
                                    expression,

@@ -55,8 +55,8 @@ public final class TCastExpression implements TPreparedExpression {
     }
 
     @Override
-    public TEvaluatableExpression build(QueryContext queryContext) {
-        return new CastEvaluation(input.build(queryContext), cast);
+    public TEvaluatableExpression build() {
+        return new CastEvaluation(input.build(), cast);
     }
 
     @Override
