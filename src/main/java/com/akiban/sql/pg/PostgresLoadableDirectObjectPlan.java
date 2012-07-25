@@ -43,8 +43,8 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
 
     private Object[] args;
     private DirectObjectPlan plan;
-    private boolean useCopy;
     private boolean usePVals;
+    private DirectObjectPlan.OutputMode outputMode;
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
                                                Object[] args, boolean usePVals)
@@ -55,8 +55,8 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
         this.args = args;
 
         plan = loadablePlan.plan();
-        useCopy = plan.useCopyData();
         this.usePVals = usePVals;
+        outputMode = plan.getOutputMode();
     }
     
     @Override
@@ -84,8 +84,8 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     @Override
     public void sendDescription(PostgresQueryContext context, boolean always)
             throws IOException {
-        // The copy case will be handled below.
-        if (!useCopy)
+        // The copy cases will be handled below.
+        if (outputMode == DirectObjectPlan.OutputMode.TABLE)
             super.sendDescription(context, always);
     }
 
@@ -103,12 +103,16 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
             cursor = plan.cursor(context);
             cursor.open();
             List<?> row;
-            if (useCopy) {
-                outputter = copier = new PostgresDirectObjectCopier(context, this);
-                copier.respond();
-            }
-            else
+            switch (outputMode) {
+            case TABLE:
                 outputter = new PostgresDirectObjectOutputter(context, this);
+                break;
+            case COPY:
+            case COPY_WITH_NEWLINE:
+                outputter = copier = new PostgresDirectObjectCopier(context, this, (outputMode == DirectObjectPlan.OutputMode.COPY_WITH_NEWLINE));
+                copier.respond();
+                break;
+            }
             while ((row = cursor.next()) != null) {
                 if (row.isEmpty()) {
                     messenger.flush();
@@ -120,7 +124,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
             }
-            if (useCopy) {
+            if (copier != null) {
                 copier.done();
             }
         }
@@ -131,7 +135,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            if (useCopy)
+            if (copier != null)
                 messenger.writeString("COPY"); // Make CopyManager happy.
             else
                 messenger.writeString("CALL " + nrows);

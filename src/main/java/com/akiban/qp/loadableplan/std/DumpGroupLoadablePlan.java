@@ -65,9 +65,9 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
 
             @Override
-            public boolean useCopyData() {
+            public OutputMode getOutputMode() {
                 // Output as raw text, not rows.
-                return true;
+                return OutputMode.COPY;
             }
         };
     }
@@ -106,7 +106,14 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             cursor.open();
             tableSizes = new HashMap<UserTable,Integer>();
             buffer = new StringBuilder();
-            formatter = new SQLRowFormatter(buffer, currentSchema);
+            int insertMaxRowCount;
+            try {
+                insertMaxRowCount = (int)context.getValue(2).getLong();
+            }
+            catch (BindingNotSetException ex) {
+                insertMaxRowCount = 1;
+            }
+            formatter = new SQLRowFormatter(buffer, currentSchema, insertMaxRowCount);
             messagesSent = 0;
         }
 
@@ -135,8 +142,8 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 }
                 if ((buffer.length() >= CHARS_PER_MESSAGE))
                     break;
-                buffer.append('\n');
             }
+            formatter.flush();
             if (buffer.length() > 0) {
                 String str = buffer.toString();
                 buffer.setLength(0);
@@ -177,28 +184,57 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         }
 
         public abstract void appendRow(RowType rowType, Row row, int ncols) throws IOException;
+        public void flush() {
+        }
     }
 
     public static class SQLRowFormatter extends GroupRowFormatter {
         private Map<UserTable,String> tableNames = new HashMap<UserTable,String>();
+        private int maxRowCount;
         private SqlLiteralValueFormatter literalFormatter;
+        private RowType lastRowType;
+        private int rowCount, insertWidth;
 
-        SQLRowFormatter(StringBuilder buffer, String currentSchema) {
+        SQLRowFormatter(StringBuilder buffer, String currentSchema, int maxRowCount) {
             super(buffer, currentSchema);
+            this.maxRowCount = maxRowCount;
             literalFormatter = new SqlLiteralValueFormatter(buffer);
         }
 
         @Override
         public void appendRow(RowType rowType, Row row, int ncols) throws IOException {
-            buffer.append("INSERT INTO ");
-            buffer.append(tableName(rowType.userTable()));
-            buffer.append(" VALUES(");
+            if ((lastRowType == rowType) &&
+                (rowCount++ < maxRowCount)) {
+                buffer.append(",\n");
+                for (int i = 0; i < insertWidth; i++) {
+                    buffer.append(' ');
+                }
+            }
+            else {
+                flush();
+                int pos = buffer.length();
+                buffer.append("INSERT INTO ");
+                buffer.append(tableName(rowType.userTable()));
+                buffer.append(" VALUES");
+                insertWidth = buffer.length() - pos;
+                lastRowType = rowType;
+                rowCount = 1;
+            }
+            buffer.append('(');
             ncols = Math.min(ncols, rowType.nFields());
             for (int i = 0; i < ncols; i++) {
                 if (i > 0) buffer.append(", ");
                 literalFormatter.append(row.eval(i), rowType.typeAt(i));
             }
-            buffer.append(");");
+            buffer.append(')');
+        }
+
+        public void flush() {
+            if (rowCount > 0) {
+                buffer.append(";\n");
+                lastRowType = null;
+                rowCount = 0;
+            }
         }
 
         protected String tableName(UserTable table) {
