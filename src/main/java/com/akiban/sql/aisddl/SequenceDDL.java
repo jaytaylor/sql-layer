@@ -29,7 +29,6 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.DropSequenceNode;
@@ -41,18 +40,18 @@ public class SequenceDDL {
                                     Session session,
                                     String defaultSchemaName,
                                     CreateSequenceNode createSequence) {
-        final String schemaName = createSequence.getObjectName().getSchemaName() != null ? createSequence.getObjectName().getSchemaName() : defaultSchemaName;
         
+        final TableName sequenceName = DDLHelper.convertName(defaultSchemaName, createSequence.getObjectName());
+                
         AISBuilder builder = new AISBuilder();
-        builder.sequence(schemaName, 
-                createSequence.getObjectName().getTableName(), 
+        builder.sequence(sequenceName.getSchemaName(), 
+                sequenceName.getTableName(), 
                 createSequence.getInitialValue(), 
                 createSequence.getStepValue(), 
                 createSequence.getMinValue(), 
                 createSequence.getMaxValue(), 
                 createSequence.isAtomic());
         
-        final TableName sequenceName = new TableName(schemaName, createSequence.getObjectName().getTableName());
         Sequence sequence = builder.akibanInformationSchema().getSequence(sequenceName);
         ddlFunctions.createSequence(session, sequence);
     }
@@ -64,11 +63,12 @@ public class SequenceDDL {
         final String schemaName = dropSequence.getObjectName().getSchemaName() != null ? dropSequence.getObjectName().getSchemaName() : defaultSchemaName;
         final TableName sequenceName = TableName.create(schemaName, dropSequence.getObjectName().getTableName());
         
-        Sequence sequence = ddlFunctions.getAIS(session).getSequence(sequenceName);
-        
-        if (sequence == null) {
-            throw new NoSuchSequenceException (sequenceName);
-        }
-        ddlFunctions.dropSequence(session, sequence);
+        // TODO: Re-enable this when the IF [NOT] EXIST checking needs to be done
+        // And is put in to the parser and parser nodes. 
+        //
+        //if (sequence == null) {
+        //    throw new NoSuchSequenceException (sequenceName);
+        //}
+        ddlFunctions.dropSequence(session, sequenceName);
     }
 }

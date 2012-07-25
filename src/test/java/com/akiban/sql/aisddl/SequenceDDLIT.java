@@ -28,6 +28,7 @@ package com.akiban.sql.aisddl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 import org.postgresql.util.PSQLException;
@@ -60,6 +61,43 @@ public class SequenceDDLIT extends PostgresServerITBase {
         assertEquals (0, ais.getSequences().size());
     }
 
+    @Test 
+    public void duplicateSequence() throws Exception {
+        String sql = "CREATE SEQUENCE test.new_sequence";
+        getConnection().createStatement().execute(sql);
+        AkibanInformationSchema ais = ddlServer().getAIS(session());
+        assertNotNull (ais.getSequence(new TableName ("test", "new_sequence")));
+
+        try {
+            getConnection().createStatement().execute(sql);
+            fail ("Duplicate Sequence not checked");
+        } catch (PSQLException ex) {
+            assertEquals("ERROR: Sequence `test`.`new_sequence` already exists", ex.getMessage());
+        }
+
+        sql = "DROP SEQUENCE test.new_sequence restrict";
+        getConnection().createStatement().execute(sql);
+        ais = ddlServer().getAIS(session());
+        assertEquals (0, ais.getSequences().size());
+
+    }
+    
+    @Test (expected=PSQLException.class)
+    public void doubleDropSequence() throws Exception {
+        String sql = "CREATE SEQUENCE test.new_sequence";
+        getConnection().createStatement().execute(sql);
+        AkibanInformationSchema ais = ddlServer().getAIS(session());
+        assertNotNull (ais.getSequence(new TableName ("test", "new_sequence")));
+
+        sql = "DROP SEQUENCE test.new_sequence restrict";
+        getConnection().createStatement().execute(sql);
+        ais = ddlServer().getAIS(session());
+        assertEquals (0, ais.getSequences().size());
+
+        // fails for the second one due to non-existence of the sequence. 
+        getConnection().createStatement().execute(sql);
+    }
+    
     protected DDLFunctions ddlServer() {
         return serviceManager().getDXL().ddlFunctions();
     }

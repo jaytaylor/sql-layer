@@ -228,19 +228,21 @@ public class ASTStatementLoader extends BaseRule
                                         fetchFirstClause);
             else if (resultSet instanceof RowResultSetNode) {
                 List<ExpressionNode> row = toExpressionsRow(resultSet);
-                List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
+                List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>(1);
                 rows.add(row);
+                return new ExpressionsSource(rows);
+            }
+            else if (resultSet instanceof RowsResultSetNode) {
+                List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
+                for (ResultSetNode row : ((RowsResultSetNode)resultSet).getRows()) {
+                    rows.add(toExpressionsRow(row));
+                }
                 return new ExpressionsSource(rows);
             }
             else if (resultSet instanceof UnionNode) {
                 UnionNode union = (UnionNode)resultSet;
                 boolean all = union.isAll();
                 PlanNode left = toQueryForSelect(union.getLeftResultSet());
-                if (all &&
-                    (left instanceof ExpressionsSource) &&
-                    ((union.getRightResultSet() instanceof RowResultSetNode) ||
-                     (union.getRightResultSet() instanceof UnionNode)))
-                    return addMoreExpressions((ExpressionsSource)left, union);
                 PlanNode right = toQueryForSelect(union.getRightResultSet());
                 return new Union(left, right, all);
             }
@@ -346,33 +348,6 @@ public class ASTStatementLoader extends BaseRule
                 row.add(toExpression(resultColumn.getExpression()));
             }
             return row;
-        }
-
-        /** If start with VALUES, handle more of them right recursively
-         * without using the stack. */
-        protected PlanNode addMoreExpressions(ExpressionsSource into,
-                                              UnionNode union) throws StandardException {
-            while (true) {
-                // The left is already in and this is a UNION ALL.
-                if (union.getRightResultSet() instanceof RowResultSetNode) {
-                    // Last row.
-                    into.getExpressions().add(toExpressionsRow(union.getRightResultSet()));
-                    return into;
-                }
-                if (!(union.getRightResultSet() instanceof UnionNode)) {
-                    return new Union(into, 
-                                     toQueryForSelect(union.getRightResultSet()), 
-                                     true);
-                }
-                union = (UnionNode)union.getRightResultSet();
-                if (!union.isAll() ||
-                    !((union.getLeftResultSet() instanceof RowResultSetNode))) {
-                    return new Union(into,
-                                     toQueryForSelect(union),
-                                     true);
-                }
-                into.getExpressions().add(toExpressionsRow(union.getLeftResultSet()));
-            }
         }
 
         /** The common top-level join and select part of all statements. */

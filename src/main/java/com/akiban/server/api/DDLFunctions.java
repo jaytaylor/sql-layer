@@ -219,5 +219,5 @@ public interface DDLFunctions {
      * @param session
      * @param sequence
      */
-    void dropSequence(Session session, Sequence sequence);
+    void dropSequence(Session session, TableName sequenceName);
 }

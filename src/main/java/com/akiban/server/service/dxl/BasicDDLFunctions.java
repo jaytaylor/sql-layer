@@ -58,6 +58,7 @@ import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.PersistitAdapterException;
@@ -506,7 +507,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().createSequence (session, sequence);
     }
    
-    public void dropSequence(Session session, Sequence sequence) {
+    public void dropSequence(Session session, TableName sequenceName) {
+        final Sequence sequence = getAIS(session).getSequence(sequenceName);
+        
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        
         store().deleteSequences(session, Collections.singleton(sequence));
         schemaManager().dropSequence(session, sequence);
     }
