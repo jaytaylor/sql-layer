@@ -28,6 +28,9 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
@@ -1297,6 +1300,30 @@ public class ASTStatementLoader extends BaseRule
                                             toExpression(cond.getThenNode(), projects),
                                             toExpression(cond.getElseNode(), projects),
                                             cond.getType(), cond);
+            }
+            else if (valueNode instanceof NextSequenceNode) {
+                NextSequenceNode seqNode = (NextSequenceNode)valueNode;
+                List<ExpressionNode> params = new ArrayList<ExpressionNode>(2);
+
+                // Extract the (potential) schema name as the first parameter
+                if (seqNode.getSequenceName().hasSchema()) {
+                    String schema = seqNode.getSequenceNode().getSchemaName();    
+                    params.add(new ConstantExpression(
+                            new TPreptimeValue(MString.VARCHAR.instance(schema.length()), new PValue(schema))));
+                } else {
+                    String schema = null;
+                    PValue value = new PValue (schema);
+                    value.putNull();
+                    params.add(new ConstantExpression(
+                            new TPreptimeValue(MString.VARCHAR.instance(0), value)));
+                }
+                // Extract the schema name as the second parameter
+                String sequence = seqNode.getSequenceName().getTableName();
+                params.add(new ConstantExpression(
+                        new TPreptimeValue(MString.VARCHAR.instance(sequence.length()), new PValue(sequence))));
+                
+                return new FunctionExpression ("nextval", params,
+                                                valueNode.getType(), valueNode);
             }
             else
                 throw new UnsupportedSQLException("Unsupported operand", valueNode);
