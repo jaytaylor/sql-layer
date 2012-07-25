@@ -1,0 +1,1 @@
+insert into customers (cid, name) values (next value for test.customers_1, 'fred')

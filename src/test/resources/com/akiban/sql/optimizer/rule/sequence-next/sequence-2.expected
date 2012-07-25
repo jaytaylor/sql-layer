@@ -1,0 +1,2 @@
+InsertStatement@7fdeff8c(customers[customers.cid, customers.name])
+  ExpressionsSource@95b81ea([[nextval(test,customers_1), fred]])
