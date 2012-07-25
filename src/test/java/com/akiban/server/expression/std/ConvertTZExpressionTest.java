@@ -74,7 +74,7 @@ public class ConvertTZExpressionTest extends ComposedExpressionTestBase
         
         return b.asList();
     }
-    
+
     private static void param(ParameterizationBuilder bd, String dt, String from, String to, Long exp)
     {
         bd.add("CONVET_TZ(" + dt + ", " + from + ", " + to + ")", dt, from, to, exp);

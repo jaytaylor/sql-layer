@@ -45,7 +45,7 @@ import org.joda.time.DateTimeZone;
 public class ConvertTZExpression extends AbstractTernaryExpression
 {
     @Scalar("convert_tz")
-    public static ExpressionComposer COMPOSER = new TernaryComposer()
+    public static final ExpressionComposer COMPOSER = new TernaryComposer()
     {
         @Override
         protected Expression doCompose(List<? extends Expression> arguments, List<ExpressionType> typesList)
