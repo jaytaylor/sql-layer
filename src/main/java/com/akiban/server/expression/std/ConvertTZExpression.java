@@ -90,8 +90,8 @@ public class ConvertTZExpression extends AbstractTernaryExpression
 
             long ymd[] = Extractors.getLongExtractor(AkType.DATETIME).getYearMonthDayHourMinuteSecond(dt.getDateTime());
 
-            String fromTz = from.getString();
-            String toTz = to.getString();
+            String fromTz = adjustTz(from.getString());
+            String toTz = adjustTz(to.getString());
 
             try
             {
@@ -106,6 +106,24 @@ public class ConvertTZExpression extends AbstractTernaryExpression
                 return NullValueSource.only();
             }
             return valueHolder();
+        }
+        
+        static String adjustTz(String st)
+        {
+            if (!st.isEmpty() && st.contains(":"))
+            {
+                int index = st.length() - 5;
+                if (index < 0 )
+                    return st;
+                char ch = st.charAt(index);
+                if (ch == '-' || ch == '+')
+                {
+                    StringBuilder bd = new StringBuilder(st);
+                    bd.insert(1, '0');
+                    return bd.toString();
+                }
+            }
+            return st;
         }
     }
 

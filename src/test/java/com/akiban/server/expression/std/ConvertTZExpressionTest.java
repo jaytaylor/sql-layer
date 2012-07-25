@@ -67,9 +67,9 @@ public class ConvertTZExpressionTest extends ComposedExpressionTestBase
     {
         ParameterizationBuilder b = new ParameterizationBuilder();
         
-        param(b, "2009-12-12 00:00:00", "-06:00", "+05:00", 20091212110000L);
+        param(b, "2009-12-12 00:00:00", "-06:00", "+5:00", 20091212110000L);
         param(b, "2004-01-01 12:00:00", "GMT", "MET", 20040101130000L);
-        param(b, "2003-06-01 12:59:59", "-01:00", "+10:00", 20030601235959L);
+        param(b, "2003-06-01 12:59:59", "-1:00", "+10:00", 20030601235959L);
 
         return b.asList();
     }
