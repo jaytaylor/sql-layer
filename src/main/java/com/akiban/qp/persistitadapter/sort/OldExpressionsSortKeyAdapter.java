@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
@@ -108,7 +109,7 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
     }
 
     @Override
-    public boolean evaluateComparison(Expression comparison) {
+    public boolean evaluateComparison(Expression comparison, QueryContext queryContext) {
         return comparison.evaluation().eval().getBool();
     }
 

@@ -44,7 +44,7 @@ public final class TNullExpression implements TPreparedExpression {
     }
 
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         TEvaluatableExpression eval = build();
         return new TPreptimeValue(tInstance, eval.resultValue());
     }

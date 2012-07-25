@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -79,9 +80,11 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     private static final TValidatedOverload ifElseValidated = new TValidatedOverload(AkIfElse.INSTANCE);
 
     private OverloadResolver overloadResolver;
+    private QueryContext queryContext;
 
-    public NewExpressionAssembler(RulesContext rulesContext) {
+    public NewExpressionAssembler(RulesContext rulesContext, QueryContext queryContext) {
         this.overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
+        this.queryContext = queryContext;
     }
 
     @Override
@@ -111,7 +114,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             throw new AssertionError(functionNode);
         }
          TInstance resultInstance = functionNode.getPreptimeValue().instance();
-        return new TPreparedFunction(overload, resultInstance, arguments);
+        return new TPreparedFunction(overload, resultInstance, arguments, queryContext);
     }
 
     @Override
@@ -138,7 +141,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
                             + " to " + toType.typeClass() + ')';
                     throw new NoSuchMethodError(castName); // TODO should be a NoSuchCastError
                 }
-                expr = new TCastExpression(expr, tcast, toType);
+                expr = new TCastExpression(expr, tcast, toType, queryContext);
             }
         }
         return expr;
@@ -181,7 +184,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     protected TPreparedExpression in(TPreparedExpression lhs, List<TPreparedExpression> rhs) {
-        return TInExpression.prepare(lhs, rhs);
+        return TInExpression.prepare(lhs, rhs, queryContext);
     }
 
     @Override
@@ -221,7 +224,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;
         TPreparedExpression expr = assembleExpression(node, null, null);
-        TPreptimeValue preptimeValue = expr.evaluateConstant();
+        TPreptimeValue preptimeValue = expr.evaluateConstant(planContext.getQueryContext());
         if (preptimeValue == null)
             throw new AkibanInternalException("required constant expression: " + expr);
         PValueSource valueSource = preptimeValue.value();
