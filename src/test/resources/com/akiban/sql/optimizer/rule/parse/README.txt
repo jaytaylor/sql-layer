@@ -70,7 +70,9 @@ insert-3l: too few columns
 
 insert-3g: too many columns
 
-insert-4: too few columns
+insert-4l: too few columns (allowed)
+
+insert-4g: too many columns
 
 joins-1: complex join tree
 

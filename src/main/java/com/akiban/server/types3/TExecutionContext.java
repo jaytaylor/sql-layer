@@ -186,6 +186,10 @@ public final class TExecutionContext {
         }
     }
 
+    public void setQueryContext(QueryContext queryContext) {
+        this.queryContext = queryContext;
+    }
+
     // state
 
     public TExecutionContext(SparseArray<Object> preptimeCache,

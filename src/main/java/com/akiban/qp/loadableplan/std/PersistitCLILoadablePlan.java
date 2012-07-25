@@ -66,8 +66,8 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
             }
 
             @Override
-            public boolean useCopyData() {
-                return true;
+            public OutputMode getOutputMode() {
+                return OutputMode.COPY_WITH_NEWLINE;
             }
         };
     }

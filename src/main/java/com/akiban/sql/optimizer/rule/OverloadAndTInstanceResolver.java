@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.Column;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.LazyListBase;
@@ -100,12 +101,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private NewFolder folder;
         private OverloadResolver resolver;
-
+        private QueryContext queryContext;
 
         ResolvingVistor(PlanContext context) {
             folder = new NewFolder(context);
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             resolver = src.getOverloadResolver();
+            this.queryContext = context.getQueryContext();
         }
 
         public void resolve(PlanNode root) {
@@ -213,7 +215,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TOverloadResult overloadResultStrategy = overload.resultStrategy();
             TInstance resultInstance;
 
-            TPreptimeContext context = new TPreptimeContext(operandInstances);
+            TPreptimeContext context = new TPreptimeContext(operandInstances, queryContext);
             switch (overloadResultStrategy.category()) {
             case CUSTOM:
                 resultInstance = overloadResultStrategy.customRule().resultInstance(operandValues, context);

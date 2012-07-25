@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyPValueTarget;
@@ -108,7 +109,7 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
     }
 
     @Override
-    public boolean evaluateComparison(TPreparedExpression comparison) {
+    public boolean evaluateComparison(TPreparedExpression comparison, QueryContext queryContext) {
         TEvaluatableExpression eval = comparison.build();
         eval.evaluate();
         return eval.resultValue().getBoolean();
