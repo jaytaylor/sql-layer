@@ -46,7 +46,7 @@ public final class TPreparedLiteral implements TPreparedExpression {
     }
 
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return new TPreptimeValue(tInstance, value);
     }
 

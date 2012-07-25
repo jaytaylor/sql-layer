@@ -32,6 +32,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
@@ -473,8 +474,8 @@ public class OperatorAssembler extends BaseRule
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
-            private NewPartialAssembler(RulesContext context) {
-                super(new NewExpressionAssembler(context));
+            private NewPartialAssembler(RulesContext context, QueryContext queryContext) {
+                super(new NewExpressionAssembler(context, queryContext));
             }
 
             @Override
@@ -560,7 +561,7 @@ public class OperatorAssembler extends BaseRule
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
             if (usePValues) {
-                newPartialAssembler = new NewPartialAssembler(rulesContext);
+                newPartialAssembler = new NewPartialAssembler(rulesContext, this.planContext.getQueryContext());
                 oldPartialAssembler = nullAssembler();
                 partialAssembler = newPartialAssembler;
             }
@@ -929,7 +930,7 @@ public class OperatorAssembler extends BaseRule
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = oldPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
                 List<TPreparedExpression> tExprs = newPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
-                bindableRows.add(BindableRow.of(stream.rowType, expressions, tExprs));
+                bindableRows.add(BindableRow.of(stream.rowType, expressions, tExprs, planContext.getQueryContext()));
             }
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
