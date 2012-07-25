@@ -59,7 +59,8 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             "s", "t",
             "id int not null",
             "cs varchar(10)", // case sensitive
-            "ci varchar(10) collate latin1_swedish_ci"); // case insensitive
+            "ci varchar(10) collate latin1_swedish_ci", // case insensitive
+            "ns int"); // non-string
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
@@ -68,14 +69,19 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         caseSensitiveCollator = tRowType.userTable().getColumn("cs").getCollator();
         caseInsensitiveCollator = tRowType.userTable().getColumn("ci").getCollator();
         db = new NewRow[]{
-            createNewRow(t, 0L, "aa_cs", "aa_ci"),
-            createNewRow(t, 1L, "bb_cs", "bb_ci"),
-            createNewRow(t, 2L, "aA_cs", "aA_ci"),
-            createNewRow(t, 3L, "bB_cs", "bB_ci"),
-            createNewRow(t, 4L, "Aa_cs", "Aa_ci"),
-            createNewRow(t, 5L, "Bb_cs", "Bb_ci"),
-            createNewRow(t, 6L, "AA_cs", "AA_ci"),
-            createNewRow(t, 7L, "BB_cs", "BB_ci"),
+            createNewRow(t, 0L, "aa_cs", "aa_ci", 0),
+            createNewRow(t, 1L, "bb_cs", "bb_ci", 0),
+            createNewRow(t, 2L, "aA_cs", "aA_ci", 0),
+            createNewRow(t, 3L, "bB_cs", "bB_ci", 0),
+            createNewRow(t, 4L, "Aa_cs", "Aa_ci", 0),
+            createNewRow(t, 5L, "Bb_cs", "Bb_ci", 0),
+            createNewRow(t, 6L, "AA_cs", "AA_ci", 0),
+            createNewRow(t, 7L, "BB_cs", "BB_ci", 0),
+            // make sure that all columns have to be examined
+            createNewRow(t, 7L, "x", "x", 0),
+            createNewRow(t, 8L, "x", "x", 0),
+            createNewRow(t, 9L, "x", "x", 0),
+            createNewRow(t, 10L, "x", "x", 0),
         };
         use(db);
     }
@@ -106,6 +112,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "aa_cs"),
             row(projectRowType, "bB_cs"),
             row(projectRowType, "bb_cs"),
+            row(projectRowType, "x"),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -137,6 +144,74 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
+            row(projectRowType, "X"),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testNonStringUsingSortTree()
+    {
+        Operator project = project_Default(
+            groupScan_Default(group),
+            tRowType,
+            Arrays.asList(Expressions.field(tRowType, 3)),
+            null);
+        RowType projectRowType = project.rowType();
+        Ordering ordering = new Ordering();
+        ordering.append(new FieldExpression(project.rowType(), 0), true);
+        Operator plan =
+            sort_Tree(
+                project,
+                projectRowType,
+                ordering,
+                SortOption.SUPPRESS_DUPLICATES);
+        RowBase[] expected = new RowBase[] {
+            row(projectRowType, 0L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testMultipleColumnsUsingSortTree()
+    {
+        Operator project = project_Default(
+            groupScan_Default(group),
+            tRowType,
+            Arrays.asList(Expressions.field(tRowType, 1),
+                          Expressions.field(tRowType, 2),
+                          Expressions.field(tRowType, 3)),
+            null);
+        RowType projectRowType = project.rowType();
+        Ordering ordering = new Ordering();
+        ordering.append(Expressions.field(projectRowType, 0), true, caseSensitiveCollator);
+        ordering.append(Expressions.field(projectRowType, 1), true, caseInsensitiveCollator);
+        ordering.append(Expressions.field(projectRowType, 2), true);
+        List<Expression> convertCaseInsensitiveToUpper =
+            Arrays.asList(Expressions.field(projectRowType, 0),
+                          new CaseConvertExpression(Expressions.field(projectRowType, 1),
+                                                    CaseConvertExpression.ConversionType.TOUPPER),
+                          Expressions.field(projectRowType, 2));
+        Operator plan =
+            project_Default(
+                sort_Tree(
+                    project,
+                    projectRowType,
+                    ordering,
+                    SortOption.SUPPRESS_DUPLICATES),
+                projectRowType,
+                convertCaseInsensitiveToUpper,
+                null);
+        RowBase[] expected = new RowBase[] {
+            row(projectRowType, "AA_cs", "AA_CI", 0),
+            row(projectRowType, "Aa_cs", "AA_CI", 0),
+            row(projectRowType, "BB_cs", "BB_CI", 0),
+            row(projectRowType, "Bb_cs", "BB_CI", 0),
+            row(projectRowType, "aA_cs", "AA_CI", 0),
+            row(projectRowType, "aa_cs", "AA_CI", 0),
+            row(projectRowType, "bB_cs", "BB_CI", 0),
+            row(projectRowType, "bb_cs", "BB_CI", 0),
+            row(projectRowType, "x", "X", 0),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -168,6 +243,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "aa_cs"),
             row(projectRowType, "bB_cs"),
             row(projectRowType, "bb_cs"),
+            row(projectRowType, "x"),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -199,6 +275,76 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
+            row(projectRowType, "X"),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testNonStringUsingSortInsertionLimited()
+    {
+        Operator project = project_Default(
+            groupScan_Default(group),
+            tRowType,
+            Arrays.asList(Expressions.field(tRowType, 3)),
+            null);
+        RowType projectRowType = project.rowType();
+        Ordering ordering = new Ordering();
+        ordering.append(new FieldExpression(project.rowType(), 0), true);
+        Operator plan =
+            sort_InsertionLimited(
+                project,
+                projectRowType,
+                ordering,
+                SortOption.SUPPRESS_DUPLICATES,
+                db.length);
+        RowBase[] expected = new RowBase[] {
+            row(projectRowType, 0L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testMultipleColumnsUsingSortInsertionLimited()
+    {
+        Operator project = project_Default(
+            groupScan_Default(group),
+            tRowType,
+            Arrays.asList(Expressions.field(tRowType, 1),
+                          Expressions.field(tRowType, 2),
+                          Expressions.field(tRowType, 3)),
+            null);
+        RowType projectRowType = project.rowType();
+        Ordering ordering = new Ordering();
+        ordering.append(Expressions.field(projectRowType, 0), true, caseSensitiveCollator);
+        ordering.append(Expressions.field(projectRowType, 1), true, caseInsensitiveCollator);
+        ordering.append(Expressions.field(projectRowType, 2), true);
+        List<Expression> convertCaseInsensitiveToUpper =
+            Arrays.asList(Expressions.field(projectRowType, 0),
+                          new CaseConvertExpression(Expressions.field(projectRowType, 1),
+                                                    CaseConvertExpression.ConversionType.TOUPPER),
+                          Expressions.field(projectRowType, 2));
+        Operator plan =
+            project_Default(
+                sort_InsertionLimited(
+                    project,
+                    projectRowType,
+                    ordering,
+                    SortOption.SUPPRESS_DUPLICATES,
+                    db.length),
+                projectRowType,
+                convertCaseInsensitiveToUpper,
+                null);
+        RowBase[] expected = new RowBase[] {
+            row(projectRowType, "AA_cs", "AA_CI", 0),
+            row(projectRowType, "Aa_cs", "AA_CI", 0),
+            row(projectRowType, "BB_cs", "BB_CI", 0),
+            row(projectRowType, "Bb_cs", "BB_CI", 0),
+            row(projectRowType, "aA_cs", "AA_CI", 0),
+            row(projectRowType, "aa_cs", "AA_CI", 0),
+            row(projectRowType, "bB_cs", "BB_CI", 0),
+            row(projectRowType, "bb_cs", "BB_CI", 0),
+            row(projectRowType, "x", "X", 0),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -235,6 +381,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "aa_cs"),
             row(projectRowType, "bB_cs"),
             row(projectRowType, "bb_cs"),
+            row(projectRowType, "x"),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -272,6 +419,84 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
+            row(projectRowType, "X"),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testNonStringUsingDistinctPartial()
+    {
+        Operator project = project_Default(
+            groupScan_Default(group),
+            tRowType,
+            Arrays.asList(Expressions.field(tRowType, 3)),
+            null);
+        RowType projectRowType = project.rowType();
+        Ordering ordering = new Ordering();
+        ordering.append(new FieldExpression(project.rowType(), 0), true);
+        Operator plan =
+            distinct_Partial(
+                sort_InsertionLimited(
+                    project,
+                    projectRowType,
+                    ordering,
+                    SortOption.PRESERVE_DUPLICATES,
+                    db.length),
+                projectRowType,
+                Arrays.asList((AkCollator)null),
+                false);
+        RowBase[] expected = new RowBase[] {
+            row(projectRowType, 0L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testMultipleColumnsUsingDistinctPartial()
+    {
+        Operator project = project_Default(
+            groupScan_Default(group),
+            tRowType,
+            Arrays.asList(Expressions.field(tRowType, 1),
+                          Expressions.field(tRowType, 2),
+                          Expressions.field(tRowType, 3)),
+            null);
+        RowType projectRowType = project.rowType();
+        Ordering ordering = new Ordering();
+        ordering.append(Expressions.field(projectRowType, 0), true, caseSensitiveCollator);
+        ordering.append(Expressions.field(projectRowType, 1), true, caseInsensitiveCollator);
+        ordering.append(Expressions.field(projectRowType, 2), true);
+        List<Expression> convertCaseInsensitiveToUpper =
+            Arrays.asList(Expressions.field(projectRowType, 0),
+                          new CaseConvertExpression(Expressions.field(projectRowType, 1),
+                                                    CaseConvertExpression.ConversionType.TOUPPER),
+                          Expressions.field(projectRowType, 2));
+        Operator plan =
+            project_Default(
+                distinct_Partial(
+                    sort_InsertionLimited(
+                        project,
+                        projectRowType,
+                        ordering,
+                        SortOption.PRESERVE_DUPLICATES,
+                        db.length),
+                    projectRowType,
+                    Arrays.asList(caseSensitiveCollator, caseInsensitiveCollator, null),
+                    false),
+                projectRowType,
+                convertCaseInsensitiveToUpper,
+                null);
+        RowBase[] expected = new RowBase[] {
+            row(projectRowType, "AA_cs", "AA_CI", 0),
+            row(projectRowType, "Aa_cs", "AA_CI", 0),
+            row(projectRowType, "BB_cs", "BB_CI", 0),
+            row(projectRowType, "Bb_cs", "BB_CI", 0),
+            row(projectRowType, "aA_cs", "AA_CI", 0),
+            row(projectRowType, "aa_cs", "AA_CI", 0),
+            row(projectRowType, "bB_cs", "BB_CI", 0),
+            row(projectRowType, "bb_cs", "BB_CI", 0),
+            row(projectRowType, "x", "X", 0),
         };
         compareRows(expected, cursor(plan, queryContext));
     }

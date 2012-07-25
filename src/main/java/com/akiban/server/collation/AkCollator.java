@@ -116,22 +116,6 @@ public abstract class AkCollator {
      */
     abstract public int hashCode(final String string);
 
-    /**
-     * Compute the has of a collated string-valued Key segment. Let K be the
-     * bytes comprising the key segment currently referenced by
-     * {@link Key#getDepth()}. Let s1, s2, ... be string for which
-     * {@link Key#append(Object)} produces the segment K (for case-insensitive
-     * collations there are usually many such strings). Then hash(s1), hash(s2),
-     * ... and hash(key) are all equal.
-     * 
-     * @param key
-     *            A Key from which the hash will be computed
-     * @return the computed hash value
-     * @throws NullPointerException
-     *             if key is null.
-     */
-    abstract public int hashCode(final Key key);
-
     @Override
     public String toString() {
         return collatorName + "(" + collatorScheme + ")";
@@ -177,15 +161,4 @@ public abstract class AkCollator {
      *             if unable to decode sort keys
      */
     abstract String decodeSortKeyBytes(byte[] bytes, int index, int length);
-
-    static int hashCode(final byte[] bytes, int from, int length) {
-        if (bytes == null)
-            return 0;
-
-        int result = 1;
-        for (int index = from; index < from + length; index++)
-            result = 31 * result + bytes[index];
-        return result;
-       
-    }
 }

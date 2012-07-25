@@ -164,7 +164,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(0);
         RowBase[] expected = new RowBase[] {
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -173,7 +173,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(1);
         RowBase[] expected = new RowBase[] {
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -182,7 +182,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(2);
         RowBase[] expected = new RowBase[] {
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -191,7 +191,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(3);
         RowBase[] expected = new RowBase[] {
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -201,7 +201,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         RowBase[] expected = new RowBase[] {
             row(outputRowType, 4L, "xy", "a"),
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -210,7 +210,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(5);
         RowBase[] expected = new RowBase[] {
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -221,7 +221,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
             row(outputRowType, 6L, "xy", "ab"),
             row(outputRowType, 6L, "xy", "ac"),
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -230,7 +230,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(7);
         RowBase[] expected = new RowBase[] {
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -239,7 +239,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(8);
         RowBase[] expected = new RowBase[] {
         };
-        compareRowsCaseInsensitive(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext), null, ciCollator, ciCollator);
     }
 
     @Test
@@ -257,7 +257,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                 };
             }
         };
-        testCursorLifecycleCaseInsensitive(plan, testCase);
+        testCursorLifecycle(plan, testCase, null, ciCollator, ciCollator);
     }
 
     public Operator plan(long testId)

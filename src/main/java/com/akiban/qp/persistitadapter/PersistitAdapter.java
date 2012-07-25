@@ -210,6 +210,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public long hash(ValueSource valueSource, AkCollator collator)
     {
+        assert collator != null; // Caller should have hashed in this case
         long hash;
         Key key;
         int depth;

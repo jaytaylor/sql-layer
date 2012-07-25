@@ -215,11 +215,6 @@ public class AkCollatorMySQL extends AkCollator {
         return result;
     }
 
-    @Override
-    public int hashCode(Key key) {
-        return CStringKeyCoder.hashCode(getCollationId(), key);
-    }
-
     public static void useForTesting() {
         TESTING = true;
     }

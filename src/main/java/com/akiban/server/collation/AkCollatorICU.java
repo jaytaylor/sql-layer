@@ -28,6 +28,8 @@ package com.akiban.server.collation;
 import java.util.Arrays;
 
 import com.akiban.server.types.ValueSource;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 import com.persistit.util.Util;
@@ -119,13 +121,8 @@ public class AkCollatorICU extends AkCollator {
     @Override
     public int hashCode(String string) {
         byte[] bytes = collator.get().getCollationKey(string).toByteArray();
-        return AkCollator.hashCode(bytes, 0, bytes.length);
+        return hashFunction.hashBytes(bytes, 0, bytes.length).asInt();
     }
 
-    @Override
-    public int hashCode(Key key) {
-        return CStringKeyCoder.hashCode(getCollationId(), key);
-    }
-
-
+    private final HashFunction hashFunction = Hashing.goodFastHash(32); // Because we're returning ints
 }

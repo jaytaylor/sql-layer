@@ -118,6 +118,9 @@ public class MemoryAdapter extends StoreAdapter {
 
     @Override
     public long hash(ValueSource valueSource, AkCollator collator) {
-        return collator.hashCode(valueSource.getString());
+        return
+            collator == null
+            ? valueSource.getString().hashCode()
+            : collator.hashCode(valueSource.getString());
     }
 }

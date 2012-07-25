@@ -229,6 +229,7 @@ public final class PersistitKeyValueSource extends ValueSource {
 
     public int compare(AkCollator collator, String string)
     {
+        assert collator != null;
         Key thatKey = new Key(key);
         thatKey.clear();
         collator.append(thatKey, string);

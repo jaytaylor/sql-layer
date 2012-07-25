@@ -111,24 +111,6 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
         throw new ConversionException("Collated key cannot be decoded");
     }
 
-    static int hashCode(int collationId, Key key) throws ConversionException {
-        byte[] rawBytes = key.getEncodedBytes();
-        int index = key.getIndex();
-        int size = key.getEncodedSize();
-        int end = index;
-        for (; end < size && rawBytes[end] != 0; end++) {
-        }
-        if (end - index < 1) {
-            throw new ConversionException("CString cannot be decoded");
-        }
-        int storedCollationId = rawBytes[index] & 0xFF;
-        if (collationId != storedCollationId) {
-            throw new ConversionException(String.format("Collator mismatch: expected,stored=(%d,%d)", collationId,
-                    storedCollationId));
-        }
-        return AkCollator.hashCode(rawBytes, index + 1, end - index - 1);
-    }
-
     /**
      * Decode the a String from a key segment based on reverse translation of
      * its sort key weights.

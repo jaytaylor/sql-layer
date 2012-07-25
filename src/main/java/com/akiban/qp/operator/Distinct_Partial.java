@@ -316,10 +316,16 @@ class Distinct_Partial extends Operator
 
         private boolean eq(int field, ValueSource x, ValueSource y)
         {
-            return
-                collators == null
-                ? currentValues[field].equals(y)
-                : collators.get(field).compare(x, y) == 0;
+            if (collators == null) {
+                return currentValues[field].equals(y);
+            } else {
+                AkCollator collator = collators.get(field);
+                if (collator == null) {
+                    return currentValues[field].equals(y);
+                } else {
+                    return collator.compare(x, y) == 0;
+                }
+            }
         }
 
         // Object state
