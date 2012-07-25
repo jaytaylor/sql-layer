@@ -103,12 +103,11 @@ public class JoinToParentPKTest {
         
     }
     
-    // bug #1014325 : This should fail, but doesn't
     @Test
     public void joinOrderMismatch() {
         builder.userTable("j7").colLong("c1").colString("c2", 10).joinTo("t2").on("c2", "c2").and("c1", "c1");
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
-        Assert.assertEquals(0, failures.size());
+        Assert.assertEquals(2, failures.size());
     }
     
     @Test
