@@ -44,12 +44,15 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.sql.aisddl.TableCopier;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
@@ -83,9 +86,24 @@ public class OperatorBasedTableCopier implements TableCopier {
             throw new IllegalArgumentException("Column count must match exactly");
         }
 
-        Expression[] projections = new Expression[sourceType.nFields()];
-        for(int i = 0; i < sourceType.nFields(); ++i) {
-            projections[i] = new FieldExpression(sourceType, i);
+        // create both, cause why not
+        List<Expression> projections;
+        List<TPreparedExpression> pProjections;
+        if (usePVals) {
+            TPreparedExpression[] arr = new TPreparedExpression[sourceType.nFields()];
+            for(int i = 0; i < sourceType.nFields(); ++i) {
+                arr[i] = new TPreparedField(sourceType.typeInstanceAt(i), i);
+            }
+            pProjections = Arrays.asList(arr);
+            projections = null;
+        }
+        else {
+            pProjections = null;
+            Expression[] arr = new Expression[sourceType.nFields()];
+            for(int i = 0; i < sourceType.nFields(); ++i) {
+                arr[i] = new FieldExpression(sourceType, i);
+            }
+            projections = Arrays.asList(arr);
         }
 
         Operator plan = project_Table(
@@ -95,8 +113,8 @@ public class OperatorBasedTableCopier implements TableCopier {
                 ),
                 sourceType,
                 destType,
-                Arrays.asList(projections),
-                null
+                projections,
+                pProjections
         );
 
         UpdatePlannable cursor = insert_Default(plan, usePVals);
