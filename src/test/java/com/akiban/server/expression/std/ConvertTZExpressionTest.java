@@ -71,6 +71,7 @@ public class ConvertTZExpressionTest extends ComposedExpressionTestBase
         param(b, "2004-01-01 12:00:00", "GMT", "MET", 20040101130000L);
         param(b, "2003-06-01 12:59:59", "-1:00", "+10:00", 20030601235959L);
         param(b, "2005-12-12", "foo", "bar", null);
+        param(b, "00-00-01", "GMT", "MET", null);
         
         return b.asList();
     }
