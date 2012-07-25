@@ -29,6 +29,7 @@ package com.akiban.qp.memoryadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -111,6 +112,11 @@ public class MemoryAdapter extends StoreAdapter {
 
     @Override
     public void deleteRow(Row oldRow) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long sequenceNextValue(TableName sequenceName) {
         throw new UnsupportedOperationException();
     }
 }

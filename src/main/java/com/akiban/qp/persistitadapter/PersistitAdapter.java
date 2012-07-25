@@ -30,6 +30,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
@@ -43,6 +44,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.rowdata.RowData;
@@ -255,7 +257,7 @@ public class PersistitAdapter extends StoreAdapter
             // row
             if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
                     rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
-                long value = rowDef.table().getColumn(i).getIdentityGenerator().nextValue(treeService);
+                long value = sequenceValue (rowDef.table().getColumn(i).getIdentityGenerator()); 
                 FromObjectValueSource objectSource = new FromObjectValueSource();
                 objectSource.setExplicitly(value, AkType.LONG);
                 source = objectSource;
@@ -263,8 +265,7 @@ public class PersistitAdapter extends StoreAdapter
               
             if (source.isNull()) {
                 if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
-                    Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
-                    long value = sequence.nextValue(treeService);
+                    long value = sequenceValue(rowDef.table().getColumn(i).getIdentityGenerator());
                     FromObjectValueSource objectSource = new FromObjectValueSource();
                     objectSource.setExplicitly(value, AkType.LONG);
                     source = objectSource;
@@ -392,4 +393,25 @@ public class PersistitAdapter extends StoreAdapter
     private final Store store;
     private final PersistitStore persistit;
     private final boolean withStepChanging;
+
+
+    @Override
+    public long sequenceNextValue(TableName sequenceName) {
+        Sequence sequence = schema().ais().getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return sequenceValue (sequence);
+    }
+    
+    private long sequenceValue (Sequence sequence) {
+        try {
+            return sequence.nextValue(treeService);
+        } catch (PersistitException e) {
+            rollbackIfNeeded(e);
+            handlePersistitException(e);
+            assert false;
+            return 0;
+        }
+    }
 }

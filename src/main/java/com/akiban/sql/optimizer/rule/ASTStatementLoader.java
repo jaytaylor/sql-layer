@@ -1282,7 +1282,7 @@ public class ASTStatementLoader extends BaseRule
 
                 // Extract the (potential) schema name as the first parameter
                 if (seqNode.getSequenceName().hasSchema()) {
-                    String schema = seqNode.getSequenceNode().getSchemaName();    
+                    String schema = seqNode.getSequenceName().getSchemaName();    
                     params.add(new ConstantExpression(
                             new TPreptimeValue(MString.VARCHAR.instance(schema.length()), new PValue(schema))));
                 } else {

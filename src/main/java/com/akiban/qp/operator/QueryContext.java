@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -194,4 +195,10 @@ public interface QueryContext
      * @throws InvalidOperationException thrown if a constraint on the row is violated.
      */
     public void checkConstraints(Row row) throws InvalidOperationException;
+    
+    /**
+     * Get the next value for the named Sequence. 
+     * @throws NoSuchSequenceException if the name does not exist in the system.  
+     */
+    public long sequenceNextValue(TableName sequence); 
 }
