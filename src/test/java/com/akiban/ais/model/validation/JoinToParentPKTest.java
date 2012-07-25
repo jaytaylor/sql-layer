@@ -46,7 +46,8 @@ public class JoinToParentPKTest {
     public void createValidations () {
         validations = new LinkedList<AISValidation>();
         validations.add(AISValidations.JOIN_TO_PARENT_PK);
-        
+        validations.add(AISValidations.JOIN_COLUMN_TYPES_MATCH);
+
         builder = AISBBasedBuilder.create("test");
         builder.userTable("t1").colLong("c1").colString("c2", 10).pk("c1");
         builder.userTable("t2").colLong("c1").colString("c2", 10).pk("c1", "c2");
@@ -94,12 +95,11 @@ public class JoinToParentPKTest {
         Assert.assertEquals(ErrorCode.JOIN_COLUMN_MISMATCH, fail.errorCode());
     }
     
-    // bug #1014325 : This should fail, but doesn't
     @Test
     public void joinColumnsMismatch () { 
         builder.userTable("j6").colLong("c1").colString("c2", 10).joinTo("t2").on("c2", "c1").and("c1", "c2");
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
-        Assert.assertEquals(0, failures.size());
+        Assert.assertEquals(2, failures.size());
         
     }
     
