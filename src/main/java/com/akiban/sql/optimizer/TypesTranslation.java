@@ -32,7 +32,6 @@ import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
@@ -40,6 +39,7 @@ import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.StandardException;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -339,8 +339,11 @@ public final class TypesTranslation {
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
         case TypeId.FormatIds.CHAR_TYPE_ID:
-            Charset charset = Charset.of(descriptor.getCharacterAttributes().getCharacterSet());
-            result = MString.VARCHAR.instance(descriptor.getMaximumWidth(), charset.ordinal());
+            CharacterTypeAttributes typeAttributes = descriptor.getCharacterAttributes();
+            int charsetId = (typeAttributes == null)
+                    ? -1
+                    : Charset.of(typeAttributes.getCharacterSet()).ordinal();
+            result = MString.VARCHAR.instance(descriptor.getMaximumWidth(), charsetId);
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
