@@ -65,7 +65,7 @@ public enum PostgresMessages {
     QUERY_TYPE              ('Q', Integer.MAX_VALUE, true, false, ErrorMode.SIMPLE), // (F)
     READY_FOR_QUERY_TYPE    ('Z', 5, false, true), // (B)
     ROW_DESCRIPTION_TYPE    ('T', Integer.MAX_VALUE, false, true), // (B)
-    STARTUP_MESSAGE_TYPE    (0,   Integer.MAX_VALUE, true, false), // (F)
+    STARTUP_MESSAGE_TYPE    (0,   Integer.MAX_VALUE, true, false, ErrorMode.FATAL), // (F)
     SYNC_TYPE               ('S', 4, true, false), // (F)
     TERMINATE_TYPE          ('X', 4, true, false); // (F)
     
@@ -73,7 +73,8 @@ public enum PostgresMessages {
     // NONE - no recovery - connection is closed.
     // SIMPLE - error sent to user, server reset for next message.
     // EXTENDED - error sent to user, server waits for sync message. 
-    public static enum ErrorMode { NONE, SIMPLE, EXTENDED };
+    // FATAL - error sent to user, server shuts down.
+    public static enum ErrorMode { NONE, SIMPLE, EXTENDED, FATAL };
     
     private final int code;
     private final int size; 

@@ -26,31 +26,37 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
+import com.akiban.server.types3.TParsers;
+import com.akiban.server.types3.TParser;
+import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.aksql.AkBundle;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.sql.types.TypeId;
-
 public class AkNumeric {
 
     private AkNumeric() {}
     
     // numeric types
-    public static final NoAttrTClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16);
-    public static final NoAttrTClass INT = create("int", 1, 1, 4, PUnderlying.INT_32);
-    public static final NoAttrTClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64);
-    public static final NoAttrTClass U_BIGINT = create("unsigned bigint", 1, 1, 8, PUnderlying.INT_64);
+    public static final NoAttrTClass SMALLINT = create("smallint", NumericFormatter.FORMAT.INT_16, 1, 1, 2, PUnderlying.INT_16, TParsers.SMALLINT);
+    public static final NoAttrTClass INT = create("int", NumericFormatter.FORMAT.INT_32, 1, 1, 4, PUnderlying.INT_32, TParsers.INT);
+    public static final NoAttrTClass BIGINT = create("bigint", NumericFormatter.FORMAT.INT_64, 1, 1, 8, PUnderlying.INT_64, TParsers.BIGINT);
+    public static final NoAttrTClass U_BIGINT = create("unsigned bigint", NumericFormatter.FORMAT.INT_64, 1, 1, 8, PUnderlying.INT_64, TParsers.UNSIGNED_BIGINT);
     
-    public static final NoAttrTClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE);
+    public static final NoAttrTClass DOUBLE = create("double precision", NumericFormatter.FORMAT.DOUBLE, 1, 1, 8, PUnderlying.DOUBLE, TParsers.DOUBLE);
 
     // basically a curried function, with AkBunder.INSTANCE.id() partially applied
     private static NoAttrTClass create(String name,
+                                       TClassFormatter formatter,
                                        int internalVersion,
                                        int serialVersion,
                                        int size,
-                                       PUnderlying underlying)
+                                       PUnderlying underlying,
+                                       TParser parser)
     {
-        return new NoAttrTClass(AkBundle.INSTANCE.id(), name, internalVersion, serialVersion, size, underlying,
-                TypeId.INTEGER_ID);
+        return new NoAttrTClass(AkBundle.INSTANCE.id(), name, AkCategory.INTEGER, formatter, internalVersion, serialVersion, size,
+                underlying, parser, TypeId.INTEGER_ID);
     }
 }

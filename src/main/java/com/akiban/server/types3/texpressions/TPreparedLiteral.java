@@ -28,9 +28,11 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.AkibanAppender;
 
 public final class TPreparedLiteral implements TPreparedExpression {
     @Override
@@ -44,8 +46,17 @@ public final class TPreparedLiteral implements TPreparedExpression {
     }
 
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return new TPreptimeValue(tInstance, value);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Literal(");
+        TClass tClass = tInstance.typeClass();
+        tClass.format(tInstance, value, AkibanAppender.of(sb));
+        sb.append(')');
+        return sb.toString();
     }
 
     public TPreparedLiteral(TInstance tInstance, PValueSource value) {

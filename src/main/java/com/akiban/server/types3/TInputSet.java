@@ -67,7 +67,25 @@ public final class TInputSet {
 
     @Override
     public String toString() {
-        return "{" + covering + (coversRemaining ? "REMAINING" : "") + "->" + targetType + "}";
+        StringBuilder sb = new StringBuilder();
+        boolean coversAny = ! covering.isEmpty();
+        if (coversAny) {
+            sb.append("POS(");
+            for (int i = covering.nextSetBit(0); i >= 0; i = covering.nextSetBit(i+1)) {
+                sb.append(i).append(", ");
+            }
+            sb.setLength(sb.length() - 2); // trim trailing ", "
+            sb.append(')');
+        }
+        if (coversRemaining) {
+            if (coversAny)
+                sb.append(", ");
+            sb.append("REMAINING");
+        }
+        if (sb.length() == 0)
+            sb.append("<none>"); // malformed input set, but still want a decent toString
+        sb.append(" <- ").append(targetType);
+        return sb.toString();
     }
 
     private final TClass targetType;

@@ -26,25 +26,31 @@
 
 package com.akiban.server.service.ui;
 
+import com.akiban.server.service.ServiceManager;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
-import java.io.OutputStream;
+import java.net.URL;
 import java.io.PrintStream;
 
 public class SwingConsole extends JFrame implements WindowListener 
 {
     public static final String TITLE = "Akiban Server";
+    public static final String ICON_PATH = "Akiban_Server_128x128.png";
 
+    private final ServiceManager serviceManager;
     private JTextArea textArea;
     private PrintStream printStream;
 
-    public SwingConsole() {
+    public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.serviceManager = serviceManager;
+
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(this);
         {
             boolean macOSX = "Mac OS X".equals(System.getProperty("os.name"));
@@ -99,15 +105,25 @@ public class SwingConsole extends JFrame implements WindowListener
         JScrollPane scrollPane = new JScrollPane(textArea);
         add(scrollPane);
 
-        pack();
-        setLocation(200, 200);
+        // centerise the window
+        pack();       
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        setSize(screenSize.width/2, screenSize.height/2);
+        setLocationRelativeTo(null);
+ 
+        
+        URL iconURL = SwingConsole.class.getClassLoader().getResource(SwingConsole.class.getPackage().getName().replace('.', '/') + "/" + ICON_PATH);
+        if (iconURL != null) {
+            ImageIcon icon = new ImageIcon(iconURL);
+            setIconImage(icon.getImage());
+        }
     }
 
     @Override
     public void windowClosing(WindowEvent arg0) {
         quit();
     }
-
+    
     @Override
     public void windowClosed(WindowEvent arg0) {
     }
@@ -165,12 +181,25 @@ public class SwingConsole extends JFrame implements WindowListener
     }
 
     protected void quit() {
-        // TODO: There isn't any way for a service to rendezvous with
-        // the service manager. Should there be?
-        try {
-            com.akiban.server.AkServer.procrunStop(new String[0]);
-        }
-        catch (Exception ex) {
+        switch (serviceManager.getState()) {    
+        case ERROR_STARTING:
+            dispose();
+            break;
+        default:
+            int yn = JOptionPane.showConfirmDialog(this, 
+                                                   "Do you really want to quit Akiban-Server?",
+                                                   "Attention!", 
+                                                    JOptionPane.YES_NO_OPTION,
+                                                    JOptionPane.QUESTION_MESSAGE);
+
+            if (yn != JOptionPane.YES_OPTION)
+                return;
+            try {
+                serviceManager.stopServices();
+            }
+            catch (Exception ex) {
+            }
+            break;
         }
     }
 

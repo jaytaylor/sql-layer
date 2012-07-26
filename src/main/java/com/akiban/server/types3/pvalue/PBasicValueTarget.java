@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.collation.AkCollator;
+
 public interface PBasicValueTarget {
     PUnderlying getUnderlyingType();
 
@@ -49,5 +51,5 @@ public interface PBasicValueTarget {
 
     void putBytes(byte[] value);
 
-    void putString(String value);
+    void putString(String value, AkCollator collator);
 }

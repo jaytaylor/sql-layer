@@ -1,0 +1,94 @@
+com.akiban.sql.parser.InsertNode@3d98c28c
+null
+statementType: INSERT
+resultSet: 	
+	com.akiban.sql.parser.RowsResultSetNode@5139574d
+	correlation Name: null
+	null
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@21c7ec60
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@4c6fa3f3
+		exposedName: null
+		name: null
+		tableName: null
+		isDefaultColumn: false
+		type: INTEGER NOT NULL
+		expression: 			
+			com.akiban.sql.parser.UntypedNullConstantNode@3574cdb9
+			value: null
+			type: INTEGER NOT NULL
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@76e481a
+		exposedName: null
+		name: null
+		tableName: null
+		isDefaultColumn: false
+		type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
+		expression: 			
+			com.akiban.sql.parser.ParameterNode@593fa6c5
+			number: 0
+			type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
+	[0]:	
+	com.akiban.sql.parser.RowResultSetNode@2050de0
+	correlation Name: null
+	null
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@19d1ee29
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@14b5a6e0
+		exposedName: null
+		name: null
+		tableName: null
+		isDefaultColumn: false
+		type: INTEGER NOT NULL
+		expression: 			
+			com.akiban.sql.parser.UntypedNullConstantNode@256ad2fd
+			value: null
+			type: INTEGER NOT NULL
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@21dec6bf
+		exposedName: null
+		name: null
+		tableName: null
+		isDefaultColumn: false
+		type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
+		expression: 			
+			com.akiban.sql.parser.ParameterNode@841f33c
+			number: 0
+			type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
+	[1]:	
+	com.akiban.sql.parser.RowResultSetNode@61ddfd49
+	correlation Name: null
+	null
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@351ff5d1
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@45438796
+		exposedName: null
+		name: null
+		tableName: null
+		isDefaultColumn: false
+		type: INTEGER NOT NULL
+		expression: 			
+			com.akiban.sql.parser.NumericConstantNode@547aac60
+			value: 1
+			type: INTEGER NOT NULL
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@41cafdf4
+		exposedName: null
+		name: null
+		tableName: null
+		isDefaultColumn: false
+		type: CHAR(3) NOT NULL
+		expression: 			
+			com.akiban.sql.parser.CharConstantNode@75e6bfea
+			value: abc
+			type: CHAR(3) NOT NULL
+targetTableName: 	
+	com.akiban.sql.parser.TableName@e3d
+	t1
+	userData: test.t1

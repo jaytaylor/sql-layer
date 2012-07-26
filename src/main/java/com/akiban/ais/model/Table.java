@@ -28,39 +28,26 @@ package com.akiban.ais.model;
 
 import java.util.*;
 
-import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.rowdata.RowDef;
 
-public abstract class Table implements Traversable, HasGroup
+public abstract class Table extends Columnar implements Traversable, HasGroup
 {
     public abstract boolean isUserTable();
 
     @Override
-    public String toString()
-    {
-        return tableName.toString();
+    public boolean isView() {
+        return false;
     }
 
     protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
-        ais.checkMutability();
-        AISInvariants.checkNullName(schemaName, "Table", "schema name");
-        AISInvariants.checkNullName(tableName, "Table", "table name");
-        AISInvariants.checkDuplicateTables(ais, schemaName, tableName);
-
-        this.ais = ais;
-        this.tableName = new TableName(schemaName, tableName);
+        super(ais, schemaName, tableName);
         this.tableId = tableId;
 
         this.groupIndexes = new HashSet<GroupIndex>();
         this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
         this.indexMap = new TreeMap<String, TableIndex>();
         this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
-    }
-
-    public AkibanInformationSchema getAIS()
-    {
-        return ais;
     }
 
     public boolean isGroupTable()
@@ -85,11 +72,6 @@ public abstract class Table implements Traversable, HasGroup
         this.tableId = tableId;
     }
 
-    public TableName getName()
-    {
-        return tableName;
-    }
-
     public Group getGroup()
     {
         return group;
@@ -98,28 +80,6 @@ public abstract class Table implements Traversable, HasGroup
     public void setGroup(Group group)
     {
         this.group = group;
-    }
-
-    public Column getColumn(String columnName)
-    {
-        return columnMap.get(columnName.toLowerCase());
-    }
-
-    public Column getColumn(Integer position)
-    {
-        return getColumns().get(position);
-    }
-
-    public List<Column> getColumns()
-    {
-        ensureColumnsUpToDate();
-        return columnsWithoutInternal;
-    }
-
-    public List<Column> getColumnsIncludingInternal()
-    {
-        ensureColumnsUpToDate();
-        return columns;
     }
 
     public Collection<TableIndex> getIndexes()
@@ -136,50 +96,12 @@ public abstract class Table implements Traversable, HasGroup
         return unmodifiableGroupIndexes;
     }
 
-    public CharsetAndCollation getCharsetAndCollation()
-    {
-        return
-            charsetAndCollation == null
-            ? ais.getCharsetAndCollation()
-            : charsetAndCollation;
-    }
-
-    public void setCharsetAndCollation(CharsetAndCollation charsetAndCollation)
-    {
-        this.charsetAndCollation = charsetAndCollation;
-    }
-
-    public void setCharset(String charset)
-    {
-        if (charset != null) {
-            this.charsetAndCollation = CharsetAndCollation.intern(charset, getCharsetAndCollation().collation());
-        }
-    }
-
-    public void setCollation(String collation)
-    {
-        if (collation != null) {
-            this.charsetAndCollation = CharsetAndCollation.intern(getCharsetAndCollation().charset(), collation);
-        }
-    }
-
     public MigrationUsage getMigrationUsage() {
         return migrationUsage;
     }
 
     public void setMigrationUsage(MigrationUsage migrationUsage) {
         this.migrationUsage = migrationUsage;
-    }
-
-    public boolean isAISTable()
-    {
-        return tableName.getSchemaName().equals(TableName.INFORMATION_SCHEMA);
-    }
-
-    protected void addColumn(Column column)
-    {
-        columnMap.put(column.getName().toLowerCase(), column);
-        columnsStale = true;
     }
 
     protected void addIndex(TableIndex index)
@@ -197,19 +119,6 @@ public abstract class Table implements Traversable, HasGroup
 
     final void removeGroupIndex(GroupIndex groupIndex) {
         groupIndexes.remove(groupIndex);
-    }
-
-    protected void dropColumns()
-    {
-        columnMap.clear();
-        columnsStale = true;
-    }
-
-    // For use by this package
-
-    void setTableName(TableName tableName)
-    {
-        this.tableName = tableName;
     }
 
     public void removeIndexes(Collection<TableIndex> indexesToDrop) {
@@ -270,13 +179,6 @@ public abstract class Table implements Traversable, HasGroup
         }
     }
 
-    /**
-     * check if this table belongs to a frozen AIS, 
-     * throw exception if ais is frozen 
-     */
-    void checkMutability() {
-        ais.checkMutability();
-    }
     /**
      * @deprecated - use AkibanInfomationSchema#validate() instead
      * @param out
@@ -345,34 +247,6 @@ public abstract class Table implements Traversable, HasGroup
         return rowDef;
     }
 
-    private void ensureColumnsUpToDate()
-    {
-        if (columnsStale) {
-            synchronized (columnsStaleLock) {
-                if (columnsStale) {
-                    columns.clear();
-                    columns.addAll(columnMap.values());
-                    Collections.sort(columns,
-                                     new Comparator<Column>()
-                                     {
-                                         @Override
-                                         public int compare(Column x, Column y)
-                                         {
-                                             return x.getPosition() - y.getPosition();
-                                         }
-                                     });
-                    columnsWithoutInternal.clear();
-                    for (Column column : columns) {
-                        if (!column.isAkibanPKColumn()) {
-                            columnsWithoutInternal.add(column);
-                        }
-                    }
-                    columnsStale = false;
-                }
-            }
-        }
-    }
-
     public String getTreeName() {
         return treeName;
     }
@@ -382,21 +256,13 @@ public abstract class Table implements Traversable, HasGroup
     }
 
     // State
-    protected final AkibanInformationSchema ais;
-    private final Object columnsStaleLock = new Object();
-    private final List<Column> columns = new ArrayList<Column>();
-    private final List<Column> columnsWithoutInternal = new ArrayList<Column>();
     private final Map<String, TableIndex> indexMap;
     private final Map<String, TableIndex> unmodifiableIndexMap;
-    private final Map<String, Column> columnMap = new TreeMap<String, Column>();
     private final Collection<GroupIndex> groupIndexes;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;
 
     protected Group group;
-    protected TableName tableName;
     private Integer tableId;
-    private volatile boolean columnsStale = true;
-    private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
     protected String treeName;

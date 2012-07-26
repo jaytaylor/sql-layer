@@ -26,14 +26,15 @@
 
 package com.akiban.server.rowdata;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.Writer;
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
@@ -46,8 +47,11 @@ import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.IndexDDL;
 import com.akiban.sql.aisddl.TableDDL;
+import com.akiban.sql.aisddl.ViewDDL;
+import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.Strings;
@@ -63,7 +67,6 @@ import java.util.Map;
 public class SchemaFactory {
     private final static String DEFAULT_DEFAULT_SCHEMA = "test";
     private final String defaultSchema;
-
 
     public SchemaFactory() {
         this(DEFAULT_DEFAULT_SCHEMA);
@@ -108,9 +111,12 @@ public class SchemaFactory {
         }
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
-                TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt);
+                TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
                 IndexDDL.createIndex(ddlFunctions, null, defaultSchema, (CreateIndexNode) stmt);
+            } else if (stmt instanceof CreateViewNode) {
+                ViewDDL.createView(ddlFunctions, null, defaultSchema, (CreateViewNode) stmt,
+                                   new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema), null);
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
@@ -177,6 +183,16 @@ public class SchemaFactory {
         }
 
         @Override
+        public void createView(Session session, View view) {
+            ais = AISMerge.mergeView(ais, view);
+        }
+
+        @Override
+        public void dropView(Session session, TableName viewName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void dropSchema(Session session, String schemaName) {
             throw new UnsupportedOperationException();
         }
@@ -238,8 +254,7 @@ public class SchemaFactory {
 
         @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            AkibanInformationSchema newAIS = new AkibanInformationSchema();
-            new Writer(new AISTarget(newAIS)).save(ais);
+            AkibanInformationSchema newAIS = AISCloner.clone(ais);
             PersistitStoreSchemaManager.createIndexes(newAIS, indexesToAdd);
             ais = newAIS;
         }
@@ -261,6 +276,16 @@ public class SchemaFactory {
 
         @Override
         public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createSequence(Session session, Sequence sequence) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropSequence(Session session, TableName sequenceName) {
             throw new UnsupportedOperationException();
         }
     }

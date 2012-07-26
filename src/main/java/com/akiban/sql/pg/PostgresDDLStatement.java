@@ -26,29 +26,27 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;
 
-import com.akiban.sql.StandardException;
-
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.CreateIndexNode;
+import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateSchemaNode;
+import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropIndexNode;
+import com.akiban.sql.parser.DropSequenceNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.RenameNode;
-
-import com.akiban.sql.optimizer.AISBinder;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
@@ -87,6 +85,11 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         AkibanInformationSchema ais = server.getAIS();
@@ -97,44 +100,56 @@ public class PostgresDDLStatement implements PostgresStatement
         try {
             switch (ddl.getNodeType()) {
             case NodeTypes.CREATE_SCHEMA_NODE:
-                SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl);
+                SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl, context);
                 break;
             case NodeTypes.DROP_SCHEMA_NODE:
-                SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl);
+                SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl, context);
                 break;
             case NodeTypes.CREATE_TABLE_NODE:
-                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl);
+                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl, context);
                 break;
             case NodeTypes.DROP_TABLE_NODE:
-                TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl);
+                TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl, context);
                 break;
             case NodeTypes.CREATE_VIEW_NODE:
-                // TODO: Need to store persistently in AIS (or its extension).
-                try {
-                    ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
-                } 
-                catch (StandardException ex) {
-                    throw new SQLParserInternalException(ex);
-                }
+                ViewDDL.createView(ddlFunctions, session, schema, (CreateViewNode)ddl,
+                                   server.getBinderContext(), context);
                 break;
             case NodeTypes.DROP_VIEW_NODE:
-                ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
+                ViewDDL.dropView(ddlFunctions, session, schema, (DropViewNode)ddl,
+                                 server.getBinderContext(), context);
                 break;
             case NodeTypes.CREATE_INDEX_NODE:
                 IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
                 break;
             case NodeTypes.DROP_INDEX_NODE:
-                IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
+                IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);
                 break;
             case NodeTypes.ALTER_TABLE_NODE:
-                AlterTableDDL.alterTable(ddlFunctions, session, schema, (AlterTableNode)ddl);
+            {
+                OperatorBasedTableCopier copier = new OperatorBasedTableCopier(
+                        server.getStore().getConfig(),
+                        server.getTreeService(),
+                        session,
+                        server.getStore().getUnderlyingStore()
+                );
+                AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddlFunctions, server.getDXL().dmlFunctions(),
+                                         session, copier, schema, (AlterTableNode)ddl);
                 break;
+            }
             case NodeTypes.RENAME_NODE:
                 if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
                     IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
                 } else if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.TABLE) {
                     TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
+                    break;
                 }
+            case NodeTypes.CREATE_SEQUENCE_NODE:
+                SequenceDDL.createSequence(ddlFunctions, session, schema, (CreateSequenceNode)ddl);
+                break;
+            case NodeTypes.DROP_SEQUENCE_NODE:
+                SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl);
+                break;
             case NodeTypes.REVOKE_NODE:
             default:
                 throw new UnsupportedSQLException (ddl.statementToString(), ddl);

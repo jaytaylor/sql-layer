@@ -87,7 +87,7 @@ public class SelectIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNullPredicate()
     {
-        select_HKeyOrdered(groupScan_Default(coi), customerRowType, null);
+        select_HKeyOrdered(groupScan_Default(coi), customerRowType, (Expression)null);
     }
 
     // Runtime tests

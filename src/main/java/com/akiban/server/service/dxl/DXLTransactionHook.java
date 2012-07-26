@@ -124,6 +124,8 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case CREATE_TABLE:
             case RENAME_TABLE:
             case DROP_TABLE:
+            case CREATE_VIEW:
+            case DROP_VIEW:
             case DROP_SCHEMA:
             case DROP_GROUP:
             case CREATE_INDEXES:
@@ -137,6 +139,8 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case TRUNCATE_TABLE:
             case UPDATE_TABLE_STATISTICS:
             case CHECK_AND_FIX_INDEXES:
+            case CREATE_SEQUENCE:
+            case DROP_SEQUENCE:
                 return true;
 
             case GET_AIS:

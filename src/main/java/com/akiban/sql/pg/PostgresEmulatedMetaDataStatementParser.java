@@ -31,6 +31,8 @@ import com.akiban.sql.pg.PostgresEmulatedMetaDataStatement.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /** Handle known system table queries from tools directly.  At some
@@ -44,7 +46,7 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
 
     /** Quickly determine whether a given query <em>might</em> be a
      * Postgres system table. */
-    public static final String POSSIBLE_PG_QUERY = "FROM\\s+PG_";
+    public static final String POSSIBLE_PG_QUERY = "FROM\\s+PG_|PG_CATALOG\\.";
     
     private Pattern possiblePattern;
 
@@ -57,10 +59,11 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
                                    String sql, int[] paramTypes)  {
         if (!possiblePattern.matcher(sql).find())
             return null;
+        List<String> groups = new ArrayList<String>();
         for (Query query : Query.values()) {
-            if (sql.equalsIgnoreCase(query.getSQL())) {
-                logger.debug("Emulated: {}", query);
-                return new PostgresEmulatedMetaDataStatement(query);
+            if (query.matches(sql, groups)) {
+                logger.debug("Emulated: {}{}", query, groups.subList(1, groups.size()));
+                return new PostgresEmulatedMetaDataStatement(query, groups);
             }
         }
         return null;

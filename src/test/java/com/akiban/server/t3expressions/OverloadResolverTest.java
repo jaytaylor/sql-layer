@@ -27,16 +27,16 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.t3expressions.OverloadResolver.OverloadException;
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -50,16 +50,19 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 public class OverloadResolverTest {
-    private static class SimpleRegistry implements T3ScalarsRegistry {
+    private static class SimpleRegistry implements T3RegistryService {
         private final Map<String,List<TValidatedOverload>> validatedMap = new HashMap<String, List<TValidatedOverload>>();
         private final Map<TOverload,TValidatedOverload> originalMap = new HashMap<TOverload, TValidatedOverload>();
         private final Map<TClass, Map<TClass, TCast>> castMap = new HashMap<TClass, Map<TClass, TCast>>();
@@ -92,12 +95,7 @@ public class OverloadResolverTest {
 
         @Override
         public List<TValidatedOverload> getOverloads(String name) {
-            return validatedMap.get(name);
-        }
-
-        @Override
-        public OverloadResolutionResult get(String name, List<? extends TClass> inputClasses) {
-            throw new UnsupportedOperationException();
+            return validatedMap.get(name.toLowerCase());
         }
 
         @Override
@@ -110,8 +108,18 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public TClassPossibility commonTClass(TClass one, TClass two) {
-            return T3ScalarsRegistry.NO_COMMON;
+        public Set<TClass> stronglyCastableTo(TClass tClass) {
+            Map<TClass, TCast> map = T3RegistryServiceImpl.createStrongCastsMap(castMap).get(tClass);
+            Set<TClass> results = (map == null)
+                    ? new HashSet<TClass>(1)
+                    : new HashSet<TClass>(map.keySet());
+            results.add(tClass);
+            return results;
+        }
+
+        @Override
+        public Collection<? extends TAggregator> getAggregates(String name) {
+            throw new UnsupportedOperationException();
         }
 
         public TValidatedOverload validated(TOverload overload) {
@@ -123,7 +131,7 @@ public class OverloadResolverTest {
         private static final TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
 
         public TestClassBase(String name, PUnderlying pUnderlying) {
-            super(TEST_BUNDLE_ID, name, 1, 1, 1, pUnderlying, null);
+            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, null);
         }
     }
 
@@ -134,11 +142,6 @@ public class OverloadResolverTest {
 
         public TestCastBase(TClass source, TClass target, boolean isAutomatic) {
             super(source, target, isAutomatic, Constantness.UNKNOWN);
-        }
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget) {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -310,7 +313,7 @@ public class OverloadResolverTest {
     }
 
     // input resolution, no casts
-    @Test
+    @Test(expected = OverloadException.class)
     public void mulIntMulBigIntWithIntsNoCasts() {
         init(MUL_INTS, MUL_BIGINTS);
         checkResolved("INT*INT", null, MUL_NAME, prepVals(TINT, TINT));
@@ -349,11 +352,16 @@ public class OverloadResolverTest {
         checkResolved("BIGINT*INT", MUL_BIGINTS, MUL_NAME, prepVals(TBIGINT, TINT));
         // 1 survives filtering
         checkResolved("DATE*INT", MUL_DATE_INT, MUL_NAME, prepVals(TDATE, TINT));
-        // 3 survive filtering, 1 less specific, 2 candidates
-        checkResolved("?*INT", null, MUL_NAME, prepVals(null, TINT));
+        try {
+            // 3 survive filtering, 1 less specific, 2 candidates
+            checkResolved("?*INT", null, MUL_NAME, prepVals(null, TINT));
+            fail("expected OverloadException");
+        } catch (OverloadException e) {
+            // expected
+        }
     }
 
-    @Test
+    @Test(expected = OverloadException.class)
     public void conflictingOverloads() {
         final String NAME = "foo";
         // Overloads aren't valid and should(?) be rejected by real registry,
@@ -381,7 +389,7 @@ public class OverloadResolverTest {
     public void onePosAndRemainingWithPickingSet() {
         final String NAME = "coalesce";
         TestGetBase coalesce = new TestGetBase(NAME, TVARCHAR);
-        coalesce.builder().covers(null, 0).pickingVararg(null);
+        coalesce.builder().pickingVararg(null, 0);
         init(coalesce);
 
         try {
@@ -392,19 +400,36 @@ public class OverloadResolverTest {
         }
 
         checkResolved(NAME+"(INT)", coalesce, NAME, prepVals(TINT));
-        checkResolved(NAME+"(INT,BIGINT)", coalesce, NAME, prepVals(TINT, TBIGINT));
-        checkResolved(NAME+"(null,DATE,INT)", coalesce, NAME, prepVals(null, TDATE, TINT));
+        registry.setCasts(C_INT_BIGINT);
+        checkResolved(NAME+"(null,INT,BIGINT)", coalesce, NAME, prepVals(null, TINT, TBIGINT));
+        try {
+            checkResolved(NAME+"(null,DATE,INT)", coalesce, NAME, prepVals(null, TDATE, TINT));
+            fail("expected overload exception");
+        } catch (OverloadException e) {
+            // There is no common type between date and int
+        }
     }
 
     @Test
     public void onlyPickingRemaining() {
         final String NAME = "first";
         TestGetBase first = new TestGetBase(NAME, null);
-        first.builder.pickingVararg(null);
+        first.builder.pickingVararg(null, 0);
         init(first);
-        checkResolved(NAME+"()", first, NAME, prepVals());
         checkResolved(NAME+"(INT)", first, NAME, prepVals(TINT));
-        checkResolved(NAME+"(null)", first, NAME, Arrays.asList(prepVal(null)));
-        checkResolved(NAME+"(BIGINT,DATE)", first, NAME, prepVals(TBIGINT,TDATE));
+        registry.setCasts(C_INT_BIGINT);
+        checkResolved(NAME+"(BIGINT,INT)", first, NAME, prepVals(TBIGINT,TINT));
+        try {
+            checkResolved(NAME+"()", first, NAME, prepVals());
+            fail("expected overload exception");
+        } catch (WrongExpressionArityException e) {
+            // can't resolve overload if nargs is wrong
+        }
+        try {
+            checkResolved(NAME+"(null)", first, NAME, Arrays.asList(prepVal(null)));
+            fail("expected overload exception");
+        } catch (OverloadException e) {
+            // can't find picking type for first if it's null
+        }
     }
 }

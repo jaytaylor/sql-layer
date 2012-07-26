@@ -180,9 +180,13 @@ public final class TExecutionContext {
         }
     }
 
+    public void setQueryContext(QueryContext queryContext) {
+        this.queryContext = queryContext;
+    }
+
     // state
 
-    TExecutionContext(SparseArray<Object> preptimeCache,
+    public TExecutionContext(SparseArray<Object> preptimeCache,
                       List<TInstance> inputTypes,
                       TInstance outputType,
                       QueryContext queryContext,

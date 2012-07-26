@@ -45,12 +45,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.round(Byte.MAX_VALUE, Byte.MIN_VALUE, 
@@ -58,18 +52,29 @@ public class MNumericCastBase
         }
     }
     
+        
+    static class FromDoubleToUnsignedInt8 extends TCastBase
+    {
+        public FromDoubleToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(target, PUnderlying.INT_8), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)CastUtils.round(Short.MAX_VALUE, 0, 
+                                                 source.getDouble(), context));
+        }
+    }
+        
     static class FromDoubleToInt16 extends TCastBase
     {
         public FromDoubleToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
                   checkType(target, PUnderlying.INT_16), auto, c);
-        }
-        
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
@@ -80,18 +85,28 @@ public class MNumericCastBase
         }
     }
     
-    static class FromDoubleToInt32 extends TCastBase
+    static class FromDoubleToUnsignedInt16 extends TCastBase
     {
-        public FromDoubleToInt32(TClass source, TClass target, boolean auto, Constantness c)
+        public FromDoubleToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
                   checkType(source, PUnderlying.INT_32), auto, c);
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            target.putInt32((int)CastUtils.round(Integer.MAX_VALUE, 0,
+                                                 source.getDouble(), context));
+        }
+    }
+
+    static class FromDoubleToInt32 extends TCastBase
+    {
+        public FromDoubleToInt32(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(source, PUnderlying.INT_32), auto, c);
         }
 
         @Override
@@ -102,18 +117,28 @@ public class MNumericCastBase
         }
     }
     
-    static class FromDoubleToInt64 extends TCastBase
+    static class FromDoubleToUnsignedInt32 extends TCastBase
     {
-        public FromDoubleToInt64(TClass source, TClass target, boolean auto, Constantness c)
+        public FromDoubleToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            target.putInt64((long)CastUtils.round(Long.MAX_VALUE, 0,
+                                                  source.getDouble(), context));
+        }
+    }
+
+    static class FromDoubleToInt64 extends TCastBase
+    {
+        public FromDoubleToInt64(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(target, PUnderlying.INT_64), auto, c);
         }
 
         @Override
@@ -133,12 +158,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TODO: determine the target precision and scale then correctly round 
@@ -152,13 +171,7 @@ public class MNumericCastBase
         public FromDoubleToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.BYTES), auto, c);
-        }
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
         @Override
@@ -173,14 +186,9 @@ public class MNumericCastBase
         public FromInt8ToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -188,6 +196,21 @@ public class MNumericCastBase
         }
     }
 
+    static class FromInt8ToUnsignedInt8 extends TCastBase
+    {
+        public FromInt8ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_8),
+                  checkType(target, PUnderlying.INT_16), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt8(), context));
+        }
+    }
+    
     static class FromInt8ToInt16 extends TCastBase
     {
         public FromInt8ToInt16(TClass source, TClass target, boolean auto, Constantness c)
@@ -197,14 +220,24 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16(source.getInt8());
+        }
+    }
+
+    static class FromInt8ToUnsignedInt16 extends TCastBase
+    {
+        public FromInt8ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_8),
+                  checkType(target, PUnderlying.INT_32), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt8(), context));
         }
     }
 
@@ -217,17 +250,27 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(source.getInt8());
         }
     }
     
+    static class FromInt8ToUnsignedInt32 extends TCastBase
+    {
+        public FromInt8ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_8),
+                  checkType(target, PUnderlying.INT_64), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt8(), context));
+        }
+    }
+        
     static class FromInt8ToInt64 extends TCastBase
     {
         public FromInt8ToInt64(TClass source, TClass target, boolean auto, Constantness c)
@@ -236,11 +279,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -257,11 +295,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt8());
@@ -277,11 +310,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt8()));
@@ -293,14 +321,9 @@ public class MNumericCastBase
         public FromInt16ToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -317,17 +340,27 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt16(), context));
         }
     }
     
+    static class FromInt16ToUnsignedInt8 extends TCastBase
+    {
+        public FromInt16ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_16),
+                  checkType(target, PUnderlying.INT_16), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt16(), context));
+        }
+    }
+
     static class FromInt16ToInt16 extends TCastBase
     {
         public FromInt16ToInt16(TClass source, TClass target, boolean auto, Constantness c)
@@ -337,17 +370,27 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16(source.getInt16());
+        }    
+    }
+    
+    static class FromInt16ToUnsignedInt16 extends TCastBase
+    {
+        public FromInt16ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_16),
+                  checkType(target, PUnderlying.INT_32), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt16(), context));
         }
     }
-        
+
     static class FromInt16ToInt32 extends TCastBase
     {
         public FromInt16ToInt32(TClass source, TClass target, boolean auto, Constantness c)
@@ -357,17 +400,27 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(source.getInt16());
         }
     }
     
+    static class FromInt16ToUnsignedInt32 extends TCastBase
+    {
+        public FromInt16ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_16),
+                  checkType(target, PUnderlying.INT_64), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt16(), context));
+        }
+    }
+        
     static class FromInt16ToInt64 extends TCastBase
     {
         public FromInt16ToInt64(TClass source, TClass target, boolean auto, Constantness c)
@@ -376,11 +429,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -397,11 +445,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt16());
@@ -417,11 +460,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt16()));
@@ -433,21 +471,16 @@ public class MNumericCastBase
         public FromInt32ToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Integer.toString(source.getInt32()));
         }
     }
-    
+
     static class FromInt32ToInt8 extends TCastBase
     {
         public FromInt32ToInt8(TClass source, TClass target, boolean auto, Constantness c)
@@ -457,17 +490,27 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt32(), context));
         }
     }
     
+    static class FromInt32ToUnsignedInt8 extends TCastBase
+    {
+        public FromInt32ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_32),
+                  checkType(target, PUnderlying.INT_16), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt32(), context));
+        }
+    }
+        
     static class FromInt32ToInt16 extends TCastBase
     {
         public FromInt32ToInt16(TClass source, TClass target, boolean auto, Constantness c)
@@ -477,14 +520,24 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt32(), context));
+        }
+    }
+    
+    static class FromInt32ToUnsignedInt16 extends TCastBase
+    {
+        public FromInt32ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_32),
+                  checkType(target, PUnderlying.INT_32), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt32(), context));
         }
     }
     
@@ -497,17 +550,27 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(source.getInt32());
         }
     }
     
+    static class FromInt32ToUnsignedInt32 extends TCastBase
+    {
+        public FromInt32ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_32),
+                  checkType(target, PUnderlying.INT_64), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt32(), context));
+        }
+    }
+        
     static class FromInt32ToInt64 extends TCastBase
     {
         public FromInt32ToInt64(TClass source, TClass target, boolean auto, Constantness c)
@@ -516,11 +579,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -537,11 +595,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt32());
@@ -557,11 +610,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt32()));
@@ -573,14 +621,9 @@ public class MNumericCastBase
         public FromInt64ToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -597,14 +640,24 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), context));
+        }
+    }
+    
+    static class FromInt64ToUnsignedInt8 extends TCastBase
+    {
+        public FromInt64ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_64),
+                  checkType(target, PUnderlying.INT_16), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt64(), context));
         }
     }
     
@@ -617,14 +670,24 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), context));
+        }
+    }
+    
+    static class FromInt64ToUnsignedInt16 extends TCastBase
+    {
+        public FromInt64ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_64),
+                  checkType(target, PUnderlying.INT_32), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt64(), context));
         }
     }
     
@@ -637,14 +700,24 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64(), context));
+        }
+    }
+    
+    static class FromInt64ToUnsignedInt32 extends TCastBase
+    {
+        public FromInt64ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_64),
+                  checkType(target, PUnderlying.INT_64), auto, c);
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt64(), context));
         }
     }
     
@@ -656,11 +729,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.INT_64), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -677,11 +745,6 @@ public class MNumericCastBase
         }
 
         @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt64());
@@ -696,11 +759,6 @@ public class MNumericCastBase
                   checkType(target, PUnderlying.BYTES), auto, c);
         }
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {

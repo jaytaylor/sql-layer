@@ -27,12 +27,15 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
-import com.akiban.ais.gwtutils.GwtLogger;
-import com.akiban.ais.gwtutils.GwtLogging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.ais.model.Join.GroupingUsage;
 import com.akiban.ais.model.Join.SourceType;
 import com.akiban.ais.model.validation.AISInvariants;
@@ -41,10 +44,8 @@ import com.akiban.ais.model.validation.AISInvariants;
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
-public class
-        AISBuilder {
-    GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
-
+public class AISBuilder {
+    private static final Logger LOG = LoggerFactory.getLogger(AISBuilder.class);
     // API for creating capturing basic schema information
 
     public AISBuilder() {
@@ -81,6 +82,14 @@ public class
         this.indexIdGenerator = offset;
     }
 
+    public void sequence (String schemaName, String sequenceName,
+            long start, long increment,
+            long minValue, long maxValue, boolean cycle) {
+        LOG.info("sequence: {}.{} ", schemaName,sequenceName);
+        Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
+        identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
+    }
+    
     public void userTable(String schemaName, String tableName) {
         LOG.info("userTable: " + schemaName + "." + tableName);
         UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
@@ -96,12 +105,20 @@ public class
         table.setInitialAutoIncrementValue(initialAutoIncrementValue);
     }
 
+    public void view(String schemaName, String tableName,
+                     String definition, Properties definitionProperties,
+                     Map<TableName,Collection<String>> tableColumnReferences) {
+        LOG.info("view: " + schemaName + "." + tableName);
+        View.create(ais, schemaName, tableName, 
+                    definition, definitionProperties, tableColumnReferences);
+    }
+
     public void column(String schemaName, String tableName, String columnName,
             Integer position, String typeName, Long typeParameter1,
             Long typeParameter2, Boolean nullable, Boolean autoIncrement,
             String charset, String collation) {
         LOG.info("column: " + schemaName + "." + tableName + "." + columnName);
-        UserTable table = ais.getUserTable(schemaName, tableName);
+        Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
                 concat(schemaName, tableName));
         Type type = ais.getType(typeName);
@@ -114,6 +131,15 @@ public class
         column.setCharset(charset);
         column.setCollation(collation);
         column.finishCreating();
+    }
+
+    public void columnAsIdentity (String schemaName, String tableName, String columnName,
+            String sequenceName, Boolean defaultIdentity) {
+        LOG.info("column as identity: " + schemaName + "." + tableName + "." + columnName + ": " + sequenceName);
+        Column column = ais.getTable(schemaName, tableName).getColumn(columnName);
+        column.setDefaultIdentity(defaultIdentity);
+        Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
+        column.setIdentityGenerator(identityGenerator);
     }
 
     public void index(String schemaName, String tableName, String indexName,
@@ -156,8 +182,7 @@ public class
         Index index = table.getIndex(indexName);
         checkFound(table, "creating index column", "index",
                 concat(schemaName, tableName, indexName));
-        index.addColumn(new IndexColumn(index, column, position, ascending,
-                indexedLength));
+        IndexColumn.create(index, column, position, ascending, indexedLength);
     }
 
     public void groupIndexColumn(String groupName, String indexName, String schemaName, String tableName,
@@ -175,7 +200,7 @@ public class
         checkFound(table, "creating group index column", "table", concat(schemaName, tableName));
         Column column = table.getColumn(columnName);
         checkFound(column, "creating group index column", "column", concat(schemaName, tableName, columnName));
-        index.addColumn(new IndexColumn(index, column, position, true, null));
+        IndexColumn.create(index, column, position, true, null);
     }
 
     public void joinTables(String joinName, String parentSchemaName,
@@ -280,14 +305,19 @@ public class
 
     // API for describing groups
 
-    public void createGroup(String groupName, String groupSchemaName,
-            String groupTableName) {
-        LOG.info("createGroup: " + groupName + " -> " + groupSchemaName + "."
-                + groupTableName);
-        GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);
+    public void createGroup(String groupName, String groupSchemaName, String groupTableName) {
+        createGroup(groupName, groupSchemaName, groupTableName, tableIdGenerator++);
+    }
+
+    public void createGroup(String groupName, String groupSchemaName, String groupTableName, int groupTableID) {
+        LOG.info("createGroup: {} -> {}.{} ({})", new Object[]{groupName, groupSchemaName, groupTableName, groupTableID});
+        GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, groupTableID);
         Group group = Group.create(ais, groupName);
         groupTable.setGroup(group);
         groupTable.setTreeName(nameGenerator.generateGroupTreeName(group));
+        if(tableIdGenerator <= groupTableID) {
+            tableIdGenerator = groupTableID + 1;
+        }
     }
 
     public void deleteGroup(String groupName) {
@@ -321,6 +351,8 @@ public class
         checkGroupAddition(group, table.getGroup(),
                 concat(schemaName, tableName));
         setTablesGroup(table, group);
+        
+        
         // group table columns
         generateGroupTableColumns(group);
     }
@@ -588,13 +620,12 @@ public class
                 this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
                 this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes",
                                 "group column", userIndexColumn.getColumn().getName());
-                IndexColumn groupIndexColumn = new IndexColumn(
+                IndexColumn.create(
                         groupIndex,
                         userIndexColumn.getColumn().getGroupColumn(),
                         position++,
                         userIndexColumn.isAscending(),
                         userIndexColumn.getIndexedLength());
-                groupIndex.addColumn(groupIndexColumn);
             }
         }
 

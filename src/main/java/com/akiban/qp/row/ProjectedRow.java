@@ -110,14 +110,14 @@ public class ProjectedRow extends AbstractRow
 
     // ProjectedRow interface
 
-    public ProjectedRow(ProjectedRowType rowType, Row row, QueryContext context, List<Expression> expressions,
+    public ProjectedRow(ProjectedRowType rowType, Row row, QueryContext context, List<? extends Expression> expressions,
                         List<? extends TPreparedExpression> pExpressions)
     {
         this.rowType = rowType;
         this.row = row;
         this.evaluations = createEvaluations(expressions, row, context);
         this.pEvals = createPEvals(pExpressions, row, context);
-        this.holders = new ValueHolder[expressions.size()];
+        this.holders = expressions == null ? null : new ValueHolder[expressions.size()];
     }
 
     /** Make sure all the <code>ValueHolder</code>s are full. */
@@ -131,7 +131,7 @@ public class ProjectedRow extends AbstractRow
 
     // For use by this class
 
-    private List<ExpressionEvaluation> createEvaluations(List<Expression> expressions, 
+    private List<ExpressionEvaluation> createEvaluations(List<? extends Expression> expressions,
                                                          Row row, QueryContext context)
     {
         if (expressions == null)

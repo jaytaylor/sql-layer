@@ -91,7 +91,7 @@ import com.akiban.util.tap.Tap;
 
  */
 
-class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
+class Delete_Default implements UpdatePlannable {
 
     // constructor
 
@@ -114,27 +114,7 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     @Override
     public UpdateResult run(QueryContext context) {
-        context(context);
-        int seen = 0, modified = 0;
-        Cursor inputCursor = null;
-        DELETE_TAP.in();
-        try {
-            inputCursor = inputOperator.cursor(context);
-            inputCursor.open();
-            Row oldRow;
-            while ((oldRow = inputCursor.next()) != null) {
-                checkQueryCancelation();
-                ++seen;
-                adapter().deleteRow(oldRow);
-                ++modified;
-            }
-        } finally {
-            if (inputCursor != null) {
-                inputCursor.close();
-            }
-            DELETE_TAP.out();
-        }
-        return new StandardUpdateResult(seen, modified);
+        return new Execution(context, inputOperator.cursor(context)).run();
     }
 
     @Override
@@ -154,4 +134,39 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     private final Operator inputOperator;
     private static final InOutTap DELETE_TAP = Tap.createTimer("operator: Delete_Default");
+
+    // Inner classes
+
+    private class Execution extends ExecutionBase
+    {
+        public UpdateResult run()
+        {
+            int seen = 0, modified = 0;
+            DELETE_TAP.in();
+            try {
+                input.open();
+                Row oldRow;
+                while ((oldRow = input.next()) != null) {
+                    checkQueryCancelation();
+                    ++seen;
+                    adapter().deleteRow(oldRow);
+                    ++modified;
+                }
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
+                DELETE_TAP.out();
+            }
+            return new StandardUpdateResult(seen, modified);
+        }
+
+        protected Execution(QueryContext queryContext, Cursor input)
+        {
+            super(queryContext);
+            this.input = input;
+        }
+
+        private final Cursor input;
+    }
 }

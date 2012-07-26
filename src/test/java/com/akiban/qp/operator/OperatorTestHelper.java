@@ -35,7 +35,11 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.store.Store;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import org.junit.Assert;
@@ -65,18 +69,13 @@ public final class OperatorTestHelper {
                 int actualWidth = actual.rowType().nFields();
                 assertEquals("row width", expected.rowType().nFields(), actualWidth);
                 for (int i = 0; i < actualWidth; ++i) {
-                    ValueHolder actualHolder = new ValueHolder(actual.eval(i));
-                    ValueHolder expectedHolder = new ValueHolder(expected.eval(i));
-
-                    if (!expectedHolder.equals(actualHolder)) {
-                        Assert.assertEquals(
-                                String.format("row[%d] field[%d]", rowCount, i),
-                                str(expecteds),
-                                str(actuals)
-                        );
-                        assertEquals(String.format("row[%d] field[%d]", rowCount, i), expectedHolder, actualHolder);
-                        throw new AssertionError("should have failed by now!");
+                    if (Types3Switch.ON) {
+                        checkRowInstance(expected, actual, i, rowCount, actuals, expecteds);
+                    } 
+                    else {
+                        checkRowType(expected, actual, i, rowCount, actuals, expecteds);
                     }
+                    
                 }
                 if (additionalCheck != null)
                     additionalCheck.check(actual);
@@ -87,6 +86,34 @@ public final class OperatorTestHelper {
             for (Row actual : actuals) {
                 actual.release();
             }
+        }
+    }
+    
+    private static void checkRowType(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {
+        ValueHolder actualHolder = new ValueHolder(actual.eval(i));
+        ValueHolder expectedHolder = new ValueHolder(expected.eval(i));
+
+        if (!expectedHolder.equals(actualHolder)) {
+            Assert.assertEquals(
+                    String.format("row[%d] field[%d]", rowCount, i),
+                    str(expecteds),
+                    str(actuals));
+            assertEquals(String.format("row[%d] field[%d]", rowCount, i), expectedHolder, actualHolder);
+            throw new AssertionError("should have failed by now!");
+        }
+    }
+    
+    private static void checkRowInstance(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {   
+        PValueSource actualSource = actual.pvalue(i);
+        PValueSource expectedSource = expected.pvalue(i);
+        
+        if(!PValueSources.areEqual(actualSource, expectedSource)) {
+            Assert.assertEquals(
+                    String.format("row[%d] field[%d]", rowCount, i),
+                    str(expecteds),
+                    str(actuals));
+            assertEquals(String.format("row[%d] field[%d]", rowCount, i), expectedSource, actualSource);
+            throw new AssertionError("should have failed by now!");
         }
     }
 
@@ -153,7 +180,8 @@ public final class OperatorTestHelper {
                                      Index index,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
-                                     IndexScanSelector selector)
+                                     IndexScanSelector selector,
+                                     boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }
@@ -161,6 +189,11 @@ public final class OperatorTestHelper {
         @Override
         public <HKEY extends HKey> HKEY newHKey(com.akiban.ais.model.HKey hKeyMetadata)
         {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Store getUnderlyingStore() {
             throw new UnsupportedOperationException();
         }
 
@@ -188,7 +221,8 @@ public final class OperatorTestHelper {
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,
-                           InOutTap loadTap)
+                           InOutTap loadTap,
+                           boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }

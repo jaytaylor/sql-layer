@@ -40,10 +40,12 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.rowdata.RowDef;
@@ -56,6 +58,7 @@ import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.PersistitAdapterException;
@@ -119,6 +122,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             dml.truncateTable(session, table.getTableId());
             store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
             store().deleteIndexes(session, userTable.getGroupIndexes());
+            
+            
+            if (userTable.getIdentityColumn() != null) {
+                Collection<Sequence> sequences = Collections.singleton(userTable.getIdentityColumn().getIdentityGenerator());
+                store().deleteSequences(session, sequences);
+            }
         }
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
@@ -451,6 +460,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
+    @Override
+    public void createView(Session session, View view)
+    {
+        schemaManager().createView(session, view);
+    }
+
+    @Override
+    public void dropView(Session session, TableName viewName)
+    {
+        schemaManager().dropView(session, viewName);
+    }
+
     private void checkCursorsForDDLModification(Session session, Table table) {
         Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
         if (cursorsMap == null) {
@@ -480,6 +501,21 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 cursor.setDDLModified();
             }
         }
+    }
+    
+    public void createSequence(Session session, Sequence sequence) {
+        schemaManager().createSequence (session, sequence);
+    }
+   
+    public void dropSequence(Session session, TableName sequenceName) {
+        final Sequence sequence = getAIS(session).getSequence(sequenceName);
+        
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        
+        store().deleteSequences(session, Collections.singleton(sequence));
+        schemaManager().dropSequence(session, sequence);
     }
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, IndexStatisticsService indexStatisticsService) {

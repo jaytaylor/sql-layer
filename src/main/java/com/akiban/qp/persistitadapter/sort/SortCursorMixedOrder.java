@@ -26,19 +26,23 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.types.ValueSource;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class SortCursorMixedOrder extends SortCursor
+class SortCursorMixedOrder<S,E> extends SortCursor
 {
     // Cursor interface
 
@@ -91,9 +95,9 @@ class SortCursorMixedOrder extends SortCursor
         more = true;
         try {
             while (more && field < scanStates.size()) {
-                MixedOrderScanState scanState = scanStates.get(field);
+                MixedOrderScanState<S> scanState = scanStates.get(field);
                 if (columnSelector.includesColumn(field)) {
-                    ValueSource fieldValue = row.eval(field);
+                    S fieldValue = sortKeyAdapter.eval(row, field);
                     if (!scanState.jump(fieldValue)) {
                         // We've matched as much of the row as we can with tree contents.
                         if (scanState.field() == scanStates.size() - 1) {
@@ -118,12 +122,13 @@ class SortCursorMixedOrder extends SortCursor
 
     // SortCursorMixedOrder interface
 
-    public static SortCursorMixedOrder create(QueryContext context,
+    public static <S, E> SortCursorMixedOrder<S, E> create(QueryContext context,
                                               IterationHelper iterationHelper,
                                               IndexKeyRange keyRange,
-                                              API.Ordering ordering)
+                                              API.Ordering ordering,
+                                              SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        return new SortCursorMixedOrder(context, iterationHelper, keyRange, ordering);
+        return new SortCursorMixedOrder<S, E>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     public void initializeScanStates() throws PersistitException
@@ -132,8 +137,8 @@ class SortCursorMixedOrder extends SortCursor
         while (f < boundColumns) {
             BoundExpressions lo = keyRange.lo().boundExpressions(context);
             BoundExpressions hi = keyRange.hi().boundExpressions(context);
-            ValueSource loSource = lo.eval(f);
-            ValueSource hiSource = hi.eval(f);
+            S loSource = sortKeyAdapter.get(lo, f);
+            S hiSource = sortKeyAdapter.get(hi, f);
             /*
              * An index restriction is described by an IndexKeyRange which contains
              * two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
@@ -170,27 +175,28 @@ class SortCursorMixedOrder extends SortCursor
                 hiInclusive = keyRange.hiInclusive();
                 singleValue = false;
             }
-            MixedOrderScanStateSingleSegment scanState =
-                new MixedOrderScanStateSingleSegment(this,
+            MixedOrderScanStateSingleSegment<S,E> scanState =
+                new MixedOrderScanStateSingleSegment<S, E> (this,
                                                      f,
                                                      loSource,
                                                      loInclusive,
                                                      hiSource,
                                                      hiInclusive,
                                                      singleValue,
-                                                     f >= orderingColumns() || ordering.ascending(f));
+                                                     f >= orderingColumns() || ordering.ascending(f),
+                                                      sortKeyAdapter);
             scanStates.add(scanState);
             f++;
         }
         while (f < orderingColumns()) {
-            MixedOrderScanStateSingleSegment scanState =
-                new MixedOrderScanStateSingleSegment(this, f);
+            MixedOrderScanStateSingleSegment<S, E> scanState =
+                new MixedOrderScanStateSingleSegment<S, E>(this, f, sortKeyAdapter);
             scanStates.add(scanState);
             f++;
         }
         if (f < keyColumns()) {
-            MixedOrderScanStateRemainingSegments scanState =
-                new MixedOrderScanStateRemainingSegments(this, orderingColumns());
+            MixedOrderScanStateRemainingSegments<S> scanState =
+                new MixedOrderScanStateRemainingSegments<S>(this, orderingColumns());
             scanStates.add(scanState);
         }
     }
@@ -200,11 +206,13 @@ class SortCursorMixedOrder extends SortCursor
     protected SortCursorMixedOrder(QueryContext context,
                                    IterationHelper iterationHelper,
                                    IndexKeyRange keyRange,
-                                   API.Ordering ordering)
+                                   API.Ordering ordering,
+                                   SortKeyAdapter<S, E> sortKeyAdapter)
     {
         super(context, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
+        this.sortKeyAdapter = sortKeyAdapter;
         // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
         // IndexRowType in that case, so an IndexKeyRange can't be created.
         if (keyRange == null) {
@@ -213,6 +221,15 @@ class SortCursorMixedOrder extends SortCursor
         } else {
             keyColumns = keyRange.indexRowType().index().indexRowComposition().getLength();
             boundColumns = keyRange.boundColumns();
+
+            collators = sortKeyAdapter.createAkCollators(boundColumns);
+            akTypes = sortKeyAdapter.createAkTypes(boundColumns);
+            tInstances = sortKeyAdapter.createTInstances(boundColumns);
+            List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
+            for (int f = 0; f < boundColumns; f++) {
+                Column column = indexColumns.get(f).getColumn();
+                sortKeyAdapter.setColumnMetadata(column, f, akTypes, collators, tInstances);
+            }
         }
     }
 
@@ -275,13 +292,29 @@ class SortCursorMixedOrder extends SortCursor
         return (MixedOrderScanStateSingleSegment) scanStates.get(field);
     }
 
+    public AkCollator collatorAt(int field) {
+        return collators == null ? null : collators[field];
+    }
+    
+    public AkType akTypeAt(int field) {
+        return akTypes == null ? null : akTypes[field];
+    }
+    
+    public TInstance tInstanceAt(int field) {
+        return tInstances == null ? null : tInstances[field];
+    }
+    
     // Object state
 
     protected final IndexKeyRange keyRange;
     protected final API.Ordering ordering;
-    protected final List<MixedOrderScanState> scanStates = new ArrayList<MixedOrderScanState>();
+    protected final List<MixedOrderScanState<S>> scanStates = new ArrayList<MixedOrderScanState<S>>();
+    private final SortKeyAdapter<S, E> sortKeyAdapter;
     private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
     private final int boundColumns;
     private boolean more;
     private boolean justOpened;
+    private AkCollator[] collators;
+    private AkType[] akTypes;
+    private TInstance[] tInstances;
 }

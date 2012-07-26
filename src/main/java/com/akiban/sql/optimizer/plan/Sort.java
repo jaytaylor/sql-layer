@@ -26,6 +26,11 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.CharacterTypeAttributes;
+
 import java.util.List;
 
 /** A key expression in an ORDER BY clause. */
@@ -44,6 +49,19 @@ public class Sort extends BasePlanWithInput
         }
         public void setAscending(boolean ascending) {
             this.ascending = ascending;
+        }
+
+        public AkCollator getCollator() {
+            DataTypeDescriptor dtd = getExpression().getSQLtype();
+            if (dtd != null) {
+                CharacterTypeAttributes att = dtd.getCharacterAttributes();
+                if (att != null) {
+                    String coll = att.getCollation();
+                    if (coll != null)
+                        return AkCollatorFactory.getAkCollator(coll);
+                }
+            }
+            return null;
         }
 
         public String toString() {

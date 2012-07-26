@@ -26,9 +26,17 @@
 
 package com.akiban.server.types3.service;
 
-public interface FunctionRegistry extends ExpressionRegistry
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
+
+import java.util.Collection;
+
+public interface FunctionRegistry
 {
-    public static enum FunctionKind {SCALAR, AGGREGATE}
-    
-    public FunctionKind getFunctionKind(String name);
+    Collection<? extends TAggregator> aggregators();
+    Collection<? extends TValidatedOverload> overloads();
+    Collection<? extends TCast> casts();
+    Collection<? extends TClass> tclasses();
 }

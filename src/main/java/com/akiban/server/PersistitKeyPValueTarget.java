@@ -27,6 +27,7 @@
 package com.akiban.server;
 
 import com.akiban.ais.model.Column;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -38,7 +39,6 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     // object state
 
     private Key key;
-    private PUnderlying type = null;
     
     // PersistitKeyPValueTarget interface
 
@@ -50,21 +50,12 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     public void attach(Key key) {
         this.key = key;
     }
-
-    public PersistitKeyPValueTarget expectingType(PUnderlying type) {
-        this.type = type;
-        return this;
-    }
-
-    public PersistitKeyPValueTarget expectingType(Column column) {
-        return expectingType(column.tInstance().typeClass().underlyingType());
-    }
     
     // PValueTarget interface
     
     @Override
     public PUnderlying getUnderlyingType() {
-        return type;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -75,83 +66,65 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     @Override
     public void putNull() {
         key.append(null);
-        invalidate();
     }
 
     @Override
     public void putBool(boolean value) {
-        assert type == PUnderlying.BOOL : type;
         key.append(value);
-        invalidate();
     }
 
     @Override
     public void putInt8(byte value) {
-        assert type == PUnderlying.INT_8 : type;
-        key.append(value);
-        invalidate();
+        key.append((long)value);
     }
 
     @Override
     public void putInt16(short value) {
-        assert type == PUnderlying.INT_16: type;
-        key.append(value);
-        invalidate();
+        key.append((long)value);
     }
 
     @Override
     public void putUInt16(char value) {
-        assert type == PUnderlying.UINT_16 : type;
-        key.append(value);
-        invalidate();
+        key.append((long)value);
     }
 
     @Override
     public void putInt32(int value) {
-        assert type == PUnderlying.INT_32 : type;
-        key.append(value);
-        invalidate();
+        key.append((long)value);
     }
 
     @Override
     public void putInt64(long value) {
-        assert type == PUnderlying.INT_64 : type;
         key.append(value);
-        invalidate();
     }
 
     @Override
     public void putFloat(float value) {
-        assert type == PUnderlying.FLOAT : type;
         key.append(value);
-        invalidate();
     }
 
     @Override
     public void putDouble(double value) {
-        assert type == PUnderlying.DOUBLE : type;
         key.append(value);
-        invalidate();
     }
 
     @Override
     public void putBytes(byte[] value) {
-        assert type == PUnderlying.BYTES : type;
         key.append(value);
-        invalidate();
     }
 
     @Override
-    public void putString(String value) {
-        assert type == PUnderlying.STRING : type;
-        key.append(value);
-        invalidate();
+    public void putString(String value, AkCollator collator) {
+        if (collator == null) {
+            key.append(value);
+        } else {
+            collator.append(key, value);
+        }
     }
 
     @Override
     public void putObject(Object object) {
         key.append(object);
-        invalidate();
     }
 
     // object interface
@@ -165,11 +138,5 @@ public class PersistitKeyPValueTarget implements PValueTarget {
 
     protected final Key key() {
         return key;
-    }
-    
-    // private methods
-
-    private void invalidate() {
-        type = null;
     }
 }

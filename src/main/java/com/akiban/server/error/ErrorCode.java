@@ -85,6 +85,7 @@ public enum ErrorCode {
         // SubClass 004 - SQL-server rejected establishment of SQL-connection
         // SubClass 006 - connection failure
         // SubClass 007 - transaction resolution unknown    
+    CONNECTION_TERMINATED   ("08", "500", Importance.ERROR, ConnectionTerminatedException.class),
     // Class 09 - triggered action exception
     // Class 0A - feature not supported
     UNSUPPORTED_SQL         ("0A", "500", Importance.ERROR, UnsupportedSQLException.class),
@@ -135,7 +136,8 @@ public enum ErrorCode {
         // SubClass 00F - zero-length character string
     
         // SubClass 00G - most specific type mismatch
-        // SubClass 00H - sequence generator limit exceeded    
+        // SubClass 00H - sequence generator limit exceeded 
+    SEQUENCE_LIMIT_EXCEEDED ("22", "00H", Importance.DEBUG, SequenceLimitExceededException.class),
         // SubClass 00P - interval value out of range
         // SubClass 00Q - multiset value overflow
     
@@ -186,7 +188,8 @@ public enum ErrorCode {
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
-    FK_CONSTRAINT_VIOLATION ("23", "502", Importance.DEBUG, ForeignKeyConstraintDMLException.class),
+    NOT_NULL_VIOLATION      ("23", "502", Importance.ERROR, NotNullViolationException.class),
+    FK_CONSTRAINT_VIOLATION ("23", "503", Importance.DEBUG, ForeignKeyConstraintDMLException.class),
     // Class 24 - invalid cursor state
     CURSOR_IS_FINISHED      ("24", "501", Importance.ERROR, CursorIsFinishedException.class), 
     CURSOR_IS_UNKNOWN       ("24", "502", Importance.ERROR, CursorIsUnknownException.class),
@@ -206,15 +209,19 @@ public enum ErrorCode {
         // SubClass 006 - read-only SQL-transaction
         // SubClass 007 - schema and data statement mixing not supported
         // SubClass 008 - held cursor requires same isolation level
+    TRANSACTION_ABORTED     ("25", "P02", Importance.DEBUG, TransactionAbortedException.class), // No standard, Postgres uses P02
     // Class 26 - invalid SQL statement name
     // Class 27 - triggered data change violation 
     // Class 28 - invalid authorization specification
+    // Class 2B - dependent privilege descriptors still exist
+    VIEW_REFERENCES_EXIST   ("2B", "000", Importance.DEBUG, ViewReferencesExist.class),
     // Class 2C - invalid character set name 
     UNSUPPORTED_CHARSET     ("2C", "000", Importance.DEBUG, UnsupportedCharsetException.class),
     // Class 2D - invalid transaction termination
     // Class 2E - invalid connection name
     // Class 2F - SQL routine exception
     // Class 2H - invalid collation name
+    UNSUPPORTED_COLLATION   ("2H", "000", Importance.DEBUG, UnsupportedCollationException.class),
     
     
     // Class 30 - invalid SQL statement identifier
@@ -233,6 +240,7 @@ public enum ErrorCode {
     
     // Class 40 - transaction rollback
     QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
+    QUERY_ROLLBACK          ("40", "001", Importance.ERROR, QueryRollbackException.class),
 
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the
@@ -259,6 +267,7 @@ public enum ErrorCode {
     UNSUPPORTED_CONFIGURATION ("42", "513", Importance.DEBUG, UnsupportedConfigurationException.class),
     SCHEMA_DEF_PARSE_EXCEPTION ("42", "514", Importance.DEBUG, SchemaDefParseException.class),
     SQL_PARSER_INTERNAL_EXCEPTION ("42", "515", Importance.DEBUG, SQLParserInternalException.class),
+    NO_SUCH_SEQUENCE        ("42", "516", Importance.DEBUG, NoSuchSequenceException.class),
 
     // Class 44 - with check option violation
     
@@ -324,6 +333,14 @@ public enum ErrorCode {
     GROUP_MIXED_TABLE_TYPES ("50", "01S", Importance.DEBUG, GroupMixedTableTypes.class),
     GROUP_MULTIPLE_MEM_TABLES ("50", "01T", Importance.DEBUG, GroupMultipleMemoryTables.class),
     JOIN_PARENT_NO_PK       ("50", "01U", Importance.DEBUG, JoinParentNoExplicitPK.class),
+    DUPLICATE_SEQUENCE      ("50", "01V", Importance.DEBUG, DuplicateSequenceNameException.class),
+    INDEX_COLUMN_IS_PARTIAL ("50", "01W", Importance.DEBUG, IndexColumnIsPartialException.class),
+    COLUMN_SIZE_MISMATCH    ("50", "01X", Importance.DEBUG, ColumnSizeMismatchException.class),
+    WHOLE_GROUP_QUERY       ("50", "01Y", Importance.DEBUG, WholeGroupQueryException.class),
+    SEQUENCE_INTERVAL_ZERO  ("50", "01Z", Importance.DEBUG, SequenceIntervalZeroException.class),
+    SEQUENCE_MIN_GE_MAX     ("50", "020", Importance.DEBUG, SequenceMinGEMaxException.class),
+    SEQUENCE_START_IN_RANGE ("50", "021", Importance.DEBUG, SequenceStartInRangeException.class),
+    SEQUENCE_TREE_NAME_NULL ("50", "022", Importance.DEBUG, SequenceTreeNameIsNullException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

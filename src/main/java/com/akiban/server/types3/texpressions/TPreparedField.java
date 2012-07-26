@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
@@ -35,7 +36,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public final class TPreparedField implements TPreparedExpression {
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return null;
     }
 
@@ -49,6 +50,11 @@ public final class TPreparedField implements TPreparedExpression {
         return new Evaluation(typeInstance.typeClass().underlyingType(), fieldIndex);
     }
 
+    @Override
+    public String toString() {
+        return "Field(" + fieldIndex + ')';
+    }
+
     public TPreparedField(TInstance typeInstance, int fieldIndex) {
         this.typeInstance = typeInstance;
         this.fieldIndex = fieldIndex;
@@ -60,8 +66,7 @@ public final class TPreparedField implements TPreparedExpression {
     private static class Evaluation extends ContextualEvaluation<Row> {
         @Override
         protected void evaluate(Row context, PValueTarget target) {
-            PValueSource rowSource = null;
-//            rowSource = context.rowEval(fieldIndex);
+            PValueSource rowSource = context.pvalue(fieldIndex);
             target.putValueSource(rowSource);
         }
 

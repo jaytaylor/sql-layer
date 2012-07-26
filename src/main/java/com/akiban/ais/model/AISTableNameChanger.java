@@ -36,6 +36,10 @@ public class AISTableNameChanger {
         this.newTableName = table.getName().getTableName();
     }
 
+    public AISTableNameChanger(UserTable table, TableName newName) {
+        this(table, newName.getSchemaName(), newName.getTableName());
+    }
+
     public AISTableNameChanger(UserTable table, String newSchemaName, String newTableName) {
         this.table = table;
         this.newSchemaName = newSchemaName;

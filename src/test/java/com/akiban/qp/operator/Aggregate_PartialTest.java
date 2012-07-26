@@ -31,6 +31,7 @@ import com.akiban.qp.rowtype.AggregatedRowType;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.expression.OldExpressionTestBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
@@ -48,7 +49,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 
-public final class Aggregate_PartialTest {
+public final class Aggregate_PartialTest extends OldExpressionTestBase {
 
     @Test
     public void simpleNoGroupBy() {

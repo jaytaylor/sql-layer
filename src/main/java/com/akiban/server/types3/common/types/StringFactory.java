@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.common.types;
 
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TAttributeValues;
 import com.akiban.server.types3.TAttributesDeclaration;
@@ -55,6 +56,11 @@ public class StringFactory implements TFactory
             return charset;
         }
         
+        public static String of (int ordinal)
+        {
+            return Charset.values()[ordinal].name();
+        }
+
         private static final Map<String,Charset> lookupMap = createLookupMap();
 
         private static Map<String, Charset> createLookupMap() {
@@ -69,9 +75,6 @@ public class StringFactory implements TFactory
             return map;
         }
     }
-    
-    //--------------------------------COLLATION---------------------------------
-    // TODO: not sure yet what we want to do about this
     
     //------------------------------Default values------------------------------
     
@@ -103,7 +106,8 @@ public class StringFactory implements TFactory
         int length = values.intAt(StringAttribute.LENGTH, DEFAULT_LENGTH);
         String charsetName = values.stringAt(StringAttribute.CHARSET, DEFAULT_CHARSET.name());
         int charsetId = Enums.ordinalOf(Charset.class, charsetName);
-        int collation = values.intAt(StringAttribute.COLLATION, DEFAULT_COLLATION_ID); // TODO need something similar
+        String collationName = values.stringAt(StringAttribute.COLLATION, AkCollatorFactory.UCS_BINARY);
+        int collation = AkCollatorFactory.getAkCollator(collationName).getCollationId();
         return tclass.instance(length, charsetId, collation);
     }
 

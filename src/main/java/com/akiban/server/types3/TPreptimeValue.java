@@ -27,7 +27,9 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Equality;
 
 public final class TPreptimeValue {
 
@@ -62,6 +64,37 @@ public final class TPreptimeValue {
         this.tInstance = tInstance;
         this.value = value;
         this.mutable = false;
+        if (value != null)
+            tInstance.setNullable(value.isNull());
+    }
+
+    @Override
+    public String toString() {
+        String result = tInstance.toString();
+        if (value != null)
+            result = result + '=' + value;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TPreptimeValue that = (TPreptimeValue) o;
+        
+        if (!Equality.areEqual(tInstance, that.tInstance))
+            return false;
+        if (value == null)
+            return that.value == null;
+        return that.value != null && PValueSources.areEqual(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = tInstance != null ? tInstance.hashCode() : 0;
+        result = 31 * result + (value != null ? PValueSources.hash(value) : 0);
+        return result;
     }
 
     private TInstance tInstance;

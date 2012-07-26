@@ -26,17 +26,27 @@
 
 package com.akiban.server.types3.common.types;
 
-import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.StringTruncationException;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types3.TBundle;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TClassFormatter;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.akiban.util.AkibanAppender;
 
 public abstract class TString extends TClass
 {
@@ -49,13 +59,64 @@ public abstract class TString extends TClass
     {
         super(bundle.id(),
                 name,
+                AkCategory.STRING_CHAR,
                 StringAttribute.class,
+                FORMAT.STRING,
                 1,
                 1,
                 serialisationSize,
                 PUnderlying.STRING);
         this.fixedLength = fixedLength;
         this.typeId = typeId;
+    }
+    
+    private static enum FORMAT implements TClassFormatter {
+        STRING {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(source.getString());
+            }
+        }
+    }
+
+    @Override
+    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+        CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
+        CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
+        AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
+        if (collator == null)
+            throw new AkibanInternalException("couldn't merge collators for " + instanceA + " and " + instanceB);
+        return collator.compare(sourceA.getString(), sourceB.getString());
+    }
+
+    @Override
+    public void attributeToString(int attributeIndex, long value, StringBuilder output) {
+        StringAttribute attribute = StringAttribute.values()[attributeIndex];
+        switch (attribute) {
+        case LENGTH:
+            output.append(value);
+            break;
+        case CHARSET:
+            StringFactory.Charset[] charsets = StringFactory.Charset.values();
+            if (value < 0 || value >= charsets.length) {
+                logger.warn("charset value out of range: {}", value);
+                output.append(value);
+            }
+            else {
+                output.append(charsets[(int)value]);
+            }
+            break;
+        case COLLATION:
+            AkCollator collator = AkCollatorFactory.getAkCollator((int)value);
+            if (collator == null) {
+                logger.warn("unknown collator for id " + value + " (" + ((int)value) + ')');
+                output.append(value);
+            }
+            else {
+                output.append(collator.getName());
+            }
+            break;
+        }
     }
 
     @Override
@@ -67,12 +128,12 @@ public abstract class TString extends TClass
     @Override
     public TInstance instance(int charsetId, int collationId) {
         return fixedLength < 0
-                ? super.instance(charsetId, collationId)
+                ? super.instance(charsetId, StringFactory.DEFAULT_CHARSET.ordinal(), collationId)
                 : super.instance(fixedLength, charsetId, collationId);
     }
 
     @Override
-    public void putSafety(QueryContext context, 
+    public void putSafety(TExecutionContext context, 
                           TInstance sourceInstance,
                           PValueSource sourceValue,
                           TInstance targetInstance,
@@ -135,4 +196,5 @@ public abstract class TString extends TClass
     
     private final int fixedLength;
     private final TypeId typeId;
+    private static final Logger logger = LoggerFactory.getLogger(TString.class);
 }

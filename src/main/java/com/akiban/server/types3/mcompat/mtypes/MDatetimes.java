@@ -29,35 +29,41 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TParsers;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
 import java.text.DateFormatSymbols;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.AkibanAppender;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
-public class MDatetimes 
+public class MDatetimes
 {
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
     
     public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
-            "date", 1, 1, 4, PUnderlying.INT_32, TypeId.DATE_ID);
+            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 4, PUnderlying.INT_32, TParsers.DATE, TypeId.DATE_ID);
     public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
-            "datetime", 1, 1, 8, PUnderlying.INT_64, TypeId.DATETIME_ID);
+            "datetime", AkCategory.DATE_TIME, FORMAT.DATETIME,  1, 1, 8, PUnderlying.INT_64, TParsers.DATETIME, TypeId.DATETIME_ID);
     public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
-            "time", 1, 1, 4, PUnderlying.INT_32, TypeId.TIME_ID);
+            "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 4, PUnderlying.INT_32, TParsers.TIME, TypeId.TIME_ID);
     public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
-            "year", 1, 1, 1, PUnderlying.INT_8, TypeId.YEAR_ID);
+            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, PUnderlying.INT_8, TParsers.YEAR, TypeId.YEAR_ID);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
-            "timestamp", 1, 1, 4, PUnderlying.INT_32, TypeId.TIMESTAMP_ID);
+            "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, PUnderlying.INT_32, TParsers.TIMESTAMP, TypeId.TIMESTAMP_ID);
 
     public static final List<String> SUPPORTED_LOCALES = new LinkedList<String>();
     
@@ -66,6 +72,40 @@ public class MDatetimes
     
     public static final Map<String, String[]> WEEKDAYS;
     public static final Map<String, String[]> SHORT_WEEKDAYS;
+
+    
+    private static enum FORMAT implements TClassFormatter {
+        DATE {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(dateToString(source.getInt32()));
+            }
+        }, 
+        DATETIME {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(datetimeToString(source.getInt64()));
+            }
+        }, 
+        TIME {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(timeToString(source.getInt32()));
+            }
+        }, 
+        YEAR {         
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(Integer.toString(source.getInt8()));
+            }
+        }, 
+        TIMESTAMP {      
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(timestampToString(source.getInt32(), null));
+            }
+        };
+    };
     
     static
     {
@@ -447,6 +487,46 @@ public class MDatetimes
         
         long ret = mul * (hr * DATETIME_HOUR_SCALE + min * DATETIME_MIN_SCALE + sec);
         return (int)CastUtils.getInRange(TIME_MAX, TIME_MIN, ret, context);
+    }
+
+    public static int parseTimestamp (String ts, String tz, TExecutionContext context)
+    {
+        Matcher m = PARSE_PATTERN.matcher(ts.trim());
+
+            if (!m.matches() || m.group(DATE_GROUP) == null) 
+            throw new InvalidDateFormatException("datetime", ts);
+
+        String year = m.group(DATE_YEAR_GROUP);
+        String month = m.group(DATE_MONTH_GROUP);
+        String day = m.group(DATE_DAY_GROUP);
+        String hour = "0";
+        String minute = "0";
+        String seconds = "0";
+
+        if (m.group(TIME_GROUP) != null)
+        {
+            hour = m.group(TIME_HOUR_GROUP);
+            minute = m.group(TIME_MINUTE_GROUP);
+            seconds = m.group(TIME_SECOND_GROUP);
+        }
+
+        try
+        {
+            long millis = new DateTime(Integer.parseInt(year),
+                                       Integer.parseInt(month),
+                                       Integer.parseInt(day),
+                                       Integer.parseInt(hour),
+                                       Integer.parseInt(minute),
+                                       Integer.parseInt(seconds),
+                                       0,
+                                       DateTimeZone.forID(tz)
+                                      ).getMillis();
+            return (int)CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
+        }
+        catch (NumberFormatException ex)
+        {
+            throw new InvalidDateFormatException("datetime", ts);
+        }
     }
 
     public static long[] decodeTimestamp(long ts, String tz) 

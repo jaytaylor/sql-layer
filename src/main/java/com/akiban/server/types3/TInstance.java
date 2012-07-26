@@ -26,9 +26,23 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 public final class TInstance {
+    
+    public void writeCanonical(PValueSource in, PValueTarget out) {
+        tclass.writeCanonical(in, this, out);
+    }
+    
+    public void writeCollating(PValueSource in, PValueTarget out) {
+        tclass.writeCollating(in, this, out);
+    }
+    
+    public void readCanonical(PValueSource in, PValueTarget out) {
+        tclass.readCanonical(in, this, out);
+    }
     
     public int attribute(Attribute attribute) {
         if (enumClass != attribute.getClass())
@@ -90,8 +104,10 @@ public final class TInstance {
 
     @Override
     public String toString() {
-        String className = tclass.name().unqualifiedName();
+        String className = tclass.name().toString();
         int nattrs = tclass.nAttributes();
+        if (nattrs == 0)
+            return className;
         // assume 5 digits per attribute as a wild guess. If it's wrong, no biggie. 2 chars for open/close paren
         int capacity = className.length() + 2 + (5*nattrs);
         StringBuilder sb = new StringBuilder(capacity);
@@ -122,7 +138,7 @@ public final class TInstance {
                 && attr1 == other.attr1
                 && attr2 == other.attr2
                 && attr3 == other.attr3
-                && (isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable)
+                && ((isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable))
                 && tclass.equals(other.tclass);
 
     }
@@ -163,6 +179,16 @@ public final class TInstance {
         this.attr2 = attr2;
         this.attr3 = attr3;
         this.enumClass = enumClass;
+    }
+
+    public TInstance(TInstance copyFrom) {
+        this.tclass = copyFrom.tclass;
+        this.attr0 = copyFrom.attr0;
+        this.attr1 = copyFrom.attr1;
+        this.attr2 = copyFrom.attr2;
+        this.attr3 = copyFrom.attr3;
+        this.enumClass = copyFrom.enumClass;
+        this.isNullable = copyFrom.isNullable;
     }
 
     private final TClass tclass;

@@ -44,6 +44,11 @@ public interface ServerStatement
         REQUIRED_WRITE          // Must have read write transaction.
     };
 
-    public TransactionMode getTransactionMode();
+    public enum TransactionAbortedMode {
+        ALLOWED,                // Statement always allowed
+        NOT_ALLOWED,            // Statement never allowed
+    }
 
+    public TransactionMode getTransactionMode();
+    public TransactionAbortedMode getTransactionAbortedMode();
 }

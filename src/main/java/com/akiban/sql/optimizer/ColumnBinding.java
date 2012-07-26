@@ -82,41 +82,47 @@ public class ColumnBinding
             return resultColumn.getType();
         }
         else {
-            Type aisType = column.getType();
-            String typeName = aisType.name().toUpperCase();
-            TypeId typeId = TypeId.getBuiltInTypeId(typeName);
-            if (typeId == null)
-                typeId = TypeId.getSQLTypeForJavaType(typeName);
-            boolean nullable = this.nullable || column.getNullable();
-            switch (aisType.nTypeParameters()) {
-            case 0:
-                return new DataTypeDescriptor(typeId, nullable);
-            case 1:
-                {
-                    DataTypeDescriptor type = new DataTypeDescriptor(typeId, nullable, 
-                                                                     column.getTypeParameter1().intValue());
-                    if (typeId.isStringTypeId() &&
-                        (column.getCharsetAndCollation() != null)) {
-                        CharacterTypeAttributes cattrs = 
-                            new CharacterTypeAttributes(column.getCharsetAndCollation().charset(),
-                                                        column.getCharsetAndCollation().collation(),
-                                                        CharacterTypeAttributes.CollationDerivation.IMPLICIT);
-                        type = new DataTypeDescriptor(type, cattrs);
-                    }
-                    return type;
+            return getType(column, nullable);
+        }
+    }
+    
+    public static DataTypeDescriptor getType(Column column, boolean nullable)
+            throws StandardException {
+        Type aisType = column.getType();
+        String typeName = aisType.name().toUpperCase();
+        TypeId typeId = TypeId.getBuiltInTypeId(typeName);
+        if (typeId == null)
+            typeId = TypeId.getSQLTypeForJavaType(typeName);
+        if (column.getNullable())
+            nullable = true;
+        switch (aisType.nTypeParameters()) {
+        case 0:
+            return new DataTypeDescriptor(typeId, nullable);
+        case 1:
+            {
+                DataTypeDescriptor type = new DataTypeDescriptor(typeId, nullable, 
+                                                                 column.getTypeParameter1().intValue());
+                if (typeId.isStringTypeId() &&
+                    (column.getCharsetAndCollation() != null)) {
+                    CharacterTypeAttributes cattrs = 
+                        new CharacterTypeAttributes(column.getCharsetAndCollation().charset(),
+                                                    column.getCharsetAndCollation().collation(),
+                                                    CharacterTypeAttributes.CollationDerivation.IMPLICIT);
+                    type = new DataTypeDescriptor(type, cattrs);
                 }
-            case 2:
-                {
-                    int precision = column.getTypeParameter1().intValue();
-                    int scale = column.getTypeParameter2().intValue();
-                    int maxWidth = DataTypeDescriptor.computeMaxWidth(precision, scale);
-                    return new DataTypeDescriptor(typeId, precision, scale, 
-                                                  nullable, maxWidth);
-                }
-            default:
-                assert false;
-                return new DataTypeDescriptor(typeId, nullable);
+                return type;
             }
+        case 2:
+            {
+                int precision = column.getTypeParameter1().intValue();
+                int scale = column.getTypeParameter2().intValue();
+                int maxWidth = DataTypeDescriptor.computeMaxWidth(precision, scale);
+                return new DataTypeDescriptor(typeId, precision, scale, 
+                                              nullable, maxWidth);
+            }
+        default:
+            assert false;
+            return new DataTypeDescriptor(typeId, nullable);
         }
     }
 

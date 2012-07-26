@@ -1,5 +1,5 @@
 PhysicalSelect[cid:int[INT], order_date:date[DATE]]
-  project([Field(0), Field(4)])
+  project(Field(0), Field(4))
     Filter_Default([flatten(test.customers, test.orders)])
       Flatten_HKeyOrdered(test.customers INNER test.orders)
         BranchLookup_Default(_akiban_customers test.customers -> test.orders limit NO LIMIT)

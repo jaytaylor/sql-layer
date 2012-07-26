@@ -45,7 +45,7 @@ import java.util.Date;
 
 public class NoArgFuncs
 {
-    static final int MySQL_DEFAULT_LENGTH = 77;
+    static final int USER_NAME_LENGTH = 77;
 
     public static final TPreparedExpression PI = new TPreparedExpression()
     {
@@ -54,7 +54,7 @@ public class NoArgFuncs
         private final TInstance RESULT_TYPE = MApproximateNumber.DOUBLE.instance();
         
         @Override
-        public TPreptimeValue evaluateConstant()
+        public TPreptimeValue evaluateConstant(QueryContext queryContext)
         {
             return PREP_VAL;
         }
@@ -100,7 +100,7 @@ public class NoArgFuncs
     public static final TOverload CUR_DATE = new NoArgExpression("CURRENT_DATE", true)
     {
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TInstance tInstance()
         {
             return MDatetimes.DATE.instance();
         }
@@ -115,7 +115,7 @@ public class NoArgFuncs
     public static final TOverload CUR_TIME = new NoArgExpression("CURRENT_TIME", true)
     {
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TInstance tInstance()
         {
             return MDatetimes.TIME.instance();
         }
@@ -130,7 +130,7 @@ public class NoArgFuncs
     public static final TOverload CUR_TIMESTAMP = new NoArgExpression("CURRENT_TIMESTAMP", true)
     {
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TInstance tInstance()
         {
             return MDatetimes.DATETIME.instance();
         }
@@ -145,7 +145,7 @@ public class NoArgFuncs
     public static final TOverload SYSDATE = new NoArgExpression("SYSDATE", false)
     {
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TInstance tInstance()
         {
             return MDatetimes.DATETIME.instance();
         }
@@ -157,13 +157,13 @@ public class NoArgFuncs
         }
     };
     
-    public static final TOverload CUR_USER = new NoArgExpression("CUR_USER", true)
+    public static final TOverload CUR_USER = new NoArgExpression("CURRENT_USER", true)
     {
 
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TInstance tInstance()
         {
-            return AkString.VARCHAR.instance(context.getCurrentUser().length());
+            return AkString.VARCHAR.instance(USER_NAME_LENGTH);
         }
 
         @Override
@@ -176,9 +176,9 @@ public class NoArgFuncs
     public static final TOverload SESSION_USER = new NoArgExpression("SESSION_USER", true)
     {
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TInstance tInstance()
         {
-            return AkString.VARCHAR.instance(context.getSessionUser().length());
+            return AkString.VARCHAR.instance(USER_NAME_LENGTH);
         }
 
         @Override
@@ -191,9 +191,9 @@ public class NoArgFuncs
     public static final TOverload SYSTEM_USER = new NoArgExpression("SYSTEM_USER", true)
     {
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TInstance tInstance()
         {
-            return AkString.VARCHAR.instance(context.getSystemUser().length());
+            return AkString.VARCHAR.instance(USER_NAME_LENGTH);
         }
 
         @Override

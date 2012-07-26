@@ -26,18 +26,22 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.ais.AISCloner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
@@ -49,13 +53,17 @@ import java.util.Set;
  * frozen. If you pass a frozen AIS into the merge, the copy process unfreeze the copy.
  */
 public class AISMerge {
-    private static final int AIS_TABLE_ID_OFFSET = 1000000000;
+    // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
+    static final int USER_TABLE_ID_OFFSET = 1;
+    static final int AIS_TABLE_ID_OFFSET = 1000000000;
+    private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
 
     /* state */
-    private AkibanInformationSchema targetAIS;
-    private UserTable sourceTable;
-    private NameGenerator nameGenerator;
-    private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
+    private final AkibanInformationSchema targetAIS;
+    private final UserTable sourceTable;
+    private final NameGenerator nameGenerator;
+    private SortedSet<Integer> userTableIDSet = new TreeSet<Integer>();
+    private SortedSet<Integer> isTableIDSet = new TreeSet<Integer>();
 
     /**
      * Creates an AISMerger with the starting values. 
@@ -64,15 +72,19 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
-        targetAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(targetAIS)).save(primaryAIS);
-        
+        targetAIS = copyAIS(primaryAIS);
         sourceTable = newTable;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
+                setDefaultSequenceNames(computeSequenceNames(targetAIS)).
                 setDefaultTreeNames(computeTreeNames(targetAIS));
+        collectTableIDs(primaryAIS);
     }
     
+    public static AkibanInformationSchema copyAIS(AkibanInformationSchema oldAIS) {
+        return AISCloner.clone(oldAIS);
+    }
+
     /**
      * Returns the final, updated AkibanInformationSchema. This AIS has been fully 
      * validated and is frozen (no more changes), hence ready for update into the
@@ -93,11 +105,8 @@ public class AISMerge {
         LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
 
         final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
-        if(TableName.INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName())) {
-            builder.setTableIdOffset(computeAISTableIdOffset(targetAIS));
-        } else {
-            builder.setTableIdOffset(computeTableIdOffset(targetAIS));
-        }
+        final boolean isISTable = TableName.INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName());
+        builder.setTableIdOffset(isISTable ? getISTableIdOffset() : getUserTableIDOffset(sourceTable.getName()));
 
         if (sourceTable.getParentJoin() != null) {
             String parentSchemaName = sourceTable.getParentJoin().getParent().getName().getSchemaName();
@@ -120,8 +129,9 @@ public class AISMerge {
             builder.basicSchemaIsComplete();            
             builder.createGroup(groupName, 
                     sourceTable.getName().getSchemaName(), 
-                    groupTableName);
-            builder.addTableToGroup(groupName, 
+                    groupTableName,
+                    getNextTableID(isISTable));
+            builder.addTableToGroup(groupName,
                     sourceTable.getName().getSchemaName(), 
                     sourceTable.getName().getTableName());
         } else {
@@ -141,8 +151,8 @@ public class AISMerge {
 
     private void addTable(AISBuilder builder, final UserTable table) {
         
-        // I should use TableSubsetWriter(new AISTarget(targetAIS))
-        // but that assumes the UserTable.getAIS() is complete and valid. 
+        // I should use TableSubsetWriter(new AISTarget(targetAIS)) or AISCloner.clone()
+        // but both assume the UserTable.getAIS() is complete and valid. 
         // i.e. has a group and group table, and the joins point to a valid table
         // which, given the use of AISMerge, is not true. 
         
@@ -166,10 +176,26 @@ public class AISMerge {
                     column.getInitialAutoIncrementValue() != null, 
                     column.getCharsetAndCollation().charset(), 
                     column.getCharsetAndCollation().collation());
+            Column newColumn = targetTable.getColumn(column.getPosition());
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {
-                targetTable.getColumn(column.getPosition()).setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
+                newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
             }
+            if (column.getDefaultIdentity() != null) {
+                String sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
+                Sequence sequence = column.getIdentityGenerator();
+                builder.sequence(schemaName, sequenceName, 
+                        sequence.getStartsWith(), 
+                        sequence.getIncrement(), 
+                        sequence.getMinValue(), 
+                        sequence.getMaxValue(), 
+                        sequence.isCycle());
+                builder.columnAsIdentity(schemaName, tableName, column.getName(), sequenceName, column.getDefaultIdentity());
+                LOG.debug("Generated sequence: {}, with tree name; {}", sequenceName, sequence.getTreeName());
+            }
+            // Proactively cache, can go away if Column ever cleans itself up
+            newColumn.getMaxStorageSize();
+            newColumn.getPrefixSize();
         }
         
         // indexes/constraints
@@ -256,43 +282,37 @@ public class AISMerge {
     }
 */
 
-    private static int computeTableIdOffset(AkibanInformationSchema ais) {
-        // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
-        int offset = computeTableIdOffset(ais, 1, false);
-        assert offset < AIS_TABLE_ID_OFFSET : "Offset too large for user table: " + offset;
+    private int getUserTableIDOffset(TableName name) {
+        int offset = getNextTableID(false);
+        if(offset >= AIS_TABLE_ID_OFFSET) {
+            LOG.warn("Offset for table {} unexpectedly large: {}", name, offset);
+        }
         return offset;
     }
 
-    private static int computeAISTableIdOffset(AkibanInformationSchema ais) {
-        int offset = computeTableIdOffset(ais, AIS_TABLE_ID_OFFSET, true);
+    private int getISTableIdOffset() {
+        int offset = getNextTableID(true);
         assert offset >= AIS_TABLE_ID_OFFSET : "Offset too small for IS table: " + offset;
         return offset;
     }
 
-    private static int computeTableIdOffset(AkibanInformationSchema ais, int offset, boolean includeIS) {
-        if(includeIS) {
-            offset = computeTableIdOffsetForSchema(ais.getSchema(TableName.INFORMATION_SCHEMA), offset);
+    /**
+     * Get the next number that could be used for a table ID. The parameter indicates
+     * where to start the search, but the ID will be unique across ALL tables.
+     * @param isISTable Offset to start the search at.
+     * @return Unique ID value.
+     */
+    private int getNextTableID(boolean isISTable) {
+        Integer nextID = (isISTable ? isTableIDSet.last() : userTableIDSet.last()) + 1;
+        while(isTableIDSet.contains(nextID) || userTableIDSet.contains(nextID)) {
+            nextID += 1;
+        }
+        if(isISTable) {
+            isTableIDSet.add(nextID);
         } else {
-            for(Schema schema : ais.getSchemas().values()) {
-                if(!TableName.INFORMATION_SCHEMA.equals(schema.getName())) {
-                    offset = computeTableIdOffsetForSchema(schema, offset);
-                }
-            }
+            userTableIDSet.add(nextID);
         }
-        return offset;
-    }
-
-    private static int computeTableIdOffsetForSchema(Schema schema, int offset) {
-        if(schema != null) {
-            for(UserTable table : schema.getUserTables().values()) {
-                offset = Math.max(offset, table.getTableId() + 1);
-                Group group = table.getGroup();
-                if(group != null && group.getGroupTable() != null) {
-                    offset = Math.max(offset, group.getGroupTable().getTableId() + 1);
-                }
-            }
-        }
-        return offset;
+        return nextID;
     }
 
     private static int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
@@ -327,6 +347,80 @@ public class AISMerge {
                 treeNames.add(index.getTreeName());
             }
         }
+        for (Sequence sequence : ais.getSequences().values()){
+            if(sequence.getTreeName() != null) {
+                treeNames.add(sequence.getTreeName());
+            }
+        }
         return treeNames;
     }
+
+    public static Set<String> computeSequenceNames (AkibanInformationSchema ais) {
+        // Collect all sequence names
+        Set<String> sequenceNames = new HashSet<String>();
+        for(TableName sequence : ais.getSequences().keySet()) {
+            sequenceNames.add(sequence.getTableName());
+        }
+        return sequenceNames;
+    }
+
+    private void collectTableIDs(AkibanInformationSchema ais) {
+        userTableIDSet.clear();
+        userTableIDSet.add(USER_TABLE_ID_OFFSET - 1);
+        isTableIDSet.clear();
+        isTableIDSet.add(AIS_TABLE_ID_OFFSET - 1);
+        for(Schema schema : ais.getSchemas().values()) {
+            final Set<Integer> set = TableName.INFORMATION_SCHEMA.equals(schema.getName()) ? isTableIDSet : userTableIDSet;
+            for(UserTable table : schema.getUserTables().values()) {
+                set.add(table.getTableId());
+                Group group = table.getGroup();
+                if(group != null && group.getGroupTable() != null) {
+                    set.add(group.getGroupTable().getTableId());
+                }
+            }
+        }
+    }
+
+    public static AkibanInformationSchema mergeView(AkibanInformationSchema oldAIS,
+                                                    View view) {
+        AkibanInformationSchema newAIS = copyAIS(oldAIS);
+        copyView(newAIS, view);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
+
+    public static void copyView(AkibanInformationSchema newAIS,
+                                View oldView) {
+        Map<TableName,Collection<String>> newReferences = 
+            new HashMap<TableName,Collection<String>>();
+        for (Map.Entry<TableName,Collection<String>> entry : oldView.getTableColumnReferences().entrySet()) {
+            newReferences.put(entry.getKey(),
+                              new HashSet<String>(entry.getValue()));
+        }
+        View newView = View.create(newAIS,
+                                   oldView.getName().getSchemaName(),
+                                   oldView.getName().getTableName(),
+                                   oldView.getDefinition(),
+                                   oldView.getDefinitionProperties(),
+                                   newReferences);
+        for (Column col : oldView.getColumns()) {
+            Column.create(newView, col.getName(), col.getPosition(),
+                          col.getType(), col.getNullable(),
+                          col.getTypeParameter1(), col.getTypeParameter2(), 
+                          col.getInitialAutoIncrementValue(),
+                          col.getCharsetAndCollation());
+        }
+        newAIS.addView(newView);
+    }
+    
+    public static AkibanInformationSchema mergeSequence (AkibanInformationSchema oldAIS,
+                                                            Sequence sequence)
+    {
+        AkibanInformationSchema newAIS = copyAIS (oldAIS);
+        newAIS.addSequence(sequence);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }    
 }

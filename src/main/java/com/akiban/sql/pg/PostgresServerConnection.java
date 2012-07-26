@@ -35,9 +35,7 @@ import com.akiban.sql.server.ServerTransaction;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserException;
-import com.akiban.sql.parser.SQLParserFeature;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.ais.model.UserTable;
@@ -53,6 +51,7 @@ import com.akiban.server.service.EventTypes;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,14 +218,23 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    logError("Query canceled", ex);
+                    logError(ErrorLogLevel.INFO, "Query canceled", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
-                } catch (InvalidOperationException ex) {
-                    logError("Error in query", ex);
+                } catch (ConnectionTerminatedException ex) {
+                    logError(ErrorLogLevel.DEBUG, "Query terminated self", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                    stop();
+                } catch (InvalidOperationException ex) {
+                    logError(ErrorLogLevel.WARN, "Error in query", ex);
+                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                } catch (RollbackException ex) {
+                    QueryRollbackException qe = new QueryRollbackException();
+                    qe.initCause(ex);
+                    logError(ErrorLogLevel.INFO, "Query rollback", qe);
+                    sendErrorResponse(type, qe,  qe.getCode(), qe.getMessage());
                 } catch (Exception ex) {
-                    logError("Unexpected error in query", ex);
+                    logError(ErrorLogLevel.WARN, "Unexpected error in query", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }
@@ -249,23 +257,35 @@ public class PostgresServerConnection extends ServerSessionBase
         }
     }
 
-    private void logError(String msg, Exception ex) {
+    private enum ErrorLogLevel { WARN, INFO, DEBUG };
+
+    private void logError(ErrorLogLevel level, String msg, Exception ex) {
         if (reqs.config().testing()) {
-            logger.debug(msg, ex);
+            level = ErrorLogLevel.DEBUG;
         }
-        else {
+        switch (level) {
+        case DEBUG:
+            logger.debug(msg, ex);
+            break;
+        case INFO:
+            logger.info(msg, ex);
+            break;
+        case WARN:
+        default:
             logger.warn(msg, ex);
+            break;
         }
     }
 
-    private void sendErrorResponse(PostgresMessages type, Exception exception, ErrorCode errorCode, String message)
+    protected void sendErrorResponse(PostgresMessages type, Exception exception, ErrorCode errorCode, String message)
         throws Exception
     {
         if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw exception;
         else {
             messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
             messenger.write('S');
-            messenger.writeString("ERROR");
+            messenger.writeString((type.errorMode() == PostgresMessages.ErrorMode.FATAL)
+                                  ? "FATAL" : "ERROR");
             messenger.write('C');
             messenger.writeString(errorCode.getFormattedValue());
             messenger.write('M');
@@ -288,7 +308,10 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected void readyForQuery() throws IOException {
         messenger.beginMessage(PostgresMessages.READY_FOR_QUERY_TYPE.code());
-        messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
+        char mode = 'I';        // Idle
+        if (isTransactionActive())
+            mode = isTransactionRollbackPending() ? 'E' : 'T';
+        messenger.writeByte(mode);
         messenger.sendMessage(true);
     }
 
@@ -320,10 +343,15 @@ public class PostgresServerConnection extends ServerSessionBase
         session = reqs.sessionService().createSession();
         updateAIS();
 
-        {
+        if (Boolean.parseBoolean(properties.getProperty("require_password", "false"))) {
             messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
             messenger.sendMessage(true);
+        }
+        else {
+            String user = properties.getProperty("user");
+            logger.info("Login {}", user);
+            authenticationOkay(user);
         }
         return true;
     }
@@ -364,6 +392,10 @@ public class PostgresServerConnection extends ServerSessionBase
         String user = properties.getProperty("user");
         String pass = messenger.readString();
         logger.info("Login {}/{}", user, pass);
+        authenticationOkay(user);
+    }
+    
+    protected void authenticationOkay(String user) throws IOException {
         Properties status = new Properties();
         // This is enough to make the JDBC driver happy.
         status.put("client_encoding", properties.getProperty("client_encoding", "UNICODE"));
@@ -456,8 +488,9 @@ public class PostgresServerConnection extends ServerSessionBase
         int[] paramTypes = new int[nparams];
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
+        sessionTracer.setCurrentStatement(sql);
         logger.info("Parse: {}", sql);
-
+        
         updateAIS();
 
         PostgresStatement pstmt = null;
@@ -630,28 +663,16 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void rebuildCompiler() {
-        parser = new SQLParser();
-        Set<SQLParserFeature> parserFeatures = new HashSet<SQLParserFeature>();
-        // TODO: Others that are on by defaults could have override to turn them
-        // off, but they are pretty harmless.
-        if (Boolean.parseBoolean(getProperty("parserInfixBit", "false")))
-            parserFeatures.add(SQLParserFeature.INFIX_BIT_OPERATORS);
-        if (Boolean.parseBoolean(getProperty("parserInfixLogical", "false")))
-            parserFeatures.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
-        if (Boolean.parseBoolean(getProperty("columnAsFunc", "false")))
-            parserFeatures.add(SQLParserFeature.MYSQL_COLUMN_AS_FUNCS);
-        if ("string".equals(getProperty("parserDoubleQuoted", "identifier")))
-            parserFeatures.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
-        parser.getFeatures().addAll(parserFeatures);
-        defaultSchemaName = getProperty("database");
-        // TODO: Any way / need to ask AIS if schema exists and report error?
+        Object parserKeys = initParser();
 
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
-        if (format.equals("json"))
+        if (format.equals("table"))
+            compiler = PostgresOperatorCompiler.create(this);
+        else if (format.equals("json"))
             compiler = PostgresJsonCompiler.create(this); 
         else
-            compiler = PostgresOperatorCompiler.create(this);
+            throw new InvalidParameterValueException(format);
         
         // Add the Persisitit Adapter - default for most tables
         adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
@@ -667,7 +688,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                 reqs.config()));
         // Statement cache depends on some connection settings.
         statementCache = server.getStatementCache(Arrays.asList(format,
-                                                                parserFeatures,
+                                                                parserKeys,
                                                                 Boolean.valueOf(getProperty("cbo"))),
                                                   aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
@@ -679,7 +700,8 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresDDLStatementGenerator(this),
             new PostgresSessionStatementGenerator(this),
             new PostgresCallStatementGenerator(this),
-            new PostgresExplainStatementGenerator(this)
+            new PostgresExplainStatementGenerator(this),
+            new PostgresServerStatementGenerator(this)
         };
     }
 
@@ -725,7 +747,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean success = false;
         try {
             sessionTracer.beginEvent(EventTypes.EXECUTE);
-            boolean usePVals = Boolean.parseBoolean(getProperty("newtypes", Boolean.toString(Types3Switch.ON)));
+            boolean usePVals = getBooleanProperty("newtypes", Types3Switch.ON);
             rowsProcessed = pstmt.execute(context, maxrows, usePVals);
             success = true;
         }
@@ -797,10 +819,7 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
-            if ("UNICODE".equals(value) || (value == null))
-                messenger.setEncoding("UTF-8");
-            else
-                messenger.setEncoding(value);
+            messenger.setEncoding(value);
             return true;
         }
         if ("OutputFormat".equals(key) ||
@@ -838,6 +857,10 @@ public class PostgresServerConnection extends ServerSessionBase
     
     public String getRemoteAddress() {
         return socket.getInetAddress().getHostAddress();
+    }
+    
+    public PostgresServer getServer() {
+        return server;
     }
 
 }

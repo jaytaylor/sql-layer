@@ -37,6 +37,10 @@ import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -63,9 +67,16 @@ class OperatorStoreGIHandler {
                 assert irc.isInRowData(i);
                 assert ! irc.isInHKey(i);
                 int flattenedIndex = irc.getFieldPosition(i);
-                Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-                ValueSource source = row.eval(flattenedIndex);
-                indexRow.append(column, source);
+                if (Types3Switch.ON) {
+                    PValueSource source = row.pvalue(flattenedIndex);
+                    TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
+                    sourceInstance.writeCollating(source, pTarget);
+                }
+                else {
+                    Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+                    ValueSource source = row.eval(flattenedIndex);
+                    indexRow.append(column, source);
+                }
             }
             indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {

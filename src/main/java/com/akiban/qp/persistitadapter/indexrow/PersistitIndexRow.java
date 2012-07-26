@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter.indexrow;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
@@ -37,6 +38,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
@@ -87,7 +89,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     public final ValueSource eval(int i)
     {
         PersistitKeyValueSource keySource = keySource(i);
-        attach(keySource, i, akTypes[i]);
+        attach(keySource, i, akTypes[i], akCollators[i]);
         return keySource;
     }
 
@@ -131,10 +133,15 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         super(adapter.persistit().getKey(adapter.getSession()));
         this.adapter = adapter;
         this.indexRowType = indexRowType;
-        assert indexRowType.nFields() == indexRowType.index().getAllColumns().size();
-        this.akTypes = new AkType[indexRowType.nFields()];
+        int nfields = indexRowType.nFields();
+        assert nfields == indexRowType.index().getAllColumns().size();
+        this.akTypes = new AkType[nfields];
+        this.akCollators = new AkCollator[nfields];
         for (IndexColumn indexColumn : indexRowType.index().getAllColumns()) {
-            this.akTypes[indexColumn.getPosition()] = indexColumn.getColumn().getType().akType();
+            int position = indexColumn.getPosition();
+            Column column = indexColumn.getColumn();
+            this.akTypes[position] = column.getType().akType();
+            this.akCollators[position] = column.getCollator();
         }
         this.leafmostTable = (UserTable) indexRowType.index().leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
@@ -169,6 +176,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     protected final PersistitAdapter adapter;
     protected final IndexRowType indexRowType;
     protected AkType[] akTypes;
+    protected AkCollator[] akCollators;
     protected PersistitKeyValueSource[] keySources;
     protected PersistitKeyPValueSource[] keyPSources;
     protected final HKeyCache<PersistitHKey> hKeyCache;

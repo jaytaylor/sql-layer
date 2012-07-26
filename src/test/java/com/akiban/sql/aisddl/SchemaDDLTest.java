@@ -41,6 +41,7 @@ import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.server.error.DuplicateSchemaException;
 import com.akiban.server.error.DropSchemaNotAllowedException;
+import com.akiban.server.error.NoSuchSchemaException;
 
 
 public class SchemaDDLTest {
@@ -49,7 +50,7 @@ public class SchemaDDLTest {
     public void before() throws Exception {
         parser = new SQLParser();
     }
-    
+
     @Test
     public void createSchemaEmpty () throws Exception
     {
@@ -59,7 +60,7 @@ public class SchemaDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateSchemaNode);
         
-        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt, null);
     }
     
     @Test (expected=DuplicateSchemaException.class)
@@ -73,10 +74,39 @@ public class SchemaDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateSchemaNode);
         
-        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt, null);
     }
     
+      
+    @Test //(expected=DuplicateSchemaException.class)
+    public void createNonDuplicateSchemaWithIfNotExist() throws Exception
+    {
+        String sql = "CREATE SCHEMA IF NOT EXISTS SS";
+        AkibanInformationSchema ais = factory();
+        
+        assertNotNull(ais.getTable("s", "t"));
+        
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateSchemaNode);
+        
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt, null);
+    }
+        
     @Test
+    public void createDuplicateSchemaWithIfNotExist() throws Exception
+    {
+        String sql = "CREATE SCHEMA IF NOT EXISTS S";
+        AkibanInformationSchema ais = factory();
+        
+        assertNotNull(ais.getTable("s", "t"));
+        
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateSchemaNode);
+        
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt, null);
+    }
+
+    @Test (expected=NoSuchSchemaException.class)
     public void dropSchemaEmpty() throws Exception 
     {
         String sql = "DROP SCHEMA EMPTY RESTRICT";
@@ -87,7 +117,35 @@ public class SchemaDDLTest {
         
         DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
-        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt, null);
+    }
+
+    @Test
+    public void dropNonExistingSchemaWithIfExists() throws Exception
+    {
+        String sql = "DROP SCHEMA IF EXISTS AA";
+        AkibanInformationSchema ais = new AkibanInformationSchema();
+        
+        StatementNode node = parser.parseStatement(sql);
+        assertTrue(node instanceof DropSchemaNode);
+        
+        DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
+        
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)node, null);
+    }
+
+    @Test
+    public void dropSchemaEmptyIfExists() throws Exception 
+    {
+        String sql = "DROP SCHEMA IF EXISTS EMPTY RESTRICT";
+        AkibanInformationSchema ais = new AkibanInformationSchema();
+        
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof DropSchemaNode);
+        
+        DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
+        
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt, null);
     }
 
     @Test(expected=DropSchemaNotAllowedException.class)
@@ -102,7 +160,7 @@ public class SchemaDDLTest {
         assertTrue (stmt instanceof DropSchemaNode);
         DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
-        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt, null);
     }
 
     protected SQLParser parser;

@@ -27,7 +27,11 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.AISNullReferenceException;
@@ -35,6 +39,7 @@ import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateGroupNameException;
 import com.akiban.server.error.DuplicateIndexColumnException;
 import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NameIsNullException;
 
@@ -54,29 +59,39 @@ public class AISInvariants {
     
     public static void checkDuplicateTables(AkibanInformationSchema ais, String schemaName, String tableName)
     {
-        if (ais.getTable(schemaName, tableName) != null) {
+        if (ais.getColumnar(schemaName, tableName) != null) {
             throw new DuplicateTableNameException (new TableName(schemaName, tableName));
         }
     }
     
-    public static void checkDuplicateColumnsInTable(Table table, String columnName)
+    public static void checkDuplicateSequence(AkibanInformationSchema ais, String schemaName, String sequenceName)
+    {
+        if (ais.getSequence(new TableName (schemaName, sequenceName)) != null) {
+            throw new DuplicateSequenceNameException (new TableName(schemaName, sequenceName));
+        }
+    }
+    
+    public static void checkDuplicateColumnsInTable(Columnar table, String columnName)
     {
         if (table.getColumn(columnName) != null) {
             throw new DuplicateColumnNameException(table.getName(), columnName);
         }
     }
-    public static void checkDuplicateColumnPositions(Table table, Integer position) {
+    public static void checkDuplicateColumnPositions(Columnar table, Integer position) {
         if (position < table.getColumnsIncludingInternal().size() && 
                 table.getColumn(position) != null &&
-                table.getColumn(position).getPosition() == position) {
+                table.getColumn(position).getPosition().equals(position)) {
             throw new DuplicateColumnNameException (table.getName(), table.getColumn(position).getName());
         }
     }
     
-    public static void checkDuplicateColumnsInIndex(Index index, String columnName)
+    public static void checkDuplicateColumnsInIndex(Index index, TableName columnarName, String columnName)
     {
-        if (index.getKeyColumns().contains(columnName)) {
-            throw new DuplicateIndexColumnException (index, columnName);
+        for(IndexColumn icol : index.getKeyColumns()) {
+            Column column = icol.getColumn();
+            if(column.getName().equals(columnName) && column.getColumnar().getName().equals(columnarName)) {
+                throw new DuplicateIndexColumnException (index, columnName);
+            }
         }
     }
     

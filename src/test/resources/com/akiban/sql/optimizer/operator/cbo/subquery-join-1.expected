@@ -1,9 +1,9 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:DATE NOT NULL]
   Map_NestedLoops
     IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (,))
-    project([Bound(0,Field(0)), Field(1)])
+    project(Bound(0,Field(0)), Field(1))
       IfEmpty_Default(Literal(NULL), Literal(NULL), KEEP_INPUT)
-        project([Field(1), Field(2)])
-          Select_HKeyOrdered(test.orders, Field(2) < Literal(2011-01-01))
+        project(Field(1), Field(2))
+          Select_HKeyOrdered(Field(2) < DATE '2011-01-01')
             AncestorLookup_Default(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]) -> [test.orders])
               IndexScan_Default(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]) (>=UnboundExpressions[Bound(0,Field(1))],<=UnboundExpressions[Bound(0,Field(1))]))

@@ -27,6 +27,7 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -162,6 +163,7 @@ public interface Store extends Service<Store> {
     void buildAllIndexes(Session session, boolean deferIndexes);
     void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
 
+    void deleteSequences (Session session, Collection<? extends Sequence> sequences);
     /**
      * Remove all trees, and their contents, associated with the given table.
      * @param session Session

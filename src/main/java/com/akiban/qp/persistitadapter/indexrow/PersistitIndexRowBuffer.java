@@ -33,6 +33,7 @@ import com.akiban.qp.row.IndexRow;
 import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.store.PersistitKeyAppender;
@@ -134,9 +135,9 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     // For use by subclasses
 
-    protected void attach(PersistitKeyValueSource source, int position, AkType type)
+    protected void attach(PersistitKeyValueSource source, int position, AkType type, AkCollator collator)
     {
-        source.attach(keyAppender.key(), position, type);
+        source.attach(keyAppender.key(), position, type, collator);
     }
 
     protected void attach(PersistitKeyPValueSource source, int position, PUnderlying type)
