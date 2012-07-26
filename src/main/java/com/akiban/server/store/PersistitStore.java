@@ -402,9 +402,9 @@ public class PersistitStore implements Store {
             // false), then we are deleting and reinserting a row, and we don't want the PK value changed.
             // See bug 1020342.
             constructHKey(session, hEx, rowDef, rowData, propagateHKeyChanges);
-            if (hEx.isValueDefined()) {
-                throw new DuplicateKeyException("PRIMARY", hEx.getKey());
-            }
+            // Don't check hkey uniqueness. That requires a database access (hEx.isValueDefined()), and we are not
+            // in a good position to report a meaningful uniqueness violation, e.g. on the PK, since we don't have
+            // the PK value handy. Instead, rely on PK validation when indexes are maintained.
 
             packRowData(hEx, rowDef, rowData);
             // Store the h-row
@@ -1137,10 +1137,6 @@ public class PersistitStore implements Store {
                 constructIndexRow(adapter(session), newExchange, newRowData, index, hkey);
 
                 checkUniqueness(index, newRowData, newExchange);
-
-                oldExchange.getValue().clear();
-                newExchange.getValue().clear();
-
                 oldExchange.remove();
                 newExchange.store();
 

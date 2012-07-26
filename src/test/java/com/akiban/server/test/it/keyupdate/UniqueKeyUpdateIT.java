@@ -310,18 +310,18 @@ public final class UniqueKeyUpdateIT extends ITBase {
     }
 
     @Test
-    public void pkEnforcement() throws InvalidOperationException {
-        final String tableName = "t1";
-        final String schemaName = "s1";
-        final int tableId;
+    public void pkEnforcement() {
+        String tableName = "t1";
+        String schemaName = "s1";
+        int tableId;
         try {
             tableId = createTable(schemaName, tableName, "cid int not null primary key, cx int");
             writeRows(
                 createNewRow(tableId, 1, 1),
-                createNewRow(tableId, 1, 2)
-                     );
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
+                createNewRow(tableId, 1, 2));
+            fail();
+        } catch (DuplicateKeyException e) {
+            // Expected
         }
     }
 }
