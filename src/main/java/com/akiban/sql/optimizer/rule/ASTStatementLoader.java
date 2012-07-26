@@ -1279,18 +1279,12 @@ public class ASTStatementLoader extends BaseRule
                 NextSequenceNode seqNode = (NextSequenceNode)valueNode;
                 List<ExpressionNode> params = new ArrayList<ExpressionNode>(2);
 
+                String schema = seqNode.getSequenceName().hasSchema() ? 
+                        seqNode.getSequenceName().getSchemaName() :
+                            rulesContext.getDefaultSchemaName();
                 // Extract the (potential) schema name as the first parameter
-                if (seqNode.getSequenceName().hasSchema()) {
-                    String schema = seqNode.getSequenceName().getSchemaName();    
-                    params.add(new ConstantExpression(
-                            new TPreptimeValue(MString.VARCHAR.instance(schema.length()), new PValue(schema))));
-                } else {
-                    String schema = null;
-                    PValue value = new PValue (schema);
-                    value.putNull();
-                    params.add(new ConstantExpression(
-                            new TPreptimeValue(MString.VARCHAR.instance(0), value)));
-                }
+                params.add(new ConstantExpression(
+                        new TPreptimeValue(MString.VARCHAR.instance(schema.length()), new PValue(schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 params.add(new ConstantExpression(

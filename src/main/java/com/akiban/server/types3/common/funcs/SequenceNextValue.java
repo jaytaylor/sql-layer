@@ -75,9 +75,14 @@ public class SequenceNextValue extends TOverloadBase {
     }
 
     @Override
+    protected boolean neverConstant() {
+        return true;
+    }
+
+    @Override
     protected void doEvaluate(TExecutionContext context,
             LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        String schema = inputs.get(0).isNull() ? "test" : inputs.get(0).getString();
+        String schema = inputs.get(0).isNull() ? context.getSessionUser() : inputs.get(0).getString();
         String sequence = inputs.get(1).getString();
         logger.warn("Sequence loading : "+ schema + "." + sequence);
 
