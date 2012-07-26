@@ -99,7 +99,10 @@ public final class TCastExpression implements TPreparedExpression {
         public void evaluate() {
             inputEval.evaluate();
             PValueSource inputVal = inputEval.resultValue();
-            cast.evaluate(null, inputVal, value);
+            if (inputVal.isNull())
+                value.putNull();
+            else
+                cast.evaluate(null, inputVal, value);
         }
 
         @Override
