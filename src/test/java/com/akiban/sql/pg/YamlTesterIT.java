@@ -1340,7 +1340,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- explain: |\n" +
 	    "    project(Field(0), Field(1))\n" +
 	    "      Filter_Default(["+PostgresServerITBase.SCHEMA_NAME+".c])\n" +
-	    "        GroupScan_Default(full scan on _akiban_c)\n");
+	    "        GroupScan_Default(full scan on _akiban_c)");
     }
 
     @Test
