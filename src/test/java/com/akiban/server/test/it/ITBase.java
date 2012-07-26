@@ -32,6 +32,8 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ShareHolder;
 
 import java.util.ArrayList;
@@ -80,15 +82,28 @@ public abstract class ITBase extends ApiTestBase {
 
     protected boolean equal(RowBase expected, RowBase actual)
     {
-        ToObjectValueTarget target = new ToObjectValueTarget();
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
-        for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = target.convertFromSource(expected.eval(i));
-            Object actualField = target.convertFromSource(actual.eval(i));
-            equal =
-                expectedField == actualField || // handles case in which both are null
-                expectedField != null && actualField != null && expectedField.equals(actualField);
+        if (!equal)
+            return false;
+        if (usingPValues()) {
+            for (int i = 0; i < actual.rowType().nFields(); i++) {
+                PValueSource expectedField = expected.pvalue(i);
+                PValueSource actualField = expected.pvalue(i);
+                if (PValueSources.areEqual(expectedField, actualField))
+                    return false;
+            }
+            return true;
         }
-        return equal;
+        else {
+            ToObjectValueTarget target = new ToObjectValueTarget();
+            for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
+                Object expectedField = target.convertFromSource(expected.eval(i));
+                Object actualField = target.convertFromSource(actual.eval(i));
+                equal =
+                    expectedField == actualField || // handles case in which both are null
+                    expectedField != null && actualField != null && expectedField.equals(actualField);
+            }
+            return equal;
+        }
     }
 }

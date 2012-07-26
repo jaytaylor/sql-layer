@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.util.SparseArray;
 
 import java.util.List;
@@ -37,7 +38,7 @@ public final class TPreptimeContext {
 
     public TExecutionContext createExecutionContext() {
         return new TExecutionContext(preptimeCache, inputTypes, outputType, 
-                null,
+                queryContext,
                 null, null, null); // TODO pass in
     }
     
@@ -59,15 +60,18 @@ public final class TPreptimeContext {
         preptimeCache.set(index, value);
     }
 
-    public TPreptimeContext(List<TInstance> inputTypes) {
+    public TPreptimeContext(List<TInstance> inputTypes, QueryContext queryContext) {
         this.inputTypes = inputTypes;
+        this.queryContext = queryContext;
     }
 
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
+    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType, QueryContext queryContext) {
         this.inputTypes = inputTypes;
         this.outputType = outputType;
+        this.queryContext = queryContext;
     }
 
+    private final QueryContext queryContext;
     private SparseArray<Object> preptimeCache;
     private List<TInstance> inputTypes;
     private TInstance outputType;

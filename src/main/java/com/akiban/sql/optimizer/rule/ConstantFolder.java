@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -889,7 +890,7 @@ public class ConstantFolder extends BaseRule
 
     public static final class NewFolder extends Folder {
         public NewFolder(PlanContext planContext) {
-            super(planContext, new NewExpressionAssembler(planContext.getRulesContext()));
+            super(planContext, new NewExpressionAssembler(planContext.getRulesContext(), planContext.getQueryContext()));
         }
 
         @Override
