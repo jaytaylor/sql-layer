@@ -303,7 +303,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleSubqueryValueExpression(SubqueryValueExpression expression) {
-            throw new UnsupportedOperationException(); // TODO
+            TInstance instance = TypesTranslation.toTInstance(expression.getSQLtype());
+            expression.setPreptimeValue(new TPreptimeValue(instance));
+            return expression;
         }
 
         ExpressionNode handleSubqueryResultSetExpression(SubqueryResultSetExpression expression) {
@@ -345,12 +347,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 expression.setPreptimeValue(ptv);
             }
             else if (columnSource instanceof SubquerySource) {
-                SubquerySource subTable = (SubquerySource) columnSource;
-                throw new UnsupportedOperationException(); // TODO
+                // This doesn't have a type in and of itself; we just need to recurse into it.
+                return expression;
             }
             else if (columnSource instanceof NullSource) {
-                NullSource nsTable = (NullSource) columnSource;
-                throw new UnsupportedOperationException(); // TODO
+                expression.setPreptimeValue(new TPreptimeValue(null));
+                return expression;
             }
             else if (columnSource instanceof Project) {
                 Project pTable = (Project) columnSource;
