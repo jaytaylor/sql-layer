@@ -119,6 +119,7 @@ public class ConvertTZExpression extends AbstractTernaryExpression
          */
         static String adjustTz(String st)
         {
+            st = st.toUpperCase();
             if (!st.isEmpty() && st.contains(":"))
             {
                 int index = st.length() - 5;
