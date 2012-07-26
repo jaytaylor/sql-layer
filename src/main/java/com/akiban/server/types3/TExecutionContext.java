@@ -34,6 +34,7 @@ import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.util.SparseArray;
+import com.google.common.base.Objects;
 
 import java.util.List;
 import java.util.TimeZone;
@@ -199,9 +200,9 @@ public final class TExecutionContext {
         this.inputTypes = inputTypes;
         this.outputType = outputType;
         this.queryContext = queryContext;
-        overflowHandling = overflow;
-        truncateHandling = truncate;
-        invalidFormatHandling = invalid;
+        overflowHandling = Objects.firstNonNull(overflow, ErrorHandlingMode.WARN);
+        truncateHandling = Objects.firstNonNull(truncate, ErrorHandlingMode.WARN);
+        invalidFormatHandling = Objects.firstNonNull(invalid,  ErrorHandlingMode.WARN);
     }
 
     private SparseArray<Object> preptimeCache;
