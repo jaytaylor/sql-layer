@@ -25,6 +25,7 @@
  */
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
@@ -40,11 +41,12 @@ import java.util.List;
 
 public final class TInExpression {
 
-    public static TPreparedExpression prepare(TPreparedExpression lhs, List<? extends TPreparedExpression> rhs) {
+    public static TPreparedExpression prepare(TPreparedExpression lhs, List<? extends TPreparedExpression> rhs,
+                                              QueryContext queryContext) {
         List<TPreparedExpression> all = new ArrayList<TPreparedExpression>(rhs.size() + 1);
         all.add(lhs);
         all.addAll(rhs);
-        return new TPreparedFunction(overload, AkBool.INSTANCE.instance(), all);
+        return new TPreparedFunction(overload, AkBool.INSTANCE.instance(), all, queryContext);
     }
     
     private static TValidatedOverload overload = new TValidatedOverload(new TOverloadBase() {

@@ -43,6 +43,10 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,10 +72,10 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         // - when the rows are ordered by name, they are unordered by importance
         // - when the rows are ordered by importance, they are unordered by name
         writeRows(
-                createNewRow(customer, 4L, "Aaa", "32.00"),
-                createNewRow(customer, 2L, "Aaa", "75.25"),
                 createNewRow(customer, 1L, "Ccc", "100.00"),
-                createNewRow(customer, 3L, "Bbb", "120.00")
+                createNewRow(customer, 2L, "Aaa", "75.25"),
+                createNewRow(customer, 3L, "Bbb", "120.00"),
+                createNewRow(customer, 4L, "Aaa", "32.00")
         );
 
         schema = new Schema(ddl().getAIS(session()));
@@ -130,8 +134,22 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     }
 
     private void orderBy(Ordering ordering, int fieldPos, boolean ascending) {
-        Expression fieldExpression = new FieldExpression(customerRowType, fieldPos);
-        ordering.append(fieldExpression, ascending);
+        Expression oFieldExpression;
+        TPreparedExpression tFieldExpression;
+        if (Types3Switch.ON) {
+            tFieldExpression = new TPreparedField(customerRowType.typeInstanceAt(fieldPos), fieldPos);
+            oFieldExpression = null;
+        }
+        else {
+            tFieldExpression = null;
+            oFieldExpression = new FieldExpression(customerRowType, fieldPos);
+        }
+        ordering.append(oFieldExpression, tFieldExpression, ascending);
+    }
+
+    @Override
+    protected boolean testSupportsPValues() {
+        return true;
     }
 
     private Schema schema;

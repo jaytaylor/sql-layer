@@ -49,11 +49,11 @@ public final class TPreparedFunction implements TPreparedExpression {
     }
 
     @Override
-    public TPreptimeValue evaluateConstant() {
+    public TPreptimeValue evaluateConstant(final QueryContext queryContext) {
         return overload.evaluateConstant(preptimeContext, new LazyListBase<TPreptimeValue>() {
             @Override
             public TPreptimeValue get(int i) {
-                return inputs.get(i).evaluateConstant();
+                return inputs.get(i).evaluateConstant(queryContext);
             }
 
             @Override
@@ -82,7 +82,8 @@ public final class TPreparedFunction implements TPreparedExpression {
 
     public TPreparedFunction(TValidatedOverload overload,
                              TInstance resultType,
-                             List<? extends TPreparedExpression> inputs)
+                             List<? extends TPreparedExpression> inputs,
+                             QueryContext queryContext)
     {
         this.overload = overload;
         this.resultType = resultType;
@@ -92,7 +93,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             localInputTypes[i] = input.resultType();
         }
         this.inputs = inputs;
-        this.preptimeContext = new TPreptimeContext(Arrays.asList(localInputTypes), resultType);
+        this.preptimeContext = new TPreptimeContext(Arrays.asList(localInputTypes), resultType, queryContext);
     }
 
     private final TValidatedOverload overload;
@@ -112,6 +113,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
         @Override
         public void with(QueryContext context) {
+            this.context.setQueryContext(context);
             for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
                 TEvaluatableExpression input = inputs.get(i);
                 input.with(context);
