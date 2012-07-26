@@ -119,6 +119,8 @@ public class ServerTransaction
 
     /** Abort transaction that still exists on exit. */
     public void abort() {
+        if(transaction.isActive() && !transaction.isCommitted())
+            transaction.rollback(); // Not required but logs WARNING otherwise
         transaction.end();
     }
     
