@@ -281,7 +281,7 @@ public final class RowDataBuilder {
 
     private void doConvertP(ValueSource source) {
         try {
-            converter.convert(rowDef.getFieldDef(fieldIndex), source, pTarget);
+            converter.convert(rowDef.getFieldDef(fieldIndex), source, pTarget, pTarget.targetInstance());
         } catch (ArrayIndexOutOfBoundsException e) {
             throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
         }
