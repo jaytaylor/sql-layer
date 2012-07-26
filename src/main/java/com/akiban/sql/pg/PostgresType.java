@@ -451,6 +451,7 @@ public class PostgresType extends ServerType
         }
 
         TInstance instance = TypesTranslation.toTInstance(type);
+        assert instance != null : type;
         return new PostgresType(oid, length, modifier, akType, instance);
     }
 

@@ -330,6 +330,8 @@ public final class TypesTranslation {
     }
 
     public static TInstance toTInstance(DataTypeDescriptor descriptor) {
+        if (descriptor == null || descriptor.getTypeId() == null)
+            return null;
         final TInstance result;
         switch (descriptor.getTypeId().getTypeFormatId()) {
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
