@@ -344,6 +344,9 @@ public final class TypesTranslation {
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
             result = MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
             break;
+        case TypeId.FormatIds.REAL_TYPE_ID:
+            result = MApproximateNumber.FLOAT.instance();
+            break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
             result = MApproximateNumber.DOUBLE.instance();
             break;
@@ -378,7 +381,6 @@ public final class TypesTranslation {
 
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-        case TypeId.FormatIds.REAL_TYPE_ID:
         case TypeId.FormatIds.REF_TYPE_ID:
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
         case TypeId.FormatIds.CLOB_TYPE_ID:
