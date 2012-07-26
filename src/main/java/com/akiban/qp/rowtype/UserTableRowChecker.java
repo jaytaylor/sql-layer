@@ -37,10 +37,10 @@ import java.util.BitSet;
 public class UserTableRowChecker implements ConstraintChecker
 {
     @Override
-    public void checkConstraints(Row row) throws InvalidOperationException
+    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException
     {
         for (int f = 0; f < fields; f++) {
-            if (notNull.get(f) && row.eval(f).isNull()) {
+            if (notNull.get(f) && isNull(row, f, usePValues)) {
                 // if this column is an identity column, null is allowed
                 // 
                 if (f == identityColumn) {
@@ -53,6 +53,12 @@ public class UserTableRowChecker implements ConstraintChecker
             }
         }
 
+    }
+
+    private boolean isNull(Row row, int f, boolean usePValues) {
+        return usePValues
+                ? row.pvalue(f).isNull()
+                : row.eval(f).isNull();
     }
 
     public UserTableRowChecker(RowType rowType)

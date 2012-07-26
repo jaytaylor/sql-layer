@@ -194,8 +194,7 @@ public interface QueryContext
     /** Check constraints on row.
      * @throws InvalidOperationException thrown if a constraint on the row is violated.
      */
-    public void checkConstraints(Row row) throws InvalidOperationException;
-    
+    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException;    
     /**
      * Get the next value for the named Sequence. 
      * @throws NoSuchSequenceException if the name does not exist in the system.  

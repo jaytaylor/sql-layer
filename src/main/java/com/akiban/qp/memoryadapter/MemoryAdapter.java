@@ -100,18 +100,18 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void updateRow(Row oldRow, Row newRow) {
+    public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
         throw new UnsupportedOperationException();
         
     }
 
     @Override
-    public void writeRow(Row newRow) {
+    public void writeRow(Row newRow, boolean usePValues) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteRow(Row oldRow) {
+    public void deleteRow(Row oldRow, boolean usePValues) {
         throw new UnsupportedOperationException();
     }
 

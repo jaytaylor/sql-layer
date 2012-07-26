@@ -36,6 +36,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -110,7 +111,7 @@ public class DeleteIT extends OperatorITBase {
         Row[] rows = {
                 row(customerRowType, new Object[]{2, "abc"}, new AkType[]{AkType.INT, AkType.VARCHAR})
         };
-        UpdatePlannable insertPlan = delete_Default(rowsToValueScan(rows));
+        UpdatePlannable insertPlan = delete_Default(rowsToValueScan(rows), Types3Switch.ON);
         UpdateResult result = insertPlan.run(queryContext);
         assertEquals("rows touched", rows.length, result.rowsTouched());
         assertEquals("rows modified", rows.length, result.rowsModified());

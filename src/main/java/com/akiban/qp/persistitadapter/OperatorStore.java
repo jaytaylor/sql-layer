@@ -452,5 +452,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
         }
+
+        @Override
+        public boolean usePValues() {
+            return false;
+        }
     }
 }

@@ -24,19 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.types.AkType;
 
-public interface UpdateFunction extends SelectionFunction {
-    /**
-     * Updates the given row by returning another row with the required modifications.
-     * @param original the original row, which will remain untouched
-     * @param context the query context for evaluation
-     * @return a row of the same type as the original, but different fields
-     * @throws IllegalArgumentException if the row could not be updated
-     * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
-     */
-    Row evaluate(Row original, QueryContext context);
-    boolean usePValues();
+interface RowDataCreator<S> {
+    S eval(RowBase row, int f);
+    boolean isNull(S source);
+    S createId(long id);
+    void put(S source, NewRow into, AkType akType, int f);
 }
