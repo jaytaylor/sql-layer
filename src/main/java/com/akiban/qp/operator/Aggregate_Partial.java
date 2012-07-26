@@ -40,6 +40,7 @@ import com.akiban.server.types3.mcompat.aggr.MCount;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Label;
@@ -509,13 +510,13 @@ final class Aggregate_Partial extends Operator
                 for(int i = 0; i < inputsIndex; ++i) {
                     PValue pValue = outputRow.pvalueAt(i);
                     PValue key = keyPValues.get(i);
-                    pValue.putValueSource(key);
+                    PValueTargets.copyFrom(key, pValue);
                 }
                 for (int i = inputsIndex; i < inputRowType.nFields(); ++i) {
                     PValue pValue = outputRow.pvalueAt(i);
                     int aggregatorIndex = i - inputsIndex;
                     PValueSource aggregatorState = pAggrsStates.get(aggregatorIndex);
-                    pValue.putValueSource(aggregatorState);
+                    PValueTargets.copyFrom(aggregatorState, pValue);
                 }
             }
             return outputRow;
@@ -557,7 +558,7 @@ final class Aggregate_Partial extends Operator
                 }
                 else {
                     for (int i = 0; i < keyPValues.size(); ++i) {
-                        keyPValues.get(i).putValueSource(givenInput.pvalue(i));
+                        PValueTargets.copyFrom(givenInput.pvalue(i), keyPValues.get(i));
                     }
                 }
                 cursorState = CursorState.RUNNING;

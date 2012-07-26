@@ -93,11 +93,6 @@ public final class RowDataPValueTarget implements PValueTarget {
     }
 
     @Override
-    public void putValueSource(PValueSource source) {
-        PValueTargets.copyFrom(source, this);
-    }
-
-    @Override
     public void putBool(boolean value) {
         recordEncoded(encodeLong(value ? 1 : 0));
     }

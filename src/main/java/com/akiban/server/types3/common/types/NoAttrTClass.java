@@ -72,7 +72,6 @@ public class NoAttrTClass extends SimpleDtdTClass {
                           TInstance targetInstance,
                           PValueTarget targetValue)
     {
-        // nothing to check ?
-        targetValue.putValueSource(sourceValue);
+        // about to delete...
     }
 }
