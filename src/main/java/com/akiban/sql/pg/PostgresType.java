@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.server.ServerType;
 
 import com.akiban.server.error.UnknownDataTypeException;
@@ -307,9 +308,6 @@ public class PostgresType extends ServerType
         TypeId typeId = type.getTypeId();
 
         AkType akType;
-        
-        // TODO: replace AkType with Instance
-        TInstance instance = null;
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
@@ -447,7 +445,8 @@ public class PostgresType extends ServerType
         else {
             length = (short)typeId.getMaximumMaximumWidth();
         }
-        
+
+        TInstance instance = TypesTranslation.toTInstance(type);
         return new PostgresType(oid, length, modifier, akType, instance);
     }
 

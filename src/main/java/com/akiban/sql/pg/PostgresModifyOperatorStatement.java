@@ -54,8 +54,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
-                                           PostgresType[] parameterTypes) {
-        super(parameterTypes);
+                                           PostgresType[] parameterTypes,
+                                           boolean usesPValues) {
+        super(parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
     }
