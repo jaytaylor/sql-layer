@@ -1284,6 +1284,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         } finally {
             session.close();
             if(txn.isActive()) {
+                if(!txn.isCommitted()) {
+                    txn.rollback();
+                }
                 txn.end();
             }
         }
