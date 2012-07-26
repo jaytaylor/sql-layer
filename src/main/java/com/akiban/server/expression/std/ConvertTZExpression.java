@@ -119,7 +119,13 @@ public class ConvertTZExpression extends AbstractTernaryExpression
          */
         static String adjustTz(String st)
         {
-            st = st.toUpperCase();
+            // we only want to caplitalise 3-letter name (UTC, GMT, MET, etc..
+            // , but NOT soemthing like: America/Los_Angeles
+            // , we might someday handle this, just not now
+            
+            if (st.length() == 3)
+                st = st.toUpperCase();
+            
             if (!st.isEmpty() && st.contains(":"))
             {
                 int index = st.length() - 5;

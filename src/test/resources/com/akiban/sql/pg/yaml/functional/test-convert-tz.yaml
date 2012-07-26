@@ -9,6 +9,6 @@
 - Statement: select CONVERT_TZ('2003-06-01 12:59:59', '-1:00', '+10:00');
 - output: [[!re '2003-06-01 23:59:59([.]0)?']]
 ---
-- Statement: elect convert_tz('2009-12-12 12:40:10', 'utc','America/Los_Angeles');
-- output: [['2009-12-12']]
+- Statement: select convert_tz('2009-12-12 12:40:10', 'utc','America/Los_Angeles');
+- output: [[!re '2009-12-12 04:40:10([.]0)?']]
 ...
