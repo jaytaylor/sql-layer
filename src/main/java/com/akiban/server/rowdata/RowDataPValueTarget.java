@@ -129,8 +129,7 @@ public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
 
     @Override
     public void putString(String value, AkCollator collator) {
-        throw new AssertionError("should be targeted to bytes instead");
-//        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
+        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
     @Override

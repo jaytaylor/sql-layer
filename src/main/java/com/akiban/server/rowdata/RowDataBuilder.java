@@ -36,6 +36,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
@@ -43,6 +44,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueSources.ValueSourceConverter;
 import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.util.ByteSource;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -316,37 +318,86 @@ public final class RowDataBuilder {
 
         @Override
         public void doConvert(PValueSource source, RowDataPValueTarget target, FieldDef fieldDef) {
-            if (source.hasRawValue()) {
-                PUnderlying sourceType = source.getUnderlyingType();
-                PUnderlying targetType = target.getUnderlyingType();
-                if (sourceType == PUnderlying.STRING && targetType != PUnderlying.STRING) {
-                    TExecutionContext context = null;
-                    fieldDef.column().tInstance().typeClass().fromObject(context, source, target);
-                }
-                else {
-                    PValueTargets.copyFrom(source, target);
-                }
+            TInstance instance = target.targetInstance();
+            if (!pValue.hasRawValue()) {
+                Object cacheObject = pValue.getObject();
+                String cachedString = (String) cacheObject; // this is the only cached object we'll ever put in
+                if (stringCache == null)
+                    stringCache = new PValue(PUnderlying.STRING);
+                stringCache.putString(cachedString, null);
+                TExecutionContext context = null;
+                instance.typeClass().fromObject(context, stringCache, pValue);
             }
-            else {
-                target.targetInstance().writeCanonical(source, target);
-            }
+            instance.writeCanonical(pValue, target);
         }
 
         @Override
         public void objectToSource(Object object, FieldDef fieldDef) {
-            if (object == null)
+            PUnderlying underlying = underlying(fieldDef);
+            pValue.underlying(underlying);
+            if (object == null) {
                 PValueTargets.copyFrom(nullSource(fieldDef), pValue);
-
+            }
+            else if (object instanceof String) {
+                // This is the common case, so let's test for it first
+                if (underlying == PUnderlying.STRING)
+                    pValue.putString((String)object, null);
+                else
+                    pValue.putObject(object);
+            }
+            else {
+                switch (underlying) {
+                case INT_8:
+                case INT_16:
+                case UINT_16:
+                case INT_32:
+                case INT_64:
+                    if (object instanceof Long)
+                        PValueSources.pvalueFromLong((Long)object, pValue);
+                    else if (object instanceof Integer)
+                        PValueSources.pvalueFromLong((Integer)object, pValue);
+                    break;
+                case FLOAT:
+                    if (object instanceof Float)
+                        pValue.putFloat((Float)object);
+                    break;
+                case DOUBLE:
+                    if (object instanceof Double)
+                        pValue.putDouble((Double) object);
+                    if (object instanceof Float)
+                        pValue.putFloat((Float)object);
+                    break;
+                case BYTES:
+                    if (object instanceof byte[])
+                        pValue.putBytes((byte[])object);
+                    if (object instanceof ByteSource)
+                        pValue.putBytes(((ByteSource)object).toByteSubarray());
+                    break;
+                case STRING:
+                    assert false : "should have been handled above";
+                case BOOL:
+                    if (object instanceof Boolean)
+                        pValue.putBool((Boolean)object);
+                    break;
+                default:
+                    throw new IllegalArgumentException("can't coerce " + object + " (" + object.getClass() + ") into "
+                            + fieldDef + " expecting " + underlying);
+                }
+            }
         }
 
         @Override
         public PValueSource nullSource(FieldDef fieldDef) {
-            return PValueSources.getNullSource(fieldDef.column().tInstance().typeClass().underlyingType());
+            return PValueSources.getNullSource(underlying(fieldDef));
         }
 
         @Override
         public boolean isNull(PValueSource source) {
             return source.isNull();
+        }
+
+        private PUnderlying underlying(FieldDef fieldDef) {
+            return fieldDef.column().tInstance().typeClass().underlyingType();
         }
 
         public NewValueAdapter() {
@@ -361,6 +412,7 @@ public final class RowDataBuilder {
         }
 
         private PValue pValue;
+        private PValue stringCache;
     }
 
     private void nullRemainingAllocations() {
