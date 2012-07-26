@@ -633,10 +633,14 @@ final class Aggregate_Partial extends Operator
                 for (int i = 0; i < inputsIndex; ++i) {
                     keyPValues.add(new PValue(outputType.typeInstanceAt(i).typeClass().underlyingType()));
                 }
-                pAggrsStates = new ArrayList<PValue>(pAggrs.size());
-                for (TAggregator aggr : pAggrs) {
-                    assert false : "need to pass these in";
-                    pAggrsStates.add(null); // TODO
+                int nAggrs = pAggrs.size();
+                pAggrsStates = new ArrayList<PValue>(nAggrs);
+                for (int i = 0; i < nAggrs; i++) {
+                    TAggregator aggr = pAggrs.get(i);
+                    TInstance stateInstance = pAggrTypes.get(i);
+                    PValue state = new PValue(stateInstance.typeClass().underlyingType());
+                    aggr.emptyValue(state);
+                    pAggrsStates.add(state);
                 }
             }
         }

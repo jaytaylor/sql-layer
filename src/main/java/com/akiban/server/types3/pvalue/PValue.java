@@ -298,12 +298,8 @@ public final class PValue implements PValueSource, PValueTarget {
         case NULL:
             throw new NullValueException();
         case CACHE_ONLY:
-            Object savedCache = oCache;
-            if (state == State.NULL)
-                throw new NullValueException();
-            assert state == State.VAL_ONLY;
-            oCache = savedCache;
-            state = State.VAL_AND_CACHE;
+            // TODO
+            assert false;
             // fall through
         case VAL_ONLY:
         case VAL_AND_CACHE:
