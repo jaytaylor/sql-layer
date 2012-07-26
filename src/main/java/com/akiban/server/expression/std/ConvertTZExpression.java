@@ -38,7 +38,10 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -69,6 +72,8 @@ public class ConvertTZExpression extends AbstractTernaryExpression
 
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
+        private static final Map<String, DateTimeZone> map = generateMap();
+        
         public InnerEvaluation(List<? extends ExpressionEvaluation> args)
         {
             super(args);
@@ -89,16 +94,16 @@ public class ConvertTZExpression extends AbstractTernaryExpression
             if (ymd[0] * ymd[1] * ymd[2] == 0L) // zero dates. (year of 0 is not tolerated)
                 return NullValueSource.only();
 
-            String fromTz = adjustTz(from.getString());
-            String toTz = adjustTz(to.getString());
+            DateTimeZone fromTz = adjustTz(from.getString());
+            DateTimeZone toTz = adjustTz(to.getString());
 
             try
             {
                 DateTime date = new DateTime((int)ymd[0], (int)ymd[1], (int)ymd[2],
                                              (int)ymd[3], (int)ymd[4], (int)ymd[5], 0,
-                                             DateTimeZone.forID(fromTz));
+                                             fromTz);
                 
-                valueHolder().putDateTime(date.withZone(DateTimeZone.forID(toTz)));
+                valueHolder().putDateTime(date.withZone(toTz));
             }
             catch (IllegalArgumentException e)
             {
@@ -117,29 +122,28 @@ public class ConvertTZExpression extends AbstractTernaryExpression
          * @param st
          * @return 
          */
-        static String adjustTz(String st)
+        static DateTimeZone adjustTz(String st)
         {
-            // we only want to caplitalise 3-letter name (UTC, GMT, MET, etc..
-            // , but NOT soemthing like: America/Los_Angeles
-            // , we might someday handle this, just not now
+            DateTimeZone ret = map.get(st);
+            if (ret != null)
+                return ret;
             
-            if (st.length() == 3)
-                st = st.toUpperCase();
             
             if (!st.isEmpty() && st.contains(":"))
             {
                 int index = st.length() - 5;
                 if (index < 0 )
-                    return st;
+                    return DateTimeZone.forID(st);
                 char ch = st.charAt(index);
                 if (ch == '-' || ch == '+')
                 {
                     StringBuilder bd = new StringBuilder(st);
                     bd.insert(1, '0');
-                    return bd.toString();
+                    return DateTimeZone.forID(bd.toString());
                 }
             }
-            return st;
+            
+            return DateTimeZone.forID(st);
         }
     }
 
@@ -172,4 +176,58 @@ public class ConvertTZExpression extends AbstractTernaryExpression
         return "CONVERT_TZ";
     }
     
+    
+        static void doMix(List<String> names, StringBuilder bd, LinkedList<Character> lib)
+    {
+        if (lib.isEmpty())
+            names.add(bd.toString());
+        else
+        {
+            LinkedList<Character> cpList;
+            StringBuilder cp;
+            char ch = lib.getFirst();
+            
+            // lowercase
+            cpList = new LinkedList<Character>();
+            cpList.addAll(lib);
+            cp = new StringBuilder(bd);
+            cp.append(Character.toLowerCase(ch));
+            cpList.removeFirst();
+            doMix(names, cp, cpList);
+            
+            // upper case
+            cpList = new LinkedList<Character>();
+            cpList.addAll(lib);
+            cp = new StringBuilder(bd);
+            cp.append(Character.toUpperCase(ch));
+            cpList.removeFirst();
+            doMix(names, cp, cpList);
+        }
+    }
+
+    static List<String> mixCase(String st)
+    {
+        List<String> list = new LinkedList<String>();
+        LinkedList<Character> lib = new LinkedList<Character>();
+
+        for (int n = 0; n < st.length(); ++n)
+            lib.addLast(st.charAt(n));
+        
+        doMix(list, new StringBuilder(), lib);
+
+        return list;
+    }
+    
+     static Map<String, DateTimeZone> generateMap()
+    {
+        Map<String, DateTimeZone> map = new HashMap<String, DateTimeZone>();
+        
+        for (String st : DateTimeZone.getAvailableIDs())
+        {
+            DateTimeZone tz = DateTimeZone.forID(st);
+            for (String name : mixCase(st))
+                map.put(name, tz);
+        }
+        return map;
+    }
 }
