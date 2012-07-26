@@ -36,6 +36,7 @@ import com.akiban.server.error.StringTruncationException;
 import com.akiban.util.SparseArray;
 
 import java.util.List;
+import java.util.TimeZone;
 
 public final class TExecutionContext {
 
@@ -101,8 +102,8 @@ public final class TExecutionContext {
      */
     public String getCurrentTimezone()
     {
-        // TODO: This should come from the query context or something of the same nature
-        throw new UnsupportedOperationException("not supported yet");
+        // TODO need to get this from the session
+        return TimeZone.getDefault().getID();
     }
 
     /**
