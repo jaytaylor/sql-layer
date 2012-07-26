@@ -216,6 +216,10 @@ public class PersistitStore implements Store {
         return this;
     }
 
+    public TreeService treeService() {
+        return treeService;
+    }
+
     public Persistit getDb() {
         return treeService.getDb();
     }
@@ -352,7 +356,7 @@ public class PersistitStore implements Store {
                                           Exchange exchange,
                                           RowData rowData,
                                           Index index,
-                                          Key hKey)
+                                          Key hKey) throws PersistitException
     {
         assert index.isTableIndex() : index;
         IndexRow indexRow = PersistitIndexRowBuffer.createEmpty(adapter, index, exchange.getKey(), exchange.getValue());
@@ -377,7 +381,7 @@ public class PersistitStore implements Store {
                                    Exchange parentPKExchange,
                                    RowDef rowDef,
                                    RowData rowData,
-                                   Index index)
+                                   Index index) throws PersistitException
     {
         IndexRow indexRow = PersistitIndexRowBuffer.createEmpty(adapter,
                                                                 index,
@@ -1076,7 +1080,8 @@ public class PersistitStore implements Store {
         return toHistogram;
     }
 
-    boolean hasNullIndexSegments(final RowData rowData, final Index index) {
+    boolean hasNullIndexSegments(RowData rowData, Index index)
+    {
         IndexDef indexDef = index.indexDef();
         assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
         for (int i : indexDef.getFields()) {
@@ -1094,6 +1099,7 @@ public class PersistitStore implements Store {
     }
 
     private void insertIntoIndex(Session session, Index index, RowData rowData, Key hkey, boolean deferIndexes)
+        throws PersistitException
     {
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
@@ -1126,7 +1132,12 @@ public class PersistitStore implements Store {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             try {
                 Key key = iEx.getKey();
-                key.setDepth(index.indexDef().getIndexKeySegmentCount());
+                int segmentCount = index.indexDef().getIndexKeySegmentCount();
+                // An index that isUniqueAndMayContainNulls has the extra null-separating field.
+                if (index.isUniqueAndMayContainNulls()) {
+                    segmentCount++;
+                }
+                key.setDepth(segmentCount);
                 if (keyExistsInIndex(index, iEx)) {
                     throw new DuplicateKeyException(index.getIndexName().getName(), key);
                 }

@@ -34,6 +34,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
+import com.persistit.exception.PersistitException;
 
 public abstract class IndexRow extends AbstractRow
 {

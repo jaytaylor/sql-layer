@@ -104,6 +104,14 @@ public class TableIndex extends Index
         allColumns.addAll(hKeyColumns);
         indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
         indexToHKey = toHKeyBuilder.createIndexToHKey();
+        uniqueAndMayContainNulls = false;
+        if (!isPrimaryKey() && isUnique()) {
+            for (IndexColumn indexColumn : getKeyColumns()) {
+                if (indexColumn.getColumn().getNullable()) {
+                    uniqueAndMayContainNulls = true;
+                }
+            }
+        }
     }
 
     @Override
@@ -129,6 +137,12 @@ public class TableIndex extends Index
     public IndexToHKey indexToHKey()
     {
         return indexToHKey;
+    }
+
+    @Override
+    public boolean isUniqueAndMayContainNulls()
+    {
+        return uniqueAndMayContainNulls;
     }
 
     // For a user table index: the user table hkey
@@ -164,4 +178,5 @@ public class TableIndex extends Index
     private HKey hKey;
     private List<IndexColumn> hKeyColumns;
     private IndexToHKey indexToHKey;
+    private boolean uniqueAndMayContainNulls;
 }

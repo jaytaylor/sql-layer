@@ -317,8 +317,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             GroupIndex groupIndex,
             Operator rootOperator,
             OperatorStoreGIHandler handler,
-            OperatorStoreGIHandler.Action action
-    )
+            OperatorStoreGIHandler.Action action)
     {
         Cursor cursor = API.cursor(rootOperator, context);
         cursor.open();

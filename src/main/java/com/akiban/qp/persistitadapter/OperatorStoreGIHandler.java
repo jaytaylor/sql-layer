@@ -37,7 +37,6 @@ import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;

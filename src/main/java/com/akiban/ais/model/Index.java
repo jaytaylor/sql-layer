@@ -26,14 +26,13 @@
 
 package com.akiban.ais.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.service.tree.TreeService;
+import com.persistit.Tree;
+
+import java.util.*;
 
 public abstract class Index implements Traversable
 {
@@ -213,6 +212,11 @@ public abstract class Index implements Traversable
         return indexRowComposition;
     }
 
+    public boolean isUniqueAndMayContainNulls()
+    {
+        return false;
+    }
+
     protected static class AssociationBuilder {
         /**
          * @param fieldPosition entry of {@link IndexRowComposition#fieldPositions}
@@ -281,7 +285,17 @@ public abstract class Index implements Traversable
         }
         return idAndFlags;
     }
-    
+
+    // Unique, non-PK indexes store a "null separator value", making index rows unique that would otherwise
+    // be considered duplicates due to nulls.
+    public long nextNullSeparatorValue(TreeService treeService)
+    {
+        Tree tree = indexDef.getTreeCache().getTree();
+        AccumulatorAdapter accumulator =
+            new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
+        return accumulator.updateAndGet(1);
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
     public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
     public static final String KEY_CONSTRAINT = "KEY";

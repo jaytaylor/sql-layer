@@ -47,6 +47,34 @@ import com.persistit.Key;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
+/*
+ * 
+ * Index row formats:
+ * 
+ * NON-UNIQUE INDEX:
+ * 
+ * - Persistit key contains all declared and undeclared (hkey) fields.
+ * 
+ * PRIMARY KEY INDEX:
+ * 
+ * - Persistit key contains all declared fields
+ * 
+ * - Persistit value contains all undeclared fields.
+ * 
+ * UNIQUE INDEX:
+ * 
+ * - Persistit key contains all declared fields
+ * 
+ * - Persistit key also contains one more long field, needed to ensure that insertion of an index row that contains
+ *   at least one null and matches a row already in the index (including any nulls) is not considered a duplicate.
+ *   For an index row with no nulls, this field contains zero. For a field with nulls, this field contains a value
+ *   that is unique within the index. This mechanism is not needed for primary keys because primary keys can only
+ *   contain NOT NULL columns.
+ * 
+ * - Persistit value contains all undeclared fields.
+ * 
+ */
+
 public class PersistitIndexRowBuffer extends IndexRow
 {
     // BoundExpressions interface
@@ -127,6 +155,20 @@ public class PersistitIndexRowBuffer extends IndexRow
     @Override
     public void close()
     {
+        // Write null-separating value if necessary
+        if (index.isUniqueAndMayContainNulls()) {
+            long nullSeparator = 0;
+            boolean hasNull = false;
+            int keyFields = index.getKeyColumns().size();
+            for (int f = 0; !hasNull && f < keyFields; f++) {
+                pKey.indexTo(f);
+                hasNull = pKey.isNull();
+            }
+            if (hasNull) {
+                nullSeparator = index.nextNullSeparatorValue(adapter.persistit().treeService());
+            }
+            pKeyAppender.append(nullSeparator);
+        }
         // If necessary, copy pValue state into value. (Check pValueAppender, because that is non-null only in
         // a writeable PIRB.)
         if (pValueAppender != null) {
