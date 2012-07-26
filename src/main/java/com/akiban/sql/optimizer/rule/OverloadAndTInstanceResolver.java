@@ -347,7 +347,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 expression.setPreptimeValue(ptv);
             }
             else if (columnSource instanceof SubquerySource) {
-                // This doesn't have a type in and of itself; we just need to recurse into it.
+                TInstance tInstance = TypesTranslation.toTInstance(expression.getSQLtype());
+                expression.setPreptimeValue(new TPreptimeValue(tInstance));
                 return expression;
             }
             else if (columnSource instanceof NullSource) {
