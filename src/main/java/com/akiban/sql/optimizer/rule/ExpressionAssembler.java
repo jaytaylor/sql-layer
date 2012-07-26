@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.std.Comparison;
@@ -42,6 +43,7 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.SubqueryExpression;
 import org.slf4j.Logger;
 
@@ -50,6 +52,8 @@ import java.util.Arrays;
 import java.util.List;
 
 abstract class ExpressionAssembler<T> {
+
+    public abstract ConstantExpression evalNow(PlanContext planContext, ExpressionNode node);
 
     protected abstract T assembleFunction(ExpressionNode functionNode,
                                           String functionName,
@@ -62,6 +66,8 @@ abstract class ExpressionAssembler<T> {
     protected abstract T literal(ConstantExpression expression);
     protected abstract T variable(ParameterExpression expression);
     protected abstract T compare(T left, Comparison comparison, T right);
+    protected abstract T collate(T left, Comparison comparison, T right, AkCollator collator);
+    protected abstract AkCollator collator(ComparisonCondition cond, T left, T right);
     protected abstract T in(T lhs, List<T> rhs);
     protected abstract T assembleFieldExpression(RowType rowType, int fieldIndex);
     protected abstract T assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex);
@@ -87,11 +93,13 @@ abstract class ExpressionAssembler<T> {
                     columnContext, subqueryAssembler);
         else if (node instanceof ComparisonCondition) {
             ComparisonCondition cond = (ComparisonCondition)node;
-            return compare(assembleExpression(cond.getLeft(),
-                    columnContext, subqueryAssembler),
-                    cond.getOperation(),
-                    assembleExpression(cond.getRight(),
-                            columnContext, subqueryAssembler));
+            T left = assembleExpression(cond.getLeft(), columnContext, subqueryAssembler);
+            T right = assembleExpression(cond.getRight(), columnContext, subqueryAssembler);
+            AkCollator collator = collator(cond, left, right);
+            if (collator != null)
+                return collate(left, cond.getOperation(), right, collator);
+            else
+                return compare(left, cond.getOperation(), right);
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;

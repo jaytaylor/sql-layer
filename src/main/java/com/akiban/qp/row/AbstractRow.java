@@ -32,6 +32,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
@@ -133,7 +134,10 @@ public abstract class AbstractRow implements Row
         final int fieldsCount = rowType().nFields();
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
-            eval(i).appendAsString(appender, Quote.SINGLE_QUOTE);
+            if (Types3Switch.ON)
+                PValueSources.toStringSimple(pvalue(i), builder);
+            else
+                eval(i).appendAsString(appender, Quote.SINGLE_QUOTE);
             if(i+1 < fieldsCount) {
                 builder.append(',').append(' ');
             }

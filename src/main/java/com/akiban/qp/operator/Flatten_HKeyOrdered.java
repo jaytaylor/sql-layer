@@ -274,7 +274,7 @@ class Flatten_HKeyOrdered extends Operator
        
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("FLATTEN HKEY ORDERED"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("Flatten HKey Ordereds"));
         if (keepParent) 
             att.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP PARENT"));
         if (keepChild) 

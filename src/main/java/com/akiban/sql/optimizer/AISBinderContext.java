@@ -32,13 +32,12 @@ import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.FromSubquery;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserFeature;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.View;
 
-import com.akiban.server.error.DuplicateViewException;
-import com.akiban.server.error.UndefinedViewException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.ViewHasBadSubqueryException;
 
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
@@ -57,7 +56,7 @@ public class AISBinderContext
     protected String defaultSchemaName;
     protected AISBinder binder;
     protected TypeComputer typeComputer;
-    protected Map<TableName,ViewDefinition> views;
+    protected Map<View,AISViewDefinition> viewDefinitions;
 
     /** When context is part of a larger object, such as a server session. */
     protected AISBinderContext() {
@@ -69,6 +68,7 @@ public class AISBinderContext
         this.defaultSchemaName = defaultSchemaName;
         properties = new Properties();
         properties.put("database", defaultSchemaName);
+        initParser();        
         setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName),
                                  new FunctionsTypeComputer(new FunctionsRegistryImpl()));
     }
@@ -109,29 +109,47 @@ public class AISBinderContext
         Set<SQLParserFeature> parserFeatures = new HashSet<SQLParserFeature>();
         // TODO: Others that are on by defaults; could have override to turn them
         // off, but they are pretty harmless.
-        if (Boolean.parseBoolean(getProperty("parserInfixBit", "false")))
+        if (getBooleanProperty("parserInfixBit", false))
             parserFeatures.add(SQLParserFeature.INFIX_BIT_OPERATORS);
-        if (Boolean.parseBoolean(getProperty("parserInfixLogical", "false")))
+        if (getBooleanProperty("parserInfixLogical", false))
             parserFeatures.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
-        if (Boolean.parseBoolean(getProperty("columnAsFunc", "false")))
+        if (getBooleanProperty("columnAsFunc", false))
             parserFeatures.add(SQLParserFeature.MYSQL_COLUMN_AS_FUNCS);
-        if ("string".equals(getProperty("parserDoubleQuoted", "identifier")))
+        String prop = getProperty("parserDoubleQuoted", "identifier");
+        if (prop.equals("string"))
             parserFeatures.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
+        else if (!prop.equals("identifier"))
+            throw new InvalidParameterValueException("'" + prop 
+                                                     + "' for parserDoubleQuoted");
         parser.getFeatures().addAll(parserFeatures);
 
         defaultSchemaName = getProperty("database");
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
+        BindingNodeFactory.wrap(parser);
+
         return parserFeatures;
+    }
+
+    public boolean getBooleanProperty(String key, boolean defval) {
+        String prop = getProperty(key);
+        if (prop == null) return defval;
+        if (prop.equalsIgnoreCase("true"))
+            return true;
+        else if (prop.equalsIgnoreCase("false"))
+            return false;
+        else
+            throw new InvalidParameterValueException("'" + prop + "' for " + key);
     }
 
     /** Get the non-default properties that were used to parse a view
      * definition, for example. 
      * @see #initParser
      */
-    protected Properties getParserProperties() {
+    public Properties getParserProperties(String schemaName) {
         Properties properties = new Properties();
-        properties.put("database", defaultSchemaName);
+        if (!defaultSchemaName.equals(schemaName))
+            properties.put("database", defaultSchemaName);
         String prop = getProperty("parserInfixBit", "false");
         if (!"false".equals(prop))
             properties.put("parserInfixBit", prop);
@@ -165,7 +183,7 @@ public class AISBinderContext
         this.binder = binder;
         binder.setContext(this);
         this.typeComputer = typeComputer;
-        this.views = new HashMap<TableName,ViewDefinition>();
+        this.viewDefinitions = new HashMap<View,AISViewDefinition>();
     }
 
     protected void initBinder() {
@@ -173,32 +191,14 @@ public class AISBinderContext
         setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName), null);
     }
 
-    // TODO: Replace with AIS.
-    public ViewDefinition getView(String schemaName, String tableName) {
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        return views.get(TableName.create(schemaName, tableName));
-    }
-
-    // TODO: Only used by tests. Remove when they go through ViewDDL.
-    public void addView(ViewDefinition view) {
-        String schemaName = view.getName().getSchemaName();
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        TableName tableName = TableName.create(schemaName, view.getName().getTableName());
-        if (views.get(tableName) != null) {
-            throw new DuplicateViewException(tableName);
+    /** Get view definition given the AIS view. */
+    public AISViewDefinition getViewDefinition(View view) {
+        AISViewDefinition viewdef = viewDefinitions.get(view);
+        if (viewdef == null) {
+            viewdef = new ViewReloader(view, this).getViewDefinition(view.getDefinition());
+            viewDefinitions.put(view, viewdef);
         }
-        try {
-            binder.bind(view.getSubquery(), false);
-            if (typeComputer != null)
-                view.getSubquery().accept(typeComputer);
-        }
-        catch (StandardException ex) {
-            throw new ViewHasBadSubqueryException(view.getName().toString(), 
-                                                  ex.getMessage());
-        }
-        views.put(tableName, view);
+        return viewdef;
     }
 
     /** When reloading a view from AIS, we need to parse the
@@ -207,21 +207,25 @@ public class AISBinderContext
      * something so we need a separate one.
      */
     protected static class ViewReloader extends AISBinderContext {
-        // TODO: Take the actual AIS view object rather than AIS and properties.
-        public ViewReloader(AkibanInformationSchema ais, Properties viewProperties,
-                            AISBinderContext parent) {
-            this.ais = ais;
-            this.properties = viewProperties;
+        public ViewReloader(View view, AISBinderContext parent) {
+            ais = view.getAIS();
+            properties = view.getDefinitionProperties();
             initParser();
+            if (defaultSchemaName == null)
+                defaultSchemaName = view.getName().getSchemaName();
             setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName),
                                      parent.typeComputer);
         }
     }
 
-    public ViewDefinition getViewDefinition(CreateViewNode ddl) {
+    /** Get view definition given the user's DDL. */
+    public AISViewDefinition getViewDefinition(CreateViewNode ddl) {
         try {
-            ViewDefinition view = new ViewDefinition(ddl, parser);
-            binder.bind(view.getSubquery(), true);
+            AISViewDefinition view = new AISViewDefinition(ddl, parser);
+            // Just want the definition for result columns and table references.
+            // If the view uses another view, the inner one is treated
+            // like a table for those purposes.
+            binder.bind(view.getSubquery(), false);
             if (typeComputer != null)
                 view.getSubquery().accept(typeComputer);
             return view;
@@ -232,22 +236,24 @@ public class AISBinderContext
         }
     }
 
-    public void addView(String schemaName, String viewName, ViewDefinition view) {
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        TableName tableName = TableName.create(schemaName, viewName);
-        if (views.get(tableName) != null) {
-            throw new DuplicateViewException(tableName);
+    /** Get view definition using stored copy of original DDL. */
+    public AISViewDefinition getViewDefinition(String ddl) {
+        AISViewDefinition view = null;
+        try {
+            view = new AISViewDefinition(ddl, parser);
+            // Want a subquery that can be spliced in.
+            // If the view uses another view, it gets expanded, too.
+            binder.bind(view.getSubquery(), true);
+            if (typeComputer != null)
+                view.getSubquery().accept(typeComputer);
         }
-        views.put(tableName, view);
-    }
-
-    public void removeView(String schemaName, String viewName) {
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        TableName key = TableName.create(schemaName, viewName);
-        if (views.remove(key) == null)
-            throw new UndefinedViewException(key);
+        catch (StandardException ex) {
+            String name = ddl;
+            if (view != null)
+                name = view.getName().toString();
+            throw new ViewHasBadSubqueryException(name, ex.getMessage());
+        }
+        return view;
     }
 
 }

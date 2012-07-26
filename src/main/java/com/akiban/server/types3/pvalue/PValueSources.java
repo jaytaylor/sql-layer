@@ -39,12 +39,106 @@ import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.util.ByteSource;
+import com.akiban.util.WrappingByteSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 
 public final class PValueSources {
+
+    private static final Logger logger = LoggerFactory.getLogger(PValueSources.class);
+
+    /**
+     * Converts AkType to TInstance. Doesn't actually have to do with PValueSources, but this is a convenient place
+     * to put it.
+     * @param akType the input type
+     * @return its TInstance equivalent, ish.
+     */
+    public static TInstance fromAkType(AkType akType) {
+        return fromAkType(akType, 32);
+    }
+    /**
+     * Converts AkType to TInstance. Doesn't actually have to do with PValueSources, but this is a convenient place
+     * to put it.
+     * @param akType the input type
+     * @param defaultStringLen the default length for character or binary strings
+     * @return its TInstance equivalent, ish.
+     */
+    public static TInstance fromAkType(AkType akType, int defaultStringLen) {
+        TInstance tInstance = null;
+        TClass tClass = null;
+        switch (akType) {
+        case DATE:
+            tClass = MDatetimes.DATE;
+            break;
+        case DATETIME:
+            tClass = MDatetimes.DATETIME;
+            break;
+        case DECIMAL:
+            tClass = MNumeric.DECIMAL;
+            break;
+        case DOUBLE:
+            tClass = MApproximateNumber.DOUBLE;
+            break;
+        case FLOAT:
+            tClass = MApproximateNumber.FLOAT;
+            break;
+        case INT:
+            tClass = MNumeric.INT;
+            break;
+        case LONG:
+            tClass = MNumeric.BIGINT;
+            break;
+        case VARCHAR:
+            tInstance = MString.VARCHAR.instance(defaultStringLen);
+            break;
+        case TEXT:
+            tClass = MString.TEXT;
+            break;
+        case TIME:
+            tClass = MDatetimes.TIME;
+            break;
+        case TIMESTAMP:
+            tClass = MDatetimes.TIMESTAMP;
+            break;
+        case U_BIGINT:
+            tClass = MNumeric.BIGINT_UNSIGNED;
+            break;
+        case U_DOUBLE:
+            tClass = MApproximateNumber.DOUBLE_UNSIGNED;
+            break;
+        case U_FLOAT:
+            tClass = MApproximateNumber.FLOAT_UNSIGNED;
+            break;
+        case U_INT:
+            tClass = MNumeric.INT_UNSIGNED;
+            break;
+        case VARBINARY:
+            tInstance = MBinary.VARBINARY.instance(defaultStringLen);
+            break;
+        case YEAR:
+            tClass = MDatetimes.YEAR;
+            break;
+        case BOOL:
+            tInstance = MNumeric.TINYINT.instance(1);
+            break;
+        case NULL:
+            tInstance = MBinary.VARBINARY.instance(0);
+            break;
+        case INTERVAL_MONTH:
+        case RESULT_SET:
+        case UNSUPPORTED:
+            throw new UnsupportedOperationException("can't infer type of null object: " + akType);
+        default:
+            throw new AssertionError(akType);
+        case INTERVAL_MILLIS:
+            break;
+        }
+        return (tClass == null) ? tInstance : tClass.instance();
+    }
 
     /**
      * Reflectively creates a {@linkplain TPreptimeValue} from the given object, optionally consulting the given
@@ -61,75 +155,9 @@ public final class PValueSources {
         if (object == null) {
             if (akType == null)
                 throw new UnsupportedOperationException("can't infer type of null object");
-            TInstance tInstanceOverride = null;
-            TClass tClass = null;
-            switch (akType) {
-            case DATE:
-                tClass = MDatetimes.DATE;
-                break;
-            case DATETIME:
-                tClass = MDatetimes.DATETIME;
-                break;
-            case DECIMAL:
-                tClass = MNumeric.DECIMAL;
-                break;
-            case DOUBLE:
-                tClass = MApproximateNumber.DOUBLE;
-                break;
-            case FLOAT:
-                tClass = MApproximateNumber.FLOAT;
-                break;
-            case INT:
-                tClass = MNumeric.INT;
-                break;
-            case LONG:
-                tClass = MNumeric.BIGINT;
-                break;
-            case VARCHAR:
-                tInstanceOverride = MString.VARCHAR.instance(0);
-                break;
-            case TEXT:
-                tClass = MString.TEXT;
-                break;
-            case TIME:
-                tClass = MDatetimes.TIME;
-                break;
-            case TIMESTAMP:
-                tClass = MDatetimes.TIMESTAMP;
-                break;
-            case U_BIGINT:
-                tClass = MNumeric.BIGINT_UNSIGNED;
-                break;
-            case U_DOUBLE:
-                tClass = MApproximateNumber.DOUBLE_UNSIGNED;
-                break;
-            case U_FLOAT:
-                tClass = MApproximateNumber.FLOAT_UNSIGNED;
-                break;
-            case U_INT:
-                tClass = MNumeric.INT_UNSIGNED;
-                break;
-            case VARBINARY:
-                tInstanceOverride = MBinary.VARBINARY.instance(0);
-                break;
-            case YEAR:
-                tClass = MDatetimes.YEAR;
-                break;
-            case BOOL:
-                tInstanceOverride = MNumeric.TINYINT.instance(0);
-                break;
-            case INTERVAL_MILLIS:
-            case INTERVAL_MONTH:
-            case RESULT_SET:
-            case NULL:
-            case UNSUPPORTED:
-                throw new UnsupportedOperationException("can't infer type of null object: " + akType);
-            default:
-                throw new AssertionError(akType);
-            }
-            tInstance = (tClass == null) ? tInstanceOverride : tClass.instance();
-            assert tInstance != null;
+            tInstance = fromAkType(akType, 0);
             value = new PValue(tInstance.typeClass().underlyingType());
+            value.putNull();
         }
         else if (object instanceof Integer) {
             tInstance = MNumeric.INT.instance();
@@ -177,7 +205,7 @@ public final class PValueSources {
                 }
                 tInstance = tClass.instance();
             }
-            value = new PValue((Long)object);
+            value = pvalueFromLong((Long)object, tInstance);
         }
         else if (object instanceof String) {
             String s = (String) object;
@@ -232,6 +260,83 @@ public final class PValueSources {
         }
 
         return new TPreptimeValue(tInstance, value);
+    }
+
+    private static PValue pvalueFromLong(long value, TInstance tInstance) {
+        PUnderlying underlying = tInstance.typeClass().underlyingType();
+        PValue result = new PValue(underlying);
+        switch (underlying) {
+        case INT_8:
+            result.putInt8((byte)value);
+            break;
+        case INT_16:
+            result.putInt16((short)value);
+            break;
+        case UINT_16:
+            result.putUInt16((char)value);
+            break;
+        case INT_32:
+            result.putInt32((int)value);
+            break;
+        case INT_64:
+            result.putInt64(value);
+            break;
+        default:
+            throw new AssertionError(underlying);
+        }
+        return result;
+    }
+
+    public static Object toObject(PValueSource valueSource, AkType akType) {
+        if (valueSource.isNull())
+            return null;
+
+        switch (akType.underlyingType()) {
+        case BOOLEAN_AKTYPE:
+            return valueSource.getBoolean();
+        case LONG_AKTYPE:
+            long v;
+            switch (valueSource.getUnderlyingType()) {
+            case INT_8:
+                v = valueSource.getInt8();
+                break;
+            case INT_16:
+                v = valueSource.getInt16();
+                break;
+            case UINT_16:
+                v = valueSource.getUInt16();
+                break;
+            case INT_32:
+                v = valueSource.getInt32();
+                break;
+            case INT_64:
+                v = valueSource.getInt64();
+                break;
+            case BOOL:
+            case FLOAT:
+            case DOUBLE:
+            case BYTES:
+            case STRING:
+                throw new UnsupportedOperationException("couldn't convert " + valueSource + " to long as " + akType);
+            default:
+                throw new AssertionError(valueSource.getUnderlyingType());
+            }
+            return v;
+        case FLOAT_AKTYPE:
+            return valueSource.getFloat();
+        case DOUBLE_AKTYPE:
+            return valueSource.getObject();
+        case OBJECT_AKTYPE:
+            if (valueSource.getUnderlyingType() == PUnderlying.STRING)
+                return valueSource.getString();
+            if (akType == AkType.VARBINARY)
+                return new WrappingByteSource(valueSource.getBytes());
+            if (valueSource.hasCacheValue())
+                return valueSource.getObject();
+            throw new UnsupportedOperationException("couldn't convert " + valueSource + " to object as " + akType);
+        default:
+            throw new AssertionError(akType + " with underlying " + akType.underlyingType());
+        }
     }
 
     public static boolean areEqual(PValueSource one, PValueSource two) {
@@ -343,6 +448,66 @@ public final class PValueSources {
         return result;
     }
 
+    public static void toStringSimple(PValueSource source, StringBuilder out) {
+        if (source.isNull()) {
+            out.append("NULL");
+            return;
+        }
+        if (!source.hasAnyValue()) {
+            out.append("<unset>");
+            return;
+        }
+        if (source.hasCacheValue()) {
+            out.append(source.getObject());
+            return;
+        }
+        
+        switch (source.getUnderlyingType()) {
+        case BOOL:
+            out.append(source.getBoolean());
+            break;
+        case INT_8:
+            out.append(source.getInt8());
+            break;
+        case INT_16:
+            out.append(source.getInt16());
+            break;
+        case UINT_16:
+            // display as int instead of char, to reinforce that it's not a char, it's an int with unsigned collation
+            out.append((int)source.getUInt16());
+            break;
+        case INT_32:
+            out.append(source.getInt32());
+            break;
+        case INT_64:
+            out.append(source.getInt64());
+            break;
+        case FLOAT:
+            out.append(source.getFloat());
+            break;
+        case DOUBLE:
+            out.append(source.getDouble());
+            break;
+        case BYTES:
+            out.append(Arrays.toString(source.getBytes()));
+            break;
+        case STRING:
+            out.append(source.getString());
+            break;
+        default:
+            // toStrings are non-critical, so let's not throw an error
+            logger.warn("unknown PValueSource underlying type: {} ({})", source.getUnderlyingType(), source);
+            out.append("<?>");
+            break;
+        }
+    }
+
+    public static String toStringSimple(PValueSource source) {
+        StringBuilder sb = new StringBuilder();
+        toStringSimple(source, sb);
+        return sb.toString();
+    }
+
     public static abstract class ValueSourceConverter<T> {
 
         protected abstract Object handleBigDecimal(T state, BigDecimal bigDecimal);
@@ -425,11 +590,17 @@ public final class PValueSources {
             case INTERVAL_MONTH:
                 lval = in.getInterval_Month();
                 break;
+            case NULL:
+                oval = null;
+                break;
             default:
                 throw new AssertionError(in.getConversionType());
             }
 
-            if (oval != UNDEF && oval.getClass() != byte[].class) {
+            if (oval == null) {
+                out.putNull();
+            }
+            else if (oval != UNDEF && oval.getClass() != byte[].class) {
                 out.putObject(oval);
             }
             else {
@@ -462,7 +633,7 @@ public final class PValueSources {
                     out.putBytes((byte[])oval); // ensured by "oval.getClass() != byte[].class" above
                     break;
                 case STRING:
-                    out.putString((String)(oval));
+                    out.putString((String)(oval), null);
                     break;
                 default:
                     throw new AssertionError(out.getUnderlyingType());

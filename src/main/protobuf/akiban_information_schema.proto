@@ -4,10 +4,8 @@ package akiban_schema.protobuf;
 option java_package = "com.akiban.ais.protobuf";
 option java_outer_classname = "AISProtobuf";
 
-// The AIS Types are statically generated in akiban server in 
-// com.akiban.ais.model.Types. The AIS message needs to include the types
-// to send them to the Akiban Adapter, where they are used to create and 
-// parse Rows. 
+// This is the old, static AIS Types. Will be deprecated soon but
+// cannot delete the message until those volumes are unsupported.
 message Type {
    optional string typeName     = 1;  // name of the type
    optional int32  parameters   = 2;  // number of parameters used in the column
@@ -47,12 +45,23 @@ message Join {
     repeated JoinColumn columns     = 2;  // list of columns for this join
 }
 
+message Sequence {
+    optional string sequenceName    = 1; 
+    optional string treeName 	    = 2; // storage system tree name
+    optional int32  accumulator     = 3; // storage system accumulator index
+    optional int64  start           = 4; // Starting value
+    optional int64  increment       = 5; // increment by value
+    optional int64  minValue        = 6; // minimum value
+    optional int64  maxValue        = 7; // maximum value
+    optional bool   isCycle         = 8; // cycle values
+}
+
 message IndexColumn {
     optional string    columnName  = 1;  // links to Column.columnName 
     optional bool      isAscending = 2;  // sort order of the column
     optional int32     position    = 3;  // order of the column in the index
-    optional TableName tableName   = 4;  // can be set to override owner name,
-                                         // GroupIndex has columns from multiple
+    optional TableName tableName   = 4;  // can be set to override owner name (group index has columns from multiple)
+    optional int32     indexedLength = 5; // number of bytes from column used in index (null if entire column is used)
 }
 
 message Index {
@@ -86,6 +95,16 @@ message Column {
     optional CharCollation charColl = 8; // column defined character set
                                          // and collation
     optional string  description  = 9;   // column comment holder
+    optional bool    defaultIdentity = 10; // true if column is identity by default,
+                                            // false if column is identity always, 
+                                            // null if column is not an identity column
+    optional TableName sequence   = 11;  // Sequence used for identity generation. 
+                                         // links to Schema.schemaName & Sequence.sequenceName
+                                         // null if not an identity column
+    optional int64  maxStorageSize = 12; // maximum number of bytes needed to store this column
+    optional int32  prefixSize     = 13; // number of bytes to describe maxStorageSize
+    optional string typeBundleUUID = 14; // bundle UUID of type. null if old style type
+    optional int32  typeVersion    = 15; // serialization version of type. null if old style type
 }
 
 // UserTable.  
@@ -106,11 +125,33 @@ message Table {
                                         // For AIS tables.
 }
 
+message Property {
+    optional string key = 1;
+    optional string value = 2;
+}
+
+message ColumnReference {
+    optional TableName table      = 1;  // table containing references
+    repeated string columns       = 2;  // list of columns referenced
+}
+
+message View {
+    optional string  viewName     = 1;  // name of view
+    repeated Column  columns      = 2;  // list of columns in the view
+    optional string  definition   = 3;  // text of CREATE VIEW
+    repeated Property definitionProperties = 4; // environment in which that was parsed
+    repeated ColumnReference references = 5;  // tables & their columns used in view
+    optional string  description  = 6;  // View comment holder
+    optional bool    protected    = 7;  // View cannot be altered
+}
+
 message Schema {
     optional string schemaName   = 1;
     repeated Table  tables       = 2;  // list of user tables in the schema
-    repeated Group  groups       = 3;  // list of groups in the schema
-    optional CharCollation charColl = 4; // schema default character set & collation 
+    repeated Group  groups       = 3;  // list of groups in the schema 
+    optional CharCollation charColl = 4; // schema default character set & collation
+    repeated View   views        = 5;  // list of views in the schema
+    repeated Sequence sequences  = 6;  // list of sequences 
 }
 
 message AkibanInformationSchema {

@@ -539,7 +539,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     {
         RowType innerValuesRowType = schema.newValuesType(AkType.NULL);
         List<BindableRow> innerValuesRows = new ArrayList<BindableRow>();
-        innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null))));
+        innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null)), null));
         Operator project = project_Default(valuesScan_Default(innerValuesRows, innerValuesRowType),
                                            innerValuesRowType,
                                            Arrays.asList(boundField(customerRowType, 0, 1)));

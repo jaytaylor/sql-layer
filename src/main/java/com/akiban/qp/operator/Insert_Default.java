@@ -86,7 +86,7 @@ import com.akiban.util.tap.Tap;
 
  */
 
-class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
+class Insert_Default implements UpdatePlannable {
 
     public Insert_Default(Operator inputOperator) {
         this.inputOperator = inputOperator;
@@ -94,31 +94,7 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     @Override
     public UpdateResult run(QueryContext context) {
-        context(context);
-        int seen = 0, modified = 0;
-        Cursor inputCursor = null;
-        INSERT_TAP.in();
-        try {
-            inputCursor = inputOperator.cursor(context);
-            inputCursor.open();
-            Row row;
-            while ((row = inputCursor.next()) != null) {
-                // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
-                checkQueryCancelation();
-                ++seen;
-                adapter().writeRow(row);
-                ++modified;
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Insert: row {}", row);
-                }
-            }
-        } finally {
-            if (inputCursor != null) {
-                inputCursor.close();
-            }
-            INSERT_TAP.out();
-        }
-        return new StandardUpdateResult(seen, modified);
+        return new Execution(context, inputOperator.cursor(context)).run();
     }
 
     @Override
@@ -148,7 +124,46 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     @Override
     public Explainer getExplainer()
     {
-        return new DUIOperatorExplainer("INSERT", inputOperator);
+        return new DUIOperatorExplainer("Insert", inputOperator);
     }
 
+    // Inner classes
+
+    private class Execution extends ExecutionBase
+    {
+        public UpdateResult run()
+        {
+            int seen = 0, modified = 0;
+            INSERT_TAP.in();
+            try {
+                input.open();
+                Row row;
+                while ((row = input.next()) != null) {
+                    // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
+                    checkQueryCancelation();
+                    ++seen;
+                    context.checkConstraints(row);
+                    adapter().writeRow(row);
+                    ++modified;
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Insert: row {}", row);
+                    }
+                }
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
+                INSERT_TAP.out();
+            }
+            return new StandardUpdateResult(seen, modified);
+        }
+
+        protected Execution(QueryContext queryContext, Cursor input)
+        {
+            super(queryContext);
+            this.input = input;
+        }
+
+        private final Cursor input;
+    }
 }

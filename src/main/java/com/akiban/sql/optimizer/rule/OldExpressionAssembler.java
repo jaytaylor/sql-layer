@@ -26,6 +26,8 @@
 
 package com.akiban.sql.optimizer.rule;
 
+
+import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
@@ -40,6 +42,7 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.expression.std.IntervalCastExpression;
 import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -98,7 +101,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         if (toType == null) return expr;
         if (!toType.equals(operand.getAkType()))
         {
-            // Do type conversion.         
+            // Do type conversion.
             TypeId id = castExpression.getSQLtype().getTypeId(); 
             if (id.isIntervalTypeId())
                 expr = new IntervalCastExpression(expr, id);
@@ -132,6 +135,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         return expr;
     }
 
+    @Override
     public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;
@@ -170,6 +174,17 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     @Override
     protected Expression compare(Expression left, Comparison comparison, Expression right) {
         return Expressions.compare(left, comparison, right);
+    }
+
+    @Override
+    protected Expression collate(Expression left, Comparison comparison, Expression right, AkCollator collator) {
+        return Expressions.collate(left, comparison, right, collator);
+    }
+
+    @Override
+    protected AkCollator collator(ComparisonCondition cond, Expression left, Expression right) {
+        return ExpressionTypes.operationCollation(TypesTranslation.toExpressionType(cond.getLeft().getSQLtype()),
+                                                  TypesTranslation.toExpressionType(cond.getRight().getSQLtype()));
     }
 
     @Override

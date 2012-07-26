@@ -73,8 +73,7 @@ public class OperatorCompiler extends SchemaRulesContext
 
     protected void initParser(SQLParser parser) {
         parserContext = parser;
-        nodeFactory = parserContext.getNodeFactory();
-        parser.setNodeFactory(new BindingNodeFactory(nodeFactory));
+        BindingNodeFactory.wrap(parser);
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         distinctEliminator = new DistinctEliminator(parser);
@@ -104,10 +103,6 @@ public class OperatorCompiler extends SchemaRulesContext
     protected void initDone() {
         super.initDone();
         assert (parserContext != null) : "initParser() not called";
-    }
-
-    public void addView(ViewDefinition view) throws StandardException {
-        binder.getContext().addView(view);
     }
 
     /** Compile a statement into an operator tree. */

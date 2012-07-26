@@ -265,7 +265,7 @@ class YamlTester {
 		} else if ("CreateTable".equals(commandName)) {
 		    createTableCommand(value, sequence);
 		} else if ("DropTable".equals(commandName)) {
-		    dropTableCommand(value);
+		    dropTableCommand(value, sequence);
 		} else if ("Statement".equals(commandName)) {
 		    statementCommand(value, sequence);
 		} else if ("Message".equals(commandName)) {
@@ -459,8 +459,12 @@ class YamlTester {
 	new CreateTableCommand(value, sequence).execute();
     }
 
-    private class CreateTableCommand extends AbstractStatementCommand {
-	CreateTableCommand(Object value, List<Object> sequence) {
+    private class CreateTableCommand extends AbstractStatementCommand 
+    {
+        private Object warningsCount;
+        private List<Warning> warnings;
+        
+        CreateTableCommand(Object value, List<Object> sequence) {
 	    super("CREATE TABLE " + string(value, "CreateTable argument"));
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map = onlyEntry(sequence.get(i),
@@ -468,12 +472,21 @@ class YamlTester {
 		String attribute = string(map.getKey(),
 			"CreateTable attribute name");
 		Object attributeValue = map.getValue();
-		if ("error".equals(attribute)) {
+		if ("error".equals(attribute))
 		    parseError(attributeValue);
-		} else {
+                else if ("warnings_count".equals(attribute)) 
+                    warningsCount = parseWarningsCount(attributeValue, warningsCount);
+                else if ("warnings".equals(attribute)) 
+                    warnings = parseWarnings(attributeValue, warnings);
+                else 
 		    fail("The '" + attribute + "' attribute name was not"
 			    + " recognized");
-		}
+
+                if (warnings != null && warningsCount != null 
+                                     && !expected(warningsCount, warnings.size()))
+                    fail("Warnings count " + warningsCount
+                         + " does not match " + warnings.size()
+                         + ", which is the number of warnings");
 	    }
 	}
 
@@ -487,6 +500,7 @@ class YamlTester {
 		if (DEBUG) {
 		    System.err.println("Statement executed successfully");
 		}
+                
 	    } catch (SQLException e) {
 		if (DEBUG) {
 		    System.err.println("Generated error code: "
@@ -495,20 +509,47 @@ class YamlTester {
 		checkFailure(e);
 		return;
 	    }
-	    assertFalse("Statement execution succeeded, but was expected"
-		    + " to generate an error", errorSpecified);
+            checkSuccess(stmt, errorSpecified, warnings, warningsCount);
 	}
     }
 
     
-    private void dropTableCommand(Object value) throws SQLException {
-        new DropTableCommand(value).execute();
+    private void dropTableCommand(Object value, List<Object> sequence) throws SQLException {
+        new DropTableCommand(value, sequence).execute();
     }
     
 
-    private class DropTableCommand extends AbstractStatementCommand {
-	DropTableCommand(Object value) {
+    private class DropTableCommand extends AbstractStatementCommand
+    {
+                
+        private Object warningsCount;
+        private List<Warning> warnings;
+	
+        DropTableCommand(Object value, List<Object> sequence)
+        {
 	    super("DROP TABLE " + string(value, "DropTable argument"));
+            for (int i = 1; i < sequence.size(); i++) {
+		Entry<Object, Object> map = onlyEntry(sequence.get(i),
+			"DropTable attribute");
+		String attribute = string(map.getKey(),
+			"CreateTable attribute name");
+		Object attributeValue = map.getValue();
+		if ("error".equals(attribute))
+		    parseError(attributeValue);
+                else if ("warnings_count".equals(attribute)) 
+                    warningsCount = parseWarningsCount(attributeValue, warningsCount);
+                else if ("warnings".equals(attribute)) 
+                    warnings = parseWarnings(attributeValue, warnings);
+                else 
+		    fail("The '" + attribute + "' attribute name was not"
+			    + " recognized");
+
+                if (warnings != null && warningsCount != null 
+                                     && !expected(warningsCount, warnings.size()))
+                    fail("Warnings count " + warningsCount
+                         + " does not match " + warnings.size()
+                         + ", which is the number of warnings");
+	    }
 	}
 
 	void execute() throws SQLException {
@@ -521,6 +562,7 @@ class YamlTester {
 		if (DEBUG) {
 		    System.err.println("Statement executed successfully");
 		}
+                
 	    } catch (SQLException e) {
 		if (DEBUG) {
 		    System.err.println("Generated error code: "
@@ -529,8 +571,7 @@ class YamlTester {
 		checkFailure(e);
 		return;
 	    }
-	    assertFalse("Statement execution succeeded, but was expected"
-		    + " to generate an error", errorSpecified);
+            checkSuccess(stmt, errorSpecified, warnings, warningsCount);
 	}
     }
 
@@ -565,11 +606,6 @@ class YamlTester {
 
 	StatementCommand(Object value, List<Object> sequence) {
 	    super(string(value, "Statement value"));
-	    if (statement.regionMatches(true, 0, "CREATE TABLE", 0, 12)) {
-		throw new ContextAssertionError(
-			"The Statement command should not be used for CREATE"
-				+ " TABLE statements");
-	    }
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map = onlyEntry(sequence.get(i),
 			"Statement attribute");
@@ -595,9 +631,9 @@ class YamlTester {
 		} else if ("explain".equals(attribute)) {
 		    parseExplain(attributeValue);
                 } else if ("warnings_count".equals(attribute)) {
-                    parseWarningsCount(attributeValue);
+                   warningsCount = parseWarningsCount(attributeValue, warningsCount);
                 } else if ("warnings".equals(attribute)) {
-                    parseWarnings(attributeValue);
+                    warnings = parseWarnings(attributeValue, warnings);
 		} else {
 		    fail("The '" + attribute + "' attribute name was not"
 			    + " recognized");
@@ -719,41 +755,6 @@ class YamlTester {
 		    explain);
 	    explain = scalar(value, "explain value");
 	}
-
-        /** Parse a warnings_count attribute with the specified value. */
-        void parseWarningsCount(Object value) {
-            if (value == null) {
-                return;
-            }
-            assertNull(
-                "The warnings_count attribute must not appear more than once",
-                warningsCount);
-            warningsCount = scalar(value, "warningsCount");
-        }
-
-        /** Parse a warnings attribute with the specified value. */
-        void parseWarnings(Object value) {
-            if (value == null) {
-                return;
-            }
-            assertNull("The warnings attribute must not appear more than once",
-                       warnings);
-            List<Object> list = nonEmptySequence(value, "warnings");
-            warnings = new ArrayList<Warning>();
-            for (int i = 0; i < list.size(); i++) {
-                List<Object> element = nonEmptyScalarSequence(
-                    list.get(i), "warnings element " + i);
-                assertFalse("Warnings element " + i + " is empty",
-                            element.isEmpty());
-                assertFalse(
-                    "Warnings element " + i + " has more than two elements",
-                    element.size() > 2);
-                warnings.add(
-                    new Warning(
-                        element.get(0),
-                        element.size() > 1 ? element.get(1) : null));
-            }
-        }
 
 	void execute() throws SQLException {
 	    if (explain != null) {
@@ -1053,7 +1054,95 @@ class YamlTester {
 	    }
 	}
     }
+    
+    //----------- static helpers -----------------
 
+    static Object stripWARN (Object msg)
+    {
+        
+        if (msg instanceof String)
+        {
+            String st = (String)msg;
+            if (st.startsWith("WARN: "))
+                return st.substring(6);
+        }
+        return msg;
+    }
+
+    static void checkSuccess(Statement stmt, boolean errorSpecified, List<Warning> warnings, Object warningsCount) throws SQLException
+    {
+        assertFalse("Statement execution succeeded, but was expected"
+                    + " to generate an error", errorSpecified);
+
+        List<Warning> reportedWarnings = new ArrayList<Warning>();
+        collectWarnings(stmt.getWarnings(), reportedWarnings);
+        checkWarnings(reportedWarnings, warnings, warningsCount);
+    }
+
+    static Object parseWarningsCount(Object value, Object warningsCount)
+    {
+        if (value == null)
+            return null;
+        assertNull("The warnings_count attribute must not appear more than once",
+                   warningsCount);
+        return warningsCount = scalar(value, "warningsCount");
+    }
+
+    static List<Warning>  parseWarnings(Object value, List<Warning> warnings)
+    {
+        if (value == null)
+            return null;
+        assertNull("The warnings attribute must not appear more than once",
+                   warnings);
+
+        List<Object> list = nonEmptySequence(value, "warnings");
+        warnings = new ArrayList<Warning>();
+        for (int i = 0; i < list.size(); i++)
+        {
+            List<Object> element = nonEmptyScalarSequence(
+                    list.get(i), "warnings element " + i);
+            assertFalse("Warnings element " + i + " is empty",
+                        element.isEmpty());
+            assertFalse("Warnings element " + i + " has more than two elements",
+                        element.size() > 2);
+            warnings.add(new Warning(
+                    element.get(0),
+                    element.size() > 1 ? stripWARN(element.get(1)) : null));
+        }
+        return warnings;
+    }
+
+    private static void collectWarnings(SQLWarning warning, List<Warning> messages)
+    {
+        while (warning != null)
+        {
+            messages.add(new Warning(warning.getSQLState(), warning.getMessage()));
+            warning = warning.getNextWarning();
+        }
+    }
+
+    private static void checkWarnings(List<Warning> reportedWarnings, List<Warning> warnings, Object warningsCount)
+    {
+        if (DEBUG && !reportedWarnings.isEmpty())
+            System.err.println("Statement warnings: " + reportedWarnings);
+
+        if (warningsCount != null)
+            checkExpected("warnings count", warningsCount, reportedWarnings.size());
+        if (warnings == null)
+            return;
+        if (reportedWarnings.isEmpty())
+        {
+            if (!warnings.isEmpty())
+                fail("No warnings were reported, but expected warnings: " + warnings);
+        }
+        else
+        {
+            if (warnings.isEmpty())
+                fail("Warnings were reported but none were expected: " + warnings);
+            checkExpectedList("Warnings", warnings, reportedWarnings);
+        }
+    }
+    
     static void checkExpectedList(String description, List<?> expected,
                                   List<?> actual)
     {
@@ -1095,6 +1184,7 @@ class YamlTester {
         } else {
             String expectedString = objectToString(expected).trim();
             String actualString = objectToString(actual).trim();
+     
             return expectedString.equals(actualString);
         }
     }

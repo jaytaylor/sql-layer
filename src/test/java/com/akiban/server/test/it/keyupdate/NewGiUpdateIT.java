@@ -1931,6 +1931,7 @@ public final class NewGiUpdateIT extends ITBase {
         Tap.setEnabled(TAP_PATTERN, false);
 
         dml().truncateTable(session(), a);
+        dml().truncateTable(session(), h);
         dml().truncateTable(session(), i);
         dml().truncateTable(session(), o);
         dml().truncateTable(session(), c);

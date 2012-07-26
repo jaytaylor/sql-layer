@@ -33,11 +33,14 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -78,7 +81,7 @@ public class ServerValueEncoder
     private PrintWriter printWriter;
     private AkibanAppender appender;
     private FromObjectValueSource objectSource;
-    private PValue pSource;
+    private PValue stringPValue;
 
     public ServerValueEncoder(String encoding) {
         this.encoding = encoding;
@@ -162,15 +165,13 @@ public class ServerValueEncoder
             case EXCEPTION:
                 throw new ZeroDateTimeException();
             case ROUND:
-                if (pSource == null)
-                    pSource = new PValue(type.getInstance().typeClass().underlyingType());
-                else {
-                    if (type.getInstance().typeClass() == MDatetimes.DATETIME)
-                        pSource.putInt64(ROUND_ZERO_DATETIME_VAL);
-                    else
-                        pSource.putInt32(ROUND_ZERO_DATE_VAL);
-                }  
-                value = pSource;
+                if (stringPValue == null)
+                    stringPValue = new PValue(PUnderlying.STRING);
+                String zeroString = (type.getInstance().typeClass() == MDatetimes.DATETIME)
+                        ? ROUND_ZERO_DATETIME
+                        : ROUND_ZERO_DATE;
+                stringPValue.putString(zeroString, null);
+                value = stringPValue;
                 break;
             case CONVERT_TO_NULL:
                 return null;
@@ -231,13 +232,12 @@ public class ServerValueEncoder
     /** Append the given value to the buffer. */
     public void appendPValue(PValueSource value, ServerType type, boolean binary) 
             throws IOException {
-        if (type.getInstance().typeClass() == MBinary.VARBINARY)
+        TClass tClass = type.getInstance().typeClass();
+        if (tClass == MBinary.VARBINARY)
             getByteStream().write(value.getBytes());
         else {
-            assert !binary : "expecting VARBINARY";
-            String input = (String) value.getObject();
-            String curr = (String) pSource.getObject();
-            pSource.putObject(curr.concat(input));
+            assert !binary : "can only binary encode VARBINARY";
+            tClass.format(type.getInstance(), value, appender);
         }
     }
     
@@ -266,9 +266,9 @@ public class ServerValueEncoder
             return;
         }
 
-        // TODO: fix, specifically put value into source based on its type
-        pSource.putObject(value);
-        appendPValue(pSource, type, binary);
+        // TODO this is inefficient, but I want to get it working. I created a task to fix it in pivotal.
+        PValueSource source = PValueSources.fromObject(objectSource, type.getAkType()).value();
+        appendPValue(source, type, binary);
     }
     
     public void appendString(String string) throws IOException {

@@ -30,6 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -67,7 +68,34 @@ public abstract class TOverloadBase implements TOverload {
     }
 
     @Override
+    public String toString(List<? extends TPreparedExpression> inputs, TInstance resultType) {
+        StringBuilder sb = new StringBuilder(toStringName());
+        sb.append('(');
+        sb.append(toStringArgsPrefix());
+        for (int i = 0, len = inputs.size(); i < len; ++i) {
+            sb.append(inputs.get(i));
+            if (i+1 < len)
+                sb.append(", ");
+        }
+        sb.append(" -> ");
+        sb.append(resultType.typeClass().name().unqualifiedName());
+        sb.append(')');
+        return sb.toString();
+    }
+
+    protected String toStringName() {
+        return overloadName();
+    }
+
+    protected String toStringArgsPrefix() {
+        return "";
+    }
+
+    @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, final LazyList<? extends TPreptimeValue> inputs) {
+        if (neverConstant()) {
+            return null;
+        }
         for (int i = 0; i < inputs.size(); ++i) {
             if (constnessMatters(i)) {
                 TPreptimeValue preptimeValue = inputs.get(i);
@@ -136,6 +164,10 @@ public abstract class TOverloadBase implements TOverload {
         return true;
     }
 
+    protected boolean neverConstant() {
+        return false;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(overloadName());
@@ -152,7 +184,8 @@ public abstract class TOverloadBase implements TOverload {
                     sb.append(", ");
             }
         }
-        sb.append(')');
+        sb.append(") -> ");
+        sb.append(resultType());
         return sb.toString();
     }
 

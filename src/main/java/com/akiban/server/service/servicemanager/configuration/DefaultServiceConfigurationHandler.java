@@ -27,6 +27,7 @@
 package com.akiban.server.service.servicemanager.configuration;
 
 import java.util.Collection;
+import java.util.List;
 
 public final class DefaultServiceConfigurationHandler implements ServiceConfigurationHandler {
 
@@ -58,6 +59,11 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
     }
 
     @Override
+    public void prioritize(String interfaceName) {
+        builder.prioritize(interfaceName);
+    }
+
+    @Override
     public void sectionEnd() {
         builder.markSectionEnd();
     }
@@ -77,6 +83,10 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
 
     public Collection<ServiceBinding> serviceBindings() {
         return builder.getAllBindings();
+    }
+
+    public List<String> priorities() {
+        return builder.getPriorities();
     }
 
     // object state

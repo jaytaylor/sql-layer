@@ -32,6 +32,11 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 
 import com.akiban.sql.types.CharacterTypeAttributes;
+import com.akiban.sql.StandardException;
+import com.akiban.server.error.SQLParserInternalException;
+
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
 
 public class ExpressionTypes
 {
@@ -129,7 +134,36 @@ public class ExpressionTypes
         private int precision, scale;
         private CharacterTypeAttributes characterAttributes;
     }
-    
+
+    /** If operating on <code>type1</code> and <code>type2</code>,
+     * would the operation be under some appropriate collation? 
+     * @return that collation or <code>null</code>
+     */
+    public static AkCollator operationCollation(ExpressionType type1, ExpressionType type2) {
+        if (!((type1 != null) &&
+              ((type1.getType() == AkType.VARCHAR) || (type1.getType() == AkType.TEXT)) &&
+              (type2 != null) &&
+              ((type2.getType() == AkType.VARCHAR) || (type2.getType() == AkType.TEXT))))
+            return null;
+        return mergeAkCollators(type1.getCharacterAttributes(), type2.getCharacterAttributes());
+    }
+
+    public static AkCollator mergeAkCollators(CharacterTypeAttributes type1Atts, CharacterTypeAttributes type2Atts) {
+        CharacterTypeAttributes att;
+        try {
+            att = CharacterTypeAttributes.mergeCollations(type1Atts, type2Atts);
+        }
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }
+        if (att != null) {
+            String coll = att.getCollation();
+            if (coll != null)
+                return AkCollatorFactory.getAkCollator(coll);
+        }
+        return null;
+    }
+
     private ExpressionTypes() {
     }
 }

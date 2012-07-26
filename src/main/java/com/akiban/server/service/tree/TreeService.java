@@ -26,6 +26,9 @@
 
 package com.akiban.server.service.tree;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
@@ -43,7 +46,9 @@ import com.persistit.exception.PersistitException;
  * @author peter
  * 
  */
-public interface TreeService extends Service<TreeService> {
+public interface TreeService extends Service<TreeService>, KeyCreator {
+
+    final static Logger logger = LoggerFactory.getLogger(TreeService.class.getName());
 
     final static int MAX_TABLES_PER_VOLUME = 100000;
 

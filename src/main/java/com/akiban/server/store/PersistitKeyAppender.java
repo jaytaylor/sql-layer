@@ -139,11 +139,7 @@ public abstract class PersistitKeyAppender {
         }
 
         public void append(Object object, Column column) {
-            TInstance tInstance = column.tInstance();
-            TClass tClass = tInstance.typeClass();
-            tClass.writeCollating(PValueSources.fromObject(object, column.getType().akType()).value(),
-                                  tInstance,
-                                  target.expectingType(column));
+            column.tInstance().writeCollating(PValueSources.fromObject(object, column.getType().akType()).value(), target);
         }
 
         public void append(ValueSource source, Column column) {
@@ -151,17 +147,13 @@ public abstract class PersistitKeyAppender {
         }
 
         public void append(PValueSource source, Column column) {
-            TInstance tInstance = column.tInstance();
-            TClass tClass = tInstance.typeClass();
-            tClass.writeCollating(source, tInstance, target.expectingType(column));
+            column.tInstance().writeCollating(source, target);
         }
 
         public void append(FieldDef fieldDef, RowData rowData) {
             fromRowDataSource.bind(fieldDef, rowData);
             Column column = fieldDef.column();
-            TInstance tInstance = column.tInstance();
-            TClass tClass = tInstance.typeClass();
-            tClass.writeCollating(fromRowDataSource, tInstance, target.expectingType(column));
+            column.tInstance().writeCollating(fromRowDataSource, target);
         }
 
         private final RowDataPValueSource fromRowDataSource;

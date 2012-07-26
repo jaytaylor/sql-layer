@@ -32,6 +32,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 
 import java.util.HashSet;
 import java.util.List;
@@ -60,14 +61,19 @@ public class DerivedTypesSchema {
         return new FlattenedRowType(this, nextTypeId(), parent, child);
     }
 
-    public synchronized ProjectedRowType newProjectType(List<? extends Expression> columns, List<? extends TInstance> tInstances)
+    public synchronized ProjectedRowType newProjectType(List<? extends Expression> columns, List<? extends TPreparedExpression> tExprs)
     {
-        return new ProjectedRowType(this, nextTypeId(), columns, tInstances);
+        return new ProjectedRowType(this, nextTypeId(), columns, tExprs);
     }
 
     public ProductRowType newProductType(RowType leftType, UserTableRowType branchType, RowType rightType)
     {
         return new ProductRowType(this, nextTypeId(), leftType, branchType, rightType);
+    }
+
+    public synchronized ValuesRowType newValuesType(TInstance... fields)
+    {
+        return new ValuesRowType(this, nextTypeId(), fields);
     }
 
     public synchronized ValuesRowType newValuesType(AkType... fields)

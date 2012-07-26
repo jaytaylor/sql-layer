@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -39,6 +40,8 @@ import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueSources;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
@@ -58,6 +61,9 @@ public class CompareExpression extends AbstractBinaryExpression {
     @Override
     protected void describe(StringBuilder sb) {
         sb.append(name());
+        // TODO: Need nicer presentation.
+        if (collator != null)
+            sb.append("/").append(collator);
     }
     
     @Override
@@ -67,17 +73,26 @@ public class CompareExpression extends AbstractBinaryExpression {
 
     @Override
     public Explainer getExplainer () {
-        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+        Explainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
+        return ex;
     }
     
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(childrenEvaluations(), OPS.get(comparison));
+        if (collator != null)
+            return new CollateEvaluation(childrenEvaluations(), OPS.get(comparison), collator);
+        else
+            return new CompareEvaluation(childrenEvaluations(), OPS.get(comparison));
     }
 
     @Override
     public boolean nullIsContaminating() {
         return true;
+    }
+
+    public CompareExpression(Expression lhs, Comparison comparison, Expression rhs, AkCollator collator) {
+        this(AkType.BOOL, lhs, comparison, rhs, collator);
     }
 
     /*
@@ -96,20 +111,21 @@ public class CompareExpression extends AbstractBinaryExpression {
     
     //copied from trunk
     public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
-        this(AkType.BOOL, lhs, comparison, rhs);
+        this(AkType.BOOL, lhs, comparison, rhs, null);
     }
     
     // For use by RankExpression
     protected CompareExpression(Expression lhs, Expression rhs) {
-        this(AkType.INT, lhs, null, rhs);
+        this(AkType.INT, lhs, null, rhs, null);
     }
     
     // for use in this class
 
-    private CompareExpression(AkType outputType, Expression lhs, Comparison comparison, Expression rhs)
+    private CompareExpression(AkType outputType, Expression lhs, Comparison comparison, Expression rhs, AkCollator collator)
     {
         super(outputType, lhs, rhs);
         this.comparison = comparison;
+        this.collator = collator;
     }
     
     // overriding protected methods
@@ -123,6 +139,7 @@ public class CompareExpression extends AbstractBinaryExpression {
     // object state
 
     private final Comparison comparison;
+    private final AkCollator collator;
 
      // consts
     
@@ -131,35 +148,77 @@ public class CompareExpression extends AbstractBinaryExpression {
     static
     {
         OPS.put(Comparison.EQ, 
-               new Op(){public boolean compare(ValueSource a, ValueSource b){return ValueSources.equals(a, b, false);}});
+               new Op() {
+                   public boolean compare(ValueSource a, ValueSource b) { 
+                       return ValueSources.equals(a, b, false);
+                   }
+                   public boolean collate(AkCollator c, ValueSource a, ValueSource b) { 
+                       return c.compare(a, b) == 0;
+                   }
+               } );
         
         OPS.put(Comparison.GE,
-               new Op(){public boolean compare(ValueSource a, ValueSource b){return ValueSources.compare(a, b) >= 0;}});
+               new Op() {
+                   public boolean compare(ValueSource a, ValueSource b) { 
+                       return ValueSources.compare(a, b) >= 0; 
+                   }
+                   public boolean collate(AkCollator c, ValueSource a, ValueSource b) { 
+                       return c.compare(a, b) >= 0;
+                   }
+               } );
         
         OPS.put(Comparison.GT,
-                new Op(){public boolean compare(ValueSource a, ValueSource b){return ValueSources.compare(a, b) > 0;}});
+               new Op() {
+                   public boolean compare(ValueSource a, ValueSource b) { 
+                       return ValueSources.compare(a, b) > 0; 
+                   }
+                   public boolean collate(AkCollator c, ValueSource a, ValueSource b) { 
+                       return c.compare(a, b) > 0;
+                   }
+               } );
         
         OPS.put(Comparison.LE,
-                new Op(){public boolean compare(ValueSource a, ValueSource b){return ValueSources.compare(a, b) <= 0;}});
+               new Op() {
+                   public boolean compare(ValueSource a, ValueSource b) { 
+                       return ValueSources.compare(a, b) <= 0;
+                   }
+                   public boolean collate(AkCollator c, ValueSource a, ValueSource b) { 
+                       return c.compare(a, b) <= 0;
+                   }
+               } );
         
         OPS.put(Comparison.LT,
-                new Op(){public boolean compare(ValueSource a, ValueSource b){return ValueSources.compare(a, b) < 0;}});
+               new Op() {
+                   public boolean compare(ValueSource a, ValueSource b) { 
+                       return ValueSources.compare(a, b) < 0;
+                   }
+                   public boolean collate(AkCollator c, ValueSource a, ValueSource b) { 
+                       return c.compare(a, b) < 0;
+                   }
+               } );
         
         OPS.put(Comparison.NE,
-                new Op(){public boolean compare(ValueSource a, ValueSource b){return !ValueSources.equals(a, b, false);}});
+               new Op() {
+                   public boolean compare(ValueSource a, ValueSource b) { 
+                       return !ValueSources.equals(a, b, false);
+                   }
+                   public boolean collate(AkCollator c, ValueSource a, ValueSource b) { 
+                       return c.compare(a, b) != 0;
+                   }
+               } );
     }
 
- 
     // nested classes
     
     protected interface Op
     {
         boolean compare(ValueSource a, ValueSource b);
+        boolean collate(AkCollator c, ValueSource a, ValueSource b);
     }
        
    
 
-    private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation {
+    private static class CompareEvaluation extends AbstractTwoArgExpressionEvaluation {
         @Override
         public ValueSource eval() {
             ValueSource left = left();
@@ -170,7 +229,7 @@ public class CompareExpression extends AbstractBinaryExpression {
             return BoolValueSource.of(op.compare(left, right));
         }
 
-        private InnerEvaluation(List<? extends ExpressionEvaluation> children, Op op) {
+        private CompareEvaluation(List<? extends ExpressionEvaluation> children, Op op) {
             super(children);
             this.op = op;
         }
@@ -178,11 +237,32 @@ public class CompareExpression extends AbstractBinaryExpression {
         private final Op op;
     }
 
+    private static class CollateEvaluation extends AbstractTwoArgExpressionEvaluation {
+        @Override
+        public ValueSource eval() {
+            ValueSource left = left();
+            ValueSource right = right();
+            if (left.isNull() || right.isNull())
+                return BoolValueSource.OF_NULL;
+
+            return BoolValueSource.of(op.collate(collator, left, right));
+        }
+
+        private CollateEvaluation(List<? extends ExpressionEvaluation> children, Op op, AkCollator collator) {
+            super(children);
+            this.op = op;
+            this.collator = collator;
+        }
+
+        private final Op op;
+        private final AkCollator collator;
+    }
+
     private static final class InnerComposer extends BinaryComposer {
 
         @Override
         protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType) {
-            return new CompareExpression(first, comparison, second);
+            return new CompareExpression(first, comparison, second, ExpressionTypes.operationCollation(firstType, secondType));
         }
 
         @Override

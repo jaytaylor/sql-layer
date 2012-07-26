@@ -56,6 +56,11 @@ import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
+import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.sql.parser.ExistenceCheck;
+import com.akiban.sql.pg.PostgresQueryContext;
+
+import static com.akiban.sql.aisddl.DDLHelper.convertName;
 
 /** DDL operations on Tables */
 public class TableDDL
@@ -67,40 +72,69 @@ public class TableDDL
     public static void dropTable (DDLFunctions ddlFunctions,
                                   Session session, 
                                   String defaultSchemaName,
-                                  DropTableNode dropTable) {
+                                  DropTableNode dropTable,
+                                  PostgresQueryContext context) {
         com.akiban.sql.parser.TableName parserName = dropTable.getObjectName();
         
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        TableName tableName = TableName.create(schemaName, parserName.getTableName());
+        TableName tableName = convertName(defaultSchemaName, dropTable.getObjectName());
+        ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ddlFunctions.getAIS(session).getUserTable(tableName) == null && 
+        if (ais.getUserTable(tableName) == null && 
                 ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
+            if (existenceCheck == ExistenceCheck.IF_EXISTS)
+            {
+                if (context != null)
+                    context.warnClient(new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName()));
+                return;
+            }
             throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
+        ViewDDL.checkDropTable(ddlFunctions, session, tableName);
         ddlFunctions.dropTable(session, tableName);
     }
-    
+
     public static void renameTable (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,
                                     RenameNode renameTable) {
-        throw new UnsupportedSQLException (renameTable.statementToString(), renameTable);
-        //ddlFunctions.renameTable(session, currentName, newName);
+        TableName oldName = convertName(defaultSchemaName, renameTable.getObjectName());
+        TableName newName = convertName(defaultSchemaName, renameTable.getNewTableName());
+        ddlFunctions.renameTable(session, oldName, newName);
     }
 
     public static void createTable(DDLFunctions ddlFunctions,
                                    Session session,
                                    String defaultSchemaName,
-                                   CreateTableNode createTable) {
+                                   CreateTableNode createTable,
+                                   PostgresQueryContext context) {
         if (createTable.getQueryExpression() != null)
             throw new UnsupportedCreateSelectException();
 
         com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String tableName = parserName.getTableName();
-        
+        ExistenceCheck condition = createTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+
+        if (ais.getUserTable(schemaName, tableName) != null)
+            switch(condition)
+            {
+                case IF_NOT_EXISTS:
+                    // table already exists. does nothing
+                    if (context != null)
+                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
+                    return;
+                case NO_CONDITION:
+                    throw new DuplicateTableNameException(schemaName, tableName);
+                default:
+                    throw new IllegalStateException("Unexpected condition: " + condition);
+            }
+
         AISBuilder builder = new AISBuilder();
-        
         builder.userTable(schemaName, tableName);
 
         int colpos = 0;
@@ -138,12 +172,35 @@ public class TableDDL
     
     private static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn, 
             final String schemaName, final String tableName, int colpos) {
-        DataTypeDescriptor type = cdn.getType();
+        boolean autoIncrement = cdn.isAutoincrementColumn();
+        addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
+                  cdn.getType(), autoIncrement);
+        if (autoIncrement) {
+            // if the cdn has a default node-> GENERATE BY DEFAULT
+            // if no default node -> GENERATE ALWAYS
+            Boolean defaultIdentity = new Boolean (cdn.getDefaultNode() != null);
+            // The merge process will generate a real sequence name
+            String sequenceName = "temp-sequence-1"; 
+            // Create a sequence to hold the IDENTITY Information
+            builder.sequence(schemaName, sequenceName, 
+                    cdn.getAutoincrementStart(), 
+                    cdn.getAutoincrementIncrement(), 
+                    Long.MIN_VALUE, Long.MAX_VALUE, 
+                    false);
+            // make the column an identity column 
+            builder.columnAsIdentity(schemaName, tableName, cdn.getColumnName(), sequenceName, defaultIdentity);
+            builder.userTableInitialAutoIncrement(schemaName, tableName, 
+                                                  cdn.getAutoincrementStart());
+        }
+    }
+
+    protected static void addColumn(final AISBuilder builder, 
+                                    final String schemaName, final String tableName, final String columnName, 
+                                    int colpos, DataTypeDescriptor type, boolean autoIncrement) {
         Long typeParameter1 = null, typeParameter2 = null;
-        
         Type builderType = typeMap.get(type.getTypeId());
         if (builderType == null) {
-            throw new UnsupportedDataTypeException (new TableName(schemaName, tableName), cdn.getColumnName(), type.getTypeName());
+            throw new UnsupportedDataTypeException(new TableName(schemaName, tableName), columnName, type.getTypeName());
         }
         
         if (builderType.nTypeParameters() == 1) {
@@ -158,18 +215,13 @@ public class TableDDL
             charset = type.getCharacterAttributes().getCharacterSet();
             collation = type.getCharacterAttributes().getCollation();
         }
-        builder.column(schemaName, tableName, 
-                cdn.getColumnName(), 
-                Integer.valueOf(colpos), 
-                builderType.name(), 
-                typeParameter1, typeParameter2, 
-                type.isNullable(), 
-                cdn.isAutoincrementColumn(),
-                charset, collation);
-        if (cdn.isAutoincrementColumn()) {
-            builder.userTableInitialAutoIncrement(schemaName, tableName, 
-                    cdn.getAutoincrementStart());
-        }
+        builder.column(schemaName, tableName, columnName, 
+                       Integer.valueOf(colpos), 
+                       builderType.name(), 
+                       typeParameter1, typeParameter2, 
+                       type.isNullable(), 
+                       autoIncrement,
+                       charset, collation);
     }
 
     public static void addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn, 
@@ -281,7 +333,7 @@ public class TableDDL
         if (parentTable == null) {
             throw new NoSuchTableException (parentSchemaName, parentTableName);
         }
-        
+
         builder.userTable(parentSchemaName, parentTableName);
         
         builder.index(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);

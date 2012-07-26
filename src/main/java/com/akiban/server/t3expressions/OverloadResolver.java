@@ -35,11 +35,14 @@ import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public final class OverloadResolver {
 
@@ -60,29 +63,84 @@ public final class OverloadResolver {
             return pickedInstance;
         }
 
-        public TClass getTypeInstance(int inputIndex) {
-            throw new UnsupportedOperationException(); // TODO
+        public TClass getTypeClass(int inputIndex) {
+            return overload.inputSetAt(inputIndex).targetType();
         }
     }
 
-    private final T3ScalarsRegistry registry;
-    private final T3AggregatesRegistry aggregatesRegistry;
+    private final T3RegistryService registry;
+
+    public OverloadResolver(T3RegistryService registry) {
+        this.registry = registry;
+    }
+
+    public TCast getTCast(TInstance source, TInstance target) {
+        return registry.cast(source.typeClass(), target.typeClass());
+    }
 
     /**
-     * For testing. Aggregates will not work.
-     * @param registry the scalar registry
+     * Returns the common of the two types. For either argument, a <tt>null</tt> value is interpreted as any type. At
+     * least one of the input TClasses must be non-<tt>null</tt>. If one of the inputs is null, the result is always
+     * the other input.
+     * @param tClass1 the first type class
+     * @param tClass2 the other type class
+     * @return the common class, or <tt>null</tt> if none were found
+     * @throws IllegalArgumentException if both inputs are <tt>null</tt>
      */
-    OverloadResolver(T3ScalarsRegistry registry) {
-        this(registry, null);
-    }
+    public TClass commonTClass(TClass tClass1, TClass tClass2) {
+        // NOTE:
+        // This method shares some concepts with #reduceToMinimalCastGroups, but the two methods seem different enough
+        // that they're best implemented without much common code. But this could be an opportunity for refactoring.
 
-    public OverloadResolver(T3ScalarsRegistry registry, T3AggregatesRegistry aggregatesRegistry) {
-        this.registry = registry;
-        this.aggregatesRegistry = aggregatesRegistry;
-    }
+        // handle easy cases where one or the other is null
+        if (tClass1 == null) {
+            if (tClass2 == null)
+                throw new IllegalArgumentException("both inputs can't be null");
+            return tClass2;
+        }
+        if (tClass2 == null)
+            return tClass1;
 
-    public TClassPossibility commonTClass(TClass tClass1, TClass tClass2) {
-        return registry.commonTClass(tClass1, tClass2);
+        // If they're the same class, this is a really easy question to answer.
+        if (tClass1.equals(tClass2))
+            return tClass1;
+
+        // Alright, neither is null and they're both different. Try the hard way.
+        Set<? extends TClass> t1Targets = registry.stronglyCastableTo(tClass1);
+        Set<? extends TClass> t2Targets = registry.stronglyCastableTo(tClass2);
+
+        // TODO: The following is not very efficient -- opportunity for optimization?
+
+        // Sets.intersection works best when the first arg is smaller, so do that.
+        Set<? extends TClass> set1, set2;
+        if (t1Targets.size() < t2Targets.size()) {
+            set1 = t1Targets;
+            set2 = t2Targets;
+        }
+        else {
+            set1 = t2Targets;
+            set2 = t1Targets;
+        }
+        Set<? extends TClass> castGroup = Sets.intersection(set1, set2); // N^2 operation number 1
+
+        // The cast group is the set of type classes such that for each element C of castGroup, both tClass1 and tClass2
+        // can be strongly cast to C. castGroup is thus the set of common types for { tClass1, tClass2 }. We now need
+        // to find the MOST SPECIFIC cast M such that any element of castGroup which is not M can be strongly castable
+        // from M.
+        if (castGroup.isEmpty())
+            throw new OverloadException("no common types found for " + tClass1 + " and " + tClass2);
+
+        // N^2 operation number 2...
+        TClass mostSpecific = null;
+        for (TClass candidate : castGroup) {
+            if (isMostSpecific(candidate, castGroup)) {
+                if (mostSpecific == null)
+                    mostSpecific = candidate;
+                else
+                    return null;
+            }
+        }
+        return mostSpecific;
     }
 
     public OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
@@ -98,14 +156,41 @@ public final class OverloadResolver {
     }
 
     public TAggregator getAggregation(String name, TClass inputType) {
-        List<TAggregator> candidates = new ArrayList<TAggregator>(aggregatesRegistry.getAggregates(name));
-        for (TAggregator candidate : candidates) {
+        List<TAggregator> candidates = new ArrayList<TAggregator>(registry.getAggregates(name));
+        for (Iterator<TAggregator> iterator = candidates.iterator(); iterator.hasNext(); ) {
+            TAggregator candidate = iterator.next();
             TClass expectedInput = candidate.getTypeClass();
             if (expectedInput == null || expectedInput.equals(inputType)) // null means input type is irrelevant
                 return candidate;
-            // TODO use casting types, etc
+            if (!isStrong(registry.cast(inputType, expectedInput)))
+                iterator.remove();
         }
-        throw new AkibanInternalException("no appropriate aggregate found for " + name + "(" + inputType + ")");
+        // At this point, all of the aggregators can be strongly casted to. Find the most specific one.
+        // First, a quick check to see if there is one one or none.
+        int nCandidates = candidates.size();
+        if (nCandidates == 0)
+            throw new OverloadException("no appropriate aggregate found for " + name + "(" + inputType + ")");
+        if (nCandidates == 1)
+            return candidates.get(0);
+        Set<TClass> aggrRequiredTClasses = new HashSet<TClass>(nCandidates);
+        for (TAggregator candidate : candidates) {
+            TClass aggrRequiredTClass = candidate.getTypeClass();
+            boolean added = aggrRequiredTClasses.add(aggrRequiredTClass);
+            assert added : "multiple aggregates of " + name + " expect " + aggrRequiredTClass;
+        }
+        TAggregator result = null;
+        for (TAggregator candidate : candidates) {
+            TClass aggrRequiredTClass = candidate.getTypeClass();
+            if (isMostSpecific(aggrRequiredTClass, aggrRequiredTClasses)) {
+                if (result != null)
+                    throw new AkibanInternalException("two most-specific aggregates found for "
+                            + name + "(" + inputType + ") -- this should not be possible!");
+                result = candidate;
+            }
+        }
+        if (result == null)
+            throw new OverloadException("no appropriate aggregate found for " + name + "(" + inputType + ")");
+        return result;
     }
 
     private OverloadResult inputBasedResolution(List<? extends TPreptimeValue> inputs,
@@ -116,9 +201,9 @@ public final class OverloadResolver {
                 candidates.add(overload);
             }
         }
+        if (candidates.isEmpty())
+            throw new OverloadException("no suitable overload found for");
         TValidatedOverload mostSpecific = null;
-        if (candidates.size() == 0)
-            return null;
         if (candidates.size() == 1) {
             mostSpecific = candidates.get(0);
         } else {
@@ -129,7 +214,7 @@ public final class OverloadResolver {
             // TODO: Throw or let registry handle it?
         }
         if (mostSpecific == null)
-            return null;
+            throw new OverloadException("no suitable overload found for");
         return buildResult(mostSpecific, inputs);
     }
 
@@ -141,6 +226,21 @@ public final class OverloadResolver {
         if (!resolvedOverload.coversNInputs(nInputs))
             throw new WrongExpressionArityException(resolvedOverload.positionalInputs(), nInputs);
         return buildResult(resolvedOverload, inputs);
+    }
+
+    private boolean isMostSpecific(TClass candidate, Set<? extends TClass> castGroup) {
+        for (TClass inner : castGroup) {
+            if (candidate.equals(inner))
+                continue;
+            if (!stronglyCastable(candidate, inner)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean stronglyCastable(TClass source, TClass target) {
+        return isStrong(registry.cast(source, target));
     }
 
     private boolean isCandidate(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
@@ -178,22 +278,27 @@ public final class OverloadResolver {
             return null;
         }
         TClass common = null; // TODO change to TInstance, so we can more precisely pick instances
-        for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i)) {
+        for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i+1)) {
             TInstance instance = inputs.get(i).instance();
-            common = registry.commonTClass(common, instance != null ? instance.typeClass() : null).get();
-            if (common == T3ScalarsRegistry.NO_COMMON)
-                return common.instance(); // TODO shouldn't we throw an exception?
+            if (instance != null) {
+                common = commonTClass(common, instance.typeClass());
+                if (common == null)
+                    throw new OverloadException(overload.overloadName());
+            }
         }
         if (pickingSet.coversRemaining()) {
             for (int i = overload.firstVarargInput(), last = inputs.size(); i < last; ++i) {
                 TInstance instance = inputs.get(i).instance();
-                common = registry.commonTClass(common, instance != null ? instance.typeClass() : null).get();
-                if (common == T3ScalarsRegistry.NO_COMMON)
-                    return common.instance(); // TODO shouldn't we throw an exception?
+                if (instance != null) {
+                    common = commonTClass(common, instance.typeClass());
+                    if (common == null)
+                        throw new OverloadException(overload.overloadName());
+                }
             }
         }
-//        assert common != null : "no common type found"; // TODO re-enable that assert once common types are known
-        return common == null ? null : common.instance();
+        if (common == null)
+            throw new OverloadException(overload.overloadName());
+        return common.instance();
     }
 
     /*
@@ -206,6 +311,9 @@ public final class OverloadResolver {
      * is discarded as a possible overload.
      */
     private List<List<TValidatedOverload>> reduceToMinimalCastGroups(List<TValidatedOverload> candidates) {
+        // NOTE:
+        // This method shares some concepts with #commonTClass. See that method for a note about possible refactoring
+        // opportunities (tl;dr is the two methods don't share code right now, but they might be able to.)
         List<List<TValidatedOverload>> castGroups = new ArrayList<List<TValidatedOverload>>();
 
         for(TValidatedOverload B : candidates) {
@@ -266,5 +374,12 @@ public final class OverloadResolver {
 
     private static boolean isStrong(TCast cast) {
         return (cast != null) && cast.isAutomatic();
+    }
+
+    // TODO replace with InvalidOperationExceptions
+    static class OverloadException extends RuntimeException {
+        private OverloadException(String message) {
+            super(message);
+        }
     }
 }

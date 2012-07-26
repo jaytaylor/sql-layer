@@ -26,6 +26,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.aktypes.AkBigDecimalWrapper;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression.Operation;
 
@@ -136,6 +139,7 @@ public class ExpressionCompactor extends BaseRule
                                                                entry.get(--size),
                                                                condition,
                                                                null, null);
+                    condition.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
                 }
             }
             conditions.add(condition);

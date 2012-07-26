@@ -76,7 +76,8 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
     @Test
     public void test ()
     {
-        // test with 2 argument  
+        // test with 2 argument
+        subAndCheck("abcef", "bcef", 2);
         subAndCheck("quadratically", "ratically", 5);
         subAndCheck("Sakila", "Sakila", 1);
         subAndCheck("1234", "1234", 1); // meaning from index 0 to the end
@@ -121,9 +122,11 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
     
     private static void check (Expression inputExp, String expected)
     {
-        ValueSource result = inputExp.evaluation().eval();                      
-        assertTrue ("Actual equals expected ", expected == null ? result.isNull() :
-                                               result.getString().equals(expected));
+        ValueSource result = inputExp.evaluation().eval();
+        if (expected == null)
+            assertTrue("TOp should be null: ", result.isNull());
+        else
+            assertEquals ("Actual equals expected ", expected, result.getString());
     }
     
     private static List <? extends Expression> getArgList (Expression ...arg)

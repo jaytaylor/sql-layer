@@ -60,7 +60,7 @@ public class IndexRowType extends AisRowType
     {
         return akTypes[index];
     }
-
+    
     @Override
     public HKey hKey()
     {
@@ -96,7 +96,8 @@ public class IndexRowType extends AisRowType
         List<IndexColumn> indexColumns = index.getAllColumns();
         akTypes = new AkType[indexColumns.size()];
         for (int i = 0; i < indexColumns.size(); i++) {
-            akTypes[i] = indexColumns.get(i).getColumn().getType().akType();
+            Column column = indexColumns.get(i).getColumn();
+            akTypes[i] = column.getType().akType();
         }
     }
 

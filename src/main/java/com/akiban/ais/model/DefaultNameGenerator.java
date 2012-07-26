@@ -48,6 +48,7 @@ public class DefaultNameGenerator implements NameGenerator {
     private final Set<String> groupNames = new HashSet<String>();
     private final Set<String> indexNames = new HashSet<String>();
     private final Set<String> treeNames = new HashSet<String>();
+    private final Set<String> sequenceNames = new HashSet<String>();
     
     @Override
     public String generateColumnName(Column column) {
@@ -132,6 +133,11 @@ public class DefaultNameGenerator implements NameGenerator {
         treeNames.addAll(initialSet);
         return this;
     }
+
+    public DefaultNameGenerator setDefaultSequenceNames (Set<String> initialSet) {
+        sequenceNames.addAll(initialSet);
+        return this;
+    }
     
     @Override
     public String generateIndexName(String indexName, String columnName,
@@ -162,6 +168,11 @@ public class DefaultNameGenerator implements NameGenerator {
             pkColNames.add(col.getParent().getName());
             fkColNames.add(col.getChild().getName());
         }
+        return generateJoinName(parentTable, childTable, pkColNames, fkColNames);
+    }
+
+    @Override
+    public String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames) {
         String ret = String.format("%s/%s/%s/%s/%s/%s",
                 parentTable.getSchemaName(),
                 parentTable.getTableName(),
@@ -172,6 +183,7 @@ public class DefaultNameGenerator implements NameGenerator {
         return ret.toLowerCase().replace(',', '_');
     }
 
+    @Override
     public String generateIndexTreeName(Index index) {
         // schema.table.index
         final TableName tableName;
@@ -204,6 +216,19 @@ public class DefaultNameGenerator implements NameGenerator {
         return makeUnique(treeNames, proposed);
     }
 
+    @Override
+    public String generateIdentitySequenceTreeName (Sequence sequence) {
+        TableName tableName = sequence.getSequenceName();
+        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
+                          escapeForTreeName(tableName.getTableName());
+        return makeUnique(treeNames, proposed);
+    }
+    
+    @Override
+    public String generateIdentitySequenceName (TableName tableName) {
+        return makeUnique(sequenceNames, "_sequence-" + tableName.hashCode());
+    }
+    
     private static String makeUnique(Set<String> set, String original) {
         int counter = 1;
         String proposed = original;

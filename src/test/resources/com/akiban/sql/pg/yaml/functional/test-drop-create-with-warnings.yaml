@@ -1,0 +1,25 @@
+# test conditonal create
+# Bug:1028014 
+---
+- Properties: all
+- suppressed: true
+---
+- CreateTable:  IF NOT EXISTS t1 (ff double);
+- warnings_count: 0
+---
+- CreateTable: t1 (ff double);
+- error: [50006]
+---
+- CreateTable: IF NOT EXISTS t1 (ff double)
+- warnings_count: 1
+- warnings: [['50006', 'Table `test`.`t1` already exists']]
+---
+- Statement: DROP TABLE t1;
+--- # so such table to drop
+- DropTable: t1;
+- error: [42501]
+---
+- DropTable: if exists t1;
+- warnings_count: 1
+- warnings: [['42501', 'Cannot find the table `test`.`t1`']]
+...

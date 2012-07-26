@@ -37,6 +37,7 @@ import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
 import com.akiban.server.error.TableIsBadSubqueryException;
 import com.akiban.server.error.ViewHasBadSubqueryException;
+import com.akiban.server.error.WholeGroupQueryException;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
@@ -44,7 +45,12 @@ import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 
 import java.util.*;
 
@@ -411,13 +417,14 @@ public class AISBinder implements Visitor
         if (schemaName == null)
             schemaName = defaultSchemaName;
         String tableName = origName.getTableName();
-        if (context != null) {
-            // TODO: Honor expandViews once there is a way to refer to AIS view.
-            ViewDefinition view = context.getView(schemaName, tableName);
-            if (view != null) {
+        Columnar table = null;
+        View view = ais.getView(schemaName, tableName);
+        if (view != null) {
+            if (expandViews) {
+                ViewDefinition viewdef = context.getViewDefinition(view);
                 FromSubquery viewSubquery;
                 try {
-                    viewSubquery = view.copySubquery(fromBaseTable.getParserContext());
+                    viewSubquery = viewdef.copySubquery(fromBaseTable.getParserContext());
                 } 
                 catch (StandardException ex) {
                     throw new ViewHasBadSubqueryException(origName.toString(),
@@ -425,8 +432,12 @@ public class AISBinder implements Visitor
                 }
                 return fromTable(viewSubquery, false);
             }
+            else {
+                table = view;   // Shallow reference within another view definition.
+            }
         }
-        Table table = lookupTableName(origName, schemaName, tableName);
+        if (table == null)
+            table = lookupTableName(origName, schemaName, tableName);
         origName.setUserData(table);
         fromBaseTable.setUserData(new TableBinding(table, nullable));
         return fromBaseTable;
@@ -672,14 +683,14 @@ public class AISBinder implements Visitor
                     FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
                     TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
                     assert (tableBinding != null) : "table not bound yet";
-                        Table table = tableBinding.getTable();
-                        if (table.getName().getSchemaName().equalsIgnoreCase(schemaName) &&
-                            table.getName().getTableName().equalsIgnoreCase(tableName)) {
-                            if (result != null)
-                                throw new DuplicateTableNameException (new com.akiban.ais.model.TableName(tableNameNode.getSchemaName(), tableNameNode.getTableName()));
-                            else
-                                result = fromBaseTable;
-                        }
+                    Columnar table = tableBinding.getTable();
+                    if (table.getName().getSchemaName().equalsIgnoreCase(schemaName) &&
+                        table.getName().getTableName().equalsIgnoreCase(tableName)) {
+                        if (result != null)
+                            throw new DuplicateTableNameException (new com.akiban.ais.model.TableName(tableNameNode.getSchemaName(), tableNameNode.getTableName()));
+                        else
+                            result = fromBaseTable;
+                    }
                 }
             }
         }
@@ -695,7 +706,7 @@ public class AISBinder implements Visitor
             FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
             TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
             assert (tableBinding != null) : "table not bound yet";
-            Table table = tableBinding.getTable();
+            Columnar table = tableBinding.getTable();
             for (Column column : table.getColumns()) {
                 ColumnBinding prev = bindings.put(column.getName().toLowerCase(),
                                                   new ColumnBinding(fromTable, column, 
@@ -725,7 +736,7 @@ public class AISBinder implements Visitor
             FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
             TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
             assert (tableBinding != null) : "table not bound yet";
-            Table table = tableBinding.getTable();
+            Columnar table = tableBinding.getTable();
             Column column = table.getColumn(columnName);
             if (column == null)
                 return null;
@@ -772,10 +783,16 @@ public class AISBinder implements Visitor
         for (int index = 0; index < rcl.size(); index++) {
             ResultColumn rc = rcl.get(index);
             if (rc instanceof AllResultColumn) {
+                AllResultColumn arc = (AllResultColumn)rc;
+
                 expanded = true;
 
-                fullTableName = rc.getTableNameObject();
-                allExpansion = expandAll(fullTableName, fromList);
+                fullTableName = arc.getTableNameObject();
+                boolean recursive = arc.isRecursive();
+                if (recursive && !allowSubqueryMultipleColumns) {
+                    throw new WholeGroupQueryException();
+                }
+                allExpansion = expandAll(fullTableName, fromList, recursive);
 
                 // Make sure that every column has a name.
                 for (ResultColumn nrc : allExpansion) {
@@ -826,12 +843,12 @@ public class AISBinder implements Visitor
      *
      * @exception StandardException Thrown on error
      */
-    protected ResultColumnList expandAll(TableName allTableName, FromList fromList) {
+    protected ResultColumnList expandAll(TableName allTableName, FromList fromList, boolean recursive) {
         ResultColumnList resultColumnList = null;
         ResultColumnList tempRCList = null;
 
         for (FromTable fromTable : fromList) {
-            tempRCList = getAllResultColumns(allTableName, fromTable);
+            tempRCList = getAllResultColumns(allTableName, fromTable, recursive);
 
             if (tempRCList == null)
                 continue;
@@ -859,14 +876,16 @@ public class AISBinder implements Visitor
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   ResultSetNode fromTable) {
+                                                   ResultSetNode fromTable,
+                                                   boolean recursive) {
         try {
             switch (fromTable.getNodeType()) {
             case NodeTypes.FROM_BASE_TABLE:
-                return getAllResultColumns(allTableName, (FromBaseTable)fromTable);
+                return getAllResultColumns(allTableName, (FromBaseTable)fromTable,
+                                           recursive);
             case NodeTypes.JOIN_NODE:
             case NodeTypes.HALF_OUTER_JOIN_NODE:
-                return getAllResultColumns(allTableName, (JoinNode)fromTable);
+                return getAllResultColumns(allTableName, (JoinNode)fromTable, recursive);
             case NodeTypes.FROM_SUBQUERY:
                 return getAllResultColumns(allTableName, (FromSubquery)fromTable);
             default:
@@ -879,7 +898,8 @@ public class AISBinder implements Visitor
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   FromBaseTable fromTable) 
+                                                   FromBaseTable fromTable,
+                                                   boolean recursive)
             throws StandardException {
         TableName exposedName = fromTable.getExposedTableName();
         if ((allTableName != null) && !allTableName.equals(exposedName))
@@ -891,7 +911,7 @@ public class AISBinder implements Visitor
             nodeFactory.getNode(NodeTypes.RESULT_COLUMN_LIST,
                                 parserContext);
         TableBinding tableBinding = (TableBinding)fromTable.getUserData();
-        Table table = tableBinding.getTable();
+        Columnar table = tableBinding.getTable();
         for (Column column : table.getColumns()) {
             String columnName = column.getName();
             ValueNode valueNode = (ValueNode)
@@ -909,16 +929,24 @@ public class AISBinder implements Visitor
             valueNode.setUserData(new ColumnBinding(fromTable, column, 
                                                     tableBinding.isNullable()));
         }
+        if (recursive && (table instanceof UserTable)) {
+            for (Join child : ((UserTable)table).getChildJoins()) {
+                rcList.addResultColumn(childJoinSubquery(fromTable, child));
+            }
+        }
         return rcList;
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   JoinNode fromJoin)
+                                                   JoinNode fromJoin,
+                                                   boolean recursive)
             throws StandardException {
         ResultColumnList leftRCL = getAllResultColumns(allTableName,
-                                                       fromJoin.getLogicalLeftResultSet());
+                                                       fromJoin.getLogicalLeftResultSet(),
+                                                       recursive);
         ResultColumnList rightRCL = getAllResultColumns(allTableName,
-                                                        fromJoin.getLogicalRightResultSet());
+                                                        fromJoin.getLogicalRightResultSet(),
+                                                        recursive);
 
         if (leftRCL == null)
             return rightRCL;
@@ -975,6 +1003,72 @@ public class AISBinder implements Visitor
             rcList.add(resultColumn);
         }
         return rcList;
+    }
+
+    /** Make a nested result set for this child (and so on recursively). */
+    protected ResultColumn childJoinSubquery(FromBaseTable parentTable, Join child) 
+            throws StandardException {
+        NodeFactory nodeFactory = parentTable.getNodeFactory();
+        SQLParserContext parserContext = parentTable.getParserContext();
+        UserTable childUserTable = child.getChild();
+        Object childName = nodeFactory.getNode(NodeTypes.TABLE_NAME,
+                                               childUserTable.getName().getSchemaName(),
+                                               childUserTable.getName().getTableName(),
+                                               parserContext);
+        FromBaseTable childTable = (FromBaseTable)
+            nodeFactory.getNode(NodeTypes.FROM_BASE_TABLE,
+                                childName, childUserTable.getName().getTableName(),
+                                null,  null, null, parserContext);
+        childTable.setUserData(new TableBinding(childUserTable, false));
+        ValueNode whereClause = null;
+        for (JoinColumn join : child.getJoinColumns()) {
+            ColumnReference parentPK = (ColumnReference)
+                nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
+                                    join.getParent().getName(),
+                                    parentTable.getTableName(),
+                                    parserContext);
+            parentPK.setUserData(new ColumnBinding(parentTable, join.getParent(), false));
+            ColumnReference childFK = (ColumnReference)
+                nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
+                                    join.getChild().getName(),
+                                    childName,
+                                    parserContext);
+            childFK.setUserData(new ColumnBinding(childTable, join.getChild(), false));
+            ValueNode equals = (ValueNode)
+                nodeFactory.getNode(NodeTypes.BINARY_EQUALS_OPERATOR_NODE,
+                                    parentPK,
+                                    childFK,
+                                    parserContext);
+            if (whereClause == null) {
+                whereClause = equals;
+            }
+            else {
+                whereClause = (ValueNode)
+                    nodeFactory.getNode(NodeTypes.AND_NODE,
+                                        whereClause, equals, 
+                                        parserContext);
+            }
+        }
+        FromList fromList = (FromList)
+            nodeFactory.getNode(NodeTypes.FROM_LIST,
+                                parserContext);
+        fromList.addFromTable(childTable);
+        ResultColumnList rcl = getAllResultColumns(null, childTable, true);
+        SelectNode selectNode = (SelectNode)
+            nodeFactory.getNode(NodeTypes.SELECT_NODE,
+                                rcl, null, fromList, whereClause, null, null, null,
+                                parserContext);
+        SubqueryNode subquery = (SubqueryNode)
+            nodeFactory.getNode(NodeTypes.SUBQUERY_NODE,
+                                selectNode, SubqueryNode.SubqueryType.EXPRESSION,
+                                null, null, null, null,
+                                parserContext);
+        ResultColumn resultColumn = (ResultColumn) 
+            nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
+                                childUserTable.getName().toString(),
+                                subquery,
+                                parserContext);
+        return resultColumn;
     }
 
     protected void dmlModStatementNode(DMLModStatementNode node) {

@@ -26,20 +26,66 @@
 
 package com.akiban.server.store;
 
-import com.akiban.ais.model.*;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.IndexRow;
-import com.akiban.server.*;
+import com.akiban.qp.util.PersistitKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexRowComposition;
+import com.akiban.ais.model.IndexToHKey;
+import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
+import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.AkServerUtil;
+import com.akiban.server.TableStatistics;
+import com.akiban.server.TableStatus;
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.error.*;
-import com.akiban.server.rowdata.*;
+import com.akiban.server.collation.CString;
+import com.akiban.server.collation.CStringKeyCoder;
+import com.akiban.server.error.CursorCloseBadException;
+import com.akiban.server.error.CursorIsUnknownException;
+import com.akiban.server.error.DisplayFilterSetException;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchRowException;
+import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.error.RowDataCorruptionException;
+import com.akiban.server.rowdata.CorruptRowDataException;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
@@ -49,8 +95,16 @@ import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
-import com.persistit.*;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.KeyFilter;
+import com.persistit.KeyState;
+import com.persistit.Management;
 import com.persistit.Management.DisplayFilter;
+import com.persistit.Persistit;
+import com.persistit.Tree;
+import com.persistit.Value;
+import com.persistit.encoding.CoderManager;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.exception.RollbackException;
@@ -121,10 +175,12 @@ public class PersistitStore implements Store {
         tableStatusCache = treeService.getTableStatusCache();
         rowDefCache = new RowDefCache(tableStatusCache);
         try {
-            getDb().getCoderManager().registerValueCoder(RowData.class, new RowDataValueCoder(this));
-            originalDisplayFilter = getDb().getManagement().getDisplayFilter();
-            getDb().getManagement().setDisplayFilter(
-                    new RowDataDisplayFilter(originalDisplayFilter));
+            CoderManager cm = getDb().getCoderManager();
+            Management m = getDb().getManagement();
+            cm.registerValueCoder(RowData.class, new RowDataValueCoder(this));
+            cm.registerKeyCoder(CString.class, new CStringKeyCoder());
+            originalDisplayFilter = m.getDisplayFilter();
+            m.setDisplayFilter(new RowDataDisplayFilter(originalDisplayFilter));
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
@@ -357,7 +413,6 @@ public class PersistitStore implements Store {
             : null;
         return indexRow;
     }
-
 
     // --------------------- Implement Store interface --------------------
 
@@ -987,7 +1042,7 @@ public class PersistitStore implements Store {
         IndexDef indexDef = index.indexDef();
         RowDef indexRowDef = indexDef.getRowDef();
         TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
-        Key key = new Key((Persistit)null);
+        Key key = treeService.createKey();
         RowData indexRowData = new RowData(new byte[4096]);
         Object[] indexValues = new Object[indexRowDef.getFieldCount()];
         long count = 0;
@@ -1328,6 +1383,18 @@ public class PersistitStore implements Store {
         for(Index index : groupIndexes) {
             treeLinks.add(index.indexDef());
         }
+        // Drop the sequence trees too. 
+        if (table.isUserTable() && ((UserTable)table).getIdentityColumn() != null) {
+            treeLinks.add(((UserTable)table).getIdentityColumn().getIdentityGenerator());
+        } else if (table.isGroupTable()) {
+            for (UserTable userTable : table.getAIS().getUserTables().values()) {
+                if (userTable.getGroup() == table.getGroup() &&
+                        userTable.getIdentityColumn() != null) {
+                    treeLinks.add(userTable.getIdentityColumn().getIdentityGenerator());
+                }
+            }
+        }
+        
         // And the group tree
         treeLinks.add(table.rowDef());
         // And drop them all
@@ -1360,6 +1427,13 @@ public class PersistitStore implements Store {
             }
         }
         indexStatistics.deleteIndexStatistics(session, indexes);
+    }
+    
+    @Override
+    public void deleteSequences (Session session, Collection<? extends Sequence> sequences) {
+        Collection<TreeLink> links = new ArrayList<TreeLink>();
+        links.addAll(sequences);
+        removeTrees(session, links);
     }
 
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,

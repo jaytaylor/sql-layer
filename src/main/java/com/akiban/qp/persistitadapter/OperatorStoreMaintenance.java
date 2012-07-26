@@ -60,7 +60,7 @@ final class OperatorStoreMaintenance {
             if (planOperator == null)
                 return;
             QueryContext context = new SimpleQueryContext(adapter);
-            List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
+            List<Column> lookupCols = rowType.userTable().getPrimaryKeyIncludingInternal().getColumns();
 
             context.setHKey(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
 

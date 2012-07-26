@@ -55,6 +55,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
 
 import java.util.*;
 
@@ -277,7 +278,8 @@ public class SubqueryFlattener
                 (selectNode.getHavingClause() != null))
                 return false;
         }
-        else if (fromSubquery.getSubquery() instanceof UnionNode) {
+        else if ((fromSubquery.getSubquery() instanceof SetOperatorNode) ||
+                 (fromSubquery.getSubquery() instanceof RowsResultSetNode)) {
             return false;
         }
         if ((fromSubquery.getOrderByList() != null) ||
@@ -330,7 +332,7 @@ public class SubqueryFlattener
         for (FromTable fromTable : fromTables) {
             TableBinding binding = (TableBinding)fromTable.getUserData();
             boolean anyIndex = false;
-            for (Index index : binding.getTable().getIndexes()) {
+            for (Index index : ((Table)binding.getTable()).getIndexes()) {
                 if (!index.isUnique()) continue;
                 boolean allColumns = true, allStronger = true;
                 for (IndexColumn indexColumn : index.getKeyColumns()) {

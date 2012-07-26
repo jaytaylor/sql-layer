@@ -33,6 +33,7 @@ import java.util.Collections;
 public final class AISValidations {
     //public static final AISValidation NO_NULL_IDENTIFIERS;
     public static final AISValidation CHARACTER_SET_SUPPORTED = new CharacterSetSupported();
+    public static final AISValidation COLLATION_SUPPORTED = new CollationSupported();
     public static final AISValidation COLUMN_POSITION_DENSE = new ColumnPositionDense();
     public static final AISValidation GROUP_INDEX_NOT_UNIQUE = new GroupIndexesNotUnique();
     public static final AISValidation GROUP_TABLE_SINGLE_ROOT = new GroupTableSingleRoot();
@@ -58,6 +59,10 @@ public final class AISValidations {
     public static final AISValidation TREE_NAMES_NOT_NULL = new TreeNamesAreNotNull();
     public static final AISValidation MEMORY_TABLES_NOT_MIXED = new MemoryTablesNotMixed();
     public static final AISValidation MEMORY_TABLES_SINGLE = new MemoryTableSingleTableGroup();
+    public static final AISValidation VIEW_REFERENCES = new ViewReferences();
+    public static final AISValidation INDEX_COLUMN_IS_NOT_PARTIAL = new IndexColumnIsNotPartial();
+    public static final AISValidation COLUMN_SIZES_MATCH = new ColumnMaxAndPrefixSizesMatch();
+    public static final AISValidation SEQUENCE_VALUES_VALID = new SequenceValuesValid();
 
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
@@ -87,8 +92,13 @@ public final class AISValidations {
                 GROUP_INDEX_DEPTH,
                 TREE_NAMES_NOT_NULL,
                 MEMORY_TABLES_NOT_MIXED,
-                MEMORY_TABLES_SINGLE
+                MEMORY_TABLES_SINGLE,
+                //VIEW_REFERENCES
                 //CHARACTER_SET_SUPPORTED
+                COLLATION_SUPPORTED,
+                INDEX_COLUMN_IS_NOT_PARTIAL,
+                COLUMN_SIZES_MATCH,
+                SEQUENCE_VALUES_VALID
                 ));
     }
     

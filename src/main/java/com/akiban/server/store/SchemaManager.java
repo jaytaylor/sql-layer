@@ -32,8 +32,10 @@ import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.service.session.Session;
 
@@ -175,4 +177,16 @@ public interface SchemaManager {
      * @return The current schema generation value.
      */
     int getSchemaGeneration();
+
+    /** Add the given view to the current AIS. */
+    void createView(Session session, View view);
+
+    /** Drop the given view from the current AIS. */
+    void dropView(Session session, TableName viewName);
+    
+    /** Add the Sequence to the current AIS */
+    void createSequence(Session session, Sequence sequence);
+    
+    /** Drop the given sequence from the current AIS. */
+    void dropSequence(Session session, Sequence sequence);
 }

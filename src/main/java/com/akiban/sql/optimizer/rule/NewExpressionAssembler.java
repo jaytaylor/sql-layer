@@ -26,31 +26,48 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TCastExpression;
+import com.akiban.server.types3.texpressions.TComparisonExpression;
+import com.akiban.server.types3.texpressions.TInExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
+import com.akiban.sql.optimizer.plan.ComparisonCondition;
+import com.akiban.sql.optimizer.plan.ConditionExpression;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.types.CharacterTypeAttributes;
+import com.akiban.sql.optimizer.plan.PlanContext;
+import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +80,11 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     private static final TValidatedOverload ifElseValidated = new TValidatedOverload(AkIfElse.INSTANCE);
 
     private OverloadResolver overloadResolver;
+    private QueryContext queryContext;
 
-    public NewExpressionAssembler(RulesContext rulesContext) {
+    public NewExpressionAssembler(RulesContext rulesContext, QueryContext queryContext) {
         this.overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
+        this.queryContext = queryContext;
     }
 
     @Override
@@ -81,7 +100,6 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             overload = fexpr.getOverload();
         }
         else if (functionNode instanceof BooleanOperationExpression) {
-            BooleanOperationExpression bexpr = (BooleanOperationExpression) functionNode;
             List<TPreptimeValue> inputPreptimeValues = new ArrayList<TPreptimeValue>(argumentNodes.size());
             for (ExpressionNode argument : argumentNodes) {
                 inputPreptimeValues.add(argument.getPreptimeValue());
@@ -95,15 +113,38 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         else {
             throw new AssertionError(functionNode);
         }
-        TInstance resultInstance = functionNode.getPreptimeValue().instance();
-        return new TPreparedFunction(overload, resultInstance, arguments);
+         TInstance resultInstance = functionNode.getPreptimeValue().instance();
+        return new TPreparedFunction(overload, resultInstance, arguments, queryContext);
     }
 
     @Override
     protected TPreparedExpression assembleCastExpression(CastExpression castExpression,
                                                          ColumnExpressionContext columnContext,
                                                          SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
-        throw new UnsupportedOperationException(); // TODO
+        ExpressionNode operand = castExpression.getOperand();
+        TPreparedExpression expr = assembleExpression(operand, columnContext, subqueryAssembler);
+        TInstance toType = castExpression.getPreptimeValue().instance();
+        if (toType == null) return expr;
+        if (!toType.equals(operand.getPreptimeValue().instance()))
+        {
+            // Do type conversion.
+            TypeId id = castExpression.getSQLtype().getTypeId();
+            if (id.isIntervalTypeId()) {
+                throw new UnsupportedOperationException(); // TODO
+//                expr = new IntervalCastExpression(expr, id);
+            }
+            else {
+                TCast tcast = overloadResolver.getTCast(operand.getPreptimeValue().instance(), toType);
+                if (tcast == null) {
+                    String castName = "CAST("
+                            + operand.getPreptimeValue().instance().typeClass()
+                            + " to " + toType.typeClass() + ')';
+                    throw new NoSuchMethodError(castName); // TODO should be a NoSuchCastError
+                }
+                expr = new TCastExpression(expr, tcast, toType, queryContext);
+            }
+        }
+        return expr;
     }
 
     @Override
@@ -114,17 +155,36 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     protected TPreparedExpression variable(ParameterExpression expression) {
-        throw new UnsupportedOperationException(); // TODO
+        return new TPreparedParameter(expression.getPosition(), expression.getPreptimeValue().instance());
     }
 
     @Override
     protected TPreparedExpression compare(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
-        throw new UnsupportedOperationException(); // TODO
+        return new TComparisonExpression(left, comparison, right);
+    }
+
+    @Override
+    protected TPreparedExpression collate(TPreparedExpression left, Comparison comparison, TPreparedExpression right, AkCollator collator) {
+        return new TComparisonExpression(left,  comparison, right, collator);
+    }
+
+    @Override
+    protected AkCollator collator(ComparisonCondition cond, TPreparedExpression left, TPreparedExpression right) {
+        TInstance leftInstance = left.resultType();
+        TInstance rightInstance = right.resultType();
+        TClass tClass = leftInstance.typeClass();
+        assert tClass.equals(rightInstance.typeClass())
+                : tClass + " != " + rightInstance.typeClass();
+        if (tClass.underlyingType() != PUnderlying.STRING)
+            return null;
+        CharacterTypeAttributes leftAttributes = StringAttribute.characterTypeAttributes(leftInstance);
+        CharacterTypeAttributes rightAttributes = StringAttribute.characterTypeAttributes(rightInstance);
+        return ExpressionTypes.mergeAkCollators(leftAttributes, rightAttributes);
     }
 
     @Override
     protected TPreparedExpression in(TPreparedExpression lhs, List<TPreparedExpression> rhs) {
-        throw new UnsupportedOperationException(); // TODO
+        return TInExpression.prepare(lhs, rhs, queryContext);
     }
 
     @Override
@@ -157,6 +217,28 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
                 nkeys,
                 aggregators,
                 outputInstances);
+    }
+
+    @Override
+    public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
+        if (node instanceof ConstantExpression)
+            return (ConstantExpression)node;
+        TPreparedExpression expr = assembleExpression(node, null, null);
+        TPreptimeValue preptimeValue = expr.evaluateConstant(planContext.getQueryContext());
+        if (preptimeValue == null)
+            throw new AkibanInternalException("required constant expression: " + expr);
+        PValueSource valueSource = preptimeValue.value();
+        if (valueSource == null)
+            throw new AkibanInternalException("required constant expression: " + expr);
+        if (node instanceof ConditionExpression) {
+            Boolean value = valueSource.isNull() ? null : valueSource.getBoolean();
+            return new BooleanConstantExpression(value,
+                    node.getSQLtype(),
+                    node.getSQLsource());
+        }
+        else {
+            return new ConstantExpression(preptimeValue);
+        }
     }
 
     @Override

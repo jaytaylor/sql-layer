@@ -1,5 +1,5 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  project([Field(0)])
+  project(Field(0))
     UnionAll_Default
       UnionAll_Default
         UnionAll_Default

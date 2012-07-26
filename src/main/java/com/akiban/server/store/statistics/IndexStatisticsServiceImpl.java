@@ -306,7 +306,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                                     String schema, File file) throws IOException {
         AkibanInformationSchema ais = schemaManager.getAis(session);
         Map<Index,IndexStatistics> stats = 
-            new IndexStatisticsYamlLoader(ais, schema).load(file);
+            new IndexStatisticsYamlLoader(ais, schema, treeService).load(file);
         for (Map.Entry<Index,IndexStatistics> entry : stats.entrySet()) {
             Index index = entry.getKey();
             IndexStatistics indexStatistics = entry.getValue();
@@ -341,7 +341,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 toDump.put(index, stats);
             }
         }
-        new IndexStatisticsYamlLoader(ais, schema).dump(toDump, file);
+        new IndexStatisticsYamlLoader(ais, schema, treeService).dump(toDump, file);
     }
 
     @Override

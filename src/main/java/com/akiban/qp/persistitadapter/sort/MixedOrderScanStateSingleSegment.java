@@ -26,22 +26,17 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.server.PersistitKeyValueSource;
-import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
+
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.RankExpression;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
 import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
 
-class MixedOrderScanStateSingleSegment extends MixedOrderScanState
+class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
 {
     @Override
     public boolean startScan() throws PersistitException
@@ -57,22 +52,15 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
     }
 
     @Override
-    public boolean jump(ValueSource fieldValue) throws PersistitException
+    public boolean jump(S fieldValue) throws PersistitException
     {
         boolean more;
         if (singleValue) {
             // We already know that lo = hi.
-            more =
-                Expressions.compare(Expressions.valueSource(fieldValue),
-                                    Comparison.EQ,
-                                    Expressions.valueSource(loSource)).evaluation().eval().getBool();
+            more = sortKeyAdapter.areEqual(fieldTInstance, fieldValue, loSource, cursor.context);
         } else if (bounded()) {
-            long compareLo =
-                new RankExpression(Expressions.valueSource(fieldValue),
-                                   Expressions.valueSource(loSource)).evaluation().eval().getInt();
-            long compareHi =
-                new RankExpression(Expressions.valueSource(fieldValue),
-                                   Expressions.valueSource(hiSource)).evaluation().eval().getInt();
+            long compareLo = sortKeyAdapter.compare(fieldTInstance, fieldValue,  loSource);
+            long compareHi = sortKeyAdapter.compare(fieldTInstance, fieldValue, hiSource);
             more =
                 (loInclusive ? compareLo >= 0 : compareLo > 0) &&
                 (hiInclusive ? compareHi <= 0 : compareHi < 0);
@@ -81,8 +69,7 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
             more = true;
         }
         if (more) {
-            keyTarget.expectingType(fieldValue.getConversionType());
-            Converters.convert(fieldValue, keyTarget);
+            keyTarget.append(fieldValue, collator, fieldTInstance);
             more = cursor.exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, false) && !pastEnd();
             if (!more) {
                 // Go back to a key prefix known to exist.
@@ -99,26 +86,30 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
 
     public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor,
                                             int field,
-                                            ValueSource lo,
+                                            S lo,
                                             boolean loInclusive,
-                                            ValueSource hi,
+                                            S hi,
                                             boolean hiInclusive,
                                             boolean singleValue,
-                                            boolean ascending)
+                                            boolean ascending,
+                                            SortKeyAdapter<S, E> sortKeyAdapter)
         throws PersistitException
     {
         super(cursor, field, ascending);
         assert lo != null;
         assert hi != null;
-        this.keyTarget = new PersistitKeyValueTarget();
+        this.fieldType = cursor.akTypeAt(field);
+        this.collator = cursor.collatorAt(field);
+        this.fieldTInstance = cursor.tInstanceAt(field);
+        this.keyTarget = sortKeyAdapter.createTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
-        this.keySource = new PersistitKeyValueSource();
-        boolean loNull = lo.isNull();
-        boolean hiNull = hi.isNull();
+        this.keySource = sortKeyAdapter.createSource(fieldTInstance);
+        this.sortKeyAdapter = sortKeyAdapter;
+        boolean loNull = sortKeyAdapter.isNull(lo);
+        boolean hiNull = sortKeyAdapter.isNull(hi);
         assert !(loNull && hiNull);
         this.loSource = lo;
         this.hiSource = hi;
-        this.fieldType = loNull ? hiSource.getConversionType() : loSource.getConversionType();
         this.endComparison = null;
         this.loInclusive = loInclusive;
         this.hiInclusive = hiInclusive;
@@ -126,32 +117,28 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
         if (singleValue) {
             assert !loNull;
             assert !hiNull;
-            Expression loEQHi = Expressions.compare(Expressions.valueSource(loSource),
-                                                    Comparison.EQ,
-                                                    Expressions.valueSource(hiSource));
-            if (!loEQHi.evaluation().eval().getBool()) {
+            boolean loEQHi = sortKeyAdapter.areEqual(fieldTInstance, loSource, hiSource, cursor.context);
+            if (!loEQHi) {
                 throw new IllegalArgumentException();
             }
         }
     }
 
-    public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor, int field)
+    public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor, int field, SortKeyAdapter<S, E> sortKeyAdapter)
         throws PersistitException
     {
         super(cursor, field, cursor.ordering().ascending(field));
-        this.keyTarget = new PersistitKeyValueTarget();
+        this.keyTarget = sortKeyAdapter.createTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
-        this.keySource = new PersistitKeyValueSource();
+        this.keySource = sortKeyAdapter.createSource(cursor.tInstanceAt(field));
+        this.sortKeyAdapter = sortKeyAdapter;
     }
 
-    private void setupEndComparison(Comparison comparison, ValueSource bound)
+    private void setupEndComparison(Comparison comparison, S bound)
     {
         if (endComparison == null) {
-            keySource.attach(cursor.exchange.getKey(), -1, fieldType); // depth unimportant, will be set later
-            endComparison =
-                Expressions.compare(Expressions.valueSource(keySource),
-                                    comparison,
-                                    Expressions.valueSource(bound));
+            keySource.attach(cursor.exchange.getKey(), -1, fieldType, fieldTInstance); // depth unimportant, will be set later
+            endComparison = sortKeyAdapter.createComparison(fieldTInstance, keySource.asSource(), comparison, bound);
         }
     }
 
@@ -174,32 +161,30 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
         // About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
         Key.Direction direction;
         if (ascending) {
-            if (loSource.isNull()) {
+            if (sortKeyAdapter.isNull(loSource)) {
                 cursor.exchange.append(null);
                 direction = Key.GT;
             } else {
-                keyTarget.expectingType(loSource.getConversionType());
-                Converters.convert(loSource, keyTarget);
+                keyTarget.append(loSource, fieldType, fieldTInstance, collator);
                 direction = loInclusive ? Key.GTEQ : Key.GT;
             }
-            if (!hiSource.isNull()) {
+            if (!sortKeyAdapter.isNull(hiSource)) {
                 setupEndComparison(hiInclusive ? Comparison.LE : Comparison.LT, hiSource);
             }
             // else: endComparison stays null, which causes pastEnd() to always return false.
         } else {
-            if (hiSource.isNull()) {
-                if (loSource.isNull()) {
+            if (sortKeyAdapter.isNull(hiSource)) {
+                if (sortKeyAdapter.isNull(loSource)) {
                     cursor.exchange.append(null);
                 } else {
                     cursor.exchange.append(Key.AFTER);
                 }
                 direction = Key.LT;
             } else {
-                keyTarget.expectingType(hiSource.getConversionType());
-                Converters.convert(hiSource, keyTarget);
+                keyTarget.append(hiSource, fieldType, fieldTInstance, collator);
                 direction = hiInclusive ? Key.LTEQ : Key.LT;
             }
-            if (!loSource.isNull()) {
+            if (!sortKeyAdapter.isNull(loSource)) {
                 setupEndComparison(loInclusive ? Comparison.GE : Comparison.GT, loSource);
             }
         }
@@ -216,12 +201,11 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
             // hiComparisonExpression depends on exchange's key, but we need to compare the correct key segment.
             Key key = cursor.exchange.getKey();
             int keySize = key.getEncodedSize();
-            keySource.attach(key, field, fieldType);
-            if (keySource.isNull()) {
+            keySource.attach(key, field, fieldType, fieldTInstance);
+            if (sortKeyAdapter.isNull(keySource.asSource())) {
                 pastEnd = !ascending;
             } else {
-                ExpressionEvaluation evaluation = endComparison.evaluation();
-                pastEnd = !evaluation.eval().getBool();
+                pastEnd = !sortKeyAdapter.evaluateComparison(endComparison, cursor.context);
                 key.setEncodedSize(keySize);
             }
         }
@@ -233,14 +217,17 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
         return loSource != null && hiSource != null;
     }
 
-    private final PersistitKeyValueTarget keyTarget;
-    private final PersistitKeyValueSource keySource;
-    private ValueSource loSource;
-    private ValueSource hiSource;
+    private final SortKeyAdapter<S, E> sortKeyAdapter;
+    private final SortKeyTarget<S> keyTarget;
+    private final SortKeySource<S> keySource;
+    private S loSource;
+    private S hiSource;
     private boolean loInclusive;
     private boolean hiInclusive;
-    private Expression endComparison;
+    private E endComparison;
     private AkType fieldType;
+    private AkCollator collator;
+    private TInstance fieldTInstance;
     // singleValue is true if this scan state represents a key segment constrained to be a single value,
     // singleValue is false otherwise. This can only happen in the last bound of an index scan. E.g.
     // if we have an index on (a, b), and the index scan is (a = 1, 0 < b < 10), then singleValue is

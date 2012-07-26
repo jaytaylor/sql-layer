@@ -50,5 +50,5 @@ public enum AkBundle implements TBundle {
         // TODO
     }
 
-    private static TBundleID bundleId = new TBundleID("mcompat", "282696ac-6f10-450c-9960-a54c8abe94c0");
+    private static TBundleID bundleId = new TBundleID("aksql", "282696ac-6f10-450c-9960-a54c8abe94c0");
 }

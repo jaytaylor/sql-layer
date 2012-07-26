@@ -44,6 +44,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.Store;
 import com.akiban.util.tap.InOutTap;
 
 public class MemoryAdapter extends StoreAdapter {
@@ -66,9 +67,14 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
+    public Store getUnderlyingStore() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Cursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
-            IndexScanSelector scanSelector) {
+            IndexScanSelector scanSelector, boolean usePValues) {
         
         Table table = index.rootMostTable();
         if (table.isUserTable()) {
@@ -88,7 +94,7 @@ public class MemoryAdapter extends StoreAdapter {
 
     @Override
     public Cursor sort(QueryContext context, Cursor input, RowType rowType,
-            Ordering ordering, SortOption sortOption, InOutTap loadTap) {
+            Ordering ordering, SortOption sortOption, InOutTap loadTap, boolean usePValues) {
         throw new UnsupportedOperationException();
     }
 

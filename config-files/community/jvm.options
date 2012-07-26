@@ -1,0 +1,111 @@
+#
+# END USER LICENSE AGREEMENT (“EULA”)
+#
+# READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+# http://www.akiban.com/licensing/20110913
+#
+# BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+# ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+# AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+#
+# IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+# THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+# NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+# YOUR INITIAL PURCHASE.
+#
+# IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+# CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+# FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+# LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+# BY SUCH AUTHORIZED PERSONNEL.
+#
+# IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+# USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+# PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
+#
+
+calculate_heap_size()
+{
+    case "`uname`" in
+        Linux)
+            system_memory_in_mb=`free -m | awk '/Mem:/ {print $2}'`
+            MAX_HEAP_SIZE=$((system_memory_in_mb / 2))M
+            return 0
+        ;;
+        *)
+            MAX_HEAP_SIZE=1024M
+            return 1
+        ;;
+    esac
+}
+
+# The amount of memory to allocate to the JVM at startup, you almost
+# certainly want to adjust this for your environment. If left commented
+# out, the heap size will be automatically determined by calculate_heap_size
+# MAX_HEAP_SIZE="4G"
+if [ "x$MAX_HEAP_SIZE" = "x" ]; then
+    calculate_heap_size
+fi
+
+# specify path to the MySQL base directory on this machine
+# this is needed for the Akiban bulk loader.
+JVM_OPTS="$JVM_OPTS -Dmysql.install.dir=/usr/local/mysql"
+
+# Here we create the arguments that will get passed to the jvm when
+# starting the akiban server.
+
+# Enable assertions.
+JVM_OPTS="$JVM_OPTS -ea"
+
+# enable thread priorities, primarily so we can give periodic tasks
+# a lower priority to avoid interfering with client workload
+JVM_OPTS="$JVM_OPTS -XX:+UseThreadPriorities"
+# allows lowering thread priority without being root.  see
+# http://tech.stolsvik.com/2010/01/linux-java-thread-priorities-workaround.html
+JVM_OPTS="$JVM_OPTS -XX:ThreadPriorityPolicy=42"
+
+
+# min and max heap sizes should be set to the same value to avoid
+# stop-the-world GC pauses during resize, and so that we can lock the
+# heap in memory on startup to prevent any of it from being swapped
+# out.
+JVM_OPTS="$JVM_OPTS -Xms$MAX_HEAP_SIZE"
+JVM_OPTS="$JVM_OPTS -Xmx$MAX_HEAP_SIZE"
+JVM_OPTS="$JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError" 
+
+# Prefer binding to IPv4 network intefaces (when net.ipv6.bindv6only=1). See 
+# http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6342561 (short version:
+# comment out this entry to enable IPv6 support).
+JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
+
+if [ "`uname`" = "Linux" ] ; then
+    # reduce the per-thread stack size 
+    # Only do so on Linux where it is known to be supported.
+    JVM_OPTS="$JVM_OPTS -Xss165k"
+fi
+
+# GC tuning options
+JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC" 
+
+# GC logging options -- uncomment to enable
+# JVM_OPTS="$JVM_OPTS -XX:+PrintGCDetails"
+# JVM_OPTS="$JVM_OPTS -XX:+PrintGCTimeStamps"
+# JVM_OPTS="$JVM_OPTS -XX:+PrintClassHistogram"
+# JVM_OPTS="$JVM_OPTS -XX:+PrintTenuringDistribution"
+# JVM_OPTS="$JVM_OPTS -XX:+PrintGCApplicationStoppedTime"
+# JVM_OPTS="$JVM_OPTS -Xloggc:/var/log/akiban/gc.log"
+
+# jmx: metrics and administration interface
+# 
+# add this if you're having trouble connecting:
+# JVM_OPTS="$JVM_OPTS -Djava.rmi.server.hostname=<public name>"
+# 
+# see 
+# http://blogs.sun.com/jmxetc/entry/troubleshooting_connection_problems_in_jconsole
+# for more on configuring JMX through firewalls, etc. (Short version:
+# get it working with no firewall first.)
+JMX_PORT="8082"
+JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.port=$JMX_PORT" 
+JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.ssl=false" 
+JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false" 
+

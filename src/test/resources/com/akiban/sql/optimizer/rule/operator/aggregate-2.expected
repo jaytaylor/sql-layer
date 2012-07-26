@@ -1,7 +1,7 @@
 PhysicalSelect@407166[name, _SQL_COL_1]
-  project([Field(0), Field(1)])
+  project(Field(0), Field(1))
     Aggregation(GROUP BY 1 field, then: [count(*)])
-      project([Field(1), Literal(1)])
+      project(Field(1), 1)
         Filter_Default([flatten(test.customers, test.orders)])
           Flatten_HKeyOrdered(test.customers INNER test.orders)
             BranchLookup_Default(_akiban_customers Index(test.customers.name[IndexColumn(name)]) -> test.customers limit NO LIMIT)

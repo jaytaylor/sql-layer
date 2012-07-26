@@ -31,20 +31,21 @@ import com.akiban.server.error.*;
 import com.akiban.server.service.session.Session;
 
 import com.akiban.sql.optimizer.AISBinderContext;
+import com.akiban.sql.optimizer.AISViewDefinition;
 import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.sql.parser.ResultColumn;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Type;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
+import com.akiban.ais.model.View;
+
+import com.akiban.sql.pg.PostgresQueryContext;
+import java.util.Collection;
+import java.util.Map;
 
 /** DDL operations on Views */
 public class ViewDDL
@@ -56,16 +57,19 @@ public class ViewDDL
                                   Session session,
                                   String defaultSchemaName,
                                   CreateViewNode createView,
-                                  AISBinderContext binderContext) {
+                                  AISBinderContext binderContext,
+                                  PostgresQueryContext context) {
         com.akiban.sql.parser.TableName parserName = createView.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String viewName = parserName.getTableName();
         ExistenceCheck condition = createView.getExistenceCheck();
 
-        if (binderContext.getView(schemaName, viewName) != null) {
+        if (ddlFunctions.getAIS(session).getView(schemaName, viewName) != null) {
             switch(condition) {
             case IF_NOT_EXISTS:
                 // view already exists. does nothing
+                if (context != null)
+                    context.warnClient(new DuplicateViewException(schemaName, viewName));
                 return;
             case NO_CONDITION:
                 throw new DuplicateViewException(schemaName, viewName);
@@ -74,24 +78,56 @@ public class ViewDDL
             }
         }
         
-        ViewDefinition view = binderContext.getViewDefinition(createView);
-        binderContext.addView(schemaName, viewName, view);
+        AISViewDefinition viewdef = binderContext.getViewDefinition(createView);
+        Map<TableName,Collection<String>> tableColumnReferences = viewdef.getTableColumnReferences();
+        AISBuilder builder = new AISBuilder();
+        builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
+                     binderContext.getParserProperties(schemaName), tableColumnReferences);
+        int colpos = 0;
+        for (ResultColumn rc : viewdef.getResultColumns()) {
+            TableDDL.addColumn(builder, schemaName, viewName, rc.getName(), colpos++,
+                               rc.getType(), false);
+        }
+        View view = builder.akibanInformationSchema().getView(schemaName, viewName);
+        ddlFunctions.createView(session, view);
     }
 
     public static void dropView (DDLFunctions ddlFunctions,
                                  Session session, 
                                  String defaultSchemaName,
                                  DropViewNode dropView,
-                                 AISBinderContext binderContext) {
+                                 AISBinderContext binderContext,
+                                 PostgresQueryContext context) {
         com.akiban.sql.parser.TableName parserName = dropView.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        String viewName = parserName.getTableName();
+        TableName viewName = TableName.create(schemaName, parserName.getTableName());
         ExistenceCheck existenceCheck = dropView.getExistenceCheck();
 
-        if (binderContext.getView(schemaName, viewName) == null) {
+        if (ddlFunctions.getAIS(session).getView(viewName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS)
+            {
+                if (context != null)
+                    context.warnClient(new UndefinedViewException(viewName));
                 return;
-            throw new UndefinedViewException(schemaName, viewName);
+            }
+            throw new UndefinedViewException(viewName);
+        }
+        checkDropTable(ddlFunctions, session, viewName);
+        ddlFunctions.dropView(session, viewName);
+    }
+
+    public static void checkDropTable(DDLFunctions ddlFunctions, Session session, 
+                                      TableName name) {
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+        Columnar table = ais.getColumnar(name);
+        if (table == null) return;
+        for (View view : ais.getViews().values()) {
+            if (view.referencesTable(table)) {
+                throw new ViewReferencesExist(view.getName().getSchemaName(),
+                                              view.getName().getTableName(),
+                                              table.getName().getSchemaName(),
+                                              table.getName().getTableName());
+            }
         }
     }
 

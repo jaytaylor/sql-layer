@@ -32,6 +32,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.std.CountOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -108,13 +109,15 @@ class Count_TableStatus extends Operator
 
     // Count_TableStatus interface
 
-    public Count_TableStatus(RowType tableType)
+    public Count_TableStatus(RowType tableType, boolean usePValues)
     {
         ArgumentValidation.notNull("tableType", tableType);
         ArgumentValidation.isTrue("tableType instanceof UserTableRowType",
                                   tableType instanceof UserTableRowType);
         this.tableType = tableType;
-        this.resultType = tableType.schema().newValuesType(AkType.LONG);
+        this.resultType = usePValues
+                ? tableType.schema().newValuesType(MNumeric.BIGINT.instance())
+                : tableType.schema().newValuesType(AkType.LONG);
     }
 
     // Class state
@@ -130,7 +133,7 @@ class Count_TableStatus extends Operator
     @Override
     public Explainer getExplainer()
     {
-        return new CountOperatorExplainer("Count_TableStatus", tableType, resultType, null);
+        return new CountOperatorExplainer("Count TableStatus", tableType, resultType, null);
     }
 
     // Inner classes

@@ -108,6 +108,11 @@ public abstract class MBit implements TAggregator {
         return name;
     }
 
+    @Override
+    public String toString() {
+        return name().toLowerCase();
+    }
+
     protected MBit(String name) {
         this.name = name;
     }

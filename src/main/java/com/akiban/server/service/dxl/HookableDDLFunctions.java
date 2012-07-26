@@ -28,9 +28,11 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
@@ -98,6 +100,36 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_TABLE, thrown);
+        }
+    }
+
+    @Override
+    public void createView(Session session, View view) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CREATE_VIEW);
+            delegate.createView(session, view);
+        }catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_VIEW, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_VIEW, thrown);
+        }
+    }
+
+    @Override
+    public void dropView(Session session, TableName viewName) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.DROP_VIEW);
+            delegate.dropView(session, viewName);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.DROP_VIEW, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.DROP_VIEW, thrown);
         }
     }
 
@@ -369,6 +401,37 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.CHECK_AND_FIX_INDEXES, thrown);
+        }
+    }
+
+    @Override
+    public void createSequence(Session session, Sequence sequence) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CREATE_SEQUENCE);
+            delegate.createSequence(session, sequence);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_SEQUENCE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_SEQUENCE, thrown);
+        }
+        
+    }
+
+    @Override
+    public void dropSequence(Session session, TableName sequenceName) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.DROP_SEQUENCE);
+            delegate.dropSequence(session, sequenceName);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.DROP_SEQUENCE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.DROP_SEQUENCE, thrown);
         }
     }
 }

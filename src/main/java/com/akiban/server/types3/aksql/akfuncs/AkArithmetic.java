@@ -40,7 +40,7 @@ public class AkArithmetic {
     private AkArithmetic() {}
     
     // Add functions
-     public static final TOverload ADD_SMALLINT = new TArithmetic("+", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
+     public static final TOverload ADD_SMALLINT = new TArithmetic("plus", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             short a0 = inputs.get(0).getInt16();
@@ -49,7 +49,7 @@ public class AkArithmetic {
         }
     };
      
-    public static final TOverload ADD_INT = new TArithmetic("+", AkNumeric.INT, AkNumeric.INT) {
+    public static final TOverload ADD_INT = new TArithmetic("plus", AkNumeric.INT, AkNumeric.INT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt32();
@@ -58,7 +58,7 @@ public class AkArithmetic {
         }
     };
     
-    public static final TOverload ADD_BIGINT = new TArithmetic("+", AkNumeric.BIGINT, AkNumeric.BIGINT) {
+    public static final TOverload ADD_BIGINT = new TArithmetic("plus", AkNumeric.BIGINT, AkNumeric.BIGINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();
@@ -67,7 +67,7 @@ public class AkArithmetic {
         }
     };
 
-    public static final TOverload ADD_DOUBLE = new TArithmetic("+", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
+    public static final TOverload ADD_DOUBLE = new TArithmetic("plus", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
@@ -78,7 +78,7 @@ public class AkArithmetic {
     };
     
     // Subtract functions
-    public static final TOverload SUBTRACT_SMALLINT = new TArithmetic("-", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
+    public static final TOverload SUBTRACT_SMALLINT = new TArithmetic("minus", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             short a0 = inputs.get(0).getInt16();
@@ -87,7 +87,7 @@ public class AkArithmetic {
         }
     };
      
-   public static final TOverload SUBTRACT_INT = new TArithmetic("-", AkNumeric.INT, AkNumeric.INT) {
+   public static final TOverload SUBTRACT_INT = new TArithmetic("minus", AkNumeric.INT, AkNumeric.INT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt32();
@@ -96,7 +96,7 @@ public class AkArithmetic {
         }
     };
     
-   public static final TOverload SUBTRACT_BIGINT = new TArithmetic("-", AkNumeric.BIGINT, AkNumeric.BIGINT) {
+   public static final TOverload SUBTRACT_BIGINT = new TArithmetic("minus", AkNumeric.BIGINT, AkNumeric.BIGINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();
@@ -105,7 +105,7 @@ public class AkArithmetic {
         }
     };
 
-   public static final TOverload SUBTRACT_DOUBLE = new TArithmetic("-", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
+   public static final TOverload SUBTRACT_DOUBLE = new TArithmetic("minus", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
@@ -116,7 +116,7 @@ public class AkArithmetic {
     };
     
     // Divide functions
-   public static final TOverload DIVIDE_SMALLINT = new TArithmetic("/", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
+   public static final TOverload DIVIDE_SMALLINT = new TArithmetic("div", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             short a1 = inputs.get(1).getInt16();
@@ -132,7 +132,7 @@ public class AkArithmetic {
         }
     };
     
-   public static final TOverload DIVIDE_INT = new TArithmetic("/", AkNumeric.INT, AkNumeric.INT) {
+   public static final TOverload DIVIDE_INT = new TArithmetic("div", AkNumeric.INT, AkNumeric.INT) {
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a1 = inputs.get(1).getInt32();
@@ -148,7 +148,7 @@ public class AkArithmetic {
         }
     };
     
-   public static final TOverload DIVIDE_BIGINT = new TArithmetic("/", AkNumeric.BIGINT, AkNumeric.BIGINT) {
+   public static final TOverload DIVIDE_BIGINT = new TArithmetic("div", AkNumeric.BIGINT, AkNumeric.BIGINT) {
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a1 = inputs.get(1).getInt64();
@@ -163,7 +163,7 @@ public class AkArithmetic {
         }
     };
 
-   public static final TOverload DIVIDE_DOUBLE = new TArithmetic("/", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
+   public static final TOverload DIVIDE_DOUBLE = new TArithmetic("divide", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
@@ -180,7 +180,7 @@ public class AkArithmetic {
     };
     
     // Multiply functions
-   public static final TOverload MULTIPLY_SMALLINT = new TArithmetic("*", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
+   public static final TOverload MULTIPLY_SMALLINT = new TArithmetic("times", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             short a0 = inputs.get(0).getInt16();
@@ -189,7 +189,7 @@ public class AkArithmetic {
         }
     };
 
-   public static final TOverload MULTIPLY_INT = new TArithmetic("*", AkNumeric.INT, AkNumeric.INT) {
+   public static final TOverload MULTIPLY_INT = new TArithmetic("times", AkNumeric.INT, AkNumeric.INT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt32();
@@ -198,7 +198,7 @@ public class AkArithmetic {
         }
     };
     
-   public static final TOverload MULTIPLY_BIGINT = new TArithmetic("*", AkNumeric.BIGINT, AkNumeric.BIGINT) {
+   public static final TOverload MULTIPLY_BIGINT = new TArithmetic("times", AkNumeric.BIGINT, AkNumeric.BIGINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();
@@ -207,7 +207,7 @@ public class AkArithmetic {
         }
     };
 
-    TOverload MULTIPLY_DOUBLE = new TArithmetic("*", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
+    TOverload MULTIPLY_DOUBLE = new TArithmetic("times", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
@@ -218,7 +218,7 @@ public class AkArithmetic {
     };
     
     // Mod functions
-   public static final TOverload MOD_DOUBLE = new TArithmetic("%", AkNumeric.DOUBLE, AkNumeric.DOUBLE.instance())
+   public static final TOverload MOD_DOUBLE = new TArithmetic("mod", AkNumeric.DOUBLE, AkNumeric.DOUBLE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -227,7 +227,7 @@ public class AkArithmetic {
         }
     };
 
-   public static final TOverload MOD_SMALLINT = new TArithmetic("%", AkNumeric.SMALLINT, AkNumeric.SMALLINT.instance())
+   public static final TOverload MOD_SMALLINT = new TArithmetic("mod", AkNumeric.SMALLINT, AkNumeric.SMALLINT.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -236,7 +236,7 @@ public class AkArithmetic {
         }
     };
     
-   public static final TOverload MOD_INT = new TArithmetic("%", AkNumeric.INT, AkNumeric.INT.instance())
+   public static final TOverload MOD_INT = new TArithmetic("mod", AkNumeric.INT, AkNumeric.INT.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -245,7 +245,7 @@ public class AkArithmetic {
         }
     };
     
-   public static final TOverload MOD_BIGINT = new TArithmetic("%", AkNumeric.BIGINT, AkNumeric.BIGINT.instance())
+   public static final TOverload MOD_BIGINT = new TArithmetic("mod", AkNumeric.BIGINT, AkNumeric.BIGINT.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
