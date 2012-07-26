@@ -30,14 +30,13 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigInteger;
 
-public final class RowDataPValueTarget implements PValueTarget {
+public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
 
+    @Override
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
         clear();
         ArgumentValidation.notNull("fieldDef", fieldDef);
@@ -47,6 +46,7 @@ public final class RowDataPValueTarget implements PValueTarget {
         this.offset = offset;
     }
 
+    @Override
     public int lastEncodedLength() {
         if (lastEncodedLength < 0) {
             throw new IllegalStateException("no last recorded length available");

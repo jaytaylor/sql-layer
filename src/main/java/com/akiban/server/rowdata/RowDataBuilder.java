@@ -30,13 +30,19 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueSources.ValueSourceConverter;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -137,87 +143,53 @@ public final class RowDataBuilder {
     }
 
     public void putObject(Object o) {
-        if (source == null) {
-            source = new FromObjectValueSource();
-        }
-        source.setReflectively(o);
-        convert(source);
+        FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
+        adapter.objectToSource(o, fieldDef);
+        convert(null, adapter, fieldDef);
     }
 
-    public void convert(ValueSource source) {
+    private <S,T extends RowDataTarget> void convert(S source, ValueAdapter<S,T> valueAdapter, FieldDef fieldDef) {
         state.require(State.PUTTING);
 
-        FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
         byte[] bytes = rowData.getBytes();
         int currFixedWidth = fieldWidths[fieldIndex];
-        if (Types3Switch.ON) {
-            if (source.isNull()) {
-                if (currFixedWidth != 0) {
-                    throw new IllegalStateException("expected source to give null: " + source);
-                }
-                pTarget.bind(fieldDef, bytes, nullMapOffset);
-                pTarget.putNull();
-                if (pTarget.lastEncodedLength() != 0) {
-                    throw new IllegalStateException("putting a null should have encoded 0 bytes");
-                }
-            } else if (fieldDef.isFixedSize()) {
-                pTarget.bind(fieldDef, bytes, fixedWidthSectionOffset);
-                doConvertP(source);
-                if (pTarget.lastEncodedLength() != currFixedWidth) {
-                    throw new IllegalStateException("expected to write " + currFixedWidth
-                            + " fixed-width byte(s), but wrote " + pTarget.lastEncodedLength());
-                }
-            } else {
-                pTarget.bind(fieldDef, bytes, variableWidthSectionOffset);
-                doConvertP(source);
-                int varWidthExpected = readVarWidth(bytes, currFixedWidth);
-                // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
-                // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
-                // previous variable-length fields, and use that for our comparison. Once that's done, we'll add this
-                // field's length to that cumulative sum.
-                varWidthExpected -= vlength;
-                if (pTarget.lastEncodedLength() != varWidthExpected) {
-                    throw new IllegalStateException("expected to write " + varWidthExpected
-                            + " variable-width byte(s), but wrote " + pTarget.lastEncodedLength()
-                            + " (vlength=" + vlength + ')');
-                }
-                vlength += varWidthExpected;
-                variableWidthSectionOffset += varWidthExpected;
+
+        if (source == null)
+            source = valueAdapter.source();
+        T target = valueAdapter.target();
+
+        if (valueAdapter.isNull(source)) {
+            if (currFixedWidth != 0) {
+                throw new IllegalStateException("expected source to give null: " + source);
+            }
+            target.bind(fieldDef, bytes, nullMapOffset);
+            target.putNull();
+            if (target.lastEncodedLength() != 0) {
+                throw new IllegalStateException("putting a null should have encoded 0 bytes");
+            }
+        } else if (fieldDef.isFixedSize()) {
+            target.bind(fieldDef, bytes, fixedWidthSectionOffset);
+            valueAdapter.convert(fieldDef);
+            if (target.lastEncodedLength() != currFixedWidth) {
+                throw new IllegalStateException("expected to write " + currFixedWidth
+                        + " fixed-width byte(s), but wrote " + target.lastEncodedLength());
             }
         } else {
-            if (source.isNull()) {
-                if (currFixedWidth != 0) {
-                    throw new IllegalStateException("expected source to give null: " + source);
-                }
-                target.bind(fieldDef, bytes, nullMapOffset);
-                target.putNull();
-                if (target.lastEncodedLength() != 0) {
-                    throw new IllegalStateException("putting a null should have encoded 0 bytes");
-                }
-            } else if (fieldDef.isFixedSize()) {
-                target.bind(fieldDef, bytes, fixedWidthSectionOffset);
-                doConvert(source);
-                if (target.lastEncodedLength() != currFixedWidth) {
-                    throw new IllegalStateException("expected to write " + currFixedWidth
-                            + " fixed-width byte(s), but wrote " + target.lastEncodedLength());
-                }
-            } else {
-                target.bind(fieldDef, bytes, variableWidthSectionOffset);
-                doConvert(source);
-                int varWidthExpected = readVarWidth(bytes, currFixedWidth);
-                // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
-                // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
-                // previous variable-length fields, and use that for our comparison. Once that's done, we'll add this
-                // field's length to that cumulative sum.
-                varWidthExpected -= vlength;
-                if (target.lastEncodedLength() != varWidthExpected) {
-                    throw new IllegalStateException("expected to write " + varWidthExpected
-                            + " variable-width byte(s), but wrote " + target.lastEncodedLength()
-                            + " (vlength=" + vlength + ')');
-                }
-                vlength += varWidthExpected;
-                variableWidthSectionOffset += varWidthExpected;
+            target.bind(fieldDef, bytes, variableWidthSectionOffset);
+            valueAdapter.convert(fieldDef);
+            int varWidthExpected = readVarWidth(bytes, currFixedWidth);
+            // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
+            // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
+            // previous variable-length fields, and use that for our comparison. Once that's done, we'll add this
+            // field's length to that cumulative sum.
+            varWidthExpected -= vlength;
+            if (target.lastEncodedLength() != varWidthExpected) {
+                throw new IllegalStateException("expected to write " + varWidthExpected
+                        + " variable-width byte(s), but wrote " + target.lastEncodedLength()
+                        + " (vlength=" + vlength + ')');
             }
+            vlength += varWidthExpected;
+            variableWidthSectionOffset += varWidthExpected;
         }
         fixedWidthSectionOffset += currFixedWidth;
 
@@ -226,7 +198,7 @@ public final class RowDataBuilder {
 
     public int finalOffset() {
         state.require(State.PUTTING);
-        nullRemainingPuts();
+        nullRemainingPuts(adapter);
 
         // footer
         byte[] bytes = rowData.getBytes();
@@ -247,11 +219,12 @@ public final class RowDataBuilder {
         fixedWidthSectionOffset = rowData.getRowStart();
         state = State.NEWLY_CONSTRUCTED;
         this.fieldWidths = new int[rowDef.getFieldCount()];
+        this.adapter = Types3Switch.ON
+                ? new NewValueAdapter()
+                : new OldValueAdapter();
     }
 
-    private final RowDataValueTarget target = new RowDataValueTarget();
-    private final RowDataPValueTarget pTarget = new RowDataPValueTarget();
-    private FromObjectValueSource source = null; // lazy-loaded
+    private final ValueAdapter<?,?> adapter;
     private final RowDef rowDef;
     private final RowData rowData;
     private final int[] fieldWidths;
@@ -271,20 +244,123 @@ public final class RowDataBuilder {
         }
     }
 
-    private void doConvert(ValueSource source) {
-        try {
-            Converters.convert(source, target);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
+    private static abstract class ValueAdapter<S,T extends RowDataTarget> {
+        public abstract void doConvert(S source, T target, FieldDef fieldDef);
+        public abstract void objectToSource(Object object, FieldDef fieldDef);
+        protected abstract S nullSource(FieldDef fieldDef);
+        public abstract boolean isNull(S source);
+
+        public void convert(FieldDef fieldDef) {
+            try {
+                doConvert(source, target, fieldDef);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
+            }
         }
+
+        public S source() {
+            return source;
+        }
+
+        public T target() {
+            return target;
+        }
+
+
+        protected ValueAdapter(S source, T target) {
+            this.source = source;
+            this.target = target;
+        }
+
+        private S source;
+        private T target;
     }
 
-    private void doConvertP(ValueSource source) {
-        try {
-            converter.convert(rowDef.getFieldDef(fieldIndex), source, pTarget, pTarget.targetInstance());
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
+    private static class OldValueAdapter extends ValueAdapter<ValueSource,RowDataValueTarget>{
+
+        @Override
+        public void doConvert(ValueSource source, RowDataValueTarget target, FieldDef fieldDef) {
+            Converters.convert(source, target);
         }
+
+        @Override
+        public void objectToSource(Object object, FieldDef fieldDef) {
+            fromObjectValueSource.setReflectively(object);
+        }
+
+        @Override
+        public ValueSource nullSource(FieldDef fieldDef) {
+            return NullValueSource.only();
+        }
+
+        @Override
+        public boolean isNull(ValueSource source) {
+            return source.isNull();
+        }
+
+        public OldValueAdapter() {
+            this(
+                    new FromObjectValueSource(),
+                    new RowDataValueTarget());
+        }
+
+        private OldValueAdapter(FromObjectValueSource source, RowDataValueTarget target) {
+            super(source,  target);
+            this.fromObjectValueSource = source;
+        }
+
+        private FromObjectValueSource fromObjectValueSource;
+    }
+
+    private static class NewValueAdapter extends ValueAdapter<PValueSource,RowDataPValueTarget> {
+
+        @Override
+        public void doConvert(PValueSource source, RowDataPValueTarget target, FieldDef fieldDef) {
+            if (source.hasRawValue()) {
+                PUnderlying sourceType = source.getUnderlyingType();
+                PUnderlying targetType = target.getUnderlyingType();
+                if (sourceType == PUnderlying.STRING && targetType != PUnderlying.STRING) {
+                    TExecutionContext context = null;
+                    fieldDef.column().tInstance().typeClass().fromObject(context, source, target);
+                }
+                else {
+                    PValueTargets.copyFrom(source, target);
+                }
+            }
+            else {
+                target.targetInstance().writeCanonical(source, target);
+            }
+        }
+
+        @Override
+        public void objectToSource(Object object, FieldDef fieldDef) {
+            if (object == null)
+                PValueTargets.copyFrom(nullSource(fieldDef), pValue);
+
+        }
+
+        @Override
+        public PValueSource nullSource(FieldDef fieldDef) {
+            return PValueSources.getNullSource(fieldDef.column().tInstance().typeClass().underlyingType());
+        }
+
+        @Override
+        public boolean isNull(PValueSource source) {
+            return source.isNull();
+        }
+
+        public NewValueAdapter() {
+            this(
+                    new PValue(),
+                    new RowDataPValueTarget());
+        }
+
+        public NewValueAdapter(PValue pValue, RowDataPValueTarget target) {
+            super(pValue,  target);
+            this.pValue = pValue;
+        }
+
+        private PValue pValue;
     }
 
     private void nullRemainingAllocations() {
@@ -294,10 +370,12 @@ public final class RowDataBuilder {
         }
     }
 
-    private void nullRemainingPuts() {
+    private <S> void nullRemainingPuts(ValueAdapter<S,?> adapter) {
         int fieldsCount = rowDef.getFieldCount();
         while ( fieldIndex < fieldsCount) {
-            convert(NullValueSource.only());
+            FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
+            S source = adapter.nullSource(fieldDef);
+            convert(source, adapter, fieldDef);
         }
     }
 
