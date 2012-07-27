@@ -24,28 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.akiban.qp.persistitadapter;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import com.persistit.Key;
 
-public interface ExpressionNode extends PlanElement
+class PersistitKeyHasher
 {
-    public DataTypeDescriptor getSQLtype();
-    public AkType getAkType();
-    public ValueNode getSQLsource();
-    public AkCollator getCollator();
-    public TPreptimeValue getPreptimeValue();
+    // For hashing a single-segment key
 
-    public void setPreptimeValue(TPreptimeValue value);
+    public long hash(Key key, int depth)
+    {
+        key.indexTo(depth);
+        int startPosition = key.getIndex();
+        key.indexTo(depth + 1);
+        int endPosition = key.getIndex();
+        return hashFunction.hashBytes(key.getEncodedBytes(), startPosition, endPosition - startPosition).asLong();
+    }
 
-    public boolean isColumn();
-    public boolean isConstant();
+    // Object state
 
-    public boolean accept(ExpressionVisitor v);
-    public ExpressionNode accept(ExpressionRewriteVisitor v);
+    private final HashFunction hashFunction = Hashing.goodFastHash(64); // Because we're returning longs
 }

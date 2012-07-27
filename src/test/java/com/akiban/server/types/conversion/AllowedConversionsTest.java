@@ -89,7 +89,7 @@ public final class AllowedConversionsTest {
 
     // nested classes
 
-    private static class AlwaysWorkingSource implements ValueSource {
+    private static class AlwaysWorkingSource extends ValueSource {
         
         @Override
         public boolean isNull() {

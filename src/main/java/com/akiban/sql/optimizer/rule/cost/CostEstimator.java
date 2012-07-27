@@ -63,6 +63,7 @@ public abstract class CostEstimator implements TableRowCounts
     private final Key key;
     private final PersistitKeyValueTarget keyTarget;
     private final Comparator<byte[]> bytesComparator;
+    protected boolean warningsEnabled;
 
     protected CostEstimator(Schema schema, Properties properties, KeyCreator keyCreator) {
         this.schema = schema;
@@ -71,6 +72,7 @@ public abstract class CostEstimator implements TableRowCounts
         key = keyCreator.createKey();
         keyTarget = new PersistitKeyValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
+        warningsEnabled = logger.isWarnEnabled();
     }
 
     protected CostEstimator(SchemaRulesContext rulesContext, KeyCreator keyCreator) {
@@ -933,9 +935,9 @@ public abstract class CostEstimator implements TableRowCounts
             }
         }
     }
-    
+
     protected void missingStats(Column column, Index index) {
-        if (logger.isWarnEnabled()) {
+        if (warningsEnabled) {
             if (index == null) {
                 logger.warn("No single column index for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
             }
@@ -954,7 +956,7 @@ public abstract class CostEstimator implements TableRowCounts
 
     protected void checkRowCountChanged(UserTable table, IndexStatistics stats, 
                                         long rowCount) {
-        if (logger.isWarnEnabled()) {
+        if (warningsEnabled) {
             double ratio = (double)Math.max(rowCount, 1) / 
                            (double)Math.max(stats.getRowCount(), 1);
             String msg = null;
