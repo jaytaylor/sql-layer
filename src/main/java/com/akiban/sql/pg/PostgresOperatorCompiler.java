@@ -115,6 +115,10 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         else if (field.getSQLtype() != null) {
             pgType = PostgresType.fromDerby(field.getSQLtype());
         }
+        else {
+            pgType = new PostgresType(PostgresType.TypeOid.UNKNOWN_TYPE_OID.getOid(),
+                                      (short)-1, -1, null, null);
+        }
         return new PostgresResultColumn(field.getName(), pgType);
     }
 
