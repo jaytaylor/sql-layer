@@ -38,10 +38,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -122,8 +119,9 @@ public class ConvertTZExpression extends AbstractTernaryExpression
          */
         static DateTimeZone adjustTz(String st)
         {
-            char ch;
             for ( int n = 0; n < st.length(); ++n)
+            {
+                char ch;
                 if ((ch = st.charAt(n)) == ':')
                 {
                     int index = n - 2; // if the character that is 2 chars to the left of the COLON
@@ -139,10 +137,8 @@ public class ConvertTZExpression extends AbstractTernaryExpression
                     break;
                 }
                 else if (ch == '/')
-                {
                     return DateTimeZone.forID(st);
-                }
-
+            }
             return DateTimeZone.forID(st.toUpperCase());
         }
     }
