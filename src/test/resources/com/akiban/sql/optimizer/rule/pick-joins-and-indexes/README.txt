@@ -91,3 +91,5 @@ group-scan-no-limit: group scan and flatten
 group-scan-large-limit: with limit larger than expected
 
 group-scan-small-limit: with much smaller limit
+
+duplicate-table-conditions: condition between two occurrences of same table
