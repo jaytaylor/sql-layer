@@ -44,7 +44,7 @@ import java.math.BigInteger;
  * setExpectedType is used to set the expected type of the next value in the stream.
  */
 
-public final class PersistitValueValueSource implements ValueSource
+public final class PersistitValueValueSource extends ValueSource
 {
 
     // PersistitKeyValueSource interface

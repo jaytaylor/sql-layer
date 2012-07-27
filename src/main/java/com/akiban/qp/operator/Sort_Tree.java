@@ -129,7 +129,10 @@ class Sort_Tree extends Operator
 
     // Sort_Tree interface
 
-    public Sort_Tree(Operator inputOperator, RowType sortType, API.Ordering ordering, API.SortOption sortOption,
+    public Sort_Tree(Operator inputOperator,
+                     RowType sortType,
+                     API.Ordering ordering,
+                     API.SortOption sortOption,
                      boolean usePValues)
     {
         ArgumentValidation.notNull("sortType", sortType);

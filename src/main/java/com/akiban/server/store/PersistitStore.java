@@ -225,9 +225,9 @@ public class PersistitStore implements Store {
         return treeService.getExchange(session, index.indexDef());
     }
 
-    public Key getKey(Session session) throws PersistitException
+    public Key getKey()
     {
-        return treeService.getKey(session);
+        return treeService.getKey();
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {

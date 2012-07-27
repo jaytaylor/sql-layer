@@ -35,7 +35,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public abstract class AbstractValueSource implements ValueSource {
+public abstract class AbstractValueSource extends ValueSource {
 
     // ValueSource interface
 
