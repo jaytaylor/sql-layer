@@ -71,9 +71,7 @@ public class ConvertTZExpression extends AbstractTernaryExpression
     };
 
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
-    {
-        private static final Map<String, DateTimeZone> map = generateMap();
-        
+    {   
         public InnerEvaluation(List<? extends ExpressionEvaluation> args)
         {
             super(args);
@@ -124,11 +122,9 @@ public class ConvertTZExpression extends AbstractTernaryExpression
          */
         static DateTimeZone adjustTz(String st)
         {
-            DateTimeZone ret = map.get(st);
-            if (ret != null)
-                return ret;
-            
-            
+            if (!st.contains("/"))
+                st = st.toUpperCase();
+
             if (!st.isEmpty() && st.contains(":"))
             {
                 int index = st.length() - 5;
@@ -174,60 +170,5 @@ public class ConvertTZExpression extends AbstractTernaryExpression
     public String name()
     {
         return "CONVERT_TZ";
-    }
-    
-    
-        static void doMix(List<String> names, StringBuilder bd, LinkedList<Character> lib)
-    {
-        if (lib.isEmpty())
-            names.add(bd.toString());
-        else
-        {
-            LinkedList<Character> cpList;
-            StringBuilder cp;
-            char ch = lib.getFirst();
-            
-            // lowercase
-            cpList = new LinkedList<Character>();
-            cpList.addAll(lib);
-            cp = new StringBuilder(bd);
-            cp.append(Character.toLowerCase(ch));
-            cpList.removeFirst();
-            doMix(names, cp, cpList);
-            
-            // upper case
-            cpList = new LinkedList<Character>();
-            cpList.addAll(lib);
-            cp = new StringBuilder(bd);
-            cp.append(Character.toUpperCase(ch));
-            cpList.removeFirst();
-            doMix(names, cp, cpList);
-        }
-    }
-
-    static List<String> mixCase(String st)
-    {
-        List<String> list = new LinkedList<String>();
-        LinkedList<Character> lib = new LinkedList<Character>();
-
-        for (int n = 0; n < st.length(); ++n)
-            lib.addLast(st.charAt(n));
-        
-        doMix(list, new StringBuilder(), lib);
-
-        return list;
-    }
-    
-     static Map<String, DateTimeZone> generateMap()
-    {
-        Map<String, DateTimeZone> map = new HashMap<String, DateTimeZone>();
-        
-        for (String st : DateTimeZone.getAvailableIDs())
-        {
-            DateTimeZone tz = DateTimeZone.forID(st);
-            for (String name : mixCase(st))
-                map.put(name, tz);
-        }
-        return map;
     }
 }
