@@ -9,5 +9,5 @@ SelectQuery@26114629
                 TableSource@7a9d1714(customers - TableGroup@64afb650(customers))
                   TableSource@5f5660ef(orders - TableGroupJoin@4da9ec16(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
                     TableSource@569bc36d(items - TableGroupJoin@4ecac02f(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
-              TableGroupJoinTree@610f7612(TableGroup@4bea71d4(parent), parent - SingleIndexScan@3b896429(Index(test.parent.name[IndexColumn(name)]), covering/NONE, =items.sku, rows = 1, cost = 86.9910))
+              TableGroupJoinTree@610f7612(TableGroup@4bea71d4(parent), parent - SingleIndexScan@3b896429(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, =orders.oid, rows = 1, cost = 85.7128))
                 TableSource@c3b5587(parent - TableGroup@4bea71d4(parent))
