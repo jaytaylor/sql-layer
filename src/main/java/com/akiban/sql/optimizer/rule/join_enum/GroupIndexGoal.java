@@ -767,24 +767,23 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         continue;
                 }
                 else {
-                    if (!table.isRequired())
+                    if (!required.contains(table))
                         continue;
                     leafRequired = table;
-                    TableSource childTable = null;
+                    boolean optionalSeen = false;
                     while (rootTable != null) {
-                        if (rootTable.isRequired()) {
-                            if (rootRequired != null) {
+                        if (required.contains(rootTable)) {
+                            if (optionalSeen) {
                                 rootRequired = null;
                                 break;
                             }
+                            rootRequired = rootTable;
                         }
                         else {
-                            if (rootRequired == null)
-                                rootRequired = childTable;
+                            optionalSeen = true;
                         }
                         if (index.rootMostTable() == rootTable.getTable().getTable())
                             break;
-                        childTable = rootTable;
                         rootTable = rootTable.getParentTable();
                     }
                     if ((rootTable == null) ||
