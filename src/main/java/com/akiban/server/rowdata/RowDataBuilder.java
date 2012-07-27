@@ -27,15 +27,11 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.encoding.Encoding;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
@@ -43,12 +39,8 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.pvalue.PValueSources.ValueSourceConverter;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ByteSource;
-
-import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
 
 public final class RowDataBuilder {
 
@@ -459,37 +451,4 @@ public final class RowDataBuilder {
             }
         }
     }
-
-    private static final ValueSourceConverter<FieldDef> converter = new ValueSourceConverter<FieldDef>() {
-
-        @Override
-        protected ValueSource tweakSource(FieldDef fieldDef, ValueSource source) {
-            AkType shouldBe = fieldDef.column().getType().akType();
-            if (shouldBe != source.getConversionType()) {
-                ValueHolder holder = new ValueHolder();
-                holder.expectType(shouldBe);
-                Converters.convert(source, holder);
-                source = holder;
-            }
-            return source;
-        }
-
-        @Override
-        protected Object handleBigDecimal(FieldDef fieldDef, BigDecimal bigDecimal) {
-            int size = fieldDef.getEncoding().widthFromObject(fieldDef, bigDecimal);
-            byte[] bval = new byte[size];
-            ConversionHelperBigDecimal.fromObject(fieldDef, bigDecimal, bval, 0);
-            return bval;
-        }
-
-        @Override
-        protected Object handleString(FieldDef fieldDef, String string) {
-            String charset = fieldDef.column().getCharsetAndCollation().charset();
-            try {
-                return string.getBytes(charset);
-            } catch (UnsupportedEncodingException e) {
-                throw new AkibanInternalException("while decoding with charset " + charset, e);
-            }
-        }
-    };
 }
