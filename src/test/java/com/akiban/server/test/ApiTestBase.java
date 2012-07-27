@@ -535,7 +535,25 @@ public class ApiTestBase {
         return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
     }
 
-    private AkibanInformationSchema createIndexInternal(String schema, String table, String indexName, String... indexCols) {
+    private AkibanInformationSchema createUniqueIndexInternal(String schema,
+                                                              String table,
+                                                              String indexName,
+                                                              String... indexCols) {
+        return createIndexInternal(schema, table, indexName, true, indexCols);
+    }
+
+    private AkibanInformationSchema createIndexInternal(String schema,
+                                                        String table,
+                                                        String indexName,
+                                                        String... indexCols) {
+        return createIndexInternal(schema, table, indexName, false, indexCols);
+    }
+
+    private AkibanInformationSchema createIndexInternal(String schema,
+                                                        String table,
+                                                        String indexName,
+                                                        boolean unique,
+                                                        String... indexCols) {
         String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
                                    Strings.join(Arrays.asList(indexCols), ","));
         return createFromDDL(schema, ddl);
@@ -543,6 +561,14 @@ public class ApiTestBase {
 
     protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
         AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
+        Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
+    }
+
+    protected final TableIndex createUniqueIndex(String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createUniqueIndexInternal(schema, table, indexName, indexCols);
         Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
