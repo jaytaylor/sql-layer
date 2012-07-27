@@ -33,10 +33,12 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
@@ -150,6 +152,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         tClasses = new HashSet<TClass>(finder.find(TClass.class));
 
         castsBySource = createCasts(tClasses, finder);
+        createDerivedCasts(finder);
         strongCastsByTarget = createStrongCastsMap(castsBySource);
         checkDag(strongCastsByTarget);
 
@@ -224,20 +227,60 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
         // Now the registered casts
         for (TCast cast : finder.find(TCast.class)) {
-            TClass source = cast.sourceClass();
-            TClass target = cast.targetClass();
-            if (source.equals(target))
-                continue; // TODO remove me!
-            Map<TClass,TCast> castsByTarget = localCastsMap.get(source);
-            TCast old = castsByTarget.put(target, cast);
-            if (old != null) {
-                logger.error("CAST({} AS {}): {} replaced by {} ", new Object[]{
-                        source, target,  old.getClass(), cast.getClass()
-                });
-                throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
-            }
+            putCast(localCastsMap, cast);
         }
         return localCastsMap;
+    }
+
+    private static void putCast(Map<TClass, Map<TClass, TCast>> toMap, TCast cast) {
+        TClass source = cast.sourceClass();
+        TClass target = cast.targetClass();
+        if (source.equals(target))
+            return;
+        Map<TClass,TCast> castsByTarget = toMap.get(source);
+        TCast old = castsByTarget.put(target, cast);
+        if (old != null) {
+            logger.error("CAST({} AS {}): {} replaced by {} ", new Object[]{
+                    source, target,  old.getClass(), cast.getClass()
+            });
+            throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
+        }
+    }
+
+    private void createDerivedCasts(InstanceFinder finder) {
+        for (TCastPath castPath : finder.find(TCastPath.class)) {
+            List<? extends TClass> path = castPath.getPath();
+            // We need this loop to protect against "jumps." For instance, let's say the cast path is
+            // [ a, b, c, d, e ] and we have the following casts:
+            //  "single step" casts: (a -> b), (b -> c), (c -> d), (d -> e)
+            //  one "jump" cast: (a -> d),
+            // The first pass of this loop will create a derived cast (a -> d -> e), but we wouldn't have created
+            // (a -> c). This loop ensures that we will.
+            for (int i = path.size() - 1; i > 0; ++i) {
+                deriveCast(path, i);
+            }
+        }
+    }
+
+    private TCast deriveCast(List<? extends TClass> path, int targetIndex) {
+        TClass source = path.get(0);
+        TClass target = path.get(targetIndex);
+        TCast alreadyThere = cast(source,  target);
+        if (alreadyThere != null)
+            return alreadyThere;
+        int intermediateIndex = targetIndex - 1;
+        TClass intermediateClass = path.get(intermediateIndex);
+        TCast second = cast(intermediateClass, target);
+        if (second == null)
+            throw new AkibanInternalException("no explicit cast between " + intermediateClass + " and " + target
+                    + " while creating cast path: " + path);
+        TCast first = deriveCast(path, intermediateIndex);
+        if (first == null)
+            throw new AkibanInternalException("couldn't derive cast between " + source + " and " + intermediateClass
+                    + " while creating cast path: " + path);
+        TCast result = new ChainedCast(first, second);
+        putCast(castsBySource, result);
+        return result;
     }
 
     private static void checkDag(final Map<TClass, Map<TClass, TCast>> castsBySource) {
@@ -331,6 +374,65 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         }
 
         private final TClass tClass;
+    }
+
+    private static class ChainedCast implements TCast {
+
+        @Override
+        public boolean isAutomatic() {
+            return first.isAutomatic() && second.isAutomatic();
+        }
+
+        @Override
+        public Constantness constness() {
+            Constantness firstConst = first.constness();
+            return (firstConst == second.constness()) ? firstConst : Constantness.UNKNOWN;
+        }
+
+        @Override
+        public TClass sourceClass() {
+            return first.sourceClass();
+        }
+
+        @Override
+        public TClass targetClass() {
+            return second.targetClass();
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            PValue tmp = (PValue) context.exectimeObjectAt(TMP_PVALUE);
+            if (tmp == null) {
+                tmp = new PValue(first.targetClass().underlyingType());
+                context.putExectimeObject(TMP_PVALUE, tmp);
+            }
+            // TODO cache
+            TExecutionContext firstContext = context.deriveContext(
+                    Collections.singletonList(context.inputTInstanceAt(0)),
+                    intermediateType
+            );
+            TExecutionContext secondContext = context.deriveContext(
+                    Collections.singletonList(intermediateType),
+                    context.outputTInstance()
+            );
+
+            first.evaluate(firstContext, source, tmp);
+            second.evaluate(secondContext, tmp, target);
+        }
+
+        private ChainedCast(TCast first, TCast second) {
+            if (first.targetClass() != second.sourceClass()) {
+                throw new IllegalArgumentException("can't chain casts: " + first + " and " + second);
+            }
+            this.first = first;
+            this.second = second;
+            this.intermediateType = first.targetClass().instance();
+        }
+
+        private final TCast first;
+        private final TCast second;
+        private final TInstance intermediateType;
+        private static final int TMP_PVALUE = 0;
     }
 
     private class Bean implements T3RegistryMXBean {
