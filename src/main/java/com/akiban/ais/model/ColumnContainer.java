@@ -24,11 +24,8 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.ais.model;
 
-public interface PValueTarget extends PBasicValueTarget {
-
-    boolean supportsCachedObjects();
-
-    void putObject(Object object);
+public interface ColumnContainer {
+    Column getColumn();
 }

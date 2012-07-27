@@ -207,7 +207,8 @@ public final class PValueSources {
                 }
                 tInstance = tClass.instance();
             }
-            value = pvalueFromLong((Long)object, tInstance);
+            value = new PValue(tInstance.typeClass().underlyingType());
+            pvalueFromLong((Long)object, value);
         }
         else if (object instanceof String) {
             String s = (String) object;
@@ -264,9 +265,8 @@ public final class PValueSources {
         return new TPreptimeValue(tInstance, value);
     }
 
-    private static PValue pvalueFromLong(long value, TInstance tInstance) {
-        PUnderlying underlying = tInstance.typeClass().underlyingType();
-        PValue result = new PValue(underlying);
+    public static void pvalueFromLong(long value, PValue result) {
+        PUnderlying underlying = result.getUnderlyingType();
         switch (underlying) {
         case INT_8:
             result.putInt8((byte)value);
@@ -286,7 +286,6 @@ public final class PValueSources {
         default:
             throw new AssertionError(underlying);
         }
-        return result;
     }
 
     public static Object toObject(PValueSource valueSource, AkType akType) {

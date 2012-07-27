@@ -27,6 +27,7 @@
 package com.akiban.util;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public final class WrappingByteSource implements ByteSource {
 
@@ -127,6 +128,11 @@ public final class WrappingByteSource implements ByteSource {
         return byteArrayLength() - o.byteArrayLength();
     }
 
+    @Override
+    public byte[] toByteSubarray() {
+        return Arrays.copyOfRange(bytes, offset,  offset+length);
+
+    }
 
     // Object interface
 

@@ -84,7 +84,7 @@ public class SequenceNextValue extends TOverloadBase {
             LazyList<? extends PValueSource> inputs, PValueTarget output) {
         String schema = inputs.get(0).isNull() ? context.getSessionUser() : inputs.get(0).getString();
         String sequence = inputs.get(1).getString();
-        logger.warn("Sequence loading : "+ schema + "." + sequence);
+        logger.debug("Sequence loading : {}.{}", schema, sequence);
 
         TableName sequenceName = new TableName (schema, sequence);
         

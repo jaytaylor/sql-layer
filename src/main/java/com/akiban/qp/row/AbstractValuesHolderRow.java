@@ -33,6 +33,7 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -147,7 +148,7 @@ class AbstractValuesHolderRow extends AbstractRow {
                     throw new IllegalArgumentException(
                             "value at index " + i + " expected type " + rowType.typeInstanceAt(i)
                                     + ", but PUnderlying was " + nextValueType + ": " + nextValue);
-                pValues.get(i++).putValueSource(nextValue);
+                PValueTargets.copyFrom(nextValue, pValues.get(i++));
             }
             if (i != pValues.size())
                 throw new IllegalArgumentException("not enough initial values: required " + values.size() + " but saw " + i);

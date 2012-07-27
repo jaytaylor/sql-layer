@@ -30,6 +30,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
@@ -490,7 +491,9 @@ class Intersect_Ordered extends Operator
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
                     if (usingPValues)
-                        skipRow.pvalueAt(skipRowFixedFields + f).putValueSource(jumpRow.pvalue(jumpRowFixedFields + f));
+                        PValueTargets.copyFrom(
+                                jumpRow.pvalue(jumpRowFixedFields + f),
+                                skipRow.pvalueAt(skipRowFixedFields + f));
                     else
                         skipRow.holderAt(skipRowFixedFields + f).copyFrom(jumpRow.eval(jumpRowFixedFields + f));
                 }
@@ -506,7 +509,9 @@ class Intersect_Ordered extends Operator
                 int f = 0;
                 while (f < leftFixedFields) {
                     if (usingPValues)
-                        leftSkipRow.pvalueAt(f).putValueSource(leftRow.get().pvalue(f));
+                        PValueTargets.copyFrom(
+                                leftRow.get().pvalue(f),
+                                leftSkipRow.pvalueAt(f));
                     else
                         leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
                     f++;
@@ -530,7 +535,9 @@ class Intersect_Ordered extends Operator
                 int f = 0;
                 while (f < rightFixedFields) {
                     if (usingPValues)
-                        rightSkipRow.pvalueAt(f).putValueSource(rightRow.get().pvalue(f));
+                        PValueTargets.copyFrom(
+                                rightRow.get().pvalue(f),
+                                rightSkipRow.pvalueAt(f));
                     else
                         rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
                     f++;
