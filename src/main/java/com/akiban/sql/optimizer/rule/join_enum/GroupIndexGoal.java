@@ -423,7 +423,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (ExpressionNode targetExpression : groupBy) {
                 int found = -1;
                 for (int i = nequals; i < indexOrdering.size(); i++) {
-                    if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                    if (orderingExpressionMatches(indexOrdering.get(i).getExpression(),
+                                                  targetExpression)) {
                         found = i - nequals;
                         break;
                     }
@@ -476,7 +477,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         for (ExpressionNode targetExpression : distinct) {
             int found = -1;
             for (int i = nequals; i < indexOrdering.size(); i++) {
-                if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                if (orderingExpressionMatches(indexOrdering.get(i).getExpression(),
+                                              targetExpression)) {
                     found = i - nequals;
                     break;
                 }
