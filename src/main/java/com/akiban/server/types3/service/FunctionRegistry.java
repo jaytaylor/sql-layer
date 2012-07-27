@@ -35,8 +35,5 @@ import java.util.Collection;
 
 public interface FunctionRegistry
 {
-    Collection<? extends TAggregator> aggregators();
-    Collection<? extends TValidatedOverload> overloads();
-    Collection<? extends TCast> casts();
-    Collection<? extends TClass> tclasses();
+    <T> Collection<? extends T> find(Class<? extends T> targetClass);
 }

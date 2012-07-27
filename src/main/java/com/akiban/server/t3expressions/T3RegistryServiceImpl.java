@@ -36,6 +36,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.FunctionRegistry;
@@ -48,7 +49,6 @@ import com.google.common.base.Functions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -148,23 +148,88 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     // private methods
 
     private void start(FunctionRegistry finder) {
-        tClasses = new HashSet<TClass>(finder.tclasses());
-        castsBySource = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
+        tClasses = new HashSet<TClass>(finder.find(TClass.class));
+
+        castsBySource = createCasts(tClasses, finder);
+        strongCastsByTarget = createStrongCastsMap(castsBySource);
+        checkDag(strongCastsByTarget);
+
+        overloadsByName = createScalars(finder);
+
+        aggregatorsByName = createAggregates(finder);
+    }
+
+    private static Map<String, Collection<TAggregator>> createAggregates(FunctionRegistry finder) {
+        Collection<? extends TAggregator> aggrs = finder.find(TAggregator.class);
+        Map<String, Collection<TAggregator>> local = new HashMap<String, Collection<TAggregator>>(aggrs.size());
+        for (TAggregator aggr : aggrs) {
+            String name = aggr.name().toLowerCase();
+            Collection<TAggregator> values = local.get(name);
+            if (values == null) {
+                values = new ArrayList<TAggregator>(2); // most aggrs don't have many overloads
+                local.put(name, values);
+            }
+            values.add(aggr);
+        }
+        return local;
+    }
+
+    private static Multimap<String, TValidatedOverload> createScalars(FunctionRegistry finder) {
+        Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
+
+        int errors = 0;
+        for (TOverload scalar : finder.find(TOverload.class)) {
+            try {
+                TValidatedOverload validated = new TValidatedOverload(scalar);
+                overloadsByName.put(validated.overloadName().toLowerCase(), validated);
+            } catch (RuntimeException e) {
+                rejectTOverload(scalar, e);
+                ++errors;
+            } catch (AssertionError e) {
+                rejectTOverload(scalar, e);
+                ++errors;
+            }
+        }
+        if (errors > 0) {
+            StringBuilder sb = new StringBuilder("Found ").append(errors).append(" error");
+            if (errors != 1)
+                sb.append('s');
+            sb.append(" while collecting scalar functions. Check logs for details.");
+            throw new AkibanInternalException(sb.toString());
+        }
+        return overloadsByName;
+    }
+
+    private static void rejectTOverload(TOverload overload, Throwable e) {
+        StringBuilder sb = new StringBuilder("rejecting overload ");
+        Class<?> overloadClass = overload == null ? null : overload.getClass();
+        try {
+            sb.append(overload).append(' ');
+        } catch (Exception e1) {
+            logger.error("couldn't toString overload: " + overload);
+        }
+        sb.append("from ").append(overloadClass);
+        logger.error(sb.toString(), e);
+    }
+
+    private static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
+                                                               FunctionRegistry finder) {
+        Map<TClass, Map<TClass, TCast>> localCastsMap = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
 
         // First, define the self casts
         for (TClass tClass : tClasses) {
             Map<TClass, TCast> map = new HashMap<TClass, TCast>();
             map.put(tClass, new SelfCast(tClass));
-            castsBySource.put(tClass, map);
+            localCastsMap.put(tClass, map);
         }
 
         // Now the registered casts
-        for (TCast cast : finder.casts()) {
+        for (TCast cast : finder.find(TCast.class)) {
             TClass source = cast.sourceClass();
             TClass target = cast.targetClass();
             if (source.equals(target))
                 continue; // TODO remove me!
-            Map<TClass,TCast> castsByTarget = castsBySource.get(source);
+            Map<TClass,TCast> castsByTarget = localCastsMap.get(source);
             TCast old = castsByTarget.put(target, cast);
             if (old != null) {
                 logger.error("CAST({} AS {}): {} replaced by {} ", new Object[]{
@@ -173,27 +238,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
                 throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
             }
         }
-
-        strongCastsByTarget = createStrongCastsMap(castsBySource);
-        checkDag(strongCastsByTarget);
-
-        Multimap<String, TValidatedOverload> localOverloadsByName = ArrayListMultimap.create();
-        for (TValidatedOverload overload : finder.overloads()) {
-            localOverloadsByName.put(overload.overloadName().toLowerCase(), overload);
-        }
-        overloadsByName = Multimaps.unmodifiableMultimap(localOverloadsByName);
-
-        Collection<? extends TAggregator> aggrs = finder.aggregators();
-        aggregatorsByName = new HashMap<String, Collection<TAggregator>>(aggrs.size());
-        for (TAggregator aggr : aggrs) {
-            String name = aggr.name().toLowerCase();
-            Collection<TAggregator> values = aggregatorsByName.get(name);
-            if (values == null) {
-                values = new ArrayList<TAggregator>(2); // most aggrs don't have many overloads
-                aggregatorsByName.put(name, values);
-            }
-            values.add(aggr);
-        }
+        return localCastsMap;
     }
 
     private static void checkDag(final Map<TClass, Map<TClass, TCast>> castsBySource) {
@@ -245,11 +290,11 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     private static final Logger logger = LoggerFactory.getLogger(T3RegistryServiceImpl.class);
 
     // object state
-    private Map<TClass,Map<TClass,TCast>> castsBySource;
-    private Map<TClass,Map<TClass,TCast>> strongCastsByTarget;
-    private Multimap<String, TValidatedOverload> overloadsByName;
-    private Map<String,Collection<TAggregator>> aggregatorsByName;
-    private Collection<? extends TClass> tClasses;
+    private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
+    private volatile Map<TClass,Map<TClass,TCast>> strongCastsByTarget;
+    private volatile Multimap<String, TValidatedOverload> overloadsByName;
+    private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
+    private volatile Collection<? extends TClass> tClasses;
 
     // inner classes
 
