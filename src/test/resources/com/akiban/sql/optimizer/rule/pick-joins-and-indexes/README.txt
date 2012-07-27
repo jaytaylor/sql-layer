@@ -30,6 +30,8 @@ equals-sorted: Same with = for comparison.
 
 equivalence-1: Equivalence column used in index.
 
+equivalence-2: Equivalence column used in GROUP BY.
+
 in-subquery: IN SELECT to semi-join (not indexable).
 
 in-subquery-indexed: IN that is indexed.
