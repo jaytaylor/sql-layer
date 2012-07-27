@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.collation.AkCollator;
 
-public class Column
+public class Column implements ColumnContainer
 {
     public static Column create(Columnar table, String name, Integer position, Type type, Boolean nullable,
                                 Long typeParameter1, Long typeParameter2, Long initialAutoIncValue,
@@ -70,6 +70,11 @@ public class Column
 
     public TInstance tInstance() {
         return tInstance(false);
+    }
+
+    @Override
+    public Column getColumn() {
+        return this;
     }
 
     @Override
