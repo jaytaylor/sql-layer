@@ -499,8 +499,9 @@ public class ASTStatementLoader extends BaseRule
                 break;
 
             case NodeTypes.IN_LIST_OPERATOR_NODE:
-                addInCondition(conditions, projects,
-                               (InListOperatorNode)condition);
+                adfadfafa
+//                addInCondition(conditions, projects,
+//                               (InListOperatorNode)condition);
                 break;
 
             case NodeTypes.SUBQUERY_NODE:
@@ -584,50 +585,85 @@ public class ASTStatementLoader extends BaseRule
             conditions.add(new ComparisonCondition(Comparison.LE, left, right2, type, null));
         }
 
+        
         protected void addInCondition(List<ConditionExpression> conditions,
                                       List<ExpressionNode> projects,
-                                      InListOperatorNode in)
-                throws StandardException {
-            ExpressionNode left = toExpression(in.getLeftOperand(), projects);
-            ValueNodeList rightOperandList = in.getRightOperandList();
-            if (rightOperandList.size() <= getInToOrMaxCount()) {
-                // Make single element into = comparison and small
-                // number into a disjunction of those.
-                ConditionExpression conds = null;
-                for (ValueNode rightOperand : rightOperandList) {
-                    ExpressionNode right = toExpression(rightOperand, projects);
-                    ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left, right,
-                                                                       in.getType(), in);
-                    if (conds == null) {
-                        conds = cond;
-                        continue;
+                                      InListOperatorNode in) 
+                throws StandardException
+        {
+            RowConstructorNode lhs = in.getLeftOperand();
+            RowConstructorNode rhs = in.getRightOperandList();
+
+            // if the list on the LHS has only 1 element
+            // it's the regular case of IN (ie., not actually involving nested tuples/row constructors)
+            if (lhs.getNodeList().size() == 1)
+            {
+                ExpressionNode left = toExpression(lhs.getNodeList().get(0));
+                ValueNodeList rightOperandList = rhs.getNodeList();
+                if (rightOperandList.size() <= getInToOrMaxCount())
+                {
+                    ConditionExpression conds = null;
+                    for (ValueNode rightOperand : rightOperandList)
+                    {
+                        // expecting the rhs to be a list of scalar, not a nested tuple
+                        if (rightOperand instanceof RowConstructorNode)
+                            throw new IllegalArgumentException("Operand should have 1 colunm");
+                        
+                        ExpressionNode right = toExpression(rightOperand, projects);
+                        ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left, right, 
+                                                                           in.getType(), in);
+                        
+                        if (conds == null)
+                        {
+                            conds = cond;
+                            continue;
+                        }
+                        
+                        List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                        operands.add(conds);
+                        operands.add(cond);
+                        conds = new LogicalFunctionCondition("or", operands, in.getType(), in);
                     }
-                    List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
-                    operands.add(conds);
-                    operands.add(cond);
-                    conds = new LogicalFunctionCondition("or", operands, 
-                                                         in.getType(), in);
+                    conditions.add(conds);
+                    return;
                 }
-                conditions.add(conds);
-                return;
+                
+                List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
+                for (ValueNode rightOperand : rightOperandList)
+                {
+                    List<ExpressionNode> row = new ArrayList<ExpressionNode>(1);
+                    
+                     // expecting the rhs to be a list of scalar, not a nested tuple    
+                    if (rightOperand instanceof RowConstructorNode)
+                        throw new IllegalArgumentException("Operand should have 1 colunm");
+                    
+                    row.add(toExpression(rightOperand, projects));
+                    rows.add(row);
+                }
+                ExpressionsSource source = new ExpressionsSource(rows);
+                ConditionExpression cond
+                        = new ComparisonCondition(Comparison.EQ,
+                                                  left,
+                                                  new ColumnExpression(source, 0, left.getSQLtype(), null),
+                                                  in.getType(),
+                                                  null);
+                List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
+                fields.add(cond);
+                PlanNode subquery = new Project(source, fields);
+                conditions.add(new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in));
             }
-            List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
-            for (ValueNode rightOperand : rightOperandList) {
-                List<ExpressionNode> row = new ArrayList<ExpressionNode>(1);
-                row.add(toExpression(rightOperand, projects));
-                rows.add(row);
-            }
-            ExpressionsSource source = new ExpressionsSource(rows);
-            ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left,
-                                                               new ColumnExpression(source, 0,
-                                                                                    left.getSQLtype(), null),
-                                                               in.getType(), null);
-            List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
-            fields.add(cond);
-            PlanNode subquery = new Project(source, fields);
-            conditions.add(new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in));
+            else
+                buildInConditionNested(conditions, projects, in);
         }
-    
+
+        protected void buildInConditionNested(List<ConditionExpression> conditions,
+                                              List<ExpressionNode> projects,
+                                              InListOperatorNode in)
+        {
+            RowConstructorNode lhs = in.getLeftOperand();
+            RowConstructorNode rhs = in.getRightOperandList();
+        }
+        
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
                                             List<ExpressionNode> projects,
                                             SubqueryNode subqueryNode)
