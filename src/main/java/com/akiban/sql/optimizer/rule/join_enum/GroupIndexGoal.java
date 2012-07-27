@@ -492,9 +492,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (!(columnExpression instanceof ColumnExpression) ||
             !(targetExpression instanceof ColumnExpression))
             return false;
-        EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
-        return equivs.areEquivalent((ColumnExpression)columnExpression,
-                                    (ColumnExpression)targetExpression);
+        return getColumnEquivalencies().areEquivalent((ColumnExpression)columnExpression,
+                                                      (ColumnExpression)targetExpression);
+    }
+
+    protected EquivalenceFinder<ColumnExpression> getColumnEquivalencies() {
+        return queryGoal.getQuery().getColumnEquivalencies();
     }
 
     protected class UnboundFinder implements ExpressionVisitor {
@@ -561,13 +564,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                                              ExpressionNode comparisonOperand) {
         if (indexExpression.equals(comparisonOperand))
             return true;
-        if (!(comparisonOperand instanceof ColumnExpression))
+        if (!(indexExpression instanceof ColumnExpression) ||
+            !(comparisonOperand instanceof ColumnExpression))
             return false;
+        if (getColumnEquivalencies().areEquivalent((ColumnExpression)indexExpression,
+                                                   (ColumnExpression)comparisonOperand))
+            return true;
         // See if comparing against a result column of the subquery,
         // that is, a join to the subquery that we can push down.
-        // TODO: Should check column equivalences here, too. If we
-        // added the below that earlier, could count such a join as a
-        // group join: p JOIN (SELECT fk) sq ON p.pk = sq.fk.
         ColumnExpression comparisonColumn = (ColumnExpression)comparisonOperand;
         ColumnSource comparisonTable = comparisonColumn.getTable();
         if (!(comparisonTable instanceof SubquerySource))
@@ -693,7 +697,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         @Override
         protected List<Column> getComparisonColumns(IndexScan first, IndexScan second) {
-            EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
+            EquivalenceFinder<ColumnExpression> equivs = getColumnEquivalencies();
             List<ExpressionNode> firstOrdering = orderingCols(first);
             List<ExpressionNode> secondOrdering = orderingCols(second);
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
