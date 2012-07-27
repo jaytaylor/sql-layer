@@ -27,6 +27,7 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
+import com.akiban.server.encoding.Encoding;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
@@ -319,12 +320,16 @@ public final class RowDataBuilder {
         @Override
         public void doConvert(PValueSource source, RowDataPValueTarget target, FieldDef fieldDef) {
             TInstance instance = target.targetInstance();
-            if (!pValue.hasRawValue()) {
-                Object cacheObject = pValue.getObject();
-                String cachedString = (String) cacheObject; // this is the only cached object we'll ever put in
+            if (stringInput != null) {
+                // turn the string input into a PValueSource, then give it to TClass.fromObject.
+                // Strings being inserted to binary types are a special, weird case.
+                if (pValue.getUnderlyingType() == PUnderlying.BYTES) {
+                    target.putStringBytes(stringInput);
+                    return;
+                }
                 if (stringCache == null)
                     stringCache = new PValue(PUnderlying.STRING);
-                stringCache.putString(cachedString, null);
+                stringCache.putString(stringInput, null);
                 TExecutionContext context = null;
                 instance.typeClass().fromObject(context, stringCache, pValue);
             }
@@ -335,6 +340,7 @@ public final class RowDataBuilder {
         public void objectToSource(Object object, FieldDef fieldDef) {
             PUnderlying underlying = underlying(fieldDef);
             pValue.underlying(underlying);
+            stringInput = null;
             if (object == null) {
                 PValueTargets.copyFrom(nullSource(fieldDef), pValue);
             }
@@ -343,7 +349,7 @@ public final class RowDataBuilder {
                 if (underlying == PUnderlying.STRING)
                     pValue.putString((String)object, null);
                 else
-                    pValue.putObject(object);
+                    stringInput = (String)object;
             }
             else {
                 switch (underlying) {
@@ -379,10 +385,9 @@ public final class RowDataBuilder {
                     if (object instanceof Boolean)
                         pValue.putBool((Boolean)object);
                     break;
-                default:
-                    throw new IllegalArgumentException("can't coerce " + object + " (" + object.getClass() + ") into "
-                            + fieldDef + " expecting " + underlying);
                 }
+                if (!pValue.hasAnyValue())
+                    pValue.putObject(object); // last ditch effort!
             }
         }
 
@@ -393,7 +398,7 @@ public final class RowDataBuilder {
 
         @Override
         public boolean isNull(PValueSource source) {
-            return source.isNull();
+            return (stringInput == null) && source.isNull();
         }
 
         private PUnderlying underlying(FieldDef fieldDef) {
@@ -411,6 +416,7 @@ public final class RowDataBuilder {
             this.pValue = pValue;
         }
 
+        private String stringInput;
         private PValue pValue;
         private PValue stringCache;
     }

@@ -54,6 +54,10 @@ public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
         return lastEncodedLength;
     }
 
+    public void putStringBytes(String value) {
+        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
+    }
+
     public RowDataPValueTarget() {
         clear();
     }
