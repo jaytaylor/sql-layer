@@ -122,24 +122,10 @@ public class ConvertTZExpression extends AbstractTernaryExpression
          */
         static DateTimeZone adjustTz(String st)
         {
-            char saw = '\0';
             char ch;
-            int n;
-            for ( n = 0; n < st.length(); ++n)
+            for ( int n = 0; n < st.length(); ++n)
                 if ((ch = st.charAt(n)) == ':')
                 {
-                    saw = ':';
-                    break;
-                }
-                else if (ch == '/')
-                {
-                    saw = '/';
-                    break;
-                }
-
-            switch (saw)
-            {
-                case ':':
                     int index = n - 2; // if the character that is 2 chars to the left of the COLON
                     if (index < 0 )    //  is not a digit, then we need to pad a '0' there
                         return DateTimeZone.forID(st);
@@ -151,10 +137,12 @@ public class ConvertTZExpression extends AbstractTernaryExpression
                         return DateTimeZone.forID(bd.toString());
                     }
                     break;
-                case '/':
+                }
+                else if (ch == '/')
+                {
                     return DateTimeZone.forID(st);
-            }
-            
+                }
+
             return DateTimeZone.forID(st.toUpperCase());
         }
     }
