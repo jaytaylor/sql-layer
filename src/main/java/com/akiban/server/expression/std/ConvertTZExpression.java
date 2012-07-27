@@ -92,11 +92,11 @@ public class ConvertTZExpression extends AbstractTernaryExpression
             if (ymd[0] * ymd[1] * ymd[2] == 0L) // zero dates. (year of 0 is not tolerated)
                 return NullValueSource.only();
 
-            DateTimeZone fromTz = adjustTz(from.getString());
-            DateTimeZone toTz = adjustTz(to.getString());
-
             try
             {
+                DateTimeZone fromTz = adjustTz(from.getString());
+                DateTimeZone toTz = adjustTz(to.getString());
+
                 DateTime date = new DateTime((int)ymd[0], (int)ymd[1], (int)ymd[2],
                                              (int)ymd[3], (int)ymd[4], (int)ymd[5], 0,
                                              fromTz);
@@ -122,21 +122,37 @@ public class ConvertTZExpression extends AbstractTernaryExpression
          */
         static DateTimeZone adjustTz(String st)
         {
-            if (!st.contains("/"))
-                st = st.toUpperCase();
-
-            if (!st.isEmpty() && st.contains(":"))
-            {
-                int index = st.length() - 5;
-                if (index < 0 )
-                    return DateTimeZone.forID(st);
-                char ch = st.charAt(index);
-                if (ch == '-' || ch == '+')
+            char saw = '0';
+            char ch;
+            int n;
+            for ( n = 0; n < st.length(); ++n)
+                if ((ch = st.charAt(n)) == ':')
                 {
-                    StringBuilder bd = new StringBuilder(st);
-                    bd.insert(1, '0');
-                    return DateTimeZone.forID(bd.toString());
+                    saw = ':';
+                    break;
                 }
+                else if (ch == '/')
+                {
+                    saw = '/';
+                    break;
+                }
+            
+            switch (saw)
+            {
+                case ':':
+                    int index = n - 2;
+                    if (index < 0 )
+                        return DateTimeZone.forID(st);
+                    ch = st.charAt(index);
+                    if (ch == '-' || ch == '+')
+                    {
+                        StringBuilder bd = new StringBuilder(st);
+                        bd.insert(1, '0');
+                        return DateTimeZone.forID(bd.toString());
+                    }
+                    break;
+                case '/':
+                    return DateTimeZone.forID(st.toUpperCase());
             }
             
             return DateTimeZone.forID(st);

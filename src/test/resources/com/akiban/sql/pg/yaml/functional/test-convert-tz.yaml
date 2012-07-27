@@ -11,4 +11,7 @@
 ---
 - Statement: select convert_tz('2009-12-12 12:40:10', 'utc','America/Los_Angeles');
 - output: [[!re '2009-12-12 04:40:10([.]0)?']]
+---
+- Statement: select convert_tz('2012-01-01 12:00:00', 'pst8pdt', 'utc');
+- output: [[!re '2012-01-01 20:00:00([.]0)?']]
 ...
