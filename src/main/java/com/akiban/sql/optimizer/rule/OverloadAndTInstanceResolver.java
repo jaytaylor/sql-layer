@@ -74,6 +74,7 @@ import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.plan.TableSource;
 import com.akiban.sql.optimizer.plan.Union;
 import com.akiban.sql.optimizer.plan.UpdateStatement;
+import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.akiban.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
@@ -442,6 +443,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             else if (n instanceof UpdateStatement) {
                 UpdateStatement update = (UpdateStatement) n;
                 setTargets(update.getUpdateColumns());
+                for (UpdateColumn updateColumn : update.getUpdateColumns()) {
+                    Column target = updateColumn.getColumn();
+                    ExpressionNode value = updateColumn.getExpression();
+                    ExpressionNode casted = castTo(value, target.tInstance().typeClass());
+                    if (casted != value)
+                        updateColumn.setExpression(casted);
+                }
                 recurse = true;
             }
 
@@ -466,10 +474,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private void castToTarget(List<ExpressionNode> row) {
             for (int i = 0, ncols = row.size(); i < ncols; ++i) {
-                ExpressionNode column = row.get(i);
                 Column target = targetColumns.get(i).getColumn();
+                ExpressionNode column = row.get(i);
                 ExpressionNode casted = castTo(column, target.tInstance().typeClass());
-                row.set(i, casted);
+                if (column != casted)
+                    row.set(i, casted);
             }
         }
 

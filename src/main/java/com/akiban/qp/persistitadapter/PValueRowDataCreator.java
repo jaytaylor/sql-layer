@@ -68,28 +68,28 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
         else {
             switch (source.getUnderlyingType()) {
             case BOOL:
-                putObj = Boolean.toString(source.getBoolean());
+                putObj = source.getBoolean();
                 break;
             case INT_8:
-                putObj = Byte.toString(source.getInt8());
+                putObj = source.getInt8();
                 break;
             case INT_16:
-                putObj = Short.toString(source.getInt16());
+                putObj = source.getInt16();
                 break;
             case UINT_16:
-                putObj = Character.toString(source.getUInt16());
+                putObj = source.getUInt16();
                 break;
             case INT_32:
-                putObj = Integer.toString(source.getInt32());
+                putObj = source.getInt32();
                 break;
             case INT_64:
-                putObj = Long.toString(source.getInt64());
+                putObj = source.getInt64();
                 break;
             case FLOAT:
-                putObj = Float.toString(source.getFloat());
+                putObj = source.getFloat();
                 break;
             case DOUBLE:
-                putObj = Double.toString(source.getDouble());
+                putObj = source.getDouble();
                 break;
             case STRING:
                 putObj = source.getString();
