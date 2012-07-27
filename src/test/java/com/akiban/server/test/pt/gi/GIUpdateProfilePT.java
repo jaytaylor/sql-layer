@@ -153,13 +153,13 @@ public class GIUpdateProfilePT extends PTBase
 
     private GroupTable groupTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = rowDefCache().getRowDefOrNull(userTableId);
         return userTableRowDef.table().getGroup().getGroupTable();
     }
 
     private UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = rowDefCache().getRowDefOrNull(userTableId);
         return userTableRowDef.userTable();
     }
 

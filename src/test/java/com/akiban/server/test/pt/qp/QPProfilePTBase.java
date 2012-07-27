@@ -56,13 +56,13 @@ public class QPProfilePTBase extends PTBase
 {
     protected GroupTable groupTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = rowDefCache().getRowDefOrNull(userTableId);
         return userTableRowDef.table().getGroup().getGroupTable();
     }
 
     protected UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = rowDefCache().getRowDefOrNull(userTableId);
         return userTableRowDef.userTable();
     }
 

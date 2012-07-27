@@ -56,12 +56,12 @@ public class CostModelBase extends ApiTestBase
 
     protected GroupTable groupTable(int userTableId)
     {
-        return rowDefCache().rowDef(userTableId).table().getGroup().getGroupTable();
+        return rowDefCache().getRowDefOrNull(userTableId).table().getGroup().getGroupTable();
     }
 
     protected UserTable userTable(int userTableId)
     {
-        return rowDefCache().rowDef(userTableId).userTable();
+        return rowDefCache().getRowDefOrNull(userTableId).userTable();
     }
 
     protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
