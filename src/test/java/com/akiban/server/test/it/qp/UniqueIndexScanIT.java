@@ -147,11 +147,18 @@ public class UniqueIndexScanIT extends OperatorITBase
     }
 
     @Test
-    public void testStartAtNullReverse()
+    public void testStartAfterNull()
     {
-        Operator indexScan = indexScan_Default(xIndexRowType, true, startAtNull(xIndexRowType, true, 60, true));
-        Cursor cursor = cursor(indexScan, queryContext);
-        compareRenderedHKeys(reverse(hkeys(9, 10, 11, 12, 1, 2, 3, 4, 5, 6)), cursor);
+        {
+            Operator indexScan = indexScan_Default(xIndexRowType, false, startAtNull(xIndexRowType, false, 60, true));
+            Cursor cursor = cursor(indexScan, queryContext);
+            compareRenderedHKeys(hkeys(1, 2, 3, 4, 5, 6), cursor);
+        }
+        {
+            Operator indexScan = indexScan_Default(yIndexRowType, false, startAtNull(xIndexRowType, false, 60, true));
+            Cursor cursor = cursor(indexScan, queryContext);
+            compareRenderedHKeys(hkeys(1, 2, 3, 4, 5, 6), cursor);
+        }
     }
 
     // Naming scheme for next tests:
@@ -336,6 +343,36 @@ public class UniqueIndexScanIT extends OperatorITBase
         Operator indexScan = indexScan_Default(xIndexRowType, true, keyRange(xIndexRowType, 11, true, 12, true));
         Cursor cursor = cursor(indexScan, queryContext);
         compareRenderedHKeys(reverse(hkeys()), cursor);
+    }
+
+    @Test
+    public void testStartAtNullReverse()
+    {
+        {
+            Operator indexScan = indexScan_Default(xIndexRowType, true, startAtNull(xIndexRowType, true, 60, true));
+            Cursor cursor = cursor(indexScan, queryContext);
+            compareRenderedHKeys(reverse(hkeys(9, 10, 11, 12, 1, 2, 3, 4, 5, 6)), cursor);
+        }
+        {
+            Operator indexScan = indexScan_Default(yIndexRowType, true, startAtNull(yIndexRowType, true, 60, true));
+            Cursor cursor = cursor(indexScan, queryContext);
+            compareRenderedHKeys(reverse(hkeys(7, 8, 11, 12, 1, 2, 3, 4, 5, 6)), cursor);
+        }
+    }
+
+    @Test
+    public void testStartAfterNullReverse()
+    {
+        {
+            Operator indexScan = indexScan_Default(xIndexRowType, true, startAtNull(xIndexRowType, false, 60, true));
+            Cursor cursor = cursor(indexScan, queryContext);
+            compareRenderedHKeys(reverse(hkeys(1, 2, 3, 4, 5, 6)), cursor);
+        }
+        {
+            Operator indexScan = indexScan_Default(yIndexRowType, true, startAtNull(yIndexRowType, false, 60, true));
+            Cursor cursor = cursor(indexScan, queryContext);
+            compareRenderedHKeys(reverse(hkeys(1, 2, 3, 4, 5, 6)), cursor);
+        }
     }
 
     // Naming scheme for next tests:
