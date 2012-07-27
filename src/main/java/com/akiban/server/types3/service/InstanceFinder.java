@@ -38,9 +38,9 @@ import java.util.List;
 import java.util.Set;
 
 
-public class InstanceFinderImpl
+public class InstanceFinder
 {
-    private static final Logger logger = LoggerFactory.getLogger(InstanceFinderImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(InstanceFinder.class);
 
     private final Set<Class<?>> searchClasses;
     
@@ -49,13 +49,13 @@ public class InstanceFinderImpl
     private static final int ARRAY = 1;
     private static final int COLLECTION = 2;
 
-    public InstanceFinderImpl()
+    public InstanceFinder()
     throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
         this(new ConfigurableClassFinder("t3s.txt"));
     }
 
-    public InstanceFinderImpl(ClassFinder classFinder)
+    public InstanceFinder(ClassFinder classFinder)
     throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
         // collect all scalar TOverload instances
