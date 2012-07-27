@@ -52,16 +52,7 @@ public class Sort extends BasePlanWithInput
         }
 
         public AkCollator getCollator() {
-            DataTypeDescriptor dtd = getExpression().getSQLtype();
-            if (dtd != null) {
-                CharacterTypeAttributes att = dtd.getCharacterAttributes();
-                if (att != null) {
-                    String coll = att.getCollation();
-                    if (coll != null)
-                        return AkCollatorFactory.getAkCollator(coll);
-                }
-            }
-            return null;
+            return getExpression().getCollator();
         }
 
         public String toString() {

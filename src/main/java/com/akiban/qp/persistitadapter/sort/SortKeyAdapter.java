@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.collation.AkCollator;
@@ -42,6 +43,11 @@ abstract class SortKeyAdapter<S, E> {
     public abstract void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators,
                                            TInstance[] tInstances);
 
+    public abstract void checkConstraints(BoundExpressions loExpressions,
+                                          BoundExpressions hiExpressions,
+                                          int f,
+                                          AkCollator collator);
+
     public abstract S[] createSourceArray(int size);
 
     public abstract S get(BoundExpressions boundExpressions, int f);
@@ -49,11 +55,10 @@ abstract class SortKeyAdapter<S, E> {
 
     public abstract SortKeySource<S> createSource(TInstance tInstance);
     public abstract long compare(TInstance tInstance, S one, S two);
-
-    public abstract E createComparison(TInstance tInstance, S one, Comparison comparison, S two);
+    public abstract E createComparison(TInstance tInstance, AkCollator collator, S one, Comparison comparison, S two);
     public abstract boolean evaluateComparison(E comparison, QueryContext queryContext);
-    public boolean areEqual(TInstance tInstance, S one, S two, QueryContext queryContext) {
-        E expr = createComparison(tInstance, one, Comparison.EQ, two);
+    public boolean areEqual(TInstance tInstance, AkCollator collator, S one, S two, QueryContext queryContext) {
+        E expr = createComparison(tInstance, collator, one, Comparison.EQ, two);
         return evaluateComparison(expr, queryContext);
     }
 
@@ -78,4 +83,7 @@ abstract class SortKeyAdapter<S, E> {
     public abstract boolean isNull(S source);
 
     public abstract S eval(Row row, int field);
+
+    public abstract void setOrderingMetadata(int orderingIndex, Ordering ordering, int tInstancesOffset,
+                                             TInstance[] tInstances);
 }

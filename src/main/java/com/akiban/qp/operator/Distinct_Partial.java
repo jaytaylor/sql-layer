@@ -28,6 +28,8 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -129,11 +131,12 @@ class Distinct_Partial extends Operator
 
     // Distinct_Partial interface
 
-    public Distinct_Partial(Operator inputOperator, RowType distinctType, boolean usePValue)
+    public Distinct_Partial(Operator inputOperator, RowType distinctType, List<AkCollator> collators, boolean usePValue)
     {
         ArgumentValidation.notNull("distinctType", distinctType);
         this.inputOperator = inputOperator;
         this.distinctType = distinctType;
+        this.collators = collators;
         this.usePValue = usePValue;
     }
 
@@ -146,6 +149,7 @@ class Distinct_Partial extends Operator
 
     private final Operator inputOperator;
     private final RowType distinctType;
+    private final List<AkCollator> collators;
     private final boolean usePValue;
 
     @Override
@@ -298,7 +302,7 @@ class Distinct_Partial extends Operator
                         currentRow.release();
                 }
                 inputValue.copyFrom(inputRow.eval(i));
-                if (!currentValues[i].equals(inputValue)) {
+                if (!eq(i, currentValues[i], inputValue)) {
                     currentValues[i] = inputValue;
                     nvalid = i + 1;
                     if (i < nfields - 1)
@@ -308,6 +312,20 @@ class Distinct_Partial extends Operator
                 }
             }
             return false;
+        }
+
+        private boolean eq(int field, ValueSource x, ValueSource y)
+        {
+            if (collators == null) {
+                return currentValues[field].equals(y);
+            } else {
+                AkCollator collator = collators.get(field);
+                if (collator == null) {
+                    return currentValues[field].equals(y);
+                } else {
+                    return collator.compare(x, y) == 0;
+                }
+            }
         }
 
         // Object state

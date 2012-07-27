@@ -34,9 +34,11 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
+import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
@@ -78,6 +80,8 @@ public abstract class StoreAdapter
     }
 
     public abstract long rowCount(RowType tableType);
+
+    public abstract long hash(ValueSource valueSource, AkCollator collator);
 
     public final Session getSession() {
         return session;
