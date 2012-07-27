@@ -80,6 +80,8 @@ outer-index: LEFT using an index
 
 outer-no-index-extra-conditions: LEFT with extra conditions cannot use index
 
+right-outer-index: RIGHT using an index
+
 cross-product: Conditions but no joins
 
 competing-indexes-no-limit: WHERE beats ORDER BY
