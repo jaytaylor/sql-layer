@@ -760,6 +760,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         }
                         else {
                             if (leafRequired != null) {
+                                // Optional above required, not LEFT join compatible.
                                 leafRequired = null;
                                 break;
                             }
@@ -783,6 +784,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     while (rootTable != null) {
                         if (required.contains(rootTable)) {
                             if (optionalSeen) {
+                                // Required above optional, not RIGHT join compatible.
                                 rootRequired = null;
                                 break;
                             }
@@ -795,6 +797,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                             break;
                         rootTable = rootTable.getParentTable();
                     }
+                    // TODO: There are no INNER JOIN group indexes,
+                    // but this would support them.
+                    /*
+                    if (optionalSeen && (index.getJoinType() == JoinType.INNER))
+                        continue;
+                    */
                     if ((rootTable == null) ||
                         (rootRequired == null))
                         continue;
