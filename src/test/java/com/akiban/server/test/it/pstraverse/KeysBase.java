@@ -116,7 +116,7 @@ public abstract class KeysBase extends ITBase {
     }
 
     protected void traversePK(int rowDefId, List<? super Long>... expectedIndexes) throws Exception {
-        Index pkIndex = rowDefCache().getRowDef(rowDefId).getPKIndex();
+        Index pkIndex = rowDefCache().rowDef(rowDefId).getPKIndex();
 
         CollectingIndexKeyVisitor visitor = new CollectingIndexKeyVisitor();
         persistitStore().traverse(session(), pkIndex, visitor);

@@ -41,7 +41,6 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.MySqlStatementSplitter;

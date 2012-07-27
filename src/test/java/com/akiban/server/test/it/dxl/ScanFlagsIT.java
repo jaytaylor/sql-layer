@@ -172,7 +172,7 @@ public class ScanFlagsIT extends ITBase
         RowData rowData = null;
         if (x != null) {
             rowData = new RowData(new byte[100]);
-            RowDef rowDef = rowDefCache().getRowDef(rowDefId);
+            RowDef rowDef = rowDefCache().rowDef(rowDefId);
             rowData.createRow(rowDef, new Object[]{null, x});
         }
         return rowData;

@@ -94,7 +94,7 @@ public class RowDefCache {
      * @throws RowDefNotFoundException if there is no such RowDef.
      */
     public synchronized RowDef getRowDef(final int rowDefId) throws RowDefNotFoundException {
-        RowDef rowDef = getRowDefOrNull(rowDefId);
+        RowDef rowDef = rowDef(rowDefId);
         if (rowDef == null) {
             throw new RowDefNotFoundException(rowDefId);
         }
@@ -106,7 +106,7 @@ public class RowDefCache {
      * @param rowDefId ID to lookup.
      * @return The corresponding RowDef object or <code>null</code>
      */
-    public synchronized RowDef getRowDefOrNull(final int rowDefId) {
+    public synchronized RowDef rowDef(final int rowDefId) {
         return cacheMap.get(rowDefId);
     }
 
@@ -119,7 +119,7 @@ public class RowDefCache {
         if (key == null) {
             return null;
         }
-        return getRowDef(key.intValue());
+        return getRowDef(key);
     }
 
     public RowDef getRowDef(String schema, String table) throws RowDefNotFoundException {
@@ -134,8 +134,6 @@ public class RowDefCache {
     /**
      * Receive an instance of the AkibanInformationSchema, crack it and produce
      * the RowDef instances it defines.
-     * 
-     * @param ais
      */
     public synchronized void setAIS(final AkibanInformationSchema ais) throws PersistitInterruptedException {
         this.ais = ais;
