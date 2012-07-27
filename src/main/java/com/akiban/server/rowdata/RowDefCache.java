@@ -87,10 +87,6 @@ public class RowDefCache {
         return LATEST;
     }
 
-    public synchronized boolean contains(final int rowDefId) {
-        return cacheMap.containsKey(Integer.valueOf(rowDefId));
-    }
-
     /**
      * Look up and return a RowDef for a supplied rowDefId value.
      * @param rowDefId ID to lookup.

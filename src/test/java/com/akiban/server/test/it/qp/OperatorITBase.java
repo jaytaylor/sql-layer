@@ -241,13 +241,13 @@ public class OperatorITBase extends ITBase
 
     protected GroupTable groupTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().getRowDefOrNull(userTableId);
+        RowDef userTableRowDef = rowDefCache().getRowDef(userTableId);
         return userTableRowDef.table().getGroup().getGroupTable();
     }
 
     protected UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().getRowDefOrNull(userTableId);
+        RowDef userTableRowDef = rowDefCache().getRowDef(userTableId);
         return userTableRowDef.userTable();
     }
 
