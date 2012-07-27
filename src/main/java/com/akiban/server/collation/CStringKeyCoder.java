@@ -77,22 +77,21 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
     }
 
     /**
-     * TODO
-     * Temporarily returns an approximate version of the string.
-     * This is necessary for now to support the Index Histogram code.
+     * TODO Temporarily returns an approximate version of the string. This is
+     * necessary for now to support the Index Histogram code.
      * 
      * @throws ConversionException
      *             because in general CStrings cannot be decoded
      */
     @Override
     public Object decodeKeySegment(Key key, Class<?> clazz, CoderContext context) throws ConversionException {
-        //throw new ConversionException("Collated key cannot be decoded");
+        // throw new ConversionException("Collated key cannot be decoded");
         return decodeApproximateString(key);
     }
 
     /**
      * Attempts to make an approximate representation of the encoded string for
-     * human-readable displays.  For case-insensitive collations the case of the
+     * human-readable displays. For case-insensitive collations the case of the
      * result is likely to be wrong, and for ICU4J collations the result is
      * displayed in hex.
      */
@@ -132,10 +131,9 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
         int collationId = rawBytes[index] & 0xFF;
         AkCollator collator = AkCollatorFactory.getAkCollator(collationId);
         return collator.decodeSortKeyBytes(rawBytes, index + 1, end - index - 1);
-
     }
 
-    // @Override
+    @Override
     public boolean isZeroByteFree() throws ConversionException {
         return true;
     }

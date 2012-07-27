@@ -31,6 +31,7 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
@@ -1239,7 +1240,13 @@ public class OperatorAssembler extends BaseRule
               impl = Distinct.Implementation.SORT;
             switch (impl) {
             case PRESORTED:
-                stream.operator = API.distinct_Partial(stream.operator, stream.rowType, usePValues);
+                List<AkCollator> collators = findCollators(distinct.getInput());
+                if (collators != null) {
+                    stream.operator = API.distinct_Partial(stream.operator, stream.rowType, collators, usePValues);
+                } else {
+                    throw new UnsupportedOperationException(String.format(
+                        "Can't use Distinct_Partial except following a projection. Try again when types3 is in place"));
+                }
                 break;
             default:
                 assembleSort(stream, stream.rowType.nFields(), distinct.getInput(),
@@ -1247,6 +1254,32 @@ public class OperatorAssembler extends BaseRule
                 break;
             }
             return stream;
+        }
+
+        // Hack to handle some easy and common cases until types3.
+        private List<AkCollator> findCollators(PlanNode node)
+        {
+            if (node instanceof Sort) {
+                return findCollators(((Sort)node).getInput());
+            } else if (node instanceof MapJoin) {
+                return findCollators(((MapJoin)node).getInner());
+            } else if (node instanceof Project) {
+                List<AkCollator> collators = new ArrayList<AkCollator>();
+                Project project = (Project) node;
+                for (ExpressionNode expressionNode : project.getFields()) {
+                    collators.add(expressionNode.getCollator());
+                }
+                return collators;
+            } else if (node instanceof IndexScan) {
+                List<AkCollator> collators = new ArrayList<AkCollator>();
+                IndexScan indexScan = (IndexScan) node;
+                for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
+                    collators.add(indexColumn.getColumn().getCollator());
+                }
+                return collators;
+            } else {
+                return null;
+            }
         }
 
         protected RowStream assembleSort(Sort sort) {
@@ -1341,11 +1374,19 @@ public class OperatorAssembler extends BaseRule
             int pos = pushHashTable(bloomFilter);
             RowStream lstream = assembleStream(usingBloomFilter.getLoader());
             RowStream stream = assembleStream(usingBloomFilter.getInput());
+            List<AkCollator> collators = new ArrayList<AkCollator>();
+            if (usingBloomFilter.getLoader() instanceof IndexScan) {
+                IndexScan indexScan = (IndexScan) usingBloomFilter.getLoader();
+                for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
+                    collators.add(indexColumn.getColumn().getCollator());
+                }
+            }
             stream.operator = API.using_BloomFilter(lstream.operator,
                                                     lstream.rowType,
                                                     bloomFilter.getEstimatedSize(),
                                                     pos,
                                                     stream.operator,
+                                                    collators,
                                                     usePValues);
             popHashTable(bloomFilter);
             return stream;
@@ -1360,9 +1401,14 @@ public class OperatorAssembler extends BaseRule
             boundRows.set(pos, null);
             List<Expression> fields = oldPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                                                           stream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<AkCollator>();
+            for (ExpressionNode expressionNode : bloomFilterFilter.getLookupExpressions()) {
+                collators.add(expressionNode.getCollator());
+            }
             stream.operator = API.select_BloomFilter(stream.operator,
                                                      cstream.operator,
                                                      fields,
+                                                     collators,
                                                      pos);
             return stream;
         }        
@@ -1527,7 +1573,10 @@ public class OperatorAssembler extends BaseRule
             for (int i = 0; i < indexOrdering.size(); i++) {
                 Expression expr = oldPartialAssembler.field(indexRowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(indexRowType, i);
-                ordering.append(expr, tExpr, indexOrdering.get(i).isAscending());
+                ordering.append(expr,
+                                tExpr,
+                                indexOrdering.get(i).isAscending(),
+                                index.getIndexColumns().get(i).getColumn().getCollator());
             }
             return ordering;
         }

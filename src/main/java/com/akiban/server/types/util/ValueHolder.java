@@ -49,7 +49,7 @@ import java.util.Set;
 import com.akiban.util.WrappingByteSource;
 import org.joda.time.DateTime;
 
-public final class ValueHolder implements ValueSource, ValueTarget {
+public final class ValueHolder extends ValueSource implements ValueTarget {
 
     // ValueHolder interface
 

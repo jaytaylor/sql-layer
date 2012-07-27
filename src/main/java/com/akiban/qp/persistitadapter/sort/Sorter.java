@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.sort.SorterAdapter.PersistitValueSourceAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
@@ -203,7 +204,7 @@ public class Sorter
             ValuesHolderRow row = new ValuesHolderRow(rowType, usePValues);
             value.setStreamMode(true);
             for (int i = 0; i < rowFields; i++) {
-                valueAdapater.putToHolders(row, i, sorterAdapter.oFieldTypes(), sorterAdapter.tFieldTypes());
+                valueAdapter.putToHolders(row, i, sorterAdapter.oFieldTypes());
             }
             return row;
         }
@@ -220,13 +221,13 @@ public class Sorter
             return exchange;
         }
 
-        SorterIterationHelper(SorterAdapter.PersistitValueSourceAdapater valueAdapater)
+        SorterIterationHelper(PersistitValueSourceAdapter valueAdapter)
         {
-            this.valueAdapater = valueAdapater;
-            valueAdapater.attach(value);
+            this.valueAdapter = valueAdapter;
+            valueAdapter.attach(value);
         }
 
-        private final SorterAdapter.PersistitValueSourceAdapater valueAdapater;
+        private final PersistitValueSourceAdapter valueAdapter;
     }
 
     // public so that tests can see it

@@ -46,6 +46,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.*;
@@ -188,7 +189,9 @@ public class IndexStatisticsYamlLoader
         for (Map.Entry<Index,IndexStatistics> stat : stats.entrySet()) {
             docs.add(buildStatistics(stat.getKey(), stat.getValue()));
         }
-        new Yaml().dumpAll(docs.iterator(), writer);
+        DumperOptions dopts = new DumperOptions();
+        dopts.setAllowUnicode(false);
+        new Yaml(dopts).dumpAll(docs.iterator(), writer);
     }
 
     protected Object buildStatistics(Index index, IndexStatistics indexStatistics) {
