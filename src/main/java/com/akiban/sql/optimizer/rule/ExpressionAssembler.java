@@ -116,13 +116,12 @@ abstract class ExpressionAssembler<T> {
                     columnContext, subqueryAssembler);
         }
         else if (node instanceof InListCondition) {
-            
-//            InListCondition inList = (InListCondition)node;
-//            T lhs = assembleExpression(inList.getOperand(),
-//                    columnContext, subqueryAssembler);
-//            List<T> rhs = assembleExpressions(inList.getExpressions(),
-//                    columnContext, subqueryAssembler);
-//            return in(lhs, rhs);
+            InListCondition inList = (InListCondition)node;
+            T lhs = assembleExpression(inList.getOperand(),
+                    columnContext, subqueryAssembler);
+            List<T> rhs = assembleExpressions(inList.getExpressions(),
+                    columnContext, subqueryAssembler);
+            return in(lhs, rhs);
         }
         else if (node instanceof SubqueryExpression)
             return subqueryAssembler.assembleSubqueryExpression((SubqueryExpression)node);

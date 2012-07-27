@@ -499,9 +499,8 @@ public class ASTStatementLoader extends BaseRule
                 break;
 
             case NodeTypes.IN_LIST_OPERATOR_NODE:
-                adfadfafa
-//                addInCondition(conditions, projects,
-//                               (InListOperatorNode)condition);
+                addInCondition(conditions, projects,
+                               (InListOperatorNode)condition);
                 break;
 
             case NodeTypes.SUBQUERY_NODE:
@@ -660,8 +659,9 @@ public class ASTStatementLoader extends BaseRule
                                               List<ExpressionNode> projects,
                                               InListOperatorNode in)
         {
-            RowConstructorNode lhs = in.getLeftOperand();
-            RowConstructorNode rhs = in.getRightOperandList();
+            throw new UnsupportedOperationException("not supported cases with nested tuples yet");
+//            RowConstructorNode lhs = in.getLeftOperand();
+//            RowConstructorNode rhs = in.getRightOperandList();
         }
         
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
