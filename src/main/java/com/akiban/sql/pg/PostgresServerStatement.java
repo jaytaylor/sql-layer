@@ -75,8 +75,7 @@ public class PostgresServerStatement implements PostgresStatement {
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows,
-            boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         
         context.checkQueryCancelation();
         PostgresServerSession server = context.getServer();

@@ -77,7 +77,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
             s = Character.toString(source.getUInt16());
             break;
         case INT_32:
-            s = Integer.toString(source.getInt16());
+            s = Integer.toString(source.getInt32());
             break;
         case INT_64:
             s = Long.toString(source.getInt64());

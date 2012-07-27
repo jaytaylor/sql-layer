@@ -31,7 +31,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -58,7 +57,7 @@ public abstract class AbstractRow implements Row
     @Override
     public PValueSource pvalue(int i) {
         // Default, though inefficient.
-        return PValueSources.fromValueSource(eval(i), rowType().typeInstanceAt(i).typeClass().underlyingType());
+        return PValueSources.fromValueSource(eval(i), rowType().typeInstanceAt(i));
     }
 
     @Override

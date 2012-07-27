@@ -54,8 +54,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
-                                           PostgresType[] parameterTypes) {
-        super(parameterTypes);
+                                           PostgresType[] parameterTypes,
+                                           boolean usesPValues) {
+        super(parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
     }
@@ -70,7 +71,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         return TransactionAbortedMode.NOT_ALLOWED;
     }
 
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();

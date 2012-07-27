@@ -162,7 +162,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                                                PostgresType[] parameterTypes) {
         return new PostgresModifyOperatorStatement(statementType,
                                                    update.getUpdatePlannable(),
-                                                   parameterTypes);
+                                                   parameterTypes,
+                                                   usesPValues());
     }
 
     protected PostgresStatement generateSelect(PhysicalSelect select,
@@ -178,7 +179,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         return new PostgresOperatorStatement(select.getResultOperator(),
                                              select.getResultRowType(),
                                              columnNames, columnTypes,
-                                             parameterTypes);
+                                             parameterTypes,
+                                             usesPValues());
     }
 
 }

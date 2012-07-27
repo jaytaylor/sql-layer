@@ -31,7 +31,6 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
-import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
@@ -674,6 +673,7 @@ public class OperatorAssembler extends BaseRule
                         row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
                     }
                 }
+                insertsP = Arrays.asList(row);
             }
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
