@@ -203,16 +203,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 for (ConditionExpression condition : conditions) {
                     if (condition instanceof ComparisonCondition) {
                         ComparisonCondition ccond = (ComparisonCondition)condition;
-                        if (ccond.getOperation().equals(Comparison.NE))
+                        if (ccond.getOperation() == Comparison.NE)
                             continue; // ranges are better suited for !=
-                        ExpressionNode otherComparand = null;
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
-                            otherComparand = ccond.getRight();
-                        }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
-                            otherComparand = ccond.getLeft();
-                        }
-                        if ((otherComparand != null) && constantOrBound(otherComparand)) {
+                        ExpressionNode otherComparand = matchingComparand(indexExpression, ccond);
+                        if (otherComparand != null) {
                             index.addInequalityCondition(condition,
                                                          ccond.getOperation(),
                                                          otherComparand);
@@ -237,8 +231,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return true;
     }
 
-    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds)
-    {
+    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds) {
         setColumnsAndOrdering(index);
         int nequals = 0;
         List<ExpressionNode> indexExpressions = index.getColumns();
@@ -251,16 +244,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (ConditionExpression condition : localConds) {
                 if (condition instanceof ComparisonCondition) {
                     ComparisonCondition ccond = (ComparisonCondition)condition;
-                    ExpressionNode comparand = null;
-                    if (ccond.getOperation() == Comparison.EQ) {
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
-                            comparand = ccond.getRight();
-                        }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
-                            comparand = ccond.getLeft();
-                        }
-                    }
-                    if ((comparand != null) && constantOrBound(comparand)) {
+                    if (ccond.getOperation() != Comparison.EQ)
+                        continue; // only doing equalities
+                    ExpressionNode comparand = matchingComparand(indexExpression, ccond);
+                    if (comparand != null) {
                         equalityCondition = condition;
                         otherComparand = comparand;
                         break;
@@ -270,7 +257,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     FunctionCondition fcond = (FunctionCondition)condition;
                     if (fcond.getFunction().equals("isNull") &&
                         (fcond.getOperands().size() == 1) &&
-                        (fcond.getOperands().get(0).equals(indexExpression))) {
+                        indexExpressionMatches(indexExpression, 
+                                               fcond.getOperands().get(0))) {
                         equalityCondition = condition;
                         otherComparand = null; // TODO: Or constant NULL, depending on API.
                         break;
@@ -283,6 +271,22 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             nequals++;
         }
         return nequals;
+    }
+
+    private ExpressionNode matchingComparand(ExpressionNode indexExpression, 
+                                             ComparisonCondition ccond) {
+        ExpressionNode comparand;
+        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
+            comparand = ccond.getRight();
+            if (constantOrBound(comparand))
+                return comparand;
+        }
+        if (indexExpressionMatches(indexExpression, ccond.getRight())) {
+            comparand = ccond.getLeft();
+            if (constantOrBound(comparand))
+                return comparand;
+        }
+        return null;
     }
 
     private static void setColumnsAndOrdering(SingleIndexScan index) {
