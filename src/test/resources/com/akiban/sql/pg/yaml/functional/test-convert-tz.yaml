@@ -18,6 +18,6 @@
 - Statement: select convert_tz('2012-01-01 12:00:00', 'pst8pdt', 'utc');
 - output: [[!re '2012-01-01 20:00:00([.]0)?']]
 ---
-- Statement: SELECT CONVERT_TX('2009-12-12', 'garbage:/', 'UTC']];
+- Statement: SELECT CONVERT_TX('2009-12-12', 'garbage:/', 'UTC');
 - output: [[null]]
 ...
