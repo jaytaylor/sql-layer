@@ -317,15 +317,20 @@ public final class PValueSources {
             case DOUBLE:
             case BYTES:
             case STRING:
-                throw new UnsupportedOperationException("couldn't convert " + valueSource + " to long as " + akType);
+                v = Long.parseLong(valueSource.getString());
+                break;
             default:
                 throw new AssertionError(valueSource.getUnderlyingType());
             }
             return v;
         case FLOAT_AKTYPE:
-            return valueSource.getFloat();
+            return valueSource.getUnderlyingType() == PUnderlying.STRING
+                    ? Float.parseFloat(valueSource.getString())
+                    : valueSource.getFloat();
         case DOUBLE_AKTYPE:
-            return valueSource.getObject();
+            return valueSource.getUnderlyingType() == PUnderlying.STRING
+                    ? Double.parseDouble(valueSource.getString())
+                    : valueSource.getDouble();
         case OBJECT_AKTYPE:
             if (valueSource.getUnderlyingType() == PUnderlying.STRING)
                 return valueSource.getString();

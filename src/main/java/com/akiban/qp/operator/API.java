@@ -45,6 +45,7 @@ import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
 
 import java.util.*;
 
@@ -343,10 +344,17 @@ public class API
                                              UserTableRowType innerJoinUntilRowType,
                                              boolean usePVals)
     {
-        Ordering ordering = new Ordering();
+        Ordering ordering = new Ordering(usePVals);
         int fields = indexType.nFields();
-        for (int f = 0; f < fields; f++) {
-            ordering.append(new FieldExpression(indexType, f), !reverse);
+        if (usePVals) {
+            for (int f = 0; f < fields; f++) {
+                ordering.append(null, new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
+            }
+        }
+        else {
+            for (int f = 0; f < fields; f++) {
+                ordering.append(new FieldExpression(indexType, f), null, !reverse);
+            }
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType, usePVals);
     }
@@ -367,10 +375,17 @@ public class API
                                              IndexScanSelector indexScanSelector,
                                              boolean usePVals)
     {
-        Ordering ordering = new Ordering();
+        Ordering ordering = new Ordering(usePVals);
         int fields = indexType.nFields();
-        for (int f = 0; f < fields; f++) {
-            ordering.append(new FieldExpression(indexType, f), !reverse);
+        if (usePVals) {
+            for (int f = 0; f < fields; f++) {
+                ordering.append(null, new TPreparedField(indexType.typeInstanceAt(f), f), !reverse);
+            }
+        }
+        else {
+            for (int f = 0; f < fields; f++) {
+                ordering.append(new FieldExpression(indexType, f), null, !reverse);
+            }
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, usePVals);
     }
@@ -530,18 +545,26 @@ public class API
 
     public static Ordering ordering()
     {
-        return new Ordering();
+        return ordering(Types3Switch.ON);
+    }
+    
+    public static Ordering ordering(boolean usePVals)
+    {
+        return new Ordering(usePVals);
     }
 
     // Distinct
     public static Operator distinct_Partial(Operator input, RowType distinctType)
     {
-        return new Distinct_Partial(input, distinctType, Types3Switch.ON);
+        return new Distinct_Partial(input, distinctType, null, Types3Switch.ON);
     }
 
-    public static Operator distinct_Partial(Operator input, RowType distinctType, boolean usePValues)
+    public static Operator distinct_Partial(Operator input,
+                                            RowType distinctType,
+                                            List<AkCollator> collators,
+                                            boolean usePValues)
     {
-        return new Distinct_Partial(input, distinctType, usePValues);
+        return new Distinct_Partial(input, distinctType, collators, usePValues);
     }
 
     // Map
@@ -716,11 +739,12 @@ public class API
                                              Operator streamInput)
     {
         return new Using_BloomFilter(filterInput,
-                filterRowType,
-                estimatedRowCount,
-                filterBindingPosition,
-                streamInput,
-                Types3Switch.ON);
+                                     filterRowType,
+                                     estimatedRowCount,
+                                     filterBindingPosition,
+                                     streamInput,
+                                     null,
+                                     Types3Switch.ON);
     }
 
     public static Operator using_BloomFilter(Operator filterInput,
@@ -728,6 +752,7 @@ public class API
                                              long estimatedRowCount,
                                              int filterBindingPosition,
                                              Operator streamInput,
+                                             List<AkCollator> collators,
                                              boolean usePValues)
     {
         return new Using_BloomFilter(filterInput,
@@ -735,6 +760,7 @@ public class API
                                      estimatedRowCount,
                                      filterBindingPosition,
                                      streamInput,
+                                     collators,
                                      usePValues);
     }
 
@@ -745,17 +771,31 @@ public class API
                                               List<? extends Expression> filterFields,
                                               int bindingPosition)
     {
+        return select_BloomFilter(input, onPositive, filterFields, null, bindingPosition);
+    }
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends Expression> filterFields,
+                                              List<AkCollator> collators,
+                                              int bindingPosition)
+    {
         return new Select_BloomFilter(input,
                                       onPositive,
                                       filterFields,
+                                      collators,
                                       bindingPosition);
     }
 
     // Insert
-
     public static UpdatePlannable insert_Default(Operator inputOperator)
     {
-        return new Insert_Default(inputOperator);
+        return insert_Default(inputOperator, Types3Switch.ON);
+    }
+
+    public static UpdatePlannable insert_Default(Operator inputOperator, boolean usePVals)
+    {
+        return new Insert_Default(inputOperator, usePVals);
     }
 
 
@@ -769,9 +809,9 @@ public class API
     
     // Delete
 
-    public static UpdatePlannable delete_Default(Operator inputOperator)
+    public static UpdatePlannable delete_Default(Operator inputOperator, boolean usePValues)
     {
-        return new Delete_Default(inputOperator);
+        return new Delete_Default(inputOperator, usePValues);
     }
 
     // Execution interface
@@ -832,11 +872,12 @@ public class API
         {
             StringBuilder buffer = new StringBuilder();
             buffer.append('(');
-            for (int i = 0; i < expressions.size(); i++) {
+            List<?> exprs = usingPVals() ? tExpressions : oExpressions;
+            for (int i = 0, size = sortColumns(); i < size; i++) {
                 if (i > 0) {
                     buffer.append(", ");
                 }
-                buffer.append(expressions.get(i));
+                buffer.append(exprs.get(i));
                 buffer.append(' ');
                 buffer.append(directions.get(i) ? "ASC" : "DESC");
             }
@@ -846,16 +887,24 @@ public class API
 
         public int sortColumns()
         {
-            return expressions.size();
+            return usingPVals() ? tExpressions.size() : oExpressions.size();
         }
 
         public Expression expression(int i) {
-            return expressions.get(i);
+            return oExpressions.get(i);
+        }
+        
+        public TPreparedExpression tExpression(int i) {
+            return tExpressions.get(i);
         }
 
         public AkType type(int i)
         {
-            return expressions.get(i).valueType();
+            return oExpressions.get(i).valueType();
+        }
+        
+        public TInstance tInstance(int i) {
+            return tExpressions.get(i).resultType();
         }
 
         public boolean ascending(int i)
@@ -892,28 +941,64 @@ public class API
 
         public void append(Expression expression, boolean ascending)
         {
-            append(expression, ascending, null);
+            append(expression, null, ascending);
         }
 
-        public void append(Expression expression, boolean ascending,
+        public void append(Expression expression, TPreparedExpression tExpression, boolean ascending)
+        {
+            append(expression, tExpression, ascending, null);
+        }
+        
+        public void append(Expression expression, boolean ascending, AkCollator collator)
+        {
+            append(expression, null, ascending, collator);
+        }
+
+        public void append(Expression expression, TPreparedExpression tExpression,  boolean ascending,
                            AkCollator collator)
         {
-            expressions.add(expression);
+            if (oExpressions != null)
+                oExpressions.add(expression);
+            else
+                tExpressions.add(tExpression);
             directions.add(ascending);
             collators.add(collator);
         }
 
         public Ordering copy()
         {
-            Ordering copy = new Ordering();
-            copy.expressions.addAll(expressions);
+            boolean pvals = usingPVals();
+            Ordering copy = new Ordering(pvals);
+            if (pvals)
+                copy.tExpressions.addAll(tExpressions);
+            else
+                copy.oExpressions.addAll(oExpressions);
             copy.directions.addAll(directions);
             copy.collators.addAll(collators);
             return copy;
         }
+        
+        public boolean usingPVals() {
+            return tExpressions != null;
+        }
+        
+        public Ordering() {
+            this(Types3Switch.ON);
+        }
+        
+        private Ordering(boolean usePVals) {
+            if (usePVals) {
+                tExpressions = new ArrayList<TPreparedExpression>();
+                oExpressions = null; 
+            }
+            else {
+                tExpressions = null;
+                oExpressions = new ArrayList<Expression>();
+            }
+        }
 
-        private final List<com.akiban.server.expression.Expression> expressions =
-            new ArrayList<com.akiban.server.expression.Expression>();
+        private final List<com.akiban.server.expression.Expression> oExpressions;
+        private final List<TPreparedExpression> tExpressions;
         private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
         private final List<AkCollator> collators = new ArrayList<AkCollator>();
     }

@@ -30,6 +30,13 @@ import com.akiban.server.collation.AkCollator;
 
 public final class PValue implements PValueSource, PValueTarget {
 
+    // PValue interface
+    
+    public void underlying(PUnderlying underlying) {
+        this.underlying = underlying;
+        this.state = State.UNSET;
+    }
+    
     // PValueTarget interface
 
     @Override
@@ -307,8 +314,10 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     private void checkUnderlying(PUnderlying expected) {
-        if (underlying != expected)
-            throw new IllegalStateException("required underlying " + expected + " but was " + underlying);
+        if (underlying != expected) {
+            String underlyingToString = (underlying == null) ? "unspecified" : underlying.name();
+            throw new IllegalStateException("required underlying " + expected + " but was " + underlyingToString);
+        }
     }
 
     private void setIVal(PUnderlying expectedType, long value) {
@@ -322,10 +331,13 @@ public final class PValue implements PValueSource, PValueTarget {
         this.bVal = bVal;
         this.oCache = oCache;
     }
+    
+    public PValue() {
+        this((PUnderlying)null);
+    }
 
     public PValue(PUnderlying underlying) {
-        this.underlying = underlying;
-        this.state = State.UNSET;
+        underlying(underlying);
     }
 
     public PValue(long val) {
@@ -360,7 +372,7 @@ public final class PValue implements PValueSource, PValueTarget {
         putBool(val);
     }
 
-    private final PUnderlying underlying;
+    private PUnderlying underlying;
     private State state;
     private long iVal;
     private byte[] bVal;

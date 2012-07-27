@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueSource;
@@ -71,6 +72,29 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
     }
 
     @Override
+    public void checkConstraints(BoundExpressions loExpressions,
+                                 BoundExpressions hiExpressions,
+                                 int f,
+                                 AkCollator collator) {
+        ValueSource loValueSource = loExpressions.eval(f);
+        ValueSource hiValueSource = hiExpressions.eval(f);
+        if (loValueSource.isNull() && hiValueSource.isNull()) {
+            // OK, they're equal
+        } else if (loValueSource.isNull() || hiValueSource.isNull()) {
+            throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
+        } else {
+            Expression loEQHi =
+                    Expressions.collate(Expressions.valueSource(loValueSource),
+                                        Comparison.EQ,
+                                        Expressions.valueSource(hiValueSource),
+                                        collator);
+            if (!loEQHi.evaluation().eval().getBool()) {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
+
+    @Override
     public ValueSource[] createSourceArray(int size) {
         return new ValueSource[size];
     }
@@ -102,10 +126,15 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
     }
 
     @Override
-    public Expression createComparison(TInstance tInstance, ValueSource one, Comparison comparison, ValueSource two) {
-        return Expressions.compare(Expressions.valueSource(one),
-                comparison,
-                Expressions.valueSource(two));
+    public Expression createComparison(TInstance tInstance,
+                                       AkCollator collator,
+                                       ValueSource one,
+                                       Comparison comparison,
+                                       ValueSource two) {
+        return Expressions.collate(Expressions.valueSource(one),
+                                   comparison,
+                                   Expressions.valueSource(two),
+                                   collator);
     }
 
     @Override
@@ -116,6 +145,12 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
     @Override
     public ValueSource eval(Row row, int field) {
         return row.eval(field);
+    }
+
+    @Override
+    public void setOrderingMetadata(int orderingIndex, API.Ordering ordering, int tInstancesOffset,
+                                    TInstance[] tInstances) {
+        // nothing to do
     }
 
     private static class OldExpressionsSortKeyTarget implements SortKeyTarget<ValueSource> {
@@ -135,8 +170,7 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
 
         @Override
         public void append(ValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
-            target.expectingType(akType, collator);
-            Converters.convert(source, target);
+            target.append(source, akType, collator);
         }
 
         @Override

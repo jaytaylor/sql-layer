@@ -39,5 +39,9 @@ Statistics:
     eq: 2
     key: [MMM]
     lt: 900
+  - distinct: 300
+    eq: 1
+    key: ["\x81"]
+    lt: 300
 Table: parent
 Timestamp: 2010-01-01T00:00:00Z

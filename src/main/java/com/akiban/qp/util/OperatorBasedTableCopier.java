@@ -61,12 +61,15 @@ public class OperatorBasedTableCopier implements TableCopier {
     private final TreeService treeService;
     private final Session session;
     private final Store store;
+    private final boolean usePVals;
 
-    public OperatorBasedTableCopier(ConfigurationService config, TreeService treeService, Session session, Store store) {
+    public OperatorBasedTableCopier(ConfigurationService config, TreeService treeService, Session session, Store store,
+                                    boolean usePVals) {
         this.config = config;
         this.treeService = treeService;
         this.session = session;
         this.store = store;
+        this.usePVals = usePVals;
     }
 
     @Override
@@ -96,7 +99,7 @@ public class OperatorBasedTableCopier implements TableCopier {
                 null
         );
 
-        UpdatePlannable cursor = insert_Default(plan);
+        UpdatePlannable cursor = insert_Default(plan, usePVals);
 
         // TODO: Clean this up when ALTER exposed through DDL API
         StoreAdapter adpater = new PersistitAdapter(schema, store, treeService, session, config);

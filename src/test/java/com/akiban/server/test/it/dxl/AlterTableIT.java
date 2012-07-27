@@ -36,6 +36,7 @@ import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.AlterTableDDL;
 import com.akiban.sql.parser.AlterTableNode;
@@ -53,7 +54,7 @@ public class AlterTableIT extends ITBase {
         SQLParser parser = new SQLParser();
         StatementNode node = parser.parseStatement(sql);
         assertTrue("is alter node", node instanceof AlterTableNode);
-        OperatorBasedTableCopier copier = new OperatorBasedTableCopier(configService(), treeService(), session(), store());
+        OperatorBasedTableCopier copier = new OperatorBasedTableCopier(configService(), treeService(), session(), store(), Types3Switch.ON);
         AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddl(), dml(), session(), copier, SCHEMA, (AlterTableNode)node);
     }
 

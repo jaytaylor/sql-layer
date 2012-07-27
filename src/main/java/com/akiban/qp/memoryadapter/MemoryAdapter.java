@@ -42,9 +42,11 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
+import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 
 public class MemoryAdapter extends StoreAdapter {
@@ -99,18 +101,26 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void updateRow(Row oldRow, Row newRow) {
+    public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
         throw new UnsupportedOperationException();
         
     }
 
     @Override
-    public void writeRow(Row newRow) {
+    public void writeRow(Row newRow, boolean usePValues) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteRow(Row oldRow) {
+    public void deleteRow(Row oldRow, boolean usePValues) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long hash(ValueSource valueSource, AkCollator collator) {
+        return
+            collator == null
+            ? valueSource.getString().hashCode()
+            : collator.hashCode(valueSource.getString());
     }
 }
