@@ -24,19 +24,22 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.qp.util;
 
-import com.akiban.qp.row.Row;
+import com.persistit.Key;
 
-public interface UpdateFunction extends SelectionFunction {
-    /**
-     * Updates the given row by returning another row with the required modifications.
-     * @param original the original row, which will remain untouched
-     * @param context the query context for evaluation
-     * @return a row of the same type as the original, but different fields
-     * @throws IllegalArgumentException if the row could not be updated
-     * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
-     */
-    Row evaluate(Row original, QueryContext context);
-    boolean usePValues();
+public class PersistitKey
+{
+    public static void appendFieldFromKey(Key targetKey, Key sourceKey, int sourceDepth)
+    {
+        sourceKey.indexTo(sourceDepth);
+        int from = sourceKey.getIndex();
+        sourceKey.indexTo(sourceDepth + 1);
+        int to = sourceKey.getIndex();
+        if (from >= 0 && to >= 0 && to > from) {
+            System.arraycopy(sourceKey.getEncodedBytes(), from,
+                             targetKey.getEncodedBytes(), targetKey.getEncodedSize(), to - from);
+            targetKey.setEncodedSize(targetKey.getEncodedSize() + to - from);
+        }
+    }
 }

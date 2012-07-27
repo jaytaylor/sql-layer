@@ -30,6 +30,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.PersistitKeyPValueTarget;
@@ -60,21 +61,12 @@ class OperatorStoreGIHandler {
 
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
-            Key key = exchange.getKey();
-            key.clear();
-            
-            // Temporary until we remove old type system
-            if (Types3Switch.ON) pTarget.attach(key); 
-            else target.attach(key);
-            
+            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(exchange.getKey(), exchange.getValue());
             IndexRowComposition irc = groupIndex.indexRowComposition();
-
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
                 assert irc.isInRowData(i);
                 assert ! irc.isInHKey(i);
-
-                final int flattenedIndex = irc.getFieldPosition(i);
-
+                int flattenedIndex = irc.getFieldPosition(i);
                 if (Types3Switch.ON) {
                     PValueSource source = row.pvalue(flattenedIndex);
                     TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
@@ -83,14 +75,10 @@ class OperatorStoreGIHandler {
                 else {
                     Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
                     ValueSource source = row.eval(flattenedIndex);
-                    Converters.convert(source, target.expectingType(column));
+                    indexRow.append(column, source);
                 }
             }
-            // The group index row's value contains a bitmap indicating which of the tables covered by the index
-            // have rows contributing to this index row. The leafmost table of the index is represented by bit position 0.
-            exchange.getValue().clear();
-            exchange.getValue().put(tableBitmap(groupIndex, row));
-
+            indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {
             case STORE:
                 storeExchange(groupIndex, exchange);
@@ -152,13 +140,15 @@ class OperatorStoreGIHandler {
         }
     }
 
+    // The group index row's value contains a bitmap indicating which of the tables covered by the index
+    // have rows contributing to this index row. The leafmost table of the index is represented by bit
+    // position 0.
     private static long tableBitmap(GroupIndex groupIndex, Row row) {
         long result = 0;
          for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
                 !(table == null || table.equals(END));
-                table = table.parentTable()
-        ){
-            if (row.containsRealRowOf(table)) {
+                table = table.parentTable()) {
+             if (row.containsRealRowOf(table)) {
                 result |= 1 << table.getDepth();
             }
         }

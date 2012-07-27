@@ -24,19 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
 
-public interface UpdateFunction extends SelectionFunction {
-    /**
-     * Updates the given row by returning another row with the required modifications.
-     * @param original the original row, which will remain untouched
-     * @param context the query context for evaluation
-     * @return a row of the same type as the original, but different fields
-     * @throws IllegalArgumentException if the row could not be updated
-     * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
-     */
-    Row evaluate(Row original, QueryContext context);
-    boolean usePValues();
+final class OldRowDataCreator implements RowDataCreator<ValueSource> {
+
+    @Override
+    public ValueSource eval(RowBase row, int f) {
+        return row.eval(f);
+    }
+
+    @Override
+    public boolean isNull(ValueSource source) {
+        return source.isNull();
+    }
+
+    @Override
+    public ValueSource createId(long id) {
+        FromObjectValueSource objectSource = new FromObjectValueSource();
+        objectSource.setExplicitly(id, AkType.LONG);
+        return objectSource;
+    }
+
+    @Override
+    public void put(ValueSource source, NewRow into, AkType akType, int f) {
+        into.put(f, target.convertFromSource(source));
+    }
+
+    private ToObjectValueTarget target = new ToObjectValueTarget();
 }

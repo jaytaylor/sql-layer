@@ -33,6 +33,8 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -59,8 +61,6 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
@@ -129,19 +129,19 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public void updateRow(Row oldRow, Row newRow) {
+    public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
         if (rowDef != rowDefNewRow) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
-        RowData oldRowData = oldRowData(rowDef, oldRow);
+        RowData oldRowData = oldRowData(rowDef, oldRow, rowDataCreator(usePValues));
         int oldStep = 0;
         try {
             // For Update row, the new row (value being inserted) does not 
             // need the default value (including identity set)
-            RowData newRowData = oldRowData(rowDef, newRow);
+            RowData newRowData = oldRowData(rowDef, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
             store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (InvalidOperationException e) {
@@ -157,11 +157,11 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
     @Override
-    public void writeRow (Row newRow) {
+    public void writeRow (Row newRow, boolean usePValues) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         int oldStep = 0;
         try {
-            RowData newRowData = newRowData (rowDef, newRow);
+            RowData newRowData = newRowData (rowDef, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
             store.writeRow(getSession(), newRowData);
         } catch (InvalidOperationException e) {
@@ -178,9 +178,9 @@ public class PersistitAdapter extends StoreAdapter
     }
     
     @Override
-    public void deleteRow (Row oldRow) {
+    public void deleteRow (Row oldRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowData oldRowData = oldRowData(rowDef, oldRow);
+        RowData oldRowData = oldRowData(rowDef, oldRow, rowDataCreator(usePValues));
         int oldStep = enterUpdateStep();
         try {
             store.deleteRow(getSession(), oldRowData);
@@ -252,12 +252,70 @@ public class PersistitAdapter extends StoreAdapter
         return row;
     }
 
+    private RowDataCreator<?> rowDataCreator(boolean usePValues) {
+        return usePValues
+                ? new PValueRowDataCreator()
+                : new OldRowDataCreator();
+    }
+
+    private <S> RowData oldRowData (RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+        if (row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow) row).rowData();
+        }
+        NewRow niceRow = newRow(rowDef);
+        for(int i = 0; i < row.rowType().nFields(); ++i) {
+            S source = creator.eval(row, i);
+            AkType type = rowDef.getFieldDef(i).getType().akType();
+            creator.put(source, niceRow, type, i);
+        }
+        return niceRow.toRowData();
+    }
+
+    private <S> RowData newRowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) throws PersistitException
+    {
+        if (row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow) row).rowData();
+        }
+//
+        NewRow niceRow = newRow(rowDef);
+        for(int i = 0; i < row.rowType().nFields(); ++i) {
+            S source = creator.eval(row, i);
+
+            // this is the generated always case. Always override the value in the
+            // row
+            if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
+                    rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
+                long value = rowDef.table().getColumn(i).getIdentityGenerator().nextValue(treeService);
+                source = creator.createId(value);
+            }
+
+            if (creator.isNull(source)) {
+                if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
+                    Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
+                    long value = sequence.nextValue(treeService);
+                    source = creator.createId(value);
+                }
+                // TODO: If not an identityGenerator, insert the column default value.
+            }
+
+            // TODO: Validate column Check Constraints.
+            AkType type = rowDef.getFieldDef(i).getType().akType();
+            creator.put(source, niceRow, type, i);
+        }
+        return niceRow.toRowData();
+    }
+
     public PersistitGroupRow newGroupRow()
     {
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
-    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
+    public PersistitIndexRowBuffer newIndexRow(Index index, Key key)
+    {
+        return new PersistitIndexRowBuffer(key);
+    }
+
+    public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
     {
         return
             indexRowType.index().isTableIndex()

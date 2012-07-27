@@ -28,9 +28,9 @@ package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.ExpressionBasedUpdateFunction;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -158,7 +158,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         Operator scanPlan = groupScan_Default(group);
         final UpdatePlannable updatePlan =
             update_Default(scanPlan,
-                           new UpdateFunction()
+                           new ExpressionBasedUpdateFunction()
                            {
                                @Override
                                public Row evaluate(Row original, QueryContext context)

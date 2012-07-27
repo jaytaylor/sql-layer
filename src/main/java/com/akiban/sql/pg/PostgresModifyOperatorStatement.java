@@ -70,7 +70,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         return TransactionAbortedMode.NOT_ALLOWED;
     }
 
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();

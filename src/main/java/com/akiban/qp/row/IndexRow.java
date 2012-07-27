@@ -24,19 +24,48 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.qp.row;
 
-import com.akiban.qp.row.Row;
+import com.akiban.ais.model.Column;
+import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.types.ValueSource;
+import com.persistit.Key;
 
-public interface UpdateFunction extends SelectionFunction {
-    /**
-     * Updates the given row by returning another row with the required modifications.
-     * @param original the original row, which will remain untouched
-     * @param context the query context for evaluation
-     * @return a row of the same type as the original, but different fields
-     * @throws IllegalArgumentException if the row could not be updated
-     * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
-     */
-    Row evaluate(Row original, QueryContext context);
-    boolean usePValues();
+public abstract class IndexRow extends AbstractRow
+{
+    // BoundExpressions interface
+
+    @Override
+    public ValueSource eval(int index)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    // RowBase interface
+
+    public RowType rowType()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public HKey hKey()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    // IndexRow interface
+
+    public abstract void append(FieldDef fieldDef, RowData rowData);
+
+    public abstract void append(Column column, ValueSource source);
+
+    public abstract void appendFieldFromKey(Key fromKey, int depth);
 }

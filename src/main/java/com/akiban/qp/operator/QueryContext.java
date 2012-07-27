@@ -193,5 +193,5 @@ public interface QueryContext
     /** Check constraints on row.
      * @throws InvalidOperationException thrown if a constraint on the row is violated.
      */
-    public void checkConstraints(Row row) throws InvalidOperationException;
+    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException;
 }

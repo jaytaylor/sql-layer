@@ -28,6 +28,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.ExpressionBasedUpdateFunction;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -102,7 +103,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
         use(db);
         txn.commit();
         txn.end();
-        UpdateFunction updateAFunction = new UpdateFunction()
+        UpdateFunction updateAFunction = new ExpressionBasedUpdateFunction()
         {
             @Override
             public boolean rowIsSelected(Row row)
@@ -120,7 +121,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
                 return new OverlayingRow(original).overlay(1, -ax);
             }
         };
-        UpdateFunction updateBFunction = new UpdateFunction()
+        UpdateFunction updateBFunction = new ExpressionBasedUpdateFunction()
         {
             @Override
             public boolean rowIsSelected(Row row)

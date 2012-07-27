@@ -674,10 +674,11 @@ public class OperatorAssembler extends BaseRule
                         row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
                     }
                 }
+                insertsP = Arrays.asList(row);
             }
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
-            UpdatePlannable plan = API.insert_Default(stream.operator);
+            UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -700,7 +701,7 @@ public class OperatorAssembler extends BaseRule
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
-            UpdatePlannable plan = API.delete_Default(stream.operator);
+            UpdatePlannable plan = API.delete_Default(stream.operator, usePValues);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
