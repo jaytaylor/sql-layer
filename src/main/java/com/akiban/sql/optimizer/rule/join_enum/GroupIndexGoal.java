@@ -207,9 +207,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                             continue; // ranges are better suited for !=
                         ExpressionNode otherComparand = matchingComparand(indexExpression, ccond);
                         if (otherComparand != null) {
-                            index.addInequalityCondition(condition,
-                                                         ccond.getOperation(),
-                                                         otherComparand);
+                            Comparison op = ccond.getOperation();
+                            if (otherComparand == ccond.getLeft())
+                                op = ComparisonCondition.reverseComparison(op);
+                            index.addInequalityCondition(condition, op, otherComparand);
                             foundInequalityCondition = true;
                         }
                     }
