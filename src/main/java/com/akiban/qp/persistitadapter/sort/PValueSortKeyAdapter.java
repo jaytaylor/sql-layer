@@ -28,6 +28,8 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyPValueTarget;
@@ -138,7 +140,7 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
     }
 
     @Override
-    public boolean evaluateComparison(TPreparedExpression comparison) {
+    public boolean evaluateComparison(TPreparedExpression comparison, QueryContext queryContext) {
         TEvaluatableExpression eval = comparison.build();
         eval.evaluate();
         return eval.resultValue().getBoolean();
@@ -147,6 +149,12 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
     @Override
     public PValueSource eval(Row row, int field) {
         return row.pvalue(field);
+    }
+
+    @Override
+    public void setOrderingMetadata(int orderingIndex, API.Ordering ordering, int tInstancesOffset,
+                                    TInstance[] tInstances) {
+        tInstances[orderingIndex + tInstancesOffset] = ordering.tInstance(orderingIndex);
     }
 
     private static class PValueSortKeyTarget implements SortKeyTarget<PValueSource> {

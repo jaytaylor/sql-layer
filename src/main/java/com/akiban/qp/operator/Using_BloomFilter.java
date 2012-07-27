@@ -34,9 +34,11 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
+import java.math.BigDecimal;
 
 import java.util.Arrays;
 import java.util.List;
@@ -168,7 +170,7 @@ class Using_BloomFilter extends Operator
 
     @Override
     public Explainer getExplainer() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return PrimitiveExplainer.getInstance(toString());
     }
 
     // Inner classes

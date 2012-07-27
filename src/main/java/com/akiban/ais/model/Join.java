@@ -26,14 +26,11 @@
 
 package com.akiban.ais.model;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import com.akiban.ais.gwtutils.SerializableEnumSet;
-import com.akiban.server.error.JoinParentNoExplicitPK;
 
 public class Join implements Traversable, HasGroup
 {
@@ -64,7 +61,6 @@ public class Join implements Traversable, HasGroup
         ais.checkMutability();
         JoinColumn joinColumn = new JoinColumn(this, parent, child);
         joinColumns.add(joinColumn);
-        joinColumnsStale = true;
         return joinColumn;
     }
 
@@ -104,27 +100,6 @@ public class Join implements Traversable, HasGroup
 
     public void setGroup(Group group)
     {
-        // Join is permitted in group only if FK points to parent's PK.
-        // Checked in validation.JoinToParentPK
-/*
-        if (parentPK == null) {
-            throw new AISBuilder.UngroupableJoinException(this);
-        }
-        // FK and PK should match in size. hard to see how we get here if this isn't true, but check anyway.
-        if (parentPK.getKeyColumns().size() != joinColumns.size()) {
-            throw new AISBuilder.UngroupableJoinException(this);
-        }
-        // Check that the join parent is actually the PK.
-        Iterator<Column> parentPKColumnScan = parentPK.getKeyColumns().iterator();
-        Iterator<JoinColumn> joinColumnScan = joinColumns.iterator();
-        while (parentPKColumnScan.hasNext()) {
-            Column parentPKColumn = parentPKColumnScan.next();
-            Column parentJoinColumn = joinColumnScan.next().getParent();
-            if (parentPKColumn != parentJoinColumn) {
-                throw new AISBuilder.UngroupableJoinException(this);
-            }
-        }
-*/
         this.group = group;
     }
 
@@ -140,27 +115,6 @@ public class Join implements Traversable, HasGroup
 
     public List<JoinColumn> getJoinColumns()
     {
-        if (joinColumnsStale) {
-            // Sort into same order as parent PK columns
-            if (parent.getPrimaryKey() == null) {
-                throw new JoinParentNoExplicitPK (parent.getName());
-            }
-            final List<Column> pkColumns = parent.getPrimaryKey().getColumns();
-            Collections.sort(joinColumns,
-                             new Comparator<JoinColumn>()
-                             {
-                                 @Override
-                                 public int compare(JoinColumn x, JoinColumn y)
-                                 {
-                                     int xPosition = pkColumns.indexOf(x.getParent());
-                                     assert xPosition >= 0;
-                                     int yPosition = pkColumns.indexOf(y.getParent());
-                                     assert yPosition >= 0;
-                                     return xPosition - yPosition;
-                                 }
-                             });
-            joinColumnsStale = false;
-        }
         return joinColumns;
     }
 
@@ -295,7 +249,6 @@ public class Join implements Traversable, HasGroup
     private String joinName;
     private Integer weight;
     private Group group;
-    private boolean joinColumnsStale = true;
 
     private GroupingUsage groupingUsage = GroupingUsage.WHEN_OPTIMAL;
     private SerializableEnumSet<SourceType> sourceTypes = new SerializableEnumSet<SourceType>(SourceType.class);

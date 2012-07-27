@@ -33,6 +33,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
@@ -168,7 +169,7 @@ class Select_BloomFilter extends Operator
 
     @Override
     public Explainer getExplainer() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return PrimitiveExplainer.getInstance(toString());
     }
 
     // Inner classes

@@ -218,20 +218,23 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    logError("Query canceled", ex);
+                    logError(ErrorLogLevel.INFO, "Query canceled", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
                 } catch (ConnectionTerminatedException ex) {
+                    logError(ErrorLogLevel.DEBUG, "Query terminated self", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                     stop();
                 } catch (InvalidOperationException ex) {
-                    logError("Error in query", ex);
+                    logError(ErrorLogLevel.WARN, "Error in query", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (RollbackException ex) {
                     QueryRollbackException qe = new QueryRollbackException();
+                    qe.initCause(ex);
+                    logError(ErrorLogLevel.INFO, "Query rollback", qe);
                     sendErrorResponse(type, qe,  qe.getCode(), qe.getMessage());
                 } catch (Exception ex) {
-                    logError("Unexpected error in query", ex);
+                    logError(ErrorLogLevel.WARN, "Unexpected error in query", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }
@@ -254,12 +257,23 @@ public class PostgresServerConnection extends ServerSessionBase
         }
     }
 
-    private void logError(String msg, Exception ex) {
+    private enum ErrorLogLevel { WARN, INFO, DEBUG };
+
+    private void logError(ErrorLogLevel level, String msg, Exception ex) {
         if (reqs.config().testing()) {
-            logger.debug(msg, ex);
+            level = ErrorLogLevel.DEBUG;
         }
-        else {
+        switch (level) {
+        case DEBUG:
+            logger.debug(msg, ex);
+            break;
+        case INFO:
+            logger.info(msg, ex);
+            break;
+        case WARN:
+        default:
             logger.warn(msg, ex);
+            break;
         }
     }
 
