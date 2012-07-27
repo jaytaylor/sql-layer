@@ -200,7 +200,7 @@ public abstract class PersistitIndexRow extends AbstractRow
             this.akTypes[position] = column.getType().akType();
             this.akCollators[position] = column.getCollator();
         }
-        this.indexRow = adapter.persistit().getKey(adapter.getSession());
+        this.indexRow = adapter.persistit().getKey();
         this.leafmostTable = (UserTable) indexRowType.index().leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
     }

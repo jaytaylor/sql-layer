@@ -26,9 +26,12 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -65,6 +68,19 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     @Override
     public ValueNode getSQLsource() {
         return sqlSource;
+    }
+
+    @Override
+    public AkCollator getCollator() {
+        if (sqlType != null) {
+            CharacterTypeAttributes att = sqlType.getCharacterAttributes();
+            if (att != null) {
+                String coll = att.getCollation();
+                if (coll != null)
+                    return AkCollatorFactory.getAkCollator(coll);
+            }
+        }
+        return null;
     }
 
     protected void setSQLtype(DataTypeDescriptor type) {
