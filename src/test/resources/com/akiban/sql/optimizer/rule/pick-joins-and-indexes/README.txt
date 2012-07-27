@@ -28,6 +28,8 @@ in-sorted: IN that needs sorting
 
 equals-sorted: Same with = for comparison.
 
+equivalence-1: Equivalence column used in index.
+
 in-subquery: IN SELECT to semi-join (not indexable).
 
 in-subquery-indexed: IN that is indexed.
