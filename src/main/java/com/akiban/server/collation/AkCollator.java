@@ -25,7 +25,9 @@
  */
 package com.akiban.server.collation;
 
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
 
 public abstract class AkCollator {
@@ -70,7 +72,26 @@ public abstract class AkCollator {
     /**
      * Compare two string values: Comparable<ValueSource>
      */
-    abstract public int compare(ValueSource value1, ValueSource value2);
+    final public int compare(ValueSource value1, ValueSource value2) {
+        boolean persistit1 = value1 instanceof PersistitKeyValueSource;
+        boolean persistit2 = value2 instanceof PersistitKeyValueSource;
+        if (persistit1 && persistit2) {
+            return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
+        } else if (persistit1) {
+            return ((PersistitKeyValueSource) value1).compare(this, value2.getString());
+        } else if (persistit2) {
+            return -((PersistitKeyValueSource) value2).compare(this, value1.getString());
+        } else {
+            return compare(value1.getString(), value2.getString());
+        }
+    }
+
+    /**
+     * Compare two string values: Comparable<PValueSource>
+     */
+    final public int compare(PValueSource value1, PValueSource value2) {
+        return compare(value1.getString(), value2.getString());
+    }
 
     /**
      * Compare two string objects: Comparable<String>
@@ -81,6 +102,19 @@ public abstract class AkCollator {
      * @return whether the underlying collation scheme is case-sensitive
      */
     abstract public boolean isCaseSensitive();
+
+    /**
+     * Compute the hash of a String based on the sort keys produced by the
+     * underlying collator. For example, if the collator is case-insensitive
+     * then hash("ABC") == hash("abc").
+     * 
+     * @param string
+     *            the String
+     * @return the computed hash value
+     * @throws NullPointerException
+     *             if string is null
+     */
+    abstract public int hashCode(final String string);
 
     @Override
     public String toString() {
@@ -127,5 +161,4 @@ public abstract class AkCollator {
      *             if unable to decode sort keys
      */
     abstract String decodeSortKeyBytes(byte[] bytes, int index, int length);
-
 }

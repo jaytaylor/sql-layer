@@ -29,9 +29,11 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
@@ -129,6 +131,7 @@ class Select_BloomFilter extends Operator
     public Select_BloomFilter(Operator input,
                               Operator onPositive,
                               List<? extends Expression> fields,
+                              List<AkCollator> collators,
                               int bindingPosition)
     {
         ArgumentValidation.notNull("input", input);
@@ -140,6 +143,14 @@ class Select_BloomFilter extends Operator
         this.onPositive = onPositive;
         this.bindingPosition = bindingPosition;
         this.fields = fields;
+        this.collators = collators;
+    }
+
+    // For use by this class
+
+    private AkCollator collator(int f)
+    {
+        return collators == null ? null : collators.get(f);
     }
 
     // Class state
@@ -154,10 +165,11 @@ class Select_BloomFilter extends Operator
     private final Operator onPositive;
     private final int bindingPosition;
     private final List<? extends Expression> fields;
+    private final List<AkCollator> collators;
 
     @Override
     public Explainer getExplainer() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return PrimitiveExplainer.getInstance(toString());
     }
 
     // Inner classes
@@ -261,9 +273,10 @@ class Select_BloomFilter extends Operator
         private int hashProjectedRow(Row row)
         {
             int hash = 0;
-            for (ExpressionEvaluation fieldEval : fieldEvals) {
+            for (int f = 0; f < fieldEvals.size(); f++) {
+                ExpressionEvaluation fieldEval = fieldEvals.get(f);
                 fieldEval.of(row);
-                hash = hash ^ ValueSourceHasher.hash(fieldEval.eval());
+                hash = hash ^ ValueSourceHasher.hash(adapter(), fieldEval.eval(), collator(f));
             }
             return hash;
         }

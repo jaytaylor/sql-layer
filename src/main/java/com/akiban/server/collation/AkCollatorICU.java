@@ -25,7 +25,11 @@
  */
 package com.akiban.server.collation;
 
+import java.util.Arrays;
+
 import com.akiban.server.types.ValueSource;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 import com.persistit.util.Util;
@@ -74,11 +78,6 @@ public class AkCollatorICU extends AkCollator {
     }
 
     @Override
-    public int compare(ValueSource value1, ValueSource value2) {
-        return compare(value1.getString(), value2.getString());
-    }
-
-    @Override
     public int compare(String source, String target) {
         return collator.get().compare(source, target);
     }
@@ -119,5 +118,11 @@ public class AkCollatorICU extends AkCollator {
         return sb.toString();
     }
 
+    @Override
+    public int hashCode(String string) {
+        byte[] bytes = collator.get().getCollationKey(string).toByteArray();
+        return hashFunction.hashBytes(bytes, 0, bytes.length).asInt();
+    }
 
+    private final HashFunction hashFunction = Hashing.goodFastHash(32); // Because we're returning ints
 }

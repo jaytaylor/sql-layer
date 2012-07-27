@@ -35,14 +35,20 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.TestBase;
 import com.akiban.sql.pg.PostgresServerFilesITBase;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.Parameterization;
+import com.akiban.junit.ParameterizationBuilder;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 import java.sql.Statement;
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
+@RunWith(NamedParameterizedRunner.class)
 public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
 {
     public static final File RESOURCE_DIR = 
@@ -50,8 +56,23 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                  + DumpGroupLoadablePlanIT.class.getPackage().getName().replace('.', '/'));
     public static final File SCHEMA_FILE = new File(RESOURCE_DIR, "schema.ddl");
     public static final String GROUP_NAME = "customers";
-    public static final File TEST_FILE = new File(RESOURCE_DIR, GROUP_NAME + ".sql");
-    
+
+    @NamedParameterizedRunner.TestParameters
+    public static Collection<Parameterization> params() {
+        ParameterizationBuilder pb = new ParameterizationBuilder();
+        pb.add("single", new File(RESOURCE_DIR, GROUP_NAME + ".sql"), false);
+        pb.add("multiple", new File(RESOURCE_DIR, GROUP_NAME + "-m.sql"), true);
+        return pb.asList();
+    }
+
+    private File file;
+    private boolean multiple;
+
+    public DumpGroupLoadablePlanIT(File file, boolean multiple) {
+        this.file = file;
+        this.multiple = multiple;
+    }
+
     @Before
     public void loadDatabase() throws Exception {
         loadSchemaFile(SCHEMA_FILE);
@@ -60,7 +81,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
     @Test
     public void testDump() throws Exception {
         // Run the INSERTs via SQL.
-        String sql = TestBase.fileContents(TEST_FILE);
+        String sql = TestBase.fileContents(file);
 
         Statement stmt = getConnection().createStatement();
         for (String sqls : sql.split("\\;\\s*")) {
@@ -81,6 +102,8 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
             };
         queryContext.setValue(0, SCHEMA_NAME);
         queryContext.setValue(1, GROUP_NAME);
+        if (multiple)
+            queryContext.setValue(2, 10L);
 
         DirectObjectCursor cursor = plan.cursor(queryContext);
         

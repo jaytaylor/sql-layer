@@ -82,7 +82,7 @@ final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, Expr
     }
 
     @Override
-    protected PersistitValueSourceAdapater createValueAdapter() {
+    protected PersistitValueSourceAdapter createValueAdapter() {
         return new InternalAdapter();
     }
 
@@ -101,14 +101,14 @@ final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, Expr
         super(OldExpressionsSortKeyAdapter.INSTANCE);
     }
     
-    private class InternalAdapter implements PersistitValueSourceAdapater {
+    private class InternalAdapter implements PersistitValueSourceAdapter {
         @Override
         public void attach(Value value) {
             valueSource.attach(value);
         }
 
         @Override
-        public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
+        public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes) {
             ValueHolder valueHolder = row.holderAt(i);
             valueSource.expectedType(oFieldTypes[i]);
             valueHolder.copyFrom(valueSource);

@@ -24,19 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.loadableplan;
+package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.operator.QueryContext;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import com.persistit.Key;
 
-/** A plan that uses a {@link DirectObjectCursor}. */
-public abstract class DirectObjectPlan
+class PersistitKeyHasher
 {
-    public abstract DirectObjectCursor cursor(QueryContext context);
+    // For hashing a single-segment key
 
-    public enum OutputMode { TABLE, COPY_WITH_NEWLINE, COPY };
-
-    /** Return <code>COPY</code> to stream a single column with text formatting. */
-    public OutputMode getOutputMode() {
-        return OutputMode.TABLE;
+    public long hash(Key key, int depth)
+    {
+        key.indexTo(depth);
+        int startPosition = key.getIndex();
+        key.indexTo(depth + 1);
+        int endPosition = key.getIndex();
+        return hashFunction.hashBytes(key.getEncodedBytes(), startPosition, endPosition - startPosition).asLong();
     }
+
+    // Object state
+
+    private final HashFunction hashFunction = Hashing.goodFastHash(64); // Because we're returning longs
 }

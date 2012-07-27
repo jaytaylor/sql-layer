@@ -66,7 +66,7 @@ public interface TreeService extends Service<TreeService>, KeyCreator {
 
     Exchange getExchange(Session session, Tree tree);
 
-    Key getKey(Session session);
+    Key getKey();
 
     void releaseExchange(Session session, Exchange exchange);
 

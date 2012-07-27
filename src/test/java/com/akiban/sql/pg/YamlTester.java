@@ -631,9 +631,9 @@ class YamlTester {
 		} else if ("explain".equals(attribute)) {
 		    parseExplain(attributeValue);
                 } else if ("warnings_count".equals(attribute)) {
-                    parseWarningsCount(attributeValue);
+                   warningsCount = parseWarningsCount(attributeValue, warningsCount);
                 } else if ("warnings".equals(attribute)) {
-                    parseWarnings(attributeValue);
+                    warnings = parseWarnings(attributeValue, warnings);
 		} else {
 		    fail("The '" + attribute + "' attribute name was not"
 			    + " recognized");
@@ -755,41 +755,6 @@ class YamlTester {
 		    explain);
 	    explain = scalar(value, "explain value");
 	}
-
-        /** Parse a warnings_count attribute with the specified value. */
-        void parseWarningsCount(Object value) {
-            if (value == null) {
-                return;
-            }
-            assertNull(
-                "The warnings_count attribute must not appear more than once",
-                warningsCount);
-            warningsCount = scalar(value, "warningsCount");
-        }
-
-        /** Parse a warnings attribute with the specified value. */
-        void parseWarnings(Object value) {
-            if (value == null) {
-                return;
-            }
-            assertNull("The warnings attribute must not appear more than once",
-                       warnings);
-            List<Object> list = nonEmptySequence(value, "warnings");
-            warnings = new ArrayList<Warning>();
-            for (int i = 0; i < list.size(); i++) {
-                List<Object> element = nonEmptyScalarSequence(
-                    list.get(i), "warnings element " + i);
-                assertFalse("Warnings element " + i + " is empty",
-                            element.isEmpty());
-                assertFalse(
-                    "Warnings element " + i + " has more than two elements",
-                    element.size() > 2);
-                warnings.add(
-                    new Warning(
-                        element.get(0),
-                        element.size() > 1 ? element.get(1) : null));
-            }
-        }
 
 	void execute() throws SQLException {
 	    if (explain != null) {
@@ -1091,7 +1056,19 @@ class YamlTester {
     }
     
     //----------- static helpers -----------------
-    
+
+    static Object stripWARN (Object msg)
+    {
+        
+        if (msg instanceof String)
+        {
+            String st = (String)msg;
+            if (st.startsWith("WARN:  "))
+                return st.substring(7);
+        }
+        return msg;
+    }
+
     static void checkSuccess(Statement stmt, boolean errorSpecified, List<Warning> warnings, Object warningsCount) throws SQLException
     {
         assertFalse("Statement execution succeeded, but was expected"
@@ -1130,7 +1107,7 @@ class YamlTester {
                         element.size() > 2);
             warnings.add(new Warning(
                     element.get(0),
-                    element.size() > 1 ? element.get(1) : null));
+                    element.size() > 1 ? stripWARN(element.get(1)) : null));
         }
         return warnings;
     }
@@ -1205,8 +1182,8 @@ class YamlTester {
         } else if (expected == null) {
             return actual == null;
         } else {
-            String expectedString = objectToString(expected).trim();
-            String actualString = objectToString(actual).trim();
+            String expectedString = objectToString(expected);
+            String actualString = objectToString(actual);
      
             return expectedString.equals(actualString);
         }
