@@ -1,5 +1,10 @@
 # Testing sequences for basic functionality
 ---
+# Suppressing this test because I'm not sure the 
+# SET newtypes to DEFAULT does the correct thing
+- Properties: all
+- suppressed: true
+---
 - Statement: Set newtypes to 'True'
 ---
 - CreateTable: t (c1 integer not null primary key, c2 varchar(20))
