@@ -39,8 +39,8 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.service.FunctionRegistry;
-import com.akiban.server.types3.service.FunctionRegistryImpl;
+import com.akiban.server.types3.service.InstanceFinder;
+import com.akiban.server.types3.service.InstanceFinderImpl;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.DagChecker;
@@ -114,9 +114,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
     @Override
     public void start() {
-        FunctionRegistry registry;
+        InstanceFinder registry;
         try {
-            registry = new FunctionRegistryImpl();
+            registry = new InstanceFinderImpl();
         } catch (Exception e) {
             logger.error("while creating registry", e);
             throw new ServiceStartupException("T3Registry");
@@ -147,7 +147,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
     // private methods
 
-    private void start(FunctionRegistry finder) {
+    private void start(InstanceFinder finder) {
         tClasses = new HashSet<TClass>(finder.find(TClass.class));
 
         castsBySource = createCasts(tClasses, finder);
@@ -159,7 +159,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         aggregatorsByName = createAggregates(finder);
     }
 
-    private static Map<String, Collection<TAggregator>> createAggregates(FunctionRegistry finder) {
+    private static Map<String, Collection<TAggregator>> createAggregates(InstanceFinder finder) {
         Collection<? extends TAggregator> aggrs = finder.find(TAggregator.class);
         Map<String, Collection<TAggregator>> local = new HashMap<String, Collection<TAggregator>>(aggrs.size());
         for (TAggregator aggr : aggrs) {
@@ -174,7 +174,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         return local;
     }
 
-    private static Multimap<String, TValidatedOverload> createScalars(FunctionRegistry finder) {
+    private static Multimap<String, TValidatedOverload> createScalars(InstanceFinder finder) {
         Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
 
         int errors = 0;
@@ -213,7 +213,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     }
 
     private static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
-                                                               FunctionRegistry finder) {
+                                                               InstanceFinder finder) {
         Map<TClass, Map<TClass, TCast>> localCastsMap = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
 
         // First, define the self casts
