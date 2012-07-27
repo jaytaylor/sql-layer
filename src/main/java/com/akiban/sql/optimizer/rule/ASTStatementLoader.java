@@ -659,7 +659,7 @@ public class ASTStatementLoader extends BaseRule
                                               List<ExpressionNode> projects,
                                               InListOperatorNode in)
         {
-            throw new UnsupportedOperationException("not supported cases with nested tuples yet");
+            throw new UnsupportedOperationException("not supported yet: cases with nested tuples yet");
 //            RowConstructorNode lhs = in.getLeftOperand();
 //            RowConstructorNode rhs = in.getRightOperandList();
         }
