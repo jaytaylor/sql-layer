@@ -131,7 +131,8 @@ public class PostgresDDLStatement implements PostgresStatement
                         server.getStore().getConfig(),
                         server.getTreeService(),
                         session,
-                        server.getStore().getUnderlyingStore()
+                        server.getStore().getUnderlyingStore(),
+                        usePVals
                 );
                 AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddlFunctions, server.getDXL().dmlFunctions(),
                                          session, copier, schema, (AlterTableNode)ddl);

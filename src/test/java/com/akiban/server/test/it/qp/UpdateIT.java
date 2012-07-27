@@ -31,6 +31,7 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionBasedUpdateFunction;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
@@ -58,7 +59,7 @@ public class UpdateIT extends OperatorITBase
     public void basicUpdate() throws Exception {
         use(db);
 
-        UpdateFunction updateFunction = new UpdateFunction() {
+        UpdateFunction updateFunction = new ExpressionBasedUpdateFunction() {
             @Override
             public boolean rowIsSelected(Row row) {
                 return row.rowType().equals(customerRowType);
@@ -114,7 +115,7 @@ public class UpdateIT extends OperatorITBase
                 InputPreservationOption.DISCARD_INPUT),
             Arrays.asList(itemRowType));
         
-        UpdateFunction updateFunction = new UpdateFunction() {
+        UpdateFunction updateFunction = new ExpressionBasedUpdateFunction() {
                 @Override
                 public boolean rowIsSelected(Row row) {
                     return row.rowType().equals(itemRowType);
@@ -163,7 +164,7 @@ public class UpdateIT extends OperatorITBase
                 InputPreservationOption.DISCARD_INPUT),
             Arrays.asList(itemRowType));
         
-        UpdateFunction updateFunction = new UpdateFunction() {
+        UpdateFunction updateFunction = new ExpressionBasedUpdateFunction() {
                 @Override
                 public boolean rowIsSelected(Row row) {
                     return row.rowType().equals(itemRowType);
@@ -263,7 +264,7 @@ public class UpdateIT extends OperatorITBase
         Row[] rows = {
                 row(customerRowType, new Object[]{2, "abc"}, new AkType[]{AkType.INT, AkType.VARCHAR})
         };
-        UpdateFunction updateFunction = new UpdateFunction() {
+        UpdateFunction updateFunction = new ExpressionBasedUpdateFunction() {
             @Override
             public Row evaluate(Row original, QueryContext context) {
                 return row(customerRowType, 2L, "zzz");

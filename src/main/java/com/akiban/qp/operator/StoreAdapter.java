@@ -61,11 +61,11 @@ public abstract class StoreAdapter
 
     public abstract Store getUnderlyingStore();
 
-    public abstract void updateRow(Row oldRow, Row newRow);
+    public abstract void updateRow(Row oldRow, Row newRow, boolean usePValues);
     
-    public abstract void writeRow (Row newRow);
+    public abstract void writeRow (Row newRow, boolean usePValues);
     
-    public abstract void deleteRow (Row oldRow);
+    public abstract void deleteRow (Row oldRow, boolean usePValues);
 
     public abstract Cursor sort(QueryContext context,
                                 Cursor input,
