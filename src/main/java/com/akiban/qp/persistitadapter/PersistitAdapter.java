@@ -33,6 +33,8 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -257,7 +259,12 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
-    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
+    public PersistitIndexRowBuffer newIndexRow(Index index, Key key)
+    {
+        return new PersistitIndexRowBuffer(key);
+    }
+
+    public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
     {
         return
             indexRowType.index().isTableIndex()

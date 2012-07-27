@@ -79,7 +79,7 @@ public class NewRowBackedIndexRow implements RowBase
 
     @Override
     public ValueSource eval(int i) {
-        FieldDef fieldDef = (FieldDef) index.getAllColumns().get(i).getColumn().getFieldDef();
+        FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
         FromObjectValueSource source = sources[fieldPos];
         if (row.isColumnNull(fieldPos)) {

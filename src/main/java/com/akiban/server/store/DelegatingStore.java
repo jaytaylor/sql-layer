@@ -84,47 +84,54 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         return delegate.getRowDefCache();
     }
 
-    public void writeRow(final Session session, final RowData rowData) throws PersistitException {
+    public void writeRow(Session session, RowData rowData) throws PersistitException {
         delegate.writeRow(session, rowData);
     }
 
-    public void writeRowForBulkLoad(final Session session, Exchange hEx, RowDef rowDef, RowData rowData, int[] ordinals, int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues) throws PersistitException {
+    public void writeRowForBulkLoad(Session session,
+                                    Exchange hEx,
+                                    RowDef rowDef,
+                                    RowData rowData,
+                                    int[] ordinals,
+                                    int[] nKeyColumns,
+                                    FieldDef[] hKeyFieldDefs,
+                                    Object[] hKeyValues) throws PersistitException {
         delegate.writeRowForBulkLoad(session, hEx, rowDef, rowData, ordinals, nKeyColumns, hKeyFieldDefs, hKeyValues);
     }
 
-    public void updateTableStats(final Session session, RowDef rowDef, long rowCount) {
+    public void updateTableStats(Session session, RowDef rowDef, long rowCount) {
         delegate.updateTableStats(session, rowDef, rowCount);
     }
 
-    public void deleteRow(final Session session, final RowData rowData) throws PersistitException {
+    public void deleteRow(Session session, RowData rowData) throws PersistitException {
         delegate.deleteRow(session, rowData);
     }
 
-    public void updateRow(final Session session, final RowData oldRowData, final RowData newRowData, final ColumnSelector columnSelector) throws PersistitException {
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector) throws PersistitException {
         delegate.updateRow(session, oldRowData, newRowData, columnSelector);
     }
 
-    public void dropGroup(final Session session, final int rowDefId) throws PersistitException {
+    public void dropGroup(Session session, int rowDefId) throws PersistitException {
         delegate.dropGroup(session, rowDefId);
     }
 
-    public void truncateGroup(final Session session, final int rowDefId) throws PersistitException {
+    public void truncateGroup(Session session, int rowDefId) throws PersistitException {
         delegate.truncateGroup(session, rowDefId);
     }
 
-    public void truncateTableStatus(final Session session, final int rowDefId) throws PersistitException {
+    public void truncateTableStatus(Session session, int rowDefId) throws PersistitException {
         delegate.truncateTableStatus(session, rowDefId);
     }
 
-    public RowCollector getSavedRowCollector(final Session session, final int tableId) throws InvalidOperationException {
+    public RowCollector getSavedRowCollector(Session session, int tableId) throws InvalidOperationException {
         return delegate.getSavedRowCollector(session, tableId);
     }
 
-    public void addSavedRowCollector(final Session session, final RowCollector rc) {
+    public void addSavedRowCollector(Session session, RowCollector rc) {
         delegate.addSavedRowCollector(session, rc);
     }
 
-    public void removeSavedRowCollector(final Session session, final RowCollector rc) throws InvalidOperationException {
+    public void removeSavedRowCollector(Session session, RowCollector rc) throws InvalidOperationException {
         delegate.removeSavedRowCollector(session, rc);
     }
 
@@ -137,15 +144,15 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         return delegate.newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap, start, startColumns, end, endColumns, scanLimit);
     }
 
-    public long getRowCount(final Session session, final boolean exact, final RowData start, final RowData end, final byte[] columnBitMap) {
+    public long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap) {
         return delegate.getRowCount(session, exact, start, end, columnBitMap);
     }
 
-    public TableStatistics getTableStatistics(final Session session, int tableId) {
+    public TableStatistics getTableStatistics(Session session, int tableId) {
         return delegate.getTableStatistics(session, tableId);
     }
 
-    public void flushIndexes(final Session session) {
+    public void flushIndexes(Session session) {
         delegate.flushIndexes(session);
     }
 
@@ -174,7 +181,7 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         return delegate.isDeferIndexes();
     }
 
-    public void setDeferIndexes(final boolean defer) {
+    public void setDeferIndexes(boolean defer) {
         delegate.setDeferIndexes(defer);
     }
 }
