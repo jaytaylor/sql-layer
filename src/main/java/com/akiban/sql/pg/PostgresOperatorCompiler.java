@@ -178,7 +178,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         return new PostgresOperatorStatement(select.getResultOperator(),
                                              select.getResultRowType(),
                                              columnNames, columnTypes,
-                                             parameterTypes);
+                                             parameterTypes,
+                                             usesPValues());
     }
 
 }

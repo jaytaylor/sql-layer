@@ -39,13 +39,14 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
 
     private Object[] args;
 
-    protected PostgresLoadableOperator(LoadableOperator loadableOperator, Object[] args)
+    protected PostgresLoadableOperator(LoadableOperator loadableOperator, Object[] args, boolean usePVals)
     {
         super(loadableOperator.plan(),
               null,
               loadableOperator.columnNames(),
               loadableOperator.columnTypes(),
-              null);
+              null,
+              usePVals);
         this.args = args;
     }
     
@@ -62,10 +63,10 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         // Overwrite the query parameters with the call parameters.
         PostgresLoadablePlan.setParameters(context, args);
-        return super.execute(context, maxrows, usePVals);
+        return super.execute(context, maxrows);
     }
 
 }
