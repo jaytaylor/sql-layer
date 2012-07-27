@@ -32,6 +32,8 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.Quote;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 
 import java.util.*;
@@ -57,14 +59,14 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1);
         encoder.reset();
-        outputRow(row, resultColumns);
+        outputRow(row, resultColumns, usePVals);
         ByteArrayOutputStream bytes = encoder.getByteStream();
         messenger.writeInt(bytes.size());
         messenger.writeByteStream(bytes);
         messenger.sendMessage();
     }
 
-    protected void outputRow(Row row, List<JsonResultColumn> resultColumns)
+    protected void outputRow(Row row, List<JsonResultColumn> resultColumns, boolean usePVals)
             throws IOException {
         encoder.appendString("{");
         AkibanAppender appender = encoder.getAppender();
@@ -74,22 +76,45 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
             encoder.appendString((i == 0) ? "\"" : ",\"");
             Quote.DOUBLE_QUOTE.append(appender, resultColumn.getName());
             encoder.appendString("\":");
-            AkType type = resultColumn.getAkType();
-            if (type == AkType.RESULT_SET) {
-                outputNestedResultSet(row.eval(i).getResultSet(),
-                                      resultColumn.getNestedResultColumns());
+            if (usePVals) {
+                PValueSource value = row.pvalue(i);
+                if (false) {
+                    // TODO: No getResultSet() yet.
+                }
+                else if (value.isNull()) {
+                    encoder.appendString("null");
+                }
+                else {
+                    // TODO: No Quote support for new types.
+                    encoder.appendString("\"");
+                    encoder.appendPValue(value, valueType, false);
+                    encoder.appendString("\"");
+                }
             }
             else {
-                Quote.JSON_QUOTE.quote(appender, type);
-                encoder.appendValue(row.eval(i), valueType, false);
-                Quote.JSON_QUOTE.quote(appender, type);
+                AkType type = resultColumn.getAkType();
+                ValueSource value = row.eval(i);
+                if (type == AkType.RESULT_SET) {
+                    outputNestedResultSet(value.getResultSet(),
+                                          resultColumn.getNestedResultColumns(),
+                                          usePVals);
+                }
+                else if (value.isNull()) {
+                    encoder.appendString("null");
+                }
+                else {
+                    Quote.JSON_QUOTE.quote(appender, type);
+                    encoder.appendValue(value, valueType, false);
+                    Quote.JSON_QUOTE.quote(appender, type);
+                }
             }
         }
         encoder.appendString("}");
     }
 
     protected void outputNestedResultSet(Cursor cursor, 
-                                         List<JsonResultColumn> resultColumns) 
+                                         List<JsonResultColumn> resultColumns,
+                                         boolean usePVals) 
             throws IOException {
         encoder.appendString("[");
         try {
@@ -100,7 +125,7 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
                     first = false;
                 else
                     encoder.appendString(",");
-                outputRow(row, resultColumns);
+                outputRow(row, resultColumns, usePVals);
             }
         }
         finally {
