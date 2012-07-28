@@ -170,7 +170,7 @@ public class TableDDL
         ddlFunctions.createTable(session, table);
     }
     
-    private static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn, 
+    static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
             final String schemaName, final String tableName, int colpos) {
         boolean autoIncrement = cdn.isAutoincrementColumn();
         addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,

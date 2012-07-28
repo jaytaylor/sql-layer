@@ -60,6 +60,7 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
+import com.akiban.ais.protobuf.AISProtobuf;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
@@ -443,8 +444,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public void alterTableDefinition(Session session, TableName tableName, UserTable newDefinition) {
-        throw new UnsupportedOperationException();
+    public void alterTableDefinition(Session session, TableName tableName, final UserTable newDefinition) {
+        checkTableName(tableName, true, false);
+
+        AISMerge merge = new AISMerge(aish.getAis(), newDefinition, AISMerge.MergeType.CHANGE_TABLE);
+        merge.merge();
+
+        saveAISChangeWithRowDefs(session, merge.getAIS(), Collections.singleton(tableName.getSchemaName()));
     }
 
     private void deleteTableCommon(Session session, TableName tableName, boolean isInternal, boolean mustBeMemory) {

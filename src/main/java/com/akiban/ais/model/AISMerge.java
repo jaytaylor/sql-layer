@@ -53,6 +53,8 @@ import java.util.TreeSet;
  * frozen. If you pass a frozen AIS into the merge, the copy process unfreeze the copy.
  */
 public class AISMerge {
+    public enum MergeType { NEW_TABLE, CHANGE_TABLE }
+
     // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
     static final int USER_TABLE_ID_OFFSET = 1;
     static final int AIS_TABLE_ID_OFFSET = 1000000000;
@@ -62,6 +64,7 @@ public class AISMerge {
     private final AkibanInformationSchema targetAIS;
     private final UserTable sourceTable;
     private final NameGenerator nameGenerator;
+    private final MergeType mergeType;
     private SortedSet<Integer> userTableIDSet = new TreeSet<Integer>();
     private SortedSet<Integer> isTableIDSet = new TreeSet<Integer>();
 
@@ -72,12 +75,17 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
+        this(primaryAIS, newTable, MergeType.NEW_TABLE);
+    }
+
+    public AISMerge (AkibanInformationSchema primaryAIS, UserTable table, MergeType mergeType) {
         targetAIS = copyAIS(primaryAIS);
-        sourceTable = newTable;
+        sourceTable = table;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
                 setDefaultSequenceNames(computeSequenceNames(targetAIS)).
                 setDefaultTreeNames(computeTreeNames(targetAIS));
+        this.mergeType = mergeType;
         collectTableIDs(primaryAIS);
     }
     
@@ -96,13 +104,27 @@ public class AISMerge {
     }
     
     public AISMerge merge() {
+        switch(mergeType) {
+            case NEW_TABLE:
+                doNewMerge();
+            break;
+            case CHANGE_TABLE:
+                doChangeMerge();
+            break;
+            default:
+                throw new IllegalStateException("Unknown MergeType: " + mergeType);
+        }
+        return this;
+    }
+
+    private void doNewMerge() {
         // I should use TableSubsetWriter(new AISTarget(targetAIS))
         // but that assumes the UserTable.getAIS() is complete and valid. 
         // i.e. has a group and group table, joins are accurate, etc. 
         // this may not be true 
         // Also the tableIDs need to be assigned correctly, which 
         // TableSubsetWriter doesn't do. 
-        LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
+        LOG.debug("Merging new table {} into targetAIS", sourceTable.getName());
 
         final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
         final boolean isISTable = TableName.INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName());
@@ -119,7 +141,7 @@ public class AISMerge {
         }
 
         // Add the user table to the targetAIS
-        addTable (builder, sourceTable); 
+        addTable (builder, sourceTable, false);
 
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
@@ -142,29 +164,78 @@ public class AISMerge {
                 addJoin (builder, join);
             }
         }
+
         builder.groupingIsComplete();
-        
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
-        return this;
     }
 
-    private void addTable(AISBuilder builder, final UserTable table) {
+    private void doChangeMerge() {
+        LOG.debug("Merging changed table {} into targetAIS", sourceTable.getName());
+
+        final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
+        final UserTable origTable = targetAIS.getUserTable(sourceTable.getName());
+
+        // Add new
+        addTable(builder, sourceTable, true);
+
+        // Fix up parent join
+        if(origTable.getParentJoin() != null) {
+            targetAIS.removeJoin(origTable.getParentJoin().getName());
+            addJoin(builder, origTable.getParentJoin());
+        } else {
+            Group origGroup = origTable.getGroup();
+            GroupTable origGT = origGroup.getGroupTable();
+            targetAIS.removeGroup(origGroup);
+
+            UserTable newTable = targetAIS.getUserTable(sourceTable.getName());
+            Group group = Group.create(targetAIS, origGroup.getName());
+            GroupTable gt = GroupTable.create(targetAIS, origGT.getName().getSchemaName(), origGT.getName().getTableName(), origGT.getTableId());
+
+            gt.setGroup(group);
+            gt.setTreeName(newTable.getTreeName());
+            group.setGroupTable(gt);
+            newTable.setGroup(group);
+        }
+
+        // Fix up children joins
+        for(Join childJoin : origTable.getChildJoins()) {
+            targetAIS.removeJoin(childJoin.getName());
+            addJoin(builder, childJoin);
+        }
+
+        // TODO: Rebuild group indexes
+
+        builder.groupingIsComplete();
+        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().freeze();
+    }
+
+    private void addTable(AISBuilder builder, final UserTable table, boolean useIDs) {
         
         // I should use TableSubsetWriter(new AISTarget(targetAIS)) or AISCloner.clone()
         // but both assume the UserTable.getAIS() is complete and valid. 
         // i.e. has a group and group table, and the joins point to a valid table
         // which, given the use of AISMerge, is not true. 
-        
-        
+
+        UserTable curTable = null;
+        if(useIDs) {
+            curTable = targetAIS.getUserTable(table.getName());
+            targetAIS.removeTable(table.getName());
+        }
+
         final String schemaName = table.getName().getSchemaName();
         final String tableName = table.getName().getTableName();
         
 
         builder.userTable(schemaName, tableName);
-        UserTable targetTable = targetAIS.getUserTable(schemaName, tableName); 
+        UserTable targetTable = targetAIS.getUserTable(schemaName, tableName);
         targetTable.setEngine(table.getEngine());
         targetTable.setCharsetAndCollation(table.getCharsetAndCollation());
+        if(useIDs) {
+            targetTable.setTableId(curTable.getTableId());
+            targetTable.setTreeName(curTable.getTreeName());
+        }
         
         // columns
         for (Column column : table.getColumns()) {
@@ -201,11 +272,15 @@ public class AISMerge {
         // indexes/constraints
         for (TableIndex index : table.getIndexes()) {
             IndexName indexName = index.getIndexName();
-            
-            builder.index(schemaName, tableName, 
-                    indexName.getName(), 
-                    index.isUnique(), 
-                    index.getConstraint());
+
+            if(useIDs) {
+                Index curIndex = curTable.getIndex(index.getIndexName().getName());
+                builder.index(schemaName, tableName, indexName.getName(), index.isUnique(), index.getConstraint(), curIndex.getIndexId());
+                targetTable.getIndex(indexName.getName()).setTreeName(curIndex.getTreeName());
+            } else {
+                builder.index(schemaName, tableName, indexName.getName(), index.isUnique(), index.getConstraint());
+            }
+
             for (IndexColumn col : index.getKeyColumns()) {
                     builder.indexColumn(schemaName, tableName, index.getIndexName().getName(),
                         col.getColumn().getName(), 

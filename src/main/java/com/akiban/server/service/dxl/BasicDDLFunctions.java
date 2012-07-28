@@ -27,6 +27,7 @@
 package com.akiban.server.service.dxl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,6 +38,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
@@ -46,9 +48,29 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.expression.ExpressionRow;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.UpdateFunction;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.OverlayingRow;
+import com.akiban.qp.row.ProjectedRow;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesRow;
+import com.akiban.qp.rowtype.ProjectedRowType;
+import com.akiban.qp.rowtype.ProjectedUserTableRowType;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.api.AlterTableChange;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -66,8 +88,12 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
@@ -77,11 +103,18 @@ import com.akiban.server.store.statistics.IndexStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.akiban.qp.operator.API.cursor;
+import static com.akiban.qp.operator.API.filter_Default;
+import static com.akiban.qp.operator.API.groupScan_Default;
+import static com.akiban.qp.operator.API.project_Table;
+import static com.akiban.qp.operator.API.update_Default;
+
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
     private final IndexStatisticsService indexStatisticsService;
+    private final ConfigurationService configService;
     
     @Override
     public void createTable(Session session, UserTable table)
@@ -134,16 +167,100 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, table);
     }
 
+    private static Integer findOldPosition(List<AlterTableChange> columnChanges, Column oldColumn, Column newColumn) {
+        for(AlterTableChange change : columnChanges) {
+            String newName = newColumn.getName();
+            if(newName.equals(change.getNewName())) {
+                switch(change.getChangeType()) {
+                    case ADD:
+                        assert oldColumn == null : oldColumn;
+                        return null;
+                    case MODIFY:
+                        assert oldColumn != null : newColumn;
+                        return oldColumn.getPosition();
+                    case DROP:
+                        throw new IllegalStateException("Column should not exist in new table: " + newName);
+                    default:
+                        throw new IllegalStateException("Unknown ChangeType: " + change);
+                }
+            }
+        }
+        // Not in change list, must be an original column
+        assert oldColumn != null : newColumn;
+        return oldColumn.getPosition();
+    }
+
+
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
                            List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
+        AkibanInformationSchema origAIS = getAIS(session);
+
         // - Check table exists
-        // - Verify parameters
-        // - Create transformation
+        UserTable origTable = origAIS.getUserTable(tableName);
+        if(origTable == null) {
+            throw new NoSuchTableException(tableName);
+        }
+
+        // TODO: Verify parameters
+
         // - Alter through schemaManager
-        // - Perform transformation
-        // - Any post processing (e.g. index building)
-        throw new UnsupportedOperationException();
+        schemaManager().alterTableDefinition(session, tableName, newDefinition);
+
+        // - Create transformation
+        Schema oldSchema = SchemaCache.globalSchema(origAIS);
+        RowType oldSourceType = oldSchema.userTableRowType(origTable);
+
+        AkibanInformationSchema newAIS = getAIS(session);
+        UserTable newTable = newAIS.getUserTable(newDefinition.getName());
+        Schema newSchema = SchemaCache.globalSchema(newAIS);
+        final RowType newType = newSchema.userTableRowType(newTable);
+
+        List<Column> newColumns = newTable.getColumnsIncludingInternal();
+        AkType[] outTypes = new AkType[newColumns.size()];
+        final List<Expression> projections = new ArrayList<Expression>(newColumns.size());
+        for(Column newCol : newColumns) {
+            outTypes[newCol.getPosition()] = newCol.getType().akType();
+
+            Integer oldPosition = findOldPosition(columnChanges, origTable.getColumn(newCol.getName()), newCol);
+            if(oldPosition == null) {
+                projections.add(new LiteralExpression(newCol.getType().akType(), null));
+            } else {
+                projections.add(new FieldExpression(oldSourceType, oldPosition));
+            }
+        }
+
+        UpdatePlannable plan = update_Default(
+                filter_Default(
+                        groupScan_Default(origTable.getGroup().getGroupTable()),
+                        Collections.singleton(oldSourceType)
+                ),
+                new UpdateFunction() {
+                    @Override
+                    public Row evaluate(Row original, QueryContext context) {
+                        OverlayingRow overlay = new OverlayingRow(original, newType, false);
+                        for(int i = 0; i < projections.size(); ++i) {
+                            ExpressionEvaluation eval = projections.get(i).evaluation();
+                            eval.of(context);
+                            eval.of(original);
+                            overlay.overlay(i, eval.eval());
+                        }
+                        return overlay;
+                    }
+
+                    @Override
+                    public boolean rowIsSelected(Row row) {
+                        return true;
+                    }
+                }
+        );
+
+
+        PersistitAdapter adapter = new PersistitAdapter(oldSchema, store(), treeService(), session, configService);
+        plan.run(new SimpleQueryContext(adapter));
+
+
+        // TODO: Any post processing (e.g. index building)
     }
 
     @Override
@@ -531,8 +648,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().dropSequence(session, sequence);
     }
 
-    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, IndexStatisticsService indexStatisticsService) {
+    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService,
+                      IndexStatisticsService indexStatisticsService, ConfigurationService configService) {
         super(middleman, schemaManager, store, treeService);
         this.indexStatisticsService = indexStatisticsService;
+        this.configService = configService;
     }
 }

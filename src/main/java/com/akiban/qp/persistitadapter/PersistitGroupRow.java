@@ -139,7 +139,8 @@ public class PersistitGroupRow extends AbstractRow
             try {
                 exception = null;
                 adapter.persistit().expandRowData(exchange, rowData);
-                row.setRowDef(rowData.getRowDefId(), adapter.persistit());
+                RowDef rowDef = adapter.schema().ais().getUserTable(rowData.getRowDefId()).rowDef();
+                row.setRowDef(rowDef);
                 row.setRowData(rowData);
                 PersistitHKey persistitHKey = persistitHKey();
                 persistitHKey.copyFrom(exchange.getKey());

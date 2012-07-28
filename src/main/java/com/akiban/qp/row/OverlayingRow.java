@@ -36,6 +36,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
+    private final RowType outputType;
     private final ValueHolder[] overlays;
     protected final PValue[] pOverlays;
 
@@ -44,13 +45,18 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     public OverlayingRow(Row underlying, boolean usePValues) {
+        this(underlying, underlying.rowType(), usePValues);
+    }
+
+    public OverlayingRow(Row underlying, RowType outputType, boolean usePValues) {
         this.underlying = underlying;
+        this.outputType = outputType;
         if (usePValues) {
             this.overlays = null;
-            this.pOverlays = new PValue[underlying.rowType().nFields()];
+            this.pOverlays = new PValue[outputType.nFields()];
         }
         else {
-            this.overlays = new ValueHolder[underlying.rowType().nFields()];
+            this.overlays = new ValueHolder[outputType.nFields()];
             this.pOverlays = null;
         }
     }
@@ -73,19 +79,19 @@ public final class OverlayingRow extends AbstractRow {
         }
         else {
             if (pOverlays[index] == null)
-                pOverlays[index] = new PValue(underlying.rowType().typeInstanceAt(index).typeClass().underlyingType());
+                pOverlays[index] = new PValue(outputType.typeInstanceAt(index).typeClass().underlyingType());
             pOverlays[index].putValueSource(object);
         }
         return this;
     }
 
     public OverlayingRow overlay(int index, Object object) {
-        return overlay(index, valueSource.setExplicitly(object, underlying.rowType().typeAt(index)));
+        return overlay(index, valueSource.setExplicitly(object, outputType.typeAt(index)));
     }
 
     @Override
     public RowType rowType() {
-        return underlying.rowType();
+        return outputType;
     }
 
     @Override

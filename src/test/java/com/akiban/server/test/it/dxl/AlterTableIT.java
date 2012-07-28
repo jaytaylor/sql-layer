@@ -33,6 +33,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
@@ -42,6 +43,8 @@ import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
@@ -59,6 +62,46 @@ public class AlterTableIT extends ITBase {
 
     private RowBase testRow(RowType type, Object... fields) {
         return new TestRow(type, fields);
+    }
+
+    @Test
+     public void addColumn() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        writeRows(
+                createNewRow(cid, 1, "a"),
+                createNewRow(cid, 2, "b"),
+                createNewRow(cid, 3, "asdf"),
+                createNewRow(cid, 10, "asdfasdfasdf")
+        );
+
+        runAlter("ALTER TABLE c ADD COLUMN c1 INT");
+        updateAISGeneration();
+
+        List<NewRow> newRows = scanAll(scanAllRequest(cid));
+
+        for(NewRow row : newRows) {
+            System.out.println(row);
+        }
+    }
+
+    @Test
+    public void dropColumn() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        writeRows(
+                createNewRow(cid, 1, "a"),
+                createNewRow(cid, 2, "b"),
+                createNewRow(cid, 3, "asdf"),
+                createNewRow(cid, 10, "asdfasdfasdf")
+        );
+
+        runAlter("ALTER TABLE c DROP COLUMN v");
+        updateAISGeneration();
+
+        List<NewRow> newRows = scanAll(scanAllRequest(cid));
+
+        for(NewRow row : newRows) {
+            System.out.println(row);
+        }
     }
 
     @Test
