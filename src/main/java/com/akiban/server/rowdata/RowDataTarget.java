@@ -24,11 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.server.rowdata;
 
-public interface PValueTarget extends PBasicValueTarget {
-
-    boolean supportsCachedObjects();
-
-    void putObject(Object object);
+public interface RowDataTarget {
+    void bind(FieldDef fieldDef, byte[] backingBytes, int offset);
+    int lastEncodedLength();
+    void putNull();
 }

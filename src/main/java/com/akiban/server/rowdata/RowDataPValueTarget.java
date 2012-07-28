@@ -30,14 +30,13 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigInteger;
 
-public final class RowDataPValueTarget implements PValueTarget {
+public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
 
+    @Override
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
         clear();
         ArgumentValidation.notNull("fieldDef", fieldDef);
@@ -47,11 +46,16 @@ public final class RowDataPValueTarget implements PValueTarget {
         this.offset = offset;
     }
 
+    @Override
     public int lastEncodedLength() {
         if (lastEncodedLength < 0) {
             throw new IllegalStateException("no last recorded length available");
         }
         return lastEncodedLength;
+    }
+
+    public void putStringBytes(String value) {
+        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
     public RowDataPValueTarget() {
@@ -93,11 +97,6 @@ public final class RowDataPValueTarget implements PValueTarget {
     }
 
     @Override
-    public void putValueSource(PValueSource source) {
-        PValueTargets.copyFrom(source, this);
-    }
-
-    @Override
     public void putBool(boolean value) {
         recordEncoded(encodeLong(value ? 1 : 0));
     }
@@ -134,8 +133,7 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putString(String value, AkCollator collator) {
-        throw new AssertionError("should be targeted to bytes instead");
-//        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
+        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
     @Override

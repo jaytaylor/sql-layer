@@ -33,6 +33,7 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 public class MMinMax implements TAggregator {
 
@@ -67,7 +68,7 @@ public class MMinMax implements TAggregator {
         assert stateType.typeClass().equals(tClass) : "incompatible types " + instance + " and " + stateType;
         int comparison = TClass.compare(instance, source, stateType, state);
         if (mType.condition(comparison))
-            state.putValueSource(source);
+            PValueTargets.copyFrom(source, state);
     }
 
     @Override
