@@ -236,7 +236,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public RowDef rowDef(int tableId)
     {
-        return persistit.getRowDefCache().getRowDef(tableId);
+        return schema.ais().getUserTable(tableId).rowDef();
     }
 
     public NewRow newRow(RowDef rowDef)

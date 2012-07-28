@@ -688,7 +688,7 @@ public class PersistitStore implements Store {
     {
         RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         UserTable table = rowDef.userTable();
-        BitSet ordinals = new BitSet(rowDefCache.maxOrdinal() + 1);
+        BitSet ordinals = new BitSet();
         for (UserTable hKeyDependentTable : table.hKeyDependentTables()) {
             int ordinal = hKeyDependentTable.rowDef().getOrdinal();
             ordinals.set(ordinal, true);

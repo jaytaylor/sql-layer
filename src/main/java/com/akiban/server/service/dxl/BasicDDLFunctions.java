@@ -48,6 +48,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
+import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -131,6 +132,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
+    }
+
+    @Override
+    public void alterTable(Session session, TableName tableName, UserTable newDefinition,
+                           List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
+        // - Check table exists
+        // - Verify parameters
+        // - Create transformation
+        // - Alter through schemaManager
+        // - Perform transformation
+        // - Any post processing (e.g. index building)
+        throw new UnsupportedOperationException();
     }
 
     @Override

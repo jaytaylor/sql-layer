@@ -41,7 +41,6 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.MySqlStatementSplitter;
@@ -75,7 +74,7 @@ public abstract class AbstractScanBase extends ITBase {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getName().getTableName().startsWith("a")) {
-                tableMap.put(RowDefCache.nameOf(table.getName().getSchemaName(), table.getName().getTableName()), table);
+                tableMap.put(new TableName(table.getName().getSchemaName(), table.getName().getTableName()), table);
             }
         }
         
@@ -129,7 +128,7 @@ public abstract class AbstractScanBase extends ITBase {
     }
 
     protected RowDef rowDef(final String name) {
-        return rowDefCache().getRowDef(RowDefCache.nameOf(SCHEMA, name));
+        return rowDefCache().getRowDef(new TableName(SCHEMA, name));
     }
 
     protected int scanAllRows(final String test, final RowData start,
