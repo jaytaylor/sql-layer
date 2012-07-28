@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.ColumnContainer;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 
 import java.util.*;
@@ -36,7 +37,7 @@ public class UpdateStatement extends BaseUpdateStatement
 {
     /** One of the SET clauses of an UPDATE statement.
      */
-    public static class UpdateColumn extends AnnotatedExpression {
+    public static class UpdateColumn extends AnnotatedExpression implements ColumnContainer {
         private Column column;
 
         public UpdateColumn(Column column, ExpressionNode value) {
@@ -44,6 +45,7 @@ public class UpdateStatement extends BaseUpdateStatement
             this.column = column;
         }
 
+        @Override
         public Column getColumn() {
             return column;
         }
