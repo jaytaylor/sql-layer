@@ -24,19 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.TCastPath;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
-import java.util.Collection;
+public final class Paths {
 
-public interface FunctionRegistry
-{
-    Collection<? extends TAggregator> aggregators();
-    Collection<? extends TValidatedOverload> overloads();
-    Collection<? extends TCast> casts();
-    Collection<? extends TClass> tclasses();
+    public static final TCastPath INTEGERS = TCastPath.create(
+            MNumeric.TINYINT_UNSIGNED,
+            MNumeric.INT,
+            MNumeric.BIGINT
+    );
+
+    private Paths() {}
 }
