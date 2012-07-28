@@ -28,6 +28,7 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -57,6 +58,10 @@ public final class RowDataPValueTarget implements PValueTarget {
         clear();
     }
 
+    public TInstance targetInstance() {
+        return fieldDef.column().tInstance();
+    }
+
     // ValueTarget interface
 
     @Override
@@ -83,7 +88,7 @@ public final class RowDataPValueTarget implements PValueTarget {
     @Override
     public PUnderlying getUnderlyingType() {
         // STRING should actually be interpreted as BYTES
-        PUnderlying underlying = fieldDef.column().tInstance().typeClass().underlyingType();
+        PUnderlying underlying = targetInstance().typeClass().underlyingType();
         return underlying == PUnderlying.STRING ? PUnderlying.BYTES : underlying;
     }
 

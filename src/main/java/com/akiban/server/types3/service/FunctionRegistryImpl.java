@@ -33,12 +33,12 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
-import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -142,12 +142,12 @@ public class FunctionRegistryImpl implements FunctionRegistry
                     switch(validateField(field, target))
                     {
                         case FIELD:
-                            putItem(ret, field.get(null), target);
+                            putItem(ret, field.get(null), target, field);
                             break;
                         case ARRAY:
                             for (Object item : (Object[])field.get(null)) {
                                 if (target.isInstance(item))
-                                    putItem(ret, item, target);
+                                    putItem(ret, item, target, field);
                             }
                             break;
                         case COLLECTION:
@@ -155,7 +155,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
                             {
                                 for (Object raw : (Collection<?>)field.get(null)) {
                                     if (target.isInstance(raw))
-                                        putItem(ret, raw, target);
+                                        putItem(ret, raw, target, field);
                                 }
                                 break;
                             }
@@ -173,17 +173,17 @@ public class FunctionRegistryImpl implements FunctionRegistry
                     switch(validateMethod(method, target))
                     {
                         case FIELD:
-                            putItem(ret, method.invoke(null), target);
+                            putItem(ret, method.invoke(null), target, method);
                             break;
                         case ARRAY:
                             for (Object item : (Object[])method.invoke(null))
-                                putItem(ret, item, target);
+                                putItem(ret, item, target, method);
                             break;
                         case COLLECTION:
                             try
                             {
                                 for (Object raw : (Collection<?>)method.invoke(null))
-                                    putItem(ret, raw, target);
+                                    putItem(ret, raw, target, method);
                                 break;
                             }
                             catch (ClassCastException e) {/* fall thru */}
@@ -208,7 +208,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
         int modifiers = method.getModifiers();
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers)
                 && method.getParameterTypes().length == 0)
-            return assignable(method.getReturnType(), target);
+            return assignable(method.getReturnType(), target, method.getGenericReturnType());
         return SKIP;
     }
     
@@ -217,25 +217,55 @@ public class FunctionRegistryImpl implements FunctionRegistry
         int modifiers = field.getModifiers();
         
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers))
-            return assignable(field.getType(), target);
+            return assignable(field.getType(), target, field.getGenericType());
          return SKIP;
     }
 
-    private static <T> int assignable (Class<?> c, Class<T> target)
+    private static <T> int assignable (Class<?> c, Class<T> target, Type genericTarget)
     {
-        if (c.isArray() && target.isAssignableFrom(c.getComponentType()))
+        if (c.isArray() && target.isAssignableFrom(c.getComponentType())) {
             return ARRAY;
-        else if (target.isAssignableFrom(c))
+        }
+        else if (target.isAssignableFrom(c)) {
             return FIELD;
-        else if (Collection.class.isAssignableFrom(c))
-            return COLLECTION;
-        else
-            return SKIP;
+        }
+        else if (Collection.class.isAssignableFrom(c)) {
+            if (genericTarget instanceof ParameterizedType) {
+                ParameterizedType targetParams = (ParameterizedType) genericTarget;
+                Type[] genericArgs = targetParams.getActualTypeArguments();
+                assert genericArgs.length == 1 : Arrays.toString(genericArgs);
+                Type genericArg = genericArgs[0];
+                if (genericArg instanceof WildcardType) {
+                    Type[] upperBounds = ((WildcardType)genericArg).getUpperBounds();
+                    if (upperBounds.length > 1)
+                        logger.debug("multiple upper bounds for {}: {}", genericTarget, Arrays.toString(upperBounds));
+                    for (Type upperBound : upperBounds) {
+                        if (isAssignableFrom(target, upperBound))
+                            return COLLECTION;
+                    }
+                }
+                else if (isAssignableFrom(target, genericArg))
+                    return COLLECTION;
+            }
+        }
+        return SKIP;
     }
 
-    private static <T> void putItem(Collection<T> list, Object item,  Class<T> targetClass)
+    private static boolean isAssignableFrom(Class<?> target, Type actualType) {
+        return (actualType instanceof Class<?>) && target.isAssignableFrom((Class<?>) actualType);
+    }
+
+    private static <T> void putItem(Collection<T> list, Object item,  Class<T> targetClass, Object source)
     {
-        list.add(targetClass.cast(item));
+        T cast;
+        try {
+            cast = targetClass.cast(item);
+        } catch (ClassCastException e) {
+            String err = "while casting " + item + " from " + source + " to " + targetClass;
+            logger.error(err, e);
+            throw new ClassCastException(err);
+        }
+        list.add(cast);
     }
 
     private static boolean isRegistered(AccessibleObject field)

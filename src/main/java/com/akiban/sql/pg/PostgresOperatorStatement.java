@@ -49,7 +49,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
 
     private Operator resultOperator;
     private RowType resultRowType;
-    private boolean usesPValues;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
@@ -61,14 +60,9 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
                                      boolean usesPValues) {
-        super(columnNames, columnTypes, parameterTypes);
+        super(columnNames, columnTypes, parameterTypes, usesPValues);
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
-        this.usesPValues = usesPValues;
-    }
-
-    public boolean usesPValues() {
-        return usesPValues;
     }
     
     @Override
@@ -96,7 +90,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
-                outputter.output(row, usesPValues);
+                outputter.output(row, usesPValues());
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;

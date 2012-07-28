@@ -43,7 +43,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
 
     private Object[] args;
     private DirectObjectPlan plan;
-    private boolean usePVals;
     private DirectObjectPlan.OutputMode outputMode;
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
@@ -51,11 +50,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     {
         super(loadablePlan.columnNames(),
               loadablePlan.columnTypes(),
-              null);
+              null,
+              usePVals);
         this.args = args;
 
         plan = loadablePlan.plan();
-        this.usePVals = usePVals;
         outputMode = plan.getOutputMode();
     }
     
@@ -118,7 +117,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
                     messenger.flush();
                 }
                 else {
-                    outputter.output(row, usePVals);
+                    outputter.output(row, usesPValues());
                     nrows++;
                 }
                 if ((maxrows > 0) && (nrows >= maxrows))

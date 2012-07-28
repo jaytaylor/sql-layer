@@ -38,15 +38,9 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.common.types.StringFactory.Charset;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.AnyCondition;
@@ -77,7 +71,6 @@ import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.plan.TableSource;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +171,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleCastExpression(CastExpression expression) {
             DataTypeDescriptor dtd = expression.getSQLtype();
-            TInstance instance = tinst(dtd);
+            TInstance instance = TypesTranslation.toTInstance(dtd);
             expression.setPreptimeValue(new TPreptimeValue(instance));
             return expression;
         }
@@ -310,7 +303,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleSubqueryValueExpression(SubqueryValueExpression expression) {
-            throw new UnsupportedOperationException(); // TODO
+            TInstance instance = TypesTranslation.toTInstance(expression.getSQLtype());
+            expression.setPreptimeValue(new TPreptimeValue(instance));
+            return expression;
         }
 
         ExpressionNode handleSubqueryResultSetExpression(SubqueryResultSetExpression expression) {
@@ -352,12 +347,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 expression.setPreptimeValue(ptv);
             }
             else if (columnSource instanceof SubquerySource) {
-                SubquerySource subTable = (SubquerySource) columnSource;
-                throw new UnsupportedOperationException(); // TODO
+                TInstance tInstance = TypesTranslation.toTInstance(expression.getSQLtype());
+                expression.setPreptimeValue(new TPreptimeValue(tInstance));
+                return expression;
             }
             else if (columnSource instanceof NullSource) {
-                NullSource nsTable = (NullSource) columnSource;
-                throw new UnsupportedOperationException(); // TODO
+                expression.setPreptimeValue(new TPreptimeValue(null));
+                return expression;
             }
             else if (columnSource instanceof Project) {
                 Project pTable = (Project) columnSource;
@@ -384,7 +380,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
-            TInstance tinst = tinst(expression.getSQLtype());
+            TInstance tinst = TypesTranslation.toTInstance(expression.getSQLtype());
             expression.setPreptimeValue(new TPreptimeValue(tinst));
             return expression;
         }
@@ -431,71 +427,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             throw new RuntimeException(message); // TODO what actual error type?
         }
 
-        private static TInstance tinst(DataTypeDescriptor descriptor) {
-            final TInstance result;
-            switch (descriptor.getTypeId().getTypeFormatId()) {
-            case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-                result = AkBool.INSTANCE.instance();
-                break;
-            case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            case TypeId.FormatIds.CHAR_TYPE_ID:
-                Charset charset = StringFactory.Charset.of(descriptor.getCharacterAttributes().getCharacterSet());
-                result = MString.VARCHAR.instance(descriptor.getMaximumWidth(), charset.ordinal());
-                break;
-            case TypeId.FormatIds.DECIMAL_TYPE_ID:
-            case TypeId.FormatIds.NUMERIC_TYPE_ID:
-                result = MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
-                break;
-            case TypeId.FormatIds.DOUBLE_TYPE_ID:
-                result = MApproximateNumber.DOUBLE.instance();
-                break;
-            case TypeId.FormatIds.INT_TYPE_ID:
-                result = MNumeric.INT.instance();
-                break;
-            case TypeId.FormatIds.TINYINT_TYPE_ID:
-            case TypeId.FormatIds.SMALLINT_TYPE_ID:
-                result = MNumeric.SMALLINT.instance();
-                break;
-            case TypeId.FormatIds.LONGINT_TYPE_ID:
-                result = MNumeric.BIGINT.instance();
-                break;
-            case TypeId.FormatIds.DATE_TYPE_ID:
-                result = MDatetimes.DATE.instance();
-                break;
-            case TypeId.FormatIds.TIME_TYPE_ID:
-                result = MDatetimes.TIME.instance();
-                break;
-            case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-                result = MDatetimes.TIMESTAMP.instance();
-                break;
-            case TypeId.FormatIds.BIT_TYPE_ID:
-                result = MBinary.BINARY.instance(descriptor.getMaximumWidth());
-                break;
-            case TypeId.FormatIds.VARBIT_TYPE_ID:
-                result = MBinary.VARBINARY.instance(descriptor.getMaximumWidth());
-                break;
-            case TypeId.FormatIds.BLOB_TYPE_ID:
-                result = MBinary.BLOB.instance();
-                break;
-
-            case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-            case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-            case TypeId.FormatIds.REAL_TYPE_ID:
-            case TypeId.FormatIds.REF_TYPE_ID:
-            case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            case TypeId.FormatIds.CLOB_TYPE_ID:
-            case TypeId.FormatIds.XML_TYPE_ID:
-            case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
-            case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-            case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-                throw new UnsupportedOperationException("unsupported type: " + descriptor);
-            default:
-                throw new AssertionError("unknown type: " + descriptor);
-            }
-
-            result.setNullable(descriptor.isNullable());
-            return result;
-        }
     }
 
     private static ExpressionNode boolExpr(ExpressionNode expression) {

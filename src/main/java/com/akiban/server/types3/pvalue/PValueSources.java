@@ -29,6 +29,7 @@ package com.akiban.server.types3.pvalue;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
@@ -46,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collections;
 
 public final class PValueSources {
 
@@ -447,9 +449,9 @@ public final class PValueSources {
         return arr;
     }
 
-    public static PValueSource fromValueSource(ValueSource source, PUnderlying pUnderlying) {
-        PValue result = new PValue(pUnderlying);
-        plainConverter.convert(null, source, result);
+    public static PValueSource fromValueSource(ValueSource source, TInstance tInstance) {
+        PValue result = new PValue(tInstance.typeClass().underlyingType());
+        plainConverter.convert(null, source, result, tInstance);
         return result;
     }
     
@@ -519,7 +521,7 @@ public final class PValueSources {
         protected abstract Object handleString(T state, String string);
         protected abstract ValueSource tweakSource(T state, ValueSource source);
 
-        public final void convert(T state, ValueSource in, PValueTarget out) {
+        public final void convert(T state, ValueSource in, PValueTarget out, TInstance tInstance) {
             if (in.isNull())
                 out.putNull();
 
@@ -606,7 +608,26 @@ public final class PValueSources {
                 out.putNull();
             }
             else if (oval != UNDEF && oval.getClass() != byte[].class) {
-                out.putObject(oval);
+                if (oval instanceof String) {
+                    String sval = (String) oval;
+                    if (out.getUnderlyingType() == PUnderlying.STRING) {
+                        out.putString(sval, null);
+                    }
+                    else {
+                        TClass tClass = tInstance.typeClass();
+                        PValue sValue = new PValue(sval);
+                        TExecutionContext forErrors = new TExecutionContext(
+                                null,
+                                Collections.singletonList(tInstance),
+                                tInstance,
+                                null, null, null, null
+                        );
+                        tClass.fromObject(forErrors, sValue, out);
+                    }
+                }
+                else {
+                    out.putObject(oval);
+                }
             }
             else {
                 switch (out.getUnderlyingType()) {
