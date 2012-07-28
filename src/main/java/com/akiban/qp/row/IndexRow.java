@@ -23,63 +23,49 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.collation;
 
+package com.akiban.qp.row;
+
+import com.akiban.ais.model.Column;
+import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
 
-public class AkCollatorBinary extends AkCollator {
-
-    public AkCollatorBinary() {
-        super(AkCollatorFactory.UCS_BINARY, AkCollatorFactory.UCS_BINARY, 0);
-    }
-    
-    @Override
-    public boolean isRecoverable() {
-        return true;
-    }
+public abstract class IndexRow extends AbstractRow
+{
+    // BoundExpressions interface
 
     @Override
-    public void append(Key key, String value) {
-        key.append(value);
+    public ValueSource eval(int index)
+    {
+        throw new UnsupportedOperationException();
     }
 
-    @Override
-    public String decode(Key key) {
-        return key.decodeString();
+    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    {
+        throw new UnsupportedOperationException();
     }
 
-    /**
-     * Append the given value to the given key.
-     */
-    public byte[] encodeSortKeyBytes(String value) {
-        throw new UnsupportedOperationException("No sort key encoding for binary collation");
+    // RowBase interface
+
+    public RowType rowType()
+    {
+        throw new UnsupportedOperationException();
     }
 
-    /**
-     * Recover the value or throw an unsupported exception.
-     */
-    public String decodeSortKeyBytes(byte[] bytes, int index, int length) {
-        throw new UnsupportedOperationException("No sort key encoding for binary collation");
+    public HKey hKey()
+    {
+        throw new UnsupportedOperationException();
     }
 
-    @Override
-    public int compare(String string1, String string2) {
-        return string1.compareTo(string2);
-    }
+    // IndexRow interface
 
-    @Override
-    public boolean isCaseSensitive() {
-        return true;
-    }
+    public abstract void append(FieldDef fieldDef, RowData rowData);
 
-    @Override
-    public String toString() {
-        return getName();
-    }
+    public abstract void append(Column column, ValueSource source);
 
-    @Override
-    public int hashCode(String string) {
-        return string.hashCode();
-    }
+    public abstract void appendFieldFromKey(Key fromKey, int depth);
 }

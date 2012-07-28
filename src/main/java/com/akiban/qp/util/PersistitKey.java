@@ -24,28 +24,22 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.akiban.qp.util;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.persistit.Key;
 
-public interface ExpressionNode extends PlanElement
+public class PersistitKey
 {
-    public DataTypeDescriptor getSQLtype();
-    public AkType getAkType();
-    public ValueNode getSQLsource();
-    public AkCollator getCollator();
-    public TPreptimeValue getPreptimeValue();
-
-    public void setPreptimeValue(TPreptimeValue value);
-
-    public boolean isColumn();
-    public boolean isConstant();
-
-    public boolean accept(ExpressionVisitor v);
-    public ExpressionNode accept(ExpressionRewriteVisitor v);
+    public static void appendFieldFromKey(Key targetKey, Key sourceKey, int sourceDepth)
+    {
+        sourceKey.indexTo(sourceDepth);
+        int from = sourceKey.getIndex();
+        sourceKey.indexTo(sourceDepth + 1);
+        int to = sourceKey.getIndex();
+        if (from >= 0 && to >= 0 && to > from) {
+            System.arraycopy(sourceKey.getEncodedBytes(), from,
+                             targetKey.getEncodedBytes(), targetKey.getEncodedSize(), to - from);
+            targetKey.setEncodedSize(targetKey.getEncodedSize() + to - from);
+        }
+    }
 }

@@ -36,7 +36,9 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.store.Store;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -236,6 +238,12 @@ public final class OperatorTestHelper {
 
         @Override
         public long rowCount(RowType tableType)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long hash(ValueSource valueSource, AkCollator collator)
         {
             throw new UnsupportedOperationException();
         }

@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringFactory;
@@ -466,12 +467,12 @@ public class Column implements ColumnContainer
         this.initialAutoIncrementValue = initialAutoIncrementValue;
     }
 
-    public void setFieldDef(Object fieldDef)
+    public void setFieldDef(FieldDef fieldDef)
     {
         this.fieldDef = fieldDef;
     }
 
-    public Object getFieldDef()
+    public FieldDef getFieldDef()
     {
         return fieldDef;
     }
@@ -701,7 +702,7 @@ public class Column implements ColumnContainer
 
     private Column groupColumn; // Non-null iff this is a user table column
     private Column userColumn; // Non-null iff this is a group table column
-    private /*FieldDef*/ Object fieldDef;
+    private FieldDef fieldDef;
     private Boolean defaultIdentity;
     private Sequence identityGenerator;
 }

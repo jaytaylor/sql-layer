@@ -34,14 +34,18 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchSequenceException;
@@ -55,6 +59,8 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -202,6 +208,26 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
+    @Override
+    public long hash(ValueSource valueSource, AkCollator collator)
+    {
+        assert collator != null; // Caller should have hashed in this case
+        long hash;
+        Key key;
+        int depth;
+        if (valueSource instanceof PersistitKeyValueSource) {
+            PersistitKeyValueSource persistitKeyValueSource = (PersistitKeyValueSource) valueSource;
+            key = persistitKeyValueSource.key();
+            depth = persistitKeyValueSource.depth();
+        } else {
+            key = persistit.getKey();
+            collator.append(key, valueSource.getString());
+            depth = 0;
+        }
+        hash = keyHasher.hash(key, depth);
+        return hash;
+    }
+
     // PersistitAdapter interface
 
     public PersistitStore persistit()
@@ -284,7 +310,12 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
-    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
+    public PersistitIndexRowBuffer newIndexRow(Index index, Key key)
+    {
+        return new PersistitIndexRowBuffer(key);
+    }
+
+    public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
     {
         return
             indexRowType.index().isTableIndex()
@@ -377,7 +408,8 @@ public class PersistitAdapter extends StoreAdapter
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
     }
-    
+
+    // For use by this class
     private void rollbackIfNeeded(Exception e) {
         if((e instanceof DuplicateKeyException) || (e instanceof PersistitException) || isFromInterruption(e)) {
             Transaction txn = transaction();
@@ -386,14 +418,6 @@ public class PersistitAdapter extends StoreAdapter
             }
         }
     }
-
-    // Object state
-
-    private final TreeService treeService;
-    private final Store store;
-    private final PersistitStore persistit;
-    private final boolean withStepChanging;
-
 
     @Override
     public long sequenceNextValue(TableName sequenceName) {
@@ -414,4 +438,14 @@ public class PersistitAdapter extends StoreAdapter
             return 0;
         }
     }
+
+    // Object state
+
+    private final TreeService treeService;
+    private final Store store;
+    private final PersistitStore persistit;
+    private final boolean withStepChanging;
+    private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
+
+
 }
