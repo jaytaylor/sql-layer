@@ -43,7 +43,17 @@ public class UserTable extends Table
         return userTable;
     }
 
-    public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
+    /**
+     * Create an independent copy of an existing UserTable.
+     * @param ais Destination AkibanInformationSchema.
+     * @param userTable UserTable to copy.
+     * @return The new copy of the UserTable.
+     */
+    public static UserTable create(AkibanInformationSchema ais, UserTable userTable) {
+        return create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+    }
+
+    private UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
     }
@@ -448,7 +458,7 @@ public class UserTable extends Table
     public void setVersion(int version) {
         this.version = version;
     }
-    
+
     private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
     {
         accumulator.add(table);

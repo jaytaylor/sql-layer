@@ -58,6 +58,7 @@ public class AlterTableIT extends ITBase {
         assertTrue("is alter node", node instanceof AlterTableNode);
         OperatorBasedTableCopier copier = new OperatorBasedTableCopier(configService(), treeService(), session(), store());
         AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddl(), dml(), session(), copier, SCHEMA, (AlterTableNode)node);
+        updateAISGeneration();
     }
 
     private RowBase testRow(RowType type, Object... fields) {
@@ -65,43 +66,45 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
-     public void addColumn() throws StandardException {
+    public void addSingleColumnSingleTableGroup() throws StandardException {
         int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
         writeRows(
-                createNewRow(cid, 1, "a"),
-                createNewRow(cid, 2, "b"),
-                createNewRow(cid, 3, "asdf"),
-                createNewRow(cid, 10, "asdfasdfasdf")
+                createNewRow(cid, 1L, "a"),
+                createNewRow(cid, 2L, "b"),
+                createNewRow(cid, 3L, "asdf"),
+                createNewRow(cid, 10L, "asdfasdfasdf")
         );
 
-        runAlter("ALTER TABLE c ADD COLUMN c1 INT");
-        updateAISGeneration();
+        runAlter("ALTER TABLE c ADD COLUMN c1 INT NULL");
 
-        List<NewRow> newRows = scanAll(scanAllRequest(cid));
-
-        for(NewRow row : newRows) {
-            System.out.println(row);
-        }
+        expectFullRows(
+                cid,
+                createNewRow(cid, 1L, "a", null),
+                createNewRow(cid, 2L, "b", null),
+                createNewRow(cid, 3L, "asdf", null),
+                createNewRow(cid, 10L, "asdfasdfasdf", null)
+        );
     }
 
     @Test
-    public void dropColumn() throws StandardException {
+    public void dropSingleColumnSingleTableGroup() throws StandardException {
         int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
         writeRows(
-                createNewRow(cid, 1, "a"),
-                createNewRow(cid, 2, "b"),
-                createNewRow(cid, 3, "asdf"),
-                createNewRow(cid, 10, "asdfasdfasdf")
+                createNewRow(cid, 1L, "a"),
+                createNewRow(cid, 2L, "b"),
+                createNewRow(cid, 3L, "asdf"),
+                createNewRow(cid, 10L, "asdfasdfasdf")
         );
 
         runAlter("ALTER TABLE c DROP COLUMN v");
-        updateAISGeneration();
 
-        List<NewRow> newRows = scanAll(scanAllRequest(cid));
-
-        for(NewRow row : newRows) {
-            System.out.println(row);
-        }
+        expectFullRows(
+                cid,
+                createNewRow(cid, 1L),
+                createNewRow(cid, 2L),
+                createNewRow(cid, 3L),
+                createNewRow(cid, 10L)
+        );
     }
 
     @Test

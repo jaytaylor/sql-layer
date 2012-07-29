@@ -68,6 +68,20 @@ public class Column
         return create(table, name, position, type, null, null, null, null, null);
     }
 
+    /**
+     * Create an independent copy of an existing Column.
+     * @param columnar Destination Columnar.
+     * @param column Column to copy.
+     * @param position Position of the new column, or <code>null</code> to copy from the given column.
+     * @return Copy of the Column.
+     * */
+    public static Column create(Columnar columnar, Column column, Integer position) {
+        Integer finalPosition = (position != null) ? position : column.position;
+        return create(columnar, column.columnName, finalPosition, column.type, column.nullable, column.typeParameter1,
+                      column.typeParameter2, column.initialAutoIncrementValue, column.charsetAndCollation,
+                      column.maxStorageSize, column.prefixSize);
+    }
+
     public TInstance tInstance() {
         return tInstance(false);
     }

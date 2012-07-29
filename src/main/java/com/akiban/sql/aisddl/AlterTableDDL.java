@@ -32,6 +32,7 @@ import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
@@ -75,6 +76,7 @@ import static com.akiban.util.Exceptions.throwAlways;
 public class AlterTableDDL {
     private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table %s to multiple groups";
     private static final String NON_LEAF_ERROR_MSG = "Cannot drop group from %s table %s";
+    private static final String GROUP_CHANGE_ERROR_MSG = "Cannot drop column %s from %s primary key";
     static final String TEMP_TABLE_NAME_NEW = "__ak_alter_temp_new";
     static final String TEMP_TABLE_NAME_OLD = "__ak_alter_temp_old";
 
@@ -243,69 +245,111 @@ public class AlterTableDDL {
             return false;
         }
 
-        UserTable tableCopy = copyTable(table);
-        AISBuilder builder = new AISBuilder(tableCopy.getAIS());
-
-        List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
-        List<AlterTableChange> indexChanges = Collections.emptyList();
+        List<String> drops = new ArrayList<String>();
+        List<ColumnDefinitionNode> adds = new ArrayList<ColumnDefinitionNode>();
         for(TableElementNode node : elementList) {
             // Modify extends Definition, must come first
-            if((node instanceof ModifyColumnNode) ) {
+            if((node instanceof ModifyColumnNode)) {
                 if(node.getNodeType() == NodeTypes.DROP_COLUMN_NODE) {
-                    String columnName = ((ModifyColumnNode) node).getColumnName();
-
-
-                    columnChanges.add(AlterTableChange.createDrop(columnName));
-                    tableCopy.dropColumn(columnName);
+                    drops.add(((ModifyColumnNode) node).getColumnName());
                 } else {
-                    // TODO: Modify
-                    return false;
+                    return false;// TODO: CHANGE COLUMN
                 }
             }
             else if(node instanceof ColumnDefinitionNode) {
-                ColumnDefinitionNode cdn = (ColumnDefinitionNode)node;
-
-                TableDDL.addColumn(builder, cdn,
-                                   table.getName().getSchemaName(), table.getName().getTableName(),
-                                   table.getColumns().size());
-                columnChanges.add(AlterTableChange.createAdd(cdn.getColumnName()));
+                adds.add((ColumnDefinitionNode)node);
             } else {
-                return false;
+                return false; // TODO: Other alters
             }
+        }
+
+        UserTable tableCopy = copyTable(table, drops);
+        AISBuilder builder = new AISBuilder(tableCopy.getAIS());
+        List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
+        List<AlterTableChange> indexChanges = Collections.emptyList();
+
+        for(String columnName : drops) {
+            columnChanges.add(AlterTableChange.createDrop(columnName));
+        }
+
+        for(ColumnDefinitionNode cdn : adds) {
+            columnChanges.add(AlterTableChange.createAdd(cdn.getColumnName()));
+            TableDDL.addColumn(builder, cdn,
+                               table.getName().getSchemaName(),
+                               table.getName().getTableName(),
+                               table.getColumns().size());
         }
 
         ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges);
         return true;
     }
 
-    private static UserTable copyTable(UserTable table) {
+    private static void checkColumnToDrop(UserTable table, String columnName) {
+        Column column = table.getColumn(columnName);
+        if(column == null) {
+            throw new NoSuchColumnException(columnName);
+        }
+        // Reject PK changes until supported
+        PrimaryKey pk = table.getPrimaryKey();
+        if(pk != null) {
+            for(IndexColumn indexColumn : pk.getIndex().getKeyColumns()) {
+                if(columnName.equals(indexColumn.getColumn().getName())) {
+                    throw new UnsupportedSQLException(String.format(GROUP_CHANGE_ERROR_MSG, columnName, table.getName()), null);
+                }
+            }
+        }
+        // Reject until automatic grouping changes supported
+        Join join = table.getParentJoin();
+        if(join != null) {
+            for(JoinColumn joinColumn : join.getJoinColumns()) {
+                if(columnName.equals(joinColumn.getChild().getName())) {
+                    throw new UnsupportedSQLException(String.format(GROUP_CHANGE_ERROR_MSG, columnName, table.getName()), null);
+                }
+            }
+        }
+    }
+
+    private static UserTable copyTable(UserTable origTable, Collection<String> dropColumns) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
-        UserTable tableCopy = UserTable.create(ais, table.getName().getSchemaName(), table.getName().getTableName(), table.getTableId());
+        UserTable tableCopy = UserTable.create(ais, origTable);
 
-        for(Column c : table.getColumns()) {
-            Column.create(tableCopy, c.getName(), c.getPosition(), c.getType(), c.getNullable(), c.getTypeParameter1(),
-                          c.getTypeParameter2(), c.getInitialAutoIncrementValue(), c.getCharsetAndCollation());
+        for(String columnName : dropColumns) {
+            checkColumnToDrop(origTable, columnName);
         }
 
-        for(Index i : table.getIndexes()) {
-            Index iCopy = TableIndex.create(ais, tableCopy, i.getIndexName().getName(), i.getIndexId(), i.isUnique(), i.getConstraint());
-            for(IndexColumn ic : i.getKeyColumns()) {
-                IndexColumn.create(iCopy, tableCopy.getColumn(ic.getColumn().getName()), ic.getPosition(), ic.isAscending(), ic.getIndexedLength());
+        int colPos = 0;
+        for(Column origColumn : origTable.getColumns()) {
+            String columnName = origColumn.getName();
+            if(dropColumns.contains(columnName)) {
+                checkColumnToDrop(origTable, columnName);
+            } else {
+                Column.create(tableCopy, origColumn, colPos++);
             }
         }
 
-        Join pj = table.getParentJoin();
-        if(pj != null) {
-            UserTable parentTable = pj.getParent();
+        for(TableIndex origIndex : origTable.getIndexes()) {
+            TableIndex indexCopy = TableIndex.create(tableCopy, origIndex);
+            for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
+                IndexColumn.create(indexCopy, tableCopy.getColumn(indexColumn.getColumn().getName()), indexColumn);
+            }
+        }
+
+        Join origJoin = origTable.getParentJoin();
+        if(origJoin != null) {
+            UserTable origParent = origJoin.getParent();
             // Need just a stub (referenced columns)
-            UserTable parentCopy = UserTable.create(ais, parentTable.getName().getSchemaName(), parentTable.getName().getTableName(), parentTable.getTableId());
-            Join j = Join.create(ais, pj.getName(), parentCopy, tableCopy);
-            for(JoinColumn jc : pj.getJoinColumns()) {
-                Column pc = parentTable.getColumn(jc.getParent().getName());
-                Column pcCopy = Column.create(parentCopy, pc.getName(), pc.getPosition(), pc.getType(), pc.getNullable(), pc.getTypeParameter1(),
-                                              pc.getTypeParameter2(), pc.getInitialAutoIncrementValue(), pc.getCharsetAndCollation());
-                JoinColumn.create(j, pcCopy, tableCopy.getColumn(jc.getChild().getName()));
+            UserTable parentCopy = UserTable.create(ais, origParent);
+            Join joinCopy = Join.create(ais, origJoin.getName(), parentCopy, tableCopy);
+            for(JoinColumn origJoinCol : origJoin.getJoinColumns()) {
+                Column origParentCol = origParent.getColumn(origJoinCol.getParent().getName());
+                Column parentColCopy = Column.create(parentCopy, origParentCol, null);
+                JoinColumn.create(joinCopy, parentColCopy, tableCopy.getColumn(origJoinCol.getChild().getName()));
             }
+
+            Group groupCopy = Group.create(ais, origParent.getGroup().getName());
+            parentCopy.setGroup(groupCopy);
+            tableCopy.setGroup(groupCopy);
+            joinCopy.setGroup(groupCopy);
         }
 
         return tableCopy;
