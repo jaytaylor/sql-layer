@@ -7,8 +7,8 @@ SelectQuery@862041
             ResultSet@1eb62b6[name, _SQL_COL_1]
               Project@9da1dd[c.name, COUNT(*)]
                 Select@ede19e[]
-                  AggregateSource@17777a1(SORT,[c.name],[])
+                  AggregateSource@17777a1(PRESORTED,[c.name],[])
                     Select@4f12c2[]
-                      TableGroupJoinTree@27daad50(TableGroup@311496a4(customers), c INNER a - SingleIndexScan@12c08c7(Index(test.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 15, cost = 397.470))
+                      TableGroupJoinTree@27daad50(TableGroup@311496a4(customers), c INNER a - SingleIndexScan@12c08c7(Index(.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), covering/GROUPED, =MA, rows = 15, cost = 16.3250))
                         TableSource@144569b(c - TableGroup@1900f17(customers))
                           TableSource@191e0eb(a - TableGroupJoin@ced1a8(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
