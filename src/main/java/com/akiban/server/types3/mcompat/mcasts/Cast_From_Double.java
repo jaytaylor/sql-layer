@@ -24,19 +24,27 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.TCastBase;
+import com.akiban.server.types3.TClassBase;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Constantness;
 
-import java.util.Collection;
-
-public interface FunctionRegistry
-{
-    Collection<? extends TAggregator> aggregators();
-    Collection<? extends TValidatedOverload> overloads();
-    Collection<? extends TCast> casts();
-    Collection<? extends TClass> tclasses();
+public final class Cast_From_Double {
+    public static final TCast TO_DOUBLE_UNSIGNED = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE_UNSIGNED, true, Constantness.UNKNOWN) {
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            double orig = source.getDouble();
+            if (orig < 0) {
+                context.reportTruncate(Double.toString(orig), "0");
+                orig = 0; // TODO or is it null?
+            }
+            target.putDouble(orig);
+        }
+    };
 }

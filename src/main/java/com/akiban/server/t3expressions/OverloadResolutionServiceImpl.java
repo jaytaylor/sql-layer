@@ -29,7 +29,7 @@ package com.akiban.server.t3expressions;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
-import com.akiban.server.types3.service.FunctionRegistryImpl;
+import com.akiban.server.types3.service.InstanceFinder;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,9 +58,9 @@ public class OverloadResolutionServiceImpl implements OverloadResolutionService,
 
     @Override
     public void start() {
-        FunctionRegistryImpl finder;
+        InstanceFinder finder;
         try {
-            finder = new FunctionRegistryImpl();
+            finder = new InstanceFinder();
         } catch (Exception e) {
             logger.error("while creating registry", e);
             throw new ServiceStartupException(getClass().getSimpleName());
