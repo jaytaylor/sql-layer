@@ -36,7 +36,9 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.JoinColumnMismatchException;
@@ -541,7 +543,7 @@ public class AlterTableDDLTest {
         }
     }
 
-    private static class DDLFunctionsMock implements DDLFunctions {
+    private static class DDLFunctionsMock extends DDLFunctionsMockBase {
         final AkibanInformationSchema ais;
         final List<TableName> createdTables = new ArrayList<TableName>();
         final List<TableName> droppedTables = new ArrayList<TableName>();
@@ -588,106 +590,6 @@ public class AlterTableDDLTest {
         @Override
         public AkibanInformationSchema getAIS(Session session) {
             return ais;
-        }
-
-        @Override
-        public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropGroup(Session session, String groupName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void createView(Session session, View newView) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropView(Session session, TableName viewName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropSchema(Session session, String schemaName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<String> getDDLs(Session session) throws InvalidOperationException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getGeneration() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long getTimestamp() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public RowDef getRowDef(int tableId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Table getTable(Session session, int tableId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Table getTable(Session session, TableName tableName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getTableId(Session session, TableName tableName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public TableName getTableName(Session session, int tableId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public UserTable getUserTable(Session session, TableName tableName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void createSequence(Session session, Sequence sequence) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropSequence(Session session, TableName sequenceName) {
-            throw new UnsupportedOperationException();
         }
     }
 

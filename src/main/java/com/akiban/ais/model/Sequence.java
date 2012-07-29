@@ -156,8 +156,6 @@ public class Sequence implements TreeLink {
             } else {
                 throw new SequenceLimitExceededException (this);
             }
-        } else {
-            //accum.updateAndGet(increment);
         }
         return value;
     }

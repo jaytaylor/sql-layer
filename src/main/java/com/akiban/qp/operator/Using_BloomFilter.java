@@ -136,6 +136,8 @@ class Using_BloomFilter extends Operator
         ArgumentValidation.isGTE("estimatedRowCount", estimatedRowCount, 0);
         ArgumentValidation.isGTE("filterBindingPosition", filterBindingPosition, 0);
         ArgumentValidation.notNull("streamInput", streamInput);
+        if (collators != null)
+            ArgumentValidation.isEQ("collators length", collators.size(), filterRowType.nFields());
         this.filterInput = filterInput;
         this.filterRowType = filterRowType;
         this.estimatedRowCount = estimatedRowCount;

@@ -139,7 +139,7 @@ public class PKLessTableRowDefCacheTest
 
     private TableName tableName(String name)
     {
-        return RowDefCache.nameOf(SCHEMA, name);
+        return new TableName(SCHEMA, name);
     }
 
     // Copied from AISTest, generalized for pk less tables

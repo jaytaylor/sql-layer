@@ -59,7 +59,6 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
@@ -237,7 +236,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public RowDef rowDef(int tableId)
     {
-        return persistit.getRowDefCache().getRowDef(tableId);
+        return schema.ais().getUserTable(tableId).rowDef();
     }
 
     public NewRow newRow(RowDef rowDef)
@@ -446,6 +445,4 @@ public class PersistitAdapter extends StoreAdapter
     private final PersistitStore persistit;
     private final boolean withStepChanging;
     private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
-
-
 }

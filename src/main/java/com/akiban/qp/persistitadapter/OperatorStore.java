@@ -85,10 +85,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     {
         UPDATE_TOTAL.in();
         try {
-            PersistitStore persistitStore = getPersistitStore();
-            AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
-
-            RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
+            AkibanInformationSchema ais = aisHolder.getAis();
+            RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
             if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
                 throw new RuntimeException("group index maintenance won't work with partial rows");
             }
