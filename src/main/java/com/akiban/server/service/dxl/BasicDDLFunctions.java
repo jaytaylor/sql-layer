@@ -89,9 +89,12 @@ import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
@@ -114,6 +117,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private final IndexStatisticsService indexStatisticsService;
     private final ConfigurationService configService;
+    private final T3RegistryService t3Registry;
     
     @Override
     public void createTable(Session session, UserTable table)
@@ -252,6 +256,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
 
+            // Build transformation
+            PersistitAdapter adapter = new PersistitAdapter(oldSchema, store(), treeService(), session, configService);
+            QueryContext queryContext = new SimpleQueryContext(adapter);
+
             AkibanInformationSchema newAIS = getAIS(session);
             final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
             Schema newSchema = SchemaCache.globalSchema(newAIS);
@@ -263,12 +271,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 projections = null;
                 pProjections = new ArrayList<TPreparedExpression>(newColumns.size());
                 for(Column newCol : newColumns) {
-                    Integer oldPosition = findOldPosition(columnChanges, origTable.getColumn(newCol.getName()), newCol);
-                    TInstance tInst = newCol.tInstance();
+                    Column oldCol = origTable.getColumn(newCol.getName());
+                    Integer oldPosition = findOldPosition(columnChanges, oldCol, newCol);
+                    TInstance newInst = newCol.tInstance();
                     if(oldPosition == null) {
-                        pProjections.add(new TPreparedLiteral(tInst, PValueSources.getNullSource(tInst.typeClass().underlyingType())));
+                        pProjections.add(new TPreparedLiteral(newInst, PValueSources.getNullSource(newInst.typeClass().underlyingType())));
                     } else {
-                        pProjections.add(new TPreparedField(tInst, oldPosition));
+                        TInstance oldInst = oldCol.tInstance();
+                        TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
+                        if(oldInst.typeClass() != newInst.typeClass()) {
+                            TCast cast = t3Registry.cast(oldInst.typeClass(), newInst.typeClass());
+                            pExp = new TCastExpression(pExp, cast, newInst, queryContext);
+                        }
+                        pProjections.add(pExp);
                     }
                 }
             } else {
@@ -310,8 +325,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     }
             );
 
-            PersistitAdapter adapter = new PersistitAdapter(oldSchema, store(), treeService(), session, configService);
-            plan.run(new SimpleQueryContext(adapter));
+            // Perform transformation
+            plan.run(queryContext);
 
             // Now rebuild any group indexes, leaving out empty ones
             if(!affectedGroupIndexes.isEmpty()) {
@@ -749,9 +764,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService,
-                      IndexStatisticsService indexStatisticsService, ConfigurationService configService) {
+                      IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
         super(middleman, schemaManager, store, treeService);
         this.indexStatisticsService = indexStatisticsService;
         this.configService = configService;
+        this.t3Registry = t3Registry;
     }
 }

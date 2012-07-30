@@ -41,6 +41,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.google.inject.Inject;
 
 import java.util.Collection;
@@ -84,7 +85,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     @Override
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), treeService(), indexStatisticsService(), configService());
+        return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), treeService(), indexStatisticsService(), configService(), t3Registry());
     }
 
     public static ScanHooks installScanHook(Session session, ScanHooks hook) {
@@ -119,8 +120,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     @Inject
     public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
-                                        IndexStatisticsService indexStatisticsService, ConfigurationService configService) {
-        super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService);
+                                        IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
+        super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService, t3Registry);
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
@@ -177,8 +178,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         }
 
         private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService,
-                                               IndexStatisticsService indexStatisticsService, ConfigurationService configService) {
-            super(middleman, schemaManager, store, treeService, indexStatisticsService, configService);
+                                               IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
+            super(middleman, schemaManager, store, treeService, indexStatisticsService, configService, t3Registry);
         }
     }
 }
