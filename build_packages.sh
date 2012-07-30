@@ -73,7 +73,7 @@ cp target/dependency/postgresql.jar ../../packages-common/
 
 # Windows
 # Handled already by Maven / .iss
-popd && popd
+popd
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
