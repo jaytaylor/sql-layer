@@ -43,6 +43,7 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
+import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.DagChecker;
@@ -80,11 +81,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
     @Override
     public TCast cast(TClass source, TClass target) {
-        TCast result = null;
-        Map<TClass,TCast> castsByTarget = castsBySource.get(source);
-        if (castsByTarget != null)
-            result = castsByTarget.get(target);
-        return result;
+        return cast(castsBySource, source, target);
     }
 
     @Override
@@ -118,7 +115,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     public void start() {
         InstanceFinder registry;
         try {
-            registry = new InstanceFinder();
+            registry = new ReflectiveInstanceFinder();
         } catch (Exception e) {
             logger.error("while creating registry", e);
             throw new ServiceStartupException("T3Registry");
@@ -149,11 +146,19 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
     // private methods
 
+    private static TCast cast(Map<TClass, Map<TClass, TCast>> castsBySource, TClass source, TClass target) {
+        TCast result = null;
+        Map<TClass,TCast> castsByTarget = castsBySource.get(source);
+        if (castsByTarget != null)
+            result = castsByTarget.get(target);
+        return result;
+    }
+
     private void start(InstanceFinder finder) {
         tClasses = new HashSet<TClass>(finder.find(TClass.class));
 
         castsBySource = createCasts(tClasses, finder);
-        createDerivedCasts(finder);
+        createDerivedCasts(castsBySource, finder);
         deriveCastsFromVarchar();
         strongCastsByTarget = createStrongCastsMap(castsBySource);
         checkDag(strongCastsByTarget);
@@ -216,7 +221,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         logger.error(sb.toString(), e);
     }
 
-    private static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
+    static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
                                                                InstanceFinder finder) {
         Map<TClass, Map<TClass, TCast>> localCastsMap = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
 
@@ -249,7 +254,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         }
     }
 
-    private void createDerivedCasts(InstanceFinder finder) {
+    static void createDerivedCasts(Map<TClass,Map<TClass,TCast>> castsBySource, InstanceFinder finder) {
         for (TCastPath castPath : finder.find(TCastPath.class)) {
             List<? extends TClass> path = castPath.getPath();
             // We need this loop to protect against "jumps." For instance, let's say the cast path is
@@ -258,8 +263,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             //  one "jump" cast: (a -> d),
             // The first pass of this loop will create a derived cast (a -> d -> e), but we wouldn't have created
             // (a -> c). This loop ensures that we will.
-            for (int i = path.size() - 1; i > 0; --i) {
-                deriveCast(path, i);
+            // We work from both ends, shrinking iteratively from the beginning and recursively (within deriveCast)
+            // from the end. A derived cast has to have at least three participants, so we can stop when we get
+            // to a path whose size is less than 3.
+            while (path.size() >= 3) {
+                for (int i = path.size() - 1; i > 0; --i) {
+                    deriveCast(castsBySource, path, i);
+                }
+                path = path.subList(1, path.size());
             }
         }
     }
@@ -291,19 +302,20 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         }
     }
 
-    private TCast deriveCast(List<? extends TClass> path, int targetIndex) {
+    private static TCast deriveCast(Map<TClass,Map<TClass,TCast>> castsBySource,
+                                    List<? extends TClass> path, int targetIndex) {
         TClass source = path.get(0);
         TClass target = path.get(targetIndex);
-        TCast alreadyThere = cast(source,  target);
+        TCast alreadyThere = cast(castsBySource, source,  target);
         if (alreadyThere != null)
             return alreadyThere;
         int intermediateIndex = targetIndex - 1;
         TClass intermediateClass = path.get(intermediateIndex);
-        TCast second = cast(intermediateClass, target);
+        TCast second = cast(castsBySource, intermediateClass, target);
         if (second == null)
             throw new AkibanInternalException("no explicit cast between " + intermediateClass + " and " + target
                     + " while creating cast path: " + path);
-        TCast first = deriveCast(path, intermediateIndex);
+        TCast first = deriveCast(castsBySource, path, intermediateIndex);
         if (first == null)
             throw new AkibanInternalException("couldn't derive cast between " + source + " and " + intermediateClass
                     + " while creating cast path: " + path);
