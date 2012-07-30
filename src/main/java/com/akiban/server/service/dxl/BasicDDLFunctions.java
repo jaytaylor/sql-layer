@@ -27,7 +27,6 @@
 package com.akiban.server.service.dxl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -54,17 +53,12 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.expression.ExpressionRow;
-import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesRow;
-import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -73,7 +67,6 @@ import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.rowdata.RowDef;
@@ -96,13 +89,9 @@ import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.texpressions.TCastExpression;
-import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
@@ -115,10 +104,8 @@ import com.akiban.server.store.statistics.IndexStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
-import static com.akiban.qp.operator.API.project_Table;
 import static com.akiban.qp.operator.API.update_Default;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
