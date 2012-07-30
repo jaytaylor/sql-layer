@@ -68,6 +68,10 @@ public abstract class BasePlannable extends BasePlanNode
         // Do not copy operators.
     }
     
+    public void giveInfo(Map map) {
+        extraInfo = map;
+    }
+    
     public List<String> explainPlan() {
         List<String> result = new ArrayList<String>();
         explainPlan(plannable, result, extraInfo);

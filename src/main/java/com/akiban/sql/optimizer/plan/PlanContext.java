@@ -30,6 +30,7 @@ import com.akiban.sql.optimizer.rule.RulesContext;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import java.util.Collections;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ public class PlanContext
 {
     private RulesContext rulesContext;
     private PlanNode plan;
+    private Map extraInfo = Collections.synchronizedMap(new HashMap());
 
     public PlanContext(RulesContext rulesContext) {
         this.rulesContext = rulesContext;
@@ -64,6 +66,14 @@ public class PlanContext
     
     public void accept(PlanVisitor visitor) {
         plan.accept(visitor);
+    }
+    
+    public Map getInfo() {
+        return extraInfo;
+    }
+    
+    public void storeInfo(Object key, Object value) {
+        extraInfo.put(key, value);
     }
 
     /** Type safe tag for storing objects on the context whiteboard. */

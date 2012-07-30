@@ -474,8 +474,8 @@ public class OperatorAssembler extends BaseRule
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
-            private NewPartialAssembler(PlanContext context, QueryContext queryContext) {
-                super(new NewExpressionAssembler(context, queryContext));
+            private NewPartialAssembler(PlanContext context) {
+                super(new NewExpressionAssembler(context));
             }
 
             @Override
@@ -561,7 +561,7 @@ public class OperatorAssembler extends BaseRule
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
             if (usePValues) {
-                newPartialAssembler = new NewPartialAssembler(planContext, this.planContext.getQueryContext());
+                newPartialAssembler = new NewPartialAssembler(planContext);
                 oldPartialAssembler = nullAssembler();
                 partialAssembler = newPartialAssembler;
             }
