@@ -76,10 +76,7 @@ public class MNumeric extends SimpleDtdTClass {
                           TInstance targetInstance,
                           PValueTarget targetValue)
     {
-       assert sourceInstance.typeClass() instanceof MNumeric
-                    && targetInstance.typeClass() instanceof MNumeric
-               : "expected instances of mcompat.types.MNumeric";
-       targetValue.putValueSource(sourceValue);
+       // going away soon
     }
         
     @Override

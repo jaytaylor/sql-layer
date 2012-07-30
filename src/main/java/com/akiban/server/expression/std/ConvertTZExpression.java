@@ -68,7 +68,7 @@ public class ConvertTZExpression extends AbstractTernaryExpression
     };
 
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
-    {
+    {   
         public InnerEvaluation(List<? extends ExpressionEvaluation> args)
         {
             super(args);
@@ -89,16 +89,16 @@ public class ConvertTZExpression extends AbstractTernaryExpression
             if (ymd[0] * ymd[1] * ymd[2] == 0L) // zero dates. (year of 0 is not tolerated)
                 return NullValueSource.only();
 
-            String fromTz = adjustTz(from.getString());
-            String toTz = adjustTz(to.getString());
-
             try
             {
+                DateTimeZone fromTz = adjustTz(from.getString());
+                DateTimeZone toTz = adjustTz(to.getString());
+
                 DateTime date = new DateTime((int)ymd[0], (int)ymd[1], (int)ymd[2],
                                              (int)ymd[3], (int)ymd[4], (int)ymd[5], 0,
-                                             DateTimeZone.forID(fromTz));
+                                             fromTz);
                 
-                valueHolder().putDateTime(date.withZone(DateTimeZone.forID(toTz)));
+                valueHolder().putDateTime(date.withZone(toTz));
             }
             catch (IllegalArgumentException e)
             {
@@ -117,22 +117,29 @@ public class ConvertTZExpression extends AbstractTernaryExpression
          * @param st
          * @return 
          */
-        static String adjustTz(String st)
+        static DateTimeZone adjustTz(String st)
         {
-            if (!st.isEmpty() && st.contains(":"))
+            for ( int n = 0; n < st.length(); ++n)
             {
-                int index = st.length() - 5;
-                if (index < 0 )
-                    return st;
-                char ch = st.charAt(index);
-                if (ch == '-' || ch == '+')
+                char ch;
+                if ((ch = st.charAt(n)) == ':')
                 {
-                    StringBuilder bd = new StringBuilder(st);
-                    bd.insert(1, '0');
-                    return bd.toString();
+                    int index = n - 2; // if the character that is 2 chars to the left of the COLON
+                    if (index < 0 )    //  is not a digit, then we need to pad a '0' there
+                        return DateTimeZone.forID(st);
+                    ch = st.charAt(index);
+                    if (ch == '-' || ch == '+')
+                    {
+                        StringBuilder bd = new StringBuilder(st);
+                        bd.insert(1, '0');
+                        return DateTimeZone.forID(bd.toString());
+                    }
+                    break;
                 }
+                else if (ch == '/')
+                    return DateTimeZone.forID(st);
             }
-            return st;
+            return DateTimeZone.forID(st.toUpperCase());
         }
     }
 
@@ -164,5 +171,4 @@ public class ConvertTZExpression extends AbstractTernaryExpression
     {
         return "CONVERT_TZ";
     }
-    
 }

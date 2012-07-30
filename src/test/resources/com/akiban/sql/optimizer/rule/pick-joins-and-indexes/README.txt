@@ -28,6 +28,10 @@ in-sorted: IN that needs sorting
 
 equals-sorted: Same with = for comparison.
 
+equivalence-1: Equivalence column used in index.
+
+equivalence-2: Equivalence column used in GROUP BY.
+
 in-subquery: IN SELECT to semi-join (not indexable).
 
 in-subquery-indexed: IN that is indexed.
@@ -78,6 +82,12 @@ outer-index: LEFT using an index
 
 outer-no-index-extra-conditions: LEFT with extra conditions cannot use index
 
+right-outer-index: RIGHT using an index
+
+left-as-inner: LEFT index used for INNER join
+
+right-as-inner: RIGHT index used for INNER join
+
 cross-product: Conditions but no joins
 
 competing-indexes-no-limit: WHERE beats ORDER BY
@@ -89,3 +99,5 @@ group-scan-no-limit: group scan and flatten
 group-scan-large-limit: with limit larger than expected
 
 group-scan-small-limit: with much smaller limit
+
+duplicate-table-conditions: condition between two occurrences of same table

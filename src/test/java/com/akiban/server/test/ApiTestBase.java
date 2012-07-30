@@ -997,6 +997,8 @@ public class ApiTestBase {
             return value;
         }
         finally {
+            if(txn.isActive() && !txn.isCommitted())
+                txn.rollback(); // Prevent log message
             txn.end();
         }
     }

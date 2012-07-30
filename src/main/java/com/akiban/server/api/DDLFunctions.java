@@ -36,7 +36,6 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.RowDefNotFoundException;
@@ -46,7 +45,7 @@ import com.akiban.server.service.session.Session;
 
 public interface DDLFunctions {
     /**
-     * 
+     * Create a new table.
      * @param session the session to run the Create under
      * @param table - new user table to add to the existing system
      */
@@ -66,6 +65,17 @@ public interface DDLFunctions {
      * @throws NullPointerException if tableName is null
      */
     void dropTable(Session session, TableName tableName);
+
+    /**
+     * Alter an existing table's definition.
+     * @param tableName the table to alter
+     * @param newDefinition the new definition of the table
+     * @param columnChanges list of all column changes
+     * @param indexChanges list of all index changes
+     */
+    void alterTable(Session session, TableName tableName, UserTable newDefinition,
+                    List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges);
+
     /**
      * Drops a table if it exists, and possibly its children.
      * @param schemaName the schema to drop
@@ -79,6 +89,7 @@ public interface DDLFunctions {
      * @throws NullPointerException if groupName is null
      */
     void dropGroup(Session session, String groupName);
+
     /**
      * Gets the AIS from the Store.
      * @return returns the store's AIS.
@@ -121,6 +132,7 @@ public interface DDLFunctions {
      * @throws NoSuchTableException if the tableName can not be found in the session list
      */
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException;
+
     /**
      * Resolves the given table to its UserTable
      * @param session the session
@@ -134,7 +146,7 @@ public interface DDLFunctions {
      * Resolves the given table ID to its RowDef
      * @param tableId the table to look up
      * @return the rowdef
-     * @throws RowDefNotFoundException if the tableID has no associated RowDef. 
+     * @throws RowDefNotFoundException if the tableID has no associated RowDef.
      */
     RowDef getRowDef(int tableId) throws RowDefNotFoundException;
 
@@ -165,7 +177,6 @@ public interface DDLFunctions {
      * are recalculated later. Blocks until the actual index data has been created.
      *
      * @param indexesToAdd a list of indexes to add to the existing AIS
-     * @throws InvalidOperationException
      */
     void createIndexes(Session session, Collection<? extends Index> indexesToAdd);
 
@@ -173,14 +184,12 @@ public interface DDLFunctions {
      * Drop indexes on an existing table.
      * @param tableName the table containing the indexes to drop
      * @param indexesToDrop list of indexes to drop
-     * @throws InvalidOperationException
      */
     void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop);
 
     /**
      * Drop indexes on an existing group.
-     * @param indexesToDrop
-     * @throws InvalidOperationException
+     * @param indexesToDrop Indexes to drop
      */
     void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop);
 
@@ -188,14 +197,13 @@ public interface DDLFunctions {
      * Update statistics for the given table.
      * @param tableName the table whose statistics should be updated.
      * @param indexesToUpdate specific indexes to update. If <code>null</code>, all indexes are analyzed.
-     * @throws InvalidOperationException
      */
     void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate);
 
     IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex);
 
     /**
-     * 
+     * Create a view.
      * @param session the session to run the Create under
      * @param view - new view to add to the existing system
      */
@@ -209,15 +217,13 @@ public interface DDLFunctions {
     
     /**
      * Create a sequence, an independent number generator.
-     * @param session
-     * @param sequence
+     * @param sequence Sequence to create.
      */
     void createSequence(Session session, Sequence sequence);
     
     /**
      * Drop a user created sequence.
-     * @param session
-     * @param sequence
+     * @param sequenceName Sequence to drop
      */
     void dropSequence(Session session, TableName sequenceName);
 }

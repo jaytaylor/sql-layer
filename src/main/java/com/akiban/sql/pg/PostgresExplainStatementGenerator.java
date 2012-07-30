@@ -61,6 +61,6 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
         if (!(innerStmt instanceof DMLStatementNode))
             throw new UnableToExplainException ();
         BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params);
-        return new PostgresExplainStatement(result.explainPlan());
+        return new PostgresExplainStatement(result.explainPlan(), compiler.usesPValues());
     }
 }

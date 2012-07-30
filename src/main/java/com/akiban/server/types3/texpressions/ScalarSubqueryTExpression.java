@@ -32,6 +32,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.SubqueryTooManyRowsException;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 public class ScalarSubqueryTExpression extends SubqueryTExpression
 {
@@ -63,7 +64,7 @@ public class ScalarSubqueryTExpression extends SubqueryTExpression
 
                 // evaluate the result
                 eval.evaluate();
-                out.putValueSource(eval.resultValue());
+                PValueTargets.copyFrom(eval.resultValue(), out);
                 
                 if (next() != null)
                     throw new SubqueryTooManyRowsException();

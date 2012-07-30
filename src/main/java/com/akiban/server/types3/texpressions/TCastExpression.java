@@ -29,10 +29,14 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.SparseArray;
+
+import java.util.Collections;
 
 public final class TCastExpression implements TPreparedExpression {
     @Override
@@ -44,7 +48,17 @@ public final class TCastExpression implements TPreparedExpression {
         }
         else {
             value = new PValue(cast.targetClass().underlyingType());
-            cast.evaluate(null, inputValue.value(), value);
+
+            TExecutionContext context = new TExecutionContext(
+                    new SparseArray<Object>(),
+                    Collections.singletonList(input.resultType()),
+                    targetInstance,
+                    queryContext,
+                    null,
+                    null,
+                    null
+            );
+            cast.evaluate(context, inputValue.value(), value);
         }
         return new TPreptimeValue(targetInstance, value);
     }
@@ -85,7 +99,10 @@ public final class TCastExpression implements TPreparedExpression {
         public void evaluate() {
             inputEval.evaluate();
             PValueSource inputVal = inputEval.resultValue();
-            cast.evaluate(null, inputVal, value);
+            if (inputVal.isNull())
+                value.putNull();
+            else
+                cast.evaluate(null, inputVal, value);
         }
 
         @Override

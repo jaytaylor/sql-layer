@@ -91,8 +91,9 @@ import java.math.BigDecimal;
 
 class Insert_Default implements UpdatePlannable {
 
-    public Insert_Default(Operator inputOperator) {
+    public Insert_Default(Operator inputOperator, boolean usePValues) {
         this.inputOperator = inputOperator;
+        this.usePValues = usePValues;
     }
 
     @Override
@@ -121,6 +122,7 @@ class Insert_Default implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
+    private final boolean usePValues;
     private static final InOutTap INSERT_TAP = Tap.createTimer("operator: Insert_Default");
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
@@ -145,8 +147,8 @@ class Insert_Default implements UpdatePlannable {
                     // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
                     checkQueryCancelation();
                     ++seen;
-                    context.checkConstraints(row);
-                    adapter().writeRow(row);
+                    context.checkConstraints(row, usePValues);
+                    adapter().writeRow(row, usePValues);
                     ++modified;
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Insert: row {}", row);

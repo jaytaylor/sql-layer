@@ -442,6 +442,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         deleteTableCommon(session, new TableName(schemaName, tableName), false, false);
     }
 
+    @Override
+    public void alterTableDefinition(Session session, TableName tableName, UserTable newDefinition) {
+        throw new UnsupportedOperationException();
+    }
+
     private void deleteTableCommon(Session session, TableName tableName, boolean isInternal, boolean mustBeMemory) {
         checkTableName(tableName, true, isInternal);
 
@@ -1284,6 +1289,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         } finally {
             session.close();
             if(txn.isActive()) {
+                if(!txn.isCommitted()) {
+                    txn.rollback();
+                }
                 txn.end();
             }
         }

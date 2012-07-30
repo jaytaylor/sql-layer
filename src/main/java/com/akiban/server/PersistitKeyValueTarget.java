@@ -34,8 +34,10 @@ import com.akiban.ais.model.Column;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ByteSource;
 import com.persistit.Key;
 
@@ -60,7 +62,37 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     public PersistitKeyValueTarget expectingType(Column column) {
         return expectingType(column.getType().akType(), column.getCollator());
     }
-    
+
+    public void append(ValueSource valueSource, AkType akType, AkCollator collator) {
+        expectingType(akType, this.collator);
+        if (collator == null) {
+            Converters.convert(valueSource, this);
+        } else {
+            if (valueSource instanceof PersistitKeyValueSource) {
+                PersistitKeyValueSource persistitKeyValueSource = (PersistitKeyValueSource) valueSource;
+                Key sourceKey = persistitKeyValueSource.key();
+                int sourceDepth = persistitKeyValueSource.depth();
+                sourceKey.indexTo(sourceDepth);
+                int sourceStart = sourceKey.getIndex();
+                sourceKey.indexTo(sourceDepth + 1);
+                int sourceEnd = sourceKey.getIndex();
+                byte[] sourceBytes = sourceKey.getEncodedBytes();
+                int bytesToCopy = sourceEnd - sourceStart;
+                byte[] targetBytes = this.key.getEncodedBytes();
+                int targetSize = this.key.getEncodedSize();
+                System.arraycopy(sourceBytes, sourceStart,
+                                 targetBytes, targetSize,
+                                 bytesToCopy);
+                // We just wrote to Key internals. Invalidate cached state
+                key.setEncodedSize(targetSize + bytesToCopy);
+            } else if (valueSource.isNull()) {
+                key.append(null);
+            } else {
+                collator.append(key, valueSource.getString());
+            }
+        }
+    }
+
     // ValueTarget interface
 
     @Override

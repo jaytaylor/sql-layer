@@ -203,19 +203,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 for (ConditionExpression condition : conditions) {
                     if (condition instanceof ComparisonCondition) {
                         ComparisonCondition ccond = (ComparisonCondition)condition;
-                        if (ccond.getOperation().equals(Comparison.NE))
+                        if (ccond.getOperation() == Comparison.NE)
                             continue; // ranges are better suited for !=
-                        ExpressionNode otherComparand = null;
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
-                            otherComparand = ccond.getRight();
-                        }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
-                            otherComparand = ccond.getLeft();
-                        }
-                        if ((otherComparand != null) && constantOrBound(otherComparand)) {
-                            index.addInequalityCondition(condition,
-                                                         ccond.getOperation(),
-                                                         otherComparand);
+                        ExpressionNode otherComparand = matchingComparand(indexExpression, ccond);
+                        if (otherComparand != null) {
+                            Comparison op = ccond.getOperation();
+                            if (otherComparand == ccond.getLeft())
+                                op = ComparisonCondition.reverseComparison(op);
+                            index.addInequalityCondition(condition, op, otherComparand);
                             foundInequalityCondition = true;
                         }
                     }
@@ -237,8 +232,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return true;
     }
 
-    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds)
-    {
+    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds) {
         setColumnsAndOrdering(index);
         int nequals = 0;
         List<ExpressionNode> indexExpressions = index.getColumns();
@@ -251,16 +245,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (ConditionExpression condition : localConds) {
                 if (condition instanceof ComparisonCondition) {
                     ComparisonCondition ccond = (ComparisonCondition)condition;
-                    ExpressionNode comparand = null;
-                    if (ccond.getOperation() == Comparison.EQ) {
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
-                            comparand = ccond.getRight();
-                        }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
-                            comparand = ccond.getLeft();
-                        }
-                    }
-                    if ((comparand != null) && constantOrBound(comparand)) {
+                    if (ccond.getOperation() != Comparison.EQ)
+                        continue; // only doing equalities
+                    ExpressionNode comparand = matchingComparand(indexExpression, ccond);
+                    if (comparand != null) {
                         equalityCondition = condition;
                         otherComparand = comparand;
                         break;
@@ -270,7 +258,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     FunctionCondition fcond = (FunctionCondition)condition;
                     if (fcond.getFunction().equals("isNull") &&
                         (fcond.getOperands().size() == 1) &&
-                        (fcond.getOperands().get(0).equals(indexExpression))) {
+                        indexExpressionMatches(indexExpression, 
+                                               fcond.getOperands().get(0))) {
                         equalityCondition = condition;
                         otherComparand = null; // TODO: Or constant NULL, depending on API.
                         break;
@@ -283,6 +272,22 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             nequals++;
         }
         return nequals;
+    }
+
+    private ExpressionNode matchingComparand(ExpressionNode indexExpression, 
+                                             ComparisonCondition ccond) {
+        ExpressionNode comparand;
+        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
+            comparand = ccond.getRight();
+            if (constantOrBound(comparand))
+                return comparand;
+        }
+        if (indexExpressionMatches(indexExpression, ccond.getRight())) {
+            comparand = ccond.getLeft();
+            if (constantOrBound(comparand))
+                return comparand;
+        }
+        return null;
     }
 
     private static void setColumnsAndOrdering(SingleIndexScan index) {
@@ -418,7 +423,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (ExpressionNode targetExpression : groupBy) {
                 int found = -1;
                 for (int i = nequals; i < indexOrdering.size(); i++) {
-                    if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                    if (orderingExpressionMatches(indexOrdering.get(i).getExpression(),
+                                                  targetExpression)) {
                         found = i - nequals;
                         break;
                     }
@@ -471,7 +477,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         for (ExpressionNode targetExpression : distinct) {
             int found = -1;
             for (int i = nequals; i < indexOrdering.size(); i++) {
-                if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                if (orderingExpressionMatches(indexOrdering.get(i).getExpression(),
+                                              targetExpression)) {
                     found = i - nequals;
                     break;
                 }
@@ -492,9 +499,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (!(columnExpression instanceof ColumnExpression) ||
             !(targetExpression instanceof ColumnExpression))
             return false;
-        EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
-        return equivs.areEquivalent((ColumnExpression)columnExpression,
-                                    (ColumnExpression)targetExpression);
+        return getColumnEquivalencies().areEquivalent((ColumnExpression)columnExpression,
+                                                      (ColumnExpression)targetExpression);
+    }
+
+    protected EquivalenceFinder<ColumnExpression> getColumnEquivalencies() {
+        return queryGoal.getQuery().getColumnEquivalencies();
     }
 
     protected class UnboundFinder implements ExpressionVisitor {
@@ -561,13 +571,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                                              ExpressionNode comparisonOperand) {
         if (indexExpression.equals(comparisonOperand))
             return true;
-        if (!(comparisonOperand instanceof ColumnExpression))
+        if (!(indexExpression instanceof ColumnExpression) ||
+            !(comparisonOperand instanceof ColumnExpression))
             return false;
+        if (getColumnEquivalencies().areEquivalent((ColumnExpression)indexExpression,
+                                                   (ColumnExpression)comparisonOperand))
+            return true;
         // See if comparing against a result column of the subquery,
         // that is, a join to the subquery that we can push down.
-        // TODO: Should check column equivalences here, too. If we
-        // added the below that earlier, could count such a join as a
-        // group join: p JOIN (SELECT fk) sq ON p.pk = sq.fk.
         ColumnExpression comparisonColumn = (ColumnExpression)comparisonOperand;
         ColumnSource comparisonTable = comparisonColumn.getTable();
         if (!(comparisonTable instanceof SubquerySource))
@@ -693,7 +704,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         @Override
         protected List<Column> getComparisonColumns(IndexScan first, IndexScan second) {
-            EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
+            EquivalenceFinder<ColumnExpression> equivs = getColumnEquivalencies();
             List<ExpressionNode> firstOrdering = orderingCols(first);
             List<ExpressionNode> secondOrdering = orderingCols(second);
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
@@ -751,6 +762,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         }
                         else {
                             if (leafRequired != null) {
+                                // Optional above required, not LEFT join compatible.
                                 leafRequired = null;
                                 break;
                             }
@@ -767,26 +779,32 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         continue;
                 }
                 else {
-                    if (!table.isRequired())
+                    if (!required.contains(table))
                         continue;
                     leafRequired = table;
-                    TableSource childTable = null;
+                    boolean optionalSeen = false;
                     while (rootTable != null) {
-                        if (rootTable.isRequired()) {
-                            if (rootRequired != null) {
+                        if (required.contains(rootTable)) {
+                            if (optionalSeen) {
+                                // Required above optional, not RIGHT join compatible.
                                 rootRequired = null;
                                 break;
                             }
+                            rootRequired = rootTable;
                         }
                         else {
-                            if (rootRequired == null)
-                                rootRequired = childTable;
+                            optionalSeen = true;
                         }
                         if (index.rootMostTable() == rootTable.getTable().getTable())
                             break;
-                        childTable = rootTable;
                         rootTable = rootTable.getParentTable();
                     }
+                    // TODO: There are no INNER JOIN group indexes,
+                    // but this would support them.
+                    /*
+                    if (optionalSeen && (index.getJoinType() == JoinType.INNER))
+                        continue;
+                    */
                     if ((rootTable == null) ||
                         (rootRequired == null))
                         continue;

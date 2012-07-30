@@ -95,8 +95,9 @@ class Delete_Default implements UpdatePlannable {
 
     // constructor
 
-    public Delete_Default(Operator inputOperator) {
+    public Delete_Default(Operator inputOperator, boolean usePValues) {
         this.inputOperator = inputOperator;
+        this.usePValues = usePValues;
     }
 
     // Object interface
@@ -132,6 +133,7 @@ class Delete_Default implements UpdatePlannable {
         return Collections.singletonList(inputOperator);
     }
 
+    private final boolean usePValues;
     private final Operator inputOperator;
     private static final InOutTap DELETE_TAP = Tap.createTimer("operator: Delete_Default");
 
@@ -149,7 +151,7 @@ class Delete_Default implements UpdatePlannable {
                 while ((oldRow = input.next()) != null) {
                     checkQueryCancelation();
                     ++seen;
-                    adapter().deleteRow(oldRow);
+                    adapter().deleteRow(oldRow, usePValues);
                     ++modified;
                 }
             } finally {

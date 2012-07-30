@@ -35,7 +35,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class FromObjectValueSource implements ValueSource {
+public final class FromObjectValueSource extends ValueSource {
 
     // FromObjectValueSource interface
 

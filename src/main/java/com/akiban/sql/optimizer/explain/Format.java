@@ -345,6 +345,10 @@ public class Format {
                 // TODO: optimizer
                 sb.append(atts.get(Label.GROUPING_OPTION).get(0));
                 break;
+            case PHYSICAL_OPERATOR:
+                // TODO: optimizer
+                sb.append(atts.get(Label.GROUPING_OPTION).get(0));
+                break;
             default:
                 throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
         }

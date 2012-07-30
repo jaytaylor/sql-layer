@@ -24,19 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.qp.persistitadapter;
 
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import com.persistit.Key;
 
-import java.util.Collection;
-
-public interface FunctionRegistry
+class PersistitKeyHasher
 {
-    Collection<? extends TAggregator> aggregators();
-    Collection<? extends TValidatedOverload> overloads();
-    Collection<? extends TCast> casts();
-    Collection<? extends TClass> tclasses();
+    // For hashing a single-segment key
+
+    public long hash(Key key, int depth)
+    {
+        key.indexTo(depth);
+        int startPosition = key.getIndex();
+        key.indexTo(depth + 1);
+        int endPosition = key.getIndex();
+        return hashFunction.hashBytes(key.getEncodedBytes(), startPosition, endPosition - startPosition).asLong();
+    }
+
+    // Object state
+
+    private final HashFunction hashFunction = Hashing.goodFastHash(64); // Because we're returning longs
 }

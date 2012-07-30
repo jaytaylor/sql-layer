@@ -26,18 +26,10 @@
 
 package com.akiban.server.types3.pvalue;
 
-import com.akiban.server.types3.TInstance;
-
 public final class PValueTargets {
     private PValueTargets() {}
 
     public static void copyFrom(PValueSource source, PValueTarget target) {
-        copyFrom(source, target, null, null);
-    }
-
-    public static <T> void copyFrom(PValueSource source, PValueTarget target,
-                                    PValueCacher<T> cacher, TInstance tInstance)
-    {
         if (source.isNull()) {
             target.putNull();
             return;
@@ -45,12 +37,6 @@ public final class PValueTargets {
         else if (source.hasCacheValue()) {
             if (target.supportsCachedObjects()) {
                 target.putObject(source.getObject());
-                return;
-            }
-            else if (cacher != null) {
-                @SuppressWarnings("unchecked")
-                T cached = (T) source.getObject();
-                cacher.cacheToValue(cached, tInstance, target);
                 return;
             }
             else if (!source.hasRawValue()) {

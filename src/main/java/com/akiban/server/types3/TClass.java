@@ -53,7 +53,7 @@ public abstract class TClass {
 
     public void selfCast(TExecutionContext context,
                          TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
-        target.putValueSource(source); // TODO make abstract
+        PValueTargets.copyFrom(source, target);
     }
     
     public static int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
@@ -117,7 +117,7 @@ public abstract class TClass {
     }
 
     protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        PValueTargets.copyFrom(in, out, cacher(), typeInstance);
+        PValueTargets.copyFrom(in, out);
     }
 
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {

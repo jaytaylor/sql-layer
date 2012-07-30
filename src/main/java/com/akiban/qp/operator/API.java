@@ -556,12 +556,15 @@ public class API
     // Distinct
     public static Operator distinct_Partial(Operator input, RowType distinctType)
     {
-        return new Distinct_Partial(input, distinctType, Types3Switch.ON);
+        return new Distinct_Partial(input, distinctType, null, Types3Switch.ON);
     }
 
-    public static Operator distinct_Partial(Operator input, RowType distinctType, boolean usePValues)
+    public static Operator distinct_Partial(Operator input,
+                                            RowType distinctType,
+                                            List<AkCollator> collators,
+                                            boolean usePValues)
     {
-        return new Distinct_Partial(input, distinctType, usePValues);
+        return new Distinct_Partial(input, distinctType, collators, usePValues);
     }
 
     // Map
@@ -736,11 +739,12 @@ public class API
                                              Operator streamInput)
     {
         return new Using_BloomFilter(filterInput,
-                filterRowType,
-                estimatedRowCount,
-                filterBindingPosition,
-                streamInput,
-                Types3Switch.ON);
+                                     filterRowType,
+                                     estimatedRowCount,
+                                     filterBindingPosition,
+                                     streamInput,
+                                     null,
+                                     Types3Switch.ON);
     }
 
     public static Operator using_BloomFilter(Operator filterInput,
@@ -748,6 +752,7 @@ public class API
                                              long estimatedRowCount,
                                              int filterBindingPosition,
                                              Operator streamInput,
+                                             List<AkCollator> collators,
                                              boolean usePValues)
     {
         return new Using_BloomFilter(filterInput,
@@ -755,6 +760,7 @@ public class API
                                      estimatedRowCount,
                                      filterBindingPosition,
                                      streamInput,
+                                     collators,
                                      usePValues);
     }
 
@@ -765,17 +771,31 @@ public class API
                                               List<? extends Expression> filterFields,
                                               int bindingPosition)
     {
+        return select_BloomFilter(input, onPositive, filterFields, null, bindingPosition);
+    }
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends Expression> filterFields,
+                                              List<AkCollator> collators,
+                                              int bindingPosition)
+    {
         return new Select_BloomFilter(input,
                                       onPositive,
                                       filterFields,
+                                      collators,
                                       bindingPosition);
     }
 
     // Insert
-
     public static UpdatePlannable insert_Default(Operator inputOperator)
     {
-        return new Insert_Default(inputOperator);
+        return insert_Default(inputOperator, Types3Switch.ON);
+    }
+
+    public static UpdatePlannable insert_Default(Operator inputOperator, boolean usePVals)
+    {
+        return new Insert_Default(inputOperator, usePVals);
     }
 
 
@@ -789,9 +809,9 @@ public class API
     
     // Delete
 
-    public static UpdatePlannable delete_Default(Operator inputOperator)
+    public static UpdatePlannable delete_Default(Operator inputOperator, boolean usePValues)
     {
-        return new Delete_Default(inputOperator);
+        return new Delete_Default(inputOperator, usePValues);
     }
 
     // Execution interface
@@ -958,7 +978,7 @@ public class API
             return copy;
         }
         
-        private boolean usingPVals() {
+        public boolean usingPVals() {
             return tExpressions != null;
         }
         

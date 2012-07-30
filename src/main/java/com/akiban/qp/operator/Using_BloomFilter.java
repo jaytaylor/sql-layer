@@ -29,6 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -127,6 +128,7 @@ class Using_BloomFilter extends Operator
                              long estimatedRowCount,
                              int filterBindingPosition,
                              Operator streamInput,
+                             List<AkCollator> collators,
                              boolean usePValues)
     {
         ArgumentValidation.notNull("filterInput", filterInput);
@@ -134,12 +136,22 @@ class Using_BloomFilter extends Operator
         ArgumentValidation.isGTE("estimatedRowCount", estimatedRowCount, 0);
         ArgumentValidation.isGTE("filterBindingPosition", filterBindingPosition, 0);
         ArgumentValidation.notNull("streamInput", streamInput);
+        if (collators != null)
+            ArgumentValidation.isEQ("collators length", collators.size(), filterRowType.nFields());
         this.filterInput = filterInput;
         this.filterRowType = filterRowType;
         this.estimatedRowCount = estimatedRowCount;
         this.filterBindingPosition = filterBindingPosition;
         this.streamInput = streamInput;
+        this.collators = collators;
         this.usePValues = usePValues;
+    }
+
+    // For use by this class
+
+    private AkCollator collator(int f)
+    {
+        return collators == null ? null : collators.get(f);
     }
 
     // Class state
@@ -155,6 +167,7 @@ class Using_BloomFilter extends Operator
     private final long estimatedRowCount;
     private final int filterBindingPosition;
     private final Operator streamInput;
+    private final List<AkCollator> collators;
     private final boolean usePValues;
 
     @Override
@@ -262,7 +275,7 @@ class Using_BloomFilter extends Operator
                     }
                     else {
                         ValueSource valueSource = row.eval(f);
-                        h = h ^ ValueSourceHasher.hash(valueSource);
+                        h = h ^ ValueSourceHasher.hash(adapter(), valueSource, collator(f));
                     }
                 }
                 filter.add(h);

@@ -91,7 +91,7 @@ public abstract class Strings {
      * @param strings the strings
      * @return the String
      */
-    public static String join(String... strings) {
+    public static String join(Object... strings) {
         return join(Arrays.asList(strings));
     }
 
