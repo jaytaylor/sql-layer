@@ -382,8 +382,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         indexColumn = null; // Index sorts by unknown column.
                 }
                 if ((indexColumn != null) && 
-                    orderingExpressionMatches(indexColumn.getExpression(), 
-                                              targetExpression)) {
+                    orderingExpressionMatches(indexColumn, targetExpression)) {
                     if (indexColumn.isAscending() != targetColumn.isAscending()) {
                         // To avoid mixed mode as much as possible,
                         // defer changing the index order until
@@ -423,8 +422,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (ExpressionNode targetExpression : groupBy) {
                 int found = -1;
                 for (int i = nequals; i < indexOrdering.size(); i++) {
-                    if (orderingExpressionMatches(indexOrdering.get(i).getExpression(),
-                                                  targetExpression)) {
+                    if (orderingExpressionMatches(indexOrdering.get(i), targetExpression)) {
                         found = i - nequals;
                         break;
                     }
@@ -477,8 +475,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         for (ExpressionNode targetExpression : distinct) {
             int found = -1;
             for (int i = nequals; i < indexOrdering.size(); i++) {
-                if (orderingExpressionMatches(indexOrdering.get(i).getExpression(),
-                                              targetExpression)) {
+                if (orderingExpressionMatches(indexOrdering.get(i), targetExpression)) {
                     found = i - nequals;
                     break;
                 }
@@ -492,8 +489,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     // Does the column expression coming from the index match the ORDER BY target,
     // allowing for column equivalences?
-    protected boolean orderingExpressionMatches(ExpressionNode columnExpression,
+    protected boolean orderingExpressionMatches(OrderByExpression orderByExpression,
                                                 ExpressionNode targetExpression) {
+        ExpressionNode columnExpression = orderByExpression.getExpression();
+        if (columnExpression == null)
+            return false;
         if (columnExpression.equals(targetExpression))
             return true;
         if (!(columnExpression instanceof ColumnExpression) ||
