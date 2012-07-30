@@ -55,6 +55,7 @@ import com.akiban.server.error.OrderGroupByNonIntegerConstant;
 import com.akiban.server.error.OrderGroupByIntegerOutOfRange;
 import com.akiban.server.error.WrongExpressionArityException;
 
+import com.akiban.sql.optimizer.plan.BooleanOperationExpression.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -655,13 +656,89 @@ public class ASTStatementLoader extends BaseRule
                 buildInConditionNested(conditions, projects, in);
         }
 
+        protected ConditionExpression getEqual(InListOperatorNode in, 
+                                               List<ExpressionNode> projects,
+                                               ValueNode left, ValueNode right) throws StandardException
+        {
+            if (right instanceof RowConstructorNode)
+            {
+                if (left instanceof RowConstructorNode)
+                {
+                    ValueNodeList leftList = ((RowConstructorNode)left).getNodeList();
+                    ValueNodeList rightList = ((RowConstructorNode)right).getNodeList();
+                    
+                    if (leftList.size() != rightList.size())
+                        throw new IllegalArgumentException("mismatched columns count in IN " 
+                                + "left : " + leftList.size() + ", right: " + rightList.size());
+                    
+                    ConditionExpression result = null;
+                    for (int n = 0; n < leftList.size(); ++n)
+                    {
+                        ConditionExpression equalNode = getEqual(in,
+                                                       projects,
+                                                       leftList.get(n), rightList.get(n));
+                        
+                        if (result == null)
+                            result = equalNode;
+                        else
+                        {
+                            ConditionExpression andNode = new BooleanOperationExpression(Operation.AND,
+                                                                                         result, equalNode,
+                                                                                         left.getType(), left); // TODO: wrong!
+                            result = andNode;
+                        }
+                        
+                    }
+                    return result;
+                }
+                else
+                    throw new IllegalArgumentException("mismatchec column count in IN");
+            }
+            else
+            {
+                if (left instanceof RowConstructorNode)
+                    throw new IllegalArgumentException("mismatch columns count in IN");
+                
+                ExpressionNode rightExp = toExpression(right, projects);
+                ExpressionNode leftExp = toExpression(left, projects);
+                
+                return new ComparisonCondition(Comparison.EQ, 
+                                               leftExp, rightExp,
+                                               in.getType(), in);
+            }
+        }
         protected void buildInConditionNested(List<ConditionExpression> conditions,
                                               List<ExpressionNode> projects,
-                                              InListOperatorNode in)
+                                              InListOperatorNode in) throws StandardException
         {
-            throw new UnsupportedOperationException("not supported yet: cases with nested tuples yet");
-//            RowConstructorNode lhs = in.getLeftOperand();
-//            RowConstructorNode rhs = in.getRightOperandList();
+            RowConstructorNode leftRow = in.getLeftOperand();
+            RowConstructorNode rightRow = in.getRightOperandList();
+            
+            if(rightRow.listSize() <= getInToOrMaxCount())
+            {
+                ConditionExpression result = null;
+
+                for (ValueNode rightNode : rightRow.getNodeList())
+                {
+                    ConditionExpression equalNode = getEqual(in, projects, leftRow, rightNode);
+
+                    if (result == null)
+                        result = equalNode;
+                    else
+                    {
+                        List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+
+                        operands.add(result);
+                        operands.add(equalNode);
+
+                        result = new LogicalFunctionCondition("or", operands, in.getType(), in);
+                    }
+                }
+                conditions.add(result);
+                return;
+            }
+            
+            //throw new UnsupportedOperationException("Nested tuple with subquery  NOT SUPPORTED");
         }
         
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
