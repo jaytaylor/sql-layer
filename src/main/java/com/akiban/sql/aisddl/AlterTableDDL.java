@@ -33,6 +33,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
@@ -223,7 +224,11 @@ public class AlterTableDDL {
         TableName tempName1 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_NEW);
         UserTable newTable = aisCopy.getUserTable(tableName);
         new AISTableNameChanger(newTable, tempName1).doChange();
-        newTable.clearGrouping();
+        // Dis-associate the tables
+        Join join = newTable.getParentJoin();
+        join.getParent().removeCandidateChildJoin(join);
+        newTable.removeCandidateParentJoin(join);
+        newTable.setGroup(null);
 
         createRenameCopyDrop(session, ddl, copier, newTable, tableName);
     }

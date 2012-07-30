@@ -409,7 +409,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public void dropIndexes(Session session, final Collection<Index> indexesToDrop) {
+    public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
         final AkibanInformationSchema newAIS = AISCloner.clone(
                 getAis(),
                 new ProtobufWriter.WriteSelector() {

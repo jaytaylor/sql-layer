@@ -176,5 +176,5 @@ public interface Store extends Service<Store> {
     /** Get the underlying {@link PersistitStore}. */
     public PersistitStore getPersistitStore();
 
-    void truncateIndex(Session session, Index index);
+    void truncateIndex(Session session, Collection<? extends Index> indexes);
 }

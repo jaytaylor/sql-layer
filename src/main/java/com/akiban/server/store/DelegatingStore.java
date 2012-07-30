@@ -179,7 +179,7 @@ public abstract class DelegatingStore<S extends Store> implements Store {
     }
 
     @Override
-    public void truncateIndex(Session session, Index index) {
-        delegate.truncateIndex(session, index);
+    public void truncateIndex(Session session, Collection<? extends Index> indexes) {
+        delegate.truncateIndex(session, indexes);
     }
 }

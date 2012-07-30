@@ -161,13 +161,21 @@ public class AISMerge {
             // But since the AIS supports multiples, so does the merge.
             // This gets flagged in JoinToOneParent validation. 
             for (Join join : sourceTable.getCandidateParentJoins()) {
-                addJoin (builder, join);
+                addJoin (builder, join, sourceTable.getName());
             }
         }
 
         builder.groupingIsComplete();
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
+    }
+
+    private static void propagateNewGroup(UserTable table) {
+        for(Join join : table.getCandidateChildJoins()) {
+            join.setGroup(table.getGroup());
+            join.getChild().setGroup(table.getGroup());
+            propagateNewGroup(join.getChild());
+        }
     }
 
     private void doChangeMerge() {
@@ -178,30 +186,38 @@ public class AISMerge {
 
         // Add new
         addTable(builder, sourceTable, true);
+        UserTable newTable = targetAIS.getUserTable(sourceTable.getName());
 
         // Fix up parent join
-        if(origTable.getParentJoin() != null) {
-            targetAIS.removeJoin(origTable.getParentJoin().getName());
-            addJoin(builder, origTable.getParentJoin());
+        Join parentJoin = origTable.getParentJoin();
+        if(parentJoin != null) {
+            targetAIS.removeJoin(parentJoin.getName());
+            parentJoin.getParent().removeCandidateChildJoin(parentJoin);
+            addJoin(builder, parentJoin, sourceTable.getName());
         } else {
             Group origGroup = origTable.getGroup();
             GroupTable origGT = origGroup.getGroupTable();
             targetAIS.removeGroup(origGroup);
+            origGT.dropColumns();
 
-            UserTable newTable = targetAIS.getUserTable(sourceTable.getName());
             Group group = Group.create(targetAIS, origGroup.getName());
-            GroupTable gt = GroupTable.create(targetAIS, origGT.getName().getSchemaName(), origGT.getName().getTableName(), origGT.getTableId());
+            GroupTable groupTable = GroupTable.create(targetAIS, origGT.getName().getSchemaName(),
+                                                      origGT.getName().getTableName(), origGT.getTableId());
 
-            gt.setGroup(group);
-            gt.setTreeName(newTable.getTreeName());
-            group.setGroupTable(gt);
+            groupTable.setGroup(group);
+            groupTable.setTreeName(newTable.getTreeName());
+            group.setGroupTable(groupTable);
             newTable.setGroup(group);
         }
 
         // Fix up children joins
         for(Join childJoin : origTable.getChildJoins()) {
             targetAIS.removeJoin(childJoin.getName());
-            addJoin(builder, childJoin);
+            UserTable childTable = childJoin.getChild();
+            childTable.removeCandidateParentJoin(childJoin);
+            childTable.setGroup(null);
+            addJoin(builder, childJoin, childTable.getName());
+            propagateNewGroup(childTable);
         }
 
         // TODO: Rebuild group indexes
@@ -291,7 +307,7 @@ public class AISMerge {
         }
     }
 
-    private void addJoin (AISBuilder builder, Join join) {
+    private void addJoin (AISBuilder builder, Join join, TableName childTable) {
         String parentSchemaName = join.getParent().getName().getSchemaName();
         String parentTableName = join.getParent().getName().getTableName();
         UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
@@ -300,13 +316,13 @@ public class AISMerge {
          }
         LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
         String joinName = nameGenerator.generateJoinName(parentTable.getName(),
-                                                         sourceTable.getName(),
+                                                         childTable,
                                                          join.getJoinColumns());
         builder.joinTables(joinName,
                 parentSchemaName,
                 parentTableName,
-                sourceTable.getName().getSchemaName(), 
-                sourceTable.getName().getTableName());
+                childTable.getSchemaName(),
+                childTable.getTableName());
 
         for (JoinColumn joinColumn : join.getJoinColumns()) {
             try {
@@ -314,8 +330,8 @@ public class AISMerge {
                     parentSchemaName, 
                     parentTableName, 
                     joinColumn.getParent().getName(),
-                    sourceTable.getName().getSchemaName(), 
-                    sourceTable.getName().getTableName(), 
+                    childTable.getSchemaName(),
+                    childTable.getTableName(),
                     joinColumn.getChild().getName());
             } catch (AISBuilder.NoSuchObjectException ex) {
                 throw new JoinToWrongColumnsException (

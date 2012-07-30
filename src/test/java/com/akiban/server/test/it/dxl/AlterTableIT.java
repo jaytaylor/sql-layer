@@ -27,12 +27,17 @@
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.OperatorBasedTableCopier;
@@ -55,12 +60,16 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AlterTableIT extends ITBase {
     private final String SCHEMA = "test";
+    private int cid;
+    private int oid;
+    private int iid;
 
     private void runAlter(String sql) throws StandardException {
         SQLParser parser = new SQLParser();
@@ -75,18 +84,40 @@ public class AlterTableIT extends ITBase {
         return new TestRow(type, fields);
     }
 
+    private void createAndLoadSingleTableGroup() {
+        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5)");
+        writeRows(
+                createNewRow(cid, 1L, "10"),
+                createNewRow(cid, 2L, "20"),
+                createNewRow(cid, 3L, "30")
+        );
+    }
+
+    private void createAndLoadCOI() {
+        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(1)");
+        oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, o1 int, grouping foreign key(cid) references c(id)");
+        iid = createTable(SCHEMA, "i", "id int not null primary key, oid int, i1 int, grouping foreign key(oid) references o(id)");
+        writeRows(
+                createNewRow(cid, 1L, "a"),
+                    createNewRow(oid, 10L, 1L, 11L),
+                        createNewRow(iid, 100L, 10L, 110L),
+                        createNewRow(iid, 101L, 10L, 111L),
+                    createNewRow(oid, 11L, 1L, 12L),
+                        createNewRow(iid, 111L, 11L, 122L),
+                createNewRow(cid, 2L, "b"),
+                // no 3L
+                    createNewRow(oid, 30L, 3L, 33L),
+                        createNewRow(iid, 300L, 30L, 330L)
+        );
+    }
+
     @Test
     public void cannotAddNotNullColumn() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, c char(1)");
-        writeRows(
-                createNewRow(cid,  1L, "a"),
-                createNewRow(cid, 13L, "m"),
-                createNewRow(cid, 26L, "z")
-        );
+        createAndLoadSingleTableGroup();
 
         // Needs updated after default values are supported
         try {
-            runAlter("ALTER TABLE c ADD COLUMN c1 INT NOT NULL DEFAULT 0");
+            runAlter("ALTER TABLE c ADD COLUMN c2 INT NOT NULL DEFAULT 0");
             fail("Expected NotNullViolationException");
         } catch(NotNullViolationException e) {
             // Expected
@@ -96,64 +127,112 @@ public class AlterTableIT extends ITBase {
         updateAISGeneration();
         expectFullRows(
                 cid,
-                createNewRow(cid,  1L, "a"),
-                createNewRow(cid, 13L, "m"),
-                createNewRow(cid, 26L, "z")
+                createNewRow(cid, 1L, "10"),
+                createNewRow(cid, 2L, "20"),
+                createNewRow(cid, 3L, "30")
         );
     }
 
     @Test
     public void addSingleColumnSingleTableGroup() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
-        writeRows(
-                createNewRow(cid, 1L, "a"),
-                createNewRow(cid, 2L, "b"),
-                createNewRow(cid, 3L, "asdf"),
-                createNewRow(cid, 10L, "asdfasdfasdf")
+        createAndLoadSingleTableGroup();
+        runAlter("ALTER TABLE c ADD COLUMN c2 INT NULL");
+        expectFullRows(
+                cid,
+                createNewRow(cid, 1L, "10", null),
+                createNewRow(cid, 2L, "20", null),
+                createNewRow(cid, 3L, "30", null)
         );
+    }
 
-        runAlter("ALTER TABLE c ADD COLUMN c1 INT NULL");
-
+    @Test
+    public void addSingleColumnRootOfGroup() throws StandardException {
+        createAndLoadCOI();
+        runAlter("ALTER TABLE c ADD COLUMN c2 INT NULL");
         expectFullRows(
                 cid,
                 createNewRow(cid, 1L, "a", null),
-                createNewRow(cid, 2L, "b", null),
-                createNewRow(cid, 3L, "asdf", null),
-                createNewRow(cid, 10L, "asdfasdfasdf", null)
+                createNewRow(cid, 2L, "b", null)
+        );
+    }
+
+    @Test
+    public void addSingleColumnMiddleOfGroup() throws StandardException {
+        createAndLoadCOI();
+        runAlter("ALTER TABLE o ADD COLUMN o2 INT NULL");
+        expectFullRows(
+                oid,
+                createNewRow(oid, 10L, 1L, 11L, null),
+                createNewRow(oid, 11L, 1L, 12L, null),
+                createNewRow(oid, 30L, 3L, 33L, null)
+        );
+    }
+
+    @Test
+    public void addSingleColumnLeafOfGroup() throws StandardException {
+        createAndLoadCOI();
+        runAlter("ALTER TABLE i ADD COLUMN i2 INT NULL");
+        expectFullRows(
+                iid,
+                createNewRow(iid, 100L, 10L, 110L, null),
+                createNewRow(iid, 101L, 10L, 111L, null),
+                createNewRow(iid, 111L, 11L, 122L, null),
+                createNewRow(iid, 300L, 30L, 330L, null)
         );
     }
 
     @Test
     public void dropSingleColumnSingleTableGroup() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
-        writeRows(
-                createNewRow(cid, 1L, "a"),
-                createNewRow(cid, 2L, "b"),
-                createNewRow(cid, 3L, "asdf"),
-                createNewRow(cid, 10L, "asdfasdfasdf")
-        );
-
-        runAlter("ALTER TABLE c DROP COLUMN v");
-
+        createAndLoadSingleTableGroup();
+        runAlter("ALTER TABLE c DROP COLUMN c1");
         expectFullRows(
                 cid,
                 createNewRow(cid, 1L),
                 createNewRow(cid, 2L),
-                createNewRow(cid, 3L),
-                createNewRow(cid, 10L)
+                createNewRow(cid, 3L)
+        );
+    }
+
+    @Test
+    public void dropSingleColumnRootOfGroup() throws StandardException {
+        createAndLoadCOI();
+        runAlter("ALTER TABLE c DROP COLUMN c1");
+        expectFullRows(
+                cid,
+                createNewRow(cid, 1L),
+                createNewRow(cid, 2L)
+        );
+    }
+
+    @Test
+    public void dropSingleColumnMiddleOfGroup() throws StandardException {
+        createAndLoadCOI();
+        runAlter("ALTER TABLE o DROP COLUMN o1");
+        expectFullRows(
+                oid,
+                createNewRow(oid, 10L, 1L),
+                createNewRow(oid, 11L, 1L),
+                createNewRow(oid, 30L, 3L)
+        );
+    }
+
+    @Test
+    public void dropSingleColumnLeafOfGroup() throws StandardException {
+        createAndLoadCOI();
+        runAlter("ALTER TABLE i DROP COLUMN i1");
+        expectFullRows(
+                iid,
+                createNewRow(iid, 100L, 10L),
+                createNewRow(iid, 101L, 10L),
+                createNewRow(iid, 111L, 11L),
+                createNewRow(iid, 300L, 30L)
         );
     }
 
     @Test
     public void dropSingleColumnOfSingleColumnIndex() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, c1 int");
+        createAndLoadSingleTableGroup();
         createIndex(SCHEMA, "c", "c1", "c1");
-        writeRows(
-                createNewRow(cid,  1L,  11L),
-                createNewRow(cid,  2L,  21L),
-                createNewRow(cid,  3L,  31L),
-                createNewRow(cid, 10L, 101L)
-        );
 
         UserTable origTable = getUserTable(cid);
         runAlter("ALTER TABLE c DROP COLUMN c1");
@@ -164,8 +243,7 @@ public class AlterTableIT extends ITBase {
                 cid,
                 createNewRow(store(), cid,  1L),
                 createNewRow(store(), cid,  2L),
-                createNewRow(store(), cid,  3L),
-                createNewRow(store(), cid, 10L)
+                createNewRow(store(), cid,  3L)
         );
     }
 
@@ -192,23 +270,43 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
-    public void changeDataTypeSingleColumnSingleTableGroup() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, v int");
-        writeRows(
-                createNewRow(cid, 1L, 10),
-                createNewRow(cid, 2L, 20),
-                createNewRow(cid, 3L, 30),
-                createNewRow(cid, 10L, 100)
+    public void dropSingleColumnOfMultiColumnGroupIndex() throws StandardException {
+        createAndLoadCOI();
+        createGroupIndex("c", "c1_o1_o2", "c.c1,o.o1,i.i1");
+
+        runAlter("ALTER TABLE o DROP COLUMN o1");
+
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        Index index = ais.getGroup("c").getIndex("c1_o1_o2");
+        assertNotNull("Index still exists", index);
+        assertEquals("Index column count", 2, index.getKeyColumns().size());
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        IndexRowType indexRowType = schema.indexRowType(index);
+
+        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        compareRows(
+                new RowBase[] {
+                        testRow(indexRowType, "a", 110L, 1L, 10L, 100L),
+                        testRow(indexRowType, "a", 111L, 1L, 10L, 101L),
+                        testRow(indexRowType, "a", 122L, 1L, 11L, 111L),
+                },
+                API.cursor(
+                        API.indexScan_Default(indexRowType, false, IndexKeyRange.unbounded(indexRowType)),
+                        new SimpleQueryContext(adapter)
+                )
         );
+    }
 
-        runAlter("ALTER TABLE c ALTER COLUMN v SET DATA TYPE varchar(10)");
-
+    @Test
+    public void changeDataTypeSingleColumnSingleTableGroup() throws StandardException {
+        createAndLoadSingleTableGroup();
+        runAlter("ALTER TABLE c ALTER COLUMN c1 SET DATA TYPE int");
         expectFullRows(
                 cid,
-                createNewRow(cid, 1L, "10"),
-                createNewRow(cid, 2L, "20"),
-                createNewRow(cid, 3L, "30"),
-                createNewRow(cid, 10L, "100")
+                createNewRow(cid, 1L, 10L),
+                createNewRow(cid, 2L, 20L),
+                createNewRow(cid, 3L, 30L)
         );
     }
 
@@ -276,7 +374,6 @@ public class AlterTableIT extends ITBase {
         );
 
         runAlter("ALTER TABLE i ADD GROUPING FOREIGN KEY(spare_id) REFERENCES o(id)");
-        updateAISGeneration();
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
@@ -322,7 +419,6 @@ public class AlterTableIT extends ITBase {
         );
 
         runAlter("ALTER TABLE o DROP GROUPING FOREIGN KEY");
-        updateAISGeneration();
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));

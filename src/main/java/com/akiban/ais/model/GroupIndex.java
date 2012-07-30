@@ -153,6 +153,12 @@ public class GroupIndex extends Index
         return group;
     }
 
+    public static GroupIndex create(AkibanInformationSchema ais, Group group, GroupIndex index)
+    {
+        return create(ais, group, index.getIndexName().getName(), index.getIndexId(),
+                      index.isUnique(), index.getConstraint(), index.getJoinType());
+    }
+
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
                                     Boolean isUnique, String constraint)
     {
@@ -171,7 +177,7 @@ public class GroupIndex extends Index
         return index;
     }
 
-    public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
+    private GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
         // index checks index name.
         super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);

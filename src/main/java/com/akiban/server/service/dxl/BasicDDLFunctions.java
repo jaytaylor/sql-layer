@@ -37,10 +37,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
@@ -48,6 +52,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Operator;
@@ -189,6 +194,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         return oldColumn.getPosition();
     }
 
+    private static boolean indexContainsColumn(Index index, TableName tableName, String columnName) {
+        for(IndexColumn indexColumn : index.getKeyColumns()) {
+            Column fromIndex = indexColumn.getColumn();
+            if(fromIndex.getTable().getName().equals(tableName) && fromIndex.getName().equals(columnName)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
@@ -201,11 +215,27 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         // TODO: More pre-checking?
 
-        // Save previous state (so we can scan it)
+        List<GroupIndex> affectedGroupIndexes = new ArrayList<GroupIndex>();
+        for(AlterTableChange change : columnChanges) {
+            if(change.getChangeType() == AlterTableChange.ChangeType.ADD) {
+                continue;
+            }
+            for(GroupIndex index : origTable.getGroupIndexes()) {
+                if(indexContainsColumn(index, tableName, change.getOldName())) {
+                    affectedGroupIndexes.add(index);
+                }
+            }
+        }
+
+        // Drop definition and rebuild later, probably better than doing each entry individually
+        store().truncateIndex(session, affectedGroupIndexes);
+        schemaManager().dropIndexes(session, affectedGroupIndexes);
+
+        // Save previous state so it can be scanned
         final Schema oldSchema = SchemaCache.globalSchema(origAIS);
         final RowType oldSourceType = oldSchema.userTableRowType(origTable);
 
-        // Alter through schemaManager (we need to table definition and row defs)
+        // Alter through schemaManager to get new definitions and RowDefs
         schemaManager().alterTableDefinition(session, tableName, newDefinition);
 
         boolean rollBackNeeded = false;
@@ -221,7 +251,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         indexesToDrop.add(index);
                     // fall
                     case MODIFY:
-                        store().truncateIndex(session, index);
+                        store().truncateIndex(session, Collections.singleton(index));
                     break;
                     default:
                         throw new IllegalStateException("Unknown change type: " + change);
@@ -229,7 +259,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
 
             AkibanInformationSchema newAIS = getAIS(session);
-            UserTable newTable = newAIS.getUserTable(newDefinition.getName());
+            final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
             Schema newSchema = SchemaCache.globalSchema(newAIS);
 
             List<Column> newColumns = newTable.getColumnsIncludingInternal();
@@ -266,6 +296,42 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             PersistitAdapter adapter = new PersistitAdapter(oldSchema, store(), treeService(), session, configService);
             plan.run(new SimpleQueryContext(adapter));
+
+            // Now rebuild any group indexes, leaving out empty ones
+            if(!affectedGroupIndexes.isEmpty()) {
+                AkibanInformationSchema tempAIS = AISCloner.clone(newAIS, new ProtobufWriter.TableAllIndexSelector() {
+                    @Override
+                    public boolean isSelected(Columnar columnar) {
+                        return columnar.isTable() && (newTable.getGroup() == ((Table) columnar).getGroup());
+                    }
+                });
+
+                Collection<GroupIndex> indexesToBuild = new ArrayList<GroupIndex>();
+
+                final Group origGroup = origTable.getGroup();
+                Group tempGroup = tempAIS.getGroup(newTable.getGroup().getName());
+                for(GroupIndex index : affectedGroupIndexes) {
+                    GroupIndex origIndex = origGroup.getIndex(index.getIndexName().getName());
+                    GroupIndex indexCopy = GroupIndex.create(tempAIS, tempGroup, origIndex);
+                    int pos = 0;
+                    for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
+                        UserTable tempTable = tempAIS.getUserTable(indexColumn.getColumn().getTable().getName());
+                        Column column = tempTable.getColumn(indexColumn.getColumn().getName());
+                        if(column != null) {
+                            IndexColumn.create(indexCopy, column, indexColumn, pos++);
+                        }
+                    }
+                    if(pos != 0) {
+                        indexesToBuild.add(indexCopy);
+                    } else {
+                        indexesToDrop.add(origIndex);
+                    }
+                }
+
+                if(!indexesToBuild.isEmpty()) {
+                    createIndexes(session, indexesToBuild);
+                }
+            }
         } catch(RuntimeException e) {
             rollBackNeeded = true;
             throw e;

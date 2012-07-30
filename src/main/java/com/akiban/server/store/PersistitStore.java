@@ -806,11 +806,11 @@ public class PersistitStore implements Store {
         //
         for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
             for (Index index : userRowDef.getIndexes()) {
-                truncateIndex(session, index);
+                truncateIndex(session, Collections.singleton(index));
             }
         }
         for (Index index : groupRowDef.getGroupIndexes()) {
-            truncateIndex(session, index);
+            truncateIndex(session, Collections.singleton(index));
         }
 
         //
@@ -835,18 +835,20 @@ public class PersistitStore implements Store {
     }
 
     @Override
-    public void truncateIndex(Session session, Index index) {
-        Exchange iEx = getExchange(session, index);
-        try {
-            iEx.removeAll();
-            if (index.isGroupIndex())
-                new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
+    public void truncateIndex(Session session, Collection<? extends Index> indexes) {
+        for(Index index : indexes) {
+            Exchange iEx = getExchange(session, index);
+            try {
+                iEx.removeAll();
+                if (index.isGroupIndex())
+                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
+            } catch (PersistitException e) {
+                throw new PersistitAdapterException(e);
+            }
+            releaseExchange(session, iEx);
         }
-        releaseExchange(session, iEx);
         // Delete any statistics associated with index.
-        indexStatistics.deleteIndexStatistics(session, Collections.singletonList(index));
+        indexStatistics.deleteIndexStatistics(session, indexes);
     }
 
     @Override
