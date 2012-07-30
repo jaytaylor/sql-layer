@@ -60,7 +60,6 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
-import com.akiban.ais.protobuf.AISProtobuf;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
@@ -652,6 +651,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         List<TableName> emptyList = new ArrayList<TableName>(0);
         final AkibanInformationSchema newAIS = removeTablesFromAIS(emptyList, Collections.singleton(sequence.getSequenceName()));
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
+    }
+
+    // TODO: Method is a complete hack, failed DDL should be handled more gracefully
+    @Override
+    public void rollbackAIS(Session session, AkibanInformationSchema replaceAIS, Collection<String> schemaNames) {
+        AkibanInformationSchema newAIS = AISCloner.clone(replaceAIS);
+        saveAISChangeWithRowDefs(session, newAIS, schemaNames);
     }
 
     @Override

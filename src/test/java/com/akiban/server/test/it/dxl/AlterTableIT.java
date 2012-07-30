@@ -54,8 +54,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-// TODO: Cleanup once ALTER exists on DDLFunctions directly
 public class AlterTableIT extends ITBase {
     private final String SCHEMA = "test";
 
@@ -72,12 +72,31 @@ public class AlterTableIT extends ITBase {
         return new TestRow(type, fields);
     }
 
-    // Needs updated after default values are supported
-    @Test(expected=NotNullViolationException.class)
+    @Test
     public void cannotAddNotNullColumn() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
-        writeRows(createNewRow(cid, 1L, "a"));
-        runAlter("ALTER TABLE c ADD COLUMN c1 INT NOT NULL DEFAULT 0");
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, c char(1)");
+        writeRows(
+                createNewRow(cid,  1L, "a"),
+                createNewRow(cid, 13L, "m"),
+                createNewRow(cid, 26L, "z")
+        );
+
+        // Needs updated after default values are supported
+        try {
+            runAlter("ALTER TABLE c ADD COLUMN c1 INT NOT NULL DEFAULT 0");
+            fail("Expected NotNullViolationException");
+        } catch(NotNullViolationException e) {
+            // Expected
+        }
+
+        // For now, check that the ALTER schema change was rolled back correctly
+        updateAISGeneration();
+        expectFullRows(
+                cid,
+                createNewRow(cid,  1L, "a"),
+                createNewRow(cid, 13L, "m"),
+                createNewRow(cid, 26L, "z")
+        );
     }
 
     @Test

@@ -193,68 +193,70 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
                            List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
-        AkibanInformationSchema origAIS = getAIS(session);
-
-        // - Check table exists
-        UserTable origTable = origAIS.getUserTable(tableName);
+        // Check validity
+        final AkibanInformationSchema origAIS = getAIS(session);
+        final UserTable origTable = origAIS.getUserTable(tableName);
         if(origTable == null) {
             throw new NoSuchTableException(tableName);
         }
+        // TODO: More pre-checking?
 
-        // TODO: Verify parameters
+        // Save previous state (so we can scan it)
+        final Schema oldSchema = SchemaCache.globalSchema(origAIS);
+        final RowType oldSourceType = oldSchema.userTableRowType(origTable);
 
-        // - Alter through schemaManager
+        // Alter through schemaManager (we need to table definition and row defs)
         schemaManager().alterTableDefinition(session, tableName, newDefinition);
 
-        // - Create transformation
-        Schema oldSchema = SchemaCache.globalSchema(origAIS);
-        RowType oldSourceType = oldSchema.userTableRowType(origTable);
+        boolean rollBackNeeded = false;
+        try {
+            AkibanInformationSchema newAIS = getAIS(session);
+            UserTable newTable = newAIS.getUserTable(newDefinition.getName());
+            Schema newSchema = SchemaCache.globalSchema(newAIS);
 
-        AkibanInformationSchema newAIS = getAIS(session);
-        UserTable newTable = newAIS.getUserTable(newDefinition.getName());
-        Schema newSchema = SchemaCache.globalSchema(newAIS);
+            List<Column> newColumns = newTable.getColumnsIncludingInternal();
+            final List<Expression> projections = new ArrayList<Expression>(newColumns.size());
+            for(Column newCol : newColumns) {
+                Integer oldPosition = findOldPosition(columnChanges, origTable.getColumn(newCol.getName()), newCol);
+                if(oldPosition == null) {
+                    projections.add(new LiteralExpression(newCol.getType().akType(), null));
+                } else {
+                    projections.add(new FieldExpression(oldSourceType, oldPosition));
+                }
+            }
 
-        List<Column> newColumns = newTable.getColumnsIncludingInternal();
-        AkType[] outTypes = new AkType[newColumns.size()];
-        final List<Expression> projections = new ArrayList<Expression>(newColumns.size());
-        for(Column newCol : newColumns) {
-            outTypes[newCol.getPosition()] = newCol.getType().akType();
+            // PUTRT for constraint checking
+            final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, null);
 
-            Integer oldPosition = findOldPosition(columnChanges, origTable.getColumn(newCol.getName()), newCol);
-            if(oldPosition == null) {
-                projections.add(new LiteralExpression(newCol.getType().akType(), null));
-            } else {
-                projections.add(new FieldExpression(oldSourceType, oldPosition));
+            UpdatePlannable plan = update_Default(
+                    filter_Default(
+                            groupScan_Default(origTable.getGroup().getGroupTable()),
+                            Collections.singleton(oldSourceType)
+                    ),
+                    new UpdateFunction() {
+                        @Override
+                        public Row evaluate(Row original, QueryContext context) {
+                            return new ProjectedRow(newType, original, context, projections, null);
+                        }
+
+                        @Override
+                        public boolean rowIsSelected(Row row) {
+                            return true;
+                        }
+                    }
+            );
+
+            PersistitAdapter adapter = new PersistitAdapter(oldSchema, store(), treeService(), session, configService);
+            plan.run(new SimpleQueryContext(adapter));
+        } catch(RuntimeException e) {
+            rollBackNeeded = true;
+            throw e;
+        } finally {
+            if(rollBackNeeded) {
+                // All of the data changed was transactional but PSSM changes aren't like that
+                schemaManager().rollbackAIS(session, origAIS, Collections.singleton(tableName.getSchemaName()));
             }
         }
-
-        // PUTRT for constraint checking
-        final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, null);
-
-        UpdatePlannable plan = update_Default(
-                filter_Default(
-                        groupScan_Default(origTable.getGroup().getGroupTable()),
-                        Collections.singleton(oldSourceType)
-                ),
-                new UpdateFunction() {
-                    @Override
-                    public Row evaluate(Row original, QueryContext context) {
-                        return new ProjectedRow(newType, original, context, projections, null);
-                    }
-
-                    @Override
-                    public boolean rowIsSelected(Row row) {
-                        return true;
-                    }
-                }
-        );
-
-
-        PersistitAdapter adapter = new PersistitAdapter(oldSchema, store(), treeService(), session, configService);
-        plan.run(new SimpleQueryContext(adapter));
-
-
-        // TODO: Any post processing (e.g. index building)
     }
 
     @Override

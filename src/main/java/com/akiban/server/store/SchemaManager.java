@@ -197,4 +197,7 @@ public interface SchemaManager {
     
     /** Drop the given sequence from the current AIS. */
     void dropSequence(Session session, Sequence sequence);
+
+    // TODO: PSSM should handle this itself...
+    void rollbackAIS(Session session, AkibanInformationSchema replacementAIS, Collection<String> schemaNames);
 }
