@@ -190,8 +190,19 @@ public final class T3RegistryImplTest {
         }
 
         // now just check the two maps
-        assertEquals("casts map", expectedMap.toString(), actualsMap.toString()); // easy-to-view diff in IDEs
+        assertEquals("casts map", toString(expectedMap), toString(actualsMap)); // easy-to-view diff in IDEs
         assertEquals("casts map", expectedMap, actualsMap);
+    }
+
+    private String toString(Map<TClass, Map<TClass, SelfCastCheck>> map) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<TClass, Map<TClass, SelfCastCheck>> entry : map.entrySet()) {
+            sb.append(entry.getKey()).append('\n');
+            for (Map.Entry<TClass,SelfCastCheck> subentry: entry.getValue().entrySet()) {
+                sb.append("    ").append(subentry).append('\n');
+            }
+        }
+        return sb.toString();
     }
 
     private <V> TreeMap<TClass, V> tClassMap() {

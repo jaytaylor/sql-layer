@@ -261,8 +261,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             //  one "jump" cast: (a -> d),
             // The first pass of this loop will create a derived cast (a -> d -> e), but we wouldn't have created
             // (a -> c). This loop ensures that we will.
-            for (int i = path.size() - 1; i > 0; --i) {
-                deriveCast(castsBySource, path, i);
+            // We work from both ends, shrinking iteratively from the beginning and recursively (within deriveCast)
+            // from the end. A derived cast has to have at least three participants, so we can stop when we get
+            // to a path whose size is less than 3.
+            while (path.size() >= 3) {
+                for (int i = path.size() - 1; i > 0; --i) {
+                    deriveCast(castsBySource, path, i);
+                }
+                path = path.subList(1, path.size());
             }
         }
     }
