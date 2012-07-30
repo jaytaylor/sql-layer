@@ -457,7 +457,7 @@ public class UserTable extends Table
     public void setVersion(int version) {
         this.version = version;
     }
-
+    
     private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
     {
         accumulator.add(table);

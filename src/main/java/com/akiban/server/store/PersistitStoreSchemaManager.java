@@ -110,6 +110,8 @@ import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
+import static com.akiban.ais.model.AISMerge.findMaxIndexIDInGroup;
+
 /**
  * <p>
  * Storage as of v1.2.1 (05/2012), Protobuf bytes per schema:
@@ -323,7 +325,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                     }
                     curIndex = newTable.getIndex(indexName.getName());
                     newGroup = newTable.getGroup();
-                    Integer newId = AISMerge.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
+                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
                     newIndex = TableIndex.create(newAIS, newTable, indexName.getName(), newId, index.isUnique(),
                                                  index.getConstraint());
                 }
@@ -335,7 +337,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                         throw new NoSuchGroupException(indexName.getTableName());
                     }
                     curIndex = newGroup.getIndex(indexName.getName());
-                    Integer newId = AISMerge.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
+                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
                     newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
                                                  index.getConstraint(), index.getJoinType());
                 }

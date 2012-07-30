@@ -144,15 +144,11 @@ public class AISBuilder {
 
     public void index(String schemaName, String tableName, String indexName,
             Boolean unique, String constraint) {
-        index(schemaName, tableName, indexName, unique, constraint, indexIdGenerator++);
-    }
-
-    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, Integer indexId) {
         LOG.info("index: " + schemaName + "." + tableName + "." + indexName);
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table",
                 concat(schemaName, tableName));
-        Index index = TableIndex.create(ais, table, indexName, indexId, unique, constraint);
+        Index index = TableIndex.create(ais, table, indexName, indexIdGenerator++, unique, constraint);
         index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 

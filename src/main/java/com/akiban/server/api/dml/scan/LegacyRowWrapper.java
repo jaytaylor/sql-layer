@@ -186,11 +186,6 @@ public final class LegacyRowWrapper extends NewRow
     }
 
     // Allows a LegacyRowWrapper to be used for a RowData acting as a container of rows of any type.
-    public void setRowDef(int rowDefId, Store store)
-    {
-        setRowDef(NewRow.rowDef(rowDefId, store));
-    }
-
     public void setRowDef(RowDef rowDef)
     {
         this.rowDef = rowDef;

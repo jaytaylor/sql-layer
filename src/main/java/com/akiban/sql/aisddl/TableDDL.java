@@ -171,7 +171,7 @@ public class TableDDL
     }
     
     static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
-                           final String schemaName, final String tableName, int colpos) {
+            final String schemaName, final String tableName, int colpos) {
         boolean autoIncrement = cdn.isAutoincrementColumn();
         addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
                   cdn.getType(), cdn.getType().isNullable(), autoIncrement);
@@ -194,7 +194,8 @@ public class TableDDL
         }
     }
 
-    static void addColumn(final AISBuilder builder, final String schemaName, final String tableName, final String columnName,
+    static void addColumn(final AISBuilder builder,
+                          final String schemaName, final String tableName, final String columnName,
                           int colpos, DataTypeDescriptor type, boolean nullable, boolean autoIncrement) {
         Long typeParameter1 = null, typeParameter2 = null;
         Type builderType = typeMap.get(type.getTypeId());

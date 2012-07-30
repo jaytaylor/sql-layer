@@ -663,10 +663,6 @@ public class AkibanInformationSchema implements Traversable
         }
     }
 
-    public void removeJoin(String name) {
-        joins.remove(name);
-    }
-
     // State
 
     private static String defaultCharset = "utf8";
