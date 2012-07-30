@@ -707,38 +707,34 @@ public class ASTStatementLoader extends BaseRule
                                                in.getType(), in);
             }
         }
+        
         protected void buildInConditionNested(List<ConditionExpression> conditions,
                                               List<ExpressionNode> projects,
                                               InListOperatorNode in) throws StandardException
         {
             RowConstructorNode leftRow = in.getLeftOperand();
             RowConstructorNode rightRow = in.getRightOperandList();
-            
-            if(rightRow.listSize() <= getInToOrMaxCount())
+           
+            ConditionExpression result = null;
+
+            for (ValueNode rightNode : rightRow.getNodeList())
             {
-                ConditionExpression result = null;
+                ConditionExpression equalNode = getEqual(in, projects, leftRow, rightNode);
 
-                for (ValueNode rightNode : rightRow.getNodeList())
+                if (result == null)
+                    result = equalNode;
+                else
                 {
-                    ConditionExpression equalNode = getEqual(in, projects, leftRow, rightNode);
+                    List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
 
-                    if (result == null)
-                        result = equalNode;
-                    else
-                    {
-                        List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                    operands.add(result);
+                    operands.add(equalNode);
 
-                        operands.add(result);
-                        operands.add(equalNode);
-
-                        result = new LogicalFunctionCondition("or", operands, in.getType(), in);
-                    }
+                    result = new LogicalFunctionCondition("or", operands, in.getType(), in);
                 }
-                conditions.add(result);
-                return;
             }
-            
-            //throw new UnsupportedOperationException("Nested tuple with subquery  NOT SUPPORTED");
+            conditions.add(result);
+            return;
         }
         
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
