@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Set;
 
 
-public class InstanceFinder
+public class InstanceFinder implements InstanceFinderI
 {
     private static final Logger logger = LoggerFactory.getLogger(InstanceFinder.class);
 
@@ -62,6 +62,7 @@ public class InstanceFinder
         searchClasses = classFinder.findClasses();
     }
 
+    @Override
     public <T> Collection<? extends T> find(Class<? extends T> targetClass) {
         return collectInstances(searchClasses, targetClass);
     }

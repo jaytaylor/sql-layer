@@ -79,11 +79,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
     @Override
     public TCast cast(TClass source, TClass target) {
-        TCast result = null;
-        Map<TClass,TCast> castsByTarget = castsBySource.get(source);
-        if (castsByTarget != null)
-            result = castsByTarget.get(target);
-        return result;
+        return cast(castsBySource, source, target);
     }
 
     @Override
@@ -148,11 +144,19 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
     // private methods
 
+    private static TCast cast(Map<TClass, Map<TClass, TCast>> castsBySource, TClass source, TClass target) {
+        TCast result = null;
+        Map<TClass,TCast> castsByTarget = castsBySource.get(source);
+        if (castsByTarget != null)
+            result = castsByTarget.get(target);
+        return result;
+    }
+
     private void start(InstanceFinder finder) {
         tClasses = new HashSet<TClass>(finder.find(TClass.class));
 
         castsBySource = createCasts(tClasses, finder);
-        createDerivedCasts(finder);
+        createDerivedCasts(castsBySource, finder);
         strongCastsByTarget = createStrongCastsMap(castsBySource);
         checkDag(strongCastsByTarget);
 
@@ -247,7 +251,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         }
     }
 
-    private void createDerivedCasts(InstanceFinder finder) {
+    private void createDerivedCasts(Map<TClass,Map<TClass,TCast>> castsBySource, InstanceFinder finder) {
         for (TCastPath castPath : finder.find(TCastPath.class)) {
             List<? extends TClass> path = castPath.getPath();
             // We need this loop to protect against "jumps." For instance, let's say the cast path is
@@ -257,24 +261,25 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             // The first pass of this loop will create a derived cast (a -> d -> e), but we wouldn't have created
             // (a -> c). This loop ensures that we will.
             for (int i = path.size() - 1; i > 0; --i) {
-                deriveCast(path, i);
+                deriveCast(castsBySource, path, i);
             }
         }
     }
 
-    private TCast deriveCast(List<? extends TClass> path, int targetIndex) {
+    private static TCast deriveCast(Map<TClass,Map<TClass,TCast>> castsBySource,
+                                    List<? extends TClass> path, int targetIndex) {
         TClass source = path.get(0);
         TClass target = path.get(targetIndex);
-        TCast alreadyThere = cast(source,  target);
+        TCast alreadyThere = cast(castsBySource, source,  target);
         if (alreadyThere != null)
             return alreadyThere;
         int intermediateIndex = targetIndex - 1;
         TClass intermediateClass = path.get(intermediateIndex);
-        TCast second = cast(intermediateClass, target);
+        TCast second = cast(castsBySource, intermediateClass, target);
         if (second == null)
             throw new AkibanInternalException("no explicit cast between " + intermediateClass + " and " + target
                     + " while creating cast path: " + path);
-        TCast first = deriveCast(path, intermediateIndex);
+        TCast first = deriveCast(castsBySource, path, intermediateIndex);
         if (first == null)
             throw new AkibanInternalException("couldn't derive cast between " + source + " and " + intermediateClass
                     + " while creating cast path: " + path);
