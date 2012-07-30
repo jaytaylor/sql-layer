@@ -194,5 +194,10 @@ public class SchemaFactory {
             PersistitStoreSchemaManager.createIndexes(newAIS, indexesToAdd);
             ais = newAIS;
         }
+        
+        @Override
+        public void createSequence(Session session, Sequence sequence) {
+            ais = AISMerge.mergeSequence(ais, sequence);
+        }
     }
 }
