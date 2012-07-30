@@ -111,12 +111,12 @@ public class FormatterTest {
         
         Explainer explainer = substr.getExplainer();
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \'%Y-%m-%d\'), 9 + 10, 11)";
-        String result = Format.Describe(explainer);
+        String result = Format.Describe(explainer, null);
         assertEquals(expResult, result);
         
         explainer = substr_.getExplainer();
         expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \'%Y-%m-%d\'), 9 + 10, 11)";
-        result = Format.Describe(explainer);
+        result = Format.Describe(explainer, null);
         assertEquals(expResult, result);
     }
 

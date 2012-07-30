@@ -27,6 +27,8 @@
 package com.akiban.sql.optimizer.explain;
 
 import com.akiban.sql.optimizer.explain.Type.GeneralType;
+import java.util.List;
+import java.util.Map;
 
 public class Format {
     
@@ -37,7 +39,7 @@ public class Format {
         this.verbose = verbose;
     }
 
-    public static String Describe(Explainer explainer)
+    public static String Describe(Explainer explainer, Map extraInfo)
     {
         StringBuilder sb = new StringBuilder("");
         describe(explainer, sb);
@@ -53,7 +55,7 @@ public class Format {
         {
             OperationExplainer opEx = (OperationExplainer) explainer;
             if (explainer.getType().generalType() == GeneralType.OPERATOR)
-                describeOperator(opEx, sb);
+                describeOperator(opEx, sb, 0);
             else
                 describeExpression(opEx, sb, needsParens, parentName);
         }
@@ -143,7 +145,7 @@ public class Format {
         
     }
 
-    protected static void describeOperator(OperationExplainer explainer, StringBuilder sb) {
+    protected static void describeOperator(OperationExplainer explainer, StringBuilder sb, int depth) {
         
         Attributes atts = explainer.get();
         String name = atts.get(Label.NAME).get(0).get().toString();
@@ -247,7 +249,8 @@ public class Format {
                 }
                 break;
             case DISTINCT:
-                describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+            case UNION_ALL:
+                break;
             case FILTER:
                 for (Explainer rowtype : atts.get(Label.KEEP_TYPE))
                 {
@@ -299,7 +302,7 @@ public class Format {
                 describe(atts.get(Label.LIMIT).get(0), sb);
                 break;
             case NESTED_LOOPS:
-                if (name.equals("Map"))
+                if (name.equals("Map_NestedLoops"))
                 {
                     sb.append("Binding at ");
                     describe(atts.get(Label.BINDING_POSITION).get(0), sb);
@@ -328,13 +331,11 @@ public class Format {
             case DUI:
                 if (name.equals("Delete"))
                 {
-                    describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
                     sb.append(" FROM ");
                     describe(atts.get(Label.TABLE_TYPE).get(0), sb);
                 }
                 else if (name.equals("Insert"))
                 {
-                    describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
                     sb.append("INTO");
                     describe(atts.get(Label.TABLE_TYPE).get(0), sb);
                 }
@@ -348,5 +349,18 @@ public class Format {
                 throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
         }
         sb.append(")");
+        if (atts.containsKey(Label.INPUT_OPERATOR))
+        {
+            List<Explainer> inputs = atts.get(Label.INPUT_OPERATOR);
+            for (Explainer input : inputs)
+            {
+                sb.append("\n");
+                for (int i = 0; i <= depth; i++)
+                {
+                    sb.append("  ");
+                }
+                describeOperator((OperationExplainer) input, sb, depth + 1);
+            }
+        }
     }
 }

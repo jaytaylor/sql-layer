@@ -97,7 +97,7 @@ class Select_HKeyOrdered extends Operator
     public String toString()
     {
         Format f = new Format(true);
-        return f.Describe(this.getExplainer());
+        return f.Describe(this.getExplainer(), null);
     }
 
     // Operator interface

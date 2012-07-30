@@ -115,7 +115,9 @@ public class OperatorCompiler extends SchemaRulesContext
         stmt = bindAndTransform(stmt); // Get into standard form.
         plan.setPlan(new AST(stmt, params));
         applyRules(plan);
-        return (BasePlannable)plan.getPlan();
+        BasePlannable output = (BasePlannable)plan.getPlan();
+        
+        return output;
     }
 
     /** Apply AST-level transformations before rules. */

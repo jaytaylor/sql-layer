@@ -30,15 +30,16 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.sql.optimizer.explain.Format;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 /** Physical operator plan */
 public abstract class BasePlannable extends BasePlanNode
 {
     private Plannable plannable;
     private DataTypeDescriptor[] parameterTypes;
+    private Map extraInfo = Collections.synchronizedMap(new HashMap());
     
     protected BasePlannable(Plannable plannable,
                             DataTypeDescriptor[] parameterTypes) {
@@ -69,21 +70,14 @@ public abstract class BasePlannable extends BasePlanNode
     
     public List<String> explainPlan() {
         List<String> result = new ArrayList<String>();
-        explainPlan(plannable, result, 0);
+        explainPlan(plannable, result, extraInfo);
         return result;
     }
 
     protected static void explainPlan(Plannable operator,
-                                      List<String> into, int depth) {
-            
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < depth; i++)
-            sb.append("  ");
-        sb.append(operator);
-        into.add(sb.toString());
-        for (Operator inputOperator : operator.getInputOperators()) {
-            explainPlan(inputOperator, into, depth+1);
-        }
+                                      List<String> into, Map extraInfo) {
+        Format f = new Format(true);
+        into.add(f.Describe(operator.getExplainer(), extraInfo));
     }
     
     @Override

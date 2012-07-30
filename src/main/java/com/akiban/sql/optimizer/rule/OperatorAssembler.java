@@ -399,7 +399,7 @@ public class OperatorAssembler extends BaseRule
 
         private class OldPartialAssembler extends BasePartialAssembler<Expression> {
 
-            private OldPartialAssembler(RulesContext context) {
+            private OldPartialAssembler(PlanContext context) {
                 super(new OldExpressionAssembler(context));
             }
 
@@ -474,7 +474,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
-            private NewPartialAssembler(RulesContext context, QueryContext queryContext) {
+            private NewPartialAssembler(PlanContext context, QueryContext queryContext) {
                 super(new NewExpressionAssembler(context, queryContext));
             }
 
@@ -561,13 +561,13 @@ public class OperatorAssembler extends BaseRule
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
             if (usePValues) {
-                newPartialAssembler = new NewPartialAssembler(rulesContext, this.planContext.getQueryContext());
+                newPartialAssembler = new NewPartialAssembler(planContext, this.planContext.getQueryContext());
                 oldPartialAssembler = nullAssembler();
                 partialAssembler = newPartialAssembler;
             }
             else {
                 newPartialAssembler = nullAssembler();
-                oldPartialAssembler = new OldPartialAssembler(rulesContext);
+                oldPartialAssembler = new OldPartialAssembler(planContext);
                 partialAssembler = oldPartialAssembler;
             }
             computeBindingsOffsets();

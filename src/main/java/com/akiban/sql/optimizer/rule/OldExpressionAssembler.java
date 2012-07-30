@@ -64,9 +64,11 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
 
     private FunctionsRegistry functionsRegistry;
 
-    public OldExpressionAssembler(RulesContext rulesContext) {
+    public OldExpressionAssembler(PlanContext planContext) {
+        RulesContext rulesContext = planContext.getRulesContext();
         this.functionsRegistry = ((SchemaRulesContext)
                                   rulesContext).getFunctionsRegistry();
+        this.plancontext = planContext;
     }
 
     public FunctionsRegistry getFunctionRegistry()

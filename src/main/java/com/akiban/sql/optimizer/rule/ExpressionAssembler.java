@@ -31,6 +31,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
@@ -54,6 +55,7 @@ import java.util.List;
 abstract class ExpressionAssembler<T> {
 
     public abstract ConstantExpression evalNow(PlanContext planContext, ExpressionNode node);
+    PlanContext plancontext;
 
     protected abstract T assembleFunction(ExpressionNode functionNode,
                                           String functionName,
@@ -148,7 +150,11 @@ abstract class ExpressionAssembler<T> {
         if (currentRow != null) {
             int fieldIndex = currentRow.getIndex(column);
             if (fieldIndex >= 0)
-                return assembleFieldExpression(currentRow.getRowType(), fieldIndex);
+            {
+                T expression = assembleFieldExpression(currentRow.getRowType(), fieldIndex);
+                
+                return expression;
+            }
         }
 
         List<ColumnExpressionToIndex> boundRows = columnContext.getBoundRows();

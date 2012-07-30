@@ -63,5 +63,4 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
         BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params);
         return new PostgresExplainStatement(result.explainPlan());
     }
-
 }

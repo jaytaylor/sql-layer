@@ -153,12 +153,9 @@ class Map_NestedLoops extends Operator
     @Override
     public Explainer getExplainer()
     {
-        // Explainer ex = new NestedLoopsExplainer("Map_NestedLoops", innerInputOperator, outerInputOperator, null, null);
-        // ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
-        // return ex;
-        
-        // TODO optimizer assign name to binding
-        return PrimitiveExplainer.getInstance("Map_NestedLoops");
+        Explainer ex = new NestedLoopsExplainer("Map_NestedLoops", innerInputOperator, outerInputOperator, null, null);
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        return ex;
     }
 
     // Inner classes
