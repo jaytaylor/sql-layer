@@ -97,8 +97,14 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
@@ -263,18 +269,35 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             Schema newSchema = SchemaCache.globalSchema(newAIS);
 
             List<Column> newColumns = newTable.getColumnsIncludingInternal();
-            final List<Expression> projections = new ArrayList<Expression>(newColumns.size());
-            for(Column newCol : newColumns) {
-                Integer oldPosition = findOldPosition(columnChanges, origTable.getColumn(newCol.getName()), newCol);
-                if(oldPosition == null) {
-                    projections.add(new LiteralExpression(newCol.getType().akType(), null));
-                } else {
-                    projections.add(new FieldExpression(oldSourceType, oldPosition));
+            final List<Expression> projections;
+            final List<TPreparedExpression> pProjections;
+            if(Types3Switch.ON) {
+                projections = null;
+                pProjections = new ArrayList<TPreparedExpression>(newColumns.size());
+                for(Column newCol : newColumns) {
+                    Integer oldPosition = findOldPosition(columnChanges, origTable.getColumn(newCol.getName()), newCol);
+                    TInstance tInst = newCol.tInstance();
+                    if(oldPosition == null) {
+                        pProjections.add(new TPreparedLiteral(tInst, PValueSources.getNullSource(tInst.typeClass().underlyingType())));
+                    } else {
+                        pProjections.add(new TPreparedField(tInst, oldPosition));
+                    }
+                }
+            } else {
+                projections = new ArrayList<Expression>(newColumns.size());
+                pProjections = null;
+                for(Column newCol : newColumns) {
+                    Integer oldPosition = findOldPosition(columnChanges, origTable.getColumn(newCol.getName()), newCol);
+                    if(oldPosition == null) {
+                        projections.add(new LiteralExpression(newCol.getType().akType(), null));
+                    } else {
+                        projections.add(new FieldExpression(oldSourceType, oldPosition));
+                    }
                 }
             }
 
             // PUTRT for constraint checking
-            final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, null);
+            final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections);
 
             UpdatePlannable plan = update_Default(
                     filter_Default(
@@ -284,7 +307,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     new UpdateFunction() {
                         @Override
                         public Row evaluate(Row original, QueryContext context) {
-                            return new ProjectedRow(newType, original, context, projections, null);
+                            return new ProjectedRow(newType, original, context, projections, pProjections);
                         }
 
                         @Override
