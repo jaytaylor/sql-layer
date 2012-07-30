@@ -71,6 +71,7 @@ import java.util.List;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.ALTER_TABLE_TEMP_TABLE;
 import static com.akiban.sql.aisddl.DDLHelper.convertName;
 import static com.akiban.util.Exceptions.throwAlways;
+import static com.akiban.server.api.AlterTableChange.ChangeType;
 
 public class AlterTableDDL {
     private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table %s to multiple groups";
@@ -245,6 +246,7 @@ public class AlterTableDDL {
         }
 
         List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
+        List<AlterTableChange> indexChanges = new ArrayList<AlterTableChange>();
         List<ColumnDefinitionNode> addsOrChanges = new ArrayList<ColumnDefinitionNode>();
         for(TableElementNode node : elementList) {
             // Modify extends Definition, must come first
@@ -256,7 +258,7 @@ public class AlterTableDDL {
                     break;
                     case NodeTypes.MODIFY_COLUMN_TYPE_NODE:
                         columnChanges.add(AlterTableChange.createModify(columnName, columnName));
-                        addsOrChanges.add((ColumnDefinitionNode)node);
+                        addsOrChanges.add((ColumnDefinitionNode) node);
                     break;
                     default:
                         return false; // TODO: Some column metadata change
@@ -271,9 +273,8 @@ public class AlterTableDDL {
             }
         }
 
-        UserTable tableCopy = copyTable(table, columnChanges);
+        UserTable tableCopy = copyTable(table, columnChanges, indexChanges);
         AISBuilder builder = new AISBuilder(tableCopy.getAIS());
-        List<AlterTableChange> indexChanges = Collections.emptyList();
 
         for(ColumnDefinitionNode cdn : addsOrChanges) {
             if(cdn instanceof ModifyColumnNode) {
@@ -320,21 +321,21 @@ public class AlterTableDDL {
         }
     }
 
-    private static boolean doSkipColumn(List<AlterTableChange> changes, String columnName) {
+    private static boolean containsColumn(List<AlterTableChange> changes, String columnName, ChangeType type) {
         for(AlterTableChange change : changes) {
             if(columnName.equals(change.getOldName())) {
-                return change.getChangeType() == AlterTableChange.ChangeType.DROP;
+                return change.getChangeType() == type;
             }
         }
         return false;
     }
 
-    private static UserTable copyTable(UserTable origTable, List<AlterTableChange> changes) {
+    private static UserTable copyTable(UserTable origTable, List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         UserTable tableCopy = UserTable.create(ais, origTable);
 
-        for(AlterTableChange change : changes) {
-            if(change.getChangeType() != AlterTableChange.ChangeType.ADD) {
+        for(AlterTableChange change : columnChanges) {
+            if(change.getChangeType() != ChangeType.ADD) {
                 checkColumnChange(origTable, change.getOldName());
             }
         }
@@ -342,22 +343,43 @@ public class AlterTableDDL {
         int colPos = 0;
         for(Column origColumn : origTable.getColumns()) {
             String columnName = origColumn.getName();
-            if(!doSkipColumn(changes, columnName)) {
+            if(!containsColumn(columnChanges, columnName, ChangeType.DROP)) {
                 Column.create(tableCopy, origColumn, colPos++);
             }
         }
 
+        Collection<TableIndex> indexesToDrop = new ArrayList<TableIndex>();
         for(TableIndex origIndex : origTable.getIndexes()) {
             TableIndex indexCopy = TableIndex.create(tableCopy, origIndex);
+            boolean didModify = false;
+            int pos = 0;
             for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
-                IndexColumn.create(indexCopy, tableCopy.getColumn(indexColumn.getColumn().getName()), indexColumn);
+                if(!containsColumn(columnChanges, indexColumn.getColumn().getName(), ChangeType.DROP)) {
+                    didModify |= containsColumn(columnChanges, indexColumn.getColumn().getName(), ChangeType.MODIFY);
+                    IndexColumn.create(indexCopy, tableCopy.getColumn(indexColumn.getColumn().getName()), indexColumn, pos++);
+                } else {
+                    didModify = true;
+                }
             }
+
+            // Automatically mark indexes for drop or modification
+            if(indexCopy.getKeyColumns().isEmpty()) {
+                indexesToDrop.add(indexCopy);
+                indexChanges.add(AlterTableChange.createDrop(indexCopy.getIndexName().getName()));
+            } else if(didModify) {
+                String indexName = indexCopy.getIndexName().getName();
+                indexChanges.add(AlterTableChange.createModify(indexName, indexName));
+            }
+        }
+
+        if(!indexesToDrop.isEmpty()) {
+            tableCopy.removeIndexes(indexesToDrop);
         }
 
         Join origJoin = origTable.getParentJoin();
         if(origJoin != null) {
             UserTable origParent = origJoin.getParent();
-            // Need just a stub (referenced columns)
+            // Need just a stub, only need referenced columns
             UserTable parentCopy = UserTable.create(ais, origParent);
             Join joinCopy = Join.create(ais, origJoin.getName(), parentCopy, tableCopy);
             for(JoinColumn origJoinCol : origJoin.getJoinColumns()) {

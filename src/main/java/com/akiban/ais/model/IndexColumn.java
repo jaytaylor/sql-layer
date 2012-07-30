@@ -90,8 +90,8 @@ public class IndexColumn
      * @param indexColumn IndexColumn to copy.
      * @return The new copy of the IndexColumn.
      */
-    public static IndexColumn create(Index index, Column column, IndexColumn indexColumn) {
-        return create(index, column, indexColumn.position, indexColumn.ascending, indexColumn.indexedLength);
+    public static IndexColumn create(Index index, Column column, IndexColumn indexColumn, int position) {
+        return create(index, column, position, indexColumn.ascending, indexColumn.indexedLength);
     }
     
     IndexColumn(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength)

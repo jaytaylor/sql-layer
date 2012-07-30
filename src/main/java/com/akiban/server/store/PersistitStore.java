@@ -834,7 +834,8 @@ public class PersistitStore implements Store {
         this.indexStatistics = indexStatistics;
     }
 
-    protected final void truncateIndex(Session session, Index index) {
+    @Override
+    public void truncateIndex(Session session, Index index) {
         Exchange iEx = getExchange(session, index);
         try {
             iEx.removeAll();

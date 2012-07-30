@@ -209,7 +209,25 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().alterTableDefinition(session, tableName, newDefinition);
 
         boolean rollBackNeeded = false;
+        List<Index> indexesToDrop = new ArrayList<Index>();
         try {
+            // Simple prep: truncate dropped or changed indexes (drop tree is, currently, non-transactional)
+            for(AlterTableChange change : indexChanges) {
+                Index index = origTable.getIndex(change.getOldName());
+                switch(change.getChangeType()) {
+                    case ADD:
+                        throw new UnsupportedOperationException();
+                    case DROP:
+                        indexesToDrop.add(index);
+                    // fall
+                    case MODIFY:
+                        store().truncateIndex(session, index);
+                    break;
+                    default:
+                        throw new IllegalStateException("Unknown change type: " + change);
+                }
+            }
+
             AkibanInformationSchema newAIS = getAIS(session);
             UserTable newTable = newAIS.getUserTable(newDefinition.getName());
             Schema newSchema = SchemaCache.globalSchema(newAIS);
@@ -255,8 +273,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if(rollBackNeeded) {
                 // All of the data changed was transactional but PSSM changes aren't like that
                 schemaManager().rollbackAIS(session, origAIS, Collections.singleton(tableName.getSchemaName()));
+                // TODO: rollback new index trees
             }
         }
+
+        // Complete: we can now get rid of any index trees that shouldn't be here
+        store().deleteIndexes(session, indexesToDrop);
     }
 
     @Override

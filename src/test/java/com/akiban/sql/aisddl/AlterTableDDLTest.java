@@ -262,6 +262,24 @@ public class AlterTableDDLTest {
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
     }
 
+    @Test
+    public void dropColumnWasIndexed() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colString("c1", 10).pk("id").key("c1", "c1");
+        parseAndRun("ALTER TABLE c DROP COLUMN c1");
+        expectColumnChanges("DROP:c1");
+        expectIndexChanges("DROP:c1");
+        expectFinalTable(C_NAME, "id bigint NOT NULL", "PRIMARY(id)");
+    }
+
+    @Test
+    public void dropColumnWasInMultiIndexed() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("c1", true).colBigInt("c2", true).pk("id").key("c1_c2", "c1", "c2");
+        parseAndRun("ALTER TABLE c DROP COLUMN c1");
+        expectColumnChanges("DROP:c1");
+        expectIndexChanges("MODIFY:c1_c2->c1_c2");
+        expectFinalTable(C_NAME, "id bigint NOT NULL", "c2 bigint NULL", "c1_c2(c2)", "PRIMARY(id)");
+    }
+
     //
     // ALTER COLUMN
     //

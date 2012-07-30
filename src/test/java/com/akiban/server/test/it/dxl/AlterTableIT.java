@@ -38,6 +38,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.AlterTableChange;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NotNullViolationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.test.it.ITBase;
@@ -53,6 +54,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -138,6 +141,53 @@ public class AlterTableIT extends ITBase {
                 createNewRow(cid, 2L),
                 createNewRow(cid, 3L),
                 createNewRow(cid, 10L)
+        );
+    }
+
+    @Test
+    public void dropSingleColumnOfSingleColumnIndex() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, c1 int");
+        createIndex(SCHEMA, "c", "c1", "c1");
+        writeRows(
+                createNewRow(cid,  1L,  11L),
+                createNewRow(cid,  2L,  21L),
+                createNewRow(cid,  3L,  31L),
+                createNewRow(cid, 10L, 101L)
+        );
+
+        UserTable origTable = getUserTable(cid);
+        runAlter("ALTER TABLE c DROP COLUMN c1");
+
+        expectIndexes(cid, "PRIMARY");
+        assertEquals("index tree exists", false, treeService().treeExists(SCHEMA, origTable.getIndex("c1").getTreeName()));
+        expectFullRows(
+                cid,
+                createNewRow(store(), cid,  1L),
+                createNewRow(store(), cid,  2L),
+                createNewRow(store(), cid,  3L),
+                createNewRow(store(), cid, 10L)
+        );
+    }
+
+    @Test
+    public void dropSingleColumnOfMultiColumnIndex() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, c1 int, c2 int");
+        createIndex(SCHEMA, "c", "c1_c2", "c1", "c2");
+        writeRows(
+                createNewRow(cid,  1L,  11L,  12L),
+                createNewRow(cid,  2L,  21L,  22L),
+                createNewRow(cid,  3L,  31L,  32L),
+                createNewRow(cid, 10L, 101L, 102L)
+        );
+
+        runAlter("ALTER TABLE c DROP COLUMN c1");
+
+        expectRows(
+                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1_c2")),
+                createNewRow(store(), cid, UNDEF, 12L),
+                createNewRow(store(), cid, UNDEF, 22L),
+                createNewRow(store(), cid, UNDEF, 32L),
+                createNewRow(store(), cid, UNDEF, 102L)
         );
     }
 
