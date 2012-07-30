@@ -42,6 +42,7 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
+import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.DagChecker;
@@ -113,7 +114,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     public void start() {
         InstanceFinder registry;
         try {
-            registry = new InstanceFinder();
+            registry = new ReflectiveInstanceFinder();
         } catch (Exception e) {
             logger.error("while creating registry", e);
             throw new ServiceStartupException("T3Registry");

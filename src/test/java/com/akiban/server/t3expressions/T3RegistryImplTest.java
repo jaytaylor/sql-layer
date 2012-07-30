@@ -29,7 +29,6 @@ package com.akiban.server.t3expressions;
 import com.akiban.server.types3.T3TestClass;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.service.InstanceFinder;
-import com.akiban.server.types3.service.InstanceFinderI;
 
 import java.util.Collection;
 
@@ -39,7 +38,7 @@ public final class T3RegistryImplTest {
     private final TClass CLASS_C = new T3TestClass("C");
     private final TClass CLASS_D = new T3TestClass("D");
 
-    private static class Finder implements InstanceFinderI {
+    private static class Finder implements InstanceFinder {
         @Override
         public <T> Collection<? extends T> find(Class<? extends T> targetClass) {
             throw new UnsupportedOperationException(); // TODO
