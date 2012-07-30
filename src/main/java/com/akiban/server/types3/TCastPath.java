@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -38,16 +39,23 @@ import java.util.List;
 public final class TCastPath {
 
     public static TCastPath create(TClass first, TClass second, TClass third, TClass... rest) {
-        return new TCastPath(first, second, third, rest);
-    }
-
-    private TCastPath(TClass first, TClass second, TClass third, TClass[] rest) {
         TClass[] all = new TClass[rest.length + 3];
         all[0] = first;
         all[1] = second;
         all[2] = third;
         System.arraycopy(rest, 0, all, 3, rest.length);
-        list = Collections.unmodifiableList(Arrays.asList(all));
+        List<? extends TClass> list = Arrays.asList(all);
+        return new TCastPath(list);
+    }
+
+    public static TCastPathBuilder from(TClass... from) {
+        return new InternalBuilder(from);
+    }
+
+    private TCastPath(List<? extends TClass> list) {
+        if (list.size() < 3)
+            throw new IllegalArgumentException("cast paths must contain at least three elements: " + list);
+        this.list = Collections.unmodifiableList(list);
     }
 
     public List<? extends TClass> getPath() {
@@ -55,4 +63,33 @@ public final class TCastPath {
     }
 
     private final List<? extends TClass> list;
+
+    public interface TCastPathBuilder {
+        public TCastPathBuilder to(TClass... targets);
+        public TCastPath[] get();
+    }
+
+    private static class InternalBuilder implements TCastPathBuilder {
+
+        @Override
+        public TCastPathBuilder to(TClass... targets) {
+            List<TClass> all = new ArrayList<TClass>(initial);
+            Collections.addAll(all, targets);
+            built.add(new TCastPath(all));
+            return this;
+        }
+
+        @Override
+        public TCastPath[] get() {
+            return built.toArray(new TCastPath[built.size()]);
+        }
+
+        InternalBuilder(TClass[] initial) {
+            this.initial = Arrays.asList(initial);
+            this.built = new ArrayList<TCastPath>();
+        }
+
+        private List<TCastPath> built;
+        private List<TClass> initial;
+    }
 }
