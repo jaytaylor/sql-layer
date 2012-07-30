@@ -31,8 +31,10 @@ import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
@@ -86,6 +88,22 @@ public final class Cast_From_Decimal {
                 longVal = bd.longValue();
             }
             target.putInt64(longVal);
+        }
+
+    };
+
+    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.DECIMAL, MString.VARCHAR) {
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            BigDecimalWrapper wrapper = (BigDecimalWrapper) source.getObject();
+            String asString = wrapper.asBigDecimal().toString();
+            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
+            if (asString.length() > maxLen) {
+                String truncated = asString.substring(0, maxLen);
+                context.reportTruncate(asString, truncated);
+                asString = truncated;
+            }
+            target.putString(asString, null);
         }
     };
 
