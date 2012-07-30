@@ -163,7 +163,7 @@ public class AlterTableDDL {
 
         AkibanInformationSchema aisCopy = AISCloner.clone(
                 ais,
-                new ProtobufWriter.TableAllIndexSelector() {
+                new ProtobufWriter.TableSelector() {
                     @Override
                     public boolean isSelected(Columnar columnar) {
                         if(columnar.isView()) return false;
@@ -211,7 +211,7 @@ public class AlterTableDDL {
 
         AkibanInformationSchema aisCopy = AISCloner.clone(
                 ais,
-                new ProtobufWriter.TableAllIndexSelector() {
+                new ProtobufWriter.TableSelector() {
                     @Override
                     public boolean isSelected(Columnar columnar) {
                         if(columnar.isView()) return false;

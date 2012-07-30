@@ -315,7 +315,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             // Now rebuild any group indexes, leaving out empty ones
             if(!affectedGroupIndexes.isEmpty()) {
-                AkibanInformationSchema tempAIS = AISCloner.clone(newAIS, new ProtobufWriter.TableAllIndexSelector() {
+                AkibanInformationSchema tempAIS = AISCloner.clone(newAIS, new ProtobufWriter.TableSelector() {
                     @Override
                     public boolean isSelected(Columnar columnar) {
                         return columnar.isTable() && (newTable.getGroup() == ((Table) columnar).getGroup());
