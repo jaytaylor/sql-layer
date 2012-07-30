@@ -219,7 +219,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         logger.error(sb.toString(), e);
     }
 
-    private static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
+    static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
                                                                InstanceFinder finder) {
         Map<TClass, Map<TClass, TCast>> localCastsMap = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
 
@@ -252,7 +252,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         }
     }
 
-    private void createDerivedCasts(Map<TClass,Map<TClass,TCast>> castsBySource, InstanceFinder finder) {
+    static void createDerivedCasts(Map<TClass,Map<TClass,TCast>> castsBySource, InstanceFinder finder) {
         for (TCastPath castPath : finder.find(TCastPath.class)) {
             List<? extends TClass> path = castPath.getPath();
             // We need this loop to protect against "jumps." For instance, let's say the cast path is
