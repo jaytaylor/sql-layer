@@ -38,6 +38,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -153,6 +154,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
         castsBySource = createCasts(tClasses, finder);
         createDerivedCasts(finder);
+        deriveCastsFromVarchar();
         strongCastsByTarget = createStrongCastsMap(castsBySource);
         checkDag(strongCastsByTarget);
 
@@ -258,6 +260,33 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             // (a -> c). This loop ensures that we will.
             for (int i = path.size() - 1; i > 0; --i) {
                 deriveCast(path, i);
+            }
+        }
+    }
+
+    /**
+     * Add derived casts for any pair of TClasses (A, B) s.t. there is not a cast from A to B, but there are casts
+     * from A to VARCHAR and from VARCHAR to B. This essentially uses VARCHAR as a base type. Not pretty, but effective.
+     * Uses the instance variable #castsBySource for its input and output; it must be initialized with at least
+     * the self-casts and declared casts.
+     */
+    private void deriveCastsFromVarchar() {
+        final TClass COMMON = MString.VARCHAR;
+        Set<TClass> tClasses = castsBySource.keySet();
+        for (Map.Entry<TClass, Map<TClass, TCast>> entry : castsBySource.entrySet()) {
+            TClass source = entry.getKey();
+            Map<TClass, TCast> castsByTarget = entry.getValue();
+            for (TClass target : tClasses) {
+                if (target == source || castsByTarget.containsKey(target))
+                    continue;
+                TCast sourceToVarchar = cast(source, COMMON);
+                if (sourceToVarchar == null)
+                    continue;
+                TCast varcharToTarget = cast(COMMON, target);
+                if (varcharToTarget == null)
+                    continue;
+                TCast derived = new ChainedCast(sourceToVarchar, varcharToTarget);
+                castsByTarget.put(target, derived);
             }
         }
     }
@@ -502,6 +531,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
                     buildTName("source_bundle", "source_type", tCast.sourceClass(), map);
                     buildTName("target_bundle", "target_type", tCast.targetClass(), map);
                     map.put("strong", tCast.isAutomatic());
+                    map.put("isDerived", tCast instanceof ChainedCast);
                     result.add(map);
                 }
             }
