@@ -55,8 +55,7 @@ public class Coalesce extends TOverloadBase {
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         for (int i = 0; i < inputs.size(); ++i) {
             if (!inputs.get(i).isNull()) {
-                TInstance tinst = context.outputTInstance();
-                PValueTargets.copyFrom(inputs.get(i), output, tinst.typeClass().cacher(), tinst);
+                PValueTargets.copyFrom(inputs.get(i), output);
                 output.putObject(inputs.get(i).getObject());
                 return;
             }

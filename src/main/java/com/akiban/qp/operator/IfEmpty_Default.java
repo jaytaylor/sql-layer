@@ -31,6 +31,7 @@ import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.sql.optimizer.explain.Attributes;
@@ -350,7 +351,9 @@ class IfEmpty_Default extends Operator
                     TEvaluatableExpression outerJoinRowColumnEvaluation = pEvaluations.get(i);
                     outerJoinRowColumnEvaluation.with(context);
                     outerJoinRowColumnEvaluation.evaluate();
-                    valuesHolderRow.pvalueAt(i).putValueSource(outerJoinRowColumnEvaluation.resultValue());
+                    PValueTargets.copyFrom(
+                            outerJoinRowColumnEvaluation.resultValue(),
+                            valuesHolderRow.pvalueAt(i));
                 }
             }
             else {

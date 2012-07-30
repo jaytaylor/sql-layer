@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.server.ServerType;
 
 import com.akiban.server.error.UnknownDataTypeException;
@@ -251,7 +252,7 @@ public class PostgresType extends ServerType
         else if ("U_BIGINT".equals(encoding)) {
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
             return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
-                                    aisType.akType(), aisColumn.tInstance());
+                                    aisType.akType(), MNumeric.BIGINT_UNSIGNED.instance());
         }
         else if ("DATE".equals(encoding))
             oid = TypeOid.DATE_TYPE_OID.getOid();
@@ -282,6 +283,7 @@ public class PostgresType extends ServerType
         if (aisType.fixedSize())
             length = aisType.maxSizeBytes().shortValue();
 
+        TInstance instance;
         if (aisColumn != null) {
             switch (aisType.nTypeParameters()) {
             case 1:
@@ -294,9 +296,12 @@ public class PostgresType extends ServerType
                            aisColumn.getTypeParameter2().intValue() + 4;
                 break;
             }
+            instance = aisColumn.tInstance();
         }
-
-        return new PostgresType(oid, length, modifier, aisType.akType(), aisColumn == null ? null : aisColumn.tInstance());
+        else {
+            instance = Column.generateTInstance(null, aisType, null, null);
+        }
+        return new PostgresType(oid, length, modifier, aisType.akType(), instance);
     }
 
     public static PostgresType fromDerby(DataTypeDescriptor type)  {
@@ -307,9 +312,6 @@ public class PostgresType extends ServerType
         TypeId typeId = type.getTypeId();
 
         AkType akType;
-        
-        // TODO: replace AkType with Instance
-        TInstance instance = null;
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
@@ -447,7 +449,9 @@ public class PostgresType extends ServerType
         else {
             length = (short)typeId.getMaximumMaximumWidth();
         }
-        
+
+        TInstance instance = TypesTranslation.toTInstance(type);
+        assert instance != null : type;
         return new PostgresType(oid, length, modifier, akType, instance);
     }
 

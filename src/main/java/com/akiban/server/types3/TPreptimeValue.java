@@ -60,7 +60,6 @@ public final class TPreptimeValue {
     }
 
     public TPreptimeValue(TInstance tInstance, PValueSource value) {
-        ArgumentValidation.notNull("type instance", tInstance);
         this.tInstance = tInstance;
         this.value = value;
         this.mutable = false;

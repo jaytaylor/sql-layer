@@ -27,7 +27,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.server.ServerValueEncoder;
@@ -168,10 +167,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private Query query;
     private List<String> groups;
+    private boolean usePVals;
 
-    protected PostgresEmulatedMetaDataStatement(Query query, List<String> groups) {
+    protected PostgresEmulatedMetaDataStatement(Query query, List<String> groups, boolean usePVals) {
         this.query = query;
         this.groups = groups;
+        this.usePVals = usePVals;
     }
 
     static final PostgresType BOOL_PG_TYPE = 
@@ -312,7 +313,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;

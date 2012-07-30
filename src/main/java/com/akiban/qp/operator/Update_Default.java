@@ -161,6 +161,7 @@ class Update_Default implements UpdatePlannable {
     {
         public UpdateResult run()
         {
+            boolean usePValues = updateFunction.usePValues();
             int seen = 0, modified = 0;
             UPDATE_TAP.in();
             try {
@@ -171,8 +172,8 @@ class Update_Default implements UpdatePlannable {
                     ++seen;
                     if (updateFunction.rowIsSelected(oldRow)) {
                         Row newRow = updateFunction.evaluate(oldRow, context);
-                        context.checkConstraints(newRow);
-                        adapter().updateRow(oldRow, newRow);
+                        context.checkConstraints(newRow, usePValues);
+                        adapter().updateRow(oldRow, newRow, usePValues);
                         ++modified;
                     }
                 }

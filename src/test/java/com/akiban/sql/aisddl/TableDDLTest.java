@@ -26,6 +26,8 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.server.api.AlterTableChange;
+import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.sql.StandardException;
 import java.util.Collection;
 import java.util.List;
@@ -217,7 +219,7 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
     
-    public static class DDLFunctionsMock implements DDLFunctions {
+    public static class DDLFunctionsMock extends DDLFunctionsMockBase {
         private final AkibanInformationSchema internalAIS;
         private final AkibanInformationSchema externalAIS;
 
@@ -256,12 +258,6 @@ public class TableDDLTest {
             }
         }
 
-        @Override
-        public void renameTable(Session session, TableName currentName, TableName newName)
-        {
-            throw new UnsupportedOperationException();
-        }
-
         private void checkIndexes(UserTable sourceTable, UserTable checkTable) {
             for (Index index : sourceTable.getIndexesIncludingInternal()) {
                 assertNotNull(checkTable.getIndexIncludingInternal(index.getIndexName().getName()));
@@ -288,100 +284,10 @@ public class TableDDLTest {
         public void dropTable(Session session, TableName tableName) {
             assertEquals(tableName, dropTable);
         }
-        
+
         @Override
         public AkibanInformationSchema getAIS(Session session) {
             return externalAIS;
-        }
-
-        @Override
-        public void createIndexes(Session session,
-                Collection<? extends Index> indexesToAdd) {}
-
-        @Override
-        public void dropGroup(Session session, String groupName) {}
-
-        @Override
-        public void dropGroupIndexes(Session session, String groupName,
-                Collection<String> indexesToDrop) {}
-
-        @Override
-        public void createView(Session session, View newView) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropView(Session session, TableName viewName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropSchema(Session session, String schemaName) {}
-
-        @Override
-        public void dropTableIndexes(Session session, TableName tableName,
-                Collection<String> indexesToDrop) {}
-
-        @Override
-        public List<String> getDDLs(Session session)
-                throws InvalidOperationException {
-            return null;
-        }
-
-        @Override
-        public int getGeneration() {
-            return 0;
-        }
-
-        @Override
-        public long getTimestamp() {
-            return 0;
-        }
-
-        @Override
-        public RowDef getRowDef(int tableId) {
-            return null;
-        }
-
-        @Override
-        public Table getTable(Session session, int tableId) {
-            return null;
-        }
-
-        @Override
-        public Table getTable(Session session, TableName tableName) {
-            return null;
-        }
-
-        @Override
-        public int getTableId(Session session, TableName tableName) {
-            return 0;
-        }
-
-        @Override
-        public TableName getTableName(Session session, int tableId) {
-            return null;
-        }
-
-        @Override
-        public UserTable getUserTable(Session session, TableName tableName) {
-            return null;
-        }
-
-        @Override
-        public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {}
-
-        @Override
-        public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
-            return null;
-        }
-
-        @Override
-        public void createSequence(Session session, Sequence sequence) {
-        }
-
-        @Override
-        public void dropSequence(Session session, TableName sequenceName) {
         }
     } // END class DDLFunctionsMock
 

@@ -42,17 +42,25 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
     private PostgresType[] parameterTypes;
+    private boolean usesPValues;
 
-    protected PostgresBaseStatement(PostgresType[] parameterTypes) {
+    protected PostgresBaseStatement(PostgresType[] parameterTypes, boolean usesPValues) {
         this.parameterTypes = parameterTypes;
+        this.usesPValues = usesPValues;
     }
 
     protected PostgresBaseStatement(List<String> columnNames, 
                                     List<PostgresType> columnTypes,
-                                    PostgresType[] parameterTypes) {
+                                    PostgresType[] parameterTypes,
+                                    boolean usesPValues) {
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.parameterTypes = parameterTypes;
+        this.usesPValues = usesPValues;
+    }
+
+    public boolean usesPValues() {
+        return usesPValues;
     }
 
     public List<String> getColumnNames() {

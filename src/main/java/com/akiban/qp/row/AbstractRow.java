@@ -31,7 +31,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -41,6 +40,18 @@ public abstract class AbstractRow implements Row
 {
     // BoundExpressions interface
 
+    /**
+     * Compares two rows and indicates if and where they differ.
+     * @param row The row to be compared to this one.
+     * @param leftStartIndex First field to compare in this row.
+     * @param rightStartIndex First field to compare in the other row.
+     * @param fieldCount Number of fields to compare.
+     * @return 0 if all fields are equal. A negative value indicates that this row ranks lower than the other row.
+     * A positive value indicates that the other row ranks lower. In both non-zero cases, the absolute value
+     * of the return value is the position of the field that differed, starting the numbering at 1.
+     * E.g. a return value of -2 means that the first fields of the rows match, and that in the second field,
+     * this row had the smaller value.
+     */
     @Override
     public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
@@ -58,7 +69,7 @@ public abstract class AbstractRow implements Row
     @Override
     public PValueSource pvalue(int i) {
         // Default, though inefficient.
-        return PValueSources.fromValueSource(eval(i), rowType().typeInstanceAt(i).typeClass().underlyingType());
+        return PValueSources.fromValueSource(eval(i), rowType().typeInstanceAt(i));
     }
 
     @Override

@@ -36,6 +36,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -93,7 +94,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
 
     @Override
     protected void putFieldToTarget(PValueSource value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
-        valueTarget.putValueSource(value);
+        PValueTargets.copyFrom(value, valueTarget);
     }
 
     PValueSorterAdapter() {
@@ -110,7 +111,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
         @Override
         public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes) {
             valueSource.getReady();
-            row.pvalueAt(i).putValueSource(valueSource);
+            PValueTargets.copyFrom(valueSource, row.pvalueAt(i));
         }
 
         private final PersistitValuePValueSource valueSource = new PersistitValuePValueSource();
