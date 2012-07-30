@@ -26,6 +26,10 @@
 
 package com.akiban.server.test.it.dxl;
 
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
@@ -33,7 +37,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.AlterTableChange;
+import com.akiban.server.error.NotNullViolationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
@@ -44,6 +49,8 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
@@ -63,6 +70,14 @@ public class AlterTableIT extends ITBase {
 
     private RowBase testRow(RowType type, Object... fields) {
         return new TestRow(type, fields);
+    }
+
+    // Needs updated after default values are supported
+    @Test(expected=NotNullViolationException.class)
+    public void cannotAddNotNullColumn() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        writeRows(createNewRow(cid, 1L, "a"));
+        runAlter("ALTER TABLE c ADD COLUMN c1 INT NOT NULL DEFAULT 0");
     }
 
     @Test
@@ -104,6 +119,67 @@ public class AlterTableIT extends ITBase {
                 createNewRow(cid, 2L),
                 createNewRow(cid, 3L),
                 createNewRow(cid, 10L)
+        );
+    }
+
+    @Test
+    public void changeDataTypeSingleColumnSingleTableGroup() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, v int");
+        writeRows(
+                createNewRow(cid, 1L, 10),
+                createNewRow(cid, 2L, 20),
+                createNewRow(cid, 3L, 30),
+                createNewRow(cid, 10L, 100)
+        );
+
+        runAlter("ALTER TABLE c ALTER COLUMN v SET DATA TYPE varchar(10)");
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, 1L, "10"),
+                createNewRow(cid, 2L, "20"),
+                createNewRow(cid, 3L, "30"),
+                createNewRow(cid, 10L, "100")
+        );
+    }
+
+    @Test
+    public void addDropAndAlterColumnSingleTableGroup() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "c1 int not null primary key, c2 char(5), c3 int, c4 char(1)");
+        writeRows(
+                createNewRow(cid, 1L, "one", 10, "A"),
+                createNewRow(cid, 2L, "two", 20, "B"),
+                createNewRow(cid, 3L, "three", 30, "C"),
+                createNewRow(cid, 10L, "ten", 100, "D")
+        );
+
+        // Our parser doesn't (yet) support multi-action alters, manually build parameters
+        // ALTER TABLE c ADD COLUMN c5 INT, DROP COLUMN c2, ALTER COLUMN c3 SET DATA TYPE char(3)
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, "c");
+        builder.column(SCHEMA, "c", "c1", 0, "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, "c", "c3", 1, "char", 3L, null, true, false, null, null);
+        builder.column(SCHEMA, "c", "c4", 2, "char", 1L, null, true, false, null, null);
+        builder.column(SCHEMA, "c", "c5", 3, "int", null, null, true, false, null, null);
+        builder.index(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        builder.basicSchemaIsComplete();
+        UserTable newTable = builder.akibanInformationSchema().getUserTable(SCHEMA, "c");
+
+        List<AlterTableChange> changes = new ArrayList<AlterTableChange>();
+        changes.add(AlterTableChange.createAdd("c5"));
+        changes.add(AlterTableChange.createDrop("c2"));
+        changes.add(AlterTableChange.createModify("c3", "c3"));
+
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, Collections.<AlterTableChange>emptyList());
+        updateAISGeneration();
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, 1L, "10", "A", null),
+                createNewRow(cid, 2L, "20", "B", null),
+                createNewRow(cid, 3L, "30", "C", null),
+                createNewRow(cid, 10L, "100", "D", null)
         );
     }
 

@@ -195,21 +195,21 @@ public class AlterTableDDLTest {
     }
 
     @Test(expected=NoSuchColumnException.class)
-    public void cannotDropColumnUnknown() throws StandardException {
+    public void cannotDropColumnUnknownColumn() throws StandardException {
         builder.userTable(A_NAME).colBigInt("aid", true);
         parseAndRun("ALTER TABLE a DROP COLUMN bar");
     }
 
     // TODO: Remove when implemented
     @Test(expected=UnsupportedSQLException.class)
-    public void cannotDropPKColumn() throws StandardException {
+    public void cannotDropColumnPKColumn() throws StandardException {
         builder.userTable(A_NAME).colBigInt("aid", false).colBigInt("x").pk("aid");
         parseAndRun("ALTER TABLE a DROP COLUMN aid");
     }
 
     // TODO: Remove when implemented
     @Test(expected=UnsupportedSQLException.class)
-    public void cannotDropGroupingColumn() throws StandardException {
+    public void cannotDropColumnGroupingColumn() throws StandardException {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE i DROP COLUMN oid");
     }
@@ -259,6 +259,85 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:i_i");
         expectIndexChanges();
         expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+        expectUnchangedTables(C_NAME, O_NAME, A_NAME);
+    }
+
+    //
+    // ALTER COLUMN
+    //
+
+    @Test(expected=NoSuchTableException.class)
+    public void cannotAlterColumnUnknownTable() throws StandardException {
+        parseAndRun("ALTER TABLE foo ALTER COLUMN bar SET DATA TYPE INT");
+    }
+
+    @Test(expected=NoSuchColumnException.class)
+    public void cannotAlterColumnUnknownColumn() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", true);
+        parseAndRun("ALTER TABLE a ALTER COLUMN bar SET DATA TYPE INT");
+    }
+
+    // ... SET DATA TYPE
+
+    // TODO: Remove when implemented
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotAlterColumnPKColumn() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
+        parseAndRun("ALTER TABLE a ALTER COLUMN aid SET DATA TYPE INT");
+    }
+
+    // TODO: Remove when implemented
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotAlterColumnGroupingColumn() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE i DROP COLUMN oid");
+    }
+
+    @Test
+    public void alterColumnSetDataTypeSingleTableGroupNoPK() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).colBigInt("x");
+        parseAndRun("ALTER TABLE a ALTER COLUMN x SET DATA TYPE varchar(32)");
+        expectColumnChanges("MODIFY:x->x");
+        expectIndexChanges();
+        expectFinalTable(A_NAME, "aid bigint NOT NULL", "x varchar(32) NOT NULL"); // keeps NULL-ability
+    }
+
+    @Test
+    public void alterColumnSetDataTypeSingleTableGroup() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).colString("v1", 32, true).pk("aid");
+        parseAndRun("ALTER TABLE a ALTER COLUMN v1 SET DATA TYPE INT");
+        expectColumnChanges("MODIFY:v1->v1");
+        expectIndexChanges();
+        expectFinalTable(A_NAME, "aid bigint NOT NULL", "v1 int NULL", "PRIMARY(aid)");
+    }
+
+    @Test
+    public void alterColumnSetDataTypeRootOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE c ALTER COLUMN c_c SET DATA TYPE DECIMAL(5,2)");
+        expectColumnChanges("MODIFY:c_c->c_c");
+        expectIndexChanges();
+        expectFinalTable(C_NAME, "id bigint NOT NULL", "c_c decimal(5, 2) NULL", "PRIMARY(id)");
+        expectUnchangedTables(O_NAME, I_NAME, A_NAME);
+    }
+
+    @Test
+    public void alterColumnSetDataTypeMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE o ALTER COLUMN o_o SET DATA TYPE varchar(10)");
+        expectColumnChanges("MODIFY:o_o->o_o");
+        expectIndexChanges();
+        expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "o_o varchar(10) NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+        expectUnchangedTables(C_NAME, I_NAME, A_NAME);
+    }
+
+    @Test
+    public void alterColumnSetDataTypeLeafOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE i ALTER COLUMN i_i SET DATA TYPE double");
+        expectColumnChanges("MODIFY:i_i->i_i");
+        expectIndexChanges();
+        expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "i_i double NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
     }
 

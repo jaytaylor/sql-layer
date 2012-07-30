@@ -126,9 +126,10 @@ public abstract class Columnar
         return notNull;
     }
 
-    public void dropColumn(String columnName)
+    public Column dropColumn(String columnName)
     {
-        columnMap.remove(columnName);
+        columnsStale = true;
+        return columnMap.remove(columnName);
     }
 
     protected void addColumn(Column column)

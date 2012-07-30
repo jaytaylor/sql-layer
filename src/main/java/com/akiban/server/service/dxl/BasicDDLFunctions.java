@@ -130,7 +130,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
     }
 
-
     @Override
     public void dropTable(Session session, TableName tableName)
     {
@@ -214,7 +213,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         AkibanInformationSchema newAIS = getAIS(session);
         UserTable newTable = newAIS.getUserTable(newDefinition.getName());
         Schema newSchema = SchemaCache.globalSchema(newAIS);
-        final RowType newType = newSchema.userTableRowType(newTable);
 
         List<Column> newColumns = newTable.getColumnsIncludingInternal();
         AkType[] outTypes = new AkType[newColumns.size()];
@@ -230,6 +228,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         }
 
+        // PUTRT for constraint checking
+        final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, null);
+
         UpdatePlannable plan = update_Default(
                 filter_Default(
                         groupScan_Default(origTable.getGroup().getGroupTable()),
@@ -238,14 +239,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 new UpdateFunction() {
                     @Override
                     public Row evaluate(Row original, QueryContext context) {
-                        OverlayingRow overlay = new OverlayingRow(original, newType, false);
-                        for(int i = 0; i < projections.size(); ++i) {
-                            ExpressionEvaluation eval = projections.get(i).evaluation();
-                            eval.of(context);
-                            eval.of(original);
-                            overlay.overlay(i, eval.eval());
-                        }
-                        return overlay;
+                        return new ProjectedRow(newType, original, context, projections, null);
                     }
 
                     @Override

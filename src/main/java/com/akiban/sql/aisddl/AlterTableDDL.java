@@ -62,7 +62,6 @@ import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.ResultColumnList;
 import com.akiban.sql.parser.TableElementList;
 import com.akiban.sql.parser.TableElementNode;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.NodeType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -76,7 +75,7 @@ import static com.akiban.util.Exceptions.throwAlways;
 public class AlterTableDDL {
     private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table %s to multiple groups";
     private static final String NON_LEAF_ERROR_MSG = "Cannot drop group from %s table %s";
-    private static final String GROUP_CHANGE_ERROR_MSG = "Cannot drop column %s from %s primary key";
+    private static final String GROUP_CHANGE_ERROR_MSG = "Cannot change column %s from %s (primary or grouping key)";
     static final String TEMP_TABLE_NAME_NEW = "__ak_alter_temp_new";
     static final String TEMP_TABLE_NAME_OLD = "__ak_alter_temp_old";
 
@@ -245,46 +244,58 @@ public class AlterTableDDL {
             return false;
         }
 
-        List<String> drops = new ArrayList<String>();
-        List<ColumnDefinitionNode> adds = new ArrayList<ColumnDefinitionNode>();
+        List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
+        List<ColumnDefinitionNode> addsOrChanges = new ArrayList<ColumnDefinitionNode>();
         for(TableElementNode node : elementList) {
             // Modify extends Definition, must come first
             if((node instanceof ModifyColumnNode)) {
-                if(node.getNodeType() == NodeTypes.DROP_COLUMN_NODE) {
-                    drops.add(((ModifyColumnNode) node).getColumnName());
-                } else {
-                    return false;// TODO: CHANGE COLUMN
+                String columnName = ((ModifyColumnNode)node).getColumnName();
+                switch(node.getNodeType()) {
+                    case NodeTypes.DROP_COLUMN_NODE:
+                        columnChanges.add(AlterTableChange.createDrop(columnName));
+                    break;
+                    case NodeTypes.MODIFY_COLUMN_TYPE_NODE:
+                        columnChanges.add(AlterTableChange.createModify(columnName, columnName));
+                        addsOrChanges.add((ColumnDefinitionNode)node);
+                    break;
+                    default:
+                        return false; // TODO: Some column metadata change
                 }
             }
             else if(node instanceof ColumnDefinitionNode) {
-                adds.add((ColumnDefinitionNode)node);
+                ColumnDefinitionNode cdn = (ColumnDefinitionNode) node;
+                columnChanges.add(AlterTableChange.createAdd(cdn.getColumnName()));
+                addsOrChanges.add(cdn);
             } else {
                 return false; // TODO: Other alters
             }
         }
 
-        UserTable tableCopy = copyTable(table, drops);
+        UserTable tableCopy = copyTable(table, columnChanges);
         AISBuilder builder = new AISBuilder(tableCopy.getAIS());
-        List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
         List<AlterTableChange> indexChanges = Collections.emptyList();
 
-        for(String columnName : drops) {
-            columnChanges.add(AlterTableChange.createDrop(columnName));
-        }
+        for(ColumnDefinitionNode cdn : addsOrChanges) {
+            if(cdn instanceof ModifyColumnNode) {
+                // TODO: Assumes SET DATA TYPE, expand as needed
+                assert cdn.getNodeType() == NodeTypes.MODIFY_COLUMN_TYPE_NODE;
+                Column column = tableCopy.dropColumn(cdn.getColumnName());
+                int pos = column.getPosition();
+                TableDDL.addColumn(builder, table.getName().getSchemaName(), table.getName().getTableName(),
+                                   column.getName(), pos, cdn.getType(), column.getNullable(),
+                                   column.getInitialAutoIncrementValue() != null);
+            } else {
+                int pos = table.getColumns().size();
+                TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos);
+            }
 
-        for(ColumnDefinitionNode cdn : adds) {
-            columnChanges.add(AlterTableChange.createAdd(cdn.getColumnName()));
-            TableDDL.addColumn(builder, cdn,
-                               table.getName().getSchemaName(),
-                               table.getName().getTableName(),
-                               table.getColumns().size());
         }
 
         ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges);
         return true;
     }
 
-    private static void checkColumnToDrop(UserTable table, String columnName) {
+    private static void checkColumnChange(UserTable table, String columnName) {
         Column column = table.getColumn(columnName);
         if(column == null) {
             throw new NoSuchColumnException(columnName);
@@ -309,20 +320,29 @@ public class AlterTableDDL {
         }
     }
 
-    private static UserTable copyTable(UserTable origTable, Collection<String> dropColumns) {
+    private static boolean doSkipColumn(List<AlterTableChange> changes, String columnName) {
+        for(AlterTableChange change : changes) {
+            if(columnName.equals(change.getOldName())) {
+                return change.getChangeType() == AlterTableChange.ChangeType.DROP;
+            }
+        }
+        return false;
+    }
+
+    private static UserTable copyTable(UserTable origTable, List<AlterTableChange> changes) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         UserTable tableCopy = UserTable.create(ais, origTable);
 
-        for(String columnName : dropColumns) {
-            checkColumnToDrop(origTable, columnName);
+        for(AlterTableChange change : changes) {
+            if(change.getChangeType() != AlterTableChange.ChangeType.ADD) {
+                checkColumnChange(origTable, change.getOldName());
+            }
         }
 
         int colPos = 0;
         for(Column origColumn : origTable.getColumns()) {
             String columnName = origColumn.getName();
-            if(dropColumns.contains(columnName)) {
-                checkColumnToDrop(origTable, columnName);
-            } else {
+            if(!doSkipColumn(changes, columnName)) {
                 Column.create(tableCopy, origColumn, colPos++);
             }
         }
