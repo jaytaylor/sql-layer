@@ -28,7 +28,9 @@ package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
+import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -47,7 +49,16 @@ import static com.akiban.server.types3.TParsers.*;
  */
 public class Cast_From_Varchar
 {
-    
+
+    public static final TCastPath FLOAT_PATH = TCastPath.create(
+            MString.VARCHAR,
+            MApproximateNumber.FLOAT,
+            MApproximateNumber.FLOAT_UNSIGNED);
+    public static final TCastPath DOUBLE_PATH = TCastPath.create(
+            MString.VARCHAR,
+            MApproximateNumber.DOUBLE,
+            MApproximateNumber.DOUBLE_UNSIGNED);
+
     /**
      * TODO:
      * 
@@ -65,6 +76,15 @@ public class Cast_From_Varchar
      * LONTTEXT
      * 
      */
+
+    public static final TCast TO_BOOLEAN = new TCastBase(MString.VARCHAR, AkBool.INSTANCE) {
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            String in = source.getString();
+            boolean isTrue = ("t".equalsIgnoreCase(in) || "true".equalsIgnoreCase(in));
+            target.putBool(isTrue);
+        }
+    };
       
     public static final TCast TO_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT, true, Constantness.UNKNOWN)
     {

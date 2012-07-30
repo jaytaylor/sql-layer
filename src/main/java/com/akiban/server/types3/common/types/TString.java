@@ -79,6 +79,10 @@ public abstract class TString extends TClass
         }
     }
 
+    public int getFixedLength() {
+        return fixedLength;
+    }
+
     @Override
     protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
         CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
