@@ -48,10 +48,6 @@ public final class TCastPath {
         return new TCastPath(list);
     }
 
-    public static TCastPathBuilder from(TClass... from) {
-        return new InternalBuilder(from);
-    }
-
     private TCastPath(List<? extends TClass> list) {
         if (list.size() < 3)
             throw new IllegalArgumentException("cast paths must contain at least three elements: " + list);
@@ -63,33 +59,4 @@ public final class TCastPath {
     }
 
     private final List<? extends TClass> list;
-
-    public interface TCastPathBuilder {
-        public TCastPathBuilder to(TClass... targets);
-        public TCastPath[] get();
-    }
-
-    private static class InternalBuilder implements TCastPathBuilder {
-
-        @Override
-        public TCastPathBuilder to(TClass... targets) {
-            List<TClass> all = new ArrayList<TClass>(initial);
-            Collections.addAll(all, targets);
-            built.add(new TCastPath(all));
-            return this;
-        }
-
-        @Override
-        public TCastPath[] get() {
-            return built.toArray(new TCastPath[built.size()]);
-        }
-
-        InternalBuilder(TClass[] initial) {
-            this.initial = Arrays.asList(initial);
-            this.built = new ArrayList<TCastPath>();
-        }
-
-        private List<TCastPath> built;
-        private List<TClass> initial;
-    }
 }

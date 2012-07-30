@@ -43,15 +43,6 @@ import java.nio.charset.Charset;
 
 public final class Cast_From_Varbinary {
 
-    public static final TCastPath[] PATHS = TCastPath.from(MBinary.VARBINARY, MString.VARCHAR)
-            .to(MNumeric.TINYINT, MNumeric.INT, MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED)
-            .to(MDatetimes.DATE)
-            .to(MDatetimes.DATETIME)
-            .to(MDatetimes.YEAR)
-            .to(MApproximateNumber.FLOAT, MApproximateNumber.FLOAT_UNSIGNED)
-            .to(MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE_UNSIGNED)
-            .get();
-
     public static final TCast TO_VARCHAR = new TCastBase(MBinary.VARBINARY, MString.VARCHAR) {
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
