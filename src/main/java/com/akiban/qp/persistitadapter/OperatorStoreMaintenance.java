@@ -26,24 +26,14 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.ais.model.*;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDataValueSource;
@@ -52,7 +42,10 @@ import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 
 final class OperatorStoreMaintenance {
 
@@ -77,8 +70,8 @@ final class OperatorStoreMaintenance {
             for (int i=0; i < lookupCols.size(); ++i) {
                 int bindingsIndex = i+1;
                 Column col = lookupCols.get(i);
-                pSource.bind((FieldDef)col.getFieldDef(), forRow);
-                source.bind((FieldDef)col.getFieldDef(), forRow);
+                pSource.bind(col.getFieldDef(), forRow);
+                source.bind(col.getFieldDef(), forRow);
                 
                 // New types
                 if (Types3Switch.ON) context.setPValue(bindingsIndex, pSource);

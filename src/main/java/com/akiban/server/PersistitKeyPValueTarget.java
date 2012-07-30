@@ -59,11 +59,6 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     }
 
     @Override
-    public void putValueSource(PValueSource source) {
-        PValueTargets.copyFrom(source, this);
-    }
-
-    @Override
     public void putNull() {
         key.append(null);
     }

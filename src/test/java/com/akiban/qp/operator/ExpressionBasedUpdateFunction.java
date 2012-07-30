@@ -24,19 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.qp.operator;
 
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
-
-import java.util.Collection;
-
-public interface FunctionRegistry
-{
-    Collection<? extends TAggregator> aggregators();
-    Collection<? extends TValidatedOverload> overloads();
-    Collection<? extends TCast> casts();
-    Collection<? extends TClass> tclasses();
+public abstract class ExpressionBasedUpdateFunction implements UpdateFunction {
+    @Override
+    public boolean usePValues() {
+        return false;
+    }
 }

@@ -30,7 +30,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
@@ -50,7 +49,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
 
     private Operator resultOperator;
     private RowType resultRowType;
-    private boolean usesPValues;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
@@ -60,15 +58,11 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                      RowType resultRowType,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
-                                     PostgresType[] parameterTypes) {
-        super(columnNames, columnTypes, parameterTypes);
+                                     PostgresType[] parameterTypes,
+                                     boolean usesPValues) {
+        super(columnNames, columnTypes, parameterTypes, usesPValues);
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
-        this.usesPValues = Types3Switch.ON;
-    }
-
-    public boolean usesPValues() {
-        return usesPValues;
     }
     
     @Override
@@ -82,7 +76,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         Session session = server.getSession();
         int nrows = 0;
@@ -96,7 +90,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
-                outputter.output(row, usePVals);
+                outputter.output(row, usesPValues());
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;

@@ -101,6 +101,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
@@ -308,6 +309,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         @Override
                         public Row evaluate(Row original, QueryContext context) {
                             return new ProjectedRow(newType, original, context, projections, pProjections);
+                        }
+
+                        @Override
+                        public boolean usePValues() {
+                            return Types3Switch.ON;
                         }
 
                         @Override

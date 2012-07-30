@@ -31,6 +31,7 @@ import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -389,7 +390,9 @@ class Union_Ordered extends Operator
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
                     if (usingPValues)
-                        skipRow.pvalueAt(skipRowFixedFields + f).putValueSource(suffixRow.pvalue(suffixRowFixedFields + f));
+                        PValueTargets.copyFrom(suffixRow.pvalue(
+                                suffixRowFixedFields + f),
+                                skipRow.pvalueAt(skipRowFixedFields + f));
                     else
                         skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
                 }
@@ -405,7 +408,7 @@ class Union_Ordered extends Operator
                 int f = 0;
                 while (f < fixedFields) {
                     if (usingPValues)
-                        leftSkipRow.pvalueAt(f).putValueSource(leftRow.get().pvalue(f));
+                        PValueTargets.copyFrom(leftRow.get().pvalue(f), leftSkipRow.pvalueAt(f));
                     else
                         leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
                     f++;
@@ -429,7 +432,7 @@ class Union_Ordered extends Operator
                 int f = 0;
                 while (f < fixedFields) {
                     if (usingPValues)
-                        rightSkipRow.pvalueAt(f).putValueSource(rightRow.get().pvalue(f));
+                        PValueTargets.copyFrom(rightRow.get().pvalue(f), rightSkipRow.pvalueAt(f));
                     else
                         rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
                     f++;

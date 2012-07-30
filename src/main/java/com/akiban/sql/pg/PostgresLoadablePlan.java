@@ -29,6 +29,7 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
+import com.akiban.server.types3.Types3Switch;
 
 public class PostgresLoadablePlan
 {
@@ -39,9 +40,13 @@ public class PostgresLoadablePlan
             return null;
         loadablePlan.ais(server.getAIS());
         if (loadablePlan instanceof LoadableOperator)
-            return new PostgresLoadableOperator((LoadableOperator)loadablePlan, args);
+            return new PostgresLoadableOperator(
+                    (LoadableOperator)loadablePlan,
+                    args,
+                    server.getBooleanProperty("newtypes", Types3Switch.ON));
         if (loadablePlan instanceof LoadableDirectObjectPlan)
-            return new PostgresLoadableDirectObjectPlan((LoadableDirectObjectPlan)loadablePlan, args);
+            return new PostgresLoadableDirectObjectPlan((LoadableDirectObjectPlan)loadablePlan, args,
+                    server.getBooleanProperty("newtypes", Types3Switch.ON));
         return null;
     }
     

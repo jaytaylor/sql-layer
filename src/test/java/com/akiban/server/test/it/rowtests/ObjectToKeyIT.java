@@ -43,7 +43,7 @@ public class ObjectToKeyIT extends ITBase {
 
     private void testObjectToKey(FieldDef field, Object... testValues) throws PersistitException {
         Key key = persistitStore().getKey();
-        PersistitKeyAppender appender = new PersistitKeyAppender(key);
+        PersistitKeyAppender appender = PersistitKeyAppender.create(key);
         for(Object inObj : testValues) {
             key.clear();
             appender.append(inObj, field);
@@ -61,7 +61,7 @@ public class ObjectToKeyIT extends ITBase {
     @Test
     public void decimalField() throws Exception {
         final int tid = createTableFromTypes(SCHEMA, TABLE, false, false, new SimpleColumn("c2", "decimal", 5L, 2L));
-        final FieldDef fieldDef = (FieldDef)getUserTable(tid).getColumn("c2").getFieldDef();
+        final FieldDef fieldDef = getUserTable(tid).getColumn("c2").getFieldDef();
         testObjectToKey(fieldDef,
                         null, BigDecimal.valueOf(-12345, 2), 578L, "999.99");
     }
@@ -69,7 +69,7 @@ public class ObjectToKeyIT extends ITBase {
     @Test
     public void decimalUnsignedField() throws Exception {
         final int tid = createTableFromTypes(SCHEMA, TABLE, false, true, new SimpleColumn("c2", "decimal", 5L, 2L));
-        final FieldDef fieldDef = (FieldDef)getUserTable(tid).getColumn("c2").getFieldDef();
+        final FieldDef fieldDef = getUserTable(tid).getColumn("c2").getFieldDef();
         testObjectToKey(fieldDef,
                         null, BigDecimal.valueOf(0), BigDecimal.valueOf(4242, 2), 489L, "978.83");
     }

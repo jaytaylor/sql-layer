@@ -28,15 +28,15 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigInteger;
 
-public final class RowDataPValueTarget implements PValueTarget {
+public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
 
+    @Override
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
         clear();
         ArgumentValidation.notNull("fieldDef", fieldDef);
@@ -46,6 +46,7 @@ public final class RowDataPValueTarget implements PValueTarget {
         this.offset = offset;
     }
 
+    @Override
     public int lastEncodedLength() {
         if (lastEncodedLength < 0) {
             throw new IllegalStateException("no last recorded length available");
@@ -53,8 +54,16 @@ public final class RowDataPValueTarget implements PValueTarget {
         return lastEncodedLength;
     }
 
+    public void putStringBytes(String value) {
+        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
+    }
+
     public RowDataPValueTarget() {
         clear();
+    }
+
+    public TInstance targetInstance() {
+        return fieldDef.column().tInstance();
     }
 
     // ValueTarget interface
@@ -83,13 +92,8 @@ public final class RowDataPValueTarget implements PValueTarget {
     @Override
     public PUnderlying getUnderlyingType() {
         // STRING should actually be interpreted as BYTES
-        PUnderlying underlying = fieldDef.column().tInstance().typeClass().underlyingType();
+        PUnderlying underlying = targetInstance().typeClass().underlyingType();
         return underlying == PUnderlying.STRING ? PUnderlying.BYTES : underlying;
-    }
-
-    @Override
-    public void putValueSource(PValueSource source) {
-        PValueTargets.copyFrom(source, this);
     }
 
     @Override
@@ -129,8 +133,7 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putString(String value, AkCollator collator) {
-        throw new AssertionError("should be targeted to bytes instead");
-//        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
+        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
     @Override

@@ -44,6 +44,6 @@ public interface PostgresStatement extends ServerStatement
     public void sendDescription(PostgresQueryContext context, boolean always) throws IOException;
 
     /** Execute statement and output results. Return number of rows processed. */
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException;
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException;
 
 }

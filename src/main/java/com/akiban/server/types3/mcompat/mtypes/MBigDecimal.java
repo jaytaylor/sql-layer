@@ -65,6 +65,24 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
+    protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        byte[] bytes;
+        if (in.hasRawValue()) {
+            bytes = in.getBytes();
+        }
+        else {
+            BigDecimalWrapper value = (BigDecimalWrapper) in.getObject();
+            int precision = typeInstance.attribute(Attrs.PRECISION);
+            int scale = typeInstance.attribute(Attrs.PRECISION);
+            bytes = ConversionHelperBigDecimal.bytesFromObject(
+                    value.asBigDecimal(),
+                    precision,
+                    scale);
+        }
+        out.putBytes(bytes);
+    }
+
+    @Override
     public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         // stolen from TypesTranslation
         int precision = instance.attribute(Attrs.PRECISION);

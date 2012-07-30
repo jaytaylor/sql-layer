@@ -37,6 +37,7 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.SparseArray;
 
@@ -76,7 +77,7 @@ public abstract class QueryContextBase implements QueryContext
             holder = new PValue(value.getUnderlyingType());
             bindings.set(index, holder);
         }
-        holder.putValueSource(value);
+        PValueTargets.copyFrom(value, holder);
     }
 
     @Override
@@ -243,7 +244,7 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void checkConstraints(Row row) throws InvalidOperationException {
-        row.rowType().constraintChecker().checkConstraints(row);
+    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException {
+        row.rowType().constraintChecker().checkConstraints(row, usePValues);
     }
 }

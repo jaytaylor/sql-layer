@@ -1,0 +1,7 @@
+SelectQuery@19cff046
+  ResultSet@22a790e7[state]
+    Project@271a3f77[addresses.state]
+      Select@2c3cb1af[isNull(customers.name)]
+        TableGroupJoinTree@44b56ed9(TableGroup@583e4656(customers), customers RIGHT addresses - SingleIndexScan@607be55c(Index(.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), covering/SORTED/reverse, rows = 100, cost = 159.950))
+          TableSource@77f59603(customers - TableGroup@583e4656(customers))
+            TableSource@1c4bdc7c(addresses - TableGroupJoin@5dfe0e83(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))

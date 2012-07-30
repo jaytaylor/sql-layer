@@ -33,10 +33,10 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
-    private final RowType outputType;
     private final ValueHolder[] overlays;
     protected final PValue[] pOverlays;
 
@@ -45,18 +45,13 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     public OverlayingRow(Row underlying, boolean usePValues) {
-        this(underlying, underlying.rowType(), usePValues);
-    }
-
-    public OverlayingRow(Row underlying, RowType outputType, boolean usePValues) {
         this.underlying = underlying;
-        this.outputType = outputType;
         if (usePValues) {
             this.overlays = null;
-            this.pOverlays = new PValue[outputType.nFields()];
+            this.pOverlays = new PValue[underlying.rowType().nFields()];
         }
         else {
-            this.overlays = new ValueHolder[outputType.nFields()];
+            this.overlays = new ValueHolder[underlying.rowType().nFields()];
             this.pOverlays = null;
         }
     }
@@ -79,19 +74,19 @@ public final class OverlayingRow extends AbstractRow {
         }
         else {
             if (pOverlays[index] == null)
-                pOverlays[index] = new PValue(outputType.typeInstanceAt(index).typeClass().underlyingType());
-            pOverlays[index].putValueSource(object);
+                pOverlays[index] = new PValue(underlying.rowType().typeInstanceAt(index).typeClass().underlyingType());
+            PValueTargets.copyFrom(object,  pOverlays[index]);
         }
         return this;
     }
 
     public OverlayingRow overlay(int index, Object object) {
-        return overlay(index, valueSource.setExplicitly(object, outputType.typeAt(index)));
+        return overlay(index, valueSource.setExplicitly(object, underlying.rowType().typeAt(index)));
     }
 
     @Override
     public RowType rowType() {
-        return outputType;
+        return underlying.rowType();
     }
 
     @Override
