@@ -30,6 +30,9 @@ import com.akiban.server.service.ServiceManager;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.text.*;
 
@@ -51,6 +54,17 @@ public class SwingConsole extends JFrame implements WindowListener
         this.serviceManager = serviceManager;
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        
+        // output area
+        textArea = new JTextArea(50, 100);
+        textArea.setLineWrap(true);
+        DefaultCaret caret = (DefaultCaret)textArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        add(scrollPane);
+        
+        // menu
         addWindowListener(this);
         {
             boolean macOSX = "Mac OS X".equals(System.getProperty("os.name"));
@@ -58,6 +72,7 @@ public class SwingConsole extends JFrame implements WindowListener
 
             JMenuBar menuBar = new JMenuBar();
 
+            // File menu
             if (!macOSX || !Boolean.getBoolean("apple.laf.useScreenMenuBar")) {
                 JMenu fileMenu = new JMenu("File");
                 fileMenu.setMnemonic(KeyEvent.VK_F);
@@ -71,6 +86,8 @@ public class SwingConsole extends JFrame implements WindowListener
                 fileMenu.add(quitMenuItem);
                 menuBar.add(fileMenu);
             }
+            
+            // Edit menu
             JMenu editMenu = new JMenu("Edit");
             editMenu.setMnemonic(KeyEvent.VK_E);
             Action action = new DefaultEditorKit.CutAction();
@@ -92,18 +109,57 @@ public class SwingConsole extends JFrame implements WindowListener
                 };
             action.putValue(Action.NAME, "Select All");
             action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, shift));
-            editMenu.add(action);    
+            editMenu.add(action);
+            
+            JMenuItem clearAll = editMenu.add("Clear Console");
+            clearAll.setMnemonic(KeyEvent.VK_R);
+            clearAll.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 
+                                                           java.awt.event.InputEvent.CTRL_DOWN_MASK));
+            clearAll.addActionListener(new ActionListener()
+            {
+                @Override
+                public void actionPerformed(ActionEvent ae)
+                {
+                    textArea.setText("");
+                }
+                
+            });
+            
             menuBar.add(editMenu);
+            
+            //Window menu
+            //if (macOSX) // or unix-based
+            {                
+                JMenu win = new JMenu("Window");
+                win.setMnemonic(KeyEvent.VK_W);
+                JMenuItem runPsql = win.add("Run PSQL client");
+                runPsql.addActionListener(new ActionListener()
+                {
 
+                    @Override
+                    public void actionPerformed(ActionEvent ae)
+                    {
+                        try
+                        {
+                            Runtime.getRuntime().exec(
+                                    "/usr/X11/bin/xterm -e psql -h localhost -p15432");
+                        }
+                        catch (IOException ex)
+                        {
+                            Logger.getLogger(SwingConsole.class.getName()).log(Level.SEVERE, null, ex);
+
+                            JOptionPane.showMessageDialog(null,
+                                                          "Unable to open /usr/X11/bin/xterm",
+                                                          "Error",
+                                                          JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                });
+                menuBar.add(win);
+            }
+            
             setJMenuBar(menuBar);
         }
-        textArea = new JTextArea(50, 100);
-        textArea.setLineWrap(true);
-        DefaultCaret caret = (DefaultCaret)textArea.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-        textArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        add(scrollPane);
 
         // centerise the window
         pack();       
