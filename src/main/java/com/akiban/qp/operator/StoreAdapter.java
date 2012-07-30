@@ -30,7 +30,6 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
