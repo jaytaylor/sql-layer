@@ -31,16 +31,19 @@ import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes.FORMAT;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.util.AkibanAppender;
 
 public final class Cast_From_Year {
     public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.YEAR, MString.VARCHAR) {
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            byte value = source.getInt8();
-            String asString = Integer.toString(source.getInt8());
+            StringBuilder sb = new StringBuilder(4);
+            FORMAT.YEAR.format(null, source, AkibanAppender.of(sb));
+            String asString = sb.toString();
             int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
             if (asString.length() > maxLen) {
                 String truncated = asString.substring(0, maxLen);
