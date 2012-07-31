@@ -152,7 +152,7 @@ abstract class ExpressionAssembler<T> {
             if (fieldIndex >= 0)
             {
                 T expression = assembleFieldExpression(currentRow.getRowType(), fieldIndex);
-                this.plancontext.storeInfo(expression, column.toString());
+                plancontext.storeInfo(((Expression)expression).getExplainer(), column.toString());
                 return expression;
             }
         }

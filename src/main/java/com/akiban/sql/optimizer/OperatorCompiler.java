@@ -120,7 +120,8 @@ public class OperatorCompiler extends SchemaRulesContext
         plan.setPlan(new AST(stmt, params));
         applyRules(plan);
         BasePlannable output = (BasePlannable)plan.getPlan();
-        output.giveInfo(plan.getInfo());
+        if (plan.hasInfo())
+            output.giveInfo(plan.getInfo());
         return output;
     }
 

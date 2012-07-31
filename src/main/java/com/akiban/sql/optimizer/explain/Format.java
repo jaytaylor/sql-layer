@@ -33,24 +33,26 @@ import java.util.Map;
 public class Format {
     
     private boolean verbose = true;
+    Map extraInfo;
     
     public Format(boolean verbose)
     {
         this.verbose = verbose;
     }
 
-    public static String Describe(Explainer explainer, Map extraInfo)
+    public String Describe(Explainer explainer, Map extraInfo)
     {
         StringBuilder sb = new StringBuilder("");
         describe(explainer, sb);
+        this.extraInfo = extraInfo;
         return sb.toString();
     }
     
-    private static void describe(Explainer explainer, StringBuilder sb) {
+    private void describe(Explainer explainer, StringBuilder sb) {
         describe(explainer, sb, false, null);
     }
 
-    protected static void describe(Explainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
+    protected void describe(Explainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         if (explainer.hasAttributes())
         {
             OperationExplainer opEx = (OperationExplainer) explainer;
@@ -66,7 +68,7 @@ public class Format {
         }
     }
 
-    protected static void describeExpression(OperationExplainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
+    protected void describeExpression(OperationExplainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         
         Attributes atts = explainer.get();
         String name = atts.get(Label.NAME).get(0).get().toString();
@@ -83,7 +85,7 @@ public class Format {
         }
         else if (name.equals("Field"))
         {
-            sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
+            sb.append(name).append("(").append(extraInfo.get(explainer)).append(")");
         }
         else if (name.equals("Bound"))
         {
@@ -128,7 +130,7 @@ public class Format {
         }
     }
 
-    protected static void describePrimitive(PrimitiveExplainer explainer, StringBuilder sb) {
+    protected void describePrimitive(PrimitiveExplainer explainer, StringBuilder sb) {
 
         if (explainer.getType()==Type.STRING)
         {
@@ -145,7 +147,7 @@ public class Format {
         
     }
 
-    protected static void describeOperator(OperationExplainer explainer, StringBuilder sb, int depth) {
+    protected void describeOperator(OperationExplainer explainer, StringBuilder sb, int depth) {
         
         Attributes atts = explainer.get();
         String name = atts.get(Label.NAME).get(0).get().toString();
@@ -191,9 +193,11 @@ public class Format {
             case LOOKUP_OPERATOR:
                 if (name.equals("Ancestor Lookup Default"))
                 {
-                    
-                    describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
-                    sb.append(" -> ");
+                    if (verbose)
+                    {
+                        describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                        sb.append(" -> ");
+                    }
                     for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
                     {
                         describe(table, sb);
@@ -206,8 +210,11 @@ public class Format {
                 }
                 else if (name.equals("Ancestor Lookup Nested"))
                 {
-                    describe(atts.get(Label.BINDING_POSITION).get(0), sb);
-                    sb.append(" -> ");
+                    if (verbose)
+                    {
+                        describe(atts.get(Label.BINDING_POSITION).get(0), sb);
+                        sb.append(" -> ");
+                    }
                     for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
                     {
                         describe(table, sb);
@@ -220,31 +227,40 @@ public class Format {
                 }
                 else if (name.equals("Branch Lookup Default"))
                 {
-                    describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
-                    sb.append(" -> ");
+                    if (verbose)
+                    {
+                        describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                        sb.append(" -> ");
+                    }
                     describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
-                    sb.append(" (via ");
-                    describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
-                    sb.append(")");
+                    if (verbose)
+                    {
+                        sb.append(" (via ");
+                        describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
+                        sb.append(")");
+                    }
                 }
                 else if (name.equals("Branch Lookup Nested"))
                 {
-                    describe(atts.get(Label.BINDING_POSITION).get(0), sb);
-                    sb.append(" -> ");
+                    if (verbose)
+                    {
+                        describe(atts.get(Label.BINDING_POSITION).get(0), sb);
+                        sb.append(" -> ");
+                    }
                     describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
-                    sb.append(" (via ");
-                    describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
-                    sb.append(")");
+                    if (verbose)
+                    {
+                        sb.append(" (via ");
+                        describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
+                        sb.append(")");
+                    }
                 }
                 break;
             case COUNT_OPERATOR:
-                if (name.equals("Count Default"))
+                sb.append("*");
+                if (name.equals("Count TableStatus") && verbose);
                 {
-                    sb.append("*");
-                }
-                else if (name.equals("Count TableStatus"));
-                {
-                    sb.append("* FROM ");
+                    sb.append(" FROM ");
                     describe(atts.get(Label.INPUT_TYPE).get(0), sb);
                 }
                 break;

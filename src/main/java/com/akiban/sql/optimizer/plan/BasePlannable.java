@@ -26,7 +26,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.operator.Operator;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
@@ -39,7 +38,7 @@ public abstract class BasePlannable extends BasePlanNode
 {
     private Plannable plannable;
     private DataTypeDescriptor[] parameterTypes;
-    private Map extraInfo = Collections.synchronizedMap(new HashMap());
+    private Map extraInfo;
     
     protected BasePlannable(Plannable plannable,
                             DataTypeDescriptor[] parameterTypes) {
@@ -61,7 +60,6 @@ public abstract class BasePlannable extends BasePlanNode
         return v.visit(this);
     }
 
-
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
@@ -70,6 +68,16 @@ public abstract class BasePlannable extends BasePlanNode
     
     public void giveInfo(Map map) {
         extraInfo = map;
+    }
+    
+    public boolean hasInfo() {
+        if (null != extraInfo)
+            return !extraInfo.isEmpty();
+        else return true;
+    }
+    
+    public Map getInfo() {
+        return extraInfo;
     }
     
     public List<String> explainPlan() {
