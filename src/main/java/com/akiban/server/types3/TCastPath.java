@@ -24,10 +24,35 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.server.types3;
 
-import java.util.Collection;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-public interface InstanceFinder {
-    <T> Collection<? extends T> find(Class<? extends T> targetClass);
+/**
+ * A very thin shim around List<TClass></TClass>. Mostly there so that the call sites don't have to worry about
+ * generics. This is especially useful for the reflective registration, where it's easier to search for a TCastPath
+ * than fora {@code Collection&lt;? extends List&lt;? extends TClass&gt;&gt;}.
+ */
+public final class TCastPath {
+
+    public static TCastPath create(TClass first, TClass second, TClass third, TClass... rest) {
+        return new TCastPath(first, second, third, rest);
+    }
+
+    private TCastPath(TClass first, TClass second, TClass third, TClass[] rest) {
+        TClass[] all = new TClass[rest.length + 3];
+        all[0] = first;
+        all[1] = second;
+        all[2] = third;
+        System.arraycopy(rest, 0, all, 3, rest.length);
+        list = Collections.unmodifiableList(Arrays.asList(all));
+    }
+
+    public List<? extends TClass> getPath() {
+        return list;
+    }
+
+    private final List<? extends TClass> list;
 }
