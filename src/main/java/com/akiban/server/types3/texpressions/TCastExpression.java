@@ -70,7 +70,7 @@ public final class TCastExpression implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        return new CastEvaluation(input.build(), cast);
+        return new CastEvaluation(input.build(), cast, sourceInstance, targetInstance, preptimeContext);
     }
 
     @Override
@@ -82,12 +82,16 @@ public final class TCastExpression implements TPreparedExpression {
         this.input = input;
         this.cast = cast;
         this.targetInstance = targetInstance;
+        this.sourceInstance = input.resultType();
+        this.preptimeContext = queryContext;
     }
 
 
+    private final TInstance sourceInstance;
     private final TInstance targetInstance;
     private final TPreparedExpression input;
     private final TCast cast;
+    private final QueryContext preptimeContext;
 
     private static class CastEvaluation implements TEvaluatableExpression {
         @Override
@@ -102,7 +106,7 @@ public final class TCastExpression implements TPreparedExpression {
             if (inputVal.isNull())
                 value.putNull();
             else
-                cast.evaluate(null, inputVal, value);
+                cast.evaluate(executionContext, inputVal, value);
         }
 
         @Override
@@ -113,14 +117,22 @@ public final class TCastExpression implements TPreparedExpression {
         @Override
         public void with(QueryContext context) {
             inputEval.with(context);
+            this.executionContext.setQueryContext(context);
         }
 
-        private CastEvaluation(TEvaluatableExpression inputEval, TCast cast) {
+        private CastEvaluation(TEvaluatableExpression inputEval, TCast cast,
+                               TInstance sourceInstance, TInstance targetInstance, QueryContext preptimeContext)
+        {
             this.inputEval = inputEval;
             this.cast = cast;
             this.value = new PValue(cast.targetClass().underlyingType());
+            this.executionContext = new TExecutionContext(
+                    Collections.singletonList(sourceInstance),
+                    targetInstance,
+                    preptimeContext);
         }
 
+        private final TExecutionContext executionContext;
         private final TEvaluatableExpression inputEval;
         private final TCast cast;
         private final PValue value;

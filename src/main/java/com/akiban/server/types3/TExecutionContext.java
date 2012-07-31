@@ -200,6 +200,10 @@ public final class TExecutionContext {
 
     // state
 
+    public TExecutionContext(List<TInstance> inputTypes,  TInstance outputType, QueryContext queryContext) {
+        this(null, inputTypes, outputType, queryContext, null, null, null);
+    }
+
     public TExecutionContext(SparseArray<Object> preptimeCache,
                       List<TInstance> inputTypes,
                       TInstance outputType,
