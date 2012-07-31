@@ -60,7 +60,7 @@ public final class TExecutionContext {
 
     public Object preptimeObjectAt(int index) {
         if (preptimeCache == null)
-            throw new IllegalArgumentException("no preptime cache objects");
+            preptimeCache = new SparseArray<Object>(index);
         return preptimeCache.getIfDefined(index);
     }
 
