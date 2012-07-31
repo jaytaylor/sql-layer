@@ -70,8 +70,8 @@ public final class TExecutionContext {
 
     public Object exectimeObjectAt(int index) {
         if (exectimeCache == null)
-            throw new IllegalArgumentException("no exectime cache objects");
-        return exectimeCache.getIfDefined(index);
+            exectimeCache = new SparseArray<Object>();
+        return exectimeCache.get(index);
     }
 
     public void putExectimeObject(int index, Object value) {
