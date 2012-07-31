@@ -23,39 +23,28 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.types3.mcompat.mcasts;
 
-package com.akiban.server.types3;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TCastBase;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Constantness;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+public final class Cast_From_Float {
+    public static final TCast TO_DOUBLE_UNSIGNED = new TCastBase(MApproximateNumber.FLOAT, MApproximateNumber.FLOAT_UNSIGNED, true) {
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            float orig = source.getFloat();
+            if (orig < 0) {
+                context.reportTruncate(Float.toString(orig), "0");
+                orig = 0; // TODO or is it null?
+            }
+            target.putFloat(orig);
+        }
+    };
 
-/**
- * A very thin shim around List<TClass></TClass>. Mostly there so that the call sites don't have to worry about
- * generics. This is especially useful for the reflective registration, where it's easier to search for a TCastPath
- * than fora {@code Collection&lt;? extends List&lt;? extends TClass&gt;&gt;}.
- */
-public final class TCastPath {
-
-    public static TCastPath create(TClass first, TClass second, TClass third, TClass... rest) {
-        TClass[] all = new TClass[rest.length + 3];
-        all[0] = first;
-        all[1] = second;
-        all[2] = third;
-        System.arraycopy(rest, 0, all, 3, rest.length);
-        List<? extends TClass> list = Arrays.asList(all);
-        return new TCastPath(list);
-    }
-
-    private TCastPath(List<? extends TClass> list) {
-        if (list.size() < 3)
-            throw new IllegalArgumentException("cast paths must contain at least three elements: " + list);
-        this.list = Collections.unmodifiableList(list);
-    }
-
-    public List<? extends TClass> getPath() {
-        return list;
-    }
-
-    private final List<? extends TClass> list;
+    private Cast_From_Float() {}
 }

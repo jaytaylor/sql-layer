@@ -74,7 +74,7 @@ public class MDatetimes
     public static final Map<String, String[]> SHORT_WEEKDAYS;
 
     
-    private static enum FORMAT implements TClassFormatter {
+    public static enum FORMAT implements TClassFormatter {
         DATE {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
@@ -96,7 +96,13 @@ public class MDatetimes
         YEAR {         
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-                out.append(Integer.toString(source.getInt8()));
+                int year = source.getInt8();
+                int yearAbs = Math.abs(year);
+                if (yearAbs < 70)
+                    year += 2000;
+                else if (yearAbs < 100)
+                    year += 1900;
+                out.append(year);
             }
         }, 
         TIMESTAMP {      
