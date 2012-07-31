@@ -47,7 +47,7 @@ public class SwingConsole extends JFrame implements WindowListener
     private final ServiceManager serviceManager;
     private JTextArea textArea;
     private PrintStream printStream;
-
+    private final String RUN_PSQL_CMD;
     public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
 
@@ -127,20 +127,25 @@ public class SwingConsole extends JFrame implements WindowListener
             });
             
             menuBar.add(editMenu);
-                   
+               
             // Run menu
             JMenu run = new JMenu("Run");
             run.setMnemonic(KeyEvent.VK_W);
             JMenuItem runPsql = run.add("Run PSQL client");
+            
+            if (osName.startsWith("Window"))
+                RUN_PSQL_CMD = "cmd.exe /c start psql -h localhost -p15432 ";
+            else // assuming unix-based system
+                RUN_PSQL_CMD = "xterm -e psql -h localhost -p15432";
+            
             runPsql.addActionListener(new ActionListener()
             {
-
                 @Override
                 public void actionPerformed(ActionEvent ae)
                 {
                     try
                     {
-                        Runtime.getRuntime().exec("xterm -e psql -h localhost -p15432");
+                        Runtime.getRuntime().exec(RUN_PSQL_CMD);
                     }
                     catch (IOException ex)
                     {
