@@ -38,7 +38,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 public final class Cast_From_Smallint {
     public static final TCast TO_VARCHAR = new TCastBase(MNumeric.SMALLINT, MString.VARCHAR) {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             String asString = Double.toString(source.getInt16());
             int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
             if (asString.length() > maxLen) {

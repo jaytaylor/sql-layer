@@ -44,7 +44,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             BOOLEAN.parse(context, source, target);
         }
@@ -54,7 +54,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             SMALLINT.parse(context, source, target);
         }
@@ -64,7 +64,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             INT.parse(context, source, target);
         }
@@ -74,7 +74,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             BIGINT.parse(context, source, target);
         }
@@ -84,7 +84,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             UNSIGNED_BIGINT.parse(context, source, target);
         }
@@ -94,7 +94,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             DOUBLE.parse(context, source, target);
         }

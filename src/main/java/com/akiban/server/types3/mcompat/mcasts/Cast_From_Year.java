@@ -40,7 +40,7 @@ import com.akiban.util.AkibanAppender;
 public final class Cast_From_Year {
     public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.YEAR, MString.VARCHAR) {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             StringBuilder sb = new StringBuilder(4);
             FORMAT.YEAR.format(null, source, AkibanAppender.of(sb));
             String asString = sb.toString();
