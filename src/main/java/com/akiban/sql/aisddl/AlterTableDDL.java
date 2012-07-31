@@ -234,7 +234,8 @@ public class AlterTableDDL {
         TableElementNode elementNode = node.tableElementList.get(0);
         if(elementNode instanceof FKConstraintDefinitionNode) {
             FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode)elementNode;
-            if(fkNode.isGrouping()) {
+            if((fkNode.getConstraintType() == ConstraintDefinitionNode.ConstraintType.FOREIGN_KEY) &&
+               fkNode.isGrouping()) {
                 return fkNode;
             }
         }
@@ -249,12 +250,11 @@ public class AlterTableDDL {
             return null;
         }
         TableElementNode elementNode = node.tableElementList.get(0);
-        if(elementNode instanceof ConstraintDefinitionNode) {
-            ConstraintDefinitionNode conNode = (ConstraintDefinitionNode)elementNode;
-            if(ConstraintDefinitionNode.ConstraintType.DROP.equals(conNode.getConstraintType())) {
-                // No access to verifyType (which would be FOREIGN_KEY) and not otherwise marked GROUPING
-                // Assume any name (even no name) is DROP GFK for now
-                return conNode;
+        if(elementNode instanceof FKConstraintDefinitionNode) {
+            FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode)elementNode;
+            if((fkNode.getConstraintType() == ConstraintDefinitionNode.ConstraintType.DROP) &&
+               fkNode.isGrouping()) {
+                return fkNode;
             }
         }
         return null;
