@@ -1,4 +1,4 @@
-rem @ECHO OFF
+@ECHO OFF
 
 REM
 REM END USER LICENSE AGREEMENT (“EULA”)
@@ -43,15 +43,15 @@ IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
 ECHO "Building Akiban Server for ##### %TARGET% #####"
 
-rem call mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=%BZR_REVNO%
-rem IF ERRORLEVEL 1 GOTO EOF
+call mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=%BZR_REVNO%
+IF ERRORLEVEL 1 GOTO EOF
 
 SET TOOLS_BRANCH="lp:akiban-client-tools"
 CD target
-rem bzr branch %TOOLS_BRANCH% client-tools
+bzr branch %TOOLS_BRANCH% client-tools
 IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
-rem call mvn -Dmaven.test.skip.exec clean install
+call mvn -Dmaven.test.skip.exec clean install
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
 CD ..\..
@@ -60,6 +60,7 @@ MD target\isstage
 MD target\isstage\bin
 MD target\isstage\config
 MD target\isstage\lib
+MD target\isstage\procrun
 
 COPY %LICENSE% target\isstage\LICENSE.TXT
 XCOPY /E windows target\isstage
@@ -69,12 +70,30 @@ COPY windows\%TARGET%\* target\isstage\config
 COPY target\akiban-server-*-jar-with-dependencies.jar target\isstage\lib
 COPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib
 
-FOR %%j IN (target\isstage\lib\akiban-server-*.jar) DO SET JARFILE=%%~nj
-FOR /F "delims=- tokens=3" %%n IN ("%JARFILE%") DO SET VERSION=%%n
-SET INSTALLER=akiban-server-%VERSION%-installer.exe
-
 CD target\isstage
-echo iscc /S"GoDaddy=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" /O.. /F"%INSTALLER%" /dVERSION=%VERSION% AkibanServer.iss
+
+FOR %%j IN (lib\akiban-server-*.jar) DO SET JARFILE=%%~nj
+FOR /F "delims=- tokens=3" %%n IN ("%JARFILE%") DO SET VERSION=%%n
+SET INSTALLER=akiban-server-%VERSION%-installer
+
+curl -o procrun.zip -L http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip
+IF ERRORLEVEL 1 GOTO EOF
+7z x -oprocrun procrun.zip
+IF ERRORLEVEL 1 GOTO EOF
+CD procrun
+mt -manifest ..\prunsrv.manifest -outputresource:prunsrv.exe;1
+IF ERRORLEVEL 1 GOTO EOF
+mt -manifest ..\prunmgr.manifest -outputresource:prunmgr.exe;1
+IF ERRORLEVEL 1 GOTO EOF
+CD amd64
+mt -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
+IF ERRORLEVEL 1 GOTO EOF
+CD ..\ia64
+mt -manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1
+IF ERRORLEVEL 1 GOTO EOF
+CD ..\..
+
+iscc /S"GoDaddy=signtool sign /f $q%CERT_FILE%$q  /p $q%CERT_PASSWORD%$q /t http://tsa.starfieldtech.com/ $f" /O.. /F"%INSTALLER%" /dVERSION=%VERSION% AkibanServer.iss
 IF ERRORLEVEL 1 GOTO EOF
 
 CD ..\..
