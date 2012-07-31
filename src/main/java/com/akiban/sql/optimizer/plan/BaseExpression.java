@@ -67,7 +67,8 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
         return sqlSource;
     }
 
-    protected void setSQLtype(DataTypeDescriptor type) {
+    @Override
+    public void setSQLtype(DataTypeDescriptor type) {
         this.sqlType = type;
     }
 

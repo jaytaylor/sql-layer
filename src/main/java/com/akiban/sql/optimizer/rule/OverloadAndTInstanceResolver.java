@@ -72,7 +72,6 @@ import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.plan.TableSource;
-import com.akiban.sql.optimizer.plan.Union;
 import com.akiban.sql.optimizer.plan.UpdateStatement;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
@@ -173,6 +172,16 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
 
             n = folder.foldConstants(n);
+            This shouldn't go here.  We need it to happen in a more comprehensive way. For instance, ResultSet's fields
+                    need to change if their inputs change
+            TPreptimeValue tpv = n.getPreptimeValue();
+            if (tpv != null) {
+                TInstance tInstance = tpv.instance();
+                if (tInstance != null) {
+                    DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
+                    n.setSQLtype(newDtd);
+                }
+            }
             
             return n;
         }
@@ -256,7 +265,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         : resultInstance + " != " + preptimeValue.instance();
 
             expression.setPreptimeValue(preptimeValue);
-
             return expression;
         }
 
