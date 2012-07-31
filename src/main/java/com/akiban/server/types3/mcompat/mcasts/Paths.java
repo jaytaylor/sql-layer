@@ -24,10 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.server.types3.mcompat.mcasts;
 
-import java.util.Collection;
+import com.akiban.server.types3.TCastPath;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
-public interface InstanceFinder {
-    <T> Collection<? extends T> find(Class<? extends T> targetClass);
+public final class Paths {
+
+    public static final TCastPath INTEGERS = TCastPath.create(
+            MNumeric.TINYINT_UNSIGNED,
+            MNumeric.INT,
+            MNumeric.BIGINT
+    );
+
+    private Paths() {}
 }

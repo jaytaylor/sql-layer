@@ -186,6 +186,18 @@ public final class TExecutionContext {
         this.queryContext = queryContext;
     }
 
+    public TExecutionContext deriveContext(List<TInstance> inputTypes, TInstance outputType) {
+        return new TExecutionContext(
+                new SparseArray<Object>(),
+                inputTypes,
+                outputType,
+                queryContext,
+                overflowHandling,
+                truncateHandling,
+                invalidFormatHandling
+        );
+    }
+
     // state
 
     public TExecutionContext(SparseArray<Object> preptimeCache,
