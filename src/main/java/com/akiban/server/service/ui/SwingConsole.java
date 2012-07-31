@@ -67,7 +67,8 @@ public class SwingConsole extends JFrame implements WindowListener
         // menu
         addWindowListener(this);
         {
-            boolean macOSX = "Mac OS X".equals(System.getProperty("os.name"));
+            String osName = System.getProperty("os.name");
+            boolean macOSX = "Mac OS X".equals(osName);
             int shift = (macOSX) ? InputEvent.META_MASK : InputEvent.CTRL_MASK;
 
             JMenuBar menuBar = new JMenuBar();
@@ -126,37 +127,32 @@ public class SwingConsole extends JFrame implements WindowListener
             });
             
             menuBar.add(editMenu);
-            
-            //Window menu
-            //if (macOSX) // or unix-based
-            {                
-                JMenu win = new JMenu("Window");
-                win.setMnemonic(KeyEvent.VK_W);
-                JMenuItem runPsql = win.add("Run PSQL client");
-                runPsql.addActionListener(new ActionListener()
+                   
+            // Run menu
+            JMenu run = new JMenu("Run");
+            run.setMnemonic(KeyEvent.VK_W);
+            JMenuItem runPsql = run.add("Run PSQL client");
+            runPsql.addActionListener(new ActionListener()
+            {
+
+                @Override
+                public void actionPerformed(ActionEvent ae)
                 {
-
-                    @Override
-                    public void actionPerformed(ActionEvent ae)
+                    try
                     {
-                        try
-                        {
-                            Runtime.getRuntime().exec(
-                                    "/usr/X11/bin/xterm -e psql -h localhost -p15432");
-                        }
-                        catch (IOException ex)
-                        {
-                            Logger.getLogger(SwingConsole.class.getName()).log(Level.SEVERE, null, ex);
-
-                            JOptionPane.showMessageDialog(null,
-                                                          "Unable to open /usr/X11/bin/xterm",
-                                                          "Error",
-                                                          JOptionPane.ERROR_MESSAGE);
-                        }
+                        Runtime.getRuntime().exec("xterm -e psql -h localhost -p15432");
                     }
-                });
-                menuBar.add(win);
-            }
+                    catch (IOException ex)
+                    {
+                        JOptionPane.showMessageDialog(null,
+                                                      "Unable to open xterm\nPlease make sure XTERM is installed",
+                                                      "Error",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+            menuBar.add(run);
+            
             
             setJMenuBar(menuBar);
         }
