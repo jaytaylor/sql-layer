@@ -502,6 +502,8 @@ public class PostgresType extends ServerType
 
         if (tInstance == null)
             logger.warn("no TInstance created for {}", type);
+        else
+            tInstance.setNullable(type.isNullable());
         return new PostgresType(oid, length, modifier, akType, tInstance);
     }
 
