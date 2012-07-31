@@ -114,8 +114,8 @@ public class SwingConsole extends JFrame implements WindowListener
             
             JMenuItem clearAll = editMenu.add("Clear Console");
             clearAll.setMnemonic(KeyEvent.VK_R);
-            clearAll.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, 
-                                                           java.awt.event.InputEvent.CTRL_DOWN_MASK));
+            clearAll.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K, 
+                                                           shift));
             clearAll.addActionListener(new ActionListener()
             {
                 @Override
@@ -133,11 +133,13 @@ public class SwingConsole extends JFrame implements WindowListener
             run.setMnemonic(KeyEvent.VK_W);
             JMenuItem runPsql = run.add("Run PSQL client");
             
-            if (osName.startsWith("Window"))
+            if (macOSX)
+                RUN_PSQL_CMD = "osascript -e 'tell application \"Terminal\" to do script \"psql -h localhost -p 15432\"'";
+            else if (osName.startsWith("Window"))
                 RUN_PSQL_CMD = "cmd.exe /c start psql -h localhost -p15432 ";
             else // assuming unix-based system
                 RUN_PSQL_CMD = "xterm -e psql -h localhost -p15432";
-            
+
             runPsql.addActionListener(new ActionListener()
             {
                 @Override
@@ -150,7 +152,7 @@ public class SwingConsole extends JFrame implements WindowListener
                     catch (IOException ex)
                     {
                         JOptionPane.showMessageDialog(null,
-                                                      "Unable to open xterm\nPlease make sure XTERM is installed",
+                                                      "Unable to open Terminal\nError: " + ex.getMessage(),
                                                       "Error",
                                                       JOptionPane.ERROR_MESSAGE);
                     }
