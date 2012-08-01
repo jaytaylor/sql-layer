@@ -36,9 +36,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
@@ -46,9 +51,24 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.UpdateFunction;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.ProjectedRow;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.ProjectedUserTableRowType;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.api.AlterTableChange;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -66,8 +86,18 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TCastExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
@@ -77,11 +107,17 @@ import com.akiban.server.store.statistics.IndexStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.akiban.qp.operator.API.filter_Default;
+import static com.akiban.qp.operator.API.groupScan_Default;
+import static com.akiban.qp.operator.API.update_Default;
+
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
     private final IndexStatisticsService indexStatisticsService;
+    private final ConfigurationService configService;
+    private final T3RegistryService t3Registry;
     
     @Override
     public void createTable(Session session, UserTable table)
@@ -96,7 +132,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().renameTable(session, currentName, newName);
         checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
     }
-
 
     @Override
     public void dropTable(Session session, TableName tableName)
@@ -134,16 +169,213 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, table);
     }
 
+    private static Integer findOldPosition(List<AlterTableChange> columnChanges, Column oldColumn, Column newColumn) {
+        for(AlterTableChange change : columnChanges) {
+            String newName = newColumn.getName();
+            if(newName.equals(change.getNewName())) {
+                switch(change.getChangeType()) {
+                    case ADD:
+                        assert oldColumn == null : oldColumn;
+                        return null;
+                    case MODIFY:
+                        assert oldColumn != null : newColumn;
+                        return oldColumn.getPosition();
+                    case DROP:
+                        throw new IllegalStateException("Column should not exist in new table: " + newName);
+                    default:
+                        throw new IllegalStateException("Unknown ChangeType: " + change);
+                }
+            }
+        }
+        // Not in change list, must be an original column
+        assert oldColumn != null : newColumn;
+        return oldColumn.getPosition();
+    }
+
+    private static boolean indexContainsColumn(Index index, TableName tableName, String columnName) {
+        for(IndexColumn indexColumn : index.getKeyColumns()) {
+            Column fromIndex = indexColumn.getColumn();
+            if(fromIndex.getTable().getName().equals(tableName) && fromIndex.getName().equals(columnName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
                            List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
-        // - Check table exists
-        // - Verify parameters
-        // - Create transformation
-        // - Alter through schemaManager
-        // - Perform transformation
-        // - Any post processing (e.g. index building)
-        throw new UnsupportedOperationException();
+        // Check validity
+        final AkibanInformationSchema origAIS = getAIS(session);
+        final UserTable origTable = origAIS.getUserTable(tableName);
+        if(origTable == null) {
+            throw new NoSuchTableException(tableName);
+        }
+        // TODO: More pre-checking?
+
+        List<GroupIndex> affectedGroupIndexes = new ArrayList<GroupIndex>();
+        for(AlterTableChange change : columnChanges) {
+            if(change.getChangeType() == AlterTableChange.ChangeType.ADD) {
+                continue;
+            }
+            for(GroupIndex index : origTable.getGroupIndexes()) {
+                if(indexContainsColumn(index, tableName, change.getOldName())) {
+                    affectedGroupIndexes.add(index);
+                }
+            }
+        }
+
+        // Drop definition and rebuild later, probably better than doing each entry individually
+        store().truncateIndex(session, affectedGroupIndexes);
+        schemaManager().dropIndexes(session, affectedGroupIndexes);
+
+        // Save previous state so it can be scanned
+        final Schema oldSchema = SchemaCache.globalSchema(origAIS);
+        final RowType oldSourceType = oldSchema.userTableRowType(origTable);
+
+        // Alter through schemaManager to get new definitions and RowDefs
+        schemaManager().alterTableDefinition(session, tableName, newDefinition);
+
+        boolean rollBackNeeded = false;
+        List<Index> indexesToDrop = new ArrayList<Index>();
+        try {
+            // Simple prep: truncate dropped or changed indexes (drop tree is, currently, non-transactional)
+            for(AlterTableChange change : indexChanges) {
+                Index index = origTable.getIndex(change.getOldName());
+                switch(change.getChangeType()) {
+                    case ADD:
+                        throw new UnsupportedOperationException();
+                    case DROP:
+                        indexesToDrop.add(index);
+                    // fall
+                    case MODIFY:
+                        store().truncateIndex(session, Collections.singleton(index));
+                    break;
+                    default:
+                        throw new IllegalStateException("Unknown change type: " + change);
+                }
+            }
+
+            // Build transformation
+            PersistitAdapter adapter = new PersistitAdapter(oldSchema, store(), treeService(), session, configService);
+            QueryContext queryContext = new SimpleQueryContext(adapter);
+
+            AkibanInformationSchema newAIS = getAIS(session);
+            final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
+            Schema newSchema = SchemaCache.globalSchema(newAIS);
+
+            List<Column> newColumns = newTable.getColumnsIncludingInternal();
+            final List<Expression> projections;
+            final List<TPreparedExpression> pProjections;
+            if(Types3Switch.ON) {
+                projections = null;
+                pProjections = new ArrayList<TPreparedExpression>(newColumns.size());
+                for(Column newCol : newColumns) {
+                    Column oldCol = origTable.getColumn(newCol.getName());
+                    Integer oldPosition = findOldPosition(columnChanges, oldCol, newCol);
+                    TInstance newInst = newCol.tInstance();
+                    if(oldPosition == null) {
+                        pProjections.add(new TPreparedLiteral(newInst, PValueSources.getNullSource(newInst.typeClass().underlyingType())));
+                    } else {
+                        TInstance oldInst = oldCol.tInstance();
+                        TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
+                        if(oldInst.typeClass() != newInst.typeClass()) {
+                            TCast cast = t3Registry.cast(oldInst.typeClass(), newInst.typeClass());
+                            pExp = new TCastExpression(pExp, cast, newInst, queryContext);
+                        }
+                        pProjections.add(pExp);
+                    }
+                }
+            } else {
+                projections = new ArrayList<Expression>(newColumns.size());
+                pProjections = null;
+                for(Column newCol : newColumns) {
+                    Integer oldPosition = findOldPosition(columnChanges, origTable.getColumn(newCol.getName()), newCol);
+                    if(oldPosition == null) {
+                        projections.add(new LiteralExpression(newCol.getType().akType(), null));
+                    } else {
+                        projections.add(new FieldExpression(oldSourceType, oldPosition));
+                    }
+                }
+            }
+
+            // PUTRT for constraint checking
+            final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections);
+
+            UpdatePlannable plan = update_Default(
+                    filter_Default(
+                            groupScan_Default(origTable.getGroup().getGroupTable()),
+                            Collections.singleton(oldSourceType)
+                    ),
+                    new UpdateFunction() {
+                        @Override
+                        public Row evaluate(Row original, QueryContext context) {
+                            return new ProjectedRow(newType, original, context, projections, pProjections);
+                        }
+
+                        @Override
+                        public boolean usePValues() {
+                            return Types3Switch.ON;
+                        }
+
+                        @Override
+                        public boolean rowIsSelected(Row row) {
+                            return true;
+                        }
+                    }
+            );
+
+            // Perform transformation
+            plan.run(queryContext);
+
+            // Now rebuild any group indexes, leaving out empty ones
+            if(!affectedGroupIndexes.isEmpty()) {
+                AkibanInformationSchema tempAIS = AISCloner.clone(newAIS, new ProtobufWriter.TableSelector() {
+                    @Override
+                    public boolean isSelected(Columnar columnar) {
+                        return columnar.isTable() && (newTable.getGroup() == ((Table) columnar).getGroup());
+                    }
+                });
+
+                Collection<GroupIndex> indexesToBuild = new ArrayList<GroupIndex>();
+
+                final Group origGroup = origTable.getGroup();
+                Group tempGroup = tempAIS.getGroup(newTable.getGroup().getName());
+                for(GroupIndex index : affectedGroupIndexes) {
+                    GroupIndex origIndex = origGroup.getIndex(index.getIndexName().getName());
+                    GroupIndex indexCopy = GroupIndex.create(tempAIS, tempGroup, origIndex);
+                    int pos = 0;
+                    for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
+                        UserTable tempTable = tempAIS.getUserTable(indexColumn.getColumn().getTable().getName());
+                        Column column = tempTable.getColumn(indexColumn.getColumn().getName());
+                        if(column != null) {
+                            IndexColumn.create(indexCopy, column, indexColumn, pos++);
+                        }
+                    }
+                    if(pos != 0) {
+                        indexesToBuild.add(indexCopy);
+                    } else {
+                        indexesToDrop.add(origIndex);
+                    }
+                }
+
+                if(!indexesToBuild.isEmpty()) {
+                    createIndexes(session, indexesToBuild);
+                }
+            }
+        } catch(RuntimeException e) {
+            rollBackNeeded = true;
+            throw e;
+        } finally {
+            if(rollBackNeeded) {
+                // All of the data changed was transactional but PSSM changes aren't like that
+                schemaManager().rollbackAIS(session, origAIS, Collections.singleton(tableName.getSchemaName()));
+                // TODO: rollback new index trees
+            }
+        }
+
+        // Complete: we can now get rid of any index trees that shouldn't be here
+        store().deleteIndexes(session, indexesToDrop);
     }
 
     @Override
@@ -531,8 +763,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().dropSequence(session, sequence);
     }
 
-    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, IndexStatisticsService indexStatisticsService) {
+    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService,
+                      IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
         super(middleman, schemaManager, store, treeService);
         this.indexStatisticsService = indexStatisticsService;
+        this.configService = configService;
+        this.t3Registry = t3Registry;
     }
 }

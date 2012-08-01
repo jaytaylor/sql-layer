@@ -344,7 +344,7 @@ public class IndexDDL
         AISCloner.clone(
                 builder.akibanInformationSchema(),
                 ais,
-                new ProtobufWriter.TableAllIndexSelector() {
+                new ProtobufWriter.TableSelector() {
                     @Override
                     public boolean isSelected(Columnar columnar) {
                         if(!columnar.isTable()) {

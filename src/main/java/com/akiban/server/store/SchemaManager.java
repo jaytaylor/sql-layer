@@ -115,7 +115,7 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param indexes List of indexes to drop.
      */
-    void dropIndexes(Session session, Collection<Index> indexes);
+    void dropIndexes(Session session, Collection<? extends Index> indexes);
 
     /**
      * Delete the definition of the table with the given name. Throws
@@ -197,4 +197,7 @@ public interface SchemaManager {
     
     /** Drop the given sequence from the current AIS. */
     void dropSequence(Session session, Sequence sequence);
+
+    // TODO: PSSM should handle this itself...
+    void rollbackAIS(Session session, AkibanInformationSchema replacementAIS, Collection<String> schemaNames);
 }

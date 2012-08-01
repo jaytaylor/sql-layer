@@ -41,7 +41,7 @@ import java.util.Arrays;
 
 public class MString extends TString
 {
-    public static final MString CHAR = new MString(TypeId.CHAR_ID, "varchar");
+    public static final MString CHAR = new MString(TypeId.CHAR_ID, "char");
     public static final MString VARCHAR = new MString(TypeId.VARCHAR_ID, "varchar");
     public static final MString TINYTEXT = new MString(TypeId.LONGVARCHAR_ID, "tinytext", 256);
     public static final MString MEDIUMTEXT = new MString(TypeId.LONGVARCHAR_ID, "mediumtext", 65535);

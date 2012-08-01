@@ -28,7 +28,11 @@ package com.akiban.sql.aisddl;
 
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -39,6 +43,7 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
+import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.JoinColumnMismatchException;
@@ -50,11 +55,13 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.util.Strings;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -105,7 +112,312 @@ public class AlterTableDDLTest {
 
 
     //
-    // ADD
+    // ADD COLUMN
+    //
+
+    @Test(expected=DuplicateColumnNameException.class)
+    public void cannotAddDuplicateColumnName() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", true);
+        parseAndRun("ALTER TABLE a ADD COLUMN aid INT");
+    }
+
+    @Test(expected=NoSuchTableException.class)
+    public void cannotAddColumnToUnknownTable() throws StandardException {
+        parseAndRun("ALTER TABLE foo ADD COLUMN bar INT");
+    }
+
+    @Test
+    public void addColumnSingleTableGroupNoPK() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false);
+        parseAndRun("ALTER TABLE a ADD COLUMN x INT");
+        expectColumnChanges("ADD:x");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "x MCOMPAT_ INT(11) NULL");
+        else
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "x int NULL");
+    }
+
+    @Test
+    public void addColumnSingleTableGroup() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
+        parseAndRun("ALTER TABLE a ADD COLUMN v1 VARCHAR(32)");
+        expectColumnChanges("ADD:v1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "v1 MCOMPAT_ VARCHAR(255", "UTF_8", "UCS_BINARY) NULL", "PRIMARY(aid)");
+        else
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "v1 varchar(32) NULL", "PRIMARY(aid)");
+    }
+
+    @Test
+    public void addNotNullColumnSingleTableGroup() throws StandardException {
+        // Valid syntax and shouldn't be rejected until real DDLFunctions (needs asserted in IT as well)
+        // Update (and remove these comments) when defaults are preserved
+        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
+        parseAndRun("ALTER TABLE a ADD COLUMN x INT NOT NULL DEFAULT 0");
+        expectColumnChanges("ADD:x");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "x MCOMPAT_ INT(11) NOT NULL", "PRIMARY(aid)");
+        else
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "x int NOT NULL", "PRIMARY(aid)");
+    }
+
+    @Test
+    public void addColumnRootOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE c ADD COLUMN d1 DECIMAL(10,3)");
+        expectColumnChanges("ADD:d1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "c_c MCOMPAT_ BIGINT(21)", "d1 MCOMPAT_ DECIMAL(10, 3) NULL", "PRIMARY(id)");
+        else
+            expectFinalTable(C_NAME, "id bigint NOT NULL", "c_c bigint NULL", "d1 decimal(10, 3) NULL", "PRIMARY(id)");
+        expectUnchangedTables(O_NAME, I_NAME, A_NAME);
+    }
+
+    @Test
+    public void addColumnMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE o ADD COLUMN f1 real");
+        expectColumnChanges("ADD:f1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21)", "cid MCOMPAT_ BIGINT(21)", "o_o MCOMPAT_ BIGINT(21)",
+                             "f1 MCOMPAT_ FLOAT(-1, -1) NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+        else
+            expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "o_o bigint NULL", "f1 float NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+        expectUnchangedTables(C_NAME, I_NAME, A_NAME);
+    }
+
+    @Test
+    public void addColumnLeafOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE i ADD COLUMN d1 double");
+        expectColumnChanges("ADD:d1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21)", "oid MCOMPAT_ BIGINT(21)", "i_i MCOMPAT_ BIGINT(21)", "d1 MCOMPAT_ DOUBLE(-1, -1) NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+        else
+            expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "i_i bigint NULL", "d1 double NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+        expectUnchangedTables(C_NAME, O_NAME, A_NAME);
+    }
+
+    //
+    // DROP COLUMN
+    //
+
+    @Test(expected=NoSuchTableException.class)
+    public void cannotDropColumnUnknownTable() throws StandardException {
+        parseAndRun("ALTER TABLE foo DROP COLUMN bar");
+    }
+
+    @Test(expected=NoSuchColumnException.class)
+    public void cannotDropColumnUnknownColumn() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", true);
+        parseAndRun("ALTER TABLE a DROP COLUMN bar");
+    }
+
+    // TODO: Remove when implemented
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotDropColumnPKColumn() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).colBigInt("x").pk("aid");
+        parseAndRun("ALTER TABLE a DROP COLUMN aid");
+    }
+
+    // TODO: Remove when implemented
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotDropColumnGroupingColumn() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE i DROP COLUMN oid");
+    }
+
+    @Test
+    public void dropColumnSingleTableGroupNoPK() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).colBigInt("x");
+        parseAndRun("ALTER TABLE a DROP COLUMN x");
+        expectColumnChanges("DROP:x");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)");
+        else
+            expectFinalTable(A_NAME, "aid bigint NOT NULL");
+    }
+
+    @Test
+    public void dropColumnSingleTableGroup() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).colString("v1", 32).pk("aid");
+        parseAndRun("ALTER TABLE a DROP COLUMN v1");
+        expectColumnChanges("DROP:v1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "PRIMARY(aid)");
+        else
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "PRIMARY(aid)");
+    }
+
+    @Test
+    public void dropColumnRootOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE c DROP COLUMN c_c");
+        expectColumnChanges("DROP:c_c");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "PRIMARY(id)");
+        else
+            expectFinalTable(C_NAME, "id bigint NOT NULL", "PRIMARY(id)");
+        expectUnchangedTables(O_NAME, I_NAME, A_NAME);
+    }
+
+    @Test
+    public void dropColumnMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE o DROP COLUMN o_o");
+        expectColumnChanges("DROP:o_o");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21)", "cid MCOMPAT_ BIGINT(21)", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+        else
+            expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+        expectUnchangedTables(C_NAME, I_NAME, A_NAME);
+    }
+
+    @Test
+    public void dropColumnLeafOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE i DROP COLUMN i_i");
+        expectColumnChanges("DROP:i_i");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21)", "oid MCOMPAT_ BIGINT(21)", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+        else
+            expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+        expectUnchangedTables(C_NAME, O_NAME, A_NAME);
+    }
+
+    @Test
+    public void dropColumnWasIndexed() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colString("c1", 10).pk("id").key("c1", "c1");
+        parseAndRun("ALTER TABLE c DROP COLUMN c1");
+        expectColumnChanges("DROP:c1");
+        expectIndexChanges("DROP:c1");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "PRIMARY(id)");
+        else
+            expectFinalTable(C_NAME, "id bigint NOT NULL", "PRIMARY(id)");
+    }
+
+    @Test
+    public void dropColumnWasInMultiIndexed() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("c1", true).colBigInt("c2", true).pk("id").key("c1_c2", "c1", "c2");
+        parseAndRun("ALTER TABLE c DROP COLUMN c1");
+        expectColumnChanges("DROP:c1");
+        expectIndexChanges("MODIFY:c1_c2->c1_c2");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "c2 MCOMPAT_ BIGINT(21)", "c1_c2(c2)", "PRIMARY(id)");
+        else
+            expectFinalTable(C_NAME, "id bigint NOT NULL", "c2 bigint NULL", "c1_c2(c2)", "PRIMARY(id)");
+    }
+
+    //
+    // ALTER COLUMN
+    //
+
+    @Test(expected=NoSuchTableException.class)
+    public void cannotAlterColumnUnknownTable() throws StandardException {
+        parseAndRun("ALTER TABLE foo ALTER COLUMN bar SET DATA TYPE INT");
+    }
+
+    @Test(expected=NoSuchColumnException.class)
+    public void cannotAlterColumnUnknownColumn() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", true);
+        parseAndRun("ALTER TABLE a ALTER COLUMN bar SET DATA TYPE INT");
+    }
+
+    // ... SET DATA TYPE
+
+    // TODO: Remove when implemented
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotAlterColumnPKColumn() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
+        parseAndRun("ALTER TABLE a ALTER COLUMN aid SET DATA TYPE INT");
+    }
+
+    // TODO: Remove when implemented
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotAlterColumnGroupingColumn() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE i DROP COLUMN oid");
+    }
+
+    @Test
+    public void alterColumnSetDataTypeSingleTableGroupNoPK() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).colBigInt("x");
+        parseAndRun("ALTER TABLE a ALTER COLUMN x SET DATA TYPE varchar(32)");
+        expectColumnChanges("MODIFY:x->x");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "x MCOMPAT_ VARCHAR(255, UTF_8, UCS_BINARY) NOT NULL");
+        else
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "x varchar(32) NOT NULL"); // keeps NULL-ability
+    }
+
+    @Test
+    public void alterColumnSetDataTypeSingleTableGroup() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).colString("v1", 32, true).pk("aid");
+        parseAndRun("ALTER TABLE a ALTER COLUMN v1 SET DATA TYPE INT");
+        expectColumnChanges("MODIFY:v1->v1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "v1 MCOMPAT_ INT(11) NULL", "PRIMARY(aid)");
+        else
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "v1 int NULL", "PRIMARY(aid)");
+    }
+
+    @Test
+    public void alterColumnSetDataTypeRootOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE c ALTER COLUMN c_c SET DATA TYPE DECIMAL(5,2)");
+        expectColumnChanges("MODIFY:c_c->c_c");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "c_c MCOMPAT_ DECIMAL(5, 2) NULL", "PRIMARY(id)");
+        else
+            expectFinalTable(C_NAME, "id bigint NOT NULL", "c_c decimal(5, 2) NULL", "PRIMARY(id)");
+        expectUnchangedTables(O_NAME, I_NAME, A_NAME);
+    }
+
+    @Test
+    public void alterColumnSetDataTypeMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE o ALTER COLUMN o_o SET DATA TYPE varchar(10)");
+        expectColumnChanges("MODIFY:o_o->o_o");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21)", "cid MCOMPAT_ BIGINT(21)", "o_o MCOMPAT_ VARCHAR(255, UTF_8, UCS_BINARY) NULL",
+                             "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+        else
+            expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "o_o varchar(10) NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+        expectUnchangedTables(C_NAME, I_NAME, A_NAME);
+    }
+
+    @Test
+    public void alterColumnSetDataTypeLeafOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE i ALTER COLUMN i_i SET DATA TYPE double");
+        expectColumnChanges("MODIFY:i_i->i_i");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21)", "oid MCOMPAT_ BIGINT(21)", "i_i MCOMPAT_ DOUBLE(-1, -1) NULL",
+                             "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+        else
+            expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "i_i double NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+        expectUnchangedTables(C_NAME, O_NAME, A_NAME);
+    }
+
+    //
+    // ADD GROUPING FK
     //
 
     @Test(expected=NoSuchTableException.class)
@@ -296,7 +608,7 @@ public class AlterTableDDLTest {
 
 
     //
-    // DROP
+    // DROP GROUPING FK
     //
 
     @Test(expected=NoSuchTableException.class)
@@ -518,12 +830,58 @@ public class AlterTableDDLTest {
         assertEquals(t2 + " parent name", t1, parentName);
     }
 
+    private void expectColumnChanges(String... changes) {
+        assertEquals("Column changes", Arrays.asList(changes).toString(), ddlFunctions.columnChangeDesc.toString());
+    }
+
+    private void expectIndexChanges(String... changes) {
+        assertEquals("Index changes", Arrays.asList(changes).toString(), ddlFunctions.indexChangeDesc.toString());
+    }
+
+    private void expectFinalTable(TableName table, String... parts) {
+        String expected = table.toString() + "(" + Strings.join(Arrays.asList(parts), ", ") + ")";
+        assertEquals("Final structure for " + table, expected, ddlFunctions.newTableDesc);
+    }
+
+    private void expectUnchangedTables(TableName... names) {
+        for(TableName name : names) {
+            String expected = name.toString();
+            if(Types3Switch.ON) {
+                if(name == C_NAME) {
+                    expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, c_c MCOMPAT_ BIGINT(21) NULL, PRIMARY(id))";
+                } else if(name == O_NAME) {
+                    expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, cid MCOMPAT_ BIGINT(21) NULL, o_o MCOMPAT_ BIGINT(21) NULL, __akiban_fk1(cid), PRIMARY(id), join(cid->id))";
+                } else if(name == I_NAME) {
+                    expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, oid MCOMPAT_ BIGINT(21) NULL, i_i MCOMPAT_ BIGINT(21) NULL, __akiban_fk2(oid), PRIMARY(id), join(oid->id))";
+                } else if(name == A_NAME) {
+                    expected += "(id MCOMPAT_ BIGINT(21) NOT NULL, other_id MCOMPAT_ BIGINT(21) NULL, PRIMARY(id))";
+                } else {
+                    fail("Unknown table: " + name);
+                }
+            } else {
+                if(name == C_NAME) {
+                    expected += "(id bigint NOT NULL, c_c bigint NULL, PRIMARY(id))";
+                } else if(name == O_NAME) {
+                    expected += "(id bigint NOT NULL, cid bigint NULL, o_o bigint NULL, __akiban_fk1(cid), PRIMARY(id), join(cid->id))";
+                } else if(name == I_NAME) {
+                    expected += "(id bigint NOT NULL, oid bigint NULL, i_i bigint NULL, __akiban_fk2(oid), PRIMARY(id), join(oid->id))";
+                } else if(name == A_NAME) {
+                    expected += "(id bigint NOT NULL, other_id bigint NULL, PRIMARY(id))";
+                } else {
+                    fail("Unknown table: " + name);
+                }
+            }
+            UserTable table = ddlFunctions.ais.getUserTable(name);
+            String actual = simpleDescribeTable(table);
+            assertEquals(name + " was unchanged", expected, actual);
+        }
+    }
 
     private void buildCOIJoinedAUnJoined() {
-        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
-        builder.userTable(O_NAME).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
-        builder.userTable(I_NAME).colBigInt("id", false).colBigInt("oid").pk("id").joinTo(O_NAME).on("oid", "id");
-        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").pk("id");
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("c_c", true).pk("id");
+        builder.userTable(O_NAME).colBigInt("id", false).colBigInt("cid", true).colBigInt("o_o", true).pk("id").joinTo(SCHEMA, "c", "fk1").on("cid", "id");
+        builder.userTable(I_NAME).colBigInt("id", false).colBigInt("oid", true).colBigInt("i_i", true).pk("id").joinTo(SCHEMA, "o", "fk2").on("oid", "id");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id", true).pk("id");
     }
 
     private static class TableNamePair {
@@ -545,9 +903,14 @@ public class AlterTableDDLTest {
 
     private static class DDLFunctionsMock extends DDLFunctionsMockBase {
         final AkibanInformationSchema ais;
+        // While "slow path" GFK changes still in place
         final List<TableName> createdTables = new ArrayList<TableName>();
         final List<TableName> droppedTables = new ArrayList<TableName>();
         final List<TableNamePair> renamedTables = new ArrayList<TableNamePair>();
+        // Alters going through proper sequence
+        final List<String> columnChangeDesc = new ArrayList<String>();
+        final List<String> indexChangeDesc = new ArrayList<String>();
+        String newTableDesc = "";
 
         public DDLFunctionsMock(AkibanInformationSchema ais) {
             this.ais = ais;
@@ -588,6 +951,18 @@ public class AlterTableDDLTest {
         }
 
         @Override
+        public void alterTable(Session session, TableName tableName, UserTable newDefinition,
+                               List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
+            for(AlterTableChange change : columnChanges) {
+                columnChangeDesc.add(change.toString());
+            }
+            for(AlterTableChange change : indexChanges) {
+                indexChangeDesc.add(change.toString());
+            }
+            newTableDesc = simpleDescribeTable(newDefinition);
+        }
+
+        @Override
         public AkibanInformationSchema getAIS(Session session) {
             return ais;
         }
@@ -609,5 +984,43 @@ public class AlterTableDDLTest {
 
     private static TableName tn(String schema, String table) {
         return new TableName(schema, table);
+    }
+
+    private static String simpleDescribeTable(UserTable table) {
+        // Trivial description: ordered columns and indexes
+        StringBuilder sb = new StringBuilder();
+        sb.append(table.getName()).append('(');
+        boolean first = true;
+        for(Column col : table.getColumns()) {
+            sb.append(first ? "" : ", ").append(col.getName()).append(' ');
+            first = false;
+            if(Types3Switch.ON) {
+                sb.append(col.tInstance().toString());
+            } else {
+                sb.append(col.getTypeDescription());
+                sb.append(col.getNullable() ? " NULL" : " NOT NULL");
+            }
+        }
+        for(Index index : table.getIndexes()) {
+            sb.append(", ").append(index.getIndexName().getName()).append('(');
+            first = true;
+            for(IndexColumn indexColumn : index.getKeyColumns()) {
+                sb.append(first ? "" : ',').append(indexColumn.getColumn().getName());
+                first = false;
+            }
+            sb.append(')');
+        }
+        Join join = table.getParentJoin();
+        if(join != null) {
+            sb.append(", join(");
+            first = true;
+            for(JoinColumn joinColumn : join.getJoinColumns()) {
+                sb.append(first ? "" : ", ").append(joinColumn.getChild().getName()).append("->").append(joinColumn.getParent().getName());
+                first = false;
+            }
+            sb.append(")");
+        }
+        sb.append(')');
+        return sb.toString();
     }
 }

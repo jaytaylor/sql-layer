@@ -145,7 +145,7 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             throw new UnsupportedOperationException();
         }
     }

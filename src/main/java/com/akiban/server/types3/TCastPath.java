@@ -38,16 +38,19 @@ import java.util.List;
 public final class TCastPath {
 
     public static TCastPath create(TClass first, TClass second, TClass third, TClass... rest) {
-        return new TCastPath(first, second, third, rest);
-    }
-
-    private TCastPath(TClass first, TClass second, TClass third, TClass[] rest) {
         TClass[] all = new TClass[rest.length + 3];
         all[0] = first;
         all[1] = second;
         all[2] = third;
         System.arraycopy(rest, 0, all, 3, rest.length);
-        list = Collections.unmodifiableList(Arrays.asList(all));
+        List<? extends TClass> list = Arrays.asList(all);
+        return new TCastPath(list);
+    }
+
+    private TCastPath(List<? extends TClass> list) {
+        if (list.size() < 3)
+            throw new IllegalArgumentException("cast paths must contain at least three elements: " + list);
+        this.list = Collections.unmodifiableList(list);
     }
 
     public List<? extends TClass> getPath() {

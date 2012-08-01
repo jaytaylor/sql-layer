@@ -50,7 +50,7 @@ public class SequenceDDL {
                 createSequence.getStepValue(), 
                 createSequence.getMinValue(), 
                 createSequence.getMaxValue(), 
-                createSequence.isAtomic());
+                createSequence.isCycle());
         
         Sequence sequence = builder.akibanInformationSchema().getSequence(sequenceName);
         ddlFunctions.createSequence(session, sequence);
