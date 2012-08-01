@@ -138,7 +138,7 @@ public class SwingConsole extends JFrame implements WindowListener
             else if (osName.startsWith("Window"))
                 RUN_PSQL_CMD = new String[]{"cmd.exe /c start psql -h localhost -p15432 "};
             else // assuming unix-based system
-                RUN_PSQL_CMD = new String[] {"xterm -e psql -h localhost -p15432"};
+                RUN_PSQL_CMD = new String[]{"xterm", "-e", "psql -h localhost -p15432"};
 
             runPsql.addActionListener(new ActionListener()
             {
