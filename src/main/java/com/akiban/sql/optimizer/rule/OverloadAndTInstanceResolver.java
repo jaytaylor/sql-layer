@@ -200,7 +200,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         tInstance.setNullable(n.getSQLtype().isNullable());
                     DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
                     n.setSQLtype(newDtd);
-
                 }
             }
             return n;
