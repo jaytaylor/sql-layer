@@ -130,7 +130,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        super(adapter.persistit().getKey());
+        reset(adapter.persistit().getKey());
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         int nfields = indexRowType.nFields();

@@ -23,11 +23,28 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.types3.mcompat.mcasts;
 
-package com.akiban.server.types3.service;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TCastBase;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Constantness;
 
-import java.util.Collection;
+public final class Cast_From_Float {
+    public static final TCast TO_DOUBLE_UNSIGNED = new TCastBase(MApproximateNumber.FLOAT, MApproximateNumber.FLOAT_UNSIGNED, true) {
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            float orig = source.getFloat();
+            if (orig < 0) {
+                context.reportTruncate(Float.toString(orig), "0");
+                orig = 0; // TODO or is it null?
+            }
+            target.putFloat(orig);
+        }
+    };
 
-public interface InstanceFinder {
-    <T> Collection<? extends T> find(Class<? extends T> targetClass);
+    private Cast_From_Float() {}
 }

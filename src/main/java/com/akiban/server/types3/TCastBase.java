@@ -35,7 +35,17 @@ public abstract class TCastBase implements TCast
     private final TClass targetClass;
     private final boolean isAutomatic;
     private final Constantness constness;
-    
+
+    protected TCastBase (TClass sourceClass, TClass targetClass)
+    {
+        this(sourceClass, targetClass, false, Constantness.UNKNOWN);
+    }
+
+    protected TCastBase (TClass sourceClass, TClass targetClass, boolean isAutomatic)
+    {
+        this(sourceClass, targetClass, isAutomatic, Constantness.UNKNOWN);
+    }
+
     protected TCastBase (TClass sourceClass, TClass targetClass, boolean isAutomatic, Constantness constness)
     {
         this.sourceClass = sourceClass;

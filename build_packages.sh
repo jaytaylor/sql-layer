@@ -63,7 +63,8 @@ cp ${common_dir}/* packages-common/
 
 # Add akiban-client tools via `bzr root`/target/akiban-client-tools
 tools_branch="lp:akiban-client-tools"
-pushd target && bzr branch ${tools_branch} && pushd akiban-client-tools
+pushd target && rm -rf akiban-client-tools && \
+    bzr branch ${tools_branch} && pushd akiban-client-tools
 mvn  -Dmaven.test.skip.exec clean install
 
 # Linux and Mac
@@ -103,6 +104,28 @@ elif [ ${platform} == "redhat" ]; then
     cat ${PWD}/redhat/akiban-server.spec | sed "9,9s/REVISION/${bzr_revno}/g" > ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     sed -i "10,10s/EPOCH/${epoch}/g" ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
+elif [ ${platform} == "binary" ]; then
+    # For releases only
+    # Expects the ${release} to be defined in the env, i.e. through Jenkins
+    if [ -z "$release" ]; then
+        echo "No release number defined. Define the \$release environmental variable."; exit 1
+    fi
+    
+    BINARY_NAME="akiban-server-${release}"
+    BINARY_TAR_NAME="${BINARY_NAME}.tar.gz"
+    
+    mkdir -p ${BINARY_NAME}
+    mkdir -p ${BINARY_NAME}/lib
+    mkdir -p ${BINARY_NAME}/bin
+    cp ./target/akiban-server-*-jar-with*.jar ${BINARY_NAME}/lib
+    cp -R ./conf ${BINARY_NAME}/
+    cp ./bin/akserver ${BINARY_NAME}/bin
+    cp ./bin/akserver.cmd ${BINARY_NAME}/bin
+    cp packages-common/akdump ${BINARY_NAME}/bin
+    cp packages-common/akiban-client-*-SNAPSHOT.jar ${BINARY_NAME}/lib
+    cp packages-common/postgresql.jar ${BINARY_NAME}/lib
+    cp ${license} ${BINARY_NAME}/LICENSE.txt
+    tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
     server_jar=target/akiban-server-1.4.0-SNAPSHOT-jar-with-dependencies.jar
     akdump_jar=packages-common/akiban-client-tools-1.3.1-SNAPSHOT.jar
