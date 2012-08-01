@@ -35,16 +35,99 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
+import com.akiban.server.types3.aksql.AkBundle;
+import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.AkibanAppender;
 
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-public abstract class IntervalBase extends TClassBase {
+public class AkInterval extends TClassBase {
+
+    private static TClassFormatter monthsFormatter = new TClassFormatter() {
+        @Override
+        public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            long months = source.getInt64();
+
+            long years = months / 12;
+            months -= (years * 12);
+
+            Formatter formatter = new Formatter(out.getAppendable());
+            formatter.format("INTERVAL '%d-%d", years, months);
+        }
+    };
+
+    private static TClassFormatter secondsFormatter = new TClassFormatter() {
+        @Override
+        public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            long micros = rawValueAs(source, TimeUnit.MICROSECONDS);
+
+            long days = rawValueAs(micros, TimeUnit.DAYS);
+            micros -= TimeUnit.DAYS.toMicros(days);
+
+            long hours = rawValueAs(micros, TimeUnit.HOURS);
+            micros -= TimeUnit.HOURS.toMicros(hours);
+
+            long minutes = rawValueAs(micros, TimeUnit.MINUTES);
+            micros -= TimeUnit.MINUTES.toMicros(minutes);
+
+            long seconds = rawValueAs(micros, TimeUnit.SECONDS);
+            micros -= TimeUnit.SECONDS.toMicros(seconds);
+
+            Formatter formatter = new Formatter(out.getAppendable());
+            formatter.format("INTERVAL '%d %d:%d:%d.%05d", days, hours, minutes, seconds, micros);
+        }
+    };
+
+    public static AkInterval DAYS = new AkInterval(
+            AkBundle.INSTANCE.id(),
+            "interval months",
+            AkCategory.DATE_TIME,
+            MonthsAttrs.class,
+            monthsFormatter,
+            1,
+            1,
+            8,
+            PUnderlying.INT_64,
+            MonthsAttrs.FORMAT,
+            AkIntervalMonthsFormat.values());
+
+    public static AkInterval SECONDS = new AkInterval(
+            AkBundle.INSTANCE.id(),
+            "interval seconds",
+            AkCategory.DATE_TIME,
+            SecondsAttrs.class,
+            secondsFormatter,
+            1,
+            1,
+            8,
+            PUnderlying.INT_64,
+            SecondsAttrs.FORMAT,
+            AkIntervalSecondsFormat.values()
+    );
+
+    public static long rawValueAs(PValueSource source, TimeUnit as) {
+        return rawValueAs(source.getInt64(), as);
+    }
+
+    public static long rawValueAs(long secondsIntervalRaw, TimeUnit as) {
+        return as.convert(secondsIntervalRaw, AkIntervalSecondsFormat.UNDERLYING_UNIT);
+    }
+
+    private enum SecondsAttrs implements Attribute {
+        FORMAT
+    }
+
+    private enum MonthsAttrs implements Attribute {
+        FORMAT
+    }
 
     @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
@@ -101,13 +184,13 @@ public abstract class IntervalBase extends TClassBase {
         return result;
     }
 
-    <A extends Enum<A> & Attribute> IntervalBase(TBundleID bundle, String name,
-                                                           Enum<?> category, Class<A> enumClass,
-                                                           TClassFormatter formatter,
-                                                           int internalRepVersion, int sVersion, int sSize,
-                                                           PUnderlying pUnderlying,
-                                                           A formatAttribute,
-                                                           IntervalFormat[] formatters)
+    private <A extends Enum<A> & Attribute> AkInterval(TBundleID bundle, String name,
+                                               Enum<?> category, Class<A> enumClass,
+                                               TClassFormatter formatter,
+                                               int internalRepVersion, int sVersion, int sSize,
+                                               PUnderlying pUnderlying,
+                                               A formatAttribute,
+                                               IntervalFormat[] formatters)
     {
         super(bundle, name, category, enumClass, formatter, internalRepVersion, sVersion, sSize, pUnderlying,
                 createParser(formatAttribute, formatters));

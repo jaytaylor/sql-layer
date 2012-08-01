@@ -27,8 +27,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.aksql.aktypes.AkIntervalMonths;
-import com.akiban.server.types3.aksql.aktypes.AkIntervalSeconds;
+import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
@@ -332,12 +331,12 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
             oid = TypeOid.INTERVAL_TYPE_OID.getOid();
             akType = AkType.INTERVAL_MILLIS;
-            tInstance = AkIntervalSeconds.SECONDS.tInstanceFrom(type);
+            tInstance = AkInterval.SECONDS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
             oid = TypeOid.INTERVAL_TYPE_OID.getOid();
             akType = AkType.INTERVAL_MONTH;
-            tInstance = AkIntervalMonths.DAYS.tInstanceFrom(type);
+            tInstance = AkInterval.DAYS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
             oid = TypeOid.BYTEA_TYPE_OID.getOid();

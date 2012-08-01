@@ -80,7 +80,7 @@ enum AkIntervalMonthsFormat implements IntervalFormat {
                 all[flags++] = true;
                 compiled.append("(\\d+)");
                 break;
-            case 'N':
+            case 'M':
                 all[flags++] = false;
                 compiled.append("(\\d+)");
                 break;
