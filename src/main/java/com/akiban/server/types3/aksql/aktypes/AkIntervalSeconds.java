@@ -44,6 +44,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
+import com.google.common.math.LongMath;
 
 import java.util.ArrayList;
 import java.util.Formatter;
@@ -57,17 +58,19 @@ import java.util.regex.Pattern;
 public final class AkIntervalSeconds extends TClassBase {
 
     /**
-     * An SECONDS interval. Its underlying INT_64 represents microseconds.
+     * An SECONDS interval. Its underlying INT_64 represents microseconds, but you should not rely on that, because
+     * it may change (for instance, to nanoseconds).  Instead, use #rawValueAs to get a PValueSource's values in
+     * whatever unit you want.
      */
     public static TClass SECONDS = new AkIntervalSeconds();
 
     private static TimeUnit SECONDS_SOURCE_UNIT = TimeUnit.MICROSECONDS;
 
-    public static long secondsIntervalAs(PValueSource source, TimeUnit as) {
-        return secondsIntervalAs(source.getInt64(), as);
+    public static long rawValueAs(PValueSource source, TimeUnit as) {
+        return rawValueAs(source.getInt64(), as);
     }
 
-    public static long secondsIntervalAs(long secondsIntervalRaw, TimeUnit as) {
+    public static long rawValueAs(long secondsIntervalRaw, TimeUnit as) {
         return as.convert(secondsIntervalRaw, SECONDS_SOURCE_UNIT);
     }
 
@@ -82,7 +85,7 @@ public final class AkIntervalSeconds extends TClassBase {
     }
 
     private enum SecondsAttrs implements Attribute {
-        LITERAL_FORMAT
+        FORMAT
     }
 
     private enum LiteralFormat {
@@ -129,10 +132,11 @@ public final class AkIntervalSeconds extends TClassBase {
                     // how many digits short of the full 8 are we? e.g., "123" is 5 short. Need to multiply it
                     // by shortBy*10 to get to nanos
                     for (int shortBy= (8 - group.length()); shortBy > 0; --shortBy)
-                        parsed *= 10;
+                        parsed = LongMath.checkedMultiply(parsed, 10L);
                     parsedUnit = TimeUnit.NANOSECONDS;
                 }
-                micros += SECONDS_SOURCE_UNIT.convert(parsed, parsedUnit);
+                long parsedMicros = SECONDS_SOURCE_UNIT.convert(parsed, parsedUnit);
+                micros = LongMath.checkedAdd(micros, parsedMicros);
             }
 
             return isNegative ? -micros : micros;
@@ -182,7 +186,7 @@ public final class AkIntervalSeconds extends TClassBase {
 
     @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
-        if (attributeIndex == SecondsAttrs.LITERAL_FORMAT.ordinal() )
+        if (attributeIndex == SecondsAttrs.FORMAT.ordinal() )
             attributeToString(LiteralFormat.values(), value, output);
         else
             super.attributeToString(attributeIndex, value,  output);
@@ -198,7 +202,7 @@ public final class AkIntervalSeconds extends TClassBase {
     @Override
     public void putSafety(TExecutionContext context, TInstance sourceInstance, PValueSource sourceValue,
                           TInstance targetInstance, PValueTarget targetValue) {
-        throw new UnsupportedOperationException(); // TODO
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -213,7 +217,7 @@ public final class AkIntervalSeconds extends TClassBase {
 
     @Override
     protected void validate(TInstance instance) {
-        int literalFormatId = instance.attribute(SecondsAttrs.LITERAL_FORMAT);
+        int literalFormatId = instance.attribute(SecondsAttrs.FORMAT);
         if ( (literalFormatId < 0) || (literalFormatId >= LiteralFormat.values().length) )
             throw new IllegalNameException("unrecognized literal format ID: " + literalFormatId);
     }
@@ -240,21 +244,18 @@ public final class AkIntervalSeconds extends TClassBase {
     private static TClassFormatter formatter = new TClassFormatter() {
         @Override
         public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+            long micros = rawValueAs(source, TimeUnit.MICROSECONDS);
 
-            assert SECONDS_SOURCE_UNIT == TimeUnit.MICROSECONDS : SECONDS_SOURCE_UNIT;
-
-            long micros = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
-
-            long days = secondsIntervalAs(micros, TimeUnit.DAYS);
+            long days = rawValueAs(micros, TimeUnit.DAYS);
             micros -= TimeUnit.DAYS.toMicros(days);
 
-            long hours = secondsIntervalAs(micros, TimeUnit.HOURS);
+            long hours = rawValueAs(micros, TimeUnit.HOURS);
             micros -= TimeUnit.HOURS.toMicros(hours);
 
-            long minutes = secondsIntervalAs(micros, TimeUnit.MINUTES);
+            long minutes = rawValueAs(micros, TimeUnit.MINUTES);
             micros -= TimeUnit.MINUTES.toMicros(minutes);
 
-            long seconds = secondsIntervalAs(micros, TimeUnit.SECONDS);
+            long seconds = rawValueAs(micros, TimeUnit.SECONDS);
             micros -= TimeUnit.SECONDS.toMicros(seconds);
 
             Formatter formatter = new Formatter(out.getAppendable());
@@ -274,7 +275,7 @@ public final class AkIntervalSeconds extends TClassBase {
     };
 
     private static LiteralFormat literalFormat(TInstance instance) {
-        int literalFormatId = instance.attribute(SecondsAttrs.LITERAL_FORMAT);
+        int literalFormatId = instance.attribute(SecondsAttrs.FORMAT);
         return LiteralFormat.values()[literalFormatId];
     }
 
