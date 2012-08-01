@@ -184,4 +184,9 @@ public abstract class DelegatingStore<S extends Store> implements Store {
     public void setDeferIndexes(boolean defer) {
         delegate.setDeferIndexes(defer);
     }
+
+    @Override
+    public void truncateIndex(Session session, Collection<? extends Index> indexes) {
+        delegate.truncateIndex(session, indexes);
+    }
 }

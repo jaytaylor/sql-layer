@@ -126,7 +126,7 @@ public class PersistitAdapter extends StoreAdapter
     public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
-        if (rowDef != rowDefNewRow) {
+        if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
@@ -135,7 +135,7 @@ public class PersistitAdapter extends StoreAdapter
         try {
             // For Update row, the new row (value being inserted) does not 
             // need the default value (including identity set)
-            RowData newRowData = oldRowData(rowDef, newRow, rowDataCreator(usePValues));
+            RowData newRowData = oldRowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
             store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (InvalidOperationException e) {
