@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContext.NotificationLevel;
 import com.akiban.server.error.ErrorCode;
@@ -129,6 +130,11 @@ public final class TExecutionContext {
     public String getSystemUser()
     {
         return queryContext.getSystemUser();
+    }
+    
+    public long sequenceNextValue (TableName sequenceName) 
+    {
+        return queryContext.sequenceNextValue(sequenceName);
     }
     
     public void reportOverflow(String msg)

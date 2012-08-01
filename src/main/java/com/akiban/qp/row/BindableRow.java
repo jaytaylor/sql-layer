@@ -58,7 +58,7 @@ public abstract class BindableRow {
             ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", pExpressions.size());
             for (TPreparedExpression expression : pExpressions) {
                 TPreptimeValue tpv = expression.evaluateConstant(queryContext);
-                if (tpv.value() == null)
+                if (tpv == null || tpv.value() == null)
                     return new BindingExpressions(rowType, null, pExpressions);
             }
             newVals = new PExpressionEvaluator(pExpressions, queryContext);
