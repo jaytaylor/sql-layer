@@ -68,6 +68,7 @@ import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;
+import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
@@ -126,6 +127,18 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            if (n instanceof ResultSet) {
+                ResultSet rs = (ResultSet) n;
+                for (ResultSet.ResultField field : rs.getFields()) {
+                    DataTypeDescriptor sourceDtd = field.getSourceExpression().getSQLtype();
+                    DataTypeDescriptor fieldDtd = field.getSQLtype();
+                    if (!sourceDtd.equals(fieldDtd)) {
+                        sourceDtd = nodeToSqlType(field.getSourceExpression());
+                        if (sourceDtd != null)
+                            field.setSQLtype(sourceDtd);
+                    }
+                }
+            }
             return true;
         }
 
@@ -172,16 +185,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
 
             n = folder.foldConstants(n);
-            This shouldn't go here.  We need it to happen in a more comprehensive way. For instance, ResultSet's fields
-                    need to change if their inputs change
-            TPreptimeValue tpv = n.getPreptimeValue();
-            if (tpv != null) {
-                TInstance tInstance = tpv.instance();
-                if (tInstance != null) {
-                    DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
-                    n.setSQLtype(newDtd);
-                }
-            }
+            DataTypeDescriptor newDtd = nodeToSqlType(n);
+            if (newDtd != null)
+                n.setSQLtype(newDtd);
             
             return n;
         }
@@ -422,6 +428,18 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             throw new RuntimeException(message); // TODO what actual error type?
         }
 
+    }
+
+    private static DataTypeDescriptor nodeToSqlType(ExpressionNode n) {
+        DataTypeDescriptor newDtd = null;
+        TPreptimeValue tpv = n.getPreptimeValue();
+        if (tpv != null) {
+            TInstance tInstance = tpv.instance();
+            if (tInstance != null) {
+                 newDtd = tInstance.dataTypeDescriptor();
+            }
+        }
+        return newDtd;
     }
 
     private static ExpressionNode boolExpr(ExpressionNode expression) {
