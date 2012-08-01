@@ -160,6 +160,7 @@ public class ExpressionTypes
             String coll = att.getCollation();
             if (coll != null)
                 return AkCollatorFactory.getAkCollator(coll);
+            return AkCollatorFactory.UCS_BINARY_COLLATOR;
         }
         return null;
     }
