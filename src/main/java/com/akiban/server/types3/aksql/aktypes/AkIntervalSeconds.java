@@ -76,10 +76,10 @@ public final class AkIntervalSeconds extends TClassBase {
 
     public static TInstance tInstanceFrom(DataTypeDescriptor type) {
         TypeId typeId = type.getTypeId();
-        LiteralFormat literalFormat = typeIdToLiteralFormat.get(typeId);
-        if (literalFormat == null)
+        SecondsFormat format = typeIdToFormat.get(typeId);
+        if (format == null)
             throw new IllegalArgumentException("couldn't convert " + type + " to " + SECONDS);
-        TInstance result = SECONDS.instance(literalFormat.ordinal());
+        TInstance result = SECONDS.instance(format.ordinal());
         result.setNullable(type.isNullable());
         return result;
     }
@@ -88,7 +88,7 @@ public final class AkIntervalSeconds extends TClassBase {
         FORMAT
     }
 
-    private enum LiteralFormat {
+    private enum SecondsFormat {
         DAY("D", TypeId.INTERVAL_DAY_ID),
         HOUR("H", TypeId.INTERVAL_HOUR_ID),
         MINUTE("M", TypeId.INTERVAL_MINUTE_ID),
@@ -101,7 +101,7 @@ public final class AkIntervalSeconds extends TClassBase {
         MINUTE_SECOND("M:S", TypeId.INTERVAL_MINUTE_SECOND_ID)
         ;
 
-        public long parseToMicros(String string) {
+        public long parseToRaw(String string) {
             boolean isNegative;
             if (string.charAt(0) == '-') {
                 isNegative = true;
@@ -142,7 +142,7 @@ public final class AkIntervalSeconds extends TClassBase {
             return isNegative ? -micros : micros;
         }
 
-        private LiteralFormat(String pattern, TypeId typeId) {
+        private SecondsFormat(String pattern, TypeId typeId) {
             StringBuilder compiled = new StringBuilder();
             List<TimeUnit> timeUnits = new ArrayList<TimeUnit>();
             for (int i = 0, len = pattern.length(); i < len; ++i) {
@@ -187,7 +187,7 @@ public final class AkIntervalSeconds extends TClassBase {
     @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         if (attributeIndex == SecondsAttrs.FORMAT.ordinal() )
-            attributeToString(LiteralFormat.values(), value, output);
+            attributeToString(SecondsFormat.values(), value, output);
         else
             super.attributeToString(attributeIndex, value,  output);
     }
@@ -195,7 +195,7 @@ public final class AkIntervalSeconds extends TClassBase {
     @Override
     public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         Boolean isNullable = instance.nullability(); // on separate line to make NPE easier to catch
-        TypeId typeId =  literalFormat(instance).typeId;
+        TypeId typeId = formatFor(instance).typeId;
         return new DataTypeDescriptor(typeId, isNullable);
     }
 
@@ -207,7 +207,7 @@ public final class AkIntervalSeconds extends TClassBase {
 
     @Override
     public TInstance instance() {
-        return instance(LiteralFormat.SECOND.ordinal());
+        return instance(SecondsFormat.SECOND.ordinal());
     }
 
     @Override
@@ -217,9 +217,9 @@ public final class AkIntervalSeconds extends TClassBase {
 
     @Override
     protected void validate(TInstance instance) {
-        int literalFormatId = instance.attribute(SecondsAttrs.FORMAT);
-        if ( (literalFormatId < 0) || (literalFormatId >= LiteralFormat.values().length) )
-            throw new IllegalNameException("unrecognized literal format ID: " + literalFormatId);
+        int formatId = instance.attribute(SecondsAttrs.FORMAT);
+        if ( (formatId < 0) || (formatId >= SecondsFormat.values().length) )
+            throw new IllegalNameException("unrecognized format ID: " + formatId);
     }
 
     @Override
@@ -267,25 +267,25 @@ public final class AkIntervalSeconds extends TClassBase {
         @Override
         public void parse(TExecutionContext context, PValueSource in, PValueTarget out) {
             TInstance instance = context.outputTInstance();
-            LiteralFormat literalFormat = literalFormat(instance);
+            SecondsFormat format = formatFor(instance);
             String inString = in.getString();
-            long raw = literalFormat.parseToMicros(inString);
+            long raw = format.parseToRaw(inString);
             out.putInt64(raw);
         }
     };
 
-    private static LiteralFormat literalFormat(TInstance instance) {
-        int literalFormatId = instance.attribute(SecondsAttrs.FORMAT);
-        return LiteralFormat.values()[literalFormatId];
+    private static SecondsFormat formatFor(TInstance instance) {
+        int format = instance.attribute(SecondsAttrs.FORMAT);
+        return SecondsFormat.values()[format];
     }
 
-    private static final Map<TypeId,LiteralFormat> typeIdToLiteralFormat = createTypeIdToLiteralFormatMap();
+    private static final Map<TypeId,SecondsFormat> typeIdToFormat = createTypeIdToFormatMap();
 
-    private static Map<TypeId, LiteralFormat> createTypeIdToLiteralFormatMap() {
-        LiteralFormat[] values = LiteralFormat.values();
-        Map<TypeId, LiteralFormat> map = new HashMap<TypeId, LiteralFormat>(values.length);
-        for (LiteralFormat literalFormat : values)
-            map.put(literalFormat.typeId, literalFormat);
+    private static Map<TypeId, SecondsFormat> createTypeIdToFormatMap() {
+        SecondsFormat[] values = SecondsFormat.values();
+        Map<TypeId, SecondsFormat> map = new HashMap<TypeId, SecondsFormat>(values.length);
+        for (SecondsFormat format : values)
+            map.put(format.typeId, format);
         return map;
     }
 }

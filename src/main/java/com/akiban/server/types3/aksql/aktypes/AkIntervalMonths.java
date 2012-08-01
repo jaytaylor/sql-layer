@@ -147,7 +147,7 @@ public final class AkIntervalMonths extends TClassBase {
     @Override
     public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         Boolean isNullable = instance.nullability(); // on separate line to make NPE easier to catch
-        TypeId typeId =  formatFor(instance).typeId;
+        TypeId typeId = formatFor(instance).typeId;
         return new DataTypeDescriptor(typeId, isNullable);
     }
 
