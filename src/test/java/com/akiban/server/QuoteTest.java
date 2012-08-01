@@ -99,12 +99,12 @@ public class QuoteTest {
 
     @Test
     public void writeBytesWithSnowman_JSON() {
-        doWriteBytesTest("very wintery ☃ string", "UTF-8", "very wintery ☃ string", Quote.JSON_QUOTE);
+        doWriteBytesTest("very wintery ☃ string", "UTF-8", "very wintery \\u2603 string", Quote.JSON_QUOTE);
     }
 
     @Test
     public void writeBytesJSONControlChars() {
-        doWriteBytesTest("very newline \n string", "UTF-8", "very newline \\u000a string", Quote.JSON_QUOTE);
+        doWriteBytesTest("very newline \n string", "UTF-8", "very newline \\n string", Quote.JSON_QUOTE);
     }
 
     @Test
