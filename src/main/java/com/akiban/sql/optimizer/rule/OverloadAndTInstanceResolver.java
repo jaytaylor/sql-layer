@@ -133,9 +133,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     DataTypeDescriptor sourceDtd = field.getSourceExpression().getSQLtype();
                     DataTypeDescriptor fieldDtd = field.getSQLtype();
                     if (!sourceDtd.equals(fieldDtd)) {
-                        sourceDtd = nodeToSqlType(field.getSourceExpression());
-                        if (sourceDtd != null)
-                            field.setSQLtype(sourceDtd);
+                        TPreptimeValue tpv = field.getSourceExpression().getPreptimeValue();
+                        if (tpv != null) {
+                            TInstance tInstance = tpv.instance();
+                            if (tInstance != null) {
+                                DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
+                                field.setSQLtype(newDtd);
+                            }
+                        }
                     }
                 }
             }
@@ -185,10 +190,19 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
 
             n = folder.foldConstants(n);
-            DataTypeDescriptor newDtd = nodeToSqlType(n);
-            if (newDtd != null)
-                n.setSQLtype(newDtd);
-// tinstance isn't nullable with columns. What else?
+            // Set nullability of TInstance if it hasn't been given explicitly
+            // At the same time, update the node's DataTypeDescriptor to match its TInstance
+            TPreptimeValue tpv = n.getPreptimeValue();
+            if (tpv != null) {
+                TInstance tInstance = tpv.instance();
+                if (tInstance != null) {
+                    if (tInstance.nullability() == null)
+                        tInstance.setNullable(n.getSQLtype().isNullable());
+                    DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
+                    n.setSQLtype(newDtd);
+
+                }
+            }
             return n;
         }
 
@@ -428,18 +442,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             throw new RuntimeException(message); // TODO what actual error type?
         }
 
-    }
-
-    private static DataTypeDescriptor nodeToSqlType(ExpressionNode n) {
-        DataTypeDescriptor newDtd = null;
-        TPreptimeValue tpv = n.getPreptimeValue();
-        if (tpv != null) {
-            TInstance tInstance = tpv.instance();
-            if (tInstance != null) {
-                 newDtd = tInstance.dataTypeDescriptor();
-            }
-        }
-        return newDtd;
     }
 
     private static ExpressionNode boolExpr(ExpressionNode expression) {

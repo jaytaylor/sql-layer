@@ -35,6 +35,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ArgumentValidation;
+import com.google.common.base.Objects;
 import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
@@ -163,7 +164,29 @@ public abstract class TClass {
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {
         if (instance0.typeClass() != this || instance1.typeClass() != this)
             throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);
-        return doPickInstance(instance0, instance1);
+
+        TInstance result = doPickInstance(instance0, instance1);
+
+        // set nullability
+        Boolean resultIsNullable = result.nullability();
+        final Boolean resultDesiredNullability;
+        Boolean leftIsNullable = instance0.nullability();
+        if (leftIsNullable == null) {
+            resultDesiredNullability = null;
+        }
+        else {
+            Boolean rightIsNullable = instance0.nullability();
+            resultDesiredNullability = (rightIsNullable == null)
+                    ? null
+                    : (leftIsNullable || rightIsNullable);
+        }
+        if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
+            // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
+            if ( (result == instance0) || (result == instance1) )
+                result = new TInstance(result);
+            result.setNullable(resultDesiredNullability);
+        }
+        return result;
     }
 
     public PUnderlying underlyingType() {
