@@ -332,12 +332,12 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
             oid = TypeOid.INTERVAL_TYPE_OID.getOid();
             akType = AkType.INTERVAL_MILLIS;
-            tInstance = AkIntervalSeconds.tInstanceFrom(type);
+            tInstance = AkIntervalSeconds.SECONDS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
             oid = TypeOid.INTERVAL_TYPE_OID.getOid();
             akType = AkType.INTERVAL_MONTH;
-            tInstance = AkIntervalMonths.tInstanceFrom(type);
+            tInstance = AkIntervalMonths.DAYS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
             oid = TypeOid.BYTEA_TYPE_OID.getOid();
