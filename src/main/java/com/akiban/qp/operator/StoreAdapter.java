@@ -86,6 +86,8 @@ public abstract class StoreAdapter
 
     public abstract long hash(ValueSource valueSource, AkCollator collator);
 
+    public abstract long hash(ValueSource valueSource, AkCollator collator);
+
     public final Session getSession() {
         return session;
     }

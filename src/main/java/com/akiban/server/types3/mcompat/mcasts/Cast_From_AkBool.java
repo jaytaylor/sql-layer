@@ -23,11 +23,22 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.types3.mcompat.mcasts;
 
-package com.akiban.server.types3.service;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TCastBase;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-import java.util.Collection;
-
-public interface InstanceFinder {
-    <T> Collection<? extends T> find(Class<? extends T> targetClass);
+public final class Cast_From_AkBool {
+    public static final TCast TO_VARCHAR = new TCastBase(AkBool.INSTANCE, MString.VARCHAR) {
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            String boolStr = Boolean.toString(source.getBoolean());
+            target.putString(boolStr, null);
+        }
+    };
 }
