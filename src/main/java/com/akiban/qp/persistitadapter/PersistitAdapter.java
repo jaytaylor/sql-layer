@@ -26,23 +26,23 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.rowdata.RowData;
@@ -53,17 +53,17 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
-
-import java.io.InterruptedIOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.InterruptedIOException;
 
 public class PersistitAdapter extends StoreAdapter
 {
@@ -125,7 +125,7 @@ public class PersistitAdapter extends StoreAdapter
     public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
-        if (rowDef != rowDefNewRow) {
+        if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
@@ -134,7 +134,7 @@ public class PersistitAdapter extends StoreAdapter
         try {
             // For Update row, the new row (value being inserted) does not 
             // need the default value (including identity set)
-            RowData newRowData = oldRowData(rowDef, newRow, rowDataCreator(usePValues));
+            RowData newRowData = oldRowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
             store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (InvalidOperationException e) {
@@ -200,6 +200,26 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
+    @Override
+    public long hash(ValueSource valueSource, AkCollator collator)
+    {
+        assert collator != null; // Caller should have hashed in this case
+        long hash;
+        Key key;
+        int depth;
+        if (valueSource instanceof PersistitKeyValueSource) {
+            PersistitKeyValueSource persistitKeyValueSource = (PersistitKeyValueSource) valueSource;
+            key = persistitKeyValueSource.key();
+            depth = persistitKeyValueSource.depth();
+        } else {
+            key = persistit.getKey();
+            collator.append(key, valueSource.getString());
+            depth = 0;
+        }
+        hash = keyHasher.hash(key, depth);
+        return hash;
+    }
+
     // PersistitAdapter interface
 
     public PersistitStore persistit()
@@ -209,7 +229,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public RowDef rowDef(int tableId)
     {
-        return persistit.getRowDefCache().getRowDef(tableId);
+        return schema.ais().getUserTable(tableId).rowDef();
     }
 
     public NewRow newRow(RowDef rowDef)
@@ -258,14 +278,13 @@ public class PersistitAdapter extends StoreAdapter
             // row
             if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
                     rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
-                long value = rowDef.table().getColumn(i).getIdentityGenerator().nextValue(treeService);
+                long value = sequenceValue (rowDef.table().getColumn(i).getIdentityGenerator()); 
                 source = creator.createId(value);
             }
 
             if (creator.isNull(source)) {
                 if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
-                    Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
-                    long value = sequence.nextValue(treeService);
+                    long value = sequenceValue(rowDef.table().getColumn(i).getIdentityGenerator());
                     source = creator.createId(value);
                 }
                 // TODO: If not an identityGenerator, insert the column default value.
@@ -283,7 +302,7 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
-    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
+    public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
     {
         return
             indexRowType.index().isTableIndex()
@@ -376,7 +395,8 @@ public class PersistitAdapter extends StoreAdapter
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
     }
-    
+
+    // For use by this class
     private void rollbackIfNeeded(Exception e) {
         if((e instanceof DuplicateKeyException) || (e instanceof PersistitException) || isFromInterruption(e)) {
             Transaction txn = transaction();
@@ -386,10 +406,31 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
+    @Override
+    public long sequenceNextValue(TableName sequenceName) {
+        Sequence sequence = schema().ais().getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return sequenceValue (sequence);
+    }
+    
+    private long sequenceValue (Sequence sequence) {
+        try {
+            return sequence.nextValue(treeService);
+        } catch (PersistitException e) {
+            rollbackIfNeeded(e);
+            handlePersistitException(e);
+            assert false;
+            return 0;
+        }
+    }
+
     // Object state
 
     private final TreeService treeService;
     private final Store store;
     private final PersistitStore persistit;
     private final boolean withStepChanging;
+    private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 }

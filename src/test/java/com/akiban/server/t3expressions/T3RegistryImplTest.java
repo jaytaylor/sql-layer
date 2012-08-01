@@ -60,11 +60,11 @@ public final class T3RegistryImplTest {
         InstanceFinder finder = new Finder();
         Map<TClass, Map<TClass, TCast>> casts = T3RegistryServiceImpl.createCasts(finder.find(TClass.class), finder);
         checkAll(casts,
-                new SelfCastCheck(CLASS_A, CLASS_A),
-                new SelfCastCheck(CLASS_B, CLASS_B),
-                new SelfCastCheck(CLASS_C, CLASS_C),
-                new SelfCastCheck(CLASS_D, CLASS_D),
-                new SelfCastCheck(CLASS_E, CLASS_E));
+                new CastCheck(CLASS_A, CLASS_A),
+                new CastCheck(CLASS_B, CLASS_B),
+                new CastCheck(CLASS_C, CLASS_C),
+                new CastCheck(CLASS_D, CLASS_D),
+                new CastCheck(CLASS_E, CLASS_E));
     }
 
     @Test
@@ -77,18 +77,18 @@ public final class T3RegistryImplTest {
         T3RegistryServiceImpl.createDerivedCasts(casts, finder);
         checkAll(casts,
                 // self casts
-                new SelfCastCheck(CLASS_A, CLASS_A),
-                new SelfCastCheck(CLASS_B, CLASS_B),
-                new SelfCastCheck(CLASS_C, CLASS_C),
-                new SelfCastCheck(CLASS_D, CLASS_D),
-                new SelfCastCheck(CLASS_E, CLASS_E),
+                new CastCheck(CLASS_A, CLASS_A),
+                new CastCheck(CLASS_B, CLASS_B),
+                new CastCheck(CLASS_C, CLASS_C),
+                new CastCheck(CLASS_D, CLASS_D),
+                new CastCheck(CLASS_E, CLASS_E),
                 // single-step casts
-                new SelfCastCheck(CLASS_A, CLASS_B),
-                new SelfCastCheck(CLASS_B, CLASS_C),
-                new SelfCastCheck(CLASS_C, CLASS_D),
-                new SelfCastCheck(CLASS_D, CLASS_E),
+                new CastCheck(CLASS_A, CLASS_B),
+                new CastCheck(CLASS_B, CLASS_C),
+                new CastCheck(CLASS_C, CLASS_D),
+                new CastCheck(CLASS_D, CLASS_E),
                 // cast path
-                new SelfCastCheck(CLASS_A, CLASS_C)
+                new CastCheck(CLASS_A, CLASS_C)
         );
     }
 
@@ -103,25 +103,25 @@ public final class T3RegistryImplTest {
         T3RegistryServiceImpl.createDerivedCasts(casts, finder);
         checkAll(casts,
                 // self casts
-                new SelfCastCheck(CLASS_A, CLASS_A),
-                new SelfCastCheck(CLASS_B, CLASS_B),
-                new SelfCastCheck(CLASS_C, CLASS_C),
-                new SelfCastCheck(CLASS_D, CLASS_D),
-                new SelfCastCheck(CLASS_E, CLASS_E),
+                new CastCheck(CLASS_A, CLASS_A),
+                new CastCheck(CLASS_B, CLASS_B),
+                new CastCheck(CLASS_C, CLASS_C),
+                new CastCheck(CLASS_D, CLASS_D),
+                new CastCheck(CLASS_E, CLASS_E),
                 // cast path from A
-                new SelfCastCheck(CLASS_A, CLASS_B),
-                new SelfCastCheck(CLASS_A, CLASS_C),
-                new SelfCastCheck(CLASS_A, CLASS_D),
-                new SelfCastCheck(CLASS_A, CLASS_E),
+                new CastCheck(CLASS_A, CLASS_B),
+                new CastCheck(CLASS_A, CLASS_C),
+                new CastCheck(CLASS_A, CLASS_D),
+                new CastCheck(CLASS_A, CLASS_E),
                 // cast path from B
-                new SelfCastCheck(CLASS_B, CLASS_C),
-                new SelfCastCheck(CLASS_B, CLASS_D),
-                new SelfCastCheck(CLASS_B, CLASS_E),
+                new CastCheck(CLASS_B, CLASS_C),
+                new CastCheck(CLASS_B, CLASS_D),
+                new CastCheck(CLASS_B, CLASS_E),
                 // cast path from C
-                new SelfCastCheck(CLASS_C, CLASS_D),
-                new SelfCastCheck(CLASS_C, CLASS_E),
+                new CastCheck(CLASS_C, CLASS_D),
+                new CastCheck(CLASS_C, CLASS_E),
                 // cast path from D
-                new SelfCastCheck(CLASS_D, CLASS_E)
+                new CastCheck(CLASS_D, CLASS_E)
         );
     }
 
@@ -160,30 +160,30 @@ public final class T3RegistryImplTest {
         private Multimap<Class<?>,Object> instances = ArrayListMultimap.create();
     }
 
-    private void checkAll(Map<TClass, Map<TClass, TCast>> actual, SelfCastCheck... expected) {
+    private void checkAll(Map<TClass, Map<TClass, TCast>> actual, CastCheck... expected) {
         // translate the SelfCastCheck[] to a Map
-        Map<TClass,Map<TClass,SelfCastCheck>> expectedMap = tClassMap();
-        for (SelfCastCheck check : expected) {
-            Map<TClass, SelfCastCheck> map = expectedMap.get(check.source);
+        Map<TClass,Map<TClass,CastCheck>> expectedMap = tClassMap();
+        for (CastCheck check : expected) {
+            Map<TClass, CastCheck> map = expectedMap.get(check.source);
             if (map == null) {
                 map = tClassMap();
                 expectedMap.put(check.source, map);
             }
-            SelfCastCheck old = map.put(check.target, check);
+            CastCheck old = map.put(check.target, check);
             assertNull("duplicate for " + check, old);
         }
 
         // Translate the casts map to use SelfCastCheck
-        Map<TClass,Map<TClass,SelfCastCheck>> actualsMap = tClassMap();
+        Map<TClass,Map<TClass,CastCheck>> actualsMap = tClassMap();
         for (Map.Entry<TClass,Map<TClass,TCast>> bySourceEntry : actual.entrySet()) {
             TClass source = bySourceEntry.getKey();
-            Map<TClass, SelfCastCheck> translated = tClassMap();
+            Map<TClass, CastCheck> translated = tClassMap();
             Object old = actualsMap.put(source, translated);
             assert old == null : actual; // shouldn't happen!
             for (Map.Entry<TClass,TCast> byTargetEntry : bySourceEntry.getValue().entrySet()) {
                 TClass target = byTargetEntry.getKey();
                 TCast cast = byTargetEntry.getValue();
-                SelfCastCheck check = new SelfCastCheck(cast.sourceClass(), cast.targetClass());
+                CastCheck check = new CastCheck(cast.sourceClass(), cast.targetClass());
                 old = translated.put(target, check);
                 assertNull("duplicate with " + bySourceEntry, old);
             }
@@ -194,11 +194,11 @@ public final class T3RegistryImplTest {
         assertEquals("casts map", expectedMap, actualsMap);
     }
 
-    private String toString(Map<TClass, Map<TClass, SelfCastCheck>> map) {
+    private String toString(Map<TClass, Map<TClass, CastCheck>> map) {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<TClass, Map<TClass, SelfCastCheck>> entry : map.entrySet()) {
+        for (Map.Entry<TClass, Map<TClass, CastCheck>> entry : map.entrySet()) {
             sb.append(entry.getKey()).append('\n');
-            for (Map.Entry<TClass,SelfCastCheck> subentry: entry.getValue().entrySet()) {
+            for (Map.Entry<TClass,CastCheck> subentry: entry.getValue().entrySet()) {
                 sb.append("    ").append(subentry).append('\n');
             }
         }
@@ -209,7 +209,7 @@ public final class T3RegistryImplTest {
         return new TreeMap<TClass, V>(tClassComparator);
     }
 
-    private static class SelfCastCheck {
+    private static class CastCheck {
 
         @Override
         public String toString() {
@@ -221,7 +221,7 @@ public final class T3RegistryImplTest {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            SelfCastCheck that = (SelfCastCheck) o;
+            CastCheck that = (CastCheck) o;
 
             return source.equals(that.source) && target.equals(that.target);
 
@@ -234,7 +234,7 @@ public final class T3RegistryImplTest {
             return result;
         }
 
-        private SelfCastCheck(TClass source, TClass target) {
+        private CastCheck(TClass source, TClass target) {
             this.source = source;
             this.target = target;
         }

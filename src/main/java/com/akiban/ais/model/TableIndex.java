@@ -49,6 +49,18 @@ public class TableIndex extends Index
         return index;
     }
 
+    /**
+     * Create an independent copy of an existing TableIndex.
+     * @param table Destination Table.
+     * @param index TableIndex to to copy.
+     * @return The new copy of the TableIndex.
+     */
+    public static TableIndex create(Table table, TableIndex index)
+    {
+        return create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(), index.isUnique(),
+                      index.getConstraint());
+    }
+
     public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
         // Index check indexName for null state.

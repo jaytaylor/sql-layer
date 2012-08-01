@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
@@ -37,6 +38,7 @@ public interface ExpressionNode extends PlanElement
     public DataTypeDescriptor getSQLtype();
     public AkType getAkType();
     public ValueNode getSQLsource();
+    public AkCollator getCollator();
     public TPreptimeValue getPreptimeValue();
 
     public void setPreptimeValue(TPreptimeValue value);

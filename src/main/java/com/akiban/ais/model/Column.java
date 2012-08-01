@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringFactory;
@@ -66,6 +67,20 @@ public class Column implements ColumnContainer
 
     public static Column create(Columnar table, String name, Integer position, Type type) {
         return create(table, name, position, type, null, null, null, null, null);
+    }
+
+    /**
+     * Create an independent copy of an existing Column.
+     * @param columnar Destination Columnar.
+     * @param column Column to copy.
+     * @param position Position of the new column, or <code>null</code> to copy from the given column.
+     * @return Copy of the Column.
+     * */
+    public static Column create(Columnar columnar, Column column, Integer position) {
+        Integer finalPosition = (position != null) ? position : column.position;
+        return create(columnar, column.columnName, finalPosition, column.type, column.nullable, column.typeParameter1,
+                      column.typeParameter2, column.initialAutoIncrementValue, column.charsetAndCollation,
+                      column.maxStorageSize, column.prefixSize);
     }
 
     public TInstance tInstance() {
@@ -466,12 +481,12 @@ public class Column implements ColumnContainer
         this.initialAutoIncrementValue = initialAutoIncrementValue;
     }
 
-    public void setFieldDef(Object fieldDef)
+    public void setFieldDef(FieldDef fieldDef)
     {
         this.fieldDef = fieldDef;
     }
 
-    public Object getFieldDef()
+    public FieldDef getFieldDef()
     {
         return fieldDef;
     }
@@ -702,7 +717,7 @@ public class Column implements ColumnContainer
 
     private Column groupColumn; // Non-null iff this is a user table column
     private Column userColumn; // Non-null iff this is a group table column
-    private /*FieldDef*/ Object fieldDef;
+    private FieldDef fieldDef;
     private Boolean defaultIdentity;
     private Sequence identityGenerator;
 }

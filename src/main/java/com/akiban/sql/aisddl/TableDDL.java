@@ -170,11 +170,11 @@ public class TableDDL
         ddlFunctions.createTable(session, table);
     }
     
-    private static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn, 
+    static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
             final String schemaName, final String tableName, int colpos) {
         boolean autoIncrement = cdn.isAutoincrementColumn();
         addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                  cdn.getType(), autoIncrement);
+                  cdn.getType(), cdn.getType().isNullable(), autoIncrement);
         if (autoIncrement) {
             // if the cdn has a default node-> GENERATE BY DEFAULT
             // if no default node -> GENERATE ALWAYS
@@ -194,9 +194,9 @@ public class TableDDL
         }
     }
 
-    protected static void addColumn(final AISBuilder builder, 
-                                    final String schemaName, final String tableName, final String columnName, 
-                                    int colpos, DataTypeDescriptor type, boolean autoIncrement) {
+    static void addColumn(final AISBuilder builder,
+                          final String schemaName, final String tableName, final String columnName,
+                          int colpos, DataTypeDescriptor type, boolean nullable, boolean autoIncrement) {
         Long typeParameter1 = null, typeParameter2 = null;
         Type builderType = typeMap.get(type.getTypeId());
         if (builderType == null) {
@@ -216,10 +216,10 @@ public class TableDDL
             collation = type.getCharacterAttributes().getCollation();
         }
         builder.column(schemaName, tableName, columnName, 
-                       Integer.valueOf(colpos), 
+                       colpos,
                        builderType.name(), 
                        typeParameter1, typeParameter2, 
-                       type.isNullable(), 
+                       nullable,
                        autoIncrement,
                        charset, collation);
     }

@@ -33,12 +33,10 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.types.ValueSource;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 
@@ -81,7 +79,7 @@ public class NewRowBackedIndexRow implements RowBase
 
     @Override
     public ValueSource eval(int i) {
-        FieldDef fieldDef = (FieldDef) index.getAllColumns().get(i).getColumn().getFieldDef();
+        FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
         FromObjectValueSource source = sources[fieldPos];
         if (row.isColumnNull(fieldPos)) {

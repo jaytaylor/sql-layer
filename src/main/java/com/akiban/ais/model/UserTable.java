@@ -43,7 +43,17 @@ public class UserTable extends Table
         return userTable;
     }
 
-    public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
+    /**
+     * Create an independent copy of an existing UserTable.
+     * @param ais Destination AkibanInformationSchema.
+     * @param userTable UserTable to copy.
+     * @return The new copy of the UserTable.
+     */
+    public static UserTable create(AkibanInformationSchema ais, UserTable userTable) {
+        return create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+    }
+
+    private UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
     }
@@ -129,15 +139,14 @@ public class UserTable extends Table
         candidateChildJoins.add(childJoin);
     }
 
-    /**
-     * TODO: This leaves the AIS in an invalid state. Do not execute on a canonical copy.
-     * Should be replaced with a way to
-     *  a) disassociate a table from a group fully b) copy with splitting out of group c) something even better
-     */
-    public void clearGrouping() {
-        candidateChildJoins.clear();
-        candidateParentJoins.clear();
-        group = null;
+    public void removeCandidateParentJoin(Join parentJoin)
+    {
+        candidateParentJoins.remove(parentJoin);
+    }
+
+    public void removeCandidateChildJoin(Join childJoin)
+    {
+        candidateChildJoins.remove(childJoin);
     }
 
     public List<Join> getCandidateParentJoins()

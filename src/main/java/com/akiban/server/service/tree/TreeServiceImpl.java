@@ -318,7 +318,7 @@ public class TreeServiceImpl
     }
 
     @Override
-    public Key getKey(Session session) {
+    public Key getKey() {
         return new Key(getDb());
     }
 

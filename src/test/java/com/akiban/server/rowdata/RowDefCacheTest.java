@@ -1111,7 +1111,7 @@ public class RowDefCacheTest
 
     private TableName tableName(String name)
     {
-        return RowDefCache.nameOf(SCHEMA, name);
+        return new TableName(SCHEMA, name);
     }
 
     private void checkField(String name, RowDef rowDef, int fieldNumber)

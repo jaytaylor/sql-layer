@@ -1,0 +1,4 @@
+InsertStatement@76ff7048(customers[customers.cid, customers.name])
+  Project@7c24c400[nextval(test,customer_1), customers.name]
+    Select@51c01bac[]
+      TableSource@1b58e322(customers)

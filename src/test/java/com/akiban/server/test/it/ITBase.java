@@ -29,6 +29,7 @@ package com.akiban.server.test.it;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -53,6 +54,11 @@ public abstract class ITBase extends ApiTestBase {
 
     protected void compareRows(RowBase[] expected, Cursor cursor)
     {
+        compareRows(expected, cursor, null);
+    }
+
+    protected void compareRows(RowBase[] expected, Cursor cursor, AkCollator ... collators)
+    {
         List<ShareHolder<Row>> actualRows = new ArrayList<ShareHolder<Row>>(); // So that result is viewable in debugger
         try {
             cursor.open();
@@ -60,7 +66,7 @@ public abstract class ITBase extends ApiTestBase {
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
                 assertTrue(String.format("failed test %d < %d (more rows than expected)", count, expected.length), count < expected.length);
-                if(!equal(expected[count], actualRow)) {
+                if(!equal(expected[count], actualRow, collators)) {
                     String expectedString = expected[count] == null ? "null" : expected[count].toString();
                     String actualString = actualRow == null ? "null" : actualRow.toString();
                     assertEquals("row " + count, expectedString, actualString);
@@ -80,7 +86,7 @@ public abstract class ITBase extends ApiTestBase {
         assertEquals(expected.length, actualRows.size());
     }
 
-    protected boolean equal(RowBase expected, RowBase actual)
+    protected boolean equal(RowBase expected, RowBase actual, AkCollator[] collators)
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         if (!equal)
@@ -99,11 +105,26 @@ public abstract class ITBase extends ApiTestBase {
             for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
                 Object expectedField = target.convertFromSource(expected.eval(i));
                 Object actualField = target.convertFromSource(actual.eval(i));
-                equal =
-                    expectedField == actualField || // handles case in which both are null
-                    expectedField != null && actualField != null && expectedField.equals(actualField);
+                if (expectedField == null && actualField == null) {
+                    equal = true;
+                } else if (expectedField == null || actualField == null) {
+                    equal = false;
+                } else if (collator(collators, i) != null &&
+                           expectedField instanceof String &&
+                           actualField instanceof String) {
+                    collator(collators, i).compare((String) expectedField, (String) actualField);
+                } else {
+                    equal = expectedField.equals(actualField);
+                }
             }
             return equal;
         }
+    }
+
+    private AkCollator collator(AkCollator[] collators, int i)
+    {
+        return
+            collators == null ? null :
+            collators.length == 0 ? null : collators[i];
     }
 }
