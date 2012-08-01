@@ -44,7 +44,6 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
-import com.akiban.util.Enums;
 
 import java.util.ArrayList;
 import java.util.Formatter;
