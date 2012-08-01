@@ -110,6 +110,8 @@ import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
+import static com.akiban.ais.model.AISMerge.findMaxIndexIDInGroup;
+
 /**
  * <p>
  * Storage as of v1.2.1 (05/2012), Protobuf bytes per schema:
@@ -409,13 +411,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public void dropIndexes(Session session, final Collection<Index> indexesToDrop) {
+    public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
         final AkibanInformationSchema newAIS = AISCloner.clone(
                 getAis(),
                 new ProtobufWriter.WriteSelector() {
                     @Override
-                    public boolean isSelected(Columnar columnar) {
-                        return true;
+                    public Columnar getSelected(Columnar columnar) {
+                        return columnar;
                     }
 
                     @Override
@@ -443,8 +445,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public void alterTableDefinition(Session session, TableName tableName, UserTable newDefinition) {
-        throw new UnsupportedOperationException();
+    public void alterTableDefinition(Session session, TableName tableName, final UserTable newDefinition) {
+        checkTableName(tableName, true, false);
+
+        AISMerge merge = new AISMerge(aish.getAis(), newDefinition, AISMerge.MergeType.MODIFY_TABLE);
+        merge.merge();
+
+        saveAISChangeWithRowDefs(session, merge.getAIS(), Collections.singleton(tableName.getSchemaName()));
     }
 
     private void deleteTableCommon(Session session, TableName tableName, boolean isInternal, boolean mustBeMemory) {
@@ -572,8 +579,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 getAis(),
                 new ProtobufWriter.WriteSelector() {
                     @Override
-                    public boolean isSelected(Columnar columnar) {
-                        return !tableNames.contains(columnar.getName());
+                    public Columnar getSelected(Columnar columnar) {
+                        return !tableNames.contains(columnar.getName()) ? columnar : null;
                     }
 
                     @Override
@@ -646,6 +653,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         List<TableName> emptyList = new ArrayList<TableName>(0);
         final AkibanInformationSchema newAIS = removeTablesFromAIS(emptyList, Collections.singleton(sequence.getSequenceName()));
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
+    }
+
+    // TODO: Method is a complete hack, failed DDL should be handled more gracefully
+    @Override
+    public void rollbackAIS(Session session, AkibanInformationSchema replaceAIS, Collection<String> schemaNames) {
+        AkibanInformationSchema newAIS = AISCloner.clone(replaceAIS);
+        saveAISChangeWithRowDefs(session, newAIS, schemaNames);
     }
 
     @Override
@@ -983,9 +997,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         if(TableName.INFORMATION_SCHEMA.equals(schema)) {
             selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                 @Override
-                public boolean isSelected(Columnar table) {
-                    return !legacyISTables.contains(table.getName()) &&
-                           !(table.isTable() && ((UserTable)table).hasMemoryTableFactory());
+                public Columnar getSelected(Columnar table) {
+                    if(!legacyISTables.contains(table.getName()) &&
+                       !(table.isTable() && ((UserTable)table).hasMemoryTableFactory())) {
+                        return table;
+                    }
+                    return null;
                 }
             };
         } else {
@@ -1176,24 +1193,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      */
     public void setSerializationType(SerializationType serializationType) {
         this.serializationType = serializationType;
-    }
-
-    /**
-     * Find the maximum index ID from all of the indexes within the given group.
-     */
-    private static int findMaxIndexIDInGroup(AkibanInformationSchema ais, Group group) {
-        int maxId = Integer.MIN_VALUE;
-        for(UserTable table : ais.getUserTables().values()) {
-            if(table.getGroup().equals(group)) {
-                for(Index index : table.getIndexesIncludingInternal()) {
-                    maxId = Math.max(index.getIndexId(), maxId);
-                }
-            }
-        }
-        for(Index index : group.getIndexes()) {
-            maxId = Math.max(index.getIndexId(), maxId);
-        }
-        return maxId;
     }
 
     private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,

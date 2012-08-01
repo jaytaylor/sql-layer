@@ -34,6 +34,7 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -41,6 +42,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.google.inject.Inject;
 
 import java.util.ArrayList;
@@ -60,6 +62,8 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     private final TreeService treeService;
     private final SessionService sessionService;
     private final IndexStatisticsService indexStatisticsService;
+    private final ConfigurationService configService;
+    private final T3RegistryService t3Registry;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -99,7 +103,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService);
+        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService, configService, t3Registry);
     }
 
     @Override
@@ -178,12 +182,15 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Inject
-    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService, IndexStatisticsService indexStatisticsService) {
+    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
+                          IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.treeService = treeService;
         this.sessionService = sessionService;
         this.indexStatisticsService = indexStatisticsService;
+        this.configService = configService;
+        this.t3Registry = t3Registry;
     }
 
     // for use by subclasses
@@ -202,6 +209,14 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     protected final IndexStatisticsService indexStatisticsService() {
         return indexStatisticsService;
+    }
+
+    protected final ConfigurationService configService() {
+        return configService;
+    }
+
+    protected final T3RegistryService t3Registry() {
+        return t3Registry;
     }
 
     protected final Session session() {
