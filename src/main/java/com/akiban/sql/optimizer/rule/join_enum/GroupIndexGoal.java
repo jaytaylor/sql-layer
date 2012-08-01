@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /** The goal of a indexes within a group. */
-public class GroupIndexGoal implements Comparator<IndexScan>
+public class GroupIndexGoal implements Comparator<BaseScan>
 {
     private static final Logger logger = LoggerFactory.getLogger(GroupIndexGoal.class);
     static volatile Function<? super IndexScan,Void> intersectionEnumerationHook = null;
@@ -599,25 +599,31 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     /** Find the best index among the branches. */
     public BaseScan pickBestScan() {
         Set<TableSource> required = tables.getRequired();
-        IndexScan bestIndex = null;
+        BaseScan bestScan = null;
+
+        if (!tables.getGroup().getRejectedJoins().isEmpty()) {
+            bestScan = pickBestGroupLoop();
+        }
 
         IntersectionEnumerator intersections = new IntersectionEnumerator();
         for (TableGroupJoinNode table : tables) {
             IndexScan tableIndex = pickBestIndex(table, required, intersections);
             if ((tableIndex != null) &&
-                ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
-                bestIndex = tableIndex;
+                ((bestScan == null) || (compare(tableIndex, bestScan) > 0)))
+                bestScan = tableIndex;
         }
-        bestIndex = pickBestIntersection(bestIndex, intersections);
-        if (bestIndex != null)
-            return bestIndex;
+        bestScan = pickBestIntersection(bestScan, intersections);
 
-        GroupScan groupScan = new GroupScan(tables.getGroup());
-        groupScan.setCostEstimate(estimateCost(groupScan));
-        return groupScan;
+        if (bestScan == null) {
+            GroupScan groupScan = new GroupScan(tables.getGroup());
+            groupScan.setCostEstimate(estimateCost(groupScan));
+            bestScan = groupScan;
+        }
+
+        return bestScan;
     }
 
-    private IndexScan pickBestIntersection(IndexScan previousBest, IntersectionEnumerator enumerator) {
+    private BaseScan pickBestIntersection(BaseScan previousBest, IntersectionEnumerator enumerator) {
         // filter out all leaves which are obviously bad
         if (previousBest != null) {
             CostEstimate previousBestCost = previousBest.getCostEstimate();
@@ -852,7 +858,47 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return bestIndex;
     }
 
-    public int compare(IndexScan i1, IndexScan i2) {
+    private GroupLoopScan pickBestGroupLoop() {
+        GroupLoopScan bestScan = null;
+        
+        Set<TableSource> outsideSameGroup = new HashSet<TableSource>(tables.getGroup().getTables());
+        outsideSameGroup.retainAll(boundTables);
+
+        for (TableGroupJoin join : tables.getGroup().getRejectedJoins()) {
+            TableSource parent = join.getParent();
+            TableSource child = join.getChild();
+            TableSource inside, outside;
+            if (outsideSameGroup.contains(parent) && tables.containsTable(child)) {
+                inside = child;
+                outside = parent;
+            }
+            else if (outsideSameGroup.contains(child) && tables.containsTable(parent)) {
+                inside = parent;
+                outside = child;
+            }
+            else {
+                continue;
+            }
+            GroupLoopScan forJoin = new GroupLoopScan(inside, outside, 
+                                                      join.getConditions());
+            forJoin.setCostEstimate(estimateCost(forJoin));
+            if (bestScan == null) {
+                logger.debug("Selecting {}", forJoin);
+                bestScan = forJoin;
+            }
+            else if (compare(forJoin, bestScan) > 0) {
+                logger.debug("Preferring {}", forJoin);
+                bestScan = forJoin;
+            }
+            else {
+                logger.debug("Rejecting {}", forJoin);
+            }
+        }
+
+        return bestScan;
+    }
+
+    public int compare(BaseScan i1, BaseScan i2) {
         return i2.getCostEstimate().compareTo(i1.getCostEstimate());
     }
 
@@ -985,6 +1031,31 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                              selectivityConditions(conditions, requiredTables));
         }
         
+        estimator.setLimit(queryGoal.getLimit());
+
+        return estimator.getCostEstimate();
+    }
+
+    public CostEstimate estimateCost(GroupLoopScan scan) {
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        Set<TableSource> requiredTables = requiredColumns.getTables();
+
+        estimator.flatten(tables, 
+                          scan.getOutsideTable(), requiredTables);
+
+        Collection<ConditionExpression> unhandledConditions = 
+            new HashSet<ConditionExpression>(conditions);
+        unhandledConditions.removeAll(scan.getJoinConditions());
+        if (!unhandledConditions.isEmpty()) {
+            estimator.select(unhandledConditions,
+                             selectivityConditions(unhandledConditions, requiredTables));
+        }
+
+        if (queryGoal.needSort(IndexScan.OrderEffectiveness.NONE)) {
+            estimator.sort(queryGoal.sortFields());
+        }
+
         estimator.setLimit(queryGoal.getLimit());
 
         return estimator.getCostEstimate();

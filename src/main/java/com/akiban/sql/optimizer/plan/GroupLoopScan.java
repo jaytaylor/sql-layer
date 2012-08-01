@@ -31,10 +31,10 @@ import java.util.List;
 public class GroupLoopScan extends BaseScan
 {
     private TableSource insideTable, outsideTable;
-    private List<ConditionExpression> joinConditions;
+    private List<ComparisonCondition> joinConditions;
 
     public GroupLoopScan(TableSource insideTable, TableSource outsideTable,
-                         List<ConditionExpression> joinConditions) {
+                         List<ComparisonCondition> joinConditions) {
         this.insideTable = insideTable;
         this.outsideTable = outsideTable;
         this.joinConditions = joinConditions;
@@ -47,7 +47,7 @@ public class GroupLoopScan extends BaseScan
         return outsideTable;
     }
 
-    public List<ConditionExpression> getJoinConditions() {
+    public List<ComparisonCondition> getJoinConditions() {
         return joinConditions;
     }
 
