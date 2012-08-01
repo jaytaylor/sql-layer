@@ -31,8 +31,6 @@ import com.akiban.server.service.ServiceManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.text.*;
 
@@ -47,7 +45,7 @@ public class SwingConsole extends JFrame implements WindowListener
     private final ServiceManager serviceManager;
     private JTextArea textArea;
     private PrintStream printStream;
-    private final String RUN_PSQL_CMD;
+    private final String[] RUN_PSQL_CMD;
     public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
 
@@ -134,11 +132,11 @@ public class SwingConsole extends JFrame implements WindowListener
             JMenuItem runPsql = run.add("Run PSQL client");
             
             if (macOSX)
-                RUN_PSQL_CMD = "osascript -e 'tell application \"Terminal\" to do script \"psql -h localhost -p 15432\"'";
+                RUN_PSQL_CMD = new String[] { "osascript", "-e", "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p15432\"\n end tell" };
             else if (osName.startsWith("Window"))
-                RUN_PSQL_CMD = "cmd.exe /c start psql -h localhost -p15432 ";
+                RUN_PSQL_CMD = new String[]{"cmd.exe /c start psql -h localhost -p15432 "};
             else // assuming unix-based system
-                RUN_PSQL_CMD = "xterm -e psql -h localhost -p15432";
+                RUN_PSQL_CMD = new String[] {"xterm -e psql -h localhost -p15432"};
 
             runPsql.addActionListener(new ActionListener()
             {
