@@ -77,7 +77,9 @@ public final class AkIntervalSeconds extends TClassBase {
         LiteralFormat literalFormat = typeIdToLiteralFormat.get(typeId);
         if (literalFormat == null)
             throw new IllegalArgumentException("couldn't convert " + type + " to " + SECONDS);
-        return SECONDS.instance(literalFormat.ordinal());
+        TInstance result = SECONDS.instance(literalFormat.ordinal());
+        result.setNullable(type.isNullable());
+        return result;
     }
 
     private enum SecondsAttrs implements Attribute {
