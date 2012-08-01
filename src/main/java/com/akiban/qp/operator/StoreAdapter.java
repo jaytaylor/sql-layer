@@ -31,7 +31,6 @@ import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -83,8 +82,6 @@ public abstract class StoreAdapter
     public abstract long rowCount(RowType tableType);
     
     public abstract long sequenceNextValue(TableName sequenceName);
-
-    public abstract long hash(ValueSource valueSource, AkCollator collator);
 
     public abstract long hash(ValueSource valueSource, AkCollator collator);
 
