@@ -26,8 +26,10 @@
 
 package com.akiban.server.error;
 
-public final class NoSuchIndexException extends InvalidOperationException {
-    public NoSuchIndexException(String indexName) {
-        super(ErrorCode.NO_INDEX, indexName);
+import com.akiban.ais.model.TableName;
+
+public final class NoSuchUniqueException extends InvalidOperationException {
+    public NoSuchUniqueException(TableName tableName, String indexName) {
+        super(ErrorCode.NO_SUCH_UNIQUE, tableName.getSchemaName(), tableName.getTableName(), indexName);
     }
 }

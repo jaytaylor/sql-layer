@@ -33,7 +33,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
@@ -46,11 +45,15 @@ import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.NoSuchUniqueException;
+import com.akiban.server.error.ProtectedIndexException;
+import com.akiban.server.error.UnsupportedCheckConstraintException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.session.Session;
@@ -69,10 +72,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static com.akiban.server.api.AlterTableChange.ChangeType;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.ALTER_TABLE_TEMP_TABLE;
 import static com.akiban.sql.aisddl.DDLHelper.convertName;
+import static com.akiban.sql.parser.ConstraintDefinitionNode.ConstraintType;
 import static com.akiban.util.Exceptions.throwAlways;
-import static com.akiban.server.api.AlterTableChange.ChangeType;
 
 public class AlterTableDDL {
     private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table %s to multiple groups";
@@ -252,36 +256,69 @@ public class AlterTableDDL {
 
         List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
         List<AlterTableChange> indexChanges = new ArrayList<AlterTableChange>();
-        List<ColumnDefinitionNode> addsOrChanges = new ArrayList<ColumnDefinitionNode>();
+        List<ColumnDefinitionNode> columnDefNodes = new ArrayList<ColumnDefinitionNode>();
+        List<ConstraintDefinitionNode> indexDefNodes = new ArrayList<ConstraintDefinitionNode>();
+
         for(TableElementNode node : elementList) {
-            // Modify extends Definition, must come first
-            if((node instanceof ModifyColumnNode)) {
-                String columnName = ((ModifyColumnNode)node).getColumnName();
-                switch(node.getNodeType()) {
-                    case NodeTypes.DROP_COLUMN_NODE:
-                        columnChanges.add(AlterTableChange.createDrop(columnName));
-                    break;
-                    case NodeTypes.MODIFY_COLUMN_TYPE_NODE:
-                        columnChanges.add(AlterTableChange.createModify(columnName, columnName));
-                        addsOrChanges.add((ColumnDefinitionNode) node);
-                    break;
-                    default:
-                        return false; // TODO: Some column metadata change
+            switch(node.getNodeType()) {
+                case NodeTypes.COLUMN_DEFINITION_NODE: {
+                    ColumnDefinitionNode cdn = (ColumnDefinitionNode) node;
+                    columnChanges.add(AlterTableChange.createAdd(cdn.getColumnName()));
+                    columnDefNodes.add(cdn);
+                } break;
+
+                case NodeTypes.DROP_COLUMN_NODE: {
+                    String columnName = ((ModifyColumnNode)node).getColumnName();
+                    columnChanges.add(AlterTableChange.createDrop(columnName));
+                } break;
+
+                case NodeTypes.MODIFY_COLUMN_TYPE_NODE: {
+                    String columnName = ((ModifyColumnNode)node).getColumnName();
+                    columnChanges.add(AlterTableChange.createModify(columnName, columnName));
+                    columnDefNodes.add((ColumnDefinitionNode) node);
+                } break;
+
+                case NodeTypes.FK_CONSTRAINT_DEFINITION_NODE: {
+                    FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode) node;
+                    if(fkNode.isGrouping()) {
+                        return false; // Not yet supported by generic
+                    }
                 }
-            }
-            else if(node instanceof ColumnDefinitionNode) {
-                ColumnDefinitionNode cdn = (ColumnDefinitionNode) node;
-                columnChanges.add(AlterTableChange.createAdd(cdn.getColumnName()));
-                addsOrChanges.add(cdn);
-            } else {
-                return false; // TODO: Other alters
+                // Fall
+                case NodeTypes.CONSTRAINT_DEFINITION_NODE: {
+                    ConstraintDefinitionNode cdn = (ConstraintDefinitionNode) node;
+                    if(cdn.getConstraintType() == ConstraintType.DROP) {
+                        String name = cdn.getName();
+                        switch(cdn.getVerifyType()) {
+                            case PRIMARY_KEY:
+                                name = Index.PRIMARY_KEY_CONSTRAINT;
+                            break;
+                            // TODO: Should add flags to AlterTableChange to avoid checks in multiple places
+                            case DROP:
+                            case UNIQUE:
+                                Index index = table.getIndex(name);
+                                if((index != null) && !index.isUnique()) {
+                                    throw new NoSuchUniqueException(table.getName(), cdn.getName());
+                                }
+                            break;
+                            case CHECK:
+                                throw new UnsupportedCheckConstraintException();
+                        }
+                        indexChanges.add(AlterTableChange.createDrop(name));
+                    } else {
+                        indexDefNodes.add((ConstraintDefinitionNode)node);
+                    }
+                } break;
+
+                default:
+                    return false; // Something unsupported
             }
         }
 
         UserTable tableCopy = copyTable(table, columnChanges, indexChanges);
         AISBuilder builder = new AISBuilder(tableCopy.getAIS());
 
-        for(ColumnDefinitionNode cdn : addsOrChanges) {
+        for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
                 // TODO: Assumes SET DATA TYPE, expand as needed
                 assert cdn.getNodeType() == NodeTypes.MODIFY_COLUMN_TYPE_NODE;
@@ -294,7 +331,13 @@ public class AlterTableDDL {
                 int pos = table.getColumns().size();
                 TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos);
             }
+        }
 
+        for(ConstraintDefinitionNode cdn : indexDefNodes) {
+            assert cdn.getConstraintType() != ConstraintType.DROP;
+            String name = TableDDL.addIndex(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName());
+            checkIndexChange(table, name, true);
+            indexChanges.add(AlterTableChange.createAdd(name));
         }
 
         ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges);
@@ -326,13 +369,23 @@ public class AlterTableDDL {
         }
     }
 
-    private static boolean containsColumn(List<AlterTableChange> changes, String columnName, ChangeType type) {
+    private static void checkIndexChange(UserTable table, String indexName, boolean isNew) {
+        if(Index.PRIMARY_KEY_CONSTRAINT.equals(indexName)) {
+            throw new ProtectedIndexException(indexName, table.getName());
+        }
+        Index index = table.getIndex(indexName);
+        if(index == null && !isNew) {
+            throw new NoSuchUniqueException(table.getName(), indexName);
+        }
+    }
+
+    private static ChangeType findOldName(List<AlterTableChange> changes, String oldName) {
         for(AlterTableChange change : changes) {
-            if(columnName.equals(change.getOldName())) {
-                return change.getChangeType() == type;
+            if(oldName.equals(change.getOldName())) {
+                return change.getChangeType();
             }
         }
-        return false;
+        return null;
     }
 
     private static UserTable copyTable(UserTable origTable, List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
@@ -345,22 +398,31 @@ public class AlterTableDDL {
             }
         }
 
+        for(AlterTableChange change : indexChanges) {
+            checkIndexChange(origTable, change.getOldName(), change.getChangeType() == ChangeType.ADD);
+        }
+
         int colPos = 0;
         for(Column origColumn : origTable.getColumns()) {
             String columnName = origColumn.getName();
-            if(!containsColumn(columnChanges, columnName, ChangeType.DROP)) {
+            if(findOldName(columnChanges, columnName) != ChangeType.DROP) {
                 Column.create(tableCopy, origColumn, colPos++);
             }
         }
 
         Collection<TableIndex> indexesToDrop = new ArrayList<TableIndex>();
         for(TableIndex origIndex : origTable.getIndexes()) {
+            ChangeType indexChange = findOldName(indexChanges, origIndex.getIndexName().getName());
+            if(indexChange == ChangeType.DROP) {
+                continue;
+            }
             TableIndex indexCopy = TableIndex.create(tableCopy, origIndex);
             boolean didModify = false;
             int pos = 0;
             for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
-                if(!containsColumn(columnChanges, indexColumn.getColumn().getName(), ChangeType.DROP)) {
-                    didModify |= containsColumn(columnChanges, indexColumn.getColumn().getName(), ChangeType.MODIFY);
+                ChangeType change = findOldName(columnChanges, indexColumn.getColumn().getName());
+                if(change != ChangeType.DROP) {
+                    didModify |= (change == ChangeType.MODIFY);
                     IndexColumn.create(indexCopy, tableCopy.getColumn(indexColumn.getColumn().getName()), indexColumn, pos++);
                 } else {
                     didModify = true;
@@ -371,7 +433,7 @@ public class AlterTableDDL {
             if(indexCopy.getKeyColumns().isEmpty()) {
                 indexesToDrop.add(indexCopy);
                 indexChanges.add(AlterTableChange.createDrop(indexCopy.getIndexName().getName()));
-            } else if(didModify) {
+            } else if(didModify && (indexChange == null)) {
                 String indexName = indexCopy.getIndexName().getName();
                 indexChanges.add(AlterTableChange.createModify(indexName, indexName));
             }
@@ -412,7 +474,7 @@ public class AlterTableDDL {
         TableElementNode elementNode = node.tableElementList.get(0);
         if(elementNode instanceof FKConstraintDefinitionNode) {
             FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode)elementNode;
-            if((fkNode.getConstraintType() == ConstraintDefinitionNode.ConstraintType.FOREIGN_KEY) &&
+            if((fkNode.getConstraintType() == ConstraintType.FOREIGN_KEY) &&
                fkNode.isGrouping()) {
                 return fkNode;
             }
@@ -430,7 +492,7 @@ public class AlterTableDDL {
         TableElementNode elementNode = node.tableElementList.get(0);
         if(elementNode instanceof FKConstraintDefinitionNode) {
             FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode)elementNode;
-            if((fkNode.getConstraintType() == ConstraintDefinitionNode.ConstraintType.DROP) &&
+            if((fkNode.getConstraintType() == ConstraintType.DROP) &&
                fkNode.isGrouping()) {
                 return fkNode;
             }
