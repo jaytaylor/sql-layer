@@ -151,7 +151,7 @@ public class SwingConsole extends JFrame implements WindowListener
                     }
                     catch (IOException ex)
                     {
-                        JOptionPane.showMessageDialog(null,
+                        JOptionPane.showMessageDialog(SwingConsole.this,
                                                       "Unable to open Terminal\nError: " + ex.getMessage(),
                                                       "Error",
                                                       JOptionPane.ERROR_MESSAGE);
