@@ -44,6 +44,7 @@ import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -182,7 +183,7 @@ final class Limit_Default extends Operator
     private final boolean usePVals;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes atts = new Attributes();
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));

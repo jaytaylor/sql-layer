@@ -32,22 +32,23 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
+import java.util.Map;
 
 
 public class NestedLoopsExplainer extends OperationExplainer
 {
-    public NestedLoopsExplainer (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType)
+    public NestedLoopsExplainer (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map extraInfo)
     {
-        super(Type.NESTED_LOOPS, buildMap(name, innerOp, outerOp, innerType, outerType));
+        super(Type.NESTED_LOOPS, buildMap(name, innerOp, outerOp, innerType, outerType, extraInfo));
     }
     
-    private static Attributes buildMap (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType)
+    private static Attributes buildMap (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map extraInfo)
     {
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        att.put(Label.INNER_OPERATOR, innerOp.getExplainer());
-        att.put(Label.OUTER_OPERATOR, outerOp.getExplainer());
+        att.put(Label.INNER_OPERATOR, innerOp.getExplainer(extraInfo));
+        att.put(Label.OUTER_OPERATOR, outerOp.getExplainer(extraInfo));
         att.put(Label.INNER_TYPE, PrimitiveExplainer.getInstance(innerType));
         att.put(Label.OUTER_TYPE, PrimitiveExplainer.getInstance(outerType));
         

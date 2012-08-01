@@ -38,6 +38,7 @@ import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.List;
+import java.util.Map;
 
 public final class VariableExpression implements Expression {
 
@@ -92,9 +93,9 @@ public final class VariableExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), (List)null);
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, (List)null);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(position));
         return ex;
     }

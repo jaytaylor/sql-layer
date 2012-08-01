@@ -29,6 +29,7 @@ package com.akiban.server.expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.optimizer.explain.Explainer;
+import java.util.Map;
 
 public interface Expression {
     boolean nullIsContaminating();
@@ -82,5 +83,5 @@ public interface Expression {
      * 
      * @return the explainer for this expression
      */
-    Explainer getExplainer();
+    Explainer getExplainer(Map extraInfo);
 }

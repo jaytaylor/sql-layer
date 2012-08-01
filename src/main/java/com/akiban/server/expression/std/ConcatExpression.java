@@ -47,6 +47,7 @@ import com.akiban.util.AkibanAppender;
 import java.math.BigDecimal;
 
 import java.util.List;
+import java.util.Map;
 
 public final class ConcatExpression extends AbstractCompositeExpression {
 
@@ -103,9 +104,9 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     }
     
     @Override
-    public Explainer getExplainer ()
+    public Explainer getExplainer(Map extraInfo)
     {
-        Explainer ex = super.getExplainer();
+        Explainer ex = super.getExplainer(extraInfo);
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance("||"));
         ex.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
         return ex;

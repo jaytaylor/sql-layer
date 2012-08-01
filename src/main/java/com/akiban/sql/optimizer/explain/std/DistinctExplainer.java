@@ -33,21 +33,22 @@ import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import java.math.BigDecimal;
+import java.util.Map;
 
 public class DistinctExplainer extends OperationExplainer
 {
-    public DistinctExplainer (String name, RowType distinctType, Operator inputOp)
+    public DistinctExplainer (String name, RowType distinctType, Operator inputOp, Map extraInfo)
     {
-        super(Type.DISTINCT, buildMap(name, distinctType, inputOp));
+        super(Type.DISTINCT, buildMap(name, distinctType, inputOp, extraInfo));
     }
     
-    private static Attributes buildMap (String name, RowType distinctType, Operator inputOp)
+    private static Attributes buildMap (String name, RowType distinctType, Operator inputOp, Map extraInfo)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         atts.put(Label.DINSTINCT_TYPE, PrimitiveExplainer.getInstance(distinctType));
-        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
+        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         
         return atts;
     }

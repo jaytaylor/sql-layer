@@ -49,6 +49,7 @@ import java.util.Set;
 
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_CHILD;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
+import java.util.Map;
 
 /**
 
@@ -274,7 +275,7 @@ class Flatten_HKeyOrdered extends Operator
     private final int parentHKeySegments;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
        
         Attributes att = new Attributes();

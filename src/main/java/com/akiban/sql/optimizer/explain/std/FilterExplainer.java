@@ -33,22 +33,23 @@ import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class FilterExplainer extends OperationExplainer
 {
-    public FilterExplainer (String name, Set<RowType> keepType, Operator inputOp)
+    public FilterExplainer (String name, Set<RowType> keepType, Operator inputOp, Map extraInfo)
     {
-        super(Type.FILTER, buildMap(name, keepType, inputOp));
+        super(Type.FILTER, buildMap(name, keepType, inputOp, extraInfo));
         
     }
     
-    private static Attributes buildMap (String name, Set<RowType> keepType, Operator inputOp)
+    private static Attributes buildMap (String name, Set<RowType> keepType, Operator inputOp, Map extraInfo)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
+        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         
         for (RowType type : keepType)
             atts.put(Label.KEEP_TYPE, PrimitiveExplainer.getInstance(type));

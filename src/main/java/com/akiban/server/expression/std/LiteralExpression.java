@@ -44,6 +44,7 @@ import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -138,7 +139,7 @@ public final class LiteralExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         StringBuilder sb = new StringBuilder();
         SqlLiteralValueFormatter formatter = new SqlLiteralValueFormatter(sb);
@@ -147,7 +148,7 @@ public final class LiteralExpression implements Expression {
         } catch (IOException ex) {
             Logger.getLogger(LiteralExpression.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Explainer ex = new ExpressionExplainer(Type.LITERAL, name(), (List)null);
+        Explainer ex = new ExpressionExplainer(Type.LITERAL, name(), extraInfo, (List)null);
         ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sb.toString()));
         return ex;
     }

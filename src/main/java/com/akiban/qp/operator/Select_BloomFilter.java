@@ -38,10 +38,7 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * <h1>Overview</h1>
@@ -168,7 +165,7 @@ class Select_BloomFilter extends Operator
     private final List<AkCollator> collators;
 
     @Override
-    public Explainer getExplainer() {
+    public Explainer getExplainer(Map extraInfo) {
         return PrimitiveExplainer.getInstance(toString());
     }
 

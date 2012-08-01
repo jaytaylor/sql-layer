@@ -36,6 +36,7 @@ import com.akiban.util.tap.InOutTap;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -159,9 +160,9 @@ class Sort_Tree extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator, ordering);
+        return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator, ordering, extraInfo);
         
         // TODO implement for real
         //return PrimitiveExplainer.getInstance(toString()); // Dummy explainer

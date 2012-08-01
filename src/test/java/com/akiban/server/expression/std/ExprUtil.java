@@ -33,6 +33,7 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.optimizer.explain.Explainer;
+import java.util.Map;
 
 final class ExprUtil {
 
@@ -129,7 +130,7 @@ final class ExprUtil {
         }
 
         @Override
-        public Explainer getExplainer()
+        public Explainer getExplainer(Map extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -218,7 +219,7 @@ final class ExprUtil {
         }
 
         @Override
-        public Explainer getExplainer()
+        public Explainer getExplainer(Map extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -274,7 +275,7 @@ final class ExprUtil {
         }
 
         @Override
-        public Explainer getExplainer()
+        public Explainer getExplainer(Map extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }

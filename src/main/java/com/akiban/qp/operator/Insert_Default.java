@@ -43,6 +43,7 @@ import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.Tap;
 import java.math.BigDecimal;
+import java.util.Map;
 
 /**
 
@@ -127,9 +128,9 @@ class Insert_Default implements UpdatePlannable {
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new DUIOperatorExplainer("Insert", inputOperator);
+        return new DUIOperatorExplainer("Insert", inputOperator, extraInfo);
     }
 
     // Inner classes

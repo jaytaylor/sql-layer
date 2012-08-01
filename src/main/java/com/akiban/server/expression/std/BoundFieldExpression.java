@@ -37,6 +37,7 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
+import java.util.Map;
 
 public final class BoundFieldExpression implements Expression {
     @Override
@@ -89,9 +90,9 @@ public final class BoundFieldExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        Explainer ex = new ExpressionExplainer (Type.FUNCTION, name(), fieldExpression);
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, fieldExpression);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(rowBindingPosition));
         return ex;
     }

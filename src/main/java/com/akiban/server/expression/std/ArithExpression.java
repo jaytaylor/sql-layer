@@ -47,6 +47,7 @@ import com.akiban.util.ArgumentValidation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 
 public class ArithExpression extends AbstractBinaryExpression
 {
@@ -274,9 +275,9 @@ public class ArithExpression extends AbstractBinaryExpression
     }
     
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+        ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
         if (op.isInfix())
             if (name().equals("d"))
             {

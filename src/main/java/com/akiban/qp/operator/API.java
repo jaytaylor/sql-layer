@@ -102,7 +102,7 @@ public class API
                                                  List<Expression> projections,
                                                  List<? extends TPreparedExpression> pExpressions)
     {
-        return new Project_Default (inputOperator, inputRowType, outputRowType, projections, pExpressions);
+        return new Project_Default(inputOperator, inputRowType, outputRowType, projections, pExpressions);
     }
     // Flatten
 

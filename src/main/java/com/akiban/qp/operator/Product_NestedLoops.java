@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -123,9 +124,9 @@ class Product_NestedLoops extends Operator
     }
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new NestedLoopsExplainer("Product", innerInputOperator, outerInputOperator, innerType, outerType);
+        return new NestedLoopsExplainer("Product", innerInputOperator, outerInputOperator, innerType, outerType, extraInfo);
     }
     
     // Operator interface

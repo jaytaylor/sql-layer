@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import static java.lang.Math.min;
+import java.util.Map;
 
 /**
 
@@ -284,9 +285,9 @@ public class BranchLookup_Nested extends Operator
     private final int branchRootOrdinal;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        OperationExplainer ex =  new LookUpOperatorExplainer("Branch Lookup Nested", groupTable, inputRowType, keepInput, null);
+        OperationExplainer ex =  new LookUpOperatorExplainer("Branch Lookup Nested", groupTable, inputRowType, keepInput, null, extraInfo);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         return ex;

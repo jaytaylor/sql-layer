@@ -44,6 +44,7 @@ import static com.akiban.server.types.AkType.*;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import java.util.Map;
 
 public class IntervalCastExpression extends AbstractUnaryExpression
 {
@@ -246,9 +247,9 @@ public class IntervalCastExpression extends AbstractUnaryExpression
     }
     
     @Override
-    public Explainer getExplainer ()
+    public Explainer getExplainer(Map extraInfo)
     {
-        Explainer ex = super.getExplainer();
+        Explainer ex = super.getExplainer(extraInfo);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(endPoint.type.name()));
         return ex;
     }

@@ -287,7 +287,7 @@ public class AggregatePT extends ApiTestBase {
         }
 
         @Override
-        public Explainer getExplainer() {
+        public Explainer getExplainer(Map extraInfo) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
@@ -658,7 +658,7 @@ public class AggregatePT extends ApiTestBase {
         }
 
         @Override
-        public Explainer getExplainer() {
+        public Explainer getExplainer(Map extraInfo) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }

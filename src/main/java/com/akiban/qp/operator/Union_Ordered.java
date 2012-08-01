@@ -46,6 +46,7 @@ import java.util.Set;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
+import java.util.*;
 
 /**
  <h1>Overview</h1>
@@ -186,7 +187,7 @@ class Union_Ordered extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer() {
+    public Explainer getExplainer(Map extraInfo) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

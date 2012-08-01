@@ -40,6 +40,7 @@ import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.std.CountOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import java.util.Map;
 
 import java.util.Set;
 
@@ -136,9 +137,9 @@ class Count_TableStatus extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new CountOperatorExplainer("Count TableStatus", tableType, resultType, null);
+        return new CountOperatorExplainer("Count TableStatus", tableType, resultType, null, extraInfo);
     }
 
     // Inner classes

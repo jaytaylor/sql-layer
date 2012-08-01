@@ -51,10 +51,7 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
 
@@ -349,7 +346,7 @@ final class Aggregate_Partial extends Operator
     private final List<? extends TAggregator> pAggrs;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));
@@ -359,7 +356,7 @@ final class Aggregate_Partial extends Operator
             atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
         
         atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
-        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputRowType.toString()));
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputType.toString()));
         

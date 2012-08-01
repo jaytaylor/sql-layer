@@ -38,9 +38,7 @@ import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  <h1>Overview</h1>
@@ -87,7 +85,7 @@ class Project_Default extends Operator
     public String toString()
     {
         Format f = new Format(true);
-        return f.Describe(this.getExplainer(), null);
+        return f.Describe(this.getExplainer(new HashMap()));
     }
 
     // Operator interface
@@ -186,17 +184,17 @@ class Project_Default extends Operator
     protected ProjectedRowType projectType;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance("project"));
         if (projectType.hasUserTable())
             att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
-        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         if (projections != null) {
             for (Expression ex : projections)
-                att.put(Label.PROJECTION, ex.getExplainer());
+                att.put(Label.PROJECTION, ex.getExplainer(extraInfo));
         }
         else {
             for (TPreparedExpression ex : pExpressions)

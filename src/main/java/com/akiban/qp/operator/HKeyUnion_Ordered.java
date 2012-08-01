@@ -47,6 +47,7 @@ import java.util.Set;
 
 import static java.lang.Math.min;
 import java.math.BigDecimal;
+import java.util.Map;
 
 /**
  <h1>Overview</h1>
@@ -193,7 +194,7 @@ class HKeyUnion_Ordered extends Operator
     private final int compareFields;
 
     @Override
-    public Explainer getExplainer() {
+    public Explainer getExplainer(Map extraInfo) {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("HKeyUnion"));

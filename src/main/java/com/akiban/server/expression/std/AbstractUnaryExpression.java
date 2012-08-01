@@ -32,6 +32,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
+import java.util.Map;
 
 public abstract class AbstractUnaryExpression implements Expression {
 
@@ -40,9 +41,9 @@ public abstract class AbstractUnaryExpression implements Expression {
     // for most expressions this returns TRUE
     // Those that treat NULL specially must override the method
     @Override
-    public Explainer getExplainer ()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new ExpressionExplainer(Type.FUNCTION, name(), operand);
+        return new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, operand);
     }
 
     public boolean nullIsContaminating()

@@ -47,6 +47,7 @@ import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 public class CompareExpression extends AbstractBinaryExpression {
 
@@ -72,8 +73,8 @@ public class CompareExpression extends AbstractBinaryExpression {
     }
 
     @Override
-    public Explainer getExplainer () {
-        Explainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+    public Explainer getExplainer(Map extraInfo) {
+        Explainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
         return ex;
     }

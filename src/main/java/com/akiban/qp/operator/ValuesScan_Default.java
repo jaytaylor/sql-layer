@@ -40,6 +40,7 @@ import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.tap.InOutTap;
+import java.util.Map;
 
 /**
 
@@ -115,7 +116,7 @@ public class ValuesScan_Default extends Operator
     private final RowType rowType;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes att = new Attributes();
         

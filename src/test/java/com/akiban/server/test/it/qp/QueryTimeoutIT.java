@@ -38,6 +38,7 @@ import org.junit.Test;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.qp.operator.API.cursor;
+import java.util.Map;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -210,7 +211,7 @@ public class QueryTimeoutIT extends OperatorITBase
         }
 
         @Override
-        public Explainer getExplainer()
+        public Explainer getExplainer(Map extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }

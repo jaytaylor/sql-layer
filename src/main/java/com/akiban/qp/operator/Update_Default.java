@@ -41,6 +41,7 @@ import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
 
@@ -148,9 +149,9 @@ class Update_Default implements UpdatePlannable {
     private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: Update_Default");
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        OperationExplainer ex = new DUIOperatorExplainer("UPDATE DEFAULT", inputOperator);
+        OperationExplainer ex = new DUIOperatorExplainer("UPDATE DEFAULT", inputOperator, extraInfo);
         ex.addAttribute(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
         return ex;
     }

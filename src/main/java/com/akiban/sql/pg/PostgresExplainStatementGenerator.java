@@ -30,14 +30,17 @@ import com.akiban.server.error.UnableToExplainException;
 import com.akiban.server.error.UnsupportedExplainException;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.plan.BasePlannable;
+import com.akiban.sql.optimizer.plan.PlanContext;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.ExplainStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
+import java.util.HashMap;
 
 import java.util.List;
+import java.util.Map;
 
 /** SQL statement to explain another one. */
 public class PostgresExplainStatementGenerator extends PostgresBaseStatementGenerator
@@ -60,7 +63,13 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new UnsupportedExplainException();
         if (!(innerStmt instanceof DMLStatementNode))
             throw new UnableToExplainException ();
-        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params);
+        PlanContext plan = new PlanContext(compiler);
+        if (true) // Need something here to determine if we are explaining or not
+        {
+            Map extraInfo = new HashMap();
+            plan.makeInfo(extraInfo);
+        }
+        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, plan);
         return new PostgresExplainStatement(result.explainPlan(), compiler.usesPValues());
     }
 }

@@ -31,7 +31,7 @@ import com.akiban.sql.optimizer.rule.RulesContext;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.server.expression.Expression;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -43,7 +43,7 @@ public class PlanContext
 {
     private RulesContext rulesContext;
     private PlanNode plan;
-    private Map extraInfo = new HashMap();
+    private Map extraInfo;
 
     public PlanContext(RulesContext rulesContext) {
         this.rulesContext = rulesContext;
@@ -69,13 +69,21 @@ public class PlanContext
         plan.accept(visitor);
     }
     
+    public void makeInfo(Map map) {
+        extraInfo = map;
+    }
+    
     public boolean hasInfo() {
         if (null != extraInfo)
             return !extraInfo.isEmpty();
-        else return true;
+        else return false;
     }
     
-    public void storeInfo(Explainer key, Object value) {
+    public void storeExpressionInfo(Expression key, Object value) {
+        extraInfo.put(key, value);
+    }
+    
+    public void storeOperatorInfo(Operator key, Object value) {
         extraInfo.put(key, value);
     }
     

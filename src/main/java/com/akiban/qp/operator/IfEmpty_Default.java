@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -197,7 +198,7 @@ class IfEmpty_Default extends Operator
     private final API.InputPreservationOption inputPreservation;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes att = new Attributes();
         
@@ -208,7 +209,7 @@ class IfEmpty_Default extends Operator
         }
         else {
             for (Expression ex : oExpressions)
-                att.put(Label.OPERAND, ex.getExplainer());
+                att.put(Label.OPERAND, ex.getExplainer(extraInfo));
         }
         return new OperationExplainer(Type.IF_EMPTY, att);
     }

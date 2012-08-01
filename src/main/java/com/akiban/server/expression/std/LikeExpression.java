@@ -46,6 +46,7 @@ import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.List;
+import java.util.Map;
 
 
 public class LikeExpression extends AbstractCompositeExpression
@@ -206,9 +207,9 @@ public class LikeExpression extends AbstractCompositeExpression
     }
     
     @Override
-    public Explainer getExplainer ()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new ExpressionExplainer (Type.BINARY_OPERATOR, name(), children());
+        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
     }
 
     @Override

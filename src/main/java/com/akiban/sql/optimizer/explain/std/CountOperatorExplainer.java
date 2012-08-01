@@ -29,22 +29,23 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.sql.optimizer.explain.*;
+import java.util.Map;
 
 public class CountOperatorExplainer extends OperationExplainer
 {
-    public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp)
+    public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp, Map extraInfo)
     {
-        super(Type.COUNT_OPERATOR, buildAtts(opName, inputType, resultType, inputOp));
+        super(Type.COUNT_OPERATOR, buildAtts(opName, inputType, resultType, inputOp, extraInfo));
     }
     
-    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp)
+    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp, Map extraInfo)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputType));
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(rstType));
-        if (inputOp != null) atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
+        if (inputOp != null) atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         
         return atts;
     }

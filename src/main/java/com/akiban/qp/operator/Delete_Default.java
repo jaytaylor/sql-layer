@@ -37,6 +37,7 @@ import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+import java.util.Map;
 
 /**
 
@@ -108,9 +109,9 @@ class Delete_Default implements UpdatePlannable {
     }
     
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new DUIOperatorExplainer("Delete", inputOperator);
+        return new DUIOperatorExplainer("Delete", inputOperator, extraInfo);
     }
 
     @Override

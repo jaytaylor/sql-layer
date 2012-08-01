@@ -27,24 +27,28 @@
 package com.akiban.sql.optimizer.explain;
 
 import com.akiban.sql.optimizer.explain.Type.GeneralType;
-import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
 
 public class Format {
     
     private boolean verbose = true;
-    Map extraInfo;
+    private int numSubqueries = 0;
+    private ArrayList<Explainer> subqueries = new ArrayList<Explainer>();
     
     public Format(boolean verbose)
     {
         this.verbose = verbose;
     }
 
-    public String Describe(Explainer explainer, Map extraInfo)
+    public String Describe(Explainer explainer)
     {
         StringBuilder sb = new StringBuilder("");
         describe(explainer, sb);
-        this.extraInfo = extraInfo;
+        for (int i = 1; i <= numSubqueries; i++)
+        {
+            sb.append("\nSUBQUERY ").append(i).append(':');
+            describe(subqueries.get(i-1), sb);
+        }
         return sb.toString();
     }
     
@@ -73,31 +77,7 @@ public class Format {
         Attributes atts = explainer.get();
         String name = atts.get(Label.NAME).get(0).get().toString();
         
-        if (explainer.getType().equals(Type.LITERAL))
-        {
-            sb.append(atts.get(Label.OPERAND).get(0).get());
-        }
-        else if (name.startsWith("CAST"))
-        {
-            sb.append(name.substring(0, 4)).append("(");
-            describe(atts.get(Label.OPERAND).get(0), sb);
-            sb.append(" AS ").append(atts.get(Label.OUTPUT_TYPE).get(0).get()).append(")");
-        }
-        else if (name.equals("Field"))
-        {
-            sb.append(name).append("(").append(extraInfo.get(explainer)).append(")");
-        }
-        else if (name.equals("Bound"))
-        {
-            sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(",");
-            describe(atts.get(Label.OPERAND).get(0), sb);
-            sb.append(")");
-        }
-        else if (name.equals("Variable"))
-        {
-            sb.append(name).append("(pos=").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
-        }
-        else if (atts.containsKey(Label.INFIX_REPRESENTATION))
+        if (atts.containsKey(Label.INFIX_REPRESENTATION))
         {
             Explainer leftExplainer = atts.valuePairs().get(0).getValue();
             Explainer rightExplainer = atts.valuePairs().get(1).getValue();
@@ -113,6 +93,31 @@ public class Format {
             describe(rightExplainer, sb, true, name);
             if (needsParens)
                 sb.append(")");
+        }
+        else if (explainer.getType().equals(Type.LITERAL))
+        {
+            sb.append(atts.get(Label.OPERAND).get(0).get());
+        }
+        else if (explainer.getType().equals(Type.SUBQUERY))
+        {
+            sb.append("SUBQUERY ").append(numSubqueries++);
+            subqueries.add(atts.get(Label.OPERAND).get(0));
+        }
+        else if (name.startsWith("CAST"))
+        {
+            sb.append(name.substring(0, 4)).append("(");
+            describe(atts.get(Label.OPERAND).get(0), sb);
+            sb.append(" AS ").append(atts.get(Label.OUTPUT_TYPE).get(0).get()).append(")");
+        }
+        else if (name.equals("Bound"))
+        {
+            sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(",");
+            describe(atts.get(Label.OPERAND).get(0), sb);
+            sb.append(")");
+        }
+        else if (name.equals("Variable"))
+        {
+            sb.append(name).append("(pos=").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
         }
         else
         {
@@ -195,7 +200,7 @@ public class Format {
                 {
                     if (verbose)
                     {
-                        describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                        describe(atts.get(Label.GROUP_TABLE).get(0), sb);
                         sb.append(" -> ");
                     }
                     for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
@@ -229,7 +234,7 @@ public class Format {
                 {
                     if (verbose)
                     {
-                        describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                        describe(atts.get(Label.GROUP_TABLE).get(0), sb);
                         sb.append(" -> ");
                     }
                     describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
@@ -367,8 +372,7 @@ public class Format {
         sb.append(")");
         if (atts.containsKey(Label.INPUT_OPERATOR))
         {
-            List<Explainer> inputs = atts.get(Label.INPUT_OPERATOR);
-            for (Explainer input : inputs)
+            for (Explainer input : atts.get(Label.INPUT_OPERATOR))
             {
                 sb.append("\n");
                 for (int i = 0; i <= depth; i++)

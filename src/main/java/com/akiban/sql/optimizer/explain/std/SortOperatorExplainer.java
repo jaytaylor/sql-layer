@@ -33,25 +33,26 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
+import java.util.Map;
 
 public class SortOperatorExplainer extends OperationExplainer
 {
-    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering)
+    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map extraInfo)
     {
-        super(Type.SORT, buildMap(name, sortOption, sortType, inputOp, ordering));
+        super(Type.SORT, buildMap(name, sortOption, sortType, inputOp, ordering, extraInfo));
     }
     
-    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering)
+    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map extraInfo)
     {
         Attributes map = new Attributes();
         
         map.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         map.put(Label.SORT_OPTION, PrimitiveExplainer.getInstance(sortOption.name()));
         map.put(Label.ROWTYPE, PrimitiveExplainer.getInstance(sortType));
-        map.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
+        map.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         for (int i = 0; i < ordering.sortColumns(); i++)
         {
-            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer());
+            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer(extraInfo));
             map.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
         }
         

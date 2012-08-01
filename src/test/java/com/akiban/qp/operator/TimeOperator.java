@@ -32,6 +32,7 @@ import com.akiban.sql.optimizer.explain.Explainer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class TimeOperator extends Operator
@@ -90,7 +91,7 @@ public class TimeOperator extends Operator
     private long elapsedNsec = 0;
 
     @Override
-    public Explainer getExplainer() {
+    public Explainer getExplainer(Map extraInfo) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

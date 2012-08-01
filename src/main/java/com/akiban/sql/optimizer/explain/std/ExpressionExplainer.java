@@ -29,26 +29,27 @@ import com.akiban.server.expression.Expression;
 import com.akiban.sql.optimizer.explain.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class ExpressionExplainer extends OperationExplainer
 {  
-    public ExpressionExplainer (Type type, String name, List<? extends Expression> exs)
+    public ExpressionExplainer(Type type, String name, Map extraInfo, List<? extends Expression> exs)
     {
-        super(checkType(type), buildMap(name, exs));
+        super(checkType(type), buildMap(name, extraInfo, exs));
     }
      
-    public ExpressionExplainer (Type type, String name, Expression ... operand)
+    public ExpressionExplainer(Type type, String name, Map extraInfo, Expression ... operand)
     {
-        this(type, name, Arrays.asList(operand));
+        this(type, name, extraInfo, Arrays.asList(operand));
     }
         
-    private static Attributes buildMap (String name, List<? extends Expression> exs)
+    private static Attributes buildMap (String name, Map extraInfo, List<? extends Expression> exs)
     {
         Attributes states = new Attributes();
         states.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         if (exs != null)
             for (Expression ex : exs)
-                states.put(Label.OPERAND, ex.getExplainer());
+                states.put(Label.OPERAND, ex.getExplainer(extraInfo));
         return states;
     }
     

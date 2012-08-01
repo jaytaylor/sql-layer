@@ -40,6 +40,7 @@ import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -209,7 +210,7 @@ class IndexScan_Default extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes atts = new Attributes();
         

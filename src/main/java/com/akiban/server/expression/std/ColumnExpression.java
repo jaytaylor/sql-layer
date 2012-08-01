@@ -39,6 +39,7 @@ import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is similar to a FieldExpression, except that fields are specified by an AIS Column, rather than
@@ -94,9 +95,9 @@ public final class ColumnExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        Explainer ex = new ExpressionExplainer(Type.FUNCTION, "FIELD", (List)null);
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, "FIELD", extraInfo, (List)null);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(position));
         return ex;
     }

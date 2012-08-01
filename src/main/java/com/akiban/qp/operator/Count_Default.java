@@ -39,6 +39,7 @@ import com.akiban.util.tap.InOutTap;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -147,9 +148,9 @@ class Count_Default extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new CountOperatorExplainer("Count Default", countType, resultType, null);
+        return new CountOperatorExplainer("Count Default", countType, resultType, null, extraInfo);
     }
 
     // Inner classes

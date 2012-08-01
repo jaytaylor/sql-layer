@@ -42,7 +42,6 @@ import com.akiban.sql.parser.NodeFactory;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserContext;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.server.error.SQLParserInternalException;
 
@@ -114,7 +113,7 @@ public class OperatorCompiler extends SchemaRulesContext
         return compile(stmt, params, new PlanContext(this));
     }
 
-    protected BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params,
+    public BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params,
                                     PlanContext plan) {
         stmt = bindAndTransform(stmt); // Get into standard form.
         plan.setPlan(new AST(stmt, params));

@@ -29,15 +29,16 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.optimizer.explain.*;
+import java.util.Map;
 
 public class LookUpOperatorExplainer extends OperationExplainer
 {
-    public LookUpOperatorExplainer (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp)
+    public LookUpOperatorExplainer (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map extraInfo)
     {
-        super(Type.LOOKUP_OPERATOR, buildAtts(name, gTable, iRowType, keepInput, inputOp));
+        super(Type.LOOKUP_OPERATOR, buildAtts(name, gTable, iRowType, keepInput, inputOp, extraInfo));
     }
     
-    private static Attributes buildAtts (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp)
+    private static Attributes buildAtts (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map extraInfo)
     {
         Attributes atts = new Attributes();
         
@@ -50,7 +51,7 @@ public class LookUpOperatorExplainer extends OperationExplainer
         try
         {
             atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
-            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
+            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         }
         catch (NullPointerException exception){}
         

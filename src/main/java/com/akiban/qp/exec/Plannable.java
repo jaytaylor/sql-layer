@@ -30,6 +30,7 @@ import com.akiban.qp.operator.Operator;
 
 import com.akiban.sql.optimizer.explain.Explainer;
 import java.util.List;
+import java.util.Map;
 
 public interface Plannable {
     List<Operator> getInputOperators();
@@ -38,5 +39,5 @@ public interface Plannable {
 
     String describePlan(Operator inputOperator);
     
-    Explainer getExplainer ();
+    Explainer getExplainer(Map extraInfo);
 }

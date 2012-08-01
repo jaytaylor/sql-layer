@@ -40,9 +40,7 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  <h1>Overview</h1>
@@ -97,7 +95,7 @@ class Select_HKeyOrdered extends Operator
     public String toString()
     {
         Format f = new Format(true);
-        return f.Describe(this.getExplainer(), null);
+        return f.Describe(this.getExplainer(new HashMap()));
     }
 
     // Operator interface
@@ -168,14 +166,14 @@ class Select_HKeyOrdered extends Operator
     private final TPreparedExpression pPredicate;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance("Select_HKeyOrdered"));
-        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         if (predicate != null)
-            att.put(Label.PREDICATE, predicate.getExplainer());
+            att.put(Label.PREDICATE, predicate.getExplainer(extraInfo));
         else
             att.put(Label.PREDICATE, TPreparedExpressions.getExplainer(pPredicate));
         return new OperationExplainer(Type.SELECT_HKEY, att);

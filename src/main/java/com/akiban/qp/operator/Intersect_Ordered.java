@@ -244,7 +244,7 @@ class Intersect_Ordered extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes atts = new Attributes();
         

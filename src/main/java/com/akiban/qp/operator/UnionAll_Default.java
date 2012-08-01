@@ -51,6 +51,7 @@ import com.akiban.util.tap.InOutTap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  <h1>Overview</h1>
@@ -194,14 +195,14 @@ final class UnionAll_Default extends Operator {
     private final RowType outputRowType;
 
     @Override
-    public Explainer getExplainer()
+    public Explainer getExplainer(Map extraInfo)
     {
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance("UNION ALL"));
         
         for (Operator op : inputs)
-            att.put(Label.INPUT_OPERATOR, op.getExplainer());
+            att.put(Label.INPUT_OPERATOR, op.getExplainer(extraInfo));
         for (RowType type : inputTypes)
             att.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(type));
        

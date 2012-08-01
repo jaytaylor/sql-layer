@@ -42,6 +42,7 @@ import java.math.BigDecimal;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -171,7 +172,7 @@ class Using_BloomFilter extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer() {
+    public Explainer getExplainer(Map extraInfo) {
         return PrimitiveExplainer.getInstance(toString());
     }
 

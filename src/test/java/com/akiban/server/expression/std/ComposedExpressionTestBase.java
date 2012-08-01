@@ -49,6 +49,7 @@ import java.util.Set;
 
 import static com.akiban.server.expression.std.ComposedExpressionTestBase.ExpressionAttribute.*;
 import com.akiban.sql.optimizer.explain.Explainer;
+import java.util.*;
 import static org.junit.Assert.*;
 
 public abstract class ComposedExpressionTestBase {
@@ -345,7 +346,7 @@ public abstract class ComposedExpressionTestBase {
         }
 
         @Override
-        public Explainer getExplainer()
+        public Explainer getExplainer(Map extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }

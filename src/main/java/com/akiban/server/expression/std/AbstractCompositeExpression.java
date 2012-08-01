@@ -38,15 +38,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractCompositeExpression implements Expression {
 
     // Expression interface
 
     @Override
-    public Explainer getExplainer ()
+    public Explainer getExplainer(Map extraInfo)
     {
-        return new ExpressionExplainer(Type.FUNCTION, name(), children);
+        return new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, children);
     }
     
     @Override

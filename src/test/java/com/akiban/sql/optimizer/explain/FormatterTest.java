@@ -109,15 +109,15 @@ public class FormatterTest {
         Expression substr = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         Expression substr_ = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1_, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         
-        Explainer explainer = substr.getExplainer();
+        Explainer explainer = substr.getExplainer(null);
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \'%Y-%m-%d\'), 9 + 10, 11)";
         Format f = new Format(true);
-        String result = f.Describe(explainer, null);
+        String result = f.Describe(explainer);
         assertEquals(expResult, result);
         
-        explainer = substr_.getExplainer();
+        explainer = substr_.getExplainer(null);
         expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \'%Y-%m-%d\'), 9 + 10, 11)";
-        result = f.Describe(explainer, null);
+        result = f.Describe(explainer);
         assertEquals(expResult, result);
     }
 

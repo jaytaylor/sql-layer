@@ -46,6 +46,7 @@ import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.List;
+import java.util.Map;
 
 public final class BoolLogicExpression extends AbstractBinaryExpression {
 
@@ -62,8 +63,8 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
     }
     
     @Override
-    public Explainer getExplainer () {
-        Explainer ex = new ExpressionExplainer (Type.BINARY_OPERATOR, name(), children());
+    public Explainer getExplainer(Map extraInfo) {
+        Explainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(name()));
         ex.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
         return ex;

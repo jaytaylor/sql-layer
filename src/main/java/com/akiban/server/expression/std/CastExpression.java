@@ -42,6 +42,7 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Map;
 
 public class CastExpression extends AbstractUnaryExpression
 {
@@ -55,8 +56,8 @@ public class CastExpression extends AbstractUnaryExpression
     }
 
     @Override
-    public Explainer getExplainer () {
-        Explainer ex = super.getExplainer();
+    public Explainer getExplainer(Map extraInfo) {
+        Explainer ex = super.getExplainer(extraInfo);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(valueType().name()));
         return ex;
     }

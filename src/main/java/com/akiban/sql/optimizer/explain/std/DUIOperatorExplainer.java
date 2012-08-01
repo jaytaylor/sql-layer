@@ -31,20 +31,21 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
+import java.util.Map;
 
 public class DUIOperatorExplainer extends OperationExplainer
 {
-    public DUIOperatorExplainer (String name, Operator inputOp)
+    public DUIOperatorExplainer (String name, Operator inputOp, Map extraInfo)
     {
-        super(Type.DUI, buildAtts(name, inputOp));
+        super(Type.DUI, buildAtts(name, inputOp, extraInfo));
     }
     
-    private static Attributes buildAtts (String name, Operator inputOp)
+    private static Attributes buildAtts (String name, Operator inputOp, Map extraInfo)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
+        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         try
         {
             atts.put(Label.TABLE_TYPE, PrimitiveExplainer.getInstance(inputOp.rowType().userTable().getName().toString()));

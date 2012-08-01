@@ -73,7 +73,7 @@ public abstract class BasePlannable extends BasePlanNode
     public boolean hasInfo() {
         if (null != extraInfo)
             return !extraInfo.isEmpty();
-        else return true;
+        else return false;
     }
     
     public Map getInfo() {
@@ -89,7 +89,7 @@ public abstract class BasePlannable extends BasePlanNode
     protected static void explainPlan(Plannable operator,
                                       List<String> into, Map extraInfo) {
         Format f = new Format(true);
-        into.add(f.Describe(operator.getExplainer(), extraInfo));
+        into.add(f.Describe(operator.getExplainer(extraInfo)));
     }
     
     @Override
