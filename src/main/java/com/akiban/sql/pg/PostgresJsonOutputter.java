@@ -104,7 +104,7 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
                 }
                 else {
                     Quote.JSON_QUOTE.quote(appender, type);
-                    encoder.appendValue(value, valueType, false);
+                    value.appendAsString(appender, Quote.JSON_QUOTE);
                     Quote.JSON_QUOTE.quote(appender, type);
                 }
             }
