@@ -188,7 +188,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             DataTypeDescriptor newDtd = nodeToSqlType(n);
             if (newDtd != null)
                 n.setSQLtype(newDtd);
-            
+// tinstance isn't nullable with columns. What else?
             return n;
         }
 
