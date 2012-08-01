@@ -158,9 +158,9 @@ public class ExpressionTypes
         }
         if (att != null) {
             String coll = att.getCollation();
-            if (coll != null)
-                return AkCollatorFactory.getAkCollator(coll);
-            return AkCollatorFactory.UCS_BINARY_COLLATOR;
+            return (coll != null)
+                    ? AkCollatorFactory.getAkCollator(coll)
+                    : AkCollatorFactory.UCS_BINARY_COLLATOR;
         }
         return null;
     }
