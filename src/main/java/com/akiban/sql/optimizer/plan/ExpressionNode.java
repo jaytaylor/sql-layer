@@ -42,6 +42,7 @@ public interface ExpressionNode extends PlanElement
     public TPreptimeValue getPreptimeValue();
 
     public void setPreptimeValue(TPreptimeValue value);
+    public void setSQLtype(DataTypeDescriptor type);
 
     public boolean isColumn();
     public boolean isConstant();

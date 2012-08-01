@@ -249,7 +249,7 @@ public final class T3RegistryImplTest {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             throw new UnsupportedOperationException();
         }
     }

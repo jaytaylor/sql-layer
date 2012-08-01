@@ -89,7 +89,8 @@ public abstract class TString extends TClass
         CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
         AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
         if (collator == null)
-            throw new AkibanInternalException("couldn't merge collators for " + instanceA + " and " + instanceB);
+            // TODO in the future, we may want to use some default collator. For now, just use native comparison
+            return sourceA.getString().compareTo(sourceB.getString());
         return collator.compare(sourceA.getString(), sourceB.getString());
     }
 

@@ -28,16 +28,11 @@ package com.akiban.server.types3.mcompat.mcasts;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -93,7 +88,7 @@ public final class Cast_From_Varbinary {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             byte[] asBytes = source.getBytes();
             String asString;
             try {
@@ -116,7 +111,7 @@ public final class Cast_From_Varbinary {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             String in = source.getString();
             int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
             String charsetName = StringFactory.Charset.values()[charsetId].name();
@@ -136,7 +131,7 @@ public final class Cast_From_Varbinary {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             putBytes(context, target, source.getBytes());
         }
     }

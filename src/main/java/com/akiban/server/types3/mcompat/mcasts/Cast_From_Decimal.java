@@ -52,7 +52,7 @@ public final class Cast_From_Decimal {
 
     public static final TCast TO_FLOAT = new TCastBase(MNumeric.DECIMAL, MApproximateNumber.FLOAT) {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             BigDecimalWrapper decimal = (BigDecimalWrapper) source.getObject();
             float asFloat = decimal.asBigDecimal().floatValue();
             target.putFloat(asFloat);
@@ -61,7 +61,7 @@ public final class Cast_From_Decimal {
 
     public static final TCast TO_DOUBLE = new TCastBase(MNumeric.DECIMAL, MApproximateNumber.DOUBLE) {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             BigDecimalWrapper decimal = (BigDecimalWrapper) source.getObject();
             double asDouble = decimal.asBigDecimal().doubleValue();
             target.putDouble(asDouble);
@@ -70,7 +70,7 @@ public final class Cast_From_Decimal {
 
     public static final TCast TO_BIGINT = new TCastBase(MNumeric.DECIMAL, MNumeric.BIGINT) {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             BigDecimalWrapper wrapped = (BigDecimalWrapper) source.getObject();
             BigDecimal bd = wrapped.asBigDecimal();
             int signum = bd.signum();
@@ -94,7 +94,7 @@ public final class Cast_From_Decimal {
 
     public static final TCast TO_VARCHAR = new TCastBase(MNumeric.DECIMAL, MString.VARCHAR) {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             BigDecimalWrapper wrapper = (BigDecimalWrapper) source.getObject();
             String asString = wrapper.asBigDecimal().toString();
             int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);

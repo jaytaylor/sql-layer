@@ -405,6 +405,10 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            if (source.isNull()) {
+                target.putNull();
+                return;
+            }
             TInstance srcInst = context.inputTInstanceAt(0);
             TInstance dstInst = context.outputTInstance();
             tClass.selfCast(context, srcInst, source,  dstInst, target);
@@ -442,6 +446,10 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            if (source.isNull()) {
+                target.putNull();
+                return;
+            }
             PValue tmp = (PValue) context.exectimeObjectAt(TMP_PVALUE);
             if (tmp == null) {
                 tmp = new PValue(first.targetClass().underlyingType());

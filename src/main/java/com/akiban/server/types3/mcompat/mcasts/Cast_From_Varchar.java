@@ -79,7 +79,7 @@ public class Cast_From_Varchar
 
     public static final TCast TO_BOOLEAN = new TCastBase(MString.VARCHAR, AkBool.INSTANCE) {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             String in = source.getString();
             boolean isTrue = ("t".equalsIgnoreCase(in) || "true".equalsIgnoreCase(in));
             target.putBool(isTrue);
@@ -89,7 +89,7 @@ public class Cast_From_Varchar
     public static final TCast TO_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT, true, Constantness.UNKNOWN)
     {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             TINYINT.parse(context, source, target);
         }
@@ -99,7 +99,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             UNSIGNED_TINYINT.parse(context, source, target);
         }
@@ -108,7 +108,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             SMALLINT.parse(context, source, target);
         }
@@ -117,7 +117,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             UNSIGNED_SMALLINT.parse(context, source, target);
         }
@@ -126,7 +126,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             MEDIUMINT.parse(context, source, target);
         }
@@ -135,7 +135,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             UNSIGNED_MEDIUMINT.parse(context, source, target);
         }
@@ -144,7 +144,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             INT.parse(context, source, target);
         }
@@ -153,7 +153,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             UNSIGNED_INT.parse(context, source, target);
         }
@@ -162,7 +162,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             BIGINT.parse(context, source, target);
         }
@@ -171,7 +171,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             UNSIGNED_BIGINT.parse(context, source, target);
         }
@@ -198,7 +198,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             DOUBLE.parse(context, source, target);
         }
@@ -208,7 +208,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             FLOAT.parse(context, source, target);
         }
@@ -218,7 +218,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             DECIMAL.parse(context, source, target);
         }   
@@ -228,7 +228,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             DATE.parse(context, source, target);
         }
@@ -238,7 +238,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             DATETIME.parse(context, source, target);
         }
@@ -248,7 +248,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             TIME.parse(context, source, target);
         }
@@ -258,7 +258,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             TIMESTAMP.parse(context, source, target);
         }
@@ -268,7 +268,7 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             YEAR.parse(context, source, target);
         }

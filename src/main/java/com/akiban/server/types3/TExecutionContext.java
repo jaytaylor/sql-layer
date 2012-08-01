@@ -61,7 +61,7 @@ public final class TExecutionContext {
 
     public Object preptimeObjectAt(int index) {
         if (preptimeCache == null)
-            throw new IllegalArgumentException("no preptime cache objects");
+            preptimeCache = new SparseArray<Object>(index);
         return preptimeCache.getIfDefined(index);
     }
 
@@ -71,8 +71,8 @@ public final class TExecutionContext {
 
     public Object exectimeObjectAt(int index) {
         if (exectimeCache == null)
-            throw new IllegalArgumentException("no exectime cache objects");
-        return exectimeCache.getIfDefined(index);
+            exectimeCache = new SparseArray<Object>();
+        return exectimeCache.get(index);
     }
 
     public void putExectimeObject(int index, Object value) {
@@ -205,6 +205,10 @@ public final class TExecutionContext {
     }
 
     // state
+
+    public TExecutionContext(List<TInstance> inputTypes,  TInstance outputType, QueryContext queryContext) {
+        this(null, inputTypes, outputType, queryContext, null, null, null);
+    }
 
     public TExecutionContext(SparseArray<Object> preptimeCache,
                       List<TInstance> inputTypes,
