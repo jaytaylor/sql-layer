@@ -130,7 +130,9 @@ public class SwingConsole extends JFrame implements WindowListener
             JMenu run = new JMenu("Run");
             run.setMnemonic(KeyEvent.VK_W);
             JMenuItem runPsql = run.add("Run PSQL client");
-            
+            runPsql.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6,
+                                                          shift));
+
             if (macOSX)
                 RUN_PSQL_CMD = new String[] { "osascript", "-e", "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p15432\"\n end tell" };
             else if (osName.startsWith("Window"))
