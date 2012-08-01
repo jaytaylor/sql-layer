@@ -26,12 +26,8 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.sql.types.TypeId;
 import com.google.common.math.LongMath;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 enum AkIntervalMonthsFormat implements IntervalFormat {
     YEAR("Y", TypeId.INTERVAL_YEAR_ID),
@@ -46,61 +42,49 @@ enum AkIntervalMonthsFormat implements IntervalFormat {
 
     @Override
     public long parse(String string) {
-        boolean isNegative;
-        if (string.charAt(0) == '-') {
-            isNegative = true;
-            string = string.substring(1);
-        }
-        else {
-            isNegative = false;
-        }
-        Matcher matcher = regex.matcher(string);
-        if (!matcher.matches())
-            throw new AkibanInternalException("couldn't parse string as " + name() + ": " + string);
-        long months = 0;
-        for (int i = 0, len = matcher.groupCount(); i < len; ++i) {
-            String group = matcher.group(i+1);
-            long parsed = Long.parseLong(group);
-            if (isYear[i])
-                parsed = LongMath.checkedMultiply(parsed, 12);
-            months = LongMath.checkedAdd(months, parsed);
-        }
-
-        return isNegative ? -months : months;
+        return parser.parse(string);
     }
 
     AkIntervalMonthsFormat(String pattern, TypeId typeId) {
-        StringBuilder compiled = new StringBuilder();
-        boolean[] all = new boolean[pattern.length()]; // we'll trim it later
-        int flags = 0;
-        for (int i = 0, len = pattern.length(); i < len; ++i) {
-            char c = pattern.charAt(i);
-            switch (c) {
-            case 'Y':
-                all[flags++] = true;
-                compiled.append("(\\d+)");
-                break;
-            case 'M':
-                all[flags++] = false;
-                compiled.append("(\\d+)");
-                break;
-            case '-':
-                compiled.append(c);
-                break;
-            default:
-                throw new IllegalArgumentException("illegal pattern: " + pattern);
-            }
-
-        }
-
-        this.regex = Pattern.compile(compiled.toString());
-        this.isYear = new boolean[flags];
-        System.arraycopy(all, 0, this.isYear, 0, flags);
+        this.parser = new MonthsParser(this, pattern);
         this.typeId = typeId;
 
     }
 
-    private final Pattern regex;
-    private final boolean[] isYear;
+    private final AkIntervalParser<?> parser;
     private final TypeId typeId;
+
+    private static class MonthsParser extends AkIntervalParser<Boolean> {
+
+        private MonthsParser(Enum<?> onBehalfOf, String pattern) {
+            super(onBehalfOf, pattern);
+        }
+
+        @Override
+        protected void buildChar(char c, ParseCompilation<? super Boolean> result) {
+            switch (c) {
+            case 'Y':
+                result.addGroupingDigits();
+                result.addUnit(Boolean.TRUE);
+                break;
+            case 'M':
+                result.addUnit(Boolean.FALSE);
+                result.addGroupingDigits();
+                break;
+            case '-':
+                result.addPattern(c);
+                break;
+            default:
+                throw new IllegalArgumentException("illegal pattern: " + result.inputPattern());
+            }
+        }
+
+        @Override
+        protected long parseLong(String asString, Boolean isYear) {
+            long parsed = Long.parseLong(asString);
+            if (isYear)
+                parsed = LongMath.checkedMultiply(parsed, 12);
+            return parsed;
+        }
+    }
 }

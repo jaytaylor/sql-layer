@@ -26,15 +26,10 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.sql.types.TypeId;
 import com.google.common.math.LongMath;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 enum AkIntervalSecondsFormat implements IntervalFormat {
 
@@ -59,84 +54,72 @@ enum AkIntervalSecondsFormat implements IntervalFormat {
 
     @Override
     public long parse(String string) {
-        boolean isNegative;
-        if (string.charAt(0) == '-') {
-            isNegative = true;
-            string = string.substring(1);
+        return parser.parse(string);
+    }
+
+    AkIntervalSecondsFormat(String pattern, TypeId typeId) {
+        this.parser = new SecondsParser(this, pattern);
+        this.typeId = typeId;
+    }
+
+    private final AkIntervalParser<?> parser;
+    private final TypeId typeId;
+
+    private static class SecondsParser extends AkIntervalParser<TimeUnit> {
+        private SecondsParser(Enum<?> onBehalfOf, String pattern) {
+            super(onBehalfOf, pattern);
         }
-        else {
-            isNegative = false;
+
+        @Override
+        protected void buildChar(char c, ParseCompilation<? super TimeUnit> result) {
+            switch (c) {
+            case 'D':
+                result.addGroupingDigits();
+                result.addUnit(TimeUnit.DAYS);
+                break;
+            case 'H':
+                result.addGroupingDigits();
+                result.addUnit(TimeUnit.HOURS);
+                break;
+            case 'M':
+                result.addGroupingDigits();
+                result.addUnit(TimeUnit.MINUTES);
+                break;
+            case 'S':
+                result.addPattern("(\\d+)(?:\\.(\\d+))?");
+                result.addUnit(TimeUnit.SECONDS);
+                result.addUnit(null); // fractional component
+                break;
+            case ' ':
+            case ':':
+                result.addPattern(c);
+                break;
+            default:
+                throw new IllegalArgumentException("illegal pattern: " + result.inputPattern());
+            }
         }
-        Matcher matcher = regex.matcher(string);
-        if (!matcher.matches())
-            throw new AkibanInternalException("couldn't parse string as " + name() + ": " + string);
-        long micros = 0;
-        for (int i = 0, len = matcher.groupCount(); i < len; ++i) {
-            String group = matcher.group(i+1);
-            TimeUnit parsedUnit = timeUnits[i];
+
+        @Override
+        protected long parseLong(String asString, TimeUnit parsedUnit) {
             long parsed;
             if (parsedUnit != null) {
-                parsed = Long.parseLong(group);
+                parsed = Long.parseLong(asString);
             }
             else {
                 // Fractional seconds component. Need to be careful about how many digits were given.
                 // We'll normalize to nanoseconds, then convert to what we need. This isn't the most efficient,
                 // but it means we can change the underlying scale without having to remember this code.
                 // It's just a couple multiplications and one division, anyway.
-                if (group.length() > 8)
-                    group = group.substring(0, 9);
-                parsed = Long.parseLong(group);
+                if (asString.length() > 8)
+                    asString = asString.substring(0, 9);
+                parsed = Long.parseLong(asString);
                 // how many digits short of the full 8 are we? e.g., "123" is 5 short. Need to multiply it
                 // by shortBy*10 to get to nanos
-                for (int shortBy= (8 - group.length()); shortBy > 0; --shortBy)
+                for (int shortBy= (8 - asString.length()); shortBy > 0; --shortBy)
                     parsed = LongMath.checkedMultiply(parsed, 10L);
                 parsedUnit = TimeUnit.NANOSECONDS;
             }
-            long parsedMicros = UNDERLYING_UNIT.convert(parsed, parsedUnit);
-            micros = LongMath.checkedAdd(micros, parsedMicros);
+            return UNDERLYING_UNIT.convert(parsed, parsedUnit);
         }
-
-        return isNegative ? -micros : micros;
     }
-
-    AkIntervalSecondsFormat(String pattern, TypeId typeId) {
-        StringBuilder compiled = new StringBuilder();
-        List<TimeUnit> timeUnits = new ArrayList<TimeUnit>();
-        for (int i = 0, len = pattern.length(); i < len; ++i) {
-            char c = pattern.charAt(i);
-            switch (c) {
-            case 'D':
-                compiled.append("(\\d+)");
-                timeUnits.add(TimeUnit.DAYS);
-                break;
-            case 'H':
-                compiled.append("(\\d+)");
-                timeUnits.add(TimeUnit.HOURS);
-                break;
-            case 'M':
-                compiled.append("(\\d+)");
-                timeUnits.add(TimeUnit.MINUTES);
-                break;
-            case 'S':
-                compiled.append("(\\d+)(?:\\.(\\d+))?");
-                timeUnits.add(TimeUnit.SECONDS);
-                timeUnits.add(null);
-                break;
-            case ' ':
-            case ':':
-                compiled.append(c);
-                break;
-            default:
-                throw new IllegalArgumentException("illegal pattern: " + pattern);
-            }
-        }
-
-        this.regex = Pattern.compile(compiled.toString());
-        this.timeUnits = timeUnits.toArray(new TimeUnit[timeUnits.size()]);
-        this.typeId = typeId;
-    }
-
-    private final Pattern regex;
-    private final TimeUnit[] timeUnits;
-    private final TypeId typeId;
 }

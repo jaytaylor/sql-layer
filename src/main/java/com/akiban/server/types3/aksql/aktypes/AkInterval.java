@@ -67,18 +67,18 @@ public class AkInterval extends TClassBase {
     private static TClassFormatter secondsFormatter = new TClassFormatter() {
         @Override
         public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-            long micros = rawValueAs(source, TimeUnit.MICROSECONDS);
+            long micros = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
 
-            long days = rawValueAs(micros, TimeUnit.DAYS);
+            long days = secondsIntervalAs(micros, TimeUnit.DAYS);
             micros -= TimeUnit.DAYS.toMicros(days);
 
-            long hours = rawValueAs(micros, TimeUnit.HOURS);
+            long hours = secondsIntervalAs(micros, TimeUnit.HOURS);
             micros -= TimeUnit.HOURS.toMicros(hours);
 
-            long minutes = rawValueAs(micros, TimeUnit.MINUTES);
+            long minutes = secondsIntervalAs(micros, TimeUnit.MINUTES);
             micros -= TimeUnit.MINUTES.toMicros(minutes);
 
-            long seconds = rawValueAs(micros, TimeUnit.SECONDS);
+            long seconds = secondsIntervalAs(micros, TimeUnit.SECONDS);
             micros -= TimeUnit.SECONDS.toMicros(seconds);
 
             Formatter formatter = new Formatter(out.getAppendable());
@@ -86,7 +86,10 @@ public class AkInterval extends TClassBase {
         }
     };
 
-    public static AkInterval DAYS = new AkInterval(
+    /**
+     * A MONTHS interval, whose 64-bit value represents number of months.
+     */
+    public static AkInterval MONTHS = new AkInterval(
             AkBundle.INSTANCE.id(),
             "interval months",
             AkCategory.DATE_TIME,
@@ -99,6 +102,14 @@ public class AkInterval extends TClassBase {
             MonthsAttrs.FORMAT,
             AkIntervalMonthsFormat.values());
 
+    /**
+     * <p>A SECONDS interval, whose value 64-bit value does <em>not</em> necessarily represent number of seconds.
+     * In fact, it almost definitely is not number of seconds; instead, the value is in some private format.</p>
+     *
+     * <p>To get values of this TClass in a meaningful way, you should use one of the {@linkplain #secondsIntervalAs}
+     * overloads, specifying the units you want. Units will truncate (not round) their values, as is standard in the
+     * JDK's TimeUnit implementation.</p>
+     */
     public static AkInterval SECONDS = new AkInterval(
             AkBundle.INSTANCE.id(),
             "interval seconds",
@@ -113,11 +124,11 @@ public class AkInterval extends TClassBase {
             AkIntervalSecondsFormat.values()
     );
 
-    public static long rawValueAs(PValueSource source, TimeUnit as) {
-        return rawValueAs(source.getInt64(), as);
+    public static long secondsIntervalAs(PValueSource source, TimeUnit as) {
+        return secondsIntervalAs(source.getInt64(), as);
     }
 
-    public static long rawValueAs(long secondsIntervalRaw, TimeUnit as) {
+    public static long secondsIntervalAs(long secondsIntervalRaw, TimeUnit as) {
         return as.convert(secondsIntervalRaw, AkIntervalSecondsFormat.UNDERLYING_UNIT);
     }
 
