@@ -1148,11 +1148,15 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 MultiIndexIntersectScan multiScan = (MultiIndexIntersectScan)indexScan;
                 installOrdering(indexScan, multiScan.getOrdering(), multiScan.getPeggedCount(), multiScan.getComparisonFields());
             }
-            installConditions(indexScan, conditionSources);
+            installConditions(indexScan.getConditions(), conditionSources);
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
         }
         else {
+            if (scan instanceof GroupLoopScan) {
+                installConditions(((GroupLoopScan)scan).getJoinConditions(), 
+                                  conditionSources);
+            }
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
         }
@@ -1163,11 +1167,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * used, using either the sources returned by {@link updateContext} or the
      * current ones if nothing has been changed.
      */
-    public void installConditions(IndexScan index, List<ConditionList> conditionSources) {
-        if (index.getConditions() != null) {
+    public void installConditions(Collection<? extends ConditionExpression> conditions,
+                                  List<ConditionList> conditionSources) {
+        if (conditions != null) {
             if (conditionSources == null)
                 conditionSources = this.conditionSources;
-            for (ConditionExpression condition : index.getConditions()) {
+            for (ConditionExpression condition : conditions) {
                 for (ConditionList conditionSource : conditionSources) {
                     if (conditionSource.remove(condition))
                         break;
