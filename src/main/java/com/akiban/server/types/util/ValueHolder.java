@@ -198,7 +198,13 @@ public final class ValueHolder extends ValueSource implements ValueTarget {
         ToObjectValueTarget target = new ToObjectValueTarget();
         target.expectType(AkType.VARCHAR);
         String string = (String) Converters.convert(this, target).lastConvertedValue();
-        appender.append(string);
+        if (quote == Quote.NONE)
+            appender.append(string);
+        else {
+            quote.quote(appender, type);
+            quote.append(appender, string);
+            quote.quote(appender, type);
+        }
     }
 
     @Override

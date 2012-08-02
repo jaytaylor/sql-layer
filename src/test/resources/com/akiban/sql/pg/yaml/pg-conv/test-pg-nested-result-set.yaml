@@ -26,7 +26,7 @@
 - Statement: SELECT ** FROM customers WHERE cid = 1;
 - output: [['{"cid":1,"name":"Smith","test.addresses":[{"aid":101,"cid":1,"state":"MA","city":"Boston"}],"test.orders":[{"oid":101,"cid":1,"order_date":"2011-03-01","test.items":[{"iid":1011,"oid":101,"sku":"1234","quan":100},{"iid":1012,"oid":101,"sku":"4567","quan":50}]},{"oid":102,"cid":1,"order_date":"2011-03-02","test.items":[]}]}']]
 ---
-- Statement: SET OutputFormat TO 'table';
+- Statement: SET OutputFormat TO DEFAULT;
 ---
 - Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE; 
 ...
