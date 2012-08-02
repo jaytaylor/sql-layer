@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
@@ -44,6 +45,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
+import java.lang.reflect.Field;
+
 public class MNumeric extends SimpleDtdTClass {
 
     protected MNumeric(String name, TClassFormatter formatter, int serializationSize, PUnderlying pUnderlying,
@@ -58,10 +61,21 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     private static TypeId inferTypeid(String name) {
-        if (name.contains("unsigned"))
-            return TypeId.INTEGER_UNSIGNED_ID;
-        else
+        // special cases first
+        if ("mediumint".equals(name))
             return TypeId.INTEGER_ID;
+        if ("mediumint unsigned".equals(name))
+            return TypeId.INTEGER_UNSIGNED_ID;
+
+        name = name.toUpperCase().replace(' ', '_') + "_ID";
+        try {
+            Field field = TypeId.class.getField(name);
+            // assume public and static. If not, Field.get will fail, which is all we can do anyway.
+            Object instance = field.get(null);
+            return (TypeId) instance;
+        } catch (Exception e) {
+            throw new AkibanInternalException("while getting field " + name, e);
+        }
     }
 
     @Override
@@ -124,15 +138,15 @@ public class MNumeric extends SimpleDtdTClass {
             = new MNumeric("mediumint unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 8, TParsers.UNSIGNED_MEDIUMINT);
 
     public static final MNumeric INT 
-            = new MNumeric("int", NumericFormatter.FORMAT.INT_32, 4, PUnderlying.INT_32, 11, TParsers.INT);
+            = new MNumeric("integer", NumericFormatter.FORMAT.INT_32, 4, PUnderlying.INT_32, 11, TParsers.INT);
 
     public static final MNumeric INT_UNSIGNED 
-            = new MNumeric("int unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 10, TParsers.UNSIGNED_INT);
+            = new MNumeric("integer unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 10, TParsers.UNSIGNED_INT);
 
     public static final MNumeric BIGINT 
             = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 21, TParsers.BIGINT);
     public static final MNumeric BIGINT_UNSIGNED
-            = new MNumeric("bigintunsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT);
+            = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT);
 
     public static final TClass DECIMAL = new MBigDecimal();
 

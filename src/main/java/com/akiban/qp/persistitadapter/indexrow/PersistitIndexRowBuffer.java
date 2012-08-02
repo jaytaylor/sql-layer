@@ -116,8 +116,11 @@ public class PersistitIndexRowBuffer extends IndexRow
         value.put(bitmap);
     }
 
+    public PersistitIndexRowBuffer()
+    {}
+
     // For table index rows
-    public PersistitIndexRowBuffer(Key key)
+    public void reset(Key key)
     {
         key.clear();
         this.keyAppender = PersistitKeyAppender.create(key);
@@ -125,7 +128,7 @@ public class PersistitIndexRowBuffer extends IndexRow
     }
 
     // For group index rows
-    public PersistitIndexRowBuffer(Key key, Value value)
+    public void reset(Key key, Value value)
     {
         key.clear();
         this.keyAppender = PersistitKeyAppender.create(key);
@@ -172,6 +175,6 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     // Object state
 
-    private final PersistitKeyAppender keyAppender;
-    private final Value value;
+    private PersistitKeyAppender keyAppender;
+    private Value value;
 }

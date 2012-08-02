@@ -1,0 +1,89 @@
+# Testing sequences for basic functionality
+---
+- Statement: Set newtypes to 'True'
+---
+- CreateTable: t (c1 integer not null primary key, c2 varchar(20))
+---
+- Statement: Create Sequence sequence1 start with 1 increment by 1 
+---
+- Statement: select next value for sequence1 
+- output: [[1]]
+---
+# This does not work yet. Requires fixed from the Types 3 system. 
+#- Statement: insert into t (c1, c2) values (next value for sequence1, 'FRED')
+#---
+#- Statement: select c1, c2 from t
+#- output: [[2, 'FRED']]
+#---
+- Statement: Drop Sequence sequence1 restrict;
+---
+- Statement: Create sequence sequence2 start with 3 increment by 1 maxvalue 5 no cycle;
+---
+- Statement: select next value for sequence2;
+- output: [[3]]
+---
+- Statement: Select next value for sequence2
+- output: [[4]]
+---
+- Statement: Select next value for sequence2
+- output: [[5]]
+---
+- Statement: Select next value for sequence2
+- error: [2200H]
+---
+- Statement: Drop Sequence sequence2 restrict;
+---
+- Statement: create sequence sequence3 start with 3 increment by -1 minvalue 1 no cycle;
+---
+- Statement: select next value for sequence3;
+- output: [[3]] 
+---
+- Statement: select next value for sequence3;
+- output: [[2]]
+---
+- Statement: select next value for test.sequence3
+- output: [[1]] 
+---
+- Statement: select next value for test.sequence3
+- error: [2200H]
+---
+- Statement: drop sequence sequence3 restrict;
+---
+- Statement: create sequence sequence4 start with 1 increment by 1 minvalue 1 maxvalue 3 cycle;
+---
+- Statement: select next value for test.sequence4
+- output: [[1]]
+---
+- Statement: select next value for sequence4
+- output: [[2]]
+---
+- Statement: select next value for sequence4
+- output: [[3]]
+---
+- Statement: select next value for sequence4
+- output: [[1]]
+---
+- Statement: Drop sequence sequence4 restrict;
+---
+- Statement: create sequence bad_sequence start with 100 increment by 0 
+- error: [5001Z]
+---
+- Statement: create sequence bad_sequence start with 100 increment by 1 minvalue 101 maxvalue 1000 no cycle;
+- error: [50021]
+---
+- Statement: create sequence bad_squence start with 100 increment by 1 minvalue 1 maxvalue 50 no cycle;
+- error: [50021]
+---
+- Statement: create sequence bad_sequence start with 1 increment by 1 minvalue 1 maxvalue 1 no cycle;
+- error: [50020]
+---
+- Statement: Set newtypes to DEFAULT
+---
+- Statement: create sequence sequence5 start with 1 increment by 1 no cycle;
+---
+- Statement: select next value for sequence5
+- error: [4250D]
+---
+- Statement: drop sequence sequence5 restrict;
+...
+
