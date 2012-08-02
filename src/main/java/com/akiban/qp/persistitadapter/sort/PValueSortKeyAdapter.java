@@ -76,7 +76,8 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
     public void checkConstraints(BoundExpressions loExpressions,
                                  BoundExpressions hiExpressions,
                                  int f,
-                                 AkCollator[] collators) {
+                                 AkCollator[] collators,
+                                 TInstance[] tInstances) {
         PValueSource loValueSource = loExpressions.pvalue(f);
         PValueSource hiValueSource = hiExpressions.pvalue(f);
         if (loValueSource.isNull() && hiValueSource.isNull()) {
@@ -84,11 +85,12 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
         } else if (loValueSource.isNull() || hiValueSource.isNull()) {
             throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
         } else {
+            TInstance tInstance = tInstances[f];
             TPreparedExpression loEQHi =
                     new TComparisonExpression(
-                            new TPreparedLiteral(null, loValueSource),
+                            new TPreparedLiteral(tInstance, loValueSource),
                             Comparison.EQ,
-                            new TPreparedLiteral(null, hiValueSource)
+                            new TPreparedLiteral(tInstance, hiValueSource)
                     );
             TEvaluatableExpression eval = loEQHi.build();
             eval.evaluate();
