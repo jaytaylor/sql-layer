@@ -69,8 +69,8 @@ public class AISMerge {
     private final UserTable sourceTable;
     private final NameGenerator nameGenerator;
     private final MergeType mergeType;
-    private SortedSet<Integer> userTableIDSet = new TreeSet<Integer>();
-    private SortedSet<Integer> isTableIDSet = new TreeSet<Integer>();
+    private final SortedSet<Integer> userTableIDSet = new TreeSet<Integer>();
+    private final SortedSet<Integer> isTableIDSet = new TreeSet<Integer>();
 
     /**
      * Creates an AISMerger with the starting values. 
@@ -79,34 +79,34 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
-        this(primaryAIS, newTable, MergeType.ADD_TABLE);
-    }
-
-    public AISMerge (AkibanInformationSchema primaryAIS, final UserTable table, MergeType mergeType) {
-        this.mergeType = mergeType;
-        switch(mergeType) {
-            case ADD_TABLE:
-                targetAIS = copyAISForAdd(primaryAIS);
-            break;
-            case MODIFY_TABLE:
-                targetAIS = copyAISForModify(primaryAIS, table);
-            break;
-            default:
-                throw new IllegalArgumentException("Unknown MergeType: " + mergeType);
-        }
-        sourceTable = table;
-        nameGenerator = new DefaultNameGenerator().
-                setDefaultGroupNames(targetAIS.getGroups().keySet()).
-                setDefaultSequenceNames(computeSequenceNames(targetAIS)).
-                setDefaultTreeNames(computeTreeNames(targetAIS));
+        targetAIS = copyAISForAdd(primaryAIS);
+        sourceTable = newTable;
+        nameGenerator = createGenerator(primaryAIS);
+        mergeType = MergeType.ADD_TABLE;
         collectTableIDs(targetAIS);
     }
-    
+
+    public AISMerge (AkibanInformationSchema primaryAIS, UserTable table, Map<String,String> indexMap) {
+        targetAIS = copyAISForModify(primaryAIS, table, indexMap);
+        sourceTable = table;
+        nameGenerator = createGenerator(primaryAIS);
+        mergeType = MergeType.MODIFY_TABLE;
+        collectTableIDs(targetAIS);
+    }
+
+    private static NameGenerator createGenerator(AkibanInformationSchema ais) {
+        return new DefaultNameGenerator().
+                setDefaultGroupNames(ais.getGroups().keySet()).
+                setDefaultSequenceNames(computeSequenceNames(ais)).
+                setDefaultTreeNames(computeTreeNames(ais));
+    }
+
     public static AkibanInformationSchema copyAISForAdd(AkibanInformationSchema oldAIS) {
         return AISCloner.clone(oldAIS);
     }
 
-    public static AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS, final UserTable table) {
+    public static AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS, final UserTable table,
+                                                           Map<String,String> indexMap) {
         // Copy tree names and IDs for pre-existing table and it's indexes
         final UserTable oldTable = oldAIS.getUserTable(table.getName());
         table.setTreeName(oldTable.getTreeName());
@@ -115,14 +115,15 @@ public class AISMerge {
             table.setGroup(oldTable.getGroup());
         }
 
-        for(Index index : table.getIndexesIncludingInternal()) {
-            Index oldIndex = oldTable.getIndex(index.getIndexName().getName());
+        for(Index newIndex : table.getIndexesIncludingInternal()) {
+            String oldName = indexMap.get(newIndex.getIndexName().getName());
+            Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
             if(oldIndex != null) {
-                index.setIndexId(oldIndex.getIndexId());
-                index.setTreeName(oldIndex.getTreeName());
+                newIndex.setIndexId(oldIndex.getIndexId());
+                newIndex.setTreeName(oldIndex.getTreeName());
             } else {
                 // Will be fixed up in doModifyMerge()
-                index.setIndexId(TEMP_INDEX_ID );
+                newIndex.setIndexId(TEMP_INDEX_ID);
             }
         }
 

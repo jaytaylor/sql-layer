@@ -364,7 +364,72 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
-    public void addColumnDropColumnAddIndexOldNewMiddleOfGroup() throws StandardException {
+    public void dropUniqueAddIndexSameName() {
+        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(1), c2 char(1), constraint foo unique(c1)");
+        writeRows(
+                createNewRow(cid, 1L, "A", "3"),
+                createNewRow(cid, 2L, "B", "2"),
+                createNewRow(cid, 3L, "C", "1")
+        );
+
+        AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
+        UserTable table = ais.getUserTable(SCHEMA, "c");
+        table.removeIndexes(Collections.singleton(table.getIndex("foo")));
+        AISBuilder builder = new AISBuilder(ais);
+        builder.index(SCHEMA, "c", "foo", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, "c", "foo", "c2", 0, true, null);
+
+        List<AlterTableChange> changes = new ArrayList<AlterTableChange>();
+        changes.add(AlterTableChange.createDrop("foo"));
+        changes.add(AlterTableChange.createAdd("foo"));
+
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<AlterTableChange>emptyList(), changes);
+        updateAISGeneration();
+
+        expectIndexes(cid, "foo", "PRIMARY");
+        expectRows(
+                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("foo")),
+                createNewRow(store(), cid, UNDEF, UNDEF, "1"),
+                createNewRow(store(), cid, UNDEF, UNDEF, "2"),
+                createNewRow(store(), cid, UNDEF, UNDEF, "3")
+        );
+    }
+
+    @Test
+    public void modifyIndex() {
+        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(1), c2 char(1)");
+        createIndex(SCHEMA, "c", "foo", "c1");
+        writeRows(
+                createNewRow(cid, 1L, "A", "3"),
+                createNewRow(cid, 2L, "B", "2"),
+                createNewRow(cid, 3L, "C", "1")
+        );
+
+        AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
+        UserTable table = ais.getUserTable(SCHEMA, "c");
+        table.removeIndexes(Collections.singleton(table.getIndex("foo")));
+        AISBuilder builder = new AISBuilder(ais);
+        builder.index(SCHEMA, "c", "foo", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, "c", "foo", "c2", 0, true, null);
+        builder.indexColumn(SCHEMA, "c", "foo", "c1", 1, true, null);
+
+        List<AlterTableChange> changes = new ArrayList<AlterTableChange>();
+        changes.add(AlterTableChange.createModify("foo", "foo"));
+
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<AlterTableChange>emptyList(), changes);
+        updateAISGeneration();
+
+        expectIndexes(cid, "foo", "PRIMARY");
+        expectRows(
+                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("foo")),
+                createNewRow(store(), cid, UNDEF, "C", "1"),
+                createNewRow(store(), cid, UNDEF, "B", "2"),
+                createNewRow(store(), cid, UNDEF, "A", "3")
+        );
+    }
+
+    @Test
+     public void addColumnDropColumnAddIndexOldNewMiddleOfGroup() throws StandardException {
         createAndLoadCOI();
 
         // ALTER TABLE o DROP COLUMN o1, ADD COLUMN o1 INT, ADD INDEX x(o1), ADD INDEX y(cid)

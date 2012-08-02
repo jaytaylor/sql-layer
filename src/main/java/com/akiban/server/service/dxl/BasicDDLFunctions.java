@@ -168,7 +168,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private void doIndexChange(Session session, TableName tableName, UserTable newDefinition, AlterTableHelper helper) {
-        schemaManager().alterTableDefinition(session, tableName, newDefinition);
+        schemaManager().alterTableDefinition(session, tableName, newDefinition, helper.buildIndexMapping(newDefinition));
         AkibanInformationSchema newAIS = getAIS(session);
         UserTable newTable = newAIS.getUserTable(newDefinition.getName());
         List<Index> indexes = helper.findAffectedNewIndexes(newTable);
@@ -193,7 +193,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final RowType oldSourceType = oldSchema.userTableRowType(origTable);
 
         // Alter through schemaManager to get new definitions and RowDefs
-        schemaManager().alterTableDefinition(session, tableName, newDefinition);
+        schemaManager().alterTableDefinition(session, tableName, newDefinition, helper.buildIndexMapping(newDefinition));
 
         // Build transformation
         PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);

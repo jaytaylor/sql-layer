@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -445,13 +446,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public void alterTableDefinition(Session session, TableName tableName, final UserTable newDefinition) {
+    public void alterTableDefinition(Session session, TableName tableName, final UserTable newDefinition, Map<String,String> indexMap) {
         checkTableName(tableName, true, false);
 
-        AISMerge merge = new AISMerge(aish.getAis(), newDefinition, AISMerge.MergeType.MODIFY_TABLE);
+        AISMerge merge = new AISMerge(aish.getAis(), newDefinition, indexMap);
         merge.merge();
 
-        saveAISChangeWithRowDefs(session, merge.getAIS(), Collections.singleton(tableName.getSchemaName()));
+        Set<String> schemas = new HashSet<String>();
+        schemas.add(tableName.getSchemaName());
+        schemas.add(newDefinition.getName().getSchemaName());
+        saveAISChangeWithRowDefs(session, merge.getAIS(), schemas);
     }
 
     private void deleteTableCommon(Session session, TableName tableName, boolean isInternal, boolean mustBeMemory) {

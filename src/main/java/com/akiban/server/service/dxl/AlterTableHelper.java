@@ -41,7 +41,11 @@ import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.api.AlterTableChange;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class AlterTableHelper {
     final List<AlterTableChange> columnChanges;
@@ -126,6 +130,27 @@ public class AlterTableHelper {
                 break;
             }
         }
+    }
+
+    public Map<String,String> buildIndexMapping(UserTable table) {
+        Map<String,String> map = new HashMap<String,String>();
+        for(AlterTableChange change : indexChanges) {
+            switch(change.getChangeType()) {
+                case ADD:
+                    map.put(change.getNewName(), null);
+                break;
+                case MODIFY:
+                    map.put(change.getNewName(), change.getOldName());
+                    break;
+            }
+        }
+        for(Index index : table.getIndexesIncludingInternal()) {
+            String name = index.getIndexName().getName();
+            if(!map.containsKey(name)) {
+                map.put(name, name);
+            }
+        }
+        return map;
     }
 
     public List<Index> findAffectedNewIndexes(UserTable table) {
