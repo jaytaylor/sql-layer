@@ -358,13 +358,13 @@ public class AkInterval extends TClassBase {
             }
 
             @Override
-            protected boolean buildChar(char c, boolean wild, ParseCompilation<? super Boolean> result) {
+            protected boolean buildChar(char c, boolean checkBounds, ParseCompilation<? super Boolean> result) {
                 switch (c) {
                 case 'Y':
-                    result.addUnit(Boolean.TRUE, -1, wild);
+                    result.addUnit(Boolean.TRUE, -1, checkBounds);
                     break;
                 case 'M':
-                    result.addUnit(Boolean.FALSE, 12, wild);
+                    result.addUnit(Boolean.FALSE, 12, checkBounds);
                     break;
                 case '-':
                     return true;
@@ -436,22 +436,22 @@ public class AkInterval extends TClassBase {
             }
 
             @Override
-            protected boolean buildChar(char c, boolean wild, ParseCompilation<? super TimeUnit> result) {
+            protected boolean buildChar(char c, boolean checkBOunds, ParseCompilation<? super TimeUnit> result) {
                 switch (c) {
                 case 'D':
-                    result.addUnit(TimeUnit.DAYS, 31, wild);
+                    result.addUnit(TimeUnit.DAYS, 31, checkBOunds);
                     break;
                 case 'H':
-                    result.addUnit(TimeUnit.HOURS, 32, wild);
+                    result.addUnit(TimeUnit.HOURS, 32, checkBOunds);
                     break;
                 case 'M':
-                    result.addUnit(TimeUnit.MINUTES, 59, wild);
+                    result.addUnit(TimeUnit.MINUTES, 59, checkBOunds);
                     break;
                 case 'S':
-                    result.addUnit(TimeUnit.SECONDS, 59, wild);
+                    result.addUnit(TimeUnit.SECONDS, 59, checkBOunds);
                     break;
                 case 'u':
-                    result.addUnit(null, -1, wild); // fractional component
+                    result.addUnit(null, -1, checkBOunds); // fractional component
                     break;
                 case ' ':
                 case ':':
@@ -489,6 +489,22 @@ public class AkInterval extends TClassBase {
         }
     }
 
+    /**
+     * A simple parser. The rules are:
+     * <ul>
+     *     <li>capital letters are special and correspond to numerical digits. If you have a capital letter followed
+     *     by a '+', it means one or more digits, and the number's bounds shouldn't be checked. If it's followed by
+     *     a '?', it means one or two digits, and the number's bounds should be checked. Otherwise, however many
+     *     of the same character are in a row, that's how many digits are required (no more, no less). For instance,
+     *     <tt>Y+ M? DD</tt> means any number of year digits (and the number can be as big as we want), followed by
+     *     1 or 2 month digits (and the number's bounds will be checked), followed by exactly two days digits (and
+     *     the number's bounds will be checked). The bounds come from #buildChar</li>
+     *     <li></li>
+     *     <li>a lowercase 'u' means a fractional component</li>
+     *     <li>all other letters are non-special</li>
+     * </ul>
+     * @param <U>
+     */
     static abstract class AkIntervalParser<U> {
 
         public long parse(String string) {
@@ -515,7 +531,7 @@ public class AkInterval extends TClassBase {
             return isNegative ? -result : result;
         }
 
-        protected abstract boolean buildChar(char c, boolean wild, ParseCompilation<? super U> result);
+        protected abstract boolean buildChar(char c, boolean checkBounds, ParseCompilation<? super U> result);
         protected abstract long parseLong(long value, U unit);
 
         protected String preParse(String string) {
@@ -550,7 +566,7 @@ public class AkInterval extends TClassBase {
         private ParseCompilation<U> compile(String pattern) {
             ParseCompilation<U> result = new ParseCompilation<U>(pattern);
             for (int i = 0, len = pattern.length(); i < len; ++i) {
-                boolean wild = false;
+                boolean checkBounds = true;
                 char c = pattern.charAt(i);
                 if (c == 'u') {
                     result.patternBuilder.append("(?:\\.(\\d+))?");
@@ -578,7 +594,7 @@ public class AkInterval extends TClassBase {
                     case WILD_PLUS:
                         result.patternBuilder.append("(\\d+)");
                         ++i;
-                        wild = true;
+                        checkBounds = false;
                         break;
                     case WILD_QUESTION:
                         result.patternBuilder.append("(\\d{1,2})");
@@ -591,7 +607,7 @@ public class AkInterval extends TClassBase {
                         break;
                     }
                 }
-                if (buildChar(c, wild, result))
+                if (buildChar(c, checkBounds, result))
                     result.patternBuilder.append(c);
             }
             return result;
@@ -599,9 +615,9 @@ public class AkInterval extends TClassBase {
 
         static class ParseCompilation<U> {
 
-            public void addUnit(U unit, int max, boolean ignoreWild) {
+            public void addUnit(U unit, int max, boolean checkBounds) {
                 unitsList.add(unit);
-                maxes.add(ignoreWild ? -1 : max);
+                maxes.add(checkBounds ? max : -1);
             }
 
             public String inputPattern() {
