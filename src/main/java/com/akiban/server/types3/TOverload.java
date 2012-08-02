@@ -47,7 +47,7 @@ public interface TOverload {
      * Most of the times, the two names are the same, but they could be different
      * for certain functions, especially those that need "special treatment"
      * 
-     * This needs to be an array because there could be defining different functions
+     * This needs to be an array because we could be defining different functions
      * with the same implementation
      */
     String[] registeredNames();
