@@ -79,26 +79,22 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
-        targetAIS = copyAISForAdd(primaryAIS);
-        sourceTable = newTable;
-        nameGenerator = createGenerator(primaryAIS);
-        mergeType = MergeType.ADD_TABLE;
-        collectTableIDs(targetAIS);
+        this(primaryAIS, copyAISForAdd(primaryAIS), newTable, MergeType.ADD_TABLE);
     }
 
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable table, Map<String,String> indexMap) {
-        targetAIS = copyAISForModify(primaryAIS, table, indexMap);
-        sourceTable = table;
-        nameGenerator = createGenerator(primaryAIS);
-        mergeType = MergeType.MODIFY_TABLE;
-        collectTableIDs(targetAIS);
+        this(primaryAIS, copyAISForModify(primaryAIS, table, indexMap), table, MergeType.MODIFY_TABLE);
     }
 
-    private static NameGenerator createGenerator(AkibanInformationSchema ais) {
-        return new DefaultNameGenerator().
-                setDefaultGroupNames(ais.getGroups().keySet()).
-                setDefaultSequenceNames(computeSequenceNames(ais)).
-                setDefaultTreeNames(computeTreeNames(ais));
+    private AISMerge (AkibanInformationSchema primaryAIS, AkibanInformationSchema targetAIS, UserTable sourceTable, MergeType mergeType) {
+        this.targetAIS = targetAIS;
+        this.sourceTable = sourceTable;
+        this.mergeType = mergeType;
+        nameGenerator = new DefaultNameGenerator().
+                setDefaultGroupNames(primaryAIS.getGroups().keySet()).
+                setDefaultSequenceNames(computeSequenceNames(primaryAIS)).
+                setDefaultTreeNames(computeTreeNames(primaryAIS));
+        collectTableIDs(primaryAIS);
     }
 
     public static AkibanInformationSchema copyAISForAdd(AkibanInformationSchema oldAIS) {
