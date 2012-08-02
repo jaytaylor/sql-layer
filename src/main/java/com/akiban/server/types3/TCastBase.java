@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
 public abstract class TCastBase implements TCast
@@ -53,7 +55,17 @@ public abstract class TCastBase implements TCast
         this.isAutomatic = isAutomatic;
         this.constness = constness;
     }
-    
+
+    @Override
+    public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        if (source.isNull())
+            target.putNull();
+        else
+            doEvaluate(context, source, target);
+    }
+
+    protected abstract void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target);
+
     @Override
     public boolean isAutomatic()
     {

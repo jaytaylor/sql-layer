@@ -36,7 +36,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 public final class Cast_From_AkBool {
     public static final TCast TO_VARCHAR = new TCastBase(AkBool.INSTANCE, MString.VARCHAR) {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             String boolStr = Boolean.toString(source.getBoolean());
             target.putString(boolStr, null);
         }

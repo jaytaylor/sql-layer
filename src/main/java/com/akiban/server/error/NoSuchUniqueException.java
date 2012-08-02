@@ -24,18 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.error;
 
-import com.akiban.server.types3.TCast;
+import com.akiban.ais.model.TableName;
 
-public abstract class TCastBase implements TCast {
-    @Override
-    public boolean isAutomatic() {
-        return false;
-    }
-
-    @Override
-    public Constantness constness() {
-        return Constantness.UNKNOWN;
+public final class NoSuchUniqueException extends InvalidOperationException {
+    public NoSuchUniqueException(TableName tableName, String indexName) {
+        super(ErrorCode.NO_SUCH_UNIQUE, tableName.getSchemaName(), tableName.getTableName(), indexName);
     }
 }

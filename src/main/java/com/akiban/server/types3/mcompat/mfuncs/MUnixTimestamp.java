@@ -98,13 +98,13 @@ public abstract class MUnixTimestamp extends TOverloadBase {
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
             {
-                output.putInt32((int) MDatetimes.encodeTime(context.getCurrentDate(), context.getCurrentTimezone()));
+                output.putInt32((int)MDatetimes.encodeTimetamp(context.getCurrentDate(), context));
             }
         }
     };
 
     @Override
-    public String overloadName() 
+    public String displayName() 
     {
         return "UNIX_TIMESTAMP";
     }

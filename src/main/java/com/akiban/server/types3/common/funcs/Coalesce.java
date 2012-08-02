@@ -64,7 +64,7 @@ public class Coalesce extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "COALESCE";
     }
 

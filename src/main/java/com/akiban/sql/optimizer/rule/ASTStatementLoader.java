@@ -274,7 +274,7 @@ public class ASTStatementLoader extends BaseRule
                     if ((column != null) && nameDefaulted)
                         name = column.getName();
                 }
-                results.add(new ResultField(name, type, column));
+                results.add(new ResultField(name, type, column, expr));
             }
 
             List<OrderByExpression> sorts = new ArrayList<OrderByExpression>();

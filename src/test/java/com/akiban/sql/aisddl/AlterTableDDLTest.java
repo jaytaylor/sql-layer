@@ -26,6 +26,7 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -33,27 +34,25 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.AlterTableChange;
-import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.DuplicateColumnNameException;
+import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.NoSuchUniqueException;
+import com.akiban.server.error.ProtectedIndexException;
+import com.akiban.server.error.UnsupportedCheckConstraintException;
 import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
-import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.StandardException;
@@ -68,7 +67,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -110,6 +108,14 @@ public class AlterTableDDLTest {
         ddlFunctions = null;
     }
 
+    //
+    // Assume check is done early, don't confirm for every action
+    //
+
+    @Test(expected=NoSuchTableException.class)
+    public void cannotAlterUnknownTable() throws StandardException {
+        parseAndRun("ALTER TABLE foo ADD COLUMN bar INT");
+    }
 
     //
     // ADD COLUMN
@@ -119,11 +125,6 @@ public class AlterTableDDLTest {
     public void cannotAddDuplicateColumnName() throws StandardException {
         builder.userTable(A_NAME).colBigInt("aid", true);
         parseAndRun("ALTER TABLE a ADD COLUMN aid INT");
-    }
-
-    @Test(expected=NoSuchTableException.class)
-    public void cannotAddColumnToUnknownTable() throws StandardException {
-        parseAndRun("ALTER TABLE foo ADD COLUMN bar INT");
     }
 
     @Test
@@ -152,8 +153,6 @@ public class AlterTableDDLTest {
 
     @Test
     public void addNotNullColumnSingleTableGroup() throws StandardException {
-        // Valid syntax and shouldn't be rejected until real DDLFunctions (needs asserted in IT as well)
-        // Update (and remove these comments) when defaults are preserved
         builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
         parseAndRun("ALTER TABLE a ADD COLUMN x INT NOT NULL DEFAULT 0");
         expectColumnChanges("ADD:x");
@@ -207,11 +206,6 @@ public class AlterTableDDLTest {
     //
     // DROP COLUMN
     //
-
-    @Test(expected=NoSuchTableException.class)
-    public void cannotDropColumnUnknownTable() throws StandardException {
-        parseAndRun("ALTER TABLE foo DROP COLUMN bar");
-    }
 
     @Test(expected=NoSuchColumnException.class)
     public void cannotDropColumnUnknownColumn() throws StandardException {
@@ -321,21 +315,14 @@ public class AlterTableDDLTest {
     }
 
     //
-    // ALTER COLUMN
+    // ALTER COLUMN SET DATA TYPE
     //
-
-    @Test(expected=NoSuchTableException.class)
-    public void cannotAlterColumnUnknownTable() throws StandardException {
-        parseAndRun("ALTER TABLE foo ALTER COLUMN bar SET DATA TYPE INT");
-    }
 
     @Test(expected=NoSuchColumnException.class)
     public void cannotAlterColumnUnknownColumn() throws StandardException {
         builder.userTable(A_NAME).colBigInt("aid", true);
         parseAndRun("ALTER TABLE a ALTER COLUMN bar SET DATA TYPE INT");
     }
-
-    // ... SET DATA TYPE
 
     // TODO: Remove when implemented
     @Test(expected=UnsupportedSQLException.class)
@@ -417,13 +404,189 @@ public class AlterTableDDLTest {
     }
 
     //
-    // ADD GROUPING FK
+    // ADD [CONSTRAINT] UNIQUE
     //
 
-    @Test(expected=NoSuchTableException.class)
-    public void cannotAddGFKToUnknownTable() throws StandardException {
-        parseAndRun("ALTER TABLE ha1 ADD GROUPING FOREIGN KEY(ha) REFERENCES ha2(ha)");
+    @Test(expected=NoSuchColumnException.class)
+    public void cannotAddUniqueUnknownColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ADD UNIQUE(c2)");
     }
+
+    @Test
+    public void addUniqueUnnamedSingleTableGroupNoPK() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ADD UNIQUE(c1)");
+        expectColumnChanges();
+        expectIndexChanges("ADD:c1");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL", "UNIQUE c1(c1)");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL", "UNIQUE c1(c1)");
+    }
+
+    @Test
+     public void addUniqueNamedSingleTableGroupNoPK() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ADD CONSTRAINT x UNIQUE(c1)");
+        expectColumnChanges();
+        expectIndexChanges("ADD:x");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL", "UNIQUE x(c1)");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL", "UNIQUE x(c1)");
+    }
+
+    @Test
+    public void addUniqueMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE o ADD UNIQUE(o_o)");
+        expectColumnChanges();
+        expectIndexChanges("ADD:o_o");
+        if(Types3Switch.ON)
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
+                            "__akiban_fk1(cid)", "UNIQUE o_o(o_o)", "PRIMARY(id)", "join(cid->id)");
+        else
+            expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "o_o bigint NULL", "__akiban_fk1(cid)",
+                             "UNIQUE o_o(o_o)", "PRIMARY(id)", "join(cid->id)");
+        expectUnchangedTables(C_NAME, I_NAME, A_NAME);
+    }
+
+    //
+    // DROP UNIQUE
+    //
+
+    @Test(expected=NoSuchUniqueException.class)
+    public void cannotDropUniqueUnknown() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c DROP UNIQUE c1");
+    }
+
+    @Test
+      public void dropUniqueSingleColumnSingleTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).uniqueKey("c1", "c1");
+        parseAndRun("ALTER TABLE c DROP UNIQUE c1");
+        expectColumnChanges();
+        expectIndexChanges("DROP:c1");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL");
+    }
+
+    @Test
+    public void dropUniqueMultiColumnSingleTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).colBigInt("c2", false).uniqueKey("x", "c2", "c1");
+        parseAndRun("ALTER TABLE c DROP UNIQUE x");
+        expectColumnChanges();
+        expectIndexChanges("DROP:x");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ BIGINT(21) NOT NULL");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL", "c2 bigint NOT NULL");
+    }
+
+    @Test
+    public void dropUniqueMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        AISBuilder builder2 = new AISBuilder(builder.unvalidatedAIS());
+        builder2.index(SCHEMA, "o", "x", true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder2.indexColumn(SCHEMA, "o", "x", "o_o", 0, true, null);
+        parseAndRun("ALTER TABLE o DROP UNIQUE x");
+        expectColumnChanges();
+        expectIndexChanges("DROP:x");
+        if(Types3Switch.ON)
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
+                             "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+        else
+            expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "o_o bigint NULL", "__akiban_fk1(cid)",
+                             "PRIMARY(id)", "join(cid->id)");
+        expectUnchangedTables(C_NAME, I_NAME, A_NAME);
+    }
+
+    //
+    // ADD [CONSTRAINT] PRIMARY KEY
+    //
+
+    @Test(expected=ProtectedIndexException.class)
+    public void cannotAddPrimaryKeySingleTableGroupNoPK() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY(c1)");
+    }
+
+    @Test(expected=DuplicateIndexException.class)
+    public void cannotAddPrimaryKeyAnotherPK() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).pk("c1");
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY(c1)");
+    }
+
+    //
+    // DROP PRIMARY KEY
+    //
+
+    // TODO: Update when supported
+    @Test(expected=ProtectedIndexException.class)
+    public void cannotDropPrimaryKeySingleTableGroupNoPK() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c DROP PRIMARY KEY");
+    }
+
+    // TODO: Update when supported
+    @Test(expected=ProtectedIndexException.class)
+    public void cannotDropPrimaryKeySingleTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).pk("c1");
+        parseAndRun("ALTER TABLE c DROP PRIMARY KEY");
+    }
+
+    //
+    // ADD [CONSTRAINT] CHECK
+    //
+
+    @Test(expected=UnsupportedCheckConstraintException.class)
+    public void cannotAddCheckConstraint() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ADD CHECK (c1 % 5 = 0)");
+    }
+
+    //
+    // DROP CHECK
+    //
+
+    @Test(expected=UnsupportedCheckConstraintException.class)
+    public void cannotDropCheckConstraint() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).uniqueKey("c1");
+        parseAndRun("ALTER TABLE c DROP CHECK c1");
+    }
+
+    //
+    // DROP CONSTRAINT
+    //
+
+    @Test(expected=ProtectedIndexException.class)
+    public void cannotDropConstraintIsPrimaryKey() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).pk("c1");
+        parseAndRun("ALTER TABLE c DROP CONSTRAINT \"PRIMARY\"");
+    }
+
+    @Test(expected=NoSuchUniqueException.class)
+    public void cannotDropConstraintRegularIndex() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).key("c1", "c1");
+        parseAndRun("ALTER TABLE c DROP CONSTRAINT c1");
+    }
+
+    @Test
+    public void dropConstraintIsUnique() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).uniqueKey("c1");
+        parseAndRun("ALTER TABLE c DROP CONSTRAINT c1");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL");
+    }
+
+    //
+    // ADD [CONSTRAINT] GROUPING FOREIGN KEY
+    //
 
     @Test(expected=JoinToUnknownTableException.class)
     public void cannotAddGFKToUnknownParent() throws StandardException {
@@ -608,13 +771,8 @@ public class AlterTableDDLTest {
 
 
     //
-    // DROP GROUPING FK
+    // DROP [CONSTRAINT] GROUPING FOREIGN KEY
     //
-
-    @Test(expected=NoSuchTableException.class)
-    public void cannotDropGFKFromUnknownTable() throws StandardException {
-        parseAndRun("ALTER TABLE c DROP GROUPING FOREIGN KEY");
-    }
 
     @Test(expected=UnsupportedSQLException.class)
     public void cannotDropGFKFromSingleTableGroup() throws StandardException {
@@ -1002,7 +1160,11 @@ public class AlterTableDDLTest {
             }
         }
         for(Index index : table.getIndexes()) {
-            sb.append(", ").append(index.getIndexName().getName()).append('(');
+            sb.append(", ");
+            if(!index.isPrimaryKey() && index.isUnique()) {
+                sb.append("UNIQUE ");
+            }
+            sb.append(index.getIndexName().getName()).append('(');
             first = true;
             for(IndexColumn indexColumn : index.getKeyColumns()) {
                 sb.append(first ? "" : ',').append(indexColumn.getColumn().getName());

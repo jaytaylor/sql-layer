@@ -53,7 +53,7 @@ public class PostgresExplainStatement implements PostgresStatement
         }
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(), (short)-1, maxlen,
-                                   AkType.VARCHAR, MString.VARCHAR.instance());
+                                   AkType.VARCHAR, MString.VARCHAR.instance(maxlen));
         this.usePVals = usePVals;
     }
 

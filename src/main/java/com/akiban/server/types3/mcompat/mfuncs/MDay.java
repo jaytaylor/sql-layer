@@ -135,7 +135,7 @@ public class MDay extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return funcType.name();
     }
 

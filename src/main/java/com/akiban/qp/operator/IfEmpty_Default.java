@@ -369,7 +369,7 @@ class IfEmpty_Default extends Operator
         private ShareHolder<ValuesHolderRow> unsharedEmptySubstitute()
         {
             if (emptySubstitute.isEmpty() || emptySubstitute.isShared()) {
-                ValuesHolderRow valuesHolderRow = new ValuesHolderRow(rowType);
+                ValuesHolderRow valuesHolderRow = new ValuesHolderRow(rowType, pEvaluations != null);
                 emptySubstitute.hold(valuesHolderRow);
             }
             return emptySubstitute;

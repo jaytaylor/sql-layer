@@ -549,7 +549,7 @@ public class Column implements ColumnContainer
         final TInstance old = tInstanceRef.get();
         if (old != null && !force)
             return old;
-        final TInstance tinst = generateTInstance(charsetAndCollation, type, typeParameter1, typeParameter2);
+        final TInstance tinst = generateTInstance(charsetAndCollation, type, typeParameter1, typeParameter2, nullable);
         tInstanceRef.set(tinst); // TODO ignores race conditions, because they "shouldn't" happen but do. Don't know why
 //        if (!tInstanceRef.compareAndSet(old, tinst))
 //            assert false : "CAS failed; Column is not thread-safe, so mutating it from multiple threads is bad!";
@@ -557,7 +557,7 @@ public class Column implements ColumnContainer
     }
 
     public static TInstance generateTInstance(CharsetAndCollation charsetAndCollation, Type type, Long typeParameter1,
-                                               Long typeParameter2) {
+                                               Long typeParameter2, boolean nullable) {
         final TInstance tinst;
 
         switch (Types.asEnum(type)) {
@@ -678,6 +678,7 @@ public class Column implements ColumnContainer
         }
 
         assert tinst != null : type;
+        tinst.setNullable(nullable);
         return tinst;
     }
 

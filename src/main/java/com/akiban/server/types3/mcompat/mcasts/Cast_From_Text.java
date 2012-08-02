@@ -80,7 +80,7 @@ public final class Cast_From_Text {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             String in = source.getString();
             int maxLen = (fixedLength >= 0)
                     ? fixedLength
