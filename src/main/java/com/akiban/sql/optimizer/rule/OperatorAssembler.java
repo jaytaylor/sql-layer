@@ -1043,25 +1043,37 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
-            RowStream stream = assembleStream(ancestorLookup.getInput());
+            RowStream stream;
             GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
-            RowType inputRowType = stream.rowType; // The index row type.
-            API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-            if (!(inputRowType instanceof IndexRowType)) {
-                // Getting from branch lookup.
-                inputRowType = tableRowType(ancestorLookup.getDescendant());
-                flag = API.InputPreservationOption.KEEP_INPUT;
-            }
             List<UserTableRowType> ancestorTypes =
                 new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }
-            stream.operator = API.ancestorLookup_Default(stream.operator,
-                                                         groupTable,
-                                                         inputRowType,
-                                                         ancestorTypes,
-                                                         flag);
+            if (ancestorLookup.getInput() instanceof GroupLoopScan) {
+                stream = new RowStream();
+                int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)ancestorLookup.getInput()));
+                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                stream.operator = API.ancestorLookup_Nested(groupTable, 
+                                                            boundRow.getRowType(),
+                                                            ancestorTypes,
+                                                            rowIndex + loopBindingsOffset);
+            }
+            else {
+                stream = assembleStream(ancestorLookup.getInput());
+                RowType inputRowType = stream.rowType; // The index row type.
+                API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
+                if (!(inputRowType instanceof IndexRowType)) {
+                    // Getting from branch lookup.
+                    inputRowType = tableRowType(ancestorLookup.getDescendant());
+                    flag = API.InputPreservationOption.KEEP_INPUT;
+                }
+                stream.operator = API.ancestorLookup_Default(stream.operator,
+                                                             groupTable,
+                                                             inputRowType,
+                                                             ancestorTypes,
+                                                             flag);
+            }
             stream.rowType = null;
             stream.fieldOffsets = null;
             return stream;
