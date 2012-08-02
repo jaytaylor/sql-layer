@@ -96,7 +96,7 @@ public class InetAton extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "INET_ATON";
     }

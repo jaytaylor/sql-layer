@@ -190,7 +190,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         for (TOverload scalar : finder.find(TOverload.class)) {
             try {
                 TValidatedOverload validated = new TValidatedOverload(scalar);
-                overloadsByName.put(validated.overloadName().toLowerCase(), validated);
+                for (String name : validated.registeredNames())
+                    overloadsByName.put(name.toLowerCase(), validated);
             } catch (RuntimeException e) {
                 rejectTOverload(scalar, e);
                 ++errors;

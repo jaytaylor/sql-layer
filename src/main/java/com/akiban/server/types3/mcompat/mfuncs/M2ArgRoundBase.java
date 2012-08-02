@@ -130,7 +130,7 @@ public class M2ArgRoundBase extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return roundType.name();
     }
 }

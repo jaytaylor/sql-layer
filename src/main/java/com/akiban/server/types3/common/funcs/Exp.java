@@ -56,7 +56,7 @@ public class Exp extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "EXP";
     }

@@ -44,7 +44,7 @@ public abstract class Abs extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "ABS";
     }
 
