@@ -197,34 +197,21 @@ public class AkInterval extends TClassBase {
 
         final int GOAL = 9;
         int tooManyDigits = numberOfDigits - GOAL;
-        if (tooManyDigits > 0) { // need to truncate
+
+        if (tooManyDigits > 0) {
+            // need to truncate
             while (tooManyDigits-- > 0)
-                source /= 0;
+                source /= 10;
         }
-        else if (tooManyDigits < 0) { // need to multiply, so that 1 becomes 100000000
-            while (tooManyDigits++ > 0)
-                source *= 0;
+
+        if (tooManyDigits < 0) {
+            // need to multiply, so that 1 becomes 100000000
+            while (tooManyDigits++ < 0)
+                source *= 10;
         }
 
         // source is now in nanos.
         return secondsRawFrom(source, TimeUnit.NANOSECONDS);
-    }
-
-    /**
-     * Converts seconds, including fractional parts of a second, to the raw form. Precision past that of the underlying
-     * representation will be truncated
-     * @param source seconds
-     * @return the raw form
-     * @throws  IllegalArgumentException if the source is NaN or infinite, or if it represents more nanoseconds than
-     * can be represented by a long
-     */
-    public static long secondsRawFromSeconds(double source) {
-        if (Double.isNaN(source) || Double.isInfinite(source))
-            throw new IllegalArgumentException("out of range: " + source);
-        source *= 1000000000;
-        if ( (source > ((double)Long.MAX_VALUE)) || (source < ((double)Long.MIN_VALUE)))
-            throw new IllegalArgumentException("out of range: " + source);
-        return secondsRawFrom((long)source, TimeUnit.NANOSECONDS);
     }
 
     private enum SecondsAttrs implements Attribute {
@@ -310,7 +297,7 @@ public class AkInterval extends TClassBase {
     private final Attribute formatAttribute;
     private final Map<TypeId,IntervalFormat> typeIdToFormat;
 
-    private interface IntervalFormat {
+    interface IntervalFormat {
         long parse(String string);
         TypeId getTypeId();
         int ordinal();
@@ -340,9 +327,9 @@ public class AkInterval extends TClassBase {
     }
 
     static enum AkIntervalMonthsFormat implements IntervalFormat {
-        YEAR("Y", TypeId.INTERVAL_YEAR_ID),
-        MONTH("M", TypeId.INTERVAL_MONTH_ID),
-        YEAR_MONTH("Y-M", TypeId.INTERVAL_YEAR_MONTH_ID)
+        YEAR("Y+", TypeId.INTERVAL_YEAR_ID),
+        MONTH("M+", TypeId.INTERVAL_MONTH_ID),
+        YEAR_MONTH("Y+-M?", TypeId.INTERVAL_YEAR_MONTH_ID)
         ;
 
         @Override
@@ -371,27 +358,24 @@ public class AkInterval extends TClassBase {
             }
 
             @Override
-            protected void buildChar(char c, ParseCompilation<? super Boolean> result) {
+            protected boolean buildChar(char c, boolean wild, ParseCompilation<? super Boolean> result) {
                 switch (c) {
                 case 'Y':
-                    result.addGroupingDigits();
-                    result.addUnit(Boolean.TRUE);
+                    result.addUnit(Boolean.TRUE, -1, wild);
                     break;
                 case 'M':
-                    result.addUnit(Boolean.FALSE);
-                    result.addGroupingDigits();
+                    result.addUnit(Boolean.FALSE, 12, wild);
                     break;
                 case '-':
-                    result.addPattern(c);
-                    break;
+                    return true;
                 default:
                     throw new IllegalArgumentException("illegal pattern: " + result.inputPattern());
                 }
+                return false;
             }
 
             @Override
-            protected long parseLong(String asString, Boolean isYear) {
-                long parsed = Long.parseLong(asString);
+            protected long parseLong(long parsed, Boolean isYear) {
                 if (isYear)
                     parsed = LongMath.checkedMultiply(parsed, 12);
                 return parsed;
@@ -401,16 +385,16 @@ public class AkInterval extends TClassBase {
 
     static enum AkIntervalSecondsFormat implements IntervalFormat {
 
-        DAY("D", TypeId.INTERVAL_DAY_ID),
-        HOUR("H", TypeId.INTERVAL_HOUR_ID),
-        MINUTE("M", TypeId.INTERVAL_MINUTE_ID),
-        SECOND("S", TypeId.INTERVAL_SECOND_ID),
-        DAY_HOUR("D H", TypeId.INTERVAL_DAY_HOUR_ID),
-        DAY_MINUTE("D H:M", TypeId.INTERVAL_DAY_MINUTE_ID),
-        DAY_SECOND("D H:M:S", TypeId.INTERVAL_DAY_SECOND_ID),
-        HOUR_MINUTE("H:M", TypeId.INTERVAL_HOUR_MINUTE_ID),
-        HOUR_SECOND("H:M:S", TypeId.INTERVAL_HOUR_SECOND_ID),
-        MINUTE_SECOND("M:S", TypeId.INTERVAL_MINUTE_SECOND_ID)
+        DAY("D+", TypeId.INTERVAL_DAY_ID),
+        HOUR("H+", TypeId.INTERVAL_HOUR_ID),
+        MINUTE("M+", TypeId.INTERVAL_MINUTE_ID),
+        SECOND("S+u", TypeId.INTERVAL_SECOND_ID, true),
+        DAY_HOUR("D+ H+", TypeId.INTERVAL_DAY_HOUR_ID),
+        DAY_MINUTE("D+ H?:MM", TypeId.INTERVAL_DAY_MINUTE_ID),
+        DAY_SECOND("D+ H?:MM:SSu", TypeId.INTERVAL_DAY_SECOND_ID),
+        HOUR_MINUTE("H+:MM", TypeId.INTERVAL_HOUR_MINUTE_ID),
+        HOUR_SECOND("H+:MM:SSu", TypeId.INTERVAL_HOUR_SECOND_ID),
+        MINUTE_SECOND("M+:SSu", TypeId.INTERVAL_MINUTE_SECOND_ID)
         ;
 
         static TimeUnit UNDERLYING_UNIT = TimeUnit.MICROSECONDS;
@@ -426,7 +410,11 @@ public class AkInterval extends TClassBase {
         }
 
         AkIntervalSecondsFormat(String pattern, TypeId typeId) {
-            this.parser = new SecondsParser(this, pattern);
+            this(pattern, typeId, false);
+        }
+
+        AkIntervalSecondsFormat(String pattern, TypeId typeId, boolean needsLeadingZero) {
+            this.parser = new SecondsParser(this, pattern, needsLeadingZero);
             this.typeId = typeId;
         }
 
@@ -434,71 +422,80 @@ public class AkInterval extends TClassBase {
         private final TypeId typeId;
 
         private static class SecondsParser extends AkIntervalParser<TimeUnit> {
-            private SecondsParser(Enum<?> onBehalfOf, String pattern) {
+
+            private SecondsParser(Enum<?> onBehalfOf, String pattern, boolean needsLeadingZero) {
                 super(onBehalfOf, pattern);
+                this.needsLeadingZero = needsLeadingZero;
             }
 
             @Override
-            protected void buildChar(char c, ParseCompilation<? super TimeUnit> result) {
+            protected String preParse(String string) {
+                return (needsLeadingZero && (string.charAt(0) == '.'))
+                        ? '0' + string
+                        : string;
+            }
+
+            @Override
+            protected boolean buildChar(char c, boolean wild, ParseCompilation<? super TimeUnit> result) {
                 switch (c) {
                 case 'D':
-                    result.addGroupingDigits();
-                    result.addUnit(TimeUnit.DAYS);
+                    result.addUnit(TimeUnit.DAYS, 31, wild);
                     break;
                 case 'H':
-                    result.addGroupingDigits();
-                    result.addUnit(TimeUnit.HOURS);
+                    result.addUnit(TimeUnit.HOURS, 32, wild);
                     break;
                 case 'M':
-                    result.addGroupingDigits();
-                    result.addUnit(TimeUnit.MINUTES);
+                    result.addUnit(TimeUnit.MINUTES, 59, wild);
                     break;
                 case 'S':
-                    result.addPattern("(\\d+)(?:\\.(\\d+))?");
-                    result.addUnit(TimeUnit.SECONDS);
-                    result.addUnit(null); // fractional component
+                    result.addUnit(TimeUnit.SECONDS, 59, wild);
+                    break;
+                case 'u':
+                    result.addUnit(null, -1, wild); // fractional component
                     break;
                 case ' ':
                 case ':':
-                    result.addPattern(c);
-                    break;
+                    return true;
                 default:
                     throw new IllegalArgumentException("illegal pattern: " + result.inputPattern());
                 }
+                return false;
             }
 
             @Override
-            protected long parseLong(String asString, TimeUnit parsedUnit) {
-                long parsed;
+            protected String preParseSegment(String string, TimeUnit unit) {
+                if (string == null)
+                    return "0"; // inefficient because we'll just parse this, but oh well
+                if ( (unit == null) && (string.length() > 8) )
+                    string = string.substring(0, 9);
+                return string;
+            }
+
+            @Override
+            protected long parseLong(long parsedLong, TimeUnit parsedUnit) {
                 if (parsedUnit != null) {
-                    parsed = Long.parseLong(asString);
-                    return UNDERLYING_UNIT.convert(parsed, parsedUnit);
+                    return UNDERLYING_UNIT.convert(parsedLong, parsedUnit);
                 }
                 else {
                     // Fractional seconds component. Need to be careful about how many digits were given.
                     // We'll normalize to nanoseconds, then convert to what we need. This isn't the most efficient,
                     // but it means we can change the underlying scale without having to remember this code.
                     // It's just a couple multiplications and one division, anyway.
-                    if (asString.length() > 8)
-                        asString = asString.substring(0, 9);
-                    parsed = Long.parseLong(asString);
-                    return secondsRawFromFractionalSeconds(parsed);
+                    return secondsRawFromFractionalSeconds(parsedLong);
                 }
             }
+
+            private final boolean needsLeadingZero;
         }
     }
 
     static abstract class AkIntervalParser<U> {
 
         public long parse(String string) {
-            boolean isNegative;
-            if (string.charAt(0) == '-') {
-                isNegative = true;
+            boolean isNegative = (string.charAt(0) == '-');
+            if (isNegative)
                 string = string.substring(1);
-            }
-            else {
-                isNegative = false;
-            }
+            string = preParse(string);
             Matcher matcher = regex.matcher(string);
             if (!matcher.matches())
                 throw new AkibanInternalException("couldn't parse string as " + onBehalfOf.name() + ": " + string);
@@ -506,52 +503,105 @@ public class AkInterval extends TClassBase {
             for (int i = 0, len = matcher.groupCount(); i < len; ++i) {
                 String group = matcher.group(i+1);
                 @SuppressWarnings("unchecked")
-                U unit = (U) units;
-                long parsed = parseLong(group, unit);
+                U unit = (U) units[i];
+                String preparsedGroup = preParseSegment(group, unit);
+                Long longValue = Long.parseLong(preparsedGroup);
+                int max = maxes[i];
+                if (longValue > max)
+                    throw new AkibanInternalException("out of range: " + group + " while parsing " + onBehalfOf);
+                long parsed = parseLong(longValue, unit);
                 result = LongMath.checkedAdd(result, parsed);
             }
             return isNegative ? -result : result;
         }
 
-        protected abstract void buildChar(char c, ParseCompilation<? super U> result);
-        protected abstract long parseLong(String asString, U unit);
+        protected abstract boolean buildChar(char c, boolean wild, ParseCompilation<? super U> result);
+        protected abstract long parseLong(long value, U unit);
+
+        protected String preParse(String string) {
+            return string;
+        }
+
+        protected String preParseSegment(String string, U unit) {
+            return string;
+        }
 
         protected AkIntervalParser(Enum<?> onBehalfOf, String pattern) {
             ParseCompilation<U> built = compile(pattern);
             this.regex = Pattern.compile(built.patternBuilder.toString());
             this.units = built.unitsList.toArray();
             this.onBehalfOf = onBehalfOf;
+            int maxesSize = built.maxes.size();
+            this.maxes = new int[maxesSize];
+            for (int i = 0; i < maxesSize; ++i) {
+                int max = built.maxes.get(i);
+                this.maxes[i] = (max >= 0) ? max : Integer.MAX_VALUE;
+            }
         }
 
         private final Enum<?> onBehalfOf;
         private final Pattern regex;
         private final Object[] units;
+        private final int[] maxes;
+
+        private static final int WILD_PLUS = -1;
+        private static final int WILD_QUESTION = -2;
 
         private ParseCompilation<U> compile(String pattern) {
             ParseCompilation<U> result = new ParseCompilation<U>(pattern);
             for (int i = 0, len = pattern.length(); i < len; ++i) {
+                boolean wild = false;
                 char c = pattern.charAt(i);
-                buildChar(c, result);
+                if (c == 'u') {
+                    result.patternBuilder.append("(?:\\.(\\d+))?");
+                }
+                else if (Character.isUpperCase(c)) {
+                    int count;
+                    int lookahead = i + 1;
+                    if (lookahead == len) {
+                        count = 1;
+                    }
+                    else if (pattern.charAt(lookahead) == '+') {
+                        count = WILD_PLUS;
+                    }
+                    else if (pattern.charAt(lookahead) == '?') {
+                        count = WILD_QUESTION;
+                    }
+                    else {
+                        for(; lookahead < len; ++lookahead) {
+                            if (pattern.charAt(lookahead) != c)
+                                break;
+                        }
+                        count = lookahead - i;
+                    }
+                    switch (count) {
+                    case WILD_PLUS:
+                        result.patternBuilder.append("(\\d+)");
+                        ++i;
+                        wild = true;
+                        break;
+                    case WILD_QUESTION:
+                        result.patternBuilder.append("(\\d{1,2})");
+                        ++i;
+                        break;
+                    default:
+                        assert count > 0 : count;
+                        result.patternBuilder.append("(\\d{").append(count).append("})");
+                        i += (count-1);
+                        break;
+                    }
+                }
+                if (buildChar(c, wild, result))
+                    result.patternBuilder.append(c);
             }
             return result;
         }
 
         static class ParseCompilation<U> {
 
-            public void addUnit(U unit) {
+            public void addUnit(U unit, int max, boolean ignoreWild) {
                 unitsList.add(unit);
-            }
-
-            public void addPattern(String pattern) {
-                patternBuilder.append(pattern);
-            }
-
-            public void addPattern(char pattern) {
-                patternBuilder.append(pattern);
-            }
-
-            public void addGroupingDigits() {
-                addPattern("(\\d+)");
+                maxes.add(ignoreWild ? -1 : max);
             }
 
             public String inputPattern() {
@@ -565,6 +615,7 @@ public class AkInterval extends TClassBase {
             private String inputPattern;
             private StringBuilder patternBuilder = new StringBuilder();
             private List<U> unitsList = new ArrayList<U>();
+            private List<Integer> maxes = new ArrayList<Integer>();
         }
     }
 }
