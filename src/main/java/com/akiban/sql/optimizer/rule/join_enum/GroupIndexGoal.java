@@ -1041,8 +1041,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             new PlanCostEstimator(queryGoal.getCostEstimator());
         Set<TableSource> requiredTables = requiredColumns.getTables();
 
-        estimator.flatten(tables, 
-                          scan.getOutsideTable(), requiredTables);
+        estimator.groupLoop(scan, tables, requiredTables);
 
         Collection<ConditionExpression> unhandledConditions = 
             new HashSet<ConditionExpression>(conditions);

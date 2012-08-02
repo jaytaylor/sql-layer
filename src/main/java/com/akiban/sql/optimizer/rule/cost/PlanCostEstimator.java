@@ -75,6 +75,12 @@ public class PlanCostEstimator
         planEstimator = new GroupScanEstimator(scan, tableGroup, requiredTables);
     }
 
+    public void groupLoop(GroupLoopScan scan,
+                          TableGroupJoinTree tableGroup,
+                          Set<TableSource> requiredTables) {
+        planEstimator = new GroupLoopEstimator(scan, tableGroup, requiredTables);
+    }
+
     public void select(Collection<ConditionExpression> conditions,
                        Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions) {
         planEstimator = new SelectEstimator(planEstimator,
@@ -203,6 +209,26 @@ public class PlanCostEstimator
             CostEstimate scanCost = costEstimator.costGroupScan(scan.getGroup().getGroup());
             CostEstimate flattenCost = costEstimator.costFlattenGroup(tableGroup, requiredTables);
             costEstimate = scanCost.sequence(flattenCost);
+        }
+    }
+
+    protected class GroupLoopEstimator extends PlanEstimator {
+        private GroupLoopScan scan;
+        private TableGroupJoinTree tableGroup;
+        private Set<TableSource> requiredTables;
+
+        protected GroupLoopEstimator(GroupLoopScan scan,
+                                     TableGroupJoinTree tableGroup,
+                                     Set<TableSource> requiredTables) {
+            super(null);
+            this.scan = scan;
+            this.tableGroup = tableGroup;
+            this.requiredTables = requiredTables;
+        }
+
+        @Override
+        protected void estimateCost() {
+            costEstimate = costEstimator.costFlattenNested(tableGroup, scan.getOutsideTable(), scan.getInsideTable(), requiredTables);
         }
     }
 
