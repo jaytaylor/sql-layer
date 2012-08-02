@@ -60,7 +60,7 @@ public class SequenceNextValue extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "NEXTVAL";
     }
 

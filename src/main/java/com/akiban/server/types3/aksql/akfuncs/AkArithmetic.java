@@ -116,7 +116,7 @@ public class AkArithmetic {
     };
     
     // Divide functions
-   public static final TOverload DIVIDE_SMALLINT = new TArithmetic("div", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
+   public static final TOverload DIVIDE_SMALLINT = new TArithmetic("divide", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             short a1 = inputs.get(1).getInt16();
@@ -132,7 +132,7 @@ public class AkArithmetic {
         }
     };
     
-   public static final TOverload DIVIDE_INT = new TArithmetic("div", AkNumeric.INT, AkNumeric.INT) {
+   public static final TOverload DIVIDE_INT = new TArithmetic("divide", AkNumeric.INT, AkNumeric.INT) {
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a1 = inputs.get(1).getInt32();
@@ -148,7 +148,7 @@ public class AkArithmetic {
         }
     };
     
-   public static final TOverload DIVIDE_BIGINT = new TArithmetic("div", AkNumeric.BIGINT, AkNumeric.BIGINT) {
+   public static final TOverload DIVIDE_BIGINT = new TArithmetic("divide", AkNumeric.BIGINT, AkNumeric.BIGINT) {
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a1 = inputs.get(1).getInt64();

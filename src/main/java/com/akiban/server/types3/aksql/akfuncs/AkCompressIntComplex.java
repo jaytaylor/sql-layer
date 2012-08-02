@@ -81,7 +81,7 @@ public final class AkCompressIntComplex extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "compressint-complex";
     }
 

@@ -115,7 +115,7 @@ public abstract class Rand extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "RAND";
     }
 

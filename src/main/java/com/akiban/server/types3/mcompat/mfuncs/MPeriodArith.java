@@ -90,7 +90,7 @@ public abstract class MPeriodArith extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return name;
     }
 

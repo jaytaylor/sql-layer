@@ -305,7 +305,7 @@ public final class OverloadResolver {
             if (instance != null) {
                 common = commonTClass(common, instance.typeClass());
                 if (common == null)
-                    throw new OverloadException(overload.overloadName());
+                    throw new OverloadException(overload.displayName());
             }
         }
         if (pickingSet.coversRemaining()) {
@@ -314,12 +314,12 @@ public final class OverloadResolver {
                 if (instance != null) {
                     common = commonTClass(common, instance.typeClass());
                     if (common == null)
-                        throw new OverloadException(overload.overloadName());
+                        throw new OverloadException(overload.displayName());
                 }
             }
         }
         if (common == null)
-            throw new OverloadException(overload.overloadName());
+            throw new OverloadException(overload.displayName());
         return common.instance();
     }
 

@@ -30,6 +30,7 @@ import com.akiban.server.service.ServiceManager;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import javax.swing.*;
 import javax.swing.text.*;
 
@@ -44,20 +45,33 @@ public class SwingConsole extends JFrame implements WindowListener
     private final ServiceManager serviceManager;
     private JTextArea textArea;
     private PrintStream printStream;
-
+    private final String[] RUN_PSQL_CMD;
     public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
 
         this.serviceManager = serviceManager;
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        
+        // output area
+        textArea = new JTextArea(50, 100);
+        textArea.setLineWrap(true);
+        DefaultCaret caret = (DefaultCaret)textArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        add(scrollPane);
+        
+        // menu
         addWindowListener(this);
         {
-            boolean macOSX = "Mac OS X".equals(System.getProperty("os.name"));
+            String osName = System.getProperty("os.name");
+            boolean macOSX = "Mac OS X".equals(osName);
             int shift = (macOSX) ? InputEvent.META_MASK : InputEvent.CTRL_MASK;
 
             JMenuBar menuBar = new JMenuBar();
 
+            // File menu
             if (!macOSX || !Boolean.getBoolean("apple.laf.useScreenMenuBar")) {
                 JMenu fileMenu = new JMenu("File");
                 fileMenu.setMnemonic(KeyEvent.VK_F);
@@ -71,6 +85,8 @@ public class SwingConsole extends JFrame implements WindowListener
                 fileMenu.add(quitMenuItem);
                 menuBar.add(fileMenu);
             }
+            
+            // Edit menu
             JMenu editMenu = new JMenu("Edit");
             editMenu.setMnemonic(KeyEvent.VK_E);
             Action action = new DefaultEditorKit.CutAction();
@@ -92,18 +108,61 @@ public class SwingConsole extends JFrame implements WindowListener
                 };
             action.putValue(Action.NAME, "Select All");
             action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, shift));
-            editMenu.add(action);    
+            editMenu.add(action);
+            
+            JMenuItem clearAll = editMenu.add("Clear Console");
+            clearAll.setMnemonic(KeyEvent.VK_R);
+            clearAll.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K, 
+                                                           shift));
+            clearAll.addActionListener(new ActionListener()
+            {
+                @Override
+                public void actionPerformed(ActionEvent ae)
+                {
+                    textArea.setText("");
+                }
+                
+            });
+            
             menuBar.add(editMenu);
+               
+            // Run menu
+            JMenu run = new JMenu("Run");
+            run.setMnemonic(KeyEvent.VK_W);
+            JMenuItem runPsql = run.add("Run PSQL client");
+            runPsql.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6,
+                                                          shift));
 
+            if (macOSX)
+                RUN_PSQL_CMD = new String[] { "osascript", "-e", "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p15432\"\n end tell" };
+            else if (osName.startsWith("Window"))
+                RUN_PSQL_CMD = new String[]{"cmd.exe", "/c", "start psql -h localhost -p15432" };
+            else // assuming unix-based system
+                RUN_PSQL_CMD = new String[]{"xterm", "-e", "psql -h localhost -p15432"};
+
+            runPsql.addActionListener(new ActionListener()
+            {
+                @Override
+                public void actionPerformed(ActionEvent ae)
+                {
+                    try
+                    {
+                        Runtime.getRuntime().exec(RUN_PSQL_CMD);
+                    }
+                    catch (IOException ex)
+                    {
+                        JOptionPane.showMessageDialog(SwingConsole.this,
+                                                      "Unable to open Terminal\nError: " + ex.getMessage(),
+                                                      "Error",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+            menuBar.add(run);
+            
+            
             setJMenuBar(menuBar);
         }
-        textArea = new JTextArea(50, 100);
-        textArea.setLineWrap(true);
-        DefaultCaret caret = (DefaultCaret)textArea.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-        textArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        add(scrollPane);
 
         // centerise the window
         pack();       
