@@ -14,5 +14,5 @@ Subquery@5d1dc52f
       Select@2128b147[]
         AggregateSource@11adf044(UNGROUPED,[])
           Select@768ebd52[o2.order_date > 2010-01-01]
-            TableGroupJoinTree@152f8f4d(TableGroup@49a54659(customers), o2 - SingleIndexScan@5d1dc52f(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =customers.cid, rows = 10, cost = 84.2860))
+            TableGroupJoinTree@152f8f4d(TableGroup@49a54659(customers), o2 - GroupLoopScan@1c19bbe8(customers - o2, rows = 10, cost = 33.0948))
               TableSource@25d99371(o2 - TableGroup@49a54659(customers))

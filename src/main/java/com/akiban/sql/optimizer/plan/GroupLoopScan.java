@@ -80,9 +80,9 @@ public class GroupLoopScan extends BaseScan
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append('(');
-        str.append(outsideTable.summaryString());
+        str.append(outsideTable.getName());
         str.append(" - ");
-        str.append(insideTable.summaryString());
+        str.append(insideTable.getName());
         if (getCostEstimate() != null) {
             str.append(", ");
             str.append(getCostEstimate());
