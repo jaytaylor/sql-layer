@@ -83,6 +83,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
         throws PersistitException
     {
+        updateRow(session, oldRowData, newRowData, columnSelector, null);
+    }
+
+    @Override
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexesToInsert)
+        throws PersistitException
+    {
         UPDATE_TOTAL.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();
@@ -93,6 +100,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
             PersistitAdapter adapter = createAdapter(ais, session);
+            adapter.setIndexesToInsert(indexesToInsert);
             Schema schema = adapter.schema();
 
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);

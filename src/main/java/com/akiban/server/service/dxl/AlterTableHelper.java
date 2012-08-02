@@ -48,8 +48,23 @@ public class AlterTableHelper {
     final List<AlterTableChange> indexChanges;
 
     public AlterTableHelper(List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
+        checkChangeTypes(columnChanges);
+        checkChangeTypes(indexChanges);
         this.columnChanges = columnChanges;
         this.indexChanges = indexChanges;
+    }
+
+    private static void checkChangeTypes(List<AlterTableChange> changes) {
+        for(AlterTableChange change : changes) {
+            switch(change.getChangeType()) {
+                case ADD:
+                case DROP:
+                case MODIFY:
+                break;
+                default:
+                    throw new IllegalStateException("Unknown change type: " + change);
+            }
+        }
     }
 
     public Column findNewColumn(UserTable newTable, String oldName) {
@@ -76,15 +91,12 @@ public class AlterTableHelper {
             if(newName.equals(change.getNewName())) {
                 switch(change.getChangeType()) {
                     case ADD:
-                        assert oldColumn == null : oldColumn;
                         return null;
                     case MODIFY:
                         assert oldColumn != null : newColumn;
                         return oldColumn.getPosition();
                     case DROP:
                         throw new IllegalStateException("Column should not exist in new table: " + newName);
-                    default:
-                        throw new IllegalStateException("Unknown ChangeType: " + change);
                 }
             }
         }
@@ -101,6 +113,32 @@ public class AlterTableHelper {
             }
         }
         return false;
+    }
+
+    public void findAffectedOldIndexes(UserTable table, List<Index> toTruncate, List<Index> toDrop) {
+        for(AlterTableChange change : indexChanges) {
+            switch(change.getChangeType()) {
+                case MODIFY:
+                    toTruncate.add(table.getIndex(change.getOldName()));
+                break;
+                case DROP:
+                    toDrop.add(table.getIndex(change.getOldName()));
+                break;
+            }
+        }
+    }
+
+    public List<Index> findAffectedNewIndexes(UserTable table) {
+        List<Index> indexes = new ArrayList<Index>();
+        for(AlterTableChange change : indexChanges) {
+            switch(change.getChangeType()) {
+                case ADD:
+                case MODIFY:
+                    indexes.add(table.getIndex(change.getNewName()));
+                break;
+            }
+        }
+        return indexes;
     }
 
     public List<GroupIndex> findAffectedGroupIndexes(UserTable table) {

@@ -111,6 +111,10 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         delegate.updateRow(session, oldRowData, newRowData, columnSelector);
     }
 
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexesToInsert) throws PersistitException {
+        delegate.updateRow(session, oldRowData, newRowData, columnSelector, indexesToInsert);
+    }
+
     public void dropGroup(Session session, int rowDefId) throws PersistitException {
         delegate.dropGroup(session, rowDefId);
     }

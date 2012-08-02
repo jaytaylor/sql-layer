@@ -167,19 +167,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, table);
     }
 
-    private void doIndexChange(Session session, TableName tableName, UserTable newDefinition, List<String> indexesToBuild) {
+    private void doIndexChange(Session session, TableName tableName, UserTable newDefinition, AlterTableHelper helper) {
         schemaManager().alterTableDefinition(session, tableName, newDefinition);
-
         AkibanInformationSchema newAIS = getAIS(session);
         UserTable newTable = newAIS.getUserTable(newDefinition.getName());
-
-        List<Index> indexes = new ArrayList<Index>();
-        for(String indexName : indexesToBuild) {
-            Index index = newTable.getIndex(indexName);
-            assert index != null : indexName;
-            indexes.add(index);
-        }
-
+        List<Index> indexes = helper.findAffectedNewIndexes(newTable);
         store().buildIndexes(session, indexes, DEFER_INDEX_BUILDING);
     }
 
@@ -191,8 +183,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         List<GroupIndex> affectedGroupIndexes = helper.findAffectedGroupIndexes(origTable);
 
         // Drop definition and rebuild later, probably better than doing each entry individually
-        store().truncateIndex(session, affectedGroupIndexes);
-        schemaManager().dropIndexes(session, affectedGroupIndexes);
+        if(!affectedGroupIndexes.isEmpty()) {
+            store().truncateIndex(session, affectedGroupIndexes);
+            schemaManager().dropIndexes(session, affectedGroupIndexes);
+        }
 
         // Save previous state so it can be scanned
         final Schema oldSchema = SchemaCache.globalSchema(origAIS);
@@ -202,7 +196,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().alterTableDefinition(session, tableName, newDefinition);
 
         // Build transformation
-        PersistitAdapter adapter = new PersistitAdapter(oldSchema, store(), treeService(), session, configService);
+        PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
         QueryContext queryContext = new SimpleQueryContext(adapter);
 
         final AkibanInformationSchema newAIS = getAIS(session);
@@ -270,16 +264,20 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
         );
 
+        List<Index> indexesToBuild = helper.findAffectedNewIndexes(newTable);
+        if(!indexesToBuild.isEmpty()) {
+            adapter.setIndexesToInsert(indexesToBuild.toArray(new Index[indexesToBuild.size()]));
+        }
+
         // Perform transformation
         plan.run(queryContext);
 
         // Now rebuild any group indexes, leaving out empty ones
         if(!affectedGroupIndexes.isEmpty()) {
-            List<Index> indexesToBuild = new ArrayList<Index>();
-            helper.recreateAffectedGroupIndexes(origTable, newTable, affectedGroupIndexes, indexesToBuild,
-                                                indexesToDrop);
-            if(!indexesToBuild.isEmpty()) {
-                createIndexes(session, indexesToBuild);
+            List<Index> gisToBuild = new ArrayList<Index>();
+            helper.recreateAffectedGroupIndexes(origTable, newTable, affectedGroupIndexes, gisToBuild, indexesToDrop);
+            if(!gisToBuild.isEmpty()) {
+                createIndexes(session, gisToBuild);
             }
         }
     }
@@ -296,36 +294,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         boolean rollBackNeeded = false;
         List<Index> indexesToDrop = new ArrayList<Index>();
         try {
-            List<String> indexNamesToBuild = new ArrayList<String>();
-            List<Index> indexesToTruncate = new ArrayList<Index>();
+            AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges);
 
             // Simple prep: truncate dropped or changed indexes (not drop tree as it is non-transactional)
-            for(AlterTableChange change : indexChanges) {
-                Index index = origTable.getIndex(change.getOldName());
-                switch(change.getChangeType()) {
-                    case ADD:
-                        indexNamesToBuild.add(change.getNewName());
-                    break;
-                    case DROP:
-                        indexesToDrop.add(index);
-                    break;
-                    case MODIFY:
-                        indexNamesToBuild.add(change.getNewName());
-                        indexesToTruncate.add(index);
-                    break;
-                    default:
-                        throw new IllegalStateException("Unknown change type: " + change);
-                }
-            }
+            List<Index> indexesToTruncate = new ArrayList<Index>();
+            helper.findAffectedOldIndexes(origTable, indexesToTruncate, indexesToDrop);
 
             if(!indexesToTruncate.isEmpty()) {
                 store().truncateIndex(session, indexesToTruncate);
             }
 
             if(columnChanges.isEmpty()) {
-                doIndexChange(session, tableName, newDefinition, indexNamesToBuild);
+                doIndexChange(session, tableName, newDefinition, helper);
             } else {
-                AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges);
                 doTableChange(session, tableName, newDefinition, helper, indexesToDrop);
             }
         } catch(Exception e) {
