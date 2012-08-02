@@ -644,9 +644,9 @@ public class PersistitStore implements Store {
             RowData currentRow = new RowData(EMPTY_BYTE_ARRAY);
             expandRowData(hEx, currentRow);
             RowData mergedRowData = 
-                columnSelector == null 
+                (columnSelector == null) || insideAlter
                 ? newRowData
-                : mergeRows(rowDef, currentRow, newRowDef, newRowData, columnSelector);
+                : mergeRows(rowDef, currentRow, newRowData, columnSelector);
             BitSet tablesRequiringHKeyMaintenance = insideAlter ? null : analyzeFieldChanges(rowDef, oldRowData, mergedRowData);
             if (tablesRequiringHKeyMaintenance == null) {
                 // No PK or FK fields have changed. Just update the row.
@@ -675,7 +675,7 @@ public class PersistitStore implements Store {
             releaseExchange(session, hEx);
         }
     }
-
+    
     private BitSet analyzeFieldChanges(RowDef rowDef, RowData oldRow, RowData newRow)
     {
         BitSet tablesRequiringHKeyMaintenance;
@@ -1454,8 +1454,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    private RowData mergeRows(RowDef rowDef, RowData currentRow, RowDef newRowDef, RowData newRowData, ColumnSelector columnSelector) {
-        assert rowDef == newRowDef;
+    private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector) {
         NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
         NewRow newRow = new LegacyRowWrapper(newRowData, this);
         int fields = rowDef.getFieldCount();

@@ -229,7 +229,7 @@ public class TableDDL
 
         NameGenerator namer = new DefaultNameGenerator();
         String constraint = null;
-
+        
         if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.CHECK) {
             throw new UnsupportedCheckConstraintException ();
         }
@@ -245,7 +245,7 @@ public class TableDDL
         }
         
         builder.index(schemaName, tableName, indexName, true, constraint);
-
+        
         UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
         int colPos = 0;
         for (ResultColumn col : cdn.getColumnList()) {
@@ -254,7 +254,6 @@ public class TableDDL
             }
             builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, null);
         }
-
         return indexName;
     }
     

@@ -132,9 +132,9 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param tableName Name of the table being changed.
      * @param newDefinition New definition of the table.
-     * @param indexMap Mapping of new index names to old
+     * @param indexNameMap Mapping of new index names to old
      */
-    void alterTableDefinition(Session session, TableName tableName, UserTable newDefinition, Map<String,String> indexMap);
+    void alterTableDefinition(Session session, TableName tableName, UserTable newDefinition, Map<String,String> indexNameMap);
 
     /**
      * Generate a TableDefinition, which includes a canonical 'create table' statement,

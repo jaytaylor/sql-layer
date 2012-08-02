@@ -446,10 +446,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public void alterTableDefinition(Session session, TableName tableName, final UserTable newDefinition, Map<String,String> indexMap) {
+    public void alterTableDefinition(Session session, TableName tableName, final UserTable newDefinition, Map<String,String> indexNameMap) {
         checkTableName(tableName, true, false);
 
-        AISMerge merge = new AISMerge(aish.getAis(), newDefinition, indexMap);
+        AISMerge merge = new AISMerge(aish.getAis(), newDefinition, indexNameMap);
         merge.merge();
 
         Set<String> schemas = new HashSet<String>();
