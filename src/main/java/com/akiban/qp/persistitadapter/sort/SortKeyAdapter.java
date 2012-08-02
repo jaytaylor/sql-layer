@@ -46,7 +46,7 @@ abstract class SortKeyAdapter<S, E> {
     public abstract void checkConstraints(BoundExpressions loExpressions,
                                           BoundExpressions hiExpressions,
                                           int f,
-                                          AkCollator collator);
+                                          AkCollator[] collators);
 
     public abstract S[] createSourceArray(int size);
 
