@@ -868,18 +868,21 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             TableSource parent = join.getParent();
             TableSource child = join.getChild();
             TableSource inside, outside;
+            boolean insideIsParent;
             if (outsideSameGroup.contains(parent) && tables.containsTable(child)) {
                 inside = child;
                 outside = parent;
+                insideIsParent = false;
             }
             else if (outsideSameGroup.contains(child) && tables.containsTable(parent)) {
                 inside = parent;
                 outside = child;
+                insideIsParent = true;
             }
             else {
                 continue;
             }
-            GroupLoopScan forJoin = new GroupLoopScan(inside, outside, 
+            GroupLoopScan forJoin = new GroupLoopScan(inside, outside, insideIsParent,
                                                       join.getConditions());
             forJoin.setCostEstimate(estimateCost(forJoin));
             if (bestScan == null) {

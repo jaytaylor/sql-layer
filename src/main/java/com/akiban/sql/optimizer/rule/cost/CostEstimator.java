@@ -641,19 +641,19 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costFlattenNested(TableGroupJoinTree tableGroup,
                                           TableSource outsideTable,
                                           TableSource insideTable,
+                                          boolean insideIsParent,
                                           Set<TableSource> requiredTables) {
         TableGroupJoinNode startNode = tableGroup.getRoot().findTable(insideTable);
         coverBranches(tableGroup, startNode, requiredTables);
         int branchCount = 0;
         long rowCount = 1;
         double cost = 0.0;
-        if (outsideTable.getTable().getTable().getDepth() <
-            insideTable.getTable().getTable().getDepth()) {
-            rowCount *= descendantCardinality(insideTable, outsideTable);
-            cost += model.branchLookup(schema.userTableRowType(insideTable.getTable().getTable()));
+        if (insideIsParent) {
+            cost += model.ancestorLookup(Collections.singletonList(schema.userTableRowType(insideTable.getTable().getTable())));
         }
         else {
-            cost += model.ancestorLookup(Collections.singletonList(schema.userTableRowType(insideTable.getTable().getTable())));
+            rowCount *= descendantCardinality(insideTable, outsideTable);
+            cost += model.branchLookup(schema.userTableRowType(insideTable.getTable().getTable()));
         }
         for (TableGroupJoinNode node : tableGroup) {
             if (isFlattenable(node)) {

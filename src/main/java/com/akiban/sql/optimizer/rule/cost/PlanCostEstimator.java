@@ -228,7 +228,7 @@ public class PlanCostEstimator
 
         @Override
         protected void estimateCost() {
-            costEstimate = costEstimator.costFlattenNested(tableGroup, scan.getOutsideTable(), scan.getInsideTable(), requiredTables);
+            costEstimate = costEstimator.costFlattenNested(tableGroup, scan.getOutsideTable(), scan.getInsideTable(), scan.isInsideParent(), requiredTables);
         }
     }
 

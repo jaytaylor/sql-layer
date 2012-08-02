@@ -154,12 +154,21 @@ public class BranchJoiner extends BaseRule
         }
         else if (scan instanceof GroupLoopScan) {
             GroupLoopScan groupLoop = (GroupLoopScan)scan;
-            // TODO: Need to handle ancestor case. 
-            // Need to handle case where outside isn't immediate parent loop.
-            assert (groupLoop.getInsideTable() == rootTable.getTable());
-            List<TableSource> tables = new ArrayList<TableSource>();
-            scan = new BranchLookup(scan, groupLoop.getInsideTable().getTable(), tables);
-            scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
+            if (groupLoop.isInsideParent()) {
+                TableGroupJoinNode parent = rootTable.findTable(groupLoop.getInsideTable());
+                assert (parent != null) : groupLoop;
+                List<TableSource> ancestors = new ArrayList<TableSource>();
+                pendingTableSources(parent, rootTable, ancestors);
+                scan = new AncestorLookup(scan, groupLoop.getOutsideTable(), ancestors);
+                scan = flatten(scan, parent, rootTable);
+                scan = fillSideBranches(scan, parent, rootTable);
+            }
+            else {
+                assert (groupLoop.getInsideTable() == rootTable.getTable());
+                List<TableSource> tables = new ArrayList<TableSource>();
+                scan = new BranchLookup(scan, groupLoop.getInsideTable().getTable(), tables);
+                scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
+            }
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");
