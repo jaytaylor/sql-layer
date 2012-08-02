@@ -114,6 +114,9 @@ public class BranchJoiner extends BaseRule
                 return indexScan;
             requiredTables = indexScan.getRequiredTables();
         }
+        else if (scan instanceof GroupLoopScan) {
+            requiredTables = ((GroupLoopScan)scan).getRequiredTables();
+        }
         markBranches(tableGroup, requiredTables);
         top:
         if (scan instanceof IndexScan) {

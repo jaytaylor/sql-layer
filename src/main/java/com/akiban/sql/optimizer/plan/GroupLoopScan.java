@@ -27,12 +27,14 @@
 package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
+import java.util.Set;
 
 public class GroupLoopScan extends BaseScan
 {
     private TableSource insideTable, outsideTable;
     private boolean insideParent;
     private List<ComparisonCondition> joinConditions;
+    private Set<TableSource> requiredTables;
 
     public GroupLoopScan(TableSource insideTable, TableSource outsideTable,
                          boolean insideParent, 
@@ -66,6 +68,13 @@ public class GroupLoopScan extends BaseScan
         joinColumn = (ColumnExpression)joinCondition.getRight();
         assert (joinColumn.getTable() == outsideTable);
         return joinColumn;
+    }
+
+    public Set<TableSource> getRequiredTables() {
+        return requiredTables;
+    }
+    public void setRequiredTables(Set<TableSource> requiredTables) {
+        this.requiredTables = requiredTables;
     }
 
     @Override

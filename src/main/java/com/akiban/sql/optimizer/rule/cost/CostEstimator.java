@@ -657,7 +657,7 @@ public abstract class CostEstimator implements TableRowCounts
         }
         for (TableGroupJoinNode node : tableGroup) {
             if (isFlattenable(node)) {
-                long nrows = getTableRowCount(node.getTable().getTable().getTable());
+                long nrows = tableCardinality(node);
                 // Cost of flattening these children with their ancestor.
                 cost += model.flatten((int)nrows);
                 if (isSideBranchLeaf(node)) {

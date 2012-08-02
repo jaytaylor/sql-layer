@@ -884,6 +884,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
             GroupLoopScan forJoin = new GroupLoopScan(inside, outside, insideIsParent,
                                                       join.getConditions());
+            determineRequiredTables(forJoin);
             forJoin.setCostEstimate(estimateCost(forJoin));
             if (bestScan == null) {
                 logger.debug("Selecting {}", forJoin);
@@ -972,6 +973,36 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return requiredAfter.isEmpty();
     }
 
+    protected void determineRequiredTables(GroupLoopScan scan) {
+        // Include the non-condition requirements.
+        RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
+        RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
+        // Add in any non-join conditions.
+        for (ConditionExpression condition : conditions) {
+            boolean found = false;
+            for (ConditionExpression joinCondition : scan.getJoinConditions()) {
+                if (joinCondition == condition) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                condition.accept(filler);
+        }
+        // Does not sort.
+        if (queryGoal.getOrdering() != null) {
+            // Only this node, not its inputs.
+            filler.setIncludedPlanNodes(Collections.<PlanNode>singletonList(queryGoal.getOrdering()));
+            queryGoal.getOrdering().accept(filler);
+        }
+        // The only table we can exclude is the one initially joined to, in the case
+        // where all the data comes from elsewhere on that branch.
+        Set<TableSource> required = new HashSet<TableSource>(requiredAfter.getTables());
+        if (!requiredAfter.hasColumns(scan.getInsideTable()))
+            required.remove(scan.getInsideTable());
+        scan.setRequiredTables(required);
+    }
+
     public CostEstimate estimateCost(IndexScan index) {
         return estimateCost(index, queryGoal.getLimit());
     }
@@ -1042,7 +1073,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     public CostEstimate estimateCost(GroupLoopScan scan) {
         PlanCostEstimator estimator = 
             new PlanCostEstimator(queryGoal.getCostEstimator());
-        Set<TableSource> requiredTables = requiredColumns.getTables();
+        Set<TableSource> requiredTables = scan.getRequiredTables();
 
         estimator.groupLoop(scan, tables, requiredTables);
 
