@@ -84,7 +84,7 @@ public abstract class TOverloadBase implements TOverload {
     }
 
     protected String toStringName() {
-        return overloadName();
+        return displayName();
     }
 
     protected String toStringArgsPrefix() {
@@ -170,7 +170,7 @@ public abstract class TOverloadBase implements TOverload {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(overloadName());
+        StringBuilder sb = new StringBuilder(displayName());
         sb.append('(');
 
         List<TInputSet> origInputSets = inputSets();
@@ -195,4 +195,17 @@ public abstract class TOverloadBase implements TOverload {
             return o1.firstPosition() - o2.firstPosition();
         }
     };
+    
+    /**
+     * @inheritDoc
+     * 
+     */
+    @Override
+    public String[] registeredNames()
+    {
+        registeredName[0] = displayName();
+        return registeredName;
+    }
+
+    private String registeredName[] = new String[1];
 }

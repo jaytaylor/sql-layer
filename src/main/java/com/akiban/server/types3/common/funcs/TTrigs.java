@@ -205,7 +205,7 @@ public class TTrigs extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return trigType.name();
     }

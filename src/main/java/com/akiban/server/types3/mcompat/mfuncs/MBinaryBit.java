@@ -33,9 +33,9 @@
  * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
  * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
  *
- * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO INVERT_BITS AGREE TO
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO BITNOT AGREE TO
  * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
- * INVERT_BITS USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * BITNOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
  * YOUR INITIAL PURCHASE.
  *
  * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
@@ -63,61 +63,121 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class MBinaryBit extends TOverloadBase {
 
-    static enum BitOperator {
-        BITWISE_AND {
+    static enum BitOperator 
+    {
+        BITAND
+        {
             @Override
-            long evaluate(long a0, long a1) {
+            public String displayName()
+            {
+                return "&";
+            }
+
+            @Override
+            long evaluate(long a0, long a1)
+            {
                 return a0 & a1;
             }
-        }, 
-        BITWISE_OR {
-            @Override
-            long evaluate(long a0, long a1) {
-                return a0 | a1;
-            }            
-        }, 
-        BITWISE_XOR {
-            @Override
-            long evaluate(long a0, long a1) {
-                return a0 ^ a1;
-            }            
-        }, 
-        LEFT_SHIFT {
-            @Override
-            long evaluate(long a0, long a1) {
-                return a0 << a1;
-            }            
-        }, 
-        RIGHT_SHIFT {
-            @Override
-            long evaluate(long a0, long a1) {
-                return a0 >> a1;
-            }            
         },
-        INVERT_BITS {
+        BITOR
+        {
             @Override
-            long evaluate(long a0, long a1) {
+            public String displayName()
+            {
+                return "|";
+            }
+
+            @Override
+            long evaluate(long a0, long a1)
+            {
+                return a0 | a1;
+            }
+        },
+        BITXOR
+        {
+            @Override
+            public String displayName()
+            {
+                return "^";
+            }
+
+            @Override
+            long evaluate(long a0, long a1)
+            {
+                return a0 ^ a1;
+            }
+        },
+        LEFTSHIFT
+        {
+            @Override
+            public String displayName()
+            {
+                return "<<";
+            }
+
+            @Override
+            long evaluate(long a0, long a1)
+            {
+                return a0 << a1;
+            }
+        },
+        RIGHTSHIFT
+        {
+            @Override
+            public String displayName()
+            {
+                return ">>";
+            }
+
+            @Override
+            long evaluate(long a0, long a1)
+            {
+                return a0 >> a1;
+            }
+        },
+        BITNOT
+        {
+            @Override
+            public String displayName()
+            {
+                return "!";
+            }
+
+            @Override
+            long evaluate(long a0, long a1)
+            {
                 // doEvaluate method overrides this
                 return -1;
             }
-        }, 
-        BIT_COUNT {
+        },
+        BIT_COUNT
+        {
             @Override
-            long evaluate(long a0, long a1) {
+            public String displayName()
+            {
+                return "bit_count";
+            }
+
+            @Override
+            long evaluate(long a0, long a1)
+            {
                 // doEvaluate method overrides this
                 return -1;
             }
         };
+
         abstract long evaluate(long a0, long a1);
+
+        abstract String displayName();
     }
     
     public static final TOverload[] INSTANCES = {
-        new MBinaryBit(BitOperator.BITWISE_AND),
-        new MBinaryBit(BitOperator.BITWISE_OR),
-        new MBinaryBit(BitOperator.BITWISE_XOR),
-        new MBinaryBit(BitOperator.LEFT_SHIFT),
-        new MBinaryBit(BitOperator.RIGHT_SHIFT),
-        new MBinaryBit(BitOperator.INVERT_BITS) {           
+        new MBinaryBit(BitOperator.BITAND),
+        new MBinaryBit(BitOperator.BITOR),
+        new MBinaryBit(BitOperator.BITXOR),
+        new MBinaryBit(BitOperator.LEFTSHIFT),
+        new MBinaryBit(BitOperator.RIGHTSHIFT),
+        new MBinaryBit(BitOperator.BITNOT) {           
             @Override
             protected void buildInputSets(TInputSetBuilder builder) {
                 builder.covers(MNumeric.BIGINT_UNSIGNED, 0);
@@ -143,9 +203,10 @@ public class MBinaryBit extends TOverloadBase {
     };
     
     private final BitOperator bitOp;
-   
+    private final String registeredNames [];
     private MBinaryBit(BitOperator bitOp) {
         this.bitOp = bitOp;
+        registeredNames  = new String[]{bitOp.name()};
     }
     
     @Override
@@ -162,10 +223,15 @@ public class MBinaryBit extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
-        return bitOp.name();
+    public String displayName() {
+        return bitOp.displayName();
     }
 
+    @Override
+    public String[] registeredNames()
+    {
+        return registeredNames;
+    }
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MNumeric.BIGINT_UNSIGNED.instance());

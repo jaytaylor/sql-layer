@@ -110,7 +110,7 @@ public abstract class Hex extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "HEX";
     }
 

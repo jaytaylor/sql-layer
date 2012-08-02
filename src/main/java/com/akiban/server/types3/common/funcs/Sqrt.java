@@ -60,7 +60,7 @@ public class Sqrt extends TOverloadBase {
     }
       
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "SQRT";
     }
     

@@ -59,7 +59,7 @@ public class AkIfElse extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "IF";
     }

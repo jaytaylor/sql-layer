@@ -163,15 +163,21 @@ public abstract class Substring extends TOverloadBase {
     }
     protected final TClass stringType;
     protected final TClass numericType;
-
+    private static final String registeredNames[] = new String[]{"substring", "substr"};
     private Substring(TClass stringType, TClass numericType) {
         this.stringType = stringType;
         this.numericType = numericType;
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "SUBSTRING";
+    }
+
+    @Override
+    public String[] registeredNames()
+    {
+        return registeredNames;
     }
 
     protected int adjustIndex(String str, int index) {

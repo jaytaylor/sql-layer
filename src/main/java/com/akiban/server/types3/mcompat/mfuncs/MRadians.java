@@ -52,7 +52,7 @@ public class MRadians extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "RADIANS";
     }
 
