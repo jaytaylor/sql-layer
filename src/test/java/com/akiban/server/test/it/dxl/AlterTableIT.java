@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.dxl;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -43,7 +44,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.AlterTableChange;
-import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NotNullViolationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.test.it.ITBase;
@@ -62,7 +62,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -348,6 +347,68 @@ public class AlterTableIT extends ITBase {
                 createNewRow(cid, 2L, "20", "B", null),
                 createNewRow(cid, 3L, "30", "C", null),
                 createNewRow(cid, 10L, "100", "D", null)
+        );
+    }
+
+    @Test
+    public void addUniqueKeyExistingColumn() throws StandardException {
+        createAndLoadSingleTableGroup();
+        runAlter("ALTER TABLE c ADD UNIQUE(c1)");
+        expectIndexes(cid, "PRIMARY", "c1");
+        expectRows(
+                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1")),
+                createNewRow(store(), cid, UNDEF, "10"),
+                createNewRow(store(), cid, UNDEF, "20"),
+                createNewRow(store(), cid, UNDEF, "30")
+        );
+    }
+
+    @Test
+    public void addColumnDropColumnAddIndexOldNewMiddleOfGroup() throws StandardException {
+        createAndLoadCOI();
+
+        // ALTER TABLE o DROP COLUMN o1, ADD COLUMN o1 INT, ADD INDEX x(o1), ADD INDEX y(cid)
+        AkibanInformationSchema ais = AISCloner.clone(ddl().getAIS(session()));
+        UserTable table = ais.getUserTable(SCHEMA, "o");
+        table.dropColumn("o1");
+        AISBuilder builder = new AISBuilder(ais);
+        builder.column(SCHEMA, "o", "o1", 2, "int", null, null, true, false, null, null);
+        builder.index(SCHEMA, "o", "x", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, "o", "x", "o1", 0, true, null);
+        builder.index(SCHEMA, "o", "y", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, "o", "y", "cid", 0, true, null);
+
+        List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
+        columnChanges.add(AlterTableChange.createDrop("o1"));
+        columnChanges.add(AlterTableChange.createAdd("o1"));
+        List<AlterTableChange> indexChanges = new ArrayList<AlterTableChange>();
+        indexChanges.add(AlterTableChange.createAdd("x"));
+        indexChanges.add(AlterTableChange.createAdd("y"));
+
+        ddl().alterTable(session(), new TableName(SCHEMA, "o"), table, columnChanges, indexChanges);
+        updateAISGeneration();
+
+        expectFullRows(
+                oid,
+                createNewRow(oid, 10L, 1L, null),
+                createNewRow(oid, 11L, 1L, null),
+                createNewRow(oid, 30L, 3L, null)
+        );
+
+        expectIndexes(oid, "PRIMARY", "x", "y");
+
+        expectRows(
+                scanAllIndexRequest(getUserTable(SCHEMA, "o").getIndex("x")),
+                createNewRow(store(), oid, UNDEF, UNDEF, null),
+                createNewRow(store(), oid, UNDEF, UNDEF, null),
+                createNewRow(store(), oid, UNDEF, UNDEF, null)
+        );
+
+        expectRows(
+                scanAllIndexRequest(getUserTable(SCHEMA, "o").getIndex("y")),
+                createNewRow(store(), oid, UNDEF, 1L, UNDEF),
+                createNewRow(store(), oid, UNDEF, 1L, UNDEF),
+                createNewRow(store(), oid, UNDEF, 3L, UNDEF)
         );
     }
 
