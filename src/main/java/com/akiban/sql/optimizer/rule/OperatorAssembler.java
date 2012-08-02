@@ -1070,7 +1070,18 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
             RowStream stream;
             GroupTable groupTable = branchLookup.getSource().getGroup().getGroupTable();
-            if (branchLookup.getInput() != null) {
+            if ((branchLookup.getInput() == null) ||
+                (branchLookup.getInput() instanceof GroupLoopScan)) {
+                stream = new RowStream();
+                API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
+                stream.operator = API.branchLookup_Nested(groupTable, 
+                                                          tableRowType(branchLookup.getSource()),
+                                                          tableRowType(branchLookup.getAncestor()),
+                                                          tableRowType(branchLookup.getBranch()), 
+                                                          flag,
+                                                          lookupNestedBindingPosition((GroupLoopScan)branchLookup.getInput()));
+            }
+            else {
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
@@ -1084,17 +1095,6 @@ public class OperatorAssembler extends BaseRule
                                                            inputRowType,
                                                            tableRowType(branchLookup.getBranch()), 
                                                            flag);
-            }
-            else {
-                stream = new RowStream();
-                API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
-                stream.operator = API.branchLookup_Nested(groupTable, 
-                                                          tableRowType(branchLookup.getSource()),
-                                                          tableRowType(branchLookup.getAncestor()),
-                                                          tableRowType(branchLookup.getBranch()), 
-                                                          flag,
-                                                          currentBindingPosition());
-                
             }
             stream.rowType = null;
             stream.unknownTypesPresent = true;
@@ -1770,6 +1770,22 @@ public class OperatorAssembler extends BaseRule
         protected ColumnExpressionContext getColumnExpressionContext(ColumnExpressionToIndex current) {
             columnBoundRows.current = current;
             return columnBoundRows;
+        }
+
+        protected int lookupNestedBindingPosition(GroupLoopScan scan) {
+            if (scan == null)
+                return currentBindingPosition();
+            // Find the outside key's binding position.
+            ColumnExpression joinColumn = scan.getOutsideJoinColumn();
+            for (int rowIndex = boundRows.size() - 1; rowIndex >= 0; rowIndex--) {
+                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                if (boundRow == null) continue;
+                int fieldIndex = boundRow.getIndex(joinColumn);
+                if (fieldIndex >= 0) {
+                    return rowIndex + loopBindingsOffset;
+                }
+            }
+            throw new AkibanInternalException("Outer loop not found " + scan);
         }
     }
 

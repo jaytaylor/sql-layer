@@ -58,6 +58,16 @@ public class GroupLoopScan extends BaseScan
         return joinConditions;
     }
 
+    public ColumnExpression getOutsideJoinColumn() {
+        ComparisonCondition joinCondition = joinConditions.get(0);
+        ColumnExpression joinColumn = (ColumnExpression)joinCondition.getLeft();
+        if (joinColumn.getTable() == outsideTable)
+            return joinColumn;
+        joinColumn = (ColumnExpression)joinCondition.getRight();
+        assert (joinColumn.getTable() == outsideTable);
+        return joinColumn;
+    }
+
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
