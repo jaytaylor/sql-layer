@@ -154,19 +154,21 @@ public class BranchJoiner extends BaseRule
         }
         else if (scan instanceof GroupLoopScan) {
             GroupLoopScan groupLoop = (GroupLoopScan)scan;
+            TableSource outsideTable = groupLoop.getOutsideTable();
+            TableSource insideTable = groupLoop.getInsideTable();
             if (groupLoop.isInsideParent()) {
                 TableGroupJoinNode parent = rootTable.findTable(groupLoop.getInsideTable());
                 assert (parent != null) : groupLoop;
                 List<TableSource> ancestors = new ArrayList<TableSource>();
                 pendingTableSources(parent, rootTable, ancestors);
-                scan = new AncestorLookup(scan, groupLoop.getOutsideTable(), ancestors);
+                scan = new AncestorLookup(scan, outsideTable, ancestors);
                 scan = flatten(scan, parent, rootTable);
                 scan = fillSideBranches(scan, parent, rootTable);
             }
             else {
                 assert (groupLoop.getInsideTable() == rootTable.getTable());
                 List<TableSource> tables = new ArrayList<TableSource>();
-                scan = new BranchLookup(scan, groupLoop.getInsideTable().getTable(), tables);
+                scan = new BranchLookup(scan, outsideTable.getTable(), insideTable.getTable(), tables);
                 scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
             }
         }
