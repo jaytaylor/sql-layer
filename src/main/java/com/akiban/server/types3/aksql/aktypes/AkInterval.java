@@ -110,11 +110,20 @@ public class AkInterval extends TClassBase {
 
     /**
      * <p>A SECONDS interval, whose value 64-bit value does <em>not</em> necessarily represent number of seconds.
-     * In fact, it almost definitely is not number of seconds; instead, the value is in some private format.</p>
+     * In fact, it almost definitely is not number of seconds; instead, the value is in some private unit. That said,
+     * it will still be a unit of time, so you can work with it intuitively. For instance, adding two values of
+     * the raw form will result in a number in the same unit that represents the sum of the two durations, and
+     * multiply the raw form by some number K will result in a duration K times as long as the original. The value
+     * 0 represents no time. In short, you can think of the unit as "Fooseconds", where Foo might be micro, nano,
+     * or something else but similar.</p>
      *
      * <p>To get values of this TClass in a meaningful way, you should use one of the {@linkplain #secondsIntervalAs}
      * overloads, specifying the units you want. Units will truncate (not round) their values, as is standard in the
      * JDK's TimeUnit implementation.</p>
+     *
+     * <p>If you have a value in some format, and want to convert it to the SECONDS raw format, use
+     * {@linkplain #secondsRawFrom(long, TimeUnit)} or {@linkplain #secondsRawFromFractionalSeconds(long)}.
+     * The resulting value can be added to other raw SECONDS values intuitively, as explained above.</p>
      */
     public static AkInterval SECONDS = new AkInterval(
             AkBundle.INSTANCE.id(),
@@ -130,12 +139,92 @@ public class AkInterval extends TClassBase {
             AkIntervalSecondsFormat.values()
     );
 
+    /**
+     * Gets the interval from a source, which should correspond to an AkInterval.SECONDS value, in some unit.
+     * @param source the source
+     * @param as the desired unit
+     * @return the source's value in the requested unit
+     */
     public static long secondsIntervalAs(PValueSource source, TimeUnit as) {
         return secondsIntervalAs(source.getInt64(), as);
     }
 
+    /**
+     * Gets the interval from a raw long, which should correspond to an AkInterval.SECONDS value, in some unit
+     * @param secondsIntervalRaw the raw form of the seconds value
+     * @param as the desired unit
+     * @return the raw value, translated to the requested unit
+     */
     public static long secondsIntervalAs(long secondsIntervalRaw, TimeUnit as) {
         return as.convert(secondsIntervalRaw, AkIntervalSecondsFormat.UNDERLYING_UNIT);
+    }
+
+    /**
+     * Gets a raw SECONDS value from an interval specified in some unit.
+     * @param source the interval to translate to the raw form
+     * @param sourceUnit the incoming interval's unit
+     * @return the raw form
+     */
+    public static long secondsRawFrom(long source, TimeUnit sourceUnit) {
+        return AkIntervalSecondsFormat.UNDERLYING_UNIT.convert(source, sourceUnit);
+    }
+
+    /**
+     * <p>Gets the raw SECONDS value from a number that represents fractions of a second. For instance, 1 would
+     * represent a tenth of a second; 123 would represent 123 milliseconds, etc. Values representing a greater
+     * precision than the raw form supports will be truncated. The raw form won't be more precise than nanoseconds.</p>
+     *
+     * <p>Negative values are fine and are interpreted as if the negative sign were in front of the whole number.</p>
+     *
+     * <p>Examples:
+     * <ul>
+     *     <li>123 represents 123 milliseconds, and corresponds to 0.123 seconds.</li>
+     *     <li>-4 represents 4 tenths of a second in the past, and corresponds to -0.4 seconds.</li>
+     *     <li>123456789444 represents 123456789 nanoseconds, since the trailing 444 are past nanosecond resolution
+     *     (and are thus sure to be truncated)</li>
+     * </ul>
+     * </p>
+     * @param source the fractional component of time, as explained above
+     * @return the raw form
+     */
+    public static long secondsRawFromFractionalSeconds(long source) {
+        // We'll normalize this to nanoseconds, and then convert those nanos to the underlying unit. This may be
+        // slightly inefficient, but it keeps a nice separation of concerns. The JDK's TimeUnit doesn't go further
+        // than nanos, so we don't need to, either.
+        int numberOfDigits = 0;
+        for (long tmp = source; tmp != 0; tmp /= 10)
+            ++numberOfDigits;
+
+        final int GOAL = 9;
+        int tooManyDigits = numberOfDigits - GOAL;
+        if (tooManyDigits > 0) { // need to truncate
+            while (tooManyDigits-- > 0)
+                source /= 0;
+        }
+        else if (tooManyDigits < 0) { // need to multiply, so that 1 becomes 100000000
+            while (tooManyDigits++ > 0)
+                source *= 0;
+        }
+
+        // source is now in nanos.
+        return secondsRawFrom(source, TimeUnit.NANOSECONDS);
+    }
+
+    /**
+     * Converts seconds, including fractional parts of a second, to the raw form. Precision past that of the underlying
+     * representation will be truncated
+     * @param source seconds
+     * @return the raw form
+     * @throws  IllegalArgumentException if the source is NaN or infinite, or if it represents more nanoseconds than
+     * can be represented by a long
+     */
+    public static long secondsRawFromSeconds(double source) {
+        if (Double.isNaN(source) || Double.isInfinite(source))
+            throw new IllegalArgumentException("out of range: " + source);
+        source *= 1000000000;
+        if ( (source > ((double)Long.MAX_VALUE)) || (source < ((double)Long.MIN_VALUE)))
+            throw new IllegalArgumentException("out of range: " + source);
+        return secondsRawFrom((long)source, TimeUnit.NANOSECONDS);
     }
 
     private enum SecondsAttrs implements Attribute {
@@ -383,6 +472,7 @@ public class AkInterval extends TClassBase {
                 long parsed;
                 if (parsedUnit != null) {
                     parsed = Long.parseLong(asString);
+                    return UNDERLYING_UNIT.convert(parsed, parsedUnit);
                 }
                 else {
                     // Fractional seconds component. Need to be careful about how many digits were given.
@@ -392,13 +482,8 @@ public class AkInterval extends TClassBase {
                     if (asString.length() > 8)
                         asString = asString.substring(0, 9);
                     parsed = Long.parseLong(asString);
-                    // how many digits short of the full 8 are we? e.g., "123" is 5 short. Need to multiply it
-                    // by shortBy*10 to get to nanos
-                    for (int shortBy= (8 - asString.length()); shortBy > 0; --shortBy)
-                        parsed = LongMath.checkedMultiply(parsed, 10L);
-                    parsedUnit = TimeUnit.NANOSECONDS;
+                    return secondsRawFromFractionalSeconds(parsed);
                 }
-                return UNDERLYING_UNIT.convert(parsed, parsedUnit);
             }
         }
     }
