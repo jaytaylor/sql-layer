@@ -601,7 +601,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         Set<TableSource> required = tables.getRequired();
         BaseScan bestScan = null;
 
-        if (!tables.getGroup().getRejectedJoins().isEmpty()) {
+        if (tables.getGroup().getRejectedJoins() != null) {
             bestScan = pickBestGroupLoop();
         }
 
