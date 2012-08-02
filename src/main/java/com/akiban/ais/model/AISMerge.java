@@ -36,6 +36,7 @@ import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,6 +56,8 @@ import java.util.TreeSet;
  */
 public class AISMerge {
     public enum MergeType { ADD_TABLE, MODIFY_TABLE }
+
+    private static final int TEMP_INDEX_ID = 0;
 
     // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
     static final int USER_TABLE_ID_OFFSET = 1;
@@ -113,10 +116,13 @@ public class AISMerge {
         }
 
         for(Index index : table.getIndexesIncludingInternal()) {
-            Index oldIndex = table.getIndex(index.getIndexName().getName());
+            Index oldIndex = oldTable.getIndex(index.getIndexName().getName());
             if(oldIndex != null) {
                 index.setIndexId(oldIndex.getIndexId());
                 index.setTreeName(oldIndex.getTreeName());
+            } else {
+                // Will be fixed up in doModifyMerge()
+                index.setIndexId(TEMP_INDEX_ID );
             }
         }
 
@@ -215,7 +221,7 @@ public class AISMerge {
         UserTable newTable = targetAIS.getUserTable(sourceTable.getName());
         int maxID = findMaxIndexIDInGroup(targetAIS, newTable.getGroup());
         for(Index index : newTable.getIndexesIncludingInternal()) {
-            if(index.getTreeName() == null) {
+            if(index.getIndexId().equals(TEMP_INDEX_ID)) {
                 index.setTreeName(nameGenerator.generateIndexTreeName(index));
                 index.setIndexId(++maxID);
             }
