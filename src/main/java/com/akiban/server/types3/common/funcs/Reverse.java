@@ -46,7 +46,7 @@ public class Reverse extends TOverloadBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(stringType, 0);
+        builder.pickingCovers(stringType, 0);
     }
 
     @Override

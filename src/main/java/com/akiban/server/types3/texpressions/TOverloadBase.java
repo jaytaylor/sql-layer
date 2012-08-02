@@ -203,9 +203,6 @@ public abstract class TOverloadBase implements TOverload {
     @Override
     public String[] registeredNames()
     {
-        registeredName[0] = displayName();
-        return registeredName;
+        return new String[] {displayName()};
     }
-
-    private String registeredName[] = new String[1];
 }

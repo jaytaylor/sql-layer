@@ -47,7 +47,7 @@ public abstract class UpperLower extends TOverloadBase
     {
         return new TOverload[]
         {
-            new UpperLower(stringType, "UPPER", new String[]{"lcase", "lower"})
+            new UpperLower(stringType, "UPPER")
             {
                 @Override
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -55,14 +55,24 @@ public abstract class UpperLower extends TOverloadBase
                     output.putObject(((String)inputs.get(0).getObject()).toUpperCase());
                 }
                 
-                
+                @Override
+                public String[] registeredNames()
+                {
+                    return new String[]{"lcase", "lower"};
+                }
             },
-            new UpperLower(stringType, "LOWER", new String[]{"ucase", "upper"})
+            new UpperLower(stringType, "LOWER")
             {
                 @Override
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
                 {
                     output.putObject(((String)inputs.get(0).getObject()).toLowerCase());
+                }
+                
+                @Override
+                public String[] registeredNames()
+                {
+                    return new String[]{"ucase", "upper"};
                 }
             }
         };
@@ -70,12 +80,10 @@ public abstract class UpperLower extends TOverloadBase
 
     private final TClass stringType;
     private final String name;
-    private final String[] registeredNames;
-    private UpperLower(TClass stringType, String name, String regNames[])
+    private UpperLower(TClass stringType, String name)
     {
         this.stringType = stringType;
         this.name = name;
-        this.registeredNames = regNames;
     }
     
     @Override
@@ -102,11 +110,5 @@ public abstract class UpperLower extends TOverloadBase
                 return inputs.get(0).instance();
             }
         });
-    }
-    
-    @Override
-    public String[] registeredNames()
-    {
-        return registeredNames;
     }
 }

@@ -203,10 +203,8 @@ public class MBinaryBit extends TOverloadBase {
     };
     
     private final BitOperator bitOp;
-    private final String registeredNames [];
     private MBinaryBit(BitOperator bitOp) {
         this.bitOp = bitOp;
-        registeredNames  = new String[]{bitOp.name()};
     }
     
     @Override
@@ -230,7 +228,7 @@ public class MBinaryBit extends TOverloadBase {
     @Override
     public String[] registeredNames()
     {
-        return registeredNames;
+        return new String[]{bitOp.name()};
     }
     @Override
     public TOverloadResult resultType() {
