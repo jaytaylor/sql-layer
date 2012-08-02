@@ -78,41 +78,6 @@ public final class Cast_From_Double {
             MString.VARCHAR
     );
 
-    public static final TCast TO_INTERVAL_SECONDS = new TCastBase(MApproximateNumber.DOUBLE, AkInterval.SECONDS) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            double sourceDouble = source.getDouble();
-            double sourceAbs = Math.abs(sourceDouble);
-            assert sourceAbs <= ((double)Long.MAX_VALUE) : sourceAbs;
-
-            long integerComponent = (long) sourceAbs;
-            double fractional = sourceAbs - integerComponent;
-            assert fractional > 1 : fractional;
-
-            long raw = AkInterval.secondsRawFromSeconds(fractional);
-
-            long seconds = integerComponent % 100;
-            integerComponent /= 100;
-
-            long minutes = integerComponent % 100;
-            integerComponent /= 100;
-
-            long hours = integerComponent % 100;
-            integerComponent /= 100;
-
-            long days = integerComponent % 100;
-            integerComponent /= 100;
-
-            long months = integerComponent % 100;
-            integerComponent /= 100;
-
-            long years = integerComponent;
-
-            //2012-08-01 20:10:34.000000
-            throw new UnsupportedOperationException(); // TODO
-        }
-    }
-
     public static final TCast TO_FLOAT = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.FLOAT) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
