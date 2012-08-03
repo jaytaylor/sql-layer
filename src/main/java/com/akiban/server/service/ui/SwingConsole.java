@@ -46,6 +46,8 @@ public class SwingConsole extends JFrame implements WindowListener
     private JTextArea textArea;
     private PrintStream printStream;
     private final String[] RUN_PSQL_CMD;
+    private String PSQL_ARGS = null;
+
     public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
 
@@ -133,13 +135,19 @@ public class SwingConsole extends JFrame implements WindowListener
             runPsql.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6,
                                                           shift));
 
+            int port = this.serviceManager.getPostgresService().getPort();
             if (macOSX)
-                RUN_PSQL_CMD = new String[] { "osascript", "-e", "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p15432\"\n end tell" };
+                RUN_PSQL_CMD = new String[] { "osascript", "-e",
+                                              "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p" + port + "\"\n end tell" };
             else if (osName.startsWith("Window"))
-                RUN_PSQL_CMD = new String[]{"cmd.exe", "/c", "start psql -h localhost -p15432" };
+                RUN_PSQL_CMD = new String[]{"cmd.exe", "/c",
+                                            "start psql -h localhost -p" + port };
             else // assuming unix-based system
-                RUN_PSQL_CMD = new String[]{"xterm", "-e", "psql -h localhost -p15432"};
+                RUN_PSQL_CMD = new String[]{"xterm", "-e", "psql -h localhost -p" + port};
 
+            
+                    
+                    
             runPsql.addActionListener(new ActionListener()
             {
                 @Override
