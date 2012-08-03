@@ -24,47 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.row;
+package com.akiban.server.error;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.types.ValueSource;
-import com.persistit.Key;
+import com.akiban.ais.model.TableName;
 
-public abstract class IndexRow extends AbstractRow
-{
-    // BoundExpressions interface
-
-    @Override
-    public ValueSource eval(int index)
-    {
-        throw new UnsupportedOperationException();
+public final class NoSuchUniqueException extends InvalidOperationException {
+    public NoSuchUniqueException(TableName tableName, String indexName) {
+        super(ErrorCode.NO_SUCH_UNIQUE, tableName.getSchemaName(), tableName.getTableName(), indexName);
     }
-
-    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    // RowBase interface
-
-    public RowType rowType()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public HKey hKey()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    // IndexRow interface
-
-    public abstract void append(Column column, ValueSource source);
-
-    public abstract void initialize(RowData rowData, Key hKey);
 }

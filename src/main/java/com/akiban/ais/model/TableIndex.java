@@ -26,11 +26,12 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.geophile.Space;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import com.akiban.ais.model.validation.AISInvariants;
 
 public class TableIndex extends Index
 {
@@ -92,7 +93,16 @@ public class TableIndex extends Index
         hKeyColumns = new ArrayList<IndexColumn>();
         HKey hKey = hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
-            Integer ordinal = ordinalMap.get(hKeySegment.table());
+            // TODO: ordinalMap is null if this function is called while marking an index as spatial.
+            // TODO: This is temporary, working on spatial indexes before DDL support. Once the parser
+            // TODO: supports spatial indexes, they'll be born as spatial, and we won't have to recompute
+            // TODO: field associations after the fact.
+            // By the way, it might actually safe to remove the reliance on ordinalMap and always get
+            // the ordinal from the rowdef.
+            Integer ordinal =
+                ordinalMap == null
+                ? hKeySegment.table().rowDef().getOrdinal()
+                : ordinalMap.get(hKeySegment.table());
             assert ordinal != null : hKeySegment.table();
             toHKeyBuilder.toHKeyEntry(ordinal, -1);
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
@@ -143,6 +153,26 @@ public class TableIndex extends Index
         return indexToHKey;
     }
 
+    // TODO: Set spatial index state from constructor?
+
+    public synchronized void spatialIndexDimensions(long[] lo, long[] hi)
+    {
+        assert lo != null;
+        assert hi != null;
+        space = new Space(lo, hi);
+        // computeFieldAssociations(null);
+    }
+
+    public boolean isSpatial()
+    {
+        return space != null;
+    }
+
+    public Space space()
+    {
+        return space;
+    }
+
     // For a user table index: the user table hkey
     // For a group table index: the hkey of the leafmost user table, but with user table columns replaced by
     // group table columns.
@@ -176,4 +206,6 @@ public class TableIndex extends Index
     private HKey hKey;
     private List<IndexColumn> hKeyColumns;
     private IndexToHKey indexToHKey;
+    // For a spatial index
+    private Space space;
 }

@@ -136,7 +136,9 @@ public class PersistitAdapter extends StoreAdapter
             // need the default value (including identity set)
             RowData newRowData = oldRowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
-            store.updateRow(getSession(), oldRowData, newRowData, null);
+            oldRowData.setExplicitRowDef(rowDef);
+            newRowData.setExplicitRowDef(rowDefNewRow);
+            store.updateRow(getSession(), oldRowData, newRowData, null, indexesToInsert);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -372,6 +374,11 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
+    public void setIndexesToInsert(Index[] indexesToInsert)
+    {
+        this.indexesToInsert = indexesToInsert;
+    }
+
     public PersistitAdapter(Schema schema,
                             Store store,
                             TreeService treeService,
@@ -433,4 +440,5 @@ public class PersistitAdapter extends StoreAdapter
     private final PersistitStore persistit;
     private final boolean withStepChanging;
     private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
+    private Index[] indexesToInsert;
 }

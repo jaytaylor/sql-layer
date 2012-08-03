@@ -117,6 +117,9 @@ public class RowData {
 
     private Key hKey;
 
+    // Usually null, defer to packed rowDefId
+    private RowDef explicitRowDef;
+
     // In an hkey-ordered sequence of RowData objects, adjacent hkeys indicate how the corresponding RowDatas
     // relate to one another -- the second one can be a child of the first, a descendent, have a common ancestor,
     // etc. The essential information is captured by differsFromPredecessorAtKeySegment, which identifies the
@@ -262,6 +265,14 @@ public class RowData {
 
     public int getRowDefId() {
         return AkServerUtil.getInt(bytes, rowStart + O_ROW_DEF_ID);
+    }
+
+    public RowDef getExplicitRowDef() {
+        return explicitRowDef;
+    }
+
+    public void setExplicitRowDef(RowDef explicitRowDef) {
+        this.explicitRowDef = explicitRowDef;
     }
 
     public byte[] getBytes() {
