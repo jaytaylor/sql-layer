@@ -48,7 +48,7 @@ public class LookUpOperatorExplainer extends OperationExplainer
         
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(iRowType.toString()));
         atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
-        if (null == inputOp)
+        if (null != inputOp)
             atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
         
         return atts;
