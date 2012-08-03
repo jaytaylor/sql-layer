@@ -9,12 +9,21 @@
 - Statement: select next value for sequence1 
 - output: [[1]]
 ---
-# This does not work yet. Requires fixed from the Types 3 system. 
-#- Statement: insert into t (c1, c2) values (next value for sequence1, 'FRED')
-#---
-#- Statement: select c1, c2 from t
-#- output: [[2, 'FRED']]
-#---
+- Statement: insert into t (c1, c2) values (next value for sequence1, 'FRED')
+---
+- Statement: select c1, c2 from t
+- output: [[2, 'FRED']]
+---
+- Statement: insert into t (c1, c2) values (next value for sequence1, 'GEORGE')
+---
+- Statement: select c1, c2 from t order by c1
+- output: [[2, 'FRED'], [3, 'GEORGE']] 
+---
+- Statement: update t set c1 = next value for sequence1 where c2 = 'FRED'
+---
+- Statement: select c1, c2 from t order by c1
+- output: [[3, 'GEORGE'], [4, 'FRED']] 
+---
 - Statement: Drop Sequence sequence1 restrict;
 ---
 - Statement: Create sequence sequence2 start with 3 increment by 1 maxvalue 5 no cycle;
