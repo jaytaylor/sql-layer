@@ -41,9 +41,7 @@ public class TreeIndexTest
     public void before()
     {
         space = new Space(new long[]{0, 0},
-                          new long[]{X_SIZE - 1, Y_SIZE - 1},
-                          ints(0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-                               0, 1, 0, 1, 0, 1, 0, 1, 0, 1));
+                          new long[]{X_SIZE - 1, Y_SIZE - 1});
         index = new TreeIndex(space);
         long[] point = new long[2];
         for (long x = 0; x < X_SIZE; x += 10) {
