@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.ais.model.ColumnContainer;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.ais.model.Column;
 
@@ -34,15 +35,17 @@ import java.util.List;
 /** Name the columns in a SELECT. */
 public class ResultSet extends BasePlanWithInput
 {
-    public static class ResultField extends BaseDuplicatable {
+    public static class ResultField extends BaseDuplicatable implements ColumnContainer {
         private String name;
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
+        private ExpressionNode sourceExpression;
 
-        public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn) {
+        public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn, ExpressionNode sourceExpression) {
             this.name = name;
             this.sqlType = sqlType;
             this.aisColumn = aisColumn;
+            this.sourceExpression = sourceExpression;
         }
 
         public ResultField(String name) {
@@ -53,11 +56,24 @@ public class ResultSet extends BasePlanWithInput
             return name;
         }
 
+        public ExpressionNode getSourceExpression() {
+            return sourceExpression;
+        }
+
         public DataTypeDescriptor getSQLtype() {
             return sqlType;
         }
 
+        public void setSQLtype(DataTypeDescriptor sqlType) {
+            this.sqlType = sqlType;
+        }
+
         public Column getAIScolumn() {
+            return aisColumn;
+        }
+
+        @Override
+        public Column getColumn() {
             return aisColumn;
         }
 

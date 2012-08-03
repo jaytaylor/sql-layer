@@ -503,12 +503,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: Encountered \"<EOF>\" at line 1, column 21.\n" +
+	    "    ERROR: Encountered \"<EOF>\" at line 1, column 22.\n" +
 	    "    Was expecting one of:\n" +
 	    "        \")\" ...\n" +
 	    "        \",\" ...\n" +
 	    "        \n" +
-	    "      Position: 21");
+	    "      Position: 22");
     }
 
     @Test
@@ -1340,7 +1340,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- explain: |\n" +
 	    "    project(Field(0), Field(1))\n" +
 	    "      Filter_Default(["+PostgresServerITBase.SCHEMA_NAME+".c])\n" +
-	    "        GroupScan_Default(full scan on _akiban_c)\n");
+	    "        GroupScan_Default(full scan on _akiban_c)");
     }
 
     @Test

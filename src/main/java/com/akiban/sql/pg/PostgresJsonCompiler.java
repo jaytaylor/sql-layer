@@ -123,7 +123,8 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
         return new PostgresJsonStatement(select.getResultOperator(),
                                          select.getResultRowType(),
                                          resultColumns,
-                                         parameterTypes);
+                                         parameterTypes,
+                                         usesPValues());
     }
     
 }

@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.pg.PostgresEmulatedMetaDataStatement.Query;
 
 import org.slf4j.Logger;
@@ -63,7 +64,7 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
         for (Query query : Query.values()) {
             if (query.matches(sql, groups)) {
                 logger.debug("Emulated: {}{}", query, groups.subList(1, groups.size()));
-                return new PostgresEmulatedMetaDataStatement(query, groups);
+                return new PostgresEmulatedMetaDataStatement(query, groups, server.getBooleanProperty("newtypes", Types3Switch.ON));
             }
         }
         return null;

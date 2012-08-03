@@ -24,18 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.qp.operator;
 
-import com.akiban.server.types3.TCast;
-
-public abstract class TCastBase implements TCast {
+public abstract class ExpressionBasedUpdateFunction implements UpdateFunction {
     @Override
-    public boolean isAutomatic() {
+    public boolean usePValues() {
         return false;
-    }
-
-    @Override
-    public Constantness constness() {
-        return Constantness.UNKNOWN;
     }
 }

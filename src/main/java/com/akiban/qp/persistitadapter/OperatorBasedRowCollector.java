@@ -38,13 +38,13 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.FixedCountLimit;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.PredicateLimit;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
@@ -56,7 +56,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.BufferOverflowException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.akiban.qp.operator.API.*;

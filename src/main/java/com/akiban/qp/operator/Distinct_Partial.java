@@ -28,10 +28,13 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.std.DistinctExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -129,11 +132,12 @@ class Distinct_Partial extends Operator
 
     // Distinct_Partial interface
 
-    public Distinct_Partial(Operator inputOperator, RowType distinctType, boolean usePValue)
+    public Distinct_Partial(Operator inputOperator, RowType distinctType, List<AkCollator> collators, boolean usePValue)
     {
         ArgumentValidation.notNull("distinctType", distinctType);
         this.inputOperator = inputOperator;
         this.distinctType = distinctType;
+        this.collators = collators;
         this.usePValue = usePValue;
     }
 
@@ -146,6 +150,7 @@ class Distinct_Partial extends Operator
 
     private final Operator inputOperator;
     private final RowType distinctType;
+    private final List<AkCollator> collators;
     private final boolean usePValue;
 
     @Override
@@ -259,7 +264,7 @@ class Distinct_Partial extends Operator
             for (int i = 0; i < nfields; i++) {
                 if (i == nvalid) {
                     assert currentRow.isHolding();
-                    currentPValues[i].putValueSource(currentRow.get().pvalue(i));
+                    PValueTargets.copyFrom(currentRow.get().pvalue(i), currentPValues[i]);
                     nvalid++;
                     if (nvalid == nfields)
                         // Once we have copies of all fields, don't need row any more.
@@ -267,7 +272,7 @@ class Distinct_Partial extends Operator
                 }
                 PValueSource inputValue = inputRow.pvalue(i);
                 if (!PValueSources.areEqual(currentPValues[i], inputValue)) {
-                    currentPValues[i].putValueSource(inputValue);
+                    PValueTargets.copyFrom(inputValue, currentPValues[i]);
                     nvalid = i + 1;
                     if (i < nfields - 1)
                         // Might need later fields.
@@ -298,7 +303,7 @@ class Distinct_Partial extends Operator
                         currentRow.release();
                 }
                 inputValue.copyFrom(inputRow.eval(i));
-                if (!currentValues[i].equals(inputValue)) {
+                if (!eq(i, currentValues[i], inputValue)) {
                     currentValues[i] = inputValue;
                     nvalid = i + 1;
                     if (i < nfields - 1)
@@ -308,6 +313,20 @@ class Distinct_Partial extends Operator
                 }
             }
             return false;
+        }
+
+        private boolean eq(int field, ValueSource x, ValueSource y)
+        {
+            if (collators == null) {
+                return currentValues[field].equals(y);
+            } else {
+                AkCollator collator = collators.get(field);
+                if (collator == null) {
+                    return currentValues[field].equals(y);
+                } else {
+                    return collator.compare(x, y) == 0;
+                }
+            }
         }
 
         // Object state

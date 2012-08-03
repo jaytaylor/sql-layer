@@ -33,6 +33,7 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.service.DontRegister;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
@@ -51,11 +52,14 @@ public class AkIfElse extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
+
+        int whichSource = inputs.get(0).getBoolean() ? 1 : 2;
+        PValueSource source = inputs.get(whichSource);
+        PValueTargets.copyFrom(source,  output);
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "IF";
     }

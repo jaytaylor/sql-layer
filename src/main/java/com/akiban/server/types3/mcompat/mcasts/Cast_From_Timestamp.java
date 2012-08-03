@@ -69,7 +69,7 @@ public class Cast_From_Timestamp
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(MDatetimes.encodeDate(MDatetimes.decodeTimestamp(source.getInt32(), context.getCurrentTimezone())));
         }
@@ -79,7 +79,7 @@ public class Cast_From_Timestamp
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(MDatetimes.encodeTime(MDatetimes.decodeTimestamp(source.getInt32(), context.getCurrentTimezone())));
         }
@@ -89,7 +89,7 @@ public class Cast_From_Timestamp
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeTimestamp(source.getInt32(),context.getCurrentTimezone())));
         }
@@ -99,7 +99,7 @@ public class Cast_From_Timestamp
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(MDatetimes.timestampToString(source.getInt32(), context.getCurrentTimezone()));
         }

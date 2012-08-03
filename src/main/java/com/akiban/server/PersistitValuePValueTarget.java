@@ -48,11 +48,6 @@ public final class PersistitValuePValueTarget implements PValueTarget {
     }
 
     @Override
-    public void putValueSource(PValueSource source) {
-        PValueTargets.copyFrom(source, this);
-    }
-
-    @Override
     public void putObject(Object object) {
         value.put(object);
     }

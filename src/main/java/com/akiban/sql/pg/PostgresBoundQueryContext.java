@@ -45,8 +45,8 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         this.defaultColumnBinary = defaultColumnBinary;
         if (parameters != null) {
             boolean usePValues = false;
-            if (statement instanceof PostgresOperatorStatement)
-                usePValues = ((PostgresOperatorStatement)statement).usesPValues();
+            if (statement instanceof PostgresBaseStatement)
+                usePValues = ((PostgresBaseStatement)statement).usesPValues();
             decodeParameters(parameters, usePValues);
         }
     }

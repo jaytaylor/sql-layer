@@ -29,13 +29,16 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
+import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
@@ -58,11 +61,11 @@ public abstract class StoreAdapter
 
     public abstract Store getUnderlyingStore();
 
-    public abstract void updateRow(Row oldRow, Row newRow);
+    public abstract void updateRow(Row oldRow, Row newRow, boolean usePValues);
     
-    public abstract void writeRow (Row newRow);
+    public abstract void writeRow (Row newRow, boolean usePValues);
     
-    public abstract void deleteRow (Row oldRow);
+    public abstract void deleteRow (Row oldRow, boolean usePValues);
 
     public abstract Cursor sort(QueryContext context,
                                 Cursor input,
@@ -77,6 +80,10 @@ public abstract class StoreAdapter
     }
 
     public abstract long rowCount(RowType tableType);
+    
+    public abstract long sequenceNextValue(TableName sequenceName);
+
+    public abstract long hash(ValueSource valueSource, AkCollator collator);
 
     public final Session getSession() {
         return session;

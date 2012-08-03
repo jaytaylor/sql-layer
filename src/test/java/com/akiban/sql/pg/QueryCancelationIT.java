@@ -28,6 +28,8 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.ErrorCode;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -39,9 +41,12 @@ import static junit.framework.Assert.*;
 
 public class QueryCancelationIT extends PostgresServerITBase
 {
+    private static final Logger LOG = LoggerFactory.getLogger(QueryCancelationIT.class.getName());
+
     private static final int N = 1000;
     private static final int TRIALS = 3;
     private static final String SELECT_COUNT = "select count(*) from t";
+
     @Test
     public void test() throws Exception
     {
@@ -49,7 +54,7 @@ public class QueryCancelationIT extends PostgresServerITBase
         queryThread = startQueryThread();
         cancelThread = startCancelThread(queryThread);
         for (int i = 0; i < TRIALS; i++) {
-            System.out.println("trial " + i);
+            LOG.debug("trial {}", i);
             test(false);
             test(true);
         }
@@ -65,7 +70,7 @@ public class QueryCancelationIT extends PostgresServerITBase
         queryThread = startQueryThread();
         cancelThread = startCancelSQLThread();
         for (int i = 0; i < TRIALS; i++) {
-            System.out.println("trial " + i);
+            LOG.debug("trial {}", i);
             test(false);
             test(true);
         }
@@ -85,23 +90,22 @@ public class QueryCancelationIT extends PostgresServerITBase
         statement.execute(SELECT_COUNT);
         ResultSet resultSet = statement.getResultSet();
         resultSet.next();
-        System.out.println(String.format("Loaded %s rows", resultSet.getInt(1)));
+        LOG.debug("Loaded {} rows", resultSet.getInt(1));
         statement.close();
     }
 
     private void test(boolean withCancelation) throws Exception
     {
-        System.out.println("cancelation: " + withCancelation);
+        LOG.debug("cancelation: {}", withCancelation);
         queryThread.resetCounters();
         queryThread.go();
         if (withCancelation) {
             cancelThread.go();
         }
         Thread.sleep(5000);
-        // System.out.println("About to pause threads");
+        LOG.trace("About to pause threads");
         queryThread.pause();
-        System.out.println(String.format("queries: %s, canceled: %s",
-                                         queryThread.queryCount, queryThread.cancelCount));
+        LOG.debug("queries: {}, canceled: {}", queryThread.queryCount, queryThread.cancelCount);
         if (withCancelation) {
             cancelThread.pause();
             assertTrue(queryThread.cancelCount > 0);
@@ -152,7 +156,7 @@ public class QueryCancelationIT extends PostgresServerITBase
                 while (!done) {
                     synchronized (this) {
                         while (state == TestThreadState.PAUSED) {
-                            // System.out.println(String.format("%s: wait ...", this));
+                            LOG.trace("{}: wait ...", this);
                             wait();
                         }
                     }
@@ -166,7 +170,7 @@ public class QueryCancelationIT extends PostgresServerITBase
                                 }
                             }
                         }
-                        // System.out.println(String.format("%s: about to wait", this));
+                        LOG.trace("{}: about to wait", this);
                     }
                 }
             } catch (Throwable e) {
@@ -189,24 +193,24 @@ public class QueryCancelationIT extends PostgresServerITBase
 
         public synchronized final void go() throws InterruptedException
         {
-            // System.out.println(String.format("%s: go", this));
+            LOG.trace("{}: go", this);
             state = TestThreadState.RUNNING;
             notify();
         }
 
         public synchronized final void pause() throws InterruptedException
         {
-            // System.out.println(String.format("%s: pausing", this));
+            LOG.trace("{}: pausing", this);
             state = TestThreadState.STOP;
             while (state != TestThreadState.PAUSED) {
                 wait();
             }
-            // System.out.println(String.format("%s: paused", this));
+            LOG.trace("{}: paused", this);
         }
 
         public synchronized final void terminate()
         {
-            // System.out.println(String.format("%s: terminate", this));
+            LOG.trace("{}: terminate", this);
             assert state == TestThreadState.PAUSED;
             state = TestThreadState.TERMINATE;
             done = true;
@@ -313,7 +317,7 @@ public class QueryCancelationIT extends PostgresServerITBase
             // This bit of magic is to make sure we select the correct session
             // There are two sessions, one having done the load, 
             // the other is the QueryThread. 
-            System.out.println (String.format("CancelSQLThread found %s sessions", server().getCurrentSessions().size()));
+            LOG.debug("CancelSQLThread found {} sessions", server().getCurrentSessions().size());
             Iterator<Integer> i = server().getCurrentSessions().iterator();
             sessionID = i.next();
             if (SELECT_COUNT.equals(server().getConnection(sessionID).getSqlString())) {

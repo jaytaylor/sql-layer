@@ -56,6 +56,10 @@ public class RulesContext
         assert (rules != null) : "initRules() not called";
     }
 
+    protected boolean rulesAre(List<? extends BaseRule> expected) {
+        return rules == expected;
+    }
+
     /** Make context with these rules. Just for testing. */
     public static RulesContext create(List<? extends BaseRule> rules,
                                       Properties properties) {

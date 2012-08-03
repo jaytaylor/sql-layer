@@ -30,7 +30,5 @@ public interface PValueTarget extends PBasicValueTarget {
 
     boolean supportsCachedObjects();
 
-    void putValueSource(PValueSource source);
-
     void putObject(Object object);
 }

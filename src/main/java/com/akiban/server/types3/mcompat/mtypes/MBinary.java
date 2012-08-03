@@ -56,6 +56,10 @@ public final class MBinary extends SimpleDtdTClass {
         LENGTH
     }
 
+    public int getFixedLength() {
+        return defaultLength;
+    }
+
     @Override
     public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
     {

@@ -73,6 +73,32 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
     }
 
     @Override
+    public void checkConstraints(BoundExpressions loExpressions,
+                                 BoundExpressions hiExpressions,
+                                 int f,
+                                 AkCollator collator) {
+        PValueSource loValueSource = loExpressions.pvalue(f);
+        PValueSource hiValueSource = hiExpressions.pvalue(f);
+        if (loValueSource.isNull() && hiValueSource.isNull()) {
+            // OK, they're equal
+        } else if (loValueSource.isNull() || hiValueSource.isNull()) {
+            throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
+        } else {
+            TPreparedExpression loEQHi =
+                    new TComparisonExpression(
+                            new TPreparedLiteral(null, loValueSource),
+                            Comparison.EQ,
+                            new TPreparedLiteral(null, hiValueSource)
+                    );
+            TEvaluatableExpression eval = loEQHi.build();
+            eval.evaluate();
+            if (!eval.resultValue().getBoolean()) {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
+
+    @Override
     public PValueSource[] createSourceArray(int size) {
         return new PValueSource[size];
     }
@@ -103,7 +129,11 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
     }
 
     @Override
-    public TPreparedExpression createComparison(TInstance tInstance, PValueSource one, Comparison comparison, PValueSource two) {
+    public TPreparedExpression createComparison(TInstance tInstance,
+                                                AkCollator collator,
+                                                PValueSource one,
+                                                Comparison comparison,
+                                                PValueSource two) {
         TPreparedExpression arg1 = new TPreparedLiteral(tInstance, one);
         TPreparedExpression arg2 = new TPreparedLiteral(tInstance, two);
         return new TComparisonExpression(arg1, comparison, arg2);

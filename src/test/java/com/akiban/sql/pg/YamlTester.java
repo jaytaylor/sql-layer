@@ -1063,8 +1063,8 @@ class YamlTester {
         if (msg instanceof String)
         {
             String st = (String)msg;
-            if (st.startsWith("WARN: "))
-                return st.substring(6);
+            if (st.startsWith("WARN:  "))
+                return st.substring(7);
         }
         return msg;
     }
@@ -1182,8 +1182,8 @@ class YamlTester {
         } else if (expected == null) {
             return actual == null;
         } else {
-            String expectedString = objectToString(expected).trim();
-            String actualString = objectToString(actual).trim();
+            String expectedString = objectToString(expected);
+            String actualString = objectToString(actual);
      
             return expectedString.equals(actualString);
         }

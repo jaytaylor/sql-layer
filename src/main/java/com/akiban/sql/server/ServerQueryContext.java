@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.StoreAdapter;
@@ -86,6 +87,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
         if (setting != null)
             return setting.longValue();
         return super.getQueryTimeoutSec();
+    }
+
+    @Override
+    public long sequenceNextValue(TableName sequenceName) {
+        return server.getStore().sequenceNextValue(sequenceName);
     }
 
 }

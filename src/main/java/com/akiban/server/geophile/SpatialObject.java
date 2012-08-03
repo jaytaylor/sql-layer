@@ -24,21 +24,27 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.geophile;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.common.types.NoAttrTClass;
+public interface SpatialObject
+{
+    /**
+     * Returns the coordinates of a point inside this spatial object.
+     * @return The coordinates of a point inside this spatial object.
+     */
+    long[] arbitraryPoint();
 
-public abstract class TNoAttrCastBase extends TCastBase {
+    /**
+     * Indicates whether this spatial object is contained by the given region.
+     * @param region The region to compare to.
+     * @return true if this spatial object is contained by the region, false otherwise.
+     */
+    boolean containedBy(Region region);
 
-    @Override
-    public TClass targetClass() {
-        return tClass;
-    }
-
-    protected TNoAttrCastBase(NoAttrTClass tClass) {
-        this.tClass = tClass;
-    }
-
-    private final NoAttrTClass tClass;
+    /**
+     * Determine relationship of this spatial object to the given Region.
+     * @param region region to compare.
+     * @return RegionComparison
+     */
+    RegionComparison compare(Region region);
 }

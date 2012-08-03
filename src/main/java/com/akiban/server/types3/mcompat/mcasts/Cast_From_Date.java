@@ -88,7 +88,7 @@ public class Cast_From_Date
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeDate(source.getInt32())));
         }
@@ -98,7 +98,7 @@ public class Cast_From_Date
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // DATE doesn't have any TIME
             target.putInt32(0);
@@ -109,7 +109,7 @@ public class Cast_From_Date
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(MDatetimes.encodeTimestamp(MDatetimes.decodeDate(source.getInt32()),
                                                        context.getCurrentTimezone(),
@@ -121,7 +121,7 @@ public class Cast_From_Date
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(MDatetimes.dateToString(source.getInt32()));
         }

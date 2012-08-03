@@ -86,7 +86,7 @@ public class ViewDDL
         int colpos = 0;
         for (ResultColumn rc : viewdef.getResultColumns()) {
             TableDDL.addColumn(builder, schemaName, viewName, rc.getName(), colpos++,
-                               rc.getType(), false);
+                               rc.getType(), rc.getType().isNullable(), false);
         }
         View view = builder.akibanInformationSchema().getView(schemaName, viewName);
         ddlFunctions.createView(session, view);

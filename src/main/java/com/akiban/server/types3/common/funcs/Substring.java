@@ -170,8 +170,14 @@ public abstract class Substring extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "SUBSTRING";
+    }
+
+    @Override
+    public String[] registeredNames()
+    {
+        return new String[]{"substring", "substr"};
     }
 
     protected int adjustIndex(String str, int index) {

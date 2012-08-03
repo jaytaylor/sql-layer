@@ -26,12 +26,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
@@ -42,14 +37,14 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDataExtractor;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataExtractor;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
@@ -68,10 +63,7 @@ import com.persistit.exception.PersistitException;
 
 import java.util.*;
 
-import static com.akiban.qp.operator.API.ancestorLookup_Default;
-import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.qp.operator.API.limit_Default;
-import static com.akiban.qp.operator.API.update_Default;
+import static com.akiban.qp.operator.API.*;
 
 public class OperatorStore extends DelegatingStore<PersistitStore> {
     /*
@@ -91,18 +83,24 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
         throws PersistitException
     {
+        updateRow(session, oldRowData, newRowData, columnSelector, null);
+    }
+
+    @Override
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexesToInsert)
+        throws PersistitException
+    {
         UPDATE_TOTAL.in();
         try {
-            PersistitStore persistitStore = getPersistitStore();
-            AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
-
-            RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
+            AkibanInformationSchema ais = aisHolder.getAis();
+            RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
             if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
                 throw new RuntimeException("group index maintenance won't work with partial rows");
             }
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
             PersistitAdapter adapter = createAdapter(ais, session);
+            adapter.setIndexesToInsert(indexesToInsert);
             Schema schema = adapter.schema();
 
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
@@ -269,7 +267,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     private void maintainGroupIndexes(
             Session session,
-            AkibanInformationSchema ais, PersistitAdapter adapter,
+            AkibanInformationSchema ais,
+            PersistitAdapter adapter,
             RowData rowData,
             BitSet columnDifferences,
             OperatorStoreGIHandler handler,
@@ -383,10 +382,20 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         return true;
     }
 
+    private PersistitAdapter newAdapter(Session session)
+    {
+        return new PersistitAdapter(SchemaCache.globalSchema(aisHolder.getAis()),
+                                                             getPersistitStore(),
+                                                             treeService,
+                                                             session,
+                                                             config);
+    }
+
     // object state
     private final ConfigurationService config;
     private final TreeService treeService;
     private final AisHolder aisHolder;
+
 
     // consts
 
@@ -451,6 +460,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 }
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
+        }
+
+        @Override
+        public boolean usePValues() {
+            return false;
         }
     }
 }

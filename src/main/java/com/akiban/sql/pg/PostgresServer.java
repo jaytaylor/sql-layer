@@ -152,7 +152,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     public void run() {
-        logger.debug("Postgres server listening on port {}", port);
+        logger.info("Postgres server listening on port {}", port);
         int sessionId = 0;
         Random rand = new Random();
         try {

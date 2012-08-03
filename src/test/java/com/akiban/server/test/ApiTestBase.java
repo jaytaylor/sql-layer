@@ -668,12 +668,16 @@ public class ApiTestBase {
         return output.getRows();
     }
 
-    protected final List<NewRow> scanAllIndex(TableIndex index)  throws InvalidOperationException {
+    protected final ScanRequest scanAllIndexRequest(TableIndex index)  throws InvalidOperationException {
         final Set<Integer> columns = new HashSet<Integer>();
         for(IndexColumn icol : index.getKeyColumns()) {
             columns.add(icol.getColumn().getPosition());
         }
-        return scanAll(new ScanAllRequest(index.getTable().getTableId(), columns, index.getIndexId(), null));
+        return new ScanAllRequest(index.getTable().getTableId(), columns, index.getIndexId(), null);
+    }
+
+    protected final List<NewRow> scanAllIndex(TableIndex index)  throws InvalidOperationException {
+        return scanAll(scanAllIndexRequest(index));
     }
 
     protected final void writeRow(int tableId, Object... values) {
@@ -997,6 +1001,8 @@ public class ApiTestBase {
             return value;
         }
         finally {
+            if(txn.isActive() && !txn.isCommitted())
+                txn.rollback(); // Prevent log message
             txn.end();
         }
     }

@@ -115,6 +115,10 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         else if (field.getSQLtype() != null) {
             pgType = PostgresType.fromDerby(field.getSQLtype());
         }
+        else {
+            pgType = new PostgresType(PostgresType.TypeOid.UNKNOWN_TYPE_OID.getOid(),
+                                      (short)-1, -1, null, null);
+        }
         return new PostgresResultColumn(field.getName(), pgType);
     }
 
@@ -162,7 +166,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                                                PostgresType[] parameterTypes) {
         return new PostgresModifyOperatorStatement(statementType,
                                                    update.getUpdatePlannable(),
-                                                   parameterTypes);
+                                                   parameterTypes,
+                                                   usesPValues());
     }
 
     protected PostgresStatement generateSelect(PhysicalSelect select,
@@ -178,7 +183,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         return new PostgresOperatorStatement(select.getResultOperator(),
                                              select.getResultRowType(),
                                              columnNames, columnTypes,
-                                             parameterTypes);
+                                             parameterTypes,
+                                             usesPValues());
     }
 
 }

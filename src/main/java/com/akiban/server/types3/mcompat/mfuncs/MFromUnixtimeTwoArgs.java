@@ -90,7 +90,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "FROM_UNIXTIME";
     }

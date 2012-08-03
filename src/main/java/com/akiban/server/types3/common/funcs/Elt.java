@@ -32,6 +32,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
@@ -63,7 +64,7 @@ public class Elt extends TOverloadBase
         if (index < 1 || index > nvarargs)
             output.putNull();
         else
-            output.putValueSource(inputs.get(index+1));
+            PValueTargets.copyFrom(inputs.get(index + 1), output);
     }
        
      
@@ -80,7 +81,7 @@ public class Elt extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "ELT";
     }

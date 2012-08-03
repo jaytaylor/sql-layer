@@ -79,7 +79,7 @@ public class MSpace extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "SPACE";
     }

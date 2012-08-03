@@ -153,15 +153,7 @@ public class TParsers
         }
     };
 
-    public static final TParser UNSIGNED_BIGINT = new TParser()
-    {
-        @Override
-        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            // BigInteger ?
-            throw new UnsupportedOperationException("not supported yet");
-        }
-    };
+    public static final TParser UNSIGNED_BIGINT = BIGINT; // TODO need a way to handle larger numbers.
     
     public static final TParser FLOAT = new TParser()
     {

@@ -72,10 +72,10 @@ public class OverloadResolverTest {
             for(TOverload overload : overloads) {
                 TValidatedOverload validated = new TValidatedOverload(overload);
                 originalMap.put(overload, validated);
-                List<TValidatedOverload> list = validatedMap.get(overload.overloadName());
+                List<TValidatedOverload> list = validatedMap.get(overload.displayName());
                 if(list == null) {
                     list = new ArrayList<TValidatedOverload>();
-                    validatedMap.put(overload.overloadName(), list);
+                    validatedMap.put(overload.displayName(), list);
                 }
                 list.add(validated);
             }
@@ -145,7 +145,7 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             throw new UnsupportedOperationException();
         }
     }
@@ -183,7 +183,7 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return MUL_NAME;
         }
 
@@ -218,7 +218,7 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return name;
         }
 
