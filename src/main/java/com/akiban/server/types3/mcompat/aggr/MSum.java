@@ -99,7 +99,7 @@ public class MSum implements TAggregator {
     }
     
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst) {
         sumType.input(instance, source, stateType, state);
     }
 

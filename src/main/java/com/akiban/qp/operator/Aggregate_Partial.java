@@ -400,6 +400,7 @@ final class Aggregate_Partial extends Operator
                 }
 
                 assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
+                boolean isFirst = (cursorState == CursorState.OPENING);
                 while (true) {
                     Row input = nextInput();
                     if (input == null) {
@@ -424,7 +425,7 @@ final class Aggregate_Partial extends Operator
                         saveInput(input); // save this input for the next time this method is invoked
                         return createOutput();
                     }
-                    aggregate(input);
+                    aggregate(input, isFirst);
                 }
             } finally {
                 TAP_NEXT.out();
@@ -469,7 +470,7 @@ final class Aggregate_Partial extends Operator
 
         // for use in this class
 
-        private void aggregate(Row input) {
+        private void aggregate(Row input, boolean isFirst) {
             if (aggregators != null) {
                 for (int i=0; i < aggregators.size(); ++i) {
                     Aggregator aggregator = aggregators.get(i);
@@ -483,7 +484,7 @@ final class Aggregate_Partial extends Operator
                     int inputIndex = i + inputsIndex;
                     TInstance inputType = input.rowType().typeInstanceAt(inputIndex);
                     PValueSource inputSource = input.pvalue(inputIndex);
-                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i));
+                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i), isFirst);
                 }
 
             }
