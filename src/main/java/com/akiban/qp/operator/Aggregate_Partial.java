@@ -400,8 +400,8 @@ final class Aggregate_Partial extends Operator
                 }
 
                 assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
-                boolean isFirst = (cursorState == CursorState.OPENING);
                 while (true) {
+                    boolean isFirst = (cursorState == CursorState.OPENING);
                     Row input = nextInput();
                     if (input == null) {
                         if (everSawInput) {
