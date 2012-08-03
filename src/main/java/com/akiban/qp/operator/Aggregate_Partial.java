@@ -521,8 +521,9 @@ final class Aggregate_Partial extends Operator
                 for (int i = inputsIndex; i < inputRowType.nFields(); ++i) {
                     PValue pValue = outputRow.pvalueAt(i);
                     int aggregatorIndex = i - inputsIndex;
-                    PValueSource aggregatorState = pAggrsStates.get(aggregatorIndex);
+                    PValue aggregatorState = pAggrsStates.get(aggregatorIndex);
                     PValueTargets.copyFrom(aggregatorState, pValue);
+                    pAggrs.get(aggregatorIndex).emptyValue(aggregatorState);
                 }
             }
             return outputRow;
