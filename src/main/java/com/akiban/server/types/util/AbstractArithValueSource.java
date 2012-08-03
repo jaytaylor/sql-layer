@@ -192,18 +192,21 @@ public abstract class AbstractArithValueSource extends ValueSource
     public void appendAsString(AkibanAppender appender, Quote quote)
     {
         if (isNull())
-            appender.append(null);
+            appender.append("null");
         else
         {
             String asString = "";
-            switch(getConversionType())
+            AkType type = getConversionType();
+            switch(type)
             {
                 case LONG: asString = Extractors.getLongExtractor(getConversionType()).asString(rawLong()); break;
                 case DOUBLE: asString = Extractors.getDoubleExtractor().asString(rawDouble()); break;
                 case DECIMAL: asString = Extractors.getDecimalExtractor().asString(rawDecimal()); break;
                 case U_BIGINT: asString = Extractors.getUBigIntExtractor().asString(rawBigInteger()); break;
             }
-            appender.append(asString);
+            quote.quote(appender, type);
+            quote.append(appender, asString);
+            quote.quote(appender, type);
         }
     }
 

@@ -54,6 +54,12 @@ public abstract class UpperLower extends TOverloadBase
                 {
                     output.putObject(((String)inputs.get(0).getObject()).toUpperCase());
                 }
+                
+                @Override
+                public String[] registeredNames()
+                {
+                    return new String[]{"lcase", "lower"};
+                }
             },
             new UpperLower(stringType, "LOWER")
             {
@@ -61,6 +67,12 @@ public abstract class UpperLower extends TOverloadBase
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
                 {
                     output.putObject(((String)inputs.get(0).getObject()).toLowerCase());
+                }
+                
+                @Override
+                public String[] registeredNames()
+                {
+                    return new String[]{"ucase", "upper"};
                 }
             }
         };
@@ -81,7 +93,7 @@ public abstract class UpperLower extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return name;
     }

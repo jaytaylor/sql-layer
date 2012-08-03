@@ -88,7 +88,7 @@ public class Conv extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "CONV";
     }

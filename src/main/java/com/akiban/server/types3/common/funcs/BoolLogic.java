@@ -112,7 +112,7 @@ public class BoolLogic extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return op.name();
     }

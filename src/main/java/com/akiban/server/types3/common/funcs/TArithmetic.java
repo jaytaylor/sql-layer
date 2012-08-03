@@ -49,7 +49,7 @@ public abstract class TArithmetic extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return overloadName;
     }
 

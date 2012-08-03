@@ -24,38 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.error;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.ais.model.TableName;
 
-import java.util.List;
-
-public interface TOverload {
-    
-    /**
-     * 
-     * Name that the user will see/use
-     */
-    String displayName();
-    
-    /**
-     * 
-     * Name(s) used internally by the parser/registry.
-     * 
-     * Most of the times, the two names are the same, but they could be different
-     * for certain functions, especially those that need "special treatment"
-     * 
-     * This needs to be an array because we could be defining different functions
-     * with the same implementation
-     */
-    String[] registeredNames();
-
-    TOverloadResult resultType();
-    List<TInputSet> inputSets();
-    TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
-    void finishPreptimePhase(TPreptimeContext context);
-    void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
-    String toString(List<? extends TPreparedExpression> inputs, TInstance resultType);
+public final class NoSuchUniqueException extends InvalidOperationException {
+    public NoSuchUniqueException(TableName tableName, String indexName) {
+        super(ErrorCode.NO_SUCH_UNIQUE, tableName.getSchemaName(), tableName.getTableName(), indexName);
+    }
 }
