@@ -156,223 +156,254 @@ public class Format {
         
         Attributes atts = explainer.get();
         String name = atts.get(Label.NAME).get(0).get().toString();
-        
-        sb.append(name).append("(");
-        
         Type type = explainer.getType();
-        switch (type) 
+        
+        sb.append(name);
+        
+        if (!verbose)
         {
-            case SELECT_HKEY:
-                describe(atts.get(Label.PREDICATE).get(0),sb);
-                break;
-            case PROJECT:
-                for (Explainer projection : atts.get(Label.PROJECTION))
-                {
-                    describe(projection, sb);
-                    sb.append(", ");
-                }
-                sb.setLength(sb.length()-2);
-                break;
-            case SCAN_OPERATOR:
-                if (name.equals("Values Scan"))
-                {
-                    for (Explainer row : atts.get(Label.ROWTYPE))
-                    {
-                        describe(row, sb);
-                        sb.append(", ");
-                    }
-                    if (!atts.valuePairs().isEmpty())
-                    {
-                        sb.setLength(sb.length() - 2);
-                    }
-                }
-                else if (name.equals("Group Scan"))
-                {
-                    describe(atts.get(Label.GROUP_TABLE).get(0), sb);
-                }
-                //else if (name.equals("Index Scan"))
-                {
-                    // TODO
-                }
-                break;
-            case LOOKUP_OPERATOR:
-                if (name.equals("Ancestor Lookup Default"))
-                {
-                    if (verbose)
-                    {
-                        describe(atts.get(Label.GROUP_TABLE).get(0), sb);
-                        sb.append(" -> ");
-                    }
+            switch (type)
+            {
+                case LOOKUP_OPERATOR:
+                    sb.append('(');
                     for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
                     {
                         describe(table, sb);
                         sb.append(", ");
                     }
-                    if (!atts.valuePairs().isEmpty())
+                    if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
                     {
                         sb.setLength(sb.length() - 2);
                     }
-                }
-                else if (name.equals("Ancestor Lookup Nested"))
-                {
-                    if (verbose)
-                    {
-                        describe(atts.get(Label.BINDING_POSITION).get(0), sb);
-                        sb.append(" -> ");
-                    }
-                    for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
-                    {
-                        describe(table, sb);
-                        sb.append(", ");
-                    }
-                    if (!atts.valuePairs().isEmpty())
-                    {
-                        sb.setLength(sb.length() - 2);
-                    }
-                }
-                else if (name.equals("Branch Lookup Default"))
-                {
-                    if (verbose)
-                    {
-                        describe(atts.get(Label.GROUP_TABLE).get(0), sb);
-                        sb.append(" -> ");
-                    }
-                    describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
-                    if (verbose)
-                    {
-                        sb.append(" (via ");
-                        describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
-                        sb.append(")");
-                    }
-                }
-                else if (name.equals("Branch Lookup Nested"))
-                {
-                    if (verbose)
-                    {
-                        describe(atts.get(Label.BINDING_POSITION).get(0), sb);
-                        sb.append(" -> ");
-                    }
-                    describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
-                    if (verbose)
-                    {
-                        sb.append(" (via ");
-                        describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
-                        sb.append(")");
-                    }
-                }
-                break;
-            case COUNT_OPERATOR:
-                sb.append("*");
-                if (name.equals("Count TableStatus") && verbose);
-                {
-                    sb.append(" FROM ");
-                    describe(atts.get(Label.INPUT_TYPE).get(0), sb);
-                }
-                break;
-            case DISTINCT:
-            case UNION_ALL:
-                break;
-            case FILTER:
-                for (Explainer rowtype : atts.get(Label.KEEP_TYPE))
-                {
-                    describe(rowtype, sb);
-                    sb.append(" - ");
-                }
-                if (!atts.get(Label.KEEP_TYPE).isEmpty())
-                {
-                    sb.setLength(sb.length()-3);
-                }
-                break;
-            case FLATTEN_OPERATOR: // Eventually may want to implement associativity for this
-                describe(atts.get(Label.PARENT_TYPE).get(0), sb);
-                sb.append(" ");
-                describe(atts.get(Label.JOIN_OPTION).get(0), sb);
-                sb.append(" ");
-                describe(atts.get(Label.CHILD_TYPE).get(0), sb);
-                break;
-            case ORDERED:
-                sb.append("skip ");
-                describe(atts.get(Label.LEFT).get(0), sb);
-                sb.append(" left, skip ");
-                describe(atts.get(Label.RIGHT).get(0), sb);
-                sb.append(" right, compare ");
-                describe(atts.get(Label.NUM_COMPARE).get(0), sb);
-                if (name.equals("HKeyUnion"))
-                {
-                    sb.append(", shorten to ");
-                    describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
-                }
-                else if (name.equals("Intersect"))
-                {
-                    sb.append(", USING ");
-                    describe(atts.get(Label.JOIN_OPTION).get(0), sb);
-                }
-                break;
-            case IF_EMPTY:
-                for (Explainer expression : atts.get(Label.OPERAND))
-                {
-                    describe(expression, sb);
-                    sb.append(", ");
-                }
-                if (!atts.valuePairs().isEmpty())
-                {
-                    sb.setLength(sb.length() - 2);
-                }
-                break;
-            case LIMIT_OPERATOR:
-                describe(atts.get(Label.LIMIT).get(0), sb);
-                break;
-            case NESTED_LOOPS:
-                if (name.equals("Map_NestedLoops"))
-                {
-                    sb.append("Binding at ");
-                    describe(atts.get(Label.BINDING_POSITION).get(0), sb);
-                }
-                else if (name.equals("Product"))
-                {
-                    describe(atts.get(Label.INNER_TYPE).get(0), sb);
-                    sb.append(" x ");
-                    describe(atts.get(Label.OUTER_TYPE).get(0), sb);
-                }
-                break;
-            case SORT:
-                int i = 0;
-                for (Explainer ex : atts.get(Label.EXPRESSIONS))
-                {
-                    describe(ex, sb);
-                    sb.append(" ").append(atts.get(Label.ORDERING).get(i++).get()).append(", ");
-                }
-                if (atts.containsKey(Label.LIMIT))
-                {
-                    sb.append("LIMIT ");
-                    describe(atts.get(Label.LIMIT).get(0), sb);
-                }
-                sb.append(atts.get(Label.SORT_OPTION).get(0).get());
-                break;
-            case DUI:
-                if (name.equals("Delete"))
-                {
-                    sb.append(" FROM ");
-                    describe(atts.get(Label.TABLE_TYPE).get(0), sb);
-                }
-                else if (name.equals("Insert"))
-                {
-                    sb.append("INTO");
-                    describe(atts.get(Label.TABLE_TYPE).get(0), sb);
-                }
-                // TODO: "Update"
-                break;
-            case PHYSICAL_OPERATOR:
-                // TODO: optimizer
-                sb.append(atts.get(Label.GROUPING_OPTION).get(0));
-                break;
-            default:
-                throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
+                    sb.append(')');
+                    break;
+                case COUNT_OPERATOR:
+                    sb.append("(*)");
+            }
         }
-        sb.append(")");
+        else
+        {
+            sb.append("(");
+            switch (type) 
+            {
+                case SELECT_HKEY:
+                    describe(atts.get(Label.PREDICATE).get(0),sb);
+                    break;
+                case PROJECT:
+                    for (Explainer projection : atts.get(Label.PROJECTION))
+                    {
+                        describe(projection, sb);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length()-2);
+                    break;
+                case SCAN_OPERATOR:
+                    if (name.equals("Values Scan"))
+                    {
+                        for (Explainer row : atts.get(Label.ROWTYPE))
+                        {
+                            describe(row, sb);
+                            sb.append(", ");
+                        }
+                        if (!atts.valuePairs().isEmpty())
+                        {
+                            sb.setLength(sb.length() - 2);
+                        }
+                    }
+                    else if (name.equals("Group Scan"))
+                    {
+                        describe(atts.get(Label.GROUP_TABLE).get(0), sb);
+                    }
+                    //else if (name.equals("Index Scan"))
+                    {
+                        // TODO
+                    }
+                    break;
+                case LOOKUP_OPERATOR:
+                    if (name.equals("Ancestor Lookup Default"))
+                    {
+                        describe(atts.get(Label.GROUP_TABLE).get(0), sb);
+                        sb.append(" -> ");
+                        for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                        {
+                            describe(table, sb);
+                            sb.append(", ");
+                        }
+                        if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
+                        {
+                            sb.setLength(sb.length() - 2);
+                        }
+                    }
+                    else if (name.equals("Ancestor Lookup Nested"))
+                    {
+                        describe(atts.get(Label.BINDING_POSITION).get(0), sb);
+                        sb.append(" -> ");
+                        for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                        {
+                            describe(table, sb);
+                            sb.append(", ");
+                        }
+                        if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
+                        {
+                            sb.setLength(sb.length() - 2);
+                        }
+                    }
+                    else if (name.equals("Branch Lookup Default"))
+                    {
+                        describe(atts.get(Label.GROUP_TABLE).get(0), sb);
+                        sb.append(" -> ");
+                        describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
+                        sb.append(" (via ");
+                        describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
+                        sb.append(")");
+                    }
+                    else if (name.equals("Branch Lookup Nested"))
+                    {
+                        describe(atts.get(Label.BINDING_POSITION).get(0), sb);
+                        sb.append(" -> ");
+                        describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
+                        sb.append(" (via ");
+                        describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
+                        sb.append(")");
+                    }
+                    break;
+                case COUNT_OPERATOR:
+                    sb.append("*");
+                    if (name.equals("Count TableStatus"));
+                    {
+                        sb.append(" FROM ");
+                        describe(atts.get(Label.INPUT_TYPE).get(0), sb);
+                    }
+                    break;
+                case DISTINCT:
+                case UNION_ALL:
+                    break;
+                case FILTER:
+                    for (Explainer rowtype : atts.get(Label.KEEP_TYPE))
+                    {
+                        describe(rowtype, sb);
+                        sb.append(" - ");
+                    }
+                    if (!atts.get(Label.KEEP_TYPE).isEmpty())
+                    {
+                        sb.setLength(sb.length()-3);
+                    }
+                    break;
+                case FLATTEN_OPERATOR: // Eventually may want to implement associativity for this
+                    describe(atts.get(Label.PARENT_TYPE).get(0), sb);
+                    sb.append(" ");
+                    describe(atts.get(Label.JOIN_OPTION).get(0), sb);
+                    sb.append(" ");
+                    describe(atts.get(Label.CHILD_TYPE).get(0), sb);
+                    break;
+                case ORDERED:
+                    sb.append("skip ");
+                    describe(atts.get(Label.LEFT).get(0), sb);
+                    sb.append(" left, skip ");
+                    describe(atts.get(Label.RIGHT).get(0), sb);
+                    sb.append(" right, compare ");
+                    describe(atts.get(Label.NUM_COMPARE).get(0), sb);
+                    if (name.equals("HKeyUnion"))
+                    {
+                        sb.append(", shorten to ");
+                        describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
+                    }
+                    else if (name.equals("Intersect"))
+                    {
+                        sb.append(", USING ");
+                        describe(atts.get(Label.JOIN_OPTION).get(0), sb);
+                    }
+                    break;
+                case IF_EMPTY:
+                    for (Explainer expression : atts.get(Label.OPERAND))
+                    {
+                        describe(expression, sb);
+                        sb.append(", ");
+                    }
+                    if (!atts.valuePairs().isEmpty())
+                    {
+                        sb.setLength(sb.length() - 2);
+                    }
+                    break;
+                case LIMIT_OPERATOR:
+                    describe(atts.get(Label.LIMIT).get(0), sb);
+                    break;
+                case NESTED_LOOPS:
+                    if (name.equals("Map_NestedLoops"))
+                    {
+                        sb.append("Binding at ");
+                        describe(atts.get(Label.BINDING_POSITION).get(0), sb);
+                    }
+                    else if (name.equals("Product"))
+                    {
+                        describe(atts.get(Label.INNER_TYPE).get(0), sb);
+                        sb.append(" x ");
+                        describe(atts.get(Label.OUTER_TYPE).get(0), sb);
+                    }
+                    break;
+                case SORT:
+                    int i = 0;
+                    for (Explainer ex : atts.get(Label.EXPRESSIONS))
+                    {
+                        describe(ex, sb);
+                        sb.append(" ").append(atts.get(Label.ORDERING).get(i++).get()).append(", ");
+                    }
+                    if (atts.containsKey(Label.LIMIT))
+                    {
+                        sb.append("LIMIT ");
+                        describe(atts.get(Label.LIMIT).get(0), sb);
+                    }
+                    sb.append(atts.get(Label.SORT_OPTION).get(0).get());
+                    break;
+                case DUI:
+                    if (name.equals("Delete"))
+                    {
+                        sb.append(" FROM ");
+                        describe(atts.get(Label.TABLE_TYPE).get(0), sb);
+                    }
+                    else if (name.equals("Insert"))
+                    {
+                        sb.append("INTO");
+                        describe(atts.get(Label.TABLE_TYPE).get(0), sb);
+                    }
+                    // TODO: "Update"
+                    break;
+                case PHYSICAL_OPERATOR:
+                    // TODO: optimizer
+                    sb.append(atts.get(Label.GROUPING_OPTION).get(0));
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
+            }
+            sb.append(")");
+        }
         if (atts.containsKey(Label.INPUT_OPERATOR))
         {
             for (Explainer input : atts.get(Label.INPUT_OPERATOR))
+            {
+                sb.append("\n");
+                for (int i = 0; i <= depth; i++)
+                {
+                    sb.append("  ");
+                }
+                describeOperator((OperationExplainer) input, sb, depth + 1);
+            }
+        }
+        if (atts.containsKey(Label.INNER_OPERATOR))
+        {
+            for (Explainer input : atts.get(Label.INNER_OPERATOR))
+            {
+                sb.append("\n");
+                for (int i = 0; i <= depth; i++)
+                {
+                    sb.append("  ");
+                }
+                describeOperator((OperationExplainer) input, sb, depth + 1);
+            }
+        }
+        if (atts.containsKey(Label.OUTER_OPERATOR))
+        {
+            for (Explainer input : atts.get(Label.OUTER_OPERATOR))
             {
                 sb.append("\n");
                 for (int i = 0; i <= depth; i++)

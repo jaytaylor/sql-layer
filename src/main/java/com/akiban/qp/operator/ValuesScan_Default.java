@@ -121,10 +121,9 @@ public class ValuesScan_Default extends Operator
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance("Values Scan"));
-        //att.put(Label.ROWTYPE, PrimitiveExplainer.getInstance(rows.toString()));
         for (BindableRow row : rows)
         {
-            att.put(Label.ROWTYPE, new PrimitiveExplainer(Type.STRING, row.toString()));
+            att.put(Label.ROWTYPE, PrimitiveExplainer.getInstance(row.toString()));
         }
         
         return new OperationExplainer(Type.SCAN_OPERATOR, att);
