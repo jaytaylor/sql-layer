@@ -61,6 +61,8 @@ class OperatorStoreGIHandler {
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
             indexRow.reset(groupIndex, exchange.getKey(), exchange.getValue());
+            if (Types3Switch.ON)
+                pTarget.attach(exchange.getKey());
             IndexRowComposition irc = groupIndex.indexRowComposition();
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
                 assert irc.isInRowData(i);
