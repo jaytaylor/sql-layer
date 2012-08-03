@@ -29,6 +29,7 @@ package com.akiban.server.types3;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.util.AkibanAppender;
 
 public final class TInstance {
     
@@ -42,6 +43,10 @@ public final class TInstance {
     
     public void readCanonical(PValueSource in, PValueTarget out) {
         tclass.readCanonical(in, this, out);
+    }
+
+    public void format(PValueSource source, AkibanAppender out) {
+        tclass.format(this, source, out);
     }
     
     public int attribute(Attribute attribute) {

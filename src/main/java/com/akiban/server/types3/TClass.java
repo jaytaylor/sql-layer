@@ -249,7 +249,7 @@ public abstract class TClass {
         return name.toString();
     }
 
-    public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+    void format(TInstance instance, PValueSource source, AkibanAppender out) {
         if (source.isNull())
             out.append("NULL");
         else
