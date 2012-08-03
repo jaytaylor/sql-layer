@@ -125,6 +125,13 @@ public abstract class TClass {
         output.append(value);
     }
 
+    protected static void attributeToString(Object[] array, long arrayIndex, StringBuilder output) {
+        if ( (array == null) || (arrayIndex < 0) || arrayIndex >= array.length)
+            output.append(arrayIndex);
+        else
+            output.append(array[(int)arrayIndex]);
+    }
+
     public abstract void putSafety(TExecutionContext context,
                         TInstance sourceInstance,
                         PValueSource sourceValue,
@@ -291,7 +298,7 @@ public abstract class TClass {
          for (int i = 0; i < attributes.length; ++i)
          {
              String attrValue = attributes[i].name();
-             if (!ALL_ALPHAS.matcher(attrValue).matches())
+             if (!VALID_ATTRIBUTE_PATTERN.matcher(attrValue).matches())
                  throw new IllegalNameException("attribute[" + i + "] for " + name + " has invalid name: " + attrValue);
          }
      }
@@ -320,6 +327,6 @@ public abstract class TClass {
     private final int serializationVersion;
     private final int serializationSize;
     private final PUnderlying pUnderlying;
-    private static final Pattern ALL_ALPHAS = Pattern.compile("[a-zA-Z]+");
+    private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
     private static final int EMPTY = -1;
 }

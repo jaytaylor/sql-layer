@@ -30,6 +30,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -76,6 +77,7 @@ public final class Cast_From_Double {
             MApproximateNumber.DOUBLE,
             MString.VARCHAR
     );
+
     public static final TCast TO_FLOAT = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.FLOAT) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
