@@ -249,8 +249,11 @@ public abstract class TClass {
         return name.toString();
     }
 
-    public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-        formatter.format(instance, source, out);
+    void format(TInstance instance, PValueSource source, AkibanAppender out) {
+        if (source.isNull())
+            out.append("NULL");
+        else
+            formatter.format(instance, source, out);
     }
 
     // for use by subclasses

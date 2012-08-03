@@ -34,6 +34,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -53,13 +54,27 @@ public class ProjectedRow extends AbstractRow
         AkibanAppender appender = AkibanAppender.of(buffer);
         buffer.append('(');
         boolean first = true;
-        for (ExpressionEvaluation evaluation : evaluations) {
-            if (first) {
-                first = false;
-            } else {
-                buffer.append(", ");
+        if (pEvals != null) {
+            for (int i = 0, pEvalsSize = pEvals.size(); i < pEvalsSize; i++) {
+                PValueSource evaluation = pEvals.get(i);
+                TInstance instance = tInstances.get(i);
+                if (first) {
+                    first = false;
+                } else {
+                    buffer.append(", ");
+                }
+                instance.format(evaluation, appender);
             }
-            evaluation.eval().appendAsString(appender, Quote.NONE);
+        }
+        else {
+            for (ExpressionEvaluation evaluation : evaluations) {
+                if (first) {
+                    first = false;
+                } else {
+                    buffer.append(", ");
+                }
+                evaluation.eval().appendAsString(appender, Quote.NONE);
+            }
         }
         buffer.append(')');
         return buffer.toString();
@@ -117,6 +132,7 @@ public class ProjectedRow extends AbstractRow
         this.row = row;
         this.evaluations = createEvaluations(expressions, row, context);
         this.pEvals = createPEvals(pExpressions, row, context);
+        this.tInstances = createTInstances(pExpressions);
         this.holders = expressions == null ? null : new ValueHolder[expressions.size()];
     }
 
@@ -161,11 +177,22 @@ public class ProjectedRow extends AbstractRow
         return result;
     }
 
+    private List<? extends TInstance> createTInstances(List<? extends TPreparedExpression> pExpressions) {
+        if (pExpressions == null)
+            return null;
+        List<TInstance> result = new ArrayList<TInstance>(pExpressions.size());
+        for (TPreparedExpression expression : pExpressions) {
+            result.add(expression.resultType());
+        }
+        return result;
+    }
+
     // Object state
 
     private final ProjectedRowType rowType;
     private final Row row;
     private final List<ExpressionEvaluation> evaluations;
     private final List<? extends PValueSource> pEvals;
+    private final List<? extends TInstance> tInstances;
     private final ValueHolder[] holders;
 }
