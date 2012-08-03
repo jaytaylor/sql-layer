@@ -147,7 +147,7 @@ public final class GroupIndexScanIT extends ITBase {
                 RowType rowType = row.rowType();
                 int fields =
                     rowType instanceof IndexRowType
-                    ? ((IndexRowType)rowType).declaredFields()
+                    ? ((IndexRowType)rowType).index().getKeyColumns().size()
                     : rowType.nFields();
                 Object[] rowArray = new Object[fields];
                 for (int i=0; i < rowArray.length; ++i) {

@@ -100,7 +100,7 @@ public class IndexKeyRange
     public static IndexKeyRange unbounded(IndexRowType indexRowType, boolean usePValues)
     {
         IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType, usePValues), ConstantColumnSelector.ALL_OFF);
-        return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false, false);
+        return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false, IndexKind.CONVENTIONAL);
     }
 
     /**
@@ -126,7 +126,33 @@ public class IndexKeyRange
         if (lo == null || hi == null) {
             throw new IllegalArgumentException("IndexBound arguments must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, false);
+        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, IndexKind.CONVENTIONAL);
+    }
+
+    /**
+     * Describes a range of keys between lo and hi. The bounds are inclusive or not depending on
+     * loInclusive and hiInclusive. lo and hi must both be non-null. The ColumnSelectors for
+     * lo and hi must select for the same columns.
+     * - The selected columns must be leading columns of the index.
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
+     * @param hi           Upper bound of the range.
+     * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
+     * @return IndexKeyRange covering the keys lying between lo and hi, subject to the loInclusive and
+     * hiInclusive flags.
+     */
+    public static IndexKeyRange spatial(IndexRowType indexRowType,
+                                        IndexBound lo,
+                                        boolean loInclusive,
+                                        IndexBound hi,
+                                        boolean hiInclusive)
+    {
+        if (lo == null || hi == null) {
+            throw new IllegalArgumentException("IndexBound arguments must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, IndexKind.SPATIAL);
     }
 
     /**
@@ -145,7 +171,7 @@ public class IndexKeyRange
         if (lo == null) {
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, null, false, true);
+        return new IndexKeyRange(indexRowType, lo, loInclusive, null, false, IndexKind.LEXICOGRAPHIC);
     }
 
     /**
@@ -163,7 +189,7 @@ public class IndexKeyRange
         if (hi == null) {
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
-        return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive, true);
+        return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive, IndexKind.LEXICOGRAPHIC);
     }
 
     /**
@@ -188,12 +214,17 @@ public class IndexKeyRange
         if (hi == null) {
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, true);
+        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, IndexKind.LEXICOGRAPHIC);
     }
 
     public boolean lexicographic()
     {
-        return lexicographic;
+        return indexKind == IndexKind.LEXICOGRAPHIC;
+    }
+
+    public boolean spatial()
+    {
+        return indexKind == IndexKind.SPATIAL;
     }
 
     public IndexKeyRange resetLo(IndexBound newLo)
@@ -219,20 +250,20 @@ public class IndexKeyRange
                           boolean loInclusive,
                           IndexBound hi,
                           boolean hiInclusive,
-                          boolean lexicographic)
+                          IndexKind indexKind)
     {
         this.boundColumns =
             lo == null
             ? boundColumns(indexRowType, hi) :
             hi == null
             ? boundColumns(indexRowType, lo)
-            : boundColumns(indexRowType, lo, hi, lexicographic);
+            : boundColumns(indexRowType, lo, hi);
         this.indexRowType = indexRowType;
         this.lo = lo;
         this.loInclusive = loInclusive;
         this.hi = hi;
         this.hiInclusive = hiInclusive;
-        this.lexicographic = lexicographic;
+        this.indexKind = indexKind;
     }
 
     private IndexKeyRange(IndexKeyRange indexKeyRange)
@@ -243,17 +274,17 @@ public class IndexKeyRange
         this.loInclusive = indexKeyRange.loInclusive;
         this.hi = indexKeyRange.hi;
         this.hiInclusive = indexKeyRange.hiInclusive;
-        this.lexicographic = indexKeyRange.lexicographic;
+        this.indexKind = indexKeyRange.indexKind;
     }
 
-    private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi, boolean lexicographic)
+    private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi)
     {
         ColumnSelector loSelector = lo.columnSelector();
         ColumnSelector hiSelector = hi.columnSelector();
         boolean selected = true;
         int boundColumns = 0;
         for (int i = 0; i < indexRowType.nFields(); i++) {
-            if (!lexicographic && loSelector.includesColumn(i) != hiSelector.includesColumn(i)) {
+            if (loSelector.includesColumn(i) != hiSelector.includesColumn(i)) {
                 throw new IllegalArgumentException(
                     String.format("IndexBound arguments specify different fields of index %s", indexRowType));
             }
@@ -307,11 +338,23 @@ public class IndexKeyRange
     private boolean loInclusive;
     private IndexBound hi;
     private boolean hiInclusive;
-    // An Akiban index scan normally allows a range for only the last specified part of the bound. E.g.,
+    private final IndexKind indexKind;
+
+    // A CONVENTIONAL (Akiban) index scan normally allows a range for only the last specified part of the bound. E.g.,
     // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
-    // 10-20 and 800-888. MySQL support requires a different approach in which we start at the lower bound and
-    // scan everything in the index up to the upper bound. So (1, 10, 800) - (1, 20, 888) is legal, and could return
-    // a row that is lexicographically between these bounds, but outside some range, e.g. (1, 11, 900). This will
-    // also be useful in supporting queries such as select * from t where (x, y) > (5, 7).
-    private final boolean lexicographic;
+    // 10-20 and 800-888.
+    //
+    // A LEXICOGRAPHIC index is required to support MySQL. MySQL requires a different approach in which we start at
+    // the lower bound and scan everything in the index up to the upper bound. So (1, 10, 800) - (1, 20, 888) is
+    // legal, and could return a row that is lexicographically between these bounds, but outside some range, e.g.
+    // (1, 11, 900). This will also be useful in supporting queries such as select * from t where (x, y) > (5, 7).
+    //
+    // A SPATIAL index requires has no requirements other than specifying a match or range on any restricted column.
+
+    public enum IndexKind
+    {
+        CONVENTIONAL,
+        LEXICOGRAPHIC,
+        SPATIAL
+    }
 }

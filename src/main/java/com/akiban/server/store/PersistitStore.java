@@ -359,22 +359,8 @@ public class PersistitStore implements Store {
                                           Key hKey,
                                           PersistitIndexRowBuffer indexRow)
     {
-        assert index.isTableIndex() : index;
-        indexRow.reset(targetKey);
-        IndexRowComposition indexRowComp = index.indexRowComposition();
-        for(int indexPos = 0; indexPos < indexRowComp.getLength(); ++indexPos) {
-            if(indexRowComp.isInRowData(indexPos)) {
-                int fieldPos = indexRowComp.getFieldPosition(indexPos);
-                RowDef rowDef = index.indexDef().getRowDef();
-                indexRow.append(rowDef.getFieldDef(fieldPos), rowData);
-            }
-            else if(indexRowComp.isInHKey(indexPos)) {
-                indexRow.appendFieldFromKey(hKey, indexRowComp.getHKeyPosition(indexPos));
-            }
-            else {
-                throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
-            }
-        }
+        indexRow.reset(index, targetKey);
+        indexRow.initialize(rowData, hKey);
     }
 
     void constructParentPKIndexKey(Exchange parentPKExchange, RowDef rowDef, RowData rowData)
@@ -603,13 +589,27 @@ public class PersistitStore implements Store {
                           RowData newRowData,
                           ColumnSelector columnSelector)
         throws PersistitException {
+        updateRow(session, oldRowData, newRowData, null);
+    }
+
+    @Override
+    public void updateRow(Session session,
+                          RowData oldRowData,
+                          RowData newRowData,
+                          ColumnSelector columnSelector,
+                          Index[] indexesToInsert)
+        throws PersistitException {
         int rowDefId = oldRowData.getRowDefId();
 
         if (newRowData.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException("RowData values have different rowDefId values: ("
                                                        + rowDefId + "," + newRowData.getRowDefId() + ")");
         }
-        RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        // RowDefs may be different (e.g. during an ALTER)
+        // Only non-pk or grouping columns could have change in this scenario
+        RowDef rowDef = rowDefFromExplicitOrId(oldRowData);
+        RowDef newRowDef = rowDefFromExplicitOrId(newRowData);
+        final boolean insideAlter = (rowDef != newRowDef);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         UPDATE_ROW_TAP.in();
@@ -630,19 +630,24 @@ public class PersistitStore implements Store {
             RowData currentRow = new RowData(EMPTY_BYTE_ARRAY);
             expandRowData(hEx, currentRow);
             RowData mergedRowData = 
-                columnSelector == null 
+                (columnSelector == null) || insideAlter
                 ? newRowData
                 : mergeRows(rowDef, currentRow, newRowData, columnSelector);
-            BitSet tablesRequiringHKeyMaintenance = analyzeFieldChanges(rowDef, oldRowData, mergedRowData);
+            BitSet tablesRequiringHKeyMaintenance = insideAlter ? null : analyzeFieldChanges(rowDef, oldRowData, mergedRowData);
             if (tablesRequiringHKeyMaintenance == null) {
                 // No PK or FK fields have changed. Just update the row.
-                packRowData(hEx, rowDef, mergedRowData);
+                packRowData(hEx, newRowDef, mergedRowData);
                 // Store the h-row
                 hEx.store();
                 // Update the indexes
                 PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer();
-                for (Index index : rowDef.getIndexes()) {
-                    updateIndex(session, index, rowDef, currentRow, mergedRowData, hEx.getKey(), indexRow);
+                boolean asInsert = (indexesToInsert != null);
+                for (Index index : (asInsert ? indexesToInsert : newRowDef.getIndexes())) {
+                    if(asInsert) {
+                        insertIntoIndex(session, index, newRowData, hEx.getKey(), indexRow, deferIndexes);
+                    } else {
+                        updateIndex(session, index, rowDef, currentRow, mergedRowData, hEx.getKey(), indexRow);
+                    }
                 }
             } else {
                 // A PK or FK field has changed. The row has to be deleted and reinserted, and hkeys of descendent
@@ -1445,6 +1450,14 @@ public class PersistitStore implements Store {
             }
         }
         return mergedRow.toRowData();
+    }
+
+    private RowDef rowDefFromExplicitOrId(RowData rowData) {
+        RowDef rowDef = rowData.getExplicitRowDef();
+        if(rowDef == null) {
+            rowDef = rowDefCache.getRowDef(rowData.getRowDefId());
+        }
+        return rowDef;
     }
 
     @Override
