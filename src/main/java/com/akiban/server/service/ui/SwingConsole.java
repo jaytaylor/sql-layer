@@ -30,6 +30,7 @@ import com.akiban.server.service.ServiceManager;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.io.IOException;
 import javax.swing.*;
 import javax.swing.text.*;
@@ -143,7 +144,10 @@ public class SwingConsole extends JFrame implements WindowListener
                 RUN_PSQL_CMD = new String[]{"cmd.exe", "/c",
                                             "start psql -h localhost -p" + port };
             else // assuming unix-based system
-                RUN_PSQL_CMD = new String[]{"xterm", "-e", "psql -h localhost -p" + port};
+                RUN_PSQL_CMD = new String[]{new File("/etc/alternatives/x-terminal-emulator").exists() 
+                                                    ? "" 
+                                                    : "xterm", 
+                                            "-e", "psql -h localhost -p" + port};
 
             
                     
