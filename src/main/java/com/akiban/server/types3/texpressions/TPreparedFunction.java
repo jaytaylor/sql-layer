@@ -129,6 +129,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
         @Override
         public void evaluate() {
+            Arrays.fill(inputValues, null);
             overload.evaluate(context, evaluations, resultValue);
         }
 
