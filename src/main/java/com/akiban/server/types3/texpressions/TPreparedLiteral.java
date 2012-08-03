@@ -53,8 +53,7 @@ public final class TPreparedLiteral implements TPreparedExpression {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Literal(");
-        TClass tClass = tInstance.typeClass();
-        tClass.format(tInstance, value, AkibanAppender.of(sb));
+        tInstance.format(value, AkibanAppender.of(sb));
         sb.append(')');
         return sb.toString();
     }

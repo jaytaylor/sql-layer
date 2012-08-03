@@ -31,6 +31,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -134,7 +135,7 @@ public abstract class AbstractRow implements Row
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
             if (Types3Switch.ON)
-                PValueSources.toStringSimple(pvalue(i), builder);
+                rowType().typeInstanceAt(i).format(pvalue(i), appender);
             else
                 eval(i).appendAsString(appender, Quote.SINGLE_QUOTE);
             if(i+1 < fieldsCount) {
