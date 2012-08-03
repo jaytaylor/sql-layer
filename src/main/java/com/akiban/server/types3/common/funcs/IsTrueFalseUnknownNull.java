@@ -100,7 +100,7 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return name;
     }

@@ -54,33 +54,54 @@ import java.util.Map;
 
 public class ProtobufWriter {
     public static interface WriteSelector {
-        boolean isSelected(Columnar columnar);
-        /** Called for all GroupIndexes and all table indexes where isSelected(UserTable) is true **/
+        Columnar getSelected(Columnar columnar);
+        /** Called for all GroupIndexes and all table indexes where getSelected(UserTable) is not null **/
         boolean isSelected(Index index);
         boolean isSelected(Sequence sequence);
     }
 
     public static WriteSelector ALL_SELECTOR = new WriteSelector() {
         @Override
-        public boolean isSelected(Columnar columnar) {
-            return true;
+        public Columnar getSelected(Columnar columnar) {
+            return columnar;
         }
 
         @Override
         public boolean isSelected(Index index) {
             return true;
         }
+
         @Override
         public boolean isSelected(Sequence sequence) {
             return true;
         }
     };
 
-    public static abstract class TableAllIndexSelector implements WriteSelector {
+    public static abstract class TableFilterSelector implements WriteSelector {
         @Override
         public boolean isSelected(Index index) {
             return true;
         }
+
+        @Override
+        public boolean isSelected(Sequence sequence) {
+            return true;
+        }
+    }
+
+    public static abstract class TableSelector implements WriteSelector {
+        public abstract boolean isSelected(Columnar columnar);
+
+        @Override
+        public Columnar getSelected(Columnar columnar) {
+            return isSelected(columnar) ? columnar : null;
+        }
+
+        @Override
+        public boolean isSelected(Index index) {
+            return true;
+        }
+
         @Override 
         public boolean isSelected(Sequence sequence) {
             return true;
@@ -99,8 +120,8 @@ public class ProtobufWriter {
         }
 
         @Override
-        public boolean isSelected(Columnar columnar) {
-            return schemaName.equals(columnar.getName().getSchemaName());
+        public Columnar getSelected(Columnar columnar) {
+            return schemaName.equals(columnar.getName().getSchemaName()) ? columnar : null;
         }
 
         @Override
@@ -206,7 +227,8 @@ public class ProtobufWriter {
 
         // Write groups into same schema as root table
         for(UserTable table : schema.getUserTables().values()) {
-            if(selector.isSelected(table)) {
+            table = (UserTable)selector.getSelected(table);
+            if(table != null) {
                 if(table.getParentJoin() == null && table.getGroup() != null) {
                     writeGroup(schemaBuilder, table.getGroup(), selector);
                 }
@@ -223,7 +245,8 @@ public class ProtobufWriter {
         }
 
         for(View view : schema.getViews().values()) {
-            if(selector.isSelected(view)) {
+            view = (View)selector.getSelected(view);
+            if(view != null) {
                 writeView(schemaBuilder, view);
                 isEmpty = false;
             }

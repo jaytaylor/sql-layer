@@ -51,6 +51,14 @@ public class AlterTableChange {
         return changeType;
     }
 
+    @Override
+    public String toString() {
+        if(oldName != null && newName == null)
+            return changeType + ":" + oldName;
+        if(oldName == null && newName != null)
+            return changeType + ":" + newName;
+        return changeType + ":" + oldName + "->" + newName;
+    }
 
     public static AlterTableChange createAdd(String name) {
         return new AlterTableChange(null, name, ChangeType.ADD);

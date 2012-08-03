@@ -71,6 +71,11 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     }
 
     @Override
+    public void setSQLtype(DataTypeDescriptor type) {
+        this.sqlType = type;
+    }
+
+    @Override
     public AkCollator getCollator() {
         if (sqlType != null) {
             CharacterTypeAttributes att = sqlType.getCharacterAttributes();
@@ -81,10 +86,6 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
             }
         }
         return null;
-    }
-
-    protected void setSQLtype(DataTypeDescriptor type) {
-        this.sqlType = type;
     }
 
     @Override

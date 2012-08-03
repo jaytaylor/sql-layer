@@ -28,17 +28,12 @@ package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.List;
 
 public class Reverse extends TOverloadBase
 {
@@ -51,7 +46,7 @@ public class Reverse extends TOverloadBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(stringType, 0);
+        builder.pickingCovers(stringType, 0);
     }
 
     @Override
@@ -61,7 +56,7 @@ public class Reverse extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return "REVERSE";
     }

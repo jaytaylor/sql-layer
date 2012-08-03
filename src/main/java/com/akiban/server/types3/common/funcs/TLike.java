@@ -129,7 +129,7 @@ public class TLike extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return likeType.name();
     }

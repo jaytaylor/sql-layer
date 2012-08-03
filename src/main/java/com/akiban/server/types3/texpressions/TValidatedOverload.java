@@ -48,8 +48,14 @@ public final class TValidatedOverload implements TOverload {
     // TOverload methods (straight delegation)
 
     @Override
-    public String overloadName() {
-        return overload.overloadName();
+    public String displayName() {
+        return overload.displayName();
+    }
+
+    @Override
+    public String[] registeredNames()
+    {
+        return overload.registeredNames();
     }
 
     @Override
@@ -89,7 +95,7 @@ public final class TValidatedOverload implements TOverload {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(overload.overloadName()).append('(');
+        sb.append(overload.displayName()).append('(');
         for (int i = 0, nPos = positionalInputs(), nDesc = inputSetDescriptions.length; i < nDesc; ++i) {
             sb.append(inputSetDescriptions[i]);
             if (i == nPos)

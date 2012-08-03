@@ -53,7 +53,7 @@ public class TPow extends TOverloadBase {
     }
         
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "POW";
     }
 

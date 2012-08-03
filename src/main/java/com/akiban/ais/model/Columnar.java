@@ -126,6 +126,12 @@ public abstract class Columnar
         return notNull;
     }
 
+    public Column dropColumn(String columnName)
+    {
+        columnsStale = true;
+        return columnMap.remove(columnName);
+    }
+
     protected void addColumn(Column column)
     {
         columnMap.put(column.getName().toLowerCase(), column);

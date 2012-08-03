@@ -27,7 +27,6 @@
 package com.akiban.server.error;
 
 public final class NoSuchIndexException extends InvalidOperationException {
-    //Unknown index: `{0}`
     public NoSuchIndexException(String indexName) {
         super(ErrorCode.NO_INDEX, indexName);
     }

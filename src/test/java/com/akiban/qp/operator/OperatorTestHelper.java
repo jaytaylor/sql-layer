@@ -28,6 +28,7 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -250,6 +251,11 @@ public final class OperatorTestHelper {
         public TestAdapter()
         {
             super(null, null, null);
+        }
+
+        @Override
+        public long sequenceNextValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
         }
     }
 }
