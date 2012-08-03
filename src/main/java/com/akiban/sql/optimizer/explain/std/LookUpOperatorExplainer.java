@@ -47,12 +47,9 @@ public class LookUpOperatorExplainer extends OperationExplainer
         atts.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(gTable.getName().getTableName().toString())); 
         
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(iRowType.toString()));
-        try
-        {
-            atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
+        atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
+        if (null == inputOp)
             atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
-        }
-        catch (NullPointerException exception){}
         
         return atts;
     }
