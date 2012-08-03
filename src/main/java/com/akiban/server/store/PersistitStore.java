@@ -359,22 +359,8 @@ public class PersistitStore implements Store {
                                           Key hKey,
                                           PersistitIndexRowBuffer indexRow)
     {
-        assert index.isTableIndex() : index;
-        indexRow.reset(targetKey);
-        IndexRowComposition indexRowComp = index.indexRowComposition();
-        for(int indexPos = 0; indexPos < indexRowComp.getLength(); ++indexPos) {
-            if(indexRowComp.isInRowData(indexPos)) {
-                int fieldPos = indexRowComp.getFieldPosition(indexPos);
-                RowDef rowDef = index.indexDef().getRowDef();
-                indexRow.append(rowDef.getFieldDef(fieldPos), rowData);
-            }
-            else if(indexRowComp.isInHKey(indexPos)) {
-                indexRow.appendFieldFromKey(hKey, indexRowComp.getHKeyPosition(indexPos));
-            }
-            else {
-                throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
-            }
-        }
+        indexRow.reset(index, targetKey);
+        indexRow.initialize(rowData, hKey);
     }
 
     void constructParentPKIndexKey(Exchange parentPKExchange, RowDef rowDef, RowData rowData)

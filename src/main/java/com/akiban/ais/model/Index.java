@@ -160,6 +160,11 @@ public abstract class Index implements Traversable
         return allColumns;
     }
 
+    public boolean isSpatial()
+    {
+        return false;
+    }
+
     private void sortColumnsIfNeeded() {
         if (columnsStale) {
             Collections.sort(keyColumns,
