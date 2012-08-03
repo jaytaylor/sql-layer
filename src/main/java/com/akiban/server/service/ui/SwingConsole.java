@@ -145,7 +145,7 @@ public class SwingConsole extends JFrame implements WindowListener
                                             "start psql -h localhost -p" + port };
             else // assuming unix-based system
                 RUN_PSQL_CMD = new String[]{new File("/etc/alternatives/x-terminal-emulator").exists() 
-                                                    ? "" 
+                                                    ? "x-terminal-emulator" 
                                                     : "xterm", 
                                             "-e", "psql -h localhost -p" + port};
 
