@@ -354,9 +354,14 @@ final class Aggregate_Partial extends Operator
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));
         
- 
-        for (AggregatorFactory agg : aggregatorFactories)
-            atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+        if (pAggrs != null) {
+            for (TAggregator agg : pAggrs)
+                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+        }
+        else {
+            for (AggregatorFactory agg : aggregatorFactories)
+                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+        }
         
         atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
