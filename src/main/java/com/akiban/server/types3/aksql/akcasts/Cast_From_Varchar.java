@@ -40,7 +40,7 @@ import static com.akiban.server.types3.TParsers.*;
 
 public class Cast_From_Varchar
 {
-    public static final TCast TO_BOOLEAN = new TCastBase(AkString.VARCHAR, AkBool.INSTANCE, true, Constantness.UNKNOWN)
+    public static final TCast TO_BOOLEAN = new TCastBase(AkString.VARCHAR, AkBool.INSTANCE, Constantness.UNKNOWN)
     {
 
         @Override
@@ -50,7 +50,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_SMALLINT = new TCastBase(AkString.VARCHAR, AkNumeric.SMALLINT, true, Constantness.UNKNOWN)
+    public static final TCast TO_SMALLINT = new TCastBase(AkString.VARCHAR, AkNumeric.SMALLINT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -60,7 +60,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_INT = new TCastBase(AkString.VARCHAR, AkNumeric.INT, true, Constantness.UNKNOWN)
+    public static final TCast TO_INT = new TCastBase(AkString.VARCHAR, AkNumeric.INT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -70,7 +70,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.BIGINT, true, Constantness.UNKNOWN)
+    public static final TCast TO_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.BIGINT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -80,7 +80,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.U_BIGINT, true, Constantness.UNKNOWN)
+    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.U_BIGINT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -90,7 +90,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_DOUBLE = new TCastBase(AkString.VARCHAR, AkNumeric.DOUBLE, true, Constantness.UNKNOWN)
+    public static final TCast TO_DOUBLE = new TCastBase(AkString.VARCHAR, AkNumeric.DOUBLE, Constantness.UNKNOWN)
     {
 
         @Override

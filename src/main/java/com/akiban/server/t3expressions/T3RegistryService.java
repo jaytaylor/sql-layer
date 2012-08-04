@@ -47,5 +47,6 @@ public interface T3RegistryService {
     TCast cast(TClass source, TClass target);
 
     Set<? extends TClass> stronglyCastableTo(TClass tClass);
+    boolean isStrong(TCast cast);
 
 }

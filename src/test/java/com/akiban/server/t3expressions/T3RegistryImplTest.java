@@ -245,7 +245,7 @@ public final class T3RegistryImplTest {
 
     private static class BogusCast extends TCastBase {
         private BogusCast(TClass sourceClass, TClass targetClass) {
-            super(sourceClass, targetClass, false, Constantness.UNKNOWN);
+            super(sourceClass, targetClass, Constantness.UNKNOWN);
         }
 
         @Override
