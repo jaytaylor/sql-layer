@@ -160,6 +160,11 @@ public abstract class Index implements Traversable
         return allColumns;
     }
 
+    public boolean isSpatial()
+    {
+        return false;
+    }
+
     private void sortColumnsIfNeeded() {
         if (columnsStale) {
             Collections.sort(keyColumns,
@@ -176,6 +181,11 @@ public abstract class Index implements Traversable
     public Integer getIndexId()
     {
         return indexId;
+    }
+
+    public void setIndexId(Integer indexId)
+    {
+        this.indexId = indexId;
     }
 
     @Override
@@ -292,11 +302,11 @@ public abstract class Index implements Traversable
     private static final int IS_VALID_FLAG = INDEX_ID_BITS + 1;
     private static final int IS_RIGHT_JOIN_FLAG = IS_VALID_FLAG << 1;
 
-    private final Integer indexId;
     private final Boolean isUnique;
     private final String constraint;
     private final JoinType joinType;
     private final boolean isValid;
+    private Integer indexId;
     private IndexName indexName;
     private boolean columnsStale = true;
     private boolean columnsFrozen = false;

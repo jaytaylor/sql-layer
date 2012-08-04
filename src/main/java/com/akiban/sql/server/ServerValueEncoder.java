@@ -237,7 +237,7 @@ public class ServerValueEncoder
             getByteStream().write(value.getBytes());
         else {
             assert !binary : "can only binary encode VARBINARY";
-            tClass.format(type.getInstance(), value, appender);
+            type.getInstance().format(value, appender);
         }
     }
     

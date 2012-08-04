@@ -109,7 +109,7 @@ public class MSubstringIndex extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "SUBSTRING_INDEX";
     }
 

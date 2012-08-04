@@ -104,6 +104,15 @@ public class Space
     // Space interface
 
     /**
+     * Returns the dimensionality of the space.
+     * @return the dimensionality of the space.
+     */
+    public int dimensions()
+    {
+        return dimensions;
+    }
+
+    /**
      * Compute the z-value for the given coordinates. The length of the z-value is that of the maximum resolution
      * for this space.
      * @param x Coordinates of point to be shuffled.
@@ -148,9 +157,13 @@ public class Space
 
     }
 
+    public Space(long[] lo, long[] hi)
+    {
+        this(lo, hi, null);
+    }
+
     public Space(long[] lo, long[] hi, int[] interleave)
     {
-        checkArguments(lo, hi, interleave);
         this.dimensions = lo.length;
         this.lo = Arrays.copyOf(lo, lo.length);
         this.hi = Arrays.copyOf(hi, hi.length);
@@ -158,14 +171,18 @@ public class Space
         this.xBytes = new int[dimensions];
         this.shift = new int[dimensions];
         this.xz = new int[dimensions][];
-        this.interleave = Arrays.copyOf(interleave, interleave.length);
         this.zBits = computeDimensionBoundaries();
+        this.interleave =
+            interleave == null
+            ? defaultInterleave()
+            : Arrays.copyOf(interleave, interleave.length);
         this.zBytes = (zBits + 7) / 8;
         this.zx = new int[zBits];
         initializeZXMapping();
         this.shuffler = new Shuffler(this);
         this.unshuffler = new Unshuffler(this);
         this.decomposer = new Decomposer(this);
+        checkArguments(lo, hi);
     }
 
     // For use by this package
@@ -249,7 +266,7 @@ public class Space
 
     // For use by this class
 
-    private void checkArguments(long[] lo, long[] hi, int[] interleave)
+    private void checkArguments(long[] lo, long[] hi)
     {
         int dimensions = lo.length;
         if (hi.length != dimensions) {
@@ -266,7 +283,10 @@ public class Space
                     String.format("Invalid dimension %s: lo = %s, hi = %s", d, lo[d], hi[d]));
             }
         }
-        for (int zBitPosition = 0; zBitPosition < interleave.length; zBitPosition++) {
+        if (interleave.length != zBits) {
+            throw new IllegalArgumentException(String.format("Length of interleave array must be zBits (%s)", zBits));
+        }
+        for (int zBitPosition = 0; zBitPosition < zBits; zBitPosition++) {
             int d = interleave[zBitPosition];
             if (d < 0 || d >= dimensions) {
                 throw new IllegalArgumentException(
@@ -302,6 +322,15 @@ public class Space
             zx[zBitPosition] = xBitPosition;
             xPosition[d]++;
         }
+    }
+
+    private int[] defaultInterleave()
+    {
+        int[] interleave = new int[zBits];
+        for (int zBitPosition = 0; zBitPosition < zBits; zBitPosition++) {
+            interleave[zBitPosition] = zBitPosition % dimensions;
+        }
+        return interleave;
     }
 
     // Class state

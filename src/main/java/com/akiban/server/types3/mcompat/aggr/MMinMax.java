@@ -63,7 +63,11 @@ public class MMinMax implements TAggregator {
     }
 
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst) {
+        if (isFirst && (mType == MType.MIN)) {
+            PValueTargets.copyFrom(source, state);
+            return;
+        }
         TClass tClass = instance.typeClass();
         assert stateType.typeClass().equals(tClass) : "incompatible types " + instance + " and " + stateType;
         int comparison = TClass.compare(instance, source, stateType, state);

@@ -24,21 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.server.types3.TCastPath;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
-public abstract class TNoAttrCastBase extends TCastBase {
+public final class Paths {
 
-    @Override
-    public TClass targetClass() {
-        return tClass;
-    }
+    public static final TCastPath INTEGERS = TCastPath.create(
+            MNumeric.TINYINT_UNSIGNED,
+            MNumeric.INT,
+            MNumeric.BIGINT
+    );
 
-    protected TNoAttrCastBase(NoAttrTClass tClass) {
-        this.tClass = tClass;
-    }
-
-    private final NoAttrTClass tClass;
+    private Paths() {}
 }

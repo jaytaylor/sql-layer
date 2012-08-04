@@ -68,11 +68,11 @@ import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;
+import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.plan.TableSource;
-import com.akiban.sql.optimizer.plan.Union;
 import com.akiban.sql.optimizer.plan.UpdateStatement;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
@@ -127,6 +127,23 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            if (n instanceof ResultSet) {
+                ResultSet rs = (ResultSet) n;
+                for (ResultSet.ResultField field : rs.getFields()) {
+                    DataTypeDescriptor sourceDtd = field.getSourceExpression().getSQLtype();
+                    DataTypeDescriptor fieldDtd = field.getSQLtype();
+                    if (!sourceDtd.equals(fieldDtd)) {
+                        TPreptimeValue tpv = field.getSourceExpression().getPreptimeValue();
+                        if (tpv != null) {
+                            TInstance tInstance = tpv.instance();
+                            if (tInstance != null) {
+                                DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
+                                field.setSQLtype(newDtd);
+                            }
+                        }
+                    }
+                }
+            }
             return true;
         }
 
@@ -173,7 +190,18 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
 
             n = folder.foldConstants(n);
-            
+            // Set nullability of TInstance if it hasn't been given explicitly
+            // At the same time, update the node's DataTypeDescriptor to match its TInstance
+            TPreptimeValue tpv = n.getPreptimeValue();
+            if (tpv != null) {
+                TInstance tInstance = tpv.instance();
+                if (tInstance != null) {
+                    if (tInstance.nullability() == null)
+                        tInstance.setNullable(n.getSQLtype().isNullable());
+                    DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
+                    n.setSQLtype(newDtd);
+                }
+            }
             return n;
         }
 
@@ -256,7 +284,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         : resultInstance + " != " + preptimeValue.instance();
 
             expression.setPreptimeValue(preptimeValue);
-
             return expression;
         }
 
@@ -388,8 +415,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
-            TInstance tinst = TypesTranslation.toTInstance(expression.getSQLtype());
-            expression.setPreptimeValue(new TPreptimeValue(tinst));
+            DataTypeDescriptor sqlType = expression.getSQLtype();
+            if (sqlType != null) {
+                // TODO eventually we'll probably want to ignore this completely, and do all the type inference
+                // from within the types3 framework. For now, use what we have.
+                TInstance tinst = TypesTranslation.toTInstance(sqlType);
+                expression.setPreptimeValue(new TPreptimeValue(tinst));
+            }
             return expression;
         }
 

@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContext.NotificationLevel;
 import com.akiban.server.error.ErrorCode;
@@ -60,7 +61,7 @@ public final class TExecutionContext {
 
     public Object preptimeObjectAt(int index) {
         if (preptimeCache == null)
-            throw new IllegalArgumentException("no preptime cache objects");
+            preptimeCache = new SparseArray<Object>(index);
         return preptimeCache.getIfDefined(index);
     }
 
@@ -70,8 +71,8 @@ public final class TExecutionContext {
 
     public Object exectimeObjectAt(int index) {
         if (exectimeCache == null)
-            throw new IllegalArgumentException("no exectime cache objects");
-        return exectimeCache.getIfDefined(index);
+            exectimeCache = new SparseArray<Object>();
+        return exectimeCache.get(index);
     }
 
     public void putExectimeObject(int index, Object value) {
@@ -131,6 +132,11 @@ public final class TExecutionContext {
         return queryContext.getSystemUser();
     }
     
+    public long sequenceNextValue (TableName sequenceName) 
+    {
+        return queryContext.sequenceNextValue(sequenceName);
+    }
+    
     public void reportOverflow(String msg)
     {
         switch(overflowHandling)
@@ -186,7 +192,23 @@ public final class TExecutionContext {
         this.queryContext = queryContext;
     }
 
+    public TExecutionContext deriveContext(List<TInstance> inputTypes, TInstance outputType) {
+        return new TExecutionContext(
+                new SparseArray<Object>(),
+                inputTypes,
+                outputType,
+                queryContext,
+                overflowHandling,
+                truncateHandling,
+                invalidFormatHandling
+        );
+    }
+
     // state
+
+    public TExecutionContext(List<TInstance> inputTypes,  TInstance outputType, QueryContext queryContext) {
+        this(null, inputTypes, outputType, queryContext, null, null, null);
+    }
 
     public TExecutionContext(SparseArray<Object> preptimeCache,
                       List<TInstance> inputTypes,

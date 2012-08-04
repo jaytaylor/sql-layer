@@ -35,6 +35,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ArgumentValidation;
+import com.google.common.base.Objects;
 import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
@@ -124,6 +125,13 @@ public abstract class TClass {
         output.append(value);
     }
 
+    protected static void attributeToString(Object[] array, long arrayIndex, StringBuilder output) {
+        if ( (array == null) || (arrayIndex < 0) || arrayIndex >= array.length)
+            output.append(arrayIndex);
+        else
+            output.append(array[(int)arrayIndex]);
+    }
+
     public abstract void putSafety(TExecutionContext context,
                         TInstance sourceInstance,
                         PValueSource sourceValue,
@@ -163,7 +171,29 @@ public abstract class TClass {
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {
         if (instance0.typeClass() != this || instance1.typeClass() != this)
             throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);
-        return doPickInstance(instance0, instance1);
+
+        TInstance result = doPickInstance(instance0, instance1);
+
+        // set nullability
+        Boolean resultIsNullable = result.nullability();
+        final Boolean resultDesiredNullability;
+        Boolean leftIsNullable = instance0.nullability();
+        if (leftIsNullable == null) {
+            resultDesiredNullability = null;
+        }
+        else {
+            Boolean rightIsNullable = instance0.nullability();
+            resultDesiredNullability = (rightIsNullable == null)
+                    ? null
+                    : (leftIsNullable || rightIsNullable);
+        }
+        if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
+            // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
+            if ( (result == instance0) || (result == instance1) )
+                result = new TInstance(result);
+            result.setNullable(resultDesiredNullability);
+        }
+        return result;
     }
 
     public PUnderlying underlyingType() {
@@ -219,8 +249,11 @@ public abstract class TClass {
         return name.toString();
     }
 
-    public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-        formatter.format(instance, source, out);
+    void format(TInstance instance, PValueSource source, AkibanAppender out) {
+        if (source.isNull())
+            out.append("NULL");
+        else
+            formatter.format(instance, source, out);
     }
 
     // for use by subclasses
@@ -268,7 +301,7 @@ public abstract class TClass {
          for (int i = 0; i < attributes.length; ++i)
          {
              String attrValue = attributes[i].name();
-             if (!ALL_ALPHAS.matcher(attrValue).matches())
+             if (!VALID_ATTRIBUTE_PATTERN.matcher(attrValue).matches())
                  throw new IllegalNameException("attribute[" + i + "] for " + name + " has invalid name: " + attrValue);
          }
      }
@@ -297,6 +330,6 @@ public abstract class TClass {
     private final int serializationVersion;
     private final int serializationSize;
     private final PUnderlying pUnderlying;
-    private static final Pattern ALL_ALPHAS = Pattern.compile("[a-zA-Z]+");
+    private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
     private static final int EMPTY = -1;
 }

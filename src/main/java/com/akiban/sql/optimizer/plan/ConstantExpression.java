@@ -144,7 +144,7 @@ public class ConstantExpression extends BaseExpression
                 return "NULL";
             TInstance tInstance = preptimeValue.instance();
             StringBuilder sb = new StringBuilder();
-            tInstance.typeClass().format(tInstance, valueSource, AkibanAppender.of(sb));
+            tInstance.format(valueSource, AkibanAppender.of(sb));
             return sb.toString();
         }
         ValueSource valueSource;

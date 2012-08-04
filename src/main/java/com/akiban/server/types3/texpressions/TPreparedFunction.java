@@ -108,6 +108,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
                 TEvaluatableExpression input = inputs.get(i);
                 input.with(row);
+                inputValues[i] = null;
             }
         }
 
@@ -117,6 +118,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
                 TEvaluatableExpression input = inputs.get(i);
                 input.with(context);
+                inputValues[i] = null;
             }
         }
 
@@ -127,6 +129,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
         @Override
         public void evaluate() {
+            Arrays.fill(inputValues, null);
             overload.evaluate(context, evaluations, resultValue);
         }
 
@@ -152,7 +155,6 @@ public final class TPreparedFunction implements TPreparedExpression {
             @Override
             public PValueSource get(int i) {
                 PValueSource value = inputValues[i];
-                // TODO clear cache at some point
                 if (value == null) {
                     TEvaluatableExpression inputExpr = inputs.get(i);
                     inputExpr.evaluate();

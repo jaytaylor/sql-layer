@@ -28,6 +28,7 @@ package com.akiban.server.store;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -115,7 +116,7 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param indexes List of indexes to drop.
      */
-    void dropIndexes(Session session, Collection<Index> indexes);
+    void dropIndexes(Session session, Collection<? extends Index> indexes);
 
     /**
      * Delete the definition of the table with the given name. Throws
@@ -131,8 +132,9 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param tableName Name of the table being changed.
      * @param newDefinition New definition of the table.
+     * @param indexNameMap Mapping of new index names to old
      */
-    void alterTableDefinition(Session session, TableName tableName, UserTable newDefinition);
+    void alterTableDefinition(Session session, TableName tableName, UserTable newDefinition, Map<String,String> indexNameMap);
 
     /**
      * Generate a TableDefinition, which includes a canonical 'create table' statement,
@@ -197,4 +199,7 @@ public interface SchemaManager {
     
     /** Drop the given sequence from the current AIS. */
     void dropSequence(Session session, Sequence sequence);
+
+    // TODO: PSSM should handle this itself...
+    void rollbackAIS(Session session, AkibanInformationSchema replacementAIS, Collection<String> schemaNames);
 }

@@ -56,7 +56,7 @@ public class MStrcmp extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "STRCMP";
     }
 

@@ -75,7 +75,8 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
     public void checkConstraints(BoundExpressions loExpressions,
                                  BoundExpressions hiExpressions,
                                  int f,
-                                 AkCollator collator) {
+                                 AkCollator[] collators,
+                                 TInstance[] tInstances) {
         ValueSource loValueSource = loExpressions.eval(f);
         ValueSource hiValueSource = hiExpressions.eval(f);
         if (loValueSource.isNull() && hiValueSource.isNull()) {
@@ -87,7 +88,7 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
                     Expressions.collate(Expressions.valueSource(loValueSource),
                                         Comparison.EQ,
                                         Expressions.valueSource(hiValueSource),
-                                        collator);
+                                        collators[f]);
             if (!loEQHi.evaluation().eval().getBool()) {
                 throw new IllegalArgumentException();
             }

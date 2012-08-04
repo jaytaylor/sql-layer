@@ -31,15 +31,8 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.common.types.StringFactory.Charset;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.types.CharacterTypeAttributes;
+import com.akiban.sql.pg.PostgresType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -330,75 +323,8 @@ public final class TypesTranslation {
     }
 
     public static TInstance toTInstance(DataTypeDescriptor descriptor) {
-        if (descriptor == null || descriptor.getTypeId() == null)
-            return null;
-        final TInstance result;
-        switch (descriptor.getTypeId().getTypeFormatId()) {
-        case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-            result = AkBool.INSTANCE.instance();
-            break;
-        case TypeId.FormatIds.VARCHAR_TYPE_ID:
-        case TypeId.FormatIds.CHAR_TYPE_ID:
-            CharacterTypeAttributes typeAttributes = descriptor.getCharacterAttributes();
-            int charsetId = (typeAttributes == null)
-                    ? -1
-                    : Charset.of(typeAttributes.getCharacterSet()).ordinal();
-            result = MString.VARCHAR.instance(descriptor.getMaximumWidth(), charsetId);
-            break;
-        case TypeId.FormatIds.DECIMAL_TYPE_ID:
-        case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            result = MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
-            break;
-        case TypeId.FormatIds.REAL_TYPE_ID:
-            result = MApproximateNumber.FLOAT.instance();
-            break;
-        case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            result = MApproximateNumber.DOUBLE.instance();
-            break;
-        case TypeId.FormatIds.INT_TYPE_ID:
-            result = MNumeric.INT.instance();
-            break;
-        case TypeId.FormatIds.TINYINT_TYPE_ID:
-        case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            result = MNumeric.SMALLINT.instance();
-            break;
-        case TypeId.FormatIds.LONGINT_TYPE_ID:
-            result = MNumeric.BIGINT.instance();
-            break;
-        case TypeId.FormatIds.DATE_TYPE_ID:
-            result = MDatetimes.DATE.instance();
-            break;
-        case TypeId.FormatIds.TIME_TYPE_ID:
-            result = MDatetimes.TIME.instance();
-            break;
-        case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            result = MDatetimes.TIMESTAMP.instance();
-            break;
-        case TypeId.FormatIds.BIT_TYPE_ID:
-            result = MBinary.BINARY.instance(descriptor.getMaximumWidth());
-            break;
-        case TypeId.FormatIds.VARBIT_TYPE_ID:
-            result = MBinary.VARBINARY.instance(descriptor.getMaximumWidth());
-            break;
-        case TypeId.FormatIds.BLOB_TYPE_ID:
-            result = MBinary.BLOB.instance();
-            break;
-
-        case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-        case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-        case TypeId.FormatIds.REF_TYPE_ID:
-        case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-        case TypeId.FormatIds.CLOB_TYPE_ID:
-        case TypeId.FormatIds.XML_TYPE_ID:
-        case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
-        case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-        case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-            throw new UnsupportedOperationException("unsupported type: " + descriptor);
-        default:
-            throw new AssertionError("unknown type: " + descriptor);
-        }
-
-        result.setNullable(descriptor.isNullable());
+        TInstance result = PostgresType.fromDerby(descriptor).getInstance();
+        assert result != null : "no TInstance created for " + descriptor;
         return result;
     }
 

@@ -45,7 +45,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.round(Byte.MAX_VALUE, Byte.MIN_VALUE, 
                                                  source.getDouble(), context));
@@ -62,7 +62,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.round(Short.MAX_VALUE, 0, 
                                                  source.getDouble(), context));
@@ -78,7 +78,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.round(Short.MAX_VALUE, Short.MIN_VALUE, 
                                                         source.getDouble(), context));
@@ -94,7 +94,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.round(Integer.MAX_VALUE, 0,
                                                  source.getDouble(), context));
@@ -110,7 +110,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.round(Integer.MAX_VALUE, Integer.MIN_VALUE,
                                                  source.getDouble(), context));
@@ -126,7 +126,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64((long)CastUtils.round(Long.MAX_VALUE, 0,
                                                   source.getDouble(), context));
@@ -142,7 +142,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64((long)CastUtils.round(Long.MAX_VALUE, Long.MIN_VALUE,
                                                   source.getDouble(), context));
@@ -158,7 +158,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TODO: determine the target precision and scale then correctly round 
             // the source to that type
@@ -175,7 +175,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Double.toString(source.getDouble()));
         }
@@ -190,7 +190,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Byte.toString(source.getInt8()));
         }
@@ -205,7 +205,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt8(), context));
         }
@@ -220,7 +220,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16(source.getInt8());
         }
@@ -235,7 +235,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt8(), context));
         }
@@ -250,7 +250,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(source.getInt8());
         }
@@ -265,7 +265,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt8(), context));
         }
@@ -280,7 +280,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(source.getInt8());
         }
@@ -295,7 +295,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt8());
         }
@@ -310,7 +310,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt8()));
         }
@@ -325,7 +325,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Short.toString(source.getInt16()));
         }
@@ -340,7 +340,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt16(), context));
         }
@@ -355,7 +355,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt16(), context));
         }
@@ -370,7 +370,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16(source.getInt16());
         }    
@@ -385,7 +385,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt16(), context));
         }
@@ -400,7 +400,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(source.getInt16());
         }
@@ -415,7 +415,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt16(), context));
         }
@@ -430,7 +430,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(source.getInt16());
         }
@@ -445,7 +445,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt16());
         }
@@ -460,7 +460,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt16()));
         }
@@ -475,7 +475,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Integer.toString(source.getInt32()));
         }
@@ -490,7 +490,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt32(), context));
         }
@@ -505,7 +505,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt32(), context));
         }
@@ -520,7 +520,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt32(), context));
         }
@@ -535,7 +535,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt32(), context));
         }
@@ -550,7 +550,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32(source.getInt32());
         }
@@ -565,7 +565,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt32(), context));
         }
@@ -580,7 +580,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(source.getInt32());
         }
@@ -595,7 +595,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt32());
         }
@@ -610,7 +610,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt32()));
         }
@@ -625,7 +625,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Long.toString(source.getInt64()));
         }
@@ -640,7 +640,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), context));
         }
@@ -655,7 +655,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, source.getInt64(), context));
         }
@@ -670,7 +670,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), context));
         }
@@ -685,7 +685,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, source.getInt64(), context));
         }
@@ -700,7 +700,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64(), context));
         }
@@ -715,7 +715,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, source.getInt64(), context));
         }
@@ -730,7 +730,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(source.getInt64());
         }
@@ -745,7 +745,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt64());
         }
@@ -760,7 +760,7 @@ public class MNumericCastBase
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt64()));
         }

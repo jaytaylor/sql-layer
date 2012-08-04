@@ -37,7 +37,6 @@ import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -61,7 +60,9 @@ class OperatorStoreGIHandler {
 
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(exchange.getKey(), exchange.getValue());
+            indexRow.reset(groupIndex, exchange.getKey(), exchange.getValue());
+            if (Types3Switch.ON)
+                pTarget.attach(exchange.getKey());
             IndexRowComposition irc = groupIndex.indexRowComposition();
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
                 assert irc.isInRowData(i);
@@ -187,6 +188,7 @@ class OperatorStoreGIHandler {
     private final UserTable sourceTable;
     private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
     private final PersistitKeyPValueTarget pTarget = new PersistitKeyPValueTarget();
+    private final PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer();
     
     // class state
     private static volatile GIHandlerHook giHandlerHook;

@@ -68,7 +68,7 @@ public class MSecToTime extends TOverloadBase
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return "SEC_TO_TIME";
     }
 

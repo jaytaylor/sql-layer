@@ -85,7 +85,7 @@ public abstract class MBit implements TAggregator {
     abstract long process(long i0, long i1);
 
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst) {
         if (!source.isNull()) {
             long oldState = source.getInt64();
             long currState = state.getInt64();

@@ -58,6 +58,7 @@ public abstract class TOverloadBase implements TOverload {
         for (int i = 0; i < inputs.size(); ++i) {
             if (nullContaminates(i) && inputs.get(i).isNull()) {
                 output.putNull();
+                return;
             }
         }
         doEvaluate(context, inputs, output);
@@ -84,7 +85,7 @@ public abstract class TOverloadBase implements TOverload {
     }
 
     protected String toStringName() {
-        return overloadName();
+        return displayName();
     }
 
     protected String toStringArgsPrefix() {
@@ -170,7 +171,7 @@ public abstract class TOverloadBase implements TOverload {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(overloadName());
+        StringBuilder sb = new StringBuilder(displayName());
         sb.append('(');
 
         List<TInputSet> origInputSets = inputSets();
@@ -195,4 +196,14 @@ public abstract class TOverloadBase implements TOverload {
             return o1.firstPosition() - o2.firstPosition();
         }
     };
+    
+    /**
+     * @inheritDoc
+     * 
+     */
+    @Override
+    public String[] registeredNames()
+    {
+        return new String[] {displayName()};
+    }
 }

@@ -75,7 +75,7 @@ public abstract class Trim extends TOverloadBase {
             }
 
             @Override
-            public String overloadName() {
+            public String displayName() {
                 return "RTRIM";
             }
         };
@@ -95,7 +95,7 @@ public abstract class Trim extends TOverloadBase {
             }
 
             @Override
-            public String overloadName() {
+            public String displayName() {
                 return "LTRIM";
             }
         };
@@ -121,7 +121,7 @@ public abstract class Trim extends TOverloadBase {
             }
 
             @Override
-            public String overloadName() {
+            public String displayName() {
                 return "TRIM";
             }
         };

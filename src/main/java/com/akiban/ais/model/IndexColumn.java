@@ -82,6 +82,17 @@ public class IndexColumn
         index.addColumn(indexColumn);
         return indexColumn;
     }
+
+    /**
+     * Create an independent copy of an existing IndexColumn.
+     * @param index Destination Index.
+     * @param column Associated Column.
+     * @param indexColumn IndexColumn to copy.
+     * @return The new copy of the IndexColumn.
+     */
+    public static IndexColumn create(Index index, Column column, IndexColumn indexColumn, int position) {
+        return create(index, column, position, indexColumn.ascending, indexColumn.indexedLength);
+    }
     
     IndexColumn(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength)
     {

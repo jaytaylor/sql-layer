@@ -70,6 +70,11 @@ public interface Store extends Service<Store> {
                    RowData newRowData,
                    ColumnSelector columnSelector) throws PersistitException;
 
+    void updateRow(Session session, RowData oldRowData,
+                   RowData newRowData,
+                   ColumnSelector columnSelector,
+                   Index[] indexesToInsert) throws PersistitException;
+
     /**
      * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector, ScanLimit)}
      * for parameter descriptions.
@@ -175,4 +180,6 @@ public interface Store extends Service<Store> {
 
     /** Get the underlying {@link PersistitStore}. */
     public PersistitStore getPersistitStore();
+
+    void truncateIndex(Session session, Collection<? extends Index> indexes);
 }

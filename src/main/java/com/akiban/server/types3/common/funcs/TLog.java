@@ -119,7 +119,7 @@ public class TLog extends TOverloadBase
     }
 
     @Override
-    public String overloadName()
+    public String displayName()
     {
         return logType.name();
     }

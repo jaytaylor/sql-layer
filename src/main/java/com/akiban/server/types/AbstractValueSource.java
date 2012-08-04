@@ -41,7 +41,16 @@ public abstract class AbstractValueSource extends ValueSource {
 
     @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
-        appender.append(Extractors.getStringExtractor().getObject(this));
+        String asString = Extractors.getStringExtractor().getObject(this);
+        if (quote == Quote.NONE) {
+            appender.append(asString);
+        }
+        else {
+            AkType type = getConversionType();
+            quote.quote(appender, type);
+            quote.append(appender, asString);
+            quote.quote(appender, type);
+        }
     }
     
     @Override
