@@ -26,97 +26,45 @@
 
 package com.akiban.server.types3.service;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
-import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 
-public class FunctionRegistryImpl implements FunctionRegistry
+public class ReflectiveInstanceFinder implements InstanceFinder
 {
-    private static final Logger logger = LoggerFactory.getLogger(FunctionRegistryImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReflectiveInstanceFinder.class);
 
-    private Collection<TValidatedOverload> scalars;
-    private Collection<TClass> types;
-    private Collection<TCast> casts;
-    private Collection<TAggregator> aggregators;
+    private final Set<Class<?>> searchClasses;
     
     private static final int SKIP = -1;
     private static final int FIELD = 0;
     private static final int ARRAY = 1;
     private static final int COLLECTION = 2;
 
-    public FunctionRegistryImpl()
+    public ReflectiveInstanceFinder()
     throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
         this(new ConfigurableClassFinder("t3s.txt"));
     }
 
-    public FunctionRegistryImpl(ClassFinder classFinder)
+    public ReflectiveInstanceFinder(ClassFinder classFinder)
     throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
-        this(classFinder, classFinder, classFinder);
-    }
-
-    public FunctionRegistryImpl (ClassFinder overloadsClassFinder,
-                          ClassFinder typesClassFinder,
-                          ClassFinder castsClassFinder) 
-            throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
-    {
         // collect all scalar TOverload instances
-        Collection<TOverload> rawScalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
-        scalars = new ArrayList<TValidatedOverload>(rawScalars.size());
-        int errors = 0;
-        for (TOverload rawScalar : rawScalars) {
-            TValidatedOverload scalar;
-            try {
-                scalar = new TValidatedOverload(rawScalar);
-                scalars.add(scalar);
-            } catch (RuntimeException e) {
-                rejectTOverload(rawScalar, e);
-                ++errors;
-            } catch (AssertionError e) {
-                rejectTOverload(rawScalar, e);
-                ++errors;
-            }
-        }
-        if (errors > 0) {
-            StringBuilder sb = new StringBuilder("Found ").append(errors).append(" error");
-            if (errors != 1)
-                sb.append('s');
-            sb.append(" while collecting scalar functions. Check logs for details.");
-            throw new AkibanInternalException(sb.toString());
-        }
-        
-        // collect all TClass instances
-        types = collectInstances(typesClassFinder.findClasses(), TClass.class);
-        
-        casts = collectInstances(castsClassFinder.findClasses(), TCast.class);
-
-        aggregators = collectInstances(overloadsClassFinder.findClasses(), TAggregator.class);
+        searchClasses = classFinder.findClasses();
     }
 
-    private void rejectTOverload(TOverload overload, Throwable e) {
-        StringBuilder sb = new StringBuilder("rejecting overload ");
-        Class<?> overloadClass = overload == null ? null : overload.getClass();
-        try {
-            sb.append(overload).append(' ');
-        } catch (Exception e1) {
-            logger.error("couldn't toString overload: " + overload);
-        }
-        sb.append("from ").append(overloadClass);
-        logger.error(sb.toString(), e);
+    @Override
+    public <T> Collection<? extends T> find(Class<? extends T> targetClass) {
+        return collectInstances(searchClasses, targetClass);
     }
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
@@ -142,12 +90,12 @@ public class FunctionRegistryImpl implements FunctionRegistry
                     switch(validateField(field, target))
                     {
                         case FIELD:
-                            putItem(ret, field.get(null), target);
+                            putItem(ret, field.get(null), target, field);
                             break;
                         case ARRAY:
                             for (Object item : (Object[])field.get(null)) {
                                 if (target.isInstance(item))
-                                    putItem(ret, item, target);
+                                    putItem(ret, item, target, field);
                             }
                             break;
                         case COLLECTION:
@@ -155,7 +103,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
                             {
                                 for (Object raw : (Collection<?>)field.get(null)) {
                                     if (target.isInstance(raw))
-                                        putItem(ret, raw, target);
+                                        putItem(ret, raw, target, field);
                                 }
                                 break;
                             }
@@ -173,17 +121,17 @@ public class FunctionRegistryImpl implements FunctionRegistry
                     switch(validateMethod(method, target))
                     {
                         case FIELD:
-                            putItem(ret, method.invoke(null), target);
+                            putItem(ret, method.invoke(null), target, method);
                             break;
                         case ARRAY:
                             for (Object item : (Object[])method.invoke(null))
-                                putItem(ret, item, target);
+                                putItem(ret, item, target, method);
                             break;
                         case COLLECTION:
                             try
                             {
                                 for (Object raw : (Collection<?>)method.invoke(null))
-                                    putItem(ret, raw, target);
+                                    putItem(ret, raw, target, method);
                                 break;
                             }
                             catch (ClassCastException e) {/* fall thru */}
@@ -208,7 +156,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
         int modifiers = method.getModifiers();
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers)
                 && method.getParameterTypes().length == 0)
-            return assignable(method.getReturnType(), target);
+            return assignable(method.getReturnType(), target, method.getGenericReturnType());
         return SKIP;
     }
     
@@ -217,52 +165,59 @@ public class FunctionRegistryImpl implements FunctionRegistry
         int modifiers = field.getModifiers();
         
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers))
-            return assignable(field.getType(), target);
+            return assignable(field.getType(), target, field.getGenericType());
          return SKIP;
     }
 
-    private static <T> int assignable (Class<?> c, Class<T> target)
+    private static <T> int assignable (Class<?> c, Class<T> target, Type genericTarget)
     {
-        if (c.isArray() && target.isAssignableFrom(c.getComponentType()))
+        if (c.isArray() && target.isAssignableFrom(c.getComponentType())) {
             return ARRAY;
-        else if (target.isAssignableFrom(c))
+        }
+        else if (target.isAssignableFrom(c)) {
             return FIELD;
-        else if (Collection.class.isAssignableFrom(c))
-            return COLLECTION;
-        else
-            return SKIP;
+        }
+        else if (Collection.class.isAssignableFrom(c)) {
+            if (genericTarget instanceof ParameterizedType) {
+                ParameterizedType targetParams = (ParameterizedType) genericTarget;
+                Type[] genericArgs = targetParams.getActualTypeArguments();
+                assert genericArgs.length == 1 : Arrays.toString(genericArgs);
+                Type genericArg = genericArgs[0];
+                if (genericArg instanceof WildcardType) {
+                    Type[] upperBounds = ((WildcardType)genericArg).getUpperBounds();
+                    if (upperBounds.length > 1)
+                        logger.debug("multiple upper bounds for {}: {}", genericTarget, Arrays.toString(upperBounds));
+                    for (Type upperBound : upperBounds) {
+                        if (isAssignableFrom(target, upperBound))
+                            return COLLECTION;
+                    }
+                }
+                else if (isAssignableFrom(target, genericArg))
+                    return COLLECTION;
+            }
+        }
+        return SKIP;
     }
 
-    private static <T> void putItem(Collection<T> list, Object item,  Class<T> targetClass)
+    private static boolean isAssignableFrom(Class<?> target, Type actualType) {
+        return (actualType instanceof Class<?>) && target.isAssignableFrom((Class<?>) actualType);
+    }
+
+    private static <T> void putItem(Collection<T> list, Object item,  Class<T> targetClass, Object source)
     {
-        list.add(targetClass.cast(item));
+        T cast;
+        try {
+            cast = targetClass.cast(item);
+        } catch (ClassCastException e) {
+            String err = "while casting " + item + " from " + source + " to " + targetClass;
+            logger.error(err, e);
+            throw new ClassCastException(err);
+        }
+        list.add(cast);
     }
 
     private static boolean isRegistered(AccessibleObject field)
     {
         return field.getAnnotation(DontRegister.class) == null;
-    }
-
-    @Override
-    public Collection<? extends TAggregator> aggregators() {
-        return aggregators;
-    }
-
-    @Override
-    public Collection<TValidatedOverload> overloads()
-    {
-        return scalars;
-    }
-    
-    @Override
-    public Collection<TCast> casts()
-    {
-        return casts;
-    }
-    
-    @Override
-    public Collection<TClass> tclasses()
-    {
-        return types;
     }
 }

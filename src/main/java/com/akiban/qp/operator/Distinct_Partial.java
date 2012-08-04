@@ -34,6 +34,7 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.std.DistinctExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -263,7 +264,7 @@ class Distinct_Partial extends Operator
             for (int i = 0; i < nfields; i++) {
                 if (i == nvalid) {
                     assert currentRow.isHolding();
-                    currentPValues[i].putValueSource(currentRow.get().pvalue(i));
+                    PValueTargets.copyFrom(currentRow.get().pvalue(i), currentPValues[i]);
                     nvalid++;
                     if (nvalid == nfields)
                         // Once we have copies of all fields, don't need row any more.
@@ -271,7 +272,7 @@ class Distinct_Partial extends Operator
                 }
                 PValueSource inputValue = inputRow.pvalue(i);
                 if (!PValueSources.areEqual(currentPValues[i], inputValue)) {
-                    currentPValues[i].putValueSource(inputValue);
+                    PValueTargets.copyFrom(inputValue, currentPValues[i]);
                     nvalid = i + 1;
                     if (i < nfields - 1)
                         // Might need later fields.

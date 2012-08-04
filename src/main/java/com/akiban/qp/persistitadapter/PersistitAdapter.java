@@ -26,11 +26,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
@@ -47,6 +43,7 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.rowdata.RowData;
@@ -57,8 +54,6 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
@@ -67,11 +62,10 @@ import com.persistit.Transaction;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
-
-import java.io.InterruptedIOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.InterruptedIOException;
 
 public class PersistitAdapter extends StoreAdapter
 {
@@ -133,7 +127,7 @@ public class PersistitAdapter extends StoreAdapter
     public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
-        if (rowDef != rowDefNewRow) {
+        if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
@@ -142,9 +136,11 @@ public class PersistitAdapter extends StoreAdapter
         try {
             // For Update row, the new row (value being inserted) does not 
             // need the default value (including identity set)
-            RowData newRowData = oldRowData(rowDef, newRow, rowDataCreator(usePValues));
+            RowData newRowData = oldRowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
-            store.updateRow(getSession(), oldRowData, newRowData, null);
+            oldRowData.setExplicitRowDef(rowDef);
+            newRowData.setExplicitRowDef(rowDefNewRow);
+            store.updateRow(getSession(), oldRowData, newRowData, null, indexesToInsert);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -237,7 +233,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public RowDef rowDef(int tableId)
     {
-        return persistit.getRowDefCache().getRowDef(tableId);
+        return schema.ais().getUserTable(tableId).rowDef();
     }
 
     public NewRow newRow(RowDef rowDef)
@@ -286,14 +282,13 @@ public class PersistitAdapter extends StoreAdapter
             // row
             if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
                     rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
-                long value = rowDef.table().getColumn(i).getIdentityGenerator().nextValue(treeService);
+                long value = sequenceValue (rowDef.table().getColumn(i).getIdentityGenerator()); 
                 source = creator.createId(value);
             }
 
             if (creator.isNull(source)) {
                 if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
-                    Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
-                    long value = sequence.nextValue(treeService);
+                    long value = sequenceValue(rowDef.table().getColumn(i).getIdentityGenerator());
                     source = creator.createId(value);
                 }
                 // TODO: If not an identityGenerator, insert the column default value.
@@ -386,6 +381,11 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
+    public void setIndexesToInsert(Index[] indexesToInsert)
+    {
+        this.indexesToInsert = indexesToInsert;
+    }
+
     public PersistitAdapter(Schema schema,
                             Store store,
                             TreeService treeService,
@@ -412,63 +412,32 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     // For use by this class
-
-    private RowData oldRowData (RowDef rowDef, RowBase row) {
-        if (row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow) row).rowData();
-        }
-        ToObjectValueTarget target = new ToObjectValueTarget();
-        NewRow niceRow = newRow(rowDef);
-        for(int i = 0; i < row.rowType().nFields(); ++i) {
-            ValueSource source = row.eval(i);
-            niceRow.put(i, target.convertFromSource(source));
-        }
-        return niceRow.toRowData();
-    }
-
-    private RowData newRowData(RowDef rowDef, RowBase row) throws PersistitException
-    {
-        if (row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow) row).rowData();
-        }
-        ToObjectValueTarget target = new ToObjectValueTarget();
-        NewRow niceRow = newRow(rowDef);
-        for(int i = 0; i < row.rowType().nFields(); ++i) {
-            ValueSource source = row.eval(i);
-
-            // this is the generated always case. Always override the value in the
-            // row
-            if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
-                rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
-                long value = rowDef.table().getColumn(i).getIdentityGenerator().nextValue(treeService);
-                FromObjectValueSource objectSource = new FromObjectValueSource();
-                objectSource.setExplicitly(value, AkType.LONG);
-                source = objectSource;
-            }
-
-            if (source.isNull()) {
-                if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
-                    Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
-                    long value = sequence.nextValue(treeService);
-                    FromObjectValueSource objectSource = new FromObjectValueSource();
-                    objectSource.setExplicitly(value, AkType.LONG);
-                    source = objectSource;
-                }
-                // TODO: If not an identityGenerator, insert the column default value.
-            }
-
-            // TODO: Validate column Check Constraints.
-            niceRow.put(i, target.convertFromSource(source));
-        }
-        return niceRow.toRowData();
-    }
-
     private void rollbackIfNeeded(Exception e) {
         if((e instanceof DuplicateKeyException) || (e instanceof PersistitException) || isFromInterruption(e)) {
             Transaction txn = transaction();
             if(txn.isActive()) {
                 txn.rollback();
             }
+        }
+    }
+
+    @Override
+    public long sequenceNextValue(TableName sequenceName) {
+        Sequence sequence = schema().ais().getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return sequenceValue (sequence);
+    }
+    
+    private long sequenceValue (Sequence sequence) {
+        try {
+            return sequence.nextValue(treeService);
+        } catch (PersistitException e) {
+            rollbackIfNeeded(e);
+            handlePersistitException(e);
+            assert false;
+            return 0;
         }
     }
 
@@ -479,4 +448,5 @@ public class PersistitAdapter extends StoreAdapter
     private final PersistitStore persistit;
     private final boolean withStepChanging;
     private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
+    private Index[] indexesToInsert;
 }

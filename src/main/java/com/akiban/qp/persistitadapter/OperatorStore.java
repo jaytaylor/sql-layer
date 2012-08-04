@@ -91,18 +91,24 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
         throws PersistitException
     {
+        updateRow(session, oldRowData, newRowData, columnSelector, null);
+    }
+
+    @Override
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexesToInsert)
+        throws PersistitException
+    {
         UPDATE_TOTAL.in();
         try {
-            PersistitStore persistitStore = getPersistitStore();
-            AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
-
-            RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
+            AkibanInformationSchema ais = aisHolder.getAis();
+            RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
             if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
                 throw new RuntimeException("group index maintenance won't work with partial rows");
             }
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
             PersistitAdapter adapter = createAdapter(ais, session);
+            adapter.setIndexesToInsert(indexesToInsert);
             Schema schema = adapter.schema();
 
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);

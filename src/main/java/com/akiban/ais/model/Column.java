@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.collation.AkCollator;
 
-public class Column
+public class Column implements ColumnContainer
 {
     public static Column create(Columnar table, String name, Integer position, Type type, Boolean nullable,
                                 Long typeParameter1, Long typeParameter2, Long initialAutoIncValue,
@@ -69,8 +69,27 @@ public class Column
         return create(table, name, position, type, null, null, null, null, null);
     }
 
+    /**
+     * Create an independent copy of an existing Column.
+     * @param columnar Destination Columnar.
+     * @param column Column to copy.
+     * @param position Position of the new column, or <code>null</code> to copy from the given column.
+     * @return Copy of the Column.
+     * */
+    public static Column create(Columnar columnar, Column column, Integer position) {
+        Integer finalPosition = (position != null) ? position : column.position;
+        return create(columnar, column.columnName, finalPosition, column.type, column.nullable, column.typeParameter1,
+                      column.typeParameter2, column.initialAutoIncrementValue, column.charsetAndCollation,
+                      column.maxStorageSize, column.prefixSize);
+    }
+
     public TInstance tInstance() {
         return tInstance(false);
+    }
+
+    @Override
+    public Column getColumn() {
+        return this;
     }
 
     @Override
@@ -530,6 +549,15 @@ public class Column
         final TInstance old = tInstanceRef.get();
         if (old != null && !force)
             return old;
+        final TInstance tinst = generateTInstance(charsetAndCollation, type, typeParameter1, typeParameter2, nullable);
+        tInstanceRef.set(tinst); // TODO ignores race conditions, because they "shouldn't" happen but do. Don't know why
+//        if (!tInstanceRef.compareAndSet(old, tinst))
+//            assert false : "CAS failed; Column is not thread-safe, so mutating it from multiple threads is bad!";
+        return tinst;
+    }
+
+    public static TInstance generateTInstance(CharsetAndCollation charsetAndCollation, Type type, Long typeParameter1,
+                                               Long typeParameter2, boolean nullable) {
         final TInstance tinst;
 
         switch (Types.asEnum(type)) {
@@ -559,7 +587,7 @@ public class Column
             tinst = MBinary.BINARY.instance(typeParameter1.intValue());
             break;
         case T_CHAR:
-            tinst = charString(MString.CHAR);
+            tinst = charString(charsetAndCollation, typeParameter1, MString.CHAR);
             break;
         case T_DATE:
             tinst = MDatetimes.DATE.instance();
@@ -595,7 +623,7 @@ public class Column
             tinst = MBinary.LONGBLOB.instance();
             break;
         case T_LONGTEXT:
-            tinst = textString(MString.LONGTEXT);
+            tinst = textString(charsetAndCollation, MString.LONGTEXT);
             break;
         case T_MEDIUMBLOB:
             tinst = MBinary.MEDIUMBLOB.instance();
@@ -607,7 +635,7 @@ public class Column
             tinst = MNumeric.MEDIUMINT_UNSIGNED.instance();
             break;
         case T_MEDIUMTEXT:
-            tinst = textString(MString.MEDIUMTEXT);
+            tinst = textString(charsetAndCollation, MString.MEDIUMTEXT);
             break;
         case T_SMALLINT:
             tinst = MNumeric.SMALLINT.instance();
@@ -616,7 +644,7 @@ public class Column
             tinst = MNumeric.SMALLINT_UNSIGNED.instance();
             break;
         case T_TEXT:
-            tinst = textString(MString.TEXT);
+            tinst = textString(charsetAndCollation, MString.TEXT);
             break;
         case T_TIME:
             tinst = MDatetimes.TIME.instance();
@@ -634,13 +662,13 @@ public class Column
             tinst = MNumeric.TINYINT_UNSIGNED.instance();
             break;
         case T_TINYTEXT:
-            tinst = textString(MString.TINYTEXT);
+            tinst = textString(charsetAndCollation, MString.TINYTEXT);
             break;
         case T_VARBINARY:
             tinst = MBinary.VARBINARY.instance(typeParameter1.intValue());
             break;
         case T_VARCHAR:
-            tinst = charString(MString.VARCHAR);
+            tinst = charString(charsetAndCollation, typeParameter1, MString.VARCHAR);
             break;
         case T_YEAR:
             tinst = MDatetimes.YEAR.instance();
@@ -650,21 +678,18 @@ public class Column
         }
 
         assert tinst != null : type;
-        
-        if (!tInstanceRef.compareAndSet(old, tinst))
-            assert false : "CAS failed; Column is not thread-safe, so mutating it from multiple threads is bad!";
-
+        tinst.setNullable(nullable);
         return tinst;
     }
 
-    private TInstance charString(TClass tClass) {
+    private static TInstance charString(CharsetAndCollation charsetAndCollation, Long typeParameter1, TClass tClass) {
         if (charsetAndCollation == null)
             return tClass.instance();
         StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
         return tClass.instance(typeParameter1.intValue(), charset.ordinal(), -1); // TODO collation
     }
 
-    private TInstance textString(TClass tClass) {
+    private static TInstance textString(CharsetAndCollation charsetAndCollation, TClass tClass) {
         if (charsetAndCollation == null)
             return tClass.instance();
         StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());

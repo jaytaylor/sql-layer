@@ -145,8 +145,12 @@ public enum Quote {
     }
 
     private static boolean needsEscaping(char ch) {
-        return Character.isISOControl(ch);
+        // Anything other than printing ASCII.
+        return (ch >= 0200) || Character.isISOControl(ch);
     }
+
+    private static final String SIMPLY_ESCAPED = "\r\n\t";
+    private static final String SIMPLY_ESCAPES = "rnt";
 
     static void doAppend(AkibanAppender sb, String s, Character quote, boolean escapeControlChars) {
         if (s == null) {
@@ -165,7 +169,14 @@ public enum Quote {
         for (int i = 0; i < s.length(); i++) {
             char ch = s.charAt(i);
             if (escapeControlChars && needsEscaping(ch)) {
-                new Formatter(sb.getAppendable()).format("\\u%04x", (int)ch);
+                int idx = SIMPLY_ESCAPED.indexOf(ch);
+                if (idx < 0) {
+                    new Formatter(sb.getAppendable()).format("\\u%04x", (int)ch);
+                }
+                else {
+                    sb.append('\\');
+                    sb.append(SIMPLY_ESCAPES.charAt(idx));
+                }
             }
             else {
                 if (ch == quote || ch == '\\') {

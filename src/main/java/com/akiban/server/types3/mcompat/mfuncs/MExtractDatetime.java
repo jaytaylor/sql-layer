@@ -48,7 +48,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return "YEAR";
         }
     };
@@ -61,7 +61,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return "MONTH";
         } 
     };
@@ -89,7 +89,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return "QUARTER";
         }    
     };
@@ -102,7 +102,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return "DAY";
         }       
     }; 
@@ -115,7 +115,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return "HOUR";
         }
     };
@@ -128,7 +128,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return "MINUTE";
         }
     };
@@ -141,7 +141,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
         }
 
         @Override
-        public String overloadName() {
+        public String displayName() {
             return "SECOND";
         }
     };

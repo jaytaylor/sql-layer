@@ -26,7 +26,9 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.operator.*;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.sort.SorterAdapter.PersistitValueSourceAdapter;
 import com.akiban.qp.row.Row;

@@ -61,45 +61,49 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
             into.put(f, null);
             return;
         }
-
-        final String s;
-        switch (source.getUnderlyingType()) {
-        case BOOL:
-            s = Boolean.toString(source.getBoolean());
-            break;
-        case INT_8:
-            s = Byte.toString(source.getInt8());
-            break;
-        case INT_16:
-            s = Short.toString(source.getInt16());
-            break;
-        case UINT_16:
-            s = Character.toString(source.getUInt16());
-            break;
-        case INT_32:
-            s = Integer.toString(source.getInt16());
-            break;
-        case INT_64:
-            s = Long.toString(source.getInt64());
-            break;
-        case FLOAT:
-            s = Float.toString(source.getFloat());
-            break;
-        case DOUBLE:
-            s = Double.toString(source.getDouble());
-            break;
-        case STRING:
-            s = source.getString();
-            break;
-        default:
-            throw new AssertionError(source.getUnderlyingType());
-
-        case BYTES:
-            // bytes are a special case, in that they're not easily to-stringable
-            ByteSource byteSource = new WrappingByteSource(source.getBytes());
-            into.put(f, byteSource);
-            return;
+        final Object putObj;
+        if (source.hasCacheValue()) {
+            putObj = source.getObject();
         }
-        into.put(f, s);
+        else {
+            switch (source.getUnderlyingType()) {
+            case BOOL:
+                putObj = source.getBoolean();
+                break;
+            case INT_8:
+                putObj = source.getInt8();
+                break;
+            case INT_16:
+                putObj = source.getInt16();
+                break;
+            case UINT_16:
+                putObj = source.getUInt16();
+                break;
+            case INT_32:
+                putObj = source.getInt32();
+                break;
+            case INT_64:
+                putObj = source.getInt64();
+                break;
+            case FLOAT:
+                putObj = source.getFloat();
+                break;
+            case DOUBLE:
+                putObj = source.getDouble();
+                break;
+            case STRING:
+                putObj = source.getString();
+                break;
+            default:
+                throw new AssertionError(source.getUnderlyingType());
+
+            case BYTES:
+                // bytes are a special case, in that they're not easily to-stringable
+                ByteSource byteSource = new WrappingByteSource(source.getBytes());
+                into.put(f, byteSource);
+                return;
+            }
+        }
+        into.put(f, putObj);
     }
 }

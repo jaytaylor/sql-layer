@@ -42,13 +42,15 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
 
     public PostgresJsonStatement(Operator resultOperator, RowType resultRowType,
                                  List<JsonResultColumn> resultColumns,
-                                 PostgresType[] parameterTypes) {
+                                 PostgresType[] parameterTypes,
+                                 boolean usePValues) {
         super(resultOperator, resultRowType,
               // Looks like just one unlimited VARCHAR to the client.
               Collections.singletonList("JSON"),
               Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(),
                                                          (short)-1, -1, AkType.VARCHAR, MString.VARCHAR.instance())),
-              parameterTypes);
+              parameterTypes,
+              usePValues);
         this.resultColumns = resultColumns;
     }
 

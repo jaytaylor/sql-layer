@@ -170,11 +170,11 @@ public class TableDDL
         ddlFunctions.createTable(session, table);
     }
     
-    private static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn, 
+    static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
             final String schemaName, final String tableName, int colpos) {
         boolean autoIncrement = cdn.isAutoincrementColumn();
         addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                  cdn.getType(), autoIncrement);
+                  cdn.getType(), cdn.getType().isNullable(), autoIncrement);
         if (autoIncrement) {
             // if the cdn has a default node-> GENERATE BY DEFAULT
             // if no default node -> GENERATE ALWAYS
@@ -194,9 +194,9 @@ public class TableDDL
         }
     }
 
-    protected static void addColumn(final AISBuilder builder, 
-                                    final String schemaName, final String tableName, final String columnName, 
-                                    int colpos, DataTypeDescriptor type, boolean autoIncrement) {
+    static void addColumn(final AISBuilder builder,
+                          final String schemaName, final String tableName, final String columnName,
+                          int colpos, DataTypeDescriptor type, boolean nullable, boolean autoIncrement) {
         Long typeParameter1 = null, typeParameter2 = null;
         Type builderType = typeMap.get(type.getTypeId());
         if (builderType == null) {
@@ -216,20 +216,19 @@ public class TableDDL
             collation = type.getCharacterAttributes().getCollation();
         }
         builder.column(schemaName, tableName, columnName, 
-                       Integer.valueOf(colpos), 
+                       colpos,
                        builderType.name(), 
                        typeParameter1, typeParameter2, 
-                       type.isNullable(), 
+                       nullable,
                        autoIncrement,
                        charset, collation);
     }
 
-    public static void addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn, 
+    public static String addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn,
             final String schemaName, final String tableName)  {
 
         NameGenerator namer = new DefaultNameGenerator();
         String constraint = null;
-        String indexName = null;
         
         if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.CHECK) {
             throw new UnsupportedCheckConstraintException ();
@@ -240,14 +239,22 @@ public class TableDDL
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.UNIQUE) {
             constraint = Index.UNIQUE_KEY_CONSTRAINT;
         }
-        indexName = namer.generateIndexName(cdn.getName(), cdn.getColumnList().get(0).getName(), constraint);
+        String indexName = cdn.getName();
+        if(indexName == null) {
+            indexName = namer.generateIndexName(null, cdn.getColumnList().get(0).getName(), constraint);
+        }
         
         builder.index(schemaName, tableName, indexName, true, constraint);
         
+        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
         int colPos = 0;
         for (ResultColumn col : cdn.getColumnList()) {
+            if(table.getColumn(col.getName()) == null) {
+                throw new NoSuchColumnException(col.getName());
+            }
             builder.indexColumn(schemaName, tableName, indexName, col.getName(), colPos++, true, null);
         }
+        return indexName;
     }
     
     private static void addJoin(final AISBuilder builder, final FKConstraintDefinitionNode fkdn, 

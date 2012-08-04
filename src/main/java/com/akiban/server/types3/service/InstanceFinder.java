@@ -24,21 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.types3.service;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.common.types.NoAttrTClass;
+import java.util.Collection;
 
-public abstract class TNoAttrCastBase extends TCastBase {
-
-    @Override
-    public TClass targetClass() {
-        return tClass;
-    }
-
-    protected TNoAttrCastBase(NoAttrTClass tClass) {
-        this.tClass = tClass;
-    }
-
-    private final NoAttrTClass tClass;
+public interface InstanceFinder {
+    <T> Collection<? extends T> find(Class<? extends T> targetClass);
 }

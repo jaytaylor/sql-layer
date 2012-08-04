@@ -71,7 +71,11 @@ public class Cast_From_Bigint
     public static final TCast TO_MEDIUM_INT = new FromInt64ToInt32(MNumeric.BIGINT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToUnsignedInt32(MNumeric.BIGINT, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
-    
+
+    public static final TCast TO_INT = new FromInt64ToInt32(MNumeric.BIGINT, MNumeric.INT, false, Constantness.UNKNOWN);
+
+    public static final TCast TO_INT_UNSIGNED = new FromInt64ToUnsignedInt32(MNumeric.BIGINT, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
+
     public static final TCast TO_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT, true, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, false, Constantness.UNKNOWN);
@@ -84,7 +88,7 @@ public class Cast_From_Bigint
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             long ymd[] = MDatetimes.fromDate(source.getInt64());
             if (!MDatetimes.isValidDatetime(ymd))
@@ -102,7 +106,7 @@ public class Cast_From_Bigint
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             long raw = source.getInt64();
             long ymd[] = MDatetimes.decodeDatetime(raw);
@@ -120,7 +124,7 @@ public class Cast_From_Bigint
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TIMESTAMPE is underlied by INT32
             target.putInt32((int)MDatetimes.encodeTimetamp(source.getInt64(), context));
@@ -131,7 +135,7 @@ public class Cast_From_Bigint
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             long raw = source.getInt64();
             long ymd[] = MDatetimes.decodeTime(raw);
@@ -149,7 +153,7 @@ public class Cast_From_Bigint
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(Long.toString(source.getInt64()));
         }
@@ -158,7 +162,7 @@ public class Cast_From_Bigint
     public static final TCast TO_AK_BOOLEAN = new TCastBase(MNumeric.BIGINT, AkBool.INSTANCE, false, Constantness.UNKNOWN) {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             boolean value = source.getInt64() != 0;
             target.putBool(value);
         }

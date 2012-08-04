@@ -33,6 +33,7 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 public final class TPreparedField implements TPreparedExpression {
     @Override
@@ -67,7 +68,7 @@ public final class TPreparedField implements TPreparedExpression {
         @Override
         protected void evaluate(Row context, PValueTarget target) {
             PValueSource rowSource = context.pvalue(fieldIndex);
-            target.putValueSource(rowSource);
+            PValueTargets.copyFrom(rowSource, target);
         }
 
         @Override

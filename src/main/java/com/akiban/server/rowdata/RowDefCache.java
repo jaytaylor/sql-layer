@@ -69,8 +69,6 @@ public class RowDefCache {
 
     private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
     
-    private volatile int maxOrdinal = -1;
-
     private final Map<TableName, Integer> nameMap = new TreeMap<TableName, Integer>();
     
     protected TableStatusCache tableStatusCache;
@@ -89,32 +87,10 @@ public class RowDefCache {
         return LATEST;
     }
 
-    public synchronized boolean contains(final int rowDefId) {
-        return cacheMap.containsKey(Integer.valueOf(rowDefId));
-    }
-    
-    public int maxOrdinal()
-    {
-        if (maxOrdinal == -1) {
-            synchronized (this) {
-                if (maxOrdinal == -1) {
-                    for (RowDef rowDef : cacheMap.values()) {
-                        if (rowDef.getOrdinal() > maxOrdinal) {
-                            maxOrdinal = rowDef.getOrdinal();
-                        }
-                    }
-                }
-            }
-        }
-        assert maxOrdinal >= 0;
-        return maxOrdinal;
-    }
-    
     /**
      * Look up and return a RowDef for a supplied rowDefId value.
-     * 
-     * @param rowDefId
-     * @return the corresponding RowDef
+     * @param rowDefId ID to lookup.
+     * @return The corresponding RowDef
      * @throws RowDefNotFoundException if there is no such RowDef.
      */
     public synchronized RowDef getRowDef(final int rowDefId) throws RowDefNotFoundException {
@@ -124,14 +100,14 @@ public class RowDefCache {
         }
         return rowDef;
     }
-    
+
     /**
-     * @param rowDefId
-     * @return  the corresponding RowDef object, or <code>null</code> if
-     * there is RowDef defined with the specified id
+     * Look up and return a RowDef for a supplied rowDefId value or null if none exists.
+     * @param rowDefId ID to lookup.
+     * @return The corresponding RowDef object or <code>null</code>
      */
     public synchronized RowDef rowDef(final int rowDefId) {
-        return cacheMap.get(Integer.valueOf(rowDefId));
+        return cacheMap.get(rowDefId);
     }
 
     public synchronized List<RowDef> getRowDefs() {
@@ -143,36 +119,11 @@ public class RowDefCache {
         if (key == null) {
             return null;
         }
-        return getRowDef(key.intValue());
+        return getRowDef(key);
     }
 
     public RowDef getRowDef(String schema, String table) throws RowDefNotFoundException {
         return getRowDef(new TableName(schema, table));
-    }
-
-    /**
-     * @deprecated Ambiguous, use {@link #getRowDef(String, String)}
-     */
-    public RowDef getRowDef(String schemaAndTable) throws RowDefNotFoundException {
-        String schemaTable[] = schemaAndTable.split("\\.");
-        assert schemaTable.length == 2 : schemaAndTable;
-        return getRowDef(schemaTable[0], schemaTable[1]);
-    }
-
-    /**
-     * Given a schema and table name, gets a string that uniquely identifies a
-     * table. This string can then be passed to {@link #getRowDef(TableName)}.
-     * 
-     * @param schema
-     *            the schema
-     * @param table
-     *            the table name
-     * @return a unique form
-     */
-    public static TableName nameOf(String schema, String table) {
-        assert schema != null;
-        assert table != null;
-        return new TableName(schema, table);
     }
 
     public synchronized void clear() {
@@ -183,8 +134,6 @@ public class RowDefCache {
     /**
      * Receive an instance of the AkibanInformationSchema, crack it and produce
      * the RowDef instances it defines.
-     * 
-     * @param ais
      */
     public synchronized void setAIS(final AkibanInformationSchema ais) throws PersistitInterruptedException {
         this.ais = ais;
@@ -367,7 +316,7 @@ public class RowDefCache {
     
     private synchronized void putRowDef(final RowDef rowDef) {
         final Integer key = rowDef.getRowDefId();
-        final TableName name = nameOf(rowDef.getSchemaName(), rowDef.getTableName());
+        final TableName name = new TableName(rowDef.getSchemaName(), rowDef.getTableName());
         if (cacheMap.containsKey(key)) {
             throw new IllegalStateException("Duplicate RowDefID (" + key + ") for RowDef: " + rowDef);
         }

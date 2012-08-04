@@ -85,7 +85,7 @@ public class Cast_From_Time {
     public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIME, MString.VARCHAR, false, Constantness.UNKNOWN) {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             target.putObject(MDatetimes.parseTime((String) source.getObject(), context));
         }
     };
@@ -94,7 +94,7 @@ public class Cast_From_Time {
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeTime(source.getInt32())));
         }
@@ -104,7 +104,7 @@ public class Cast_From_Time {
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // there is not DATE value in TIME, hence it's 0.
             target.putInt32(0);
@@ -115,7 +115,7 @@ public class Cast_From_Time {
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)MDatetimes.encodeTimestamp(MDatetimes.decodeTime(source.getInt32()), 
                                                             context.getCurrentTimezone(),

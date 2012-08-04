@@ -30,7 +30,9 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.akiban.sql.StandardException;
+import com.akiban.sql.pg.PostgresType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -318,6 +320,12 @@ public final class TypesTranslation {
         default:
             return ExpressionTypes.newType(toType, 0, 0);
         }
+    }
+
+    public static TInstance toTInstance(DataTypeDescriptor descriptor) {
+        TInstance result = PostgresType.fromDerby(descriptor).getInstance();
+        assert result != null : "no TInstance created for " + descriptor;
+        return result;
     }
 
     private TypesTranslation() {}

@@ -36,7 +36,9 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
+import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.PersistitAdapterException;
@@ -46,12 +48,14 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.IndexDDL;
+import com.akiban.sql.aisddl.SequenceDDL;
 import com.akiban.sql.aisddl.TableDDL;
 import com.akiban.sql.aisddl.ViewDDL;
 import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateViewNode;
+import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.Strings;
@@ -117,6 +121,8 @@ public class SchemaFactory {
             } else if (stmt instanceof CreateViewNode) {
                 ViewDDL.createView(ddlFunctions, null, defaultSchema, (CreateViewNode) stmt,
                                    new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema), null);
+            } else if (stmt instanceof CreateSequenceNode) {
+                SequenceDDL.createSequence(ddlFunctions, null, defaultSchema, (CreateSequenceNode)stmt);
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
@@ -158,7 +164,7 @@ public class SchemaFactory {
         }
     }
 
-    private static class CreateOnlyDDLMock implements DDLFunctions {
+    private static class CreateOnlyDDLMock extends DDLFunctionsMockBase {
         AkibanInformationSchema ais = new AkibanInformationSchema();
 
         public CreateOnlyDDLMock(AkibanInformationSchema ais) {
@@ -173,33 +179,8 @@ public class SchemaFactory {
         }
 
         @Override
-        public void renameTable(Session session, TableName currentName, TableName newName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropTable(Session session, TableName tableName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void createView(Session session, View view) {
             ais = AISMerge.mergeView(ais, view);
-        }
-
-        @Override
-        public void dropView(Session session, TableName viewName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropSchema(Session session, String schemaName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropGroup(Session session, String groupName) {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -208,85 +189,15 @@ public class SchemaFactory {
         }
 
         @Override
-        public TableName getTableName(Session session, int tableId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getTableId(Session session, TableName tableName) throws NoSuchTableException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Table getTable(Session session, int tableId) throws NoSuchTableIdException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public RowDef getRowDef(int tableId) throws RowDefNotFoundException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<String> getDDLs(Session session) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getGeneration() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long getTimestamp() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
             AkibanInformationSchema newAIS = AISCloner.clone(ais);
             PersistitStoreSchemaManager.createIndexes(newAIS, indexesToAdd);
             ais = newAIS;
         }
-
-        @Override
-        public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
-            throw new UnsupportedOperationException();
-        }
-
+        
         @Override
         public void createSequence(Session session, Sequence sequence) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropSequence(Session session, TableName sequenceName) {
-            throw new UnsupportedOperationException();
+            ais = AISMerge.mergeSequence(ais, sequence);
         }
     }
 }

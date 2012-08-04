@@ -31,13 +31,9 @@ import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowDataPValueSource;
-import com.akiban.server.rowdata.RowDataValueSource;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.rowdata.*;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.SparseArray;
@@ -139,7 +135,8 @@ public class PersistitGroupRow extends AbstractRow
             try {
                 exception = null;
                 adapter.persistit().expandRowData(exchange, rowData);
-                row.setRowDef(rowData.getRowDefId(), adapter.persistit());
+                RowDef rowDef = adapter.schema().ais().getUserTable(rowData.getRowDefId()).rowDef();
+                row.setRowDef(rowDef);
                 row.setRowData(rowData);
                 PersistitHKey persistitHKey = persistitHKey();
                 persistitHKey.copyFrom(exchange.getKey());

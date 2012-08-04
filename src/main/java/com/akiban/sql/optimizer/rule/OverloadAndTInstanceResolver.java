@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.ColumnContainer;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
@@ -38,16 +39,10 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.common.types.StringFactory.Charset;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.AnyCondition;
@@ -65,6 +60,7 @@ import com.akiban.sql.optimizer.plan.ExpressionsSource;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
+import com.akiban.sql.optimizer.plan.InsertStatement;
 import com.akiban.sql.optimizer.plan.NullSource;
 import com.akiban.sql.optimizer.plan.ParameterCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
@@ -72,13 +68,15 @@ import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;
+import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.plan.TableSource;
+import com.akiban.sql.optimizer.plan.UpdateStatement;
+import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +94,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     @Override
     public void apply(PlanContext plan) {
         new ResolvingVistor(plan).resolve(plan.getPlan());
+        new TopLevelCastingVistor().apply(plan.getPlan());
+
     }
 
     static class ResolvingVistor implements PlanVisitor, ExpressionRewriteVisitor {
@@ -127,6 +127,23 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            if (n instanceof ResultSet) {
+                ResultSet rs = (ResultSet) n;
+                for (ResultSet.ResultField field : rs.getFields()) {
+                    DataTypeDescriptor sourceDtd = field.getSourceExpression().getSQLtype();
+                    DataTypeDescriptor fieldDtd = field.getSQLtype();
+                    if (!sourceDtd.equals(fieldDtd)) {
+                        TPreptimeValue tpv = field.getSourceExpression().getPreptimeValue();
+                        if (tpv != null) {
+                            TInstance tInstance = tpv.instance();
+                            if (tInstance != null) {
+                                DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
+                                field.setSQLtype(newDtd);
+                            }
+                        }
+                    }
+                }
+            }
             return true;
         }
 
@@ -173,13 +190,24 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
 
             n = folder.foldConstants(n);
-            
+            // Set nullability of TInstance if it hasn't been given explicitly
+            // At the same time, update the node's DataTypeDescriptor to match its TInstance
+            TPreptimeValue tpv = n.getPreptimeValue();
+            if (tpv != null) {
+                TInstance tInstance = tpv.instance();
+                if (tInstance != null) {
+                    if (tInstance.nullability() == null)
+                        tInstance.setNullable(n.getSQLtype().isNullable());
+                    DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
+                    n.setSQLtype(newDtd);
+                }
+            }
             return n;
         }
 
         ExpressionNode handleCastExpression(CastExpression expression) {
             DataTypeDescriptor dtd = expression.getSQLtype();
-            TInstance instance = tinst(dtd);
+            TInstance instance = TypesTranslation.toTInstance(dtd);
             expression.setPreptimeValue(new TPreptimeValue(instance));
             return expression;
         }
@@ -256,7 +284,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         : resultInstance + " != " + preptimeValue.instance();
 
             expression.setPreptimeValue(preptimeValue);
-
             return expression;
         }
 
@@ -311,7 +338,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleSubqueryValueExpression(SubqueryValueExpression expression) {
-            throw new UnsupportedOperationException(); // TODO
+            TInstance instance = TypesTranslation.toTInstance(expression.getSQLtype());
+            expression.setPreptimeValue(new TPreptimeValue(instance));
+            return expression;
         }
 
         ExpressionNode handleSubqueryResultSetExpression(SubqueryResultSetExpression expression) {
@@ -353,12 +382,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 expression.setPreptimeValue(ptv);
             }
             else if (columnSource instanceof SubquerySource) {
-                SubquerySource subTable = (SubquerySource) columnSource;
-                throw new UnsupportedOperationException(); // TODO
+                TInstance tInstance = TypesTranslation.toTInstance(expression.getSQLtype());
+                expression.setPreptimeValue(new TPreptimeValue(tInstance));
+                return expression;
             }
             else if (columnSource instanceof NullSource) {
-                NullSource nsTable = (NullSource) columnSource;
-                throw new UnsupportedOperationException(); // TODO
+                expression.setPreptimeValue(new TPreptimeValue(null));
+                return expression;
             }
             else if (columnSource instanceof Project) {
                 Project pTable = (Project) columnSource;
@@ -385,8 +415,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
-            TInstance tinst = tinst(expression.getSQLtype());
-            expression.setPreptimeValue(new TPreptimeValue(tinst));
+            DataTypeDescriptor sqlType = expression.getSQLtype();
+            if (sqlType != null) {
+                // TODO eventually we'll probably want to ignore this completely, and do all the type inference
+                // from within the types3 framework. For now, use what we have.
+                TInstance tinst = TypesTranslation.toTInstance(sqlType);
+                expression.setPreptimeValue(new TPreptimeValue(tinst));
+            }
             return expression;
         }
 
@@ -403,27 +438,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression;
         }
 
-        private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass) {
-            if (targetClass.equals(tclass(expression)))
-                return expression;
-            TInstance instance = targetClass.instance();
-            instance.setNullable(expression.getSQLtype().isNullable());
-            CastExpression result
-                    = new CastExpression(expression, instance.dataTypeDescriptor(), expression.getSQLsource());
-            result.setPreptimeValue(new TPreptimeValue(instance));
-            return result;
-        }
-
-        private static TClass tclass(ExpressionNode operand) {
-            TInstance tinst = tinst(operand);
-            return tinst == null ? null : tinst.typeClass();
-        }
-
-        private static TInstance tinst(ExpressionNode node) {
-            TPreptimeValue ptv = node.getPreptimeValue();
-            return ptv == null ? null : ptv.instance();
-        }
-
         private static PValueSource pval(ExpressionNode expression) {
             return expression.getPreptimeValue().value();
         }
@@ -432,75 +446,118 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             throw new RuntimeException(message); // TODO what actual error type?
         }
 
-        private static TInstance tinst(DataTypeDescriptor descriptor) {
-            final TInstance result;
-            switch (descriptor.getTypeId().getTypeFormatId()) {
-            case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-                result = AkBool.INSTANCE.instance();
-                break;
-            case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            case TypeId.FormatIds.CHAR_TYPE_ID:
-                Charset charset = StringFactory.Charset.of(descriptor.getCharacterAttributes().getCharacterSet());
-                result = MString.VARCHAR.instance(descriptor.getMaximumWidth(), charset.ordinal());
-                break;
-            case TypeId.FormatIds.DECIMAL_TYPE_ID:
-            case TypeId.FormatIds.NUMERIC_TYPE_ID:
-                result = MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
-                break;
-            case TypeId.FormatIds.DOUBLE_TYPE_ID:
-                result = MApproximateNumber.DOUBLE.instance();
-                break;
-            case TypeId.FormatIds.INT_TYPE_ID:
-                result = MNumeric.INT.instance();
-                break;
-            case TypeId.FormatIds.TINYINT_TYPE_ID:
-            case TypeId.FormatIds.SMALLINT_TYPE_ID:
-                result = MNumeric.SMALLINT.instance();
-                break;
-            case TypeId.FormatIds.LONGINT_TYPE_ID:
-                result = MNumeric.BIGINT.instance();
-                break;
-            case TypeId.FormatIds.DATE_TYPE_ID:
-                result = MDatetimes.DATE.instance();
-                break;
-            case TypeId.FormatIds.TIME_TYPE_ID:
-                result = MDatetimes.TIME.instance();
-                break;
-            case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-                result = MDatetimes.TIMESTAMP.instance();
-                break;
-            case TypeId.FormatIds.BIT_TYPE_ID:
-                result = MBinary.BINARY.instance(descriptor.getMaximumWidth());
-                break;
-            case TypeId.FormatIds.VARBIT_TYPE_ID:
-                result = MBinary.VARBINARY.instance(descriptor.getMaximumWidth());
-                break;
-            case TypeId.FormatIds.BLOB_TYPE_ID:
-                result = MBinary.BLOB.instance();
-                break;
-
-            case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-            case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-            case TypeId.FormatIds.REAL_TYPE_ID:
-            case TypeId.FormatIds.REF_TYPE_ID:
-            case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            case TypeId.FormatIds.CLOB_TYPE_ID:
-            case TypeId.FormatIds.XML_TYPE_ID:
-            case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
-            case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-            case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-                throw new UnsupportedOperationException("unsupported type: " + descriptor);
-            default:
-                throw new AssertionError("unknown type: " + descriptor);
-            }
-
-            result.setNullable(descriptor.isNullable());
-            return result;
-        }
     }
 
     private static ExpressionNode boolExpr(ExpressionNode expression) {
         expression.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
         return expression;
+    }
+
+    static class TopLevelCastingVistor implements PlanVisitor {
+
+        private List<? extends ColumnContainer> targetColumns;
+
+        public void apply(PlanNode plan) {
+            plan.accept(this);
+        }
+
+        // PlanVisitor
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            boolean recurse = false;
+            // set up the targets
+            if (n instanceof InsertStatement) {
+                InsertStatement insert = (InsertStatement) n;
+                setTargets(insert.getTargetColumns());
+                recurse = true;
+            }
+            else if (n instanceof UpdateStatement) {
+                UpdateStatement update = (UpdateStatement) n;
+                setTargets(update.getUpdateColumns());
+                for (UpdateColumn updateColumn : update.getUpdateColumns()) {
+                    Column target = updateColumn.getColumn();
+                    ExpressionNode value = updateColumn.getExpression();
+                    ExpressionNode casted = castTo(value, target.tInstance().typeClass());
+                    if (casted != value)
+                        updateColumn.setExpression(casted);
+                }
+                recurse = true;
+            }
+
+            // use the targets
+            if (n instanceof Project)
+                handleProject((Project) n);
+            else if (n instanceof ExpressionsSource)
+                handleExpressionSource((ExpressionsSource) n);
+            return recurse;
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        private void handleExpressionSource(ExpressionsSource source) {
+            for (List<ExpressionNode> row : source.getExpressions()) {
+                castToTarget(row);
+            }
+        }
+
+        private void castToTarget(List<ExpressionNode> row) {
+            for (int i = 0, ncols = row.size(); i < ncols; ++i) {
+                Column target = targetColumns.get(i).getColumn();
+                ExpressionNode column = row.get(i);
+                ExpressionNode casted = castTo(column, target.tInstance().typeClass());
+                if (column != casted)
+                    row.set(i, casted);
+            }
+        }
+
+        private void handleProject(Project source) {
+            castToTarget(source.getFields());
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        private void setTargets(List<? extends ColumnContainer> targetColumns) {
+            assert this.targetColumns == null : this.targetColumns;
+            this.targetColumns = targetColumns;
+        }
+    }
+
+    private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass) {
+        // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
+        if (expression instanceof ParameterExpression) {
+            expression.setPreptimeValue(new TPreptimeValue(targetClass.instance()));
+            return expression;
+        }
+        if (expression instanceof NullSource) {
+            PValueSource nullSource = PValueSources.getNullSource(targetClass.underlyingType());
+            expression.setPreptimeValue(new TPreptimeValue(targetClass.instance(), nullSource));
+            return expression;
+        }
+
+        if (targetClass.equals(tclass(expression)))
+            return expression;
+        TInstance instance = targetClass.instance();
+        instance.setNullable(expression.getSQLtype().isNullable());
+        CastExpression result
+                = new CastExpression(expression, instance.dataTypeDescriptor(), expression.getSQLsource());
+        result.setPreptimeValue(new TPreptimeValue(instance));
+        return result;
+    }
+
+    private static TClass tclass(ExpressionNode operand) {
+        TInstance tinst = tinst(operand);
+        return tinst == null ? null : tinst.typeClass();
+    }
+
+    private static TInstance tinst(ExpressionNode node) {
+        TPreptimeValue ptv = node.getPreptimeValue();
+        return ptv == null ? null : ptv.instance();
     }
 }

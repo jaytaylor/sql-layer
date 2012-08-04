@@ -167,7 +167,7 @@ public abstract class MRoundBase extends TOverloadBase {
     }
 
     @Override
-    public String overloadName() {
+    public String displayName() {
         return roundType.name();
     }
 }

@@ -26,9 +26,7 @@
 
 package com.akiban.qp.persistitadapter.indexrow;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexToHKey;
+import com.akiban.ais.model.*;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.IndexRow;
@@ -36,8 +34,10 @@ import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.geophile.Space;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -134,21 +134,34 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     // IndexRow interface
 
-    public void append(FieldDef fieldDef, RowData rowData)
+    @Override
+    public void initialize(RowData rowData, Key hKey)
     {
-        keyAppender().append(fieldDef, rowData);
-        pKeyAppends++;
+        pKeyAppends = 0;
+        int indexField = 0;
+        if (index.isSpatial()) {
+            spatialHandler.bind(rowData);
+            keyAppender().append(spatialHandler.zValue());
+            indexField = spatialHandler.dimensions();
+        }
+        IndexRowComposition indexRowComp = index.indexRowComposition();
+        FieldDef[] fieldDefs = index.indexDef().getRowDef().getFieldDefs();
+        while (indexField < indexRowComp.getLength()) {
+            if (indexRowComp.isInRowData(indexField)) {
+                keyAppender().append(fieldDefs[indexRowComp.getFieldPosition(indexField)], rowData);
+            } else if (indexRowComp.isInHKey(indexField)) {
+                keyAppender().appendFieldFromKey(hKey, indexRowComp.getHKeyPosition(indexField));
+            } else {
+                throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
+            }
+            indexField++;
+            pKeyAppends++;
+        }
     }
 
     public void append(Column column, ValueSource source)
     {
         keyAppender().append(source, column);
-        pKeyAppends++;
-    }
-
-    public void appendFieldFromKey(Key fromKey, int depth)
-    {
-        keyAppender().appendFieldFromKey(fromKey, depth);
         pKeyAppends++;
     }
 
@@ -186,6 +199,7 @@ public class PersistitIndexRowBuffer extends IndexRow
         } else {
             PersistitKey.appendFieldFromKey(target.key(), pValue, position - pKeyFields);
         }
+        pKeyAppends++;
     }
 
     public void tableBitmap(long bitmap)
@@ -193,18 +207,50 @@ public class PersistitIndexRowBuffer extends IndexRow
         value.put(bitmap);
     }
 
+    // For table index rows
+    public void resetForWrite(Index index, Key key)
+    {
+        reset(index, key, null, true);
+    }
+
+    // For group index rows
+    public void resetForWrite(Index index, Key key, Value value)
+    {
+        reset(index, key, value, true);
+    }
+
+    public void resetForRead(Index index, Key key, Value value)
+    {
+        reset(index, key, value, false);
+    }
+
+    public PersistitIndexRowBuffer(PersistitAdapter adapter)
+    {
+        this.adapter = adapter;
+    }
+
     public static PersistitIndexRowBuffer createEmpty(PersistitAdapter adapter, Index index, Key key, Value value)
     {
+        // TODO: Obsolete?
+        assert false;
+        return null;
+/*
         key.clear();
         if (value != null) {
             value.clear();
         }
         return new PersistitIndexRowBuffer(adapter, index, key, value, true);
+*/
     }
 
     public static PersistitIndexRowBuffer createInitialized(PersistitAdapter adapter, Index index, Key key, Value value)
     {
+        // TODO: Obsolete:
+        assert false;
+        return null;
+/*
         return new PersistitIndexRowBuffer(adapter, index, key, value, false);
+*/
     }
 
     public boolean keyEmpty()
@@ -267,25 +313,32 @@ public class PersistitIndexRowBuffer extends IndexRow
         }
     }
 
-    // For use by subclasses
+    // For use by this class
 
-    protected PersistitIndexRowBuffer(PersistitAdapter adapter, Index index, Key key, Value value, boolean writable)
+    private PersistitKeyAppender keyAppender()
+    {
+        return pKeyAppends < pKeyFields ? pKeyAppender : pValueAppender;
+    }
+
+    private void reset(Index index, Key key, Value value, boolean writable)
     {
         assert !index.isUnique() || index.isTableIndex() : index;
-        this.adapter = adapter;
         this.index = index;
         this.pKey = key;
         this.pKeyFields =
-            index.isUnique()
-            ? index.getKeyColumns().size()
-            : index.getAllColumns().size();
+            index.isSpatial() ? index.getAllColumns().size() - index.getKeyColumns().size() + 1 :
+            index.isUnique() ? index.getKeyColumns().size() : index.getAllColumns().size();
         this.pValue = adapter.newKey();
         if (writable) {
             this.pKeyAppender = PersistitKeyAppender.create(key);
+            this.pKeyAppends = 0;
             this.pValueAppender =
                 index.isUnique()
                 ? PersistitKeyAppender.create(this.pValue)
                 : null;
+            if (value != null) {
+                value.clear();
+            }
         } else {
             if (value != null) {
                 value.getByteArray(pValue.getEncodedBytes(), 0, 0, value.getArrayLength());
@@ -295,13 +348,10 @@ public class PersistitIndexRowBuffer extends IndexRow
             this.pValueAppender = null;
         }
         this.value = value;
-    }
-
-    // For use by this class
-
-    private PersistitKeyAppender keyAppender()
-    {
-        return pKeyAppends < pKeyFields ? pKeyAppender : pValueAppender;
+        this.spatialHandler =
+            index.isSpatial()
+            ? new SpatialHandler()
+            : null;
     }
 
     // Object state
@@ -332,12 +382,71 @@ public class PersistitIndexRowBuffer extends IndexRow
     // Only when it is time to write the row are the bytes managed by the pValueAppender written as a single
     // Persistit Value.
     protected final PersistitAdapter adapter;
-    private final Index index;
-    private final Key pKey;
-    private final Key pValue;
-    private final PersistitKeyAppender pKeyAppender;
-    private final PersistitKeyAppender pValueAppender;
-    private final int pKeyFields;
-    private final Value value;
+    private Index index;
+    private Key pKey;
+    private Key pValue;
+    private PersistitKeyAppender pKeyAppender;
+    private PersistitKeyAppender pValueAppender;
+    private int pKeyFields;
+    private Value value;
     private int pKeyAppends = 0;
+    private SpatialHandler spatialHandler;
+
+    // Inner classes
+
+    // TODO: types3 version
+    private class SpatialHandler
+    {
+        public int dimensions()
+        {
+            return dimensions;
+        }
+
+        public void bind(RowData rowData)
+        {
+            for (int d = 0; d < dimensions; d++) {
+                rowDataValueSource.bind(fieldDefs[d], rowData);
+                switch (types[d]) {
+                    case INT:
+                        coords[d] = rowDataValueSource.getInt();
+                        break;
+                    case LONG:
+                        coords[d] = rowDataValueSource.getLong();
+                        break;
+                    // TODO: DECIMAL
+                    default:
+                        assert false : fieldDefs[d].column();
+                        break;
+                }
+            }
+        }
+
+        public long zValue()
+        {
+            return space.shuffle(coords);
+        }
+
+        private Space space;
+        private final int dimensions;
+        private final AkType[] types;
+        private final FieldDef[] fieldDefs;
+        private final long[] coords;
+        private final RowDataValueSource rowDataValueSource;
+
+        {
+            space = ((TableIndex)index).space();
+            dimensions = space.dimensions();
+            assert index.getKeyColumns().size() == dimensions;
+            types = new AkType[dimensions];
+            fieldDefs = new FieldDef[dimensions];
+            coords = new long[dimensions];
+            rowDataValueSource = new RowDataValueSource();
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
+                int position = indexColumn.getPosition();
+                Column column = indexColumn.getColumn();
+                types[position] = column.getType().akType();
+                fieldDefs[position] = column.getFieldDef();
+            }
+        }
+    }
 }

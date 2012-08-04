@@ -60,7 +60,9 @@ class OperatorStoreGIHandler {
 
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
-            PersistitIndexRowBuffer indexRow = adapter.newIndexRow(groupIndex, exchange.getKey(), exchange.getValue());
+            indexRow.resetForWrite(groupIndex, exchange.getKey(), exchange.getValue());
+            if (Types3Switch.ON)
+                pTarget.attach(exchange.getKey());
             IndexRowComposition irc = groupIndex.indexRowComposition();
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
                 assert irc.isInRowData(i);
@@ -178,6 +180,7 @@ class OperatorStoreGIHandler {
 
     private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
         this.adapter = adapter;
+        this.indexRow = new PersistitIndexRowBuffer(adapter);
         this.sourceTable = sourceTable;
     }
 
@@ -187,6 +190,7 @@ class OperatorStoreGIHandler {
     private final UserTable sourceTable;
     private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
     private final PersistitKeyPValueTarget pTarget = new PersistitKeyPValueTarget();
+    private final PersistitIndexRowBuffer indexRow;
     
     // class state
     private static volatile GIHandlerHook giHandlerHook;

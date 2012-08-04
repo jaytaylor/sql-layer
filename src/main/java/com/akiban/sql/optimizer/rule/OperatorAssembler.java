@@ -674,6 +674,7 @@ public class OperatorAssembler extends BaseRule
                         row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
                     }
                 }
+                insertsP = Arrays.asList(row);
             }
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
@@ -1373,8 +1374,9 @@ public class OperatorAssembler extends BaseRule
             int pos = pushHashTable(bloomFilter);
             RowStream lstream = assembleStream(usingBloomFilter.getLoader());
             RowStream stream = assembleStream(usingBloomFilter.getInput());
-            List<AkCollator> collators = new ArrayList<AkCollator>();
+            List<AkCollator> collators = null;
             if (usingBloomFilter.getLoader() instanceof IndexScan) {
+                collators = new ArrayList<AkCollator>();
                 IndexScan indexScan = (IndexScan) usingBloomFilter.getLoader();
                 for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
                     collators.add(indexColumn.getColumn().getCollator());

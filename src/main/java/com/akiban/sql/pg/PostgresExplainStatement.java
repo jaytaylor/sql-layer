@@ -29,7 +29,6 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
 import java.util.List;
@@ -42,8 +41,9 @@ public class PostgresExplainStatement implements PostgresStatement
     private List<String> explanation;
     private String colName;
     private PostgresType colType;
+    private boolean usePVals;
     
-    public PostgresExplainStatement(List<String> explanation) {
+    public PostgresExplainStatement(List<String> explanation, boolean usePVals) {
         this.explanation = explanation;
 
         int maxlen = 32;
@@ -53,7 +53,8 @@ public class PostgresExplainStatement implements PostgresStatement
         }
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(), (short)-1, maxlen,
-                                   AkType.VARCHAR, MString.VARCHAR.instance());
+                                   AkType.VARCHAR, MString.VARCHAR.instance(maxlen));
+        this.usePVals = usePVals;
     }
 
     @Override
@@ -89,7 +90,7 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());

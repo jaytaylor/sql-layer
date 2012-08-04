@@ -46,11 +46,12 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     private DirectObjectPlan.OutputMode outputMode;
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
-                                               Object[] args)
+                                               Object[] args, boolean usePVals)
     {
         super(loadablePlan.columnNames(),
               loadablePlan.columnTypes(),
-              null);
+              null,
+              usePVals);
         this.args = args;
 
         plan = loadablePlan.plan();
@@ -88,7 +89,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();
@@ -116,7 +117,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
                     messenger.flush();
                 }
                 else {
-                    outputter.output(row, usePVals);
+                    outputter.output(row, usesPValues());
                     nrows++;
                 }
                 if ((maxrows > 0) && (nrows >= maxrows))

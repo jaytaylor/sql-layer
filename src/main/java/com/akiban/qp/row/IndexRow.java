@@ -27,6 +27,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
@@ -65,11 +66,10 @@ public abstract class IndexRow extends AbstractRow
 
     // IndexRow interface
 
-    public abstract void append(FieldDef fieldDef, RowData rowData);
+    public abstract void initialize(RowData rowData, Key hKey);
 
     public abstract void append(Column column, ValueSource source);
 
-    public abstract void appendFieldFromKey(Key fromKey, int depth);
-
     public abstract void close();
+
 }

@@ -45,19 +45,6 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     @Override
-    public void putValueSource(PValueSource source) {
-        if (source instanceof PValue) {
-            PValue sourceRaw = (PValue) source;
-            if (sourceRaw.underlying != this.underlying)
-                throw new IllegalArgumentException("mismatched types: " + sourceRaw.underlying + " != " + underlying);
-            setRawValues(sourceRaw.state, sourceRaw.iVal, sourceRaw.bVal, sourceRaw.oCache);
-        }
-        else {
-            PValueTargets.copyFrom(source, this);
-        }
-    }
-
-    @Override
     public final void putNull() {
         setRawValues(State.NULL, -1, null, null);
     }
@@ -298,12 +285,8 @@ public final class PValue implements PValueSource, PValueTarget {
         case NULL:
             throw new NullValueException();
         case CACHE_ONLY:
-            Object savedCache = oCache;
-            if (state == State.NULL)
-                throw new NullValueException();
-            assert state == State.VAL_ONLY;
-            oCache = savedCache;
-            state = State.VAL_AND_CACHE;
+            // TODO
+            assert false;
             // fall through
         case VAL_ONLY:
         case VAL_AND_CACHE:

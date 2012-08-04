@@ -1,0 +1,1 @@
+select next value for customer_id from customers
