@@ -36,9 +36,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
 public abstract class MBit implements TAggregator {
-
-    private static final long EMPTY_FOR_AND = -1;
-    private static final long EMPTY_FOR_OR = 0L;
     
     public static final TAggregator[] INSTANCES = {
         // BIT_AND
@@ -48,11 +45,6 @@ public abstract class MBit implements TAggregator {
             long process(long i0, long i1) {
                 return i0 & i1;
             }
-
-            @Override
-            public void emptyValue(PValueTarget state) {
-                state.putInt64(EMPTY_FOR_AND);
-            }
         }, 
         // BIT_OR
         new MBit("BIT_OR") {
@@ -61,11 +53,6 @@ public abstract class MBit implements TAggregator {
             long process(long i0, long i1) {
                 return i0 | i1;
             }
-
-            @Override
-            public void emptyValue(PValueTarget state) {
-                state.putInt64(EMPTY_FOR_OR);
-            }   
         }, 
         // BIT_XOR
         new MBit("BIT_XOR") {
@@ -73,11 +60,6 @@ public abstract class MBit implements TAggregator {
             @Override
             long process(long i0, long i1) {
                 return i0 ^ i1;
-            }
-
-            @Override
-            public void emptyValue(PValueTarget state) {
-                state.putInt64(EMPTY_FOR_OR);
             }
         }
     };
@@ -87,9 +69,14 @@ public abstract class MBit implements TAggregator {
     @Override
     public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst) {
         if (!source.isNull()) {
-            long oldState = source.getInt64();
-            long currState = state.getInt64();
-            state.putInt64(process(oldState, currState));
+            long incoming = source.getInt64();
+            if (isFirst) {
+                state.putInt64(incoming);
+            }
+            else {
+                long previousState = state.getInt64();
+                state.putInt64(process(previousState, incoming));
+            }
         }    
     }
 
@@ -101,6 +88,11 @@ public abstract class MBit implements TAggregator {
     @Override
     public TClass getTypeClass() {
         return MNumeric.BIGINT;
+    }
+
+    @Override
+    public void emptyValue(PValueTarget state) {
+        state.putNull();
     }
 
     @Override
