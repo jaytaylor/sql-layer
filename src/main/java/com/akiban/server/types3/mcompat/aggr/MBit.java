@@ -51,7 +51,7 @@ public abstract class MBit implements TAggregator {
 
             @Override
             public void emptyValue(PValueTarget state) {
-                state.putObject(EMPTY_FOR_AND);
+                state.putInt64(EMPTY_FOR_AND);
             }
         }, 
         // BIT_OR
@@ -64,7 +64,7 @@ public abstract class MBit implements TAggregator {
 
             @Override
             public void emptyValue(PValueTarget state) {
-                state.putObject(EMPTY_FOR_OR);
+                state.putInt64(EMPTY_FOR_OR);
             }   
         }, 
         // BIT_XOR
@@ -77,7 +77,7 @@ public abstract class MBit implements TAggregator {
 
             @Override
             public void emptyValue(PValueTarget state) {
-                state.putObject(EMPTY_FOR_OR);
+                state.putInt64(EMPTY_FOR_OR);
             }
         }
     };
@@ -89,7 +89,7 @@ public abstract class MBit implements TAggregator {
         if (!source.isNull()) {
             long oldState = source.getInt64();
             long currState = state.getInt64();
-            state.putObject(process(oldState, currState));
+            state.putInt64(process(oldState, currState));
         }    
     }
 
