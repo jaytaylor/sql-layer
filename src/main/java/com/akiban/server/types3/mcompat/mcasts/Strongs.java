@@ -41,6 +41,7 @@ public final class Strongs {
             MNumeric.MEDIUMINT,
             MNumeric.INT,
             MNumeric.BIGINT,
+            MNumeric.TINYINT_UNSIGNED,
             MNumeric.SMALLINT_UNSIGNED,
             MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
