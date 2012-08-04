@@ -650,7 +650,8 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
         return indexFromRecords(records, orderRD, 
-                                o_when, 
+                                o_when,
+                                NULL_SEPARATOR_COLUMN,
                                 HKeyElement.from(1), HKeyElement.from(2),
                                 o_cid1, o_cid2,
                                 o_oid1, o_oid2);
