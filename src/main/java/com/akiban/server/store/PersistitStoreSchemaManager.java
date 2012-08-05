@@ -169,7 +169,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     private static final String METAMODEL_PARENT_KEY = "byAIS";
     private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
-    private static final int PROTOBUF_PSSM_VERSION = 1;
+    // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
+    private static final int PROTOBUF_PSSM_VERSION = 2;
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
