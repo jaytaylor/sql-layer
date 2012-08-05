@@ -159,6 +159,11 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     }
 
     @Override
+    protected Expression tryLiteral(ExpressionNode node) {
+        return null;
+    }
+
+    @Override
     protected Expression literal(ConstantExpression expression) {
         if (expression.getAkType() == null)
             return Expressions.literal(expression.getValue());
