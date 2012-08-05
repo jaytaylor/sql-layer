@@ -86,7 +86,7 @@ public class Cast_From_Varchar
         }
     };
       
-    public static final TCast TO_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT, true, Constantness.UNKNOWN)
+    public static final TCast TO_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT, Constantness.UNKNOWN)
     {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -95,7 +95,7 @@ public class Cast_From_Varchar
         }
 
     };
-    public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT_UNSIGNED, true, Constantness.UNKNOWN)
+    public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT_UNSIGNED, Constantness.UNKNOWN)
     {
 
         @Override
@@ -104,7 +104,7 @@ public class Cast_From_Varchar
             UNSIGNED_TINYINT.parse(context, source, target);
         }
     };
-    public static final TCast TO_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
+    public static final TCast TO_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -113,7 +113,7 @@ public class Cast_From_Varchar
             SMALLINT.parse(context, source, target);
         }
     };
-    public static final TCast TO_UNSIGNED_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN)
+    public static final TCast TO_UNSIGNED_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT_UNSIGNED, Constantness.UNKNOWN)
     {
 
         @Override
@@ -122,7 +122,7 @@ public class Cast_From_Varchar
             UNSIGNED_SMALLINT.parse(context, source, target);
         }
     };
-    public static final TCast TO_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN)
+    public static final TCast TO_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -131,7 +131,7 @@ public class Cast_From_Varchar
             MEDIUMINT.parse(context, source, target);
         }
     };
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN)
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT_UNSIGNED, Constantness.UNKNOWN)
     {
 
         @Override
@@ -140,7 +140,7 @@ public class Cast_From_Varchar
             UNSIGNED_MEDIUMINT.parse(context, source, target);
         }
     };
-    public static final TCast TO_INT = new TCastBase(MString.VARCHAR, MNumeric.INT, true, Constantness.UNKNOWN)
+    public static final TCast TO_INT = new TCastBase(MString.VARCHAR, MNumeric.INT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -149,7 +149,7 @@ public class Cast_From_Varchar
             INT.parse(context, source, target);
         }
     };
-    public static final TCast TO_UNSIGNED_INT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
+    public static final TCast TO_UNSIGNED_INT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, Constantness.UNKNOWN)
     {
 
         @Override
@@ -158,7 +158,7 @@ public class Cast_From_Varchar
             UNSIGNED_INT.parse(context, source, target);
         }
     };
-    public static final TCast TO_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT, true, Constantness.UNKNOWN)
+    public static final TCast TO_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -167,7 +167,7 @@ public class Cast_From_Varchar
             BIGINT.parse(context, source, target);
         }
     };
-    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN)
+    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT_UNSIGNED, Constantness.UNKNOWN)
     {
 
         @Override
@@ -194,7 +194,7 @@ public class Cast_From_Varchar
 //        
 //    };
     
-    public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN)
+    public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MApproximateNumber.DOUBLE, Constantness.UNKNOWN)
     {
 
         @Override
@@ -204,7 +204,7 @@ public class Cast_From_Varchar
         }
     };
 
-    public static final TCast TO_FLOAT = new TCastBase(MString.VARCHAR, MApproximateNumber.FLOAT, true, Constantness.UNKNOWN)
+    public static final TCast TO_FLOAT = new TCastBase(MString.VARCHAR, MApproximateNumber.FLOAT, Constantness.UNKNOWN)
     {
 
         @Override
@@ -214,7 +214,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_DECIMAL = new TCastBase(MString.VARCHAR, MNumeric.DECIMAL, true, Constantness.UNKNOWN)
+    public static final TCast TO_DECIMAL = new TCastBase(MString.VARCHAR, MNumeric.DECIMAL, Constantness.UNKNOWN)
     {
 
         @Override
@@ -224,7 +224,7 @@ public class Cast_From_Varchar
         }   
     };
     
-    public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, true, Constantness.UNKNOWN)
+    public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, Constantness.UNKNOWN)
     {
 
         @Override
@@ -234,7 +234,7 @@ public class Cast_From_Varchar
         }
     };
 
-    public static final TCast TO_DATETIME = new TCastBase(MString.VARCHAR, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_DATETIME = new TCastBase(MString.VARCHAR, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 
         @Override
@@ -244,7 +244,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_TIME = new TCastBase(MString.VARCHAR, MDatetimes.TIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_TIME = new TCastBase(MString.VARCHAR, MDatetimes.TIME, Constantness.UNKNOWN)
     {
 
         @Override
@@ -254,7 +254,7 @@ public class Cast_From_Varchar
         }
     };
 
-    public static final TCast TO_TIMESTAMP = new TCastBase(MString.VARCHAR, MDatetimes.TIMESTAMP, true, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MString.VARCHAR, MDatetimes.TIMESTAMP, Constantness.UNKNOWN)
     {
 
         @Override
@@ -264,7 +264,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_YEAR = new TCastBase(MString.VARCHAR, MDatetimes.YEAR, true, Constantness.UNKNOWN)
+    public static final TCast TO_YEAR = new TCastBase(MString.VARCHAR, MDatetimes.YEAR, Constantness.UNKNOWN)
     {
 
         @Override

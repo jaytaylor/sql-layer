@@ -33,6 +33,7 @@ import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
+import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
@@ -66,6 +67,7 @@ public class OverloadResolverTest {
         private final Map<String,List<TValidatedOverload>> validatedMap = new HashMap<String, List<TValidatedOverload>>();
         private final Map<TOverload,TValidatedOverload> originalMap = new HashMap<TOverload, TValidatedOverload>();
         private final Map<TClass, Map<TClass, TCast>> castMap = new HashMap<TClass, Map<TClass, TCast>>();
+        private final Set<TCastIdentifier> strongCasts = new HashSet<TCastIdentifier>();
 
 
         public SimpleRegistry(TOverload... overloads) {
@@ -83,6 +85,7 @@ public class OverloadResolverTest {
 
         public void setCasts(TCast... casts) {
             castMap.clear();
+            strongCasts.clear();
             for(TCast cast : casts) {
                 Map<TClass,TCast> map = castMap.get(cast.sourceClass());
                 if(map == null) {
@@ -90,6 +93,11 @@ public class OverloadResolverTest {
                     castMap.put(cast.sourceClass(), map);
                 }
                 map.put(cast.targetClass(), cast);
+                if (cast instanceof TestCastBase) {
+                    TestCastBase tcb = (TestCastBase) cast;
+                    if (tcb.isStrong)
+                        strongCasts.add(new TCastIdentifier(cast));
+                }
             }
         }
 
@@ -109,12 +117,19 @@ public class OverloadResolverTest {
 
         @Override
         public Set<TClass> stronglyCastableTo(TClass tClass) {
-            Map<TClass, TCast> map = T3RegistryServiceImpl.createStrongCastsMap(castMap).get(tClass);
+            Map<TClass, TCast> map = T3RegistryServiceImpl.createStrongCastsMap(castMap, strongCasts).get(tClass);
             Set<TClass> results = (map == null)
                     ? new HashSet<TClass>(1)
                     : new HashSet<TClass>(map.keySet());
             results.add(tClass);
             return results;
+        }
+
+        @Override
+        public boolean isStrong(TCast cast) {
+            TClass source = cast.sourceClass();
+            TClass target = cast.targetClass();
+            return stronglyCastableTo(target).contains(source);
         }
 
         @Override
@@ -136,12 +151,16 @@ public class OverloadResolverTest {
     }
 
     private static class TestCastBase extends TCastBase {
+
+        private final boolean isStrong;
+
         public TestCastBase(TClass sourceAndTarget) {
             this(sourceAndTarget, sourceAndTarget, true);
         }
 
         public TestCastBase(TClass source, TClass target, boolean isAutomatic) {
-            super(source, target, isAutomatic, Constantness.UNKNOWN);
+            super(source, target, Constantness.UNKNOWN);
+            this.isStrong = isAutomatic;
         }
 
         @Override

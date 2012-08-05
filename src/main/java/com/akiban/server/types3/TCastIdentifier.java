@@ -26,14 +26,49 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
+import com.google.common.base.Objects;
 
-public interface TCast {
-    Constantness constness();
-    public TClass sourceClass();
-    public TClass targetClass();
+public final class TCastIdentifier {
 
-    public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target);
+    public TClass getSource() {
+        return source;
+    }
+
+    public TClass getTarget() {
+        return target;
+    }
+
+    @Override
+    public String toString() {
+        return source + " to " + target;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TCastIdentifier that = (TCastIdentifier) o;
+
+        return Objects.equal(this.source, that.source) && Objects.equal(this.target, that.target);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = source != null ? source.hashCode() : 0;
+        result = 31 * result + (target != null ? target.hashCode() : 0);
+        return result;
+    }
+
+    public TCastIdentifier(TClass source, TClass target) {
+        this.source = source;
+        this.target = target;
+    }
+
+    public TCastIdentifier(TCast cast) {
+        this(cast.sourceClass(), cast.targetClass());
+    }
+
+    private final TClass source;
+    private final TClass target;
 }

@@ -35,24 +35,17 @@ public abstract class TCastBase implements TCast
         
     private final TClass sourceClass;
     private final TClass targetClass;
-    private final boolean isAutomatic;
     private final Constantness constness;
 
-    protected TCastBase (TClass sourceClass, TClass targetClass)
+    protected TCastBase(TClass sourceClass, TClass targetClass)
     {
-        this(sourceClass, targetClass, false, Constantness.UNKNOWN);
+        this(sourceClass, targetClass, Constantness.UNKNOWN);
     }
 
-    protected TCastBase (TClass sourceClass, TClass targetClass, boolean isAutomatic)
-    {
-        this(sourceClass, targetClass, isAutomatic, Constantness.UNKNOWN);
-    }
-
-    protected TCastBase (TClass sourceClass, TClass targetClass, boolean isAutomatic, Constantness constness)
+    protected TCastBase(TClass sourceClass, TClass targetClass, Constantness constness)
     {
         this.sourceClass = sourceClass;
         this.targetClass = targetClass;
-        this.isAutomatic = isAutomatic;
         this.constness = constness;
     }
 
@@ -65,12 +58,6 @@ public abstract class TCastBase implements TCast
     }
 
     protected abstract void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target);
-
-    @Override
-    public boolean isAutomatic()
-    {
-        return isAutomatic;
-    }
 
     @Override
     public Constantness constness()
@@ -92,6 +79,6 @@ public abstract class TCastBase implements TCast
 
     @Override
     public String toString() {
-        return sourceClass + "->" + targetClass + " [" + (isAutomatic ? "STRONG" : "WEAK") + "]";
+        return sourceClass + "->" + targetClass;
     }
 }
