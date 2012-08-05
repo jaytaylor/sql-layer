@@ -130,8 +130,8 @@ public class TAesEncryptDecrypt extends TOverloadBase
                 // the return type is same as its type
                 if (text == null)
                     return inputs.get(0).instance();
-                else // compute the length
-                    return varbinType.instance(text.getBytes().length * ratio);
+                int len = text.isNull() ? 0 : (text.getBytes().length * ratio);
+                return varbinType.instance(len);
             }   
         });
     }
