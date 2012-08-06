@@ -137,7 +137,7 @@ public final class Cast_From_Varbinary {
     }
 
     private static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {
-        int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
+        int maxLen = context.outputTInstance().attribute(MBinary.Attrs.LENGTH);
         if (bytes.length > maxLen) {
             context.reportTruncate("bytes of length " + bytes.length,  "bytes of length " + maxLen);
             bytes = Arrays.copyOf(bytes, maxLen);

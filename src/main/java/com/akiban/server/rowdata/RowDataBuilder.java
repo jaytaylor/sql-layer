@@ -350,27 +350,21 @@ public final class RowDataBuilder {
                 case UINT_16:
                 case INT_32:
                 case INT_64:
-                    if (object instanceof Short)
-                        PValueSources.pvalueFromLong((Short)object, pValue);
-                    else if (object instanceof Long)
-                        PValueSources.pvalueFromLong((Long)object, pValue);
-                    else if (object instanceof Integer)
-                        PValueSources.pvalueFromLong((Integer)object, pValue);
+                    if (object instanceof Number)
+                        PValueSources.pvalueFromLong(((Number)object).longValue(), pValue);
                     break;
                 case FLOAT:
-                    if (object instanceof Float)
-                        pValue.putFloat((Float)object);
+                    if (object instanceof Number)
+                        pValue.putFloat(((Number)object).floatValue());
                     break;
                 case DOUBLE:
-                    if (object instanceof Double)
-                        pValue.putDouble((Double) object);
-                    if (object instanceof Float)
-                        pValue.putFloat((Float)object);
+                    if (object instanceof Number)
+                        pValue.putDouble(((Number)object).doubleValue());
                     break;
                 case BYTES:
                     if (object instanceof byte[])
                         pValue.putBytes((byte[])object);
-                    if (object instanceof ByteSource)
+                    else if (object instanceof ByteSource)
                         pValue.putBytes(((ByteSource)object).toByteSubarray());
                     break;
                 case STRING:
