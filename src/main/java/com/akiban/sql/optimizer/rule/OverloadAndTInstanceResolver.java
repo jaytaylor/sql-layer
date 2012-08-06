@@ -483,10 +483,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             }
 
             // use the targets
-            if (n instanceof Project)
-                handleProject((Project) n);
-            else if (n instanceof ExpressionsSource)
-                handleExpressionSource((ExpressionsSource) n);
+            if (targetColumns != null) {
+                if (n instanceof Project)
+                    handleProject((Project) n);
+                else if (n instanceof ExpressionsSource)
+                    handleExpressionSource((ExpressionsSource) n);
+            }
             return true;
         }
 
