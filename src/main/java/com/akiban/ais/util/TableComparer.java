@@ -31,7 +31,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.ArgumentValidation;
@@ -41,9 +40,11 @@ import com.google.common.base.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.akiban.ais.util.TableComparerExceptions.*;
@@ -66,8 +67,6 @@ public class TableComparer {
     private final Set<ChangeLevel> indexChangeLevels;
     private final List<RuntimeException> errors;
     private ChangeLevel tableChangeLevel;
-    private boolean parentChanged;
-    private boolean childChanged;
     private boolean didCompare;
 
     public TableComparer(UserTable oldTable, UserTable newTable,
@@ -85,14 +84,6 @@ public class TableComparer {
 
     public ChangeLevel getTableChangeLevel() {
         return tableChangeLevel;
-    }
-
-    public boolean isParentChanged() {
-        return parentChanged;
-    }
-
-    public boolean isChildChanged() {
-        return childChanged;
     }
 
     public void compare() {
@@ -136,164 +127,108 @@ public class TableComparer {
     }
 
     private void compareTable() {
-        tableChangeLevel = oldTable.getName().equals(newTable.getName()) ? ChangeLevel.NONE : ChangeLevel.METADATA;
+        boolean namesEqual = oldTable.getName().equals(newTable.getName());
+        tableChangeLevel = namesEqual ? ChangeLevel.NONE : ChangeLevel.METADATA;
     }
 
     private void compareColumns() {
-        Set<String> oldExcludes = new HashSet<String>();
-        Set<String> newExcludes = new HashSet<String>();
-
-        // Check claimed column changes
-        for(TableChange change : columnChanges) {
-            Column oldCol = (change.getOldName() != null) ? oldTable.getColumn(change.getOldName()) : null;
-            Column newCol = (change.getNewName() != null) ? newTable.getColumn(change.getNewName()) : null;
-            switch(change.getChangeType()) {
-                case ADD:
-                    if(newCol == null) {
-                        error(new AddColumnNotPresentException(change.toString()));
-                    } else {
-                        columnChangeLevels.add(ChangeLevel.TABLE);
-                        newExcludes.add(newCol.getName());
-                    }
-                break;
-                case DROP:
-                    if(oldCol == null) {
-                        error(new DropColumnNotPresentException(change.toString()));
-                    } else {
-                        columnChangeLevels.add(ChangeLevel.TABLE);
-                        oldExcludes.add(oldCol.getName());
-                    }
-                break;
-                case MODIFY:
-                    if((oldCol == null) || (newCol == null)) {
-                        error(new ModifyColumnNotPresentException(change.toString()));
-                    } else {
-                        ChangeLevel colChange = compare(oldCol, newCol);
-                        if(colChange == ChangeLevel.NONE) {
-                            error(new ModifyColumnNotChangedException(change.toString()));
-                        } else {
-                            columnChangeLevels.add(colChange);
-                        }
-                    }
-                    if(oldCol != null) {
-                        oldExcludes.add(oldCol.getName());
-                    }
-                    if(newCol != null) {
-                        newExcludes.add(newCol.getName());
-                    }
-                break;
-            }
+        Map<String,Column> oldColumns = new HashMap<String,Column>();
+        Map<String,Column> newColumns = new HashMap<String,Column>();
+        for(Column column : oldTable.getColumnsIncludingInternal()) {
+            oldColumns.put(column.getName(), column);
         }
-
-        // Check remaining columns in old table
-        for(Column oldCol : oldTable.getColumns()) {
-            String colName = oldCol.getName();
-            if(!oldExcludes.contains(colName)) {
-                Column newCol = newTable.getColumn(colName);
-                if(newCol == null) {
-                    errors.add(new UnchangedColumnNotPresentException(colName));
-                } else {
-                    ChangeLevel change = compare(oldCol, newCol);
-                    if(change != ChangeLevel.NONE) {
-                        error(new UndeclaredColumnChangeException(colName));
-                    }
-                    newExcludes.add(colName);
-                }
-            }
+        for(Column column : newTable.getColumnsIncludingInternal()) {
+            newColumns.put(column.getName(), column);
         }
-
-        // Check remaining columns in new table (should be none)
-        for(Column newCol : newTable.getColumns()) {
-            String colName = newCol.getName();
-            if(!newExcludes.contains(colName)) {
-                error(new UndeclaredColumnChangeException(colName));
-            }
-        }
+        checkChanges(ChangeLevel.TABLE, columnChangeLevels, columnChanges, oldColumns, newColumns);
     }
 
     private void compareIndexes() {
+        Map<String,Index> oldIndexes = new HashMap<String,Index>();
+        Map<String,Index> newIndexes = new HashMap<String,Index>();
+        for(Index index : oldTable.getIndexesIncludingInternal()) {
+            oldIndexes.put(index.getIndexName().getName(), index);
+        }
+        for(Index index : newTable.getIndexesIncludingInternal()) {
+            newIndexes.put(index.getIndexName().getName(), index);
+        }
+        checkChanges(ChangeLevel.INDEX, indexChangeLevels, indexChanges, oldIndexes, newIndexes);
+    }
+
+    private <T> void checkChanges(ChangeLevel level, Set<ChangeLevel> changeLevels,
+                                  List<TableChange> changeList, Map<String,T> oldMap, Map<String,T> newMap) {
+        final boolean isIndex = (level == ChangeLevel.INDEX);
         Set<String> oldExcludes = new HashSet<String>();
         Set<String> newExcludes = new HashSet<String>();
 
-        // Check claimed column changes
-        for(TableChange change : indexChanges) {
+        // Check declared changes
+        for(TableChange change : changeList) {
             String oldName = change.getOldName();
             String newName = change.getNewName();
             switch(change.getChangeType()) {
                 case ADD: {
-                    Index newIndex = newTable.getIndexIncludingInternal(newName);
-                    if(newIndex == null) {
-                        error(new AddIndexNotPresentException(change.toString()));
+                    if(newMap.get(newName) == null) {
+                        addNotPresent(isIndex, change);
                     } else {
-                        indexChangeLevels.add(ChangeLevel.INDEX);
+                        changeLevels.add(level);
                         newExcludes.add(newName);
                     }
                 } break;
                 case DROP: {
-                    Index oldIndex = oldTable.getIndexIncludingInternal(oldName);
-                    if(oldIndex == null) {
-                        error(new DropIndexNotPresentException(change.toString()));
+                    if(oldMap.get(oldName) == null) {
+                        dropNotPresent(isIndex, change);
                     } else {
-                        indexChangeLevels.add(ChangeLevel.INDEX);
+                        changeLevels.add(level);
                         oldExcludes.add(oldName);
                     }
                 } break;
                 case MODIFY: {
-                    Index oldIndex = oldTable.getIndexIncludingInternal(oldName);
-                    Index newIndex = newTable.getIndexIncludingInternal(newName);
-                    if((oldIndex == null) || (newIndex == null)) {
-                        error(new ModifyIndexNotPresentException(change.toString()));
+                    T oldVal = oldMap.get(oldName);
+                    T newVal = newMap.get(newName);
+                    if((oldVal == null) || (newVal == null)) {
+                        modifyNotPresent(isIndex, change);
                     } else {
-                        ChangeLevel colChange = compare(oldIndex, newIndex);
-                        if(colChange == ChangeLevel.NONE) {
-                            error(new ModifyIndexNotChangedException(change.toString()));
+                        ChangeLevel curChange = compare(oldVal, newVal);
+                        if(curChange == ChangeLevel.NONE) {
+                            modifyNotChanged(isIndex, change);
                         } else {
-                            indexChangeLevels.add(colChange);
+                            changeLevels.add(curChange);
+                            oldExcludes.add(oldName);
+                            newExcludes.add(newName);
                         }
-                    }
-                    if(oldIndex != null) {
-                        oldExcludes.add(oldName);
-                    }
-                    if(newIndex != null) {
-                        newExcludes.add(newName);
                     }
                 } break;
             }
         }
 
-        // Check remaining columns in old table
-        for(Index oldIndex : oldTable.getIndexesIncludingInternal()) {
-            String iName = oldIndex.getIndexName().getName();
-            if(!oldExcludes.contains(iName)) {
-                Index newIndex = newTable.getIndexIncludingInternal(iName);
-                if(newIndex == null) {
-                    errors.add(new UnchangedIndexNotPresentException(iName));
+        // Check remaining elements in old table
+        for(Map.Entry<String,T> entry : oldMap.entrySet()) {
+            String name = entry.getKey();
+            if(!oldExcludes.contains(name)) {
+                T newVal = newMap.get(name);
+                if(newVal == null) {
+                    unchangedNotPresent(isIndex, name);
                 } else {
-                    ChangeLevel change = compare(oldIndex, newIndex);
+                    ChangeLevel change = compare(entry.getValue(), newVal);
                     if(change != ChangeLevel.NONE) {
-                        error(new UndeclaredIndexChangeException(iName));
+                        undeclaredChange(isIndex, name);
                     }
-                    newExcludes.add(iName);
+                    newExcludes.add(name);
                 }
             }
         }
 
-        // Check remaining columns in new table (should be none)
-        for(Index newIndex : newTable.getIndexesIncludingInternal()) {
-            String indexName = newIndex.getIndexName().getName();
-            if(!newExcludes.contains(indexName)) {
-                error(new UndeclaredIndexChangeException(indexName));
+        // Check remaining elements in new table (should be none)
+        for(String name : newMap.keySet()) {
+            if(!newExcludes.contains(name)) {
+                undeclaredChange(isIndex, name);
             }
         }
     }
 
     private void compareGrouping() {
         // Note: PK (grouping) changes checked in compareColumns()
-        parentChanged = compare(oldTable.getParentJoin(), newTable.getParentJoin());
-    }
-
-    private void error(RuntimeException e) {
-        errors.add(e);
+        compare(oldTable.getParentJoin(), newTable.getParentJoin());
     }
 
     private String findNewColumnName(String oldName) {
@@ -308,6 +243,16 @@ public class TableComparer {
             }
         }
         return oldName;
+    }
+
+    private <T> ChangeLevel compare(T oldVal, T newVal) {
+        if(oldVal instanceof Column) {
+            return compare((Column)oldVal, (Column)newVal);
+        }
+        if(oldVal instanceof Index) {
+            return compare((Index)oldVal, (Index)newVal);
+        }
+        throw new IllegalStateException("Cannot compare: " + oldVal + " and " + newVal);
     }
 
     private static ChangeLevel compare(Column oldCol, Column newCol) {
@@ -330,7 +275,9 @@ public class TableComparer {
            !Objects.equal(oldCol.getIdentityGenerator(), newCol.getIdentityGenerator())) {
           return ChangeLevel.METADATA;
         }
+
         // TODO: Check defaults
+
         return ChangeLevel.NONE;
     }
 
@@ -396,5 +343,33 @@ public class TableComparer {
             }
         }
         return false;
+    }
+
+    private void addNotPresent(boolean isIndex, TableChange change) {
+        String detail = change.toString();
+        errors.add(isIndex ? new AddIndexNotPresentException(detail) : new AddColumnNotPresentException(detail));
+    }
+
+    private void dropNotPresent(boolean isIndex, TableChange change) {
+        String detail = change.toString();
+        errors.add(isIndex ? new DropIndexNotPresentException(detail) : new DropColumnNotPresentException(detail));
+    }
+
+    private void modifyNotChanged(boolean isIndex, TableChange change) {
+        String detail = change.toString();
+        errors.add(isIndex ? new ModifyIndexNotChangedException(detail) : new ModifyColumnNotChangedException(detail));
+    }
+
+    private void modifyNotPresent(boolean isIndex, TableChange change) {
+        String detail = change.toString();
+        errors.add(isIndex ? new ModifyIndexNotPresentException(detail) : new ModifyColumnNotPresentException(detail));
+    }
+
+    private void unchangedNotPresent(boolean isIndex, String detail) {
+        errors.add(isIndex ? new UnchangedIndexNotPresentException(detail) : new UnchangedColumnNotPresentException(detail));
+    }
+
+    private void undeclaredChange(boolean isIndex, String detail) {
+        errors.add(isIndex ? new UndeclaredIndexChangeException(detail) : new UndeclaredColumnChangeException(detail));
     }
 }
