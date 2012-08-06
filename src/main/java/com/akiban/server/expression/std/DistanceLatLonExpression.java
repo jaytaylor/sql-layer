@@ -118,9 +118,7 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             }
             
             x1 = getPositive(x1);
-            y1 = getPositive(y1);
             x2 = getPositive(x2);
-            y2 = getPositive(y2);
             
             double X = Math.pow(x1 - x2, 2.0);
             double Y = Math.pow(y1 - y2, 2.0);
@@ -137,9 +135,9 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
         }
         
         private double shiftCalculation(double arg1, double arg2, double noShift, double c) {
-            double shift = noShift;
-            if (arg1 < arg2) shift = Math.pow(UPPER_BOUND - arg1 + arg2, 2.0);
-            if (arg2 < arg1) shift = Math.pow(UPPER_BOUND - arg2 + arg1, 2.0);
+            double shift = noShift;    
+            if (arg1 < arg2) shift = Math.pow(UPPER_BOUND - arg2 + arg1, 2.0);
+            if (arg2 < arg1) shift = Math.pow(UPPER_BOUND - arg1 + arg2, 2.0);
             return Math.sqrt(Math.min(shift, noShift) + c);
         }
     }
@@ -147,7 +145,7 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
     @Override
     public String name()
     {
-        return "DISTANCELATLON";
+        return "DISTANCE_LAT_LON";
     }
 
     @Override

@@ -97,6 +97,12 @@ public class DistanceLatLonExpressionTest {
         List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(0)));
         Expression exp = new DistanceLatLonExpression(lst);
     }
+    
+    @Test 
+    public void testWrapAround() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(-1), getDouble(0), getDouble(1), getDouble(0)));
+        test(2.0, lst);
+    }
 
     
     private void test(double expected, List<Expression> lst) {
