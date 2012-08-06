@@ -118,7 +118,7 @@ public class TableComparerExceptions {
         }
     }
 
-    
+
     private TableComparerExceptions()
     {}
 }

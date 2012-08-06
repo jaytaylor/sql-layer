@@ -281,4 +281,16 @@ public class TableComparerTest {
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("y").pk("id"));
         checkCompare(t1, t2, asList(TableChange.createDrop("x"), TableChange.createAdd("y")), NO_CHANGES, ChangeLevel.TABLE);
     }
+
+    @Test
+    public void addAndDropMultipleColumnAndIndex() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colDouble("d").colLong("l").colString("s", 32).
+                key("d", "d").key("l", "l").uniqueKey("k", "l", "d").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colDouble("d").colVarBinary("v", 32).colString("s", 64).
+                key("d", "d").key("v", "v").uniqueKey("k", "v", "d").pk("id"));
+        checkCompare(t1, t2,
+                     asList(TableChange.createDrop("l"), TableChange.createModify("s", "s"), TableChange.createAdd("v")),
+                     asList(TableChange.createDrop("l"), TableChange.createAdd("v"), TableChange.createModify("k", "k")),
+                     ChangeLevel.TABLE);
+    }
 }
