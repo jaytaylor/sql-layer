@@ -30,13 +30,15 @@ import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import junit.framework.Assert;
 import org.junit.Test;
 
-public class DistanceLatLonExpressionTest extends ComposedExpressionTestBase {
+public class DistanceLatLonExpressionTest {
 
     @Test
     public void testZero() {
@@ -92,15 +94,16 @@ public class DistanceLatLonExpressionTest extends ComposedExpressionTestBase {
     
     @Test (expected=WrongExpressionArityException.class)
     public void testArity() {
-        compose(DistanceLatLonExpression.COMPOSER, Arrays.asList(LiteralExpression.forNull()));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(0)));
+        Expression exp = new DistanceLatLonExpression(lst);
     }
 
     
     private void test(double expected, List<Expression> lst) {
         Expression exp = new DistanceLatLonExpression(lst);
         
-        double result = exp.evaluation().eval().getDouble();
-        Assert.assertEquals(expected, result);
+        ValueSource result = exp.evaluation().eval();
+        Assert.assertEquals(new ValueHolder(getDouble(expected).evaluation().eval()), new ValueHolder(result));
     }
     
     private LiteralExpression getDouble(double num) {
@@ -114,20 +117,4 @@ public class DistanceLatLonExpressionTest extends ComposedExpressionTestBase {
     private LiteralExpression getInt(int num) {
         return new LiteralExpression(AkType.INT, num);
     }
-    
-    @Override
-    protected CompositionTestInfo getTestInfo() {
-        return new CompositionTestInfo(1, AkType.DOUBLE, true);
-    }
-
-    @Override
-    protected ExpressionComposer getComposer() {
-        return DistanceLatLonExpression.COMPOSER;
-    }
-
-    @Override
-    protected boolean alreadyExc() {
-        return false;
-    }
-
 }

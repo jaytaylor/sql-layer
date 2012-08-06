@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
 import com.akiban.server.expression.ExpressionComposer.NullTreating;
@@ -91,10 +92,35 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
                     return NullValueSource.only();
             }
             
-            double x1 = getPositive(children().get(0).eval().getDouble());
-            double y1 = getPositive(children().get(1).eval().getDouble());
-            double x2 = getPositive(children().get(2).eval().getDouble());
-            double y2 = getPositive(children().get(3).eval().getDouble());
+            double x1, x2, y1, y2;
+            AkType type = children().get(0).eval().getConversionType();
+            switch (type) {
+                case INT: 
+                    x1 = children().get(0).eval().getInt();
+                    y1 = children().get(1).eval().getInt();
+                    x2 = children().get(2).eval().getInt();
+                    y2 = children().get(3).eval().getInt();
+                    break;
+                case LONG:
+                    x1 = children().get(0).eval().getLong();
+                    y1 = children().get(1).eval().getLong();
+                    x2 = children().get(2).eval().getLong();
+                    y2 = children().get(3).eval().getLong();
+                    break;
+                case DOUBLE:
+                    x1 = children().get(0).eval().getDouble();
+                    y1 = children().get(1).eval().getDouble();
+                    x2 = children().get(2).eval().getDouble();
+                    y2 = children().get(3).eval().getDouble();
+                    break;
+                default:
+                        throw new InvalidArgumentTypeException("Type " + type + "is not supported in DISTANCE_LAT_LON");
+            }
+            
+            x1 = getPositive(x1);
+            y1 = getPositive(y1);
+            x2 = getPositive(x2);
+            y2 = getPositive(y2);
             
             double X = Math.pow(x1 - x2, 2.0);
             double Y = Math.pow(y1 - y2, 2.0);
@@ -106,7 +132,7 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
         }
         
         private double getPositive(double num) {
-            if (num < 0) num += 180;
+            if (num < 0) num += UPPER_BOUND;
             return num;
         }
         
@@ -130,9 +156,14 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
         return new CompositeEvaluation(childrenEvaluations());
     }
     
+    private static AkType getTopType(List<? extends Expression> args) {
+        if (args.size() != 4) throw new WrongExpressionArityException(4, args.size());
+        return args.get(0).valueType();
+    }
+    
     protected DistanceLatLonExpression(List<? extends Expression> children)
     {
-        super(AkType.DOUBLE, children);
+        super(getTopType(children), children);
     }
 
 }
