@@ -110,8 +110,8 @@ public class MDatetimes
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(timestampToString(source.getInt32(), null));
             }
-        };
-    };
+        }
+    }
     
     static
     {
@@ -145,7 +145,7 @@ public class MDatetimes
         return getVal(numericRep - 1, locale, context, MONTHS, "month", 11, 0);
     }
     
-    public static String getShortMontName(int numericRep, String locale, TExecutionContext context)
+    public static String getShortMonthName(int numericRep, String locale, TExecutionContext context)
     {
         return getVal(numericRep -1, locale, context, SHORT_MONTHS, "month", 11, 0);
     }
@@ -395,9 +395,8 @@ public class MDatetimes
         int m = (int)(val / DATETIME_MIN_SCALE);
         int s = (int)val;
         
-        return String.format("%d:%02:%02d", h, m, s);
-        
-    };
+        return String.format("%d:%02d:%02d", h, m, s);
+    }
 
     public static int parseTime (String string, TExecutionContext context)
     {
