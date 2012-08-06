@@ -36,11 +36,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.akiban.ais.util.TableComparer.ChangeLevel;
-import static com.akiban.ais.util.TableComparer.DropColumnNotPresentException;
-import static com.akiban.ais.util.TableComparer.ModifyColumnNotChangedException;
-import static com.akiban.ais.util.TableComparer.ModifyColumnNotPresentException;
-import static com.akiban.ais.util.TableComparer.UnchangedColumnNotPresentException;
-import static com.akiban.ais.util.TableComparer.UndeclaredColumnChangeException;
+import static com.akiban.ais.util.TableComparerExceptions.*;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
@@ -194,9 +190,86 @@ public class TableComparerTest {
     // Index
     //
 
+    @Test
+    public void addIndex() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createAdd("x")), ChangeLevel.INDEX);
+    }
+
+    @Test
+    public void dropIndex() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createDrop("x")), ChangeLevel.INDEX);
+    }
+
+    @Test
+    public void modifyIndexedColumn() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "y").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createModify("k", "k")), ChangeLevel.INDEX);
+    }
+
+    @Test
+    public void modifyIndexedType() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colString("x", 32).key("x", "x").pk("id"));
+        checkCompare(t1, t2,asList(TableChange.createModify("x", "x")), asList(TableChange.createModify("x", "x")), ChangeLevel.TABLE);
+    }
+
+    @Test
+    public void modifyIndexName() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("a", "x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("b", "x").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createModify("a", "b")), ChangeLevel.METADATA);
+    }
+
     //
     // Index (negative)
     //
+
+    @Test(expected=UndeclaredIndexChangeException.class)
+    public void addIndexUnspecified() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+    }
+
+    @Test(expected=UnchangedIndexNotPresentException.class)
+    public void dropIndexUnspecified() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+    }
+
+    @Test(expected=DropIndexNotPresentException.class)
+    public void dropIndexUnknown() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createDrop("x")), null);
+    }
+
+    @Test(expected=ModifyIndexNotChangedException.class)
+    public void modifyIndexNotChanged() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createModify("x", "x")), null);
+    }
+
+    @Test(expected=ModifyIndexNotPresentException.class)
+    public void modifyIndexUnknown() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createModify("y", "y")), null);
+    }
+
+    @Test(expected=UndeclaredIndexChangeException.class)
+    public void modifyIndexUnspecified() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "y").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+    }
 
     //
     // Multi-part
