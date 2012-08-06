@@ -69,6 +69,7 @@ import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.ResultSet;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
@@ -103,6 +104,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         private NewFolder folder;
         private OverloadResolver resolver;
         private QueryContext queryContext;
+        private Project foundProject;
 
         ResolvingVistor(PlanContext context) {
             folder = new NewFolder(context);
@@ -127,21 +129,27 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            if (n instanceof Project) {
+                foundProject = (Project) n;
+            }
             if (n instanceof ResultSet) {
                 ResultSet rs = (ResultSet) n;
-                for (ResultSet.ResultField field : rs.getFields()) {
-                    DataTypeDescriptor sourceDtd = field.getSourceExpression().getSQLtype();
-                    DataTypeDescriptor fieldDtd = field.getSQLtype();
-                    if (!sourceDtd.equals(fieldDtd)) {
-                        TPreptimeValue tpv = field.getSourceExpression().getPreptimeValue();
-                        if (tpv != null) {
-                            TInstance tInstance = tpv.instance();
-                            if (tInstance != null) {
-                                DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
-                                field.setSQLtype(newDtd);
-                            }
+                if (foundProject != null) {
+                    List<ResultField> rsFields = rs.getFields();
+                    List<ExpressionNode> projectFields = foundProject.getFields();
+                    assert rsFields.size() == projectFields.size() : rsFields + " not applicable to " + projectFields;
+                    for (int i = 0, size = rsFields.size(); i < size; i++) {
+                        ResultField rsField = rsFields.get(i);
+                        ExpressionNode projectField = projectFields.get(i);
+                        DataTypeDescriptor projectionType = projectField.getSQLtype();
+                        DataTypeDescriptor rsFieldType = rsField.getSQLtype();
+                        if (!projectionType.equals(rsFieldType)) {
+                            rsField.setSQLtype(projectionType);
                         }
                     }
+                }
+                else {
+                    logger.warn("no Project node found for ResultSet: {}", rs);
                 }
             }
             return true;

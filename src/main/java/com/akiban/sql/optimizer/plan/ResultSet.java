@@ -39,13 +39,11 @@ public class ResultSet extends BasePlanWithInput
         private String name;
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
-        private ExpressionNode sourceExpression;
 
-        public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn, ExpressionNode sourceExpression) {
+        public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn) {
             this.name = name;
             this.sqlType = sqlType;
             this.aisColumn = aisColumn;
-            this.sourceExpression = sourceExpression;
         }
 
         public ResultField(String name) {
@@ -54,10 +52,6 @@ public class ResultSet extends BasePlanWithInput
 
         public String getName() {
             return name;
-        }
-
-        public ExpressionNode getSourceExpression() {
-            return sourceExpression;
         }
 
         public DataTypeDescriptor getSQLtype() {
