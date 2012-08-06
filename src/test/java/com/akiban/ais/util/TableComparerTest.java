@@ -33,12 +33,16 @@ import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
+import static com.akiban.ais.util.TableComparer.ChangeLevel;
+import static com.akiban.ais.util.TableComparer.DropColumnNotPresentException;
+import static com.akiban.ais.util.TableComparer.ModifyColumnNotChangedException;
+import static com.akiban.ais.util.TableComparer.ModifyColumnNotPresentException;
+import static com.akiban.ais.util.TableComparer.UnchangedColumnNotPresentException;
+import static com.akiban.ais.util.TableComparer.UndeclaredColumnChangeException;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static com.akiban.ais.util.TableComparer.*;
 
 public class TableComparerTest {
     private static final String SCHEMA = "test";
@@ -76,6 +80,10 @@ public class TableComparerTest {
     }
 
 
+    //
+    // Table
+    //
+
     @Test
     public void sameTable() {
         UserTable t = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
@@ -97,17 +105,107 @@ public class TableComparerTest {
         checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
     }
 
+    //
+    // Column
+    //
+
+    @Test
+    public void addColumn() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createAdd("x")), NO_CHANGES, ChangeLevel.TABLE);
+    }
+
+    @Test
+    public void dropColumn() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createDrop("x")), NO_CHANGES, ChangeLevel.TABLE);
+    }
+
+    @Test
+    public void modifyColumnDataType() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("y").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colString("y", 32).pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createModify("y", "y")), NO_CHANGES, ChangeLevel.TABLE);
+    }
+
+    @Test
+    public void modifyColumnName() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("y").pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createModify("x", "y")), NO_CHANGES, ChangeLevel.METADATA);
+    }
+
+    @Test
+    public void modifyColumnNullability() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", true).pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA_NULL);
+    }
+
+    //
+    // Column (negative)
+    //
+
     @Test(expected=UndeclaredColumnChangeException.class)
-    public void addSingleColumnUnspecified() {
+    public void addColumnUnspecified() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
     }
 
-    @Test
-    public void addSingleColumn() {
+    @Test(expected=UnchangedColumnNotPresentException.class)
+    public void dropColumnUnspecified() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+    }
+
+    @Test(expected=DropColumnNotPresentException.class)
+    public void dropColumnUnknown() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createDrop("x")), NO_CHANGES, null);
+    }
+
+    @Test(expected=ModifyColumnNotChangedException.class)
+    public void modifyColumnNotChanged() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
-        checkCompare(t1, t2, Arrays.asList(TableChange.createAdd("x")), NO_CHANGES, ChangeLevel.TABLE);
+        checkCompare(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, null);
+    }
+
+    @Test(expected=ModifyColumnNotPresentException.class)
+    public void modifyColumnUnknown() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createModify("y", "y")), NO_CHANGES, null);
+    }
+
+    @Test(expected=UndeclaredColumnChangeException.class)
+    public void modifyColumnUnspecified() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colString("x", 32).pk("id"));
+        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+    }
+
+    //
+    // Index
+    //
+
+    //
+    // Index (negative)
+    //
+
+    //
+    // Multi-part
+    //
+
+    @Test
+    public void addAndDropColumn() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("y").pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createDrop("x"), TableChange.createAdd("y")), NO_CHANGES, ChangeLevel.TABLE);
     }
 }

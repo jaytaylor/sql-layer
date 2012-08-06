@@ -191,7 +191,7 @@ public class TableComparer {
             switch(change.getChangeType()) {
                 case ADD:
                     if(newCol == null) {
-                        errors.add(new AddColumnNotPresentException(change.toString()));
+                        error(new AddColumnNotPresentException(change.toString()));
                     } else {
                         columnChangeLevels.add(ChangeLevel.TABLE);
                         newExcludes.add(newCol.getName());
@@ -199,7 +199,7 @@ public class TableComparer {
                 break;
                 case DROP:
                     if(oldCol == null) {
-                        errors.add(new DropColumnNotPresentException(change.toString()));
+                        error(new DropColumnNotPresentException(change.toString()));
                     } else {
                         columnChangeLevels.add(ChangeLevel.TABLE);
                         oldExcludes.add(oldCol.getName());
@@ -208,11 +208,11 @@ public class TableComparer {
                 break;
                 case MODIFY:
                     if((oldCol == null) || (newCol == null)) {
-                        errors.add(new ModifyColumnNotPresentException(change.toString()));
+                        error(new ModifyColumnNotPresentException(change.toString()));
                     } else {
                         ChangeLevel colChange = compare(oldCol, newCol);
                         if(colChange == ChangeLevel.NONE) {
-                            errors.add(new ModifyColumnNotChangedException(change.toString()));
+                            error(new ModifyColumnNotChangedException(change.toString()));
                         } else {
                             columnChangeLevels.add(colChange);
                         }
@@ -226,7 +226,7 @@ public class TableComparer {
                     // TODO: Check in PK AND !metadata
                 break;
                 default:
-                    throw new IllegalStateException("Unknown ChangeType: " + change);
+                    error(new IllegalStateException("Unknown ChangeType: " + change));
             }
         }
 
@@ -240,7 +240,7 @@ public class TableComparer {
                 } else {
                     ChangeLevel change = compare(oldCol, newCol);
                     if(change != ChangeLevel.NONE) {
-                        errors.add(new UndeclaredColumnChangeException(colName));
+                        error(new UndeclaredColumnChangeException(colName));
                     }
                     newExcludes.add(colName);
                 }
@@ -251,7 +251,7 @@ public class TableComparer {
         for(Column newCol : newTable.getColumns()) {
             String colName = newCol.getName();
             if(!newExcludes.contains(colName)) {
-                errors.add(new UndeclaredColumnChangeException(colName));
+                error(new UndeclaredColumnChangeException(colName));
             }
         }
     }
@@ -262,6 +262,10 @@ public class TableComparer {
     private void compareGrouping() {
         // Note: PK (grouping) changes checked in compareColumns()
         parentChanged = compare(oldTable.getParentJoin(), newTable.getParentJoin());
+    }
+
+    private void error(RuntimeException e) {
+        errors.add(e);
     }
 
     private static ChangeLevel compare(Column oldCol, Column newCol) {
