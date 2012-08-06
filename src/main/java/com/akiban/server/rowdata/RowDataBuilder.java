@@ -350,7 +350,9 @@ public final class RowDataBuilder {
                 case UINT_16:
                 case INT_32:
                 case INT_64:
-                    if (object instanceof Long)
+                    if (object instanceof Short)
+                        PValueSources.pvalueFromLong((Short)object, pValue);
+                    else if (object instanceof Long)
                         PValueSources.pvalueFromLong((Long)object, pValue);
                     else if (object instanceof Integer)
                         PValueSources.pvalueFromLong((Integer)object, pValue);

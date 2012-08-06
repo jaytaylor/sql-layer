@@ -354,9 +354,14 @@ final class Aggregate_Partial extends Operator
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));
         
- 
-        for (AggregatorFactory agg : aggregatorFactories)
-            atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+        if (pAggrs != null) {
+            for (TAggregator agg : pAggrs)
+                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+        }
+        else {
+            for (AggregatorFactory agg : aggregatorFactories)
+                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+        }
         
         atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
@@ -401,6 +406,7 @@ final class Aggregate_Partial extends Operator
 
                 assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
                 while (true) {
+                    boolean isFirst = (cursorState == CursorState.OPENING);
                     Row input = nextInput();
                     if (input == null) {
                         if (everSawInput) {
@@ -424,7 +430,7 @@ final class Aggregate_Partial extends Operator
                         saveInput(input); // save this input for the next time this method is invoked
                         return createOutput();
                     }
-                    aggregate(input);
+                    aggregate(input, isFirst);
                 }
             } finally {
                 TAP_NEXT.out();
@@ -469,7 +475,7 @@ final class Aggregate_Partial extends Operator
 
         // for use in this class
 
-        private void aggregate(Row input) {
+        private void aggregate(Row input, boolean isFirst) {
             if (aggregators != null) {
                 for (int i=0; i < aggregators.size(); ++i) {
                     Aggregator aggregator = aggregators.get(i);
@@ -483,7 +489,7 @@ final class Aggregate_Partial extends Operator
                     int inputIndex = i + inputsIndex;
                     TInstance inputType = input.rowType().typeInstanceAt(inputIndex);
                     PValueSource inputSource = input.pvalue(inputIndex);
-                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i));
+                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i), isFirst);
                 }
 
             }
@@ -515,8 +521,9 @@ final class Aggregate_Partial extends Operator
                 for (int i = inputsIndex; i < inputRowType.nFields(); ++i) {
                     PValue pValue = outputRow.pvalueAt(i);
                     int aggregatorIndex = i - inputsIndex;
-                    PValueSource aggregatorState = pAggrsStates.get(aggregatorIndex);
+                    PValue aggregatorState = pAggrsStates.get(aggregatorIndex);
                     PValueTargets.copyFrom(aggregatorState, pValue);
+                    pAggrs.get(aggregatorIndex).emptyValue(aggregatorState);
                 }
             }
             return outputRow;

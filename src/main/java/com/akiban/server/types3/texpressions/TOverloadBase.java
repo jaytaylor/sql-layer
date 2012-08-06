@@ -58,6 +58,7 @@ public abstract class TOverloadBase implements TOverload {
         for (int i = 0; i < inputs.size(); ++i) {
             if (nullContaminates(i) && inputs.get(i).isNull()) {
                 output.putNull();
+                return;
             }
         }
         doEvaluate(context, inputs, output);

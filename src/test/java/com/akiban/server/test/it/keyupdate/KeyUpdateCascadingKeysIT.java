@@ -397,7 +397,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD, o_when, o_vid, o_cid, o_oid);
+        return indexFromRecords(records, orderRD, o_when, NULL_SEPARATOR_COLUMN, o_vid, o_cid, o_oid);
     }
 
     @Override

@@ -74,7 +74,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     // TODO: This is not a correct implementation of hKey, because it returns an empty hKey to be filled in
     // TODO: by the caller. Normally, hKey returns the HKey of the row.
     @Override
-    public HKey hKey()
+    public final HKey hKey()
     {
         return hKeyCache.hKey(leafmostTable);
     }
@@ -94,7 +94,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     }
 
     @Override
-    public PValueSource pvalue(int i)
+    public final PValueSource pvalue(int i)
     {
         if (index.isSpatial()) {
             throw new UnsupportedOperationException("Spatial indexes don't implement types3 yet");
@@ -134,8 +134,8 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        reset(indexRowType.index(), adapter.persistit().getKey());
-        this.adapter = adapter;
+        super(adapter);
+        resetForWrite(indexRowType.index(), adapter.persistit().getKey());
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
@@ -194,13 +194,11 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     // Object state
 
-    protected final PersistitAdapter adapter;
-    protected final IndexRowType indexRowType;
-    protected AkType[] akTypes;
-    protected AkCollator[] akCollators;
-    protected PersistitKeyValueSource[] keySources;
-    protected PersistitKeyPValueSource[] keyPSources;
     protected final HKeyCache<PersistitHKey> hKeyCache;
     protected final UserTable leafmostTable;
-
+    private final IndexRowType indexRowType;
+    private final AkType[] akTypes;
+    private final AkCollator[] akCollators;
+    private PersistitKeyValueSource[] keySources;
+    private PersistitKeyPValueSource[] keyPSources;
 }

@@ -43,7 +43,7 @@ public final class TCastExpression implements TPreparedExpression {
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         TPreptimeValue inputValue = input.evaluateConstant(queryContext);
         PValue value;
-        if (inputValue.value() == null) {
+        if (inputValue == null || inputValue.value() == null) {
             value = null;
         }
         else {

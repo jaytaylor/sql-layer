@@ -151,7 +151,7 @@ public final class OverloadResolver {
         if (namedOverloads.size() == 1) {
             return defaultResolution(inputs, namedOverloads);
         } else {
-            return inputBasedResolution(inputs, namedOverloads);
+            return inputBasedResolution(name, inputs, namedOverloads);
         }
     }
 
@@ -193,7 +193,7 @@ public final class OverloadResolver {
         return result;
     }
 
-    private OverloadResult inputBasedResolution(List<? extends TPreptimeValue> inputs,
+    private OverloadResult inputBasedResolution(String name, List<? extends TPreptimeValue> inputs,
                                                 Collection<? extends TValidatedOverload> namedOverloads) {
         List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
         for (TValidatedOverload overload : namedOverloads) {
@@ -202,7 +202,7 @@ public final class OverloadResolver {
             }
         }
         if (candidates.isEmpty())
-            throw new OverloadException("no suitable overload found for");
+            throw overloadException(name, inputs);
         TValidatedOverload mostSpecific = null;
         if (candidates.size() == 1) {
             mostSpecific = candidates.get(0);
@@ -214,8 +214,30 @@ public final class OverloadResolver {
             // TODO: Throw or let registry handle it?
         }
         if (mostSpecific == null)
-            throw new OverloadException("no suitable overload found for");
+            throw overloadException(name, inputs);
         return buildResult(mostSpecific, inputs);
+    }
+
+    private OverloadException overloadException(String name, List<? extends TPreptimeValue> inputs) {
+        StringBuilder sb = new StringBuilder("no suitable overload found for ");
+        sb.append(name).append('(');
+        for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
+            TPreptimeValue tpv = inputs.get(i);
+            if (tpv == null) {
+                sb.append('?');
+            }
+            else {
+                TInstance tInstance = tpv.instance();
+                String className = (tInstance == null)
+                        ? "?"
+                        : tInstance.typeClass().name().toString();
+                sb.append(className);
+            }
+            if ( (i+1) < inputsSize)
+                sb.append(", ");
+        }
+        sb.append(')');
+        return new OverloadException(sb.toString());
     }
 
     private OverloadResult defaultResolution(List<? extends TPreptimeValue> inputs,
@@ -258,7 +280,7 @@ public final class OverloadResolver {
                 continue;
             // ... input can be strongly cast to input set
             TCast cast = registry.cast(inputInstance.typeClass(), inputSet.targetType());
-            if (cast != null && cast.isAutomatic())
+            if (isStrong(cast))
                 continue;
             // This input precludes the use of the overload
             return false;
@@ -372,8 +394,8 @@ public final class OverloadResolver {
         return castGroups;
     }
 
-    private static boolean isStrong(TCast cast) {
-        return (cast != null) && cast.isAutomatic();
+    private boolean isStrong(TCast cast) {
+        return (cast != null) && registry.isStrong(cast);
     }
 
     // TODO replace with InvalidOperationExceptions
