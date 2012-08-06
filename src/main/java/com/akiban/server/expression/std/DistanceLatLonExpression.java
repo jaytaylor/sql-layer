@@ -35,6 +35,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
+import java.math.BigDecimal;
 import java.util.List;
 
 public class DistanceLatLonExpression extends AbstractCompositeExpression {
@@ -48,7 +49,7 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             if (size != 4) throw new WrongExpressionArityException(4, size);
             
             for (int n = 0; n < size; ++n)
-                argumentTypes.setType(n, AkType.DOUBLE);
+                argumentTypes.setType(n, AkType.DECIMAL);
             return ExpressionTypes.DOUBLE;
         }
 
@@ -95,23 +96,11 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             double x1, x2, y1, y2;
             AkType type = children().get(0).eval().getConversionType();
             switch (type) {
-                case INT: 
-                    x1 = children().get(0).eval().getInt();
-                    y1 = children().get(1).eval().getInt();
-                    x2 = children().get(2).eval().getInt();
-                    y2 = children().get(3).eval().getInt();
-                    break;
-                case LONG:
-                    x1 = children().get(0).eval().getLong();
-                    y1 = children().get(1).eval().getLong();
-                    x2 = children().get(2).eval().getLong();
-                    y2 = children().get(3).eval().getLong();
-                    break;
-                case DOUBLE:
-                    x1 = children().get(0).eval().getDouble();
-                    y1 = children().get(1).eval().getDouble();
-                    x2 = children().get(2).eval().getDouble();
-                    y2 = children().get(3).eval().getDouble();
+                case DECIMAL: 
+                    x1 = children().get(0).eval().getDecimal().longValueExact();
+                    y1 = children().get(1).eval().getDecimal().longValueExact();
+                    x2 = children().get(2).eval().getDecimal().longValueExact();
+                    y2 = children().get(3).eval().getDecimal().longValueExact();
                     break;
                 default:
                         throw new InvalidArgumentTypeException("Type " + type + "is not supported in DISTANCE_LAT_LON");

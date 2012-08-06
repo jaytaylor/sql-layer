@@ -28,10 +28,9 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,65 +41,45 @@ public class DistanceLatLonExpressionTest {
 
     @Test
     public void testZero() {
-        Expression intZero = getInt(0);
-        Expression doubleZero = getDouble(0.0);
-        Expression longZero = getLong(0);
+        Expression zero = new LiteralExpression(AkType.DECIMAL, BigDecimal.ZERO);
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(zero, zero, zero, zero));
         
-        List<Expression> intLst = new LinkedList<Expression>(Arrays.asList(intZero, intZero, intZero, intZero));
-        List<Expression> doubleLst = new LinkedList<Expression>(Arrays.asList(doubleZero, doubleZero, doubleZero, doubleZero));
-        List<Expression> longLst = new LinkedList<Expression>(Arrays.asList(longZero, longZero, longZero, longZero));
-        
-        test(0.0, intLst);
-        test(0.0, doubleLst);
-        test(0.0, longLst);
+        test(0.0, lst);
     }
     
     @Test
     public void testPosNoWrap() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(90), getDouble(0), getDouble(100), getDouble(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(90), getDecimal(0), getDecimal(100), getDecimal(0)));
         test(10.0, lst);
     }
     
     @Test
     public void testPosWrap() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(0), getDouble(0), getDouble(180), getDouble(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(0), getDecimal(180), getDecimal(0)));
         test(180.0, lst);
     }
     
     @Test
     public void testNegNoWrap() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(90), getDouble(-90), getDouble(100), getDouble(-90)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(90), getDecimal(-90), getDecimal(100), getDecimal(-90)));
         test(10.0, lst);
     }
     
     @Test
     public void testNegWrap() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(-179), getDouble(0), getDouble(180), getDouble(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-179), getDecimal(0), getDecimal(180), getDecimal(0)));
         test(1.0, lst);
-    }
-    
-    @Test
-    public void testNaN()
-    {
-        Expression exp = getDouble(Double.NaN);
-        Expression num = getDouble(12.0);
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(exp, num, num, num));
-        
-        Expression top = new DistanceLatLonExpression(lst);
-        double nan = top.evaluation().eval().getDouble();
-
-        Assert.assertTrue(Double.isNaN(nan));
     }
     
     @Test (expected=WrongExpressionArityException.class)
     public void testArity() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0)));
         Expression exp = new DistanceLatLonExpression(lst);
     }
     
     @Test 
     public void testWrapAround() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDouble(-1), getDouble(0), getDouble(1), getDouble(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-1), getDecimal(0), getDecimal(1), getDecimal(0)));
         test(2.0, lst);
     }
 
@@ -109,18 +88,10 @@ public class DistanceLatLonExpressionTest {
         Expression exp = new DistanceLatLonExpression(lst);
         
         ValueSource result = exp.evaluation().eval();
-        Assert.assertEquals(new ValueHolder(getDouble(expected).evaluation().eval()), new ValueHolder(result));
+        Assert.assertEquals(expected, result.getDouble());
     }
     
-    private LiteralExpression getDouble(double num) {
-        return new LiteralExpression(AkType.DOUBLE, num);
-    }
-    
-    private LiteralExpression getLong(long num) {
-        return new LiteralExpression(AkType.LONG, num);
-    }
-    
-    private LiteralExpression getInt(int num) {
-        return new LiteralExpression(AkType.INT, num);
+    private LiteralExpression getDecimal(int num) {
+        return new LiteralExpression(AkType.DECIMAL, new BigDecimal(num));
     }
 }
