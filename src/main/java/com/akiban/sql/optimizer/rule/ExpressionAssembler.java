@@ -33,6 +33,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
@@ -152,7 +153,8 @@ abstract class ExpressionAssembler<T> {
             if (fieldIndex >= 0)
             {
                 T expression = assembleFieldExpression(currentRow.getRowType(), fieldIndex);
-                plancontext.storeExpressionInfo(((Expression)expression), column.toString());
+                if (plancontext.hasInfo())
+                    plancontext.giveInfoExpression(((Expression)expression), PrimitiveExplainer.getInstance(column.toString()));
                 return expression;
             }
         }

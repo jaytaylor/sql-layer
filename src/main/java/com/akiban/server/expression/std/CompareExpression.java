@@ -73,7 +73,7 @@ public class CompareExpression extends AbstractBinaryExpression {
     }
 
     @Override
-    public Explainer getExplainer(Map extraInfo) {
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
         Explainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
         return ex;

@@ -285,7 +285,7 @@ public class BranchLookup_Nested extends Operator
     private final int branchRootOrdinal;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         OperationExplainer ex =  new LookUpOperatorExplainer("Branch Lookup Nested", groupTable, inputRowType, keepInput, null, extraInfo);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));

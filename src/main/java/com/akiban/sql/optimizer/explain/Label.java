@@ -62,6 +62,8 @@ public enum Label
     START_TABLE(Category.IDENTIFIER),
     STOP_TABLE(Category.IDENTIFIER),
     GROUP_TABLE(Category.IDENTIFIER),
+    TABLE_CORRELATION(Category.IDENTIFIER),
+    COLUMN_NAME(Category.IDENTIFIER),
     
     // OPTION
     //--------------------------------------------------------------------------

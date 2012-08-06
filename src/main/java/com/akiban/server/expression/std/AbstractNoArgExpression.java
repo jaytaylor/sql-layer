@@ -39,7 +39,7 @@ public abstract class AbstractNoArgExpression implements Expression {
     // Expression interface
     
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, (List)null);
     }

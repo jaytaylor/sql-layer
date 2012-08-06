@@ -56,7 +56,7 @@ public class CastExpression extends AbstractUnaryExpression
     }
 
     @Override
-    public Explainer getExplainer(Map extraInfo) {
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
         Explainer ex = super.getExplainer(extraInfo);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(valueType().name()));
         return ex;

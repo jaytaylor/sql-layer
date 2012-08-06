@@ -160,7 +160,7 @@ class Sort_Tree extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator, ordering, extraInfo);
         

@@ -148,7 +148,7 @@ class Count_Default extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new CountOperatorExplainer("Count Default", countType, resultType, null, extraInfo);
     }

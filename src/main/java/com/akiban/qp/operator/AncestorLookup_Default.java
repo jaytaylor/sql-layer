@@ -251,7 +251,7 @@ class AncestorLookup_Default extends Operator
     private final boolean keepInput;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Default", groupTable, rowType, keepInput, inputOperator, extraInfo);
         for (UserTable table : ancestors)

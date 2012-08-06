@@ -130,7 +130,7 @@ class Filter_Default extends Operator
     private final Set<RowType> keepTypes;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new FilterExplainer("Filter Default", keepTypes, inputOperator, extraInfo);
     }

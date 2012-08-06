@@ -234,7 +234,7 @@ class AncestorLookup_Nested extends Operator
     private final int inputBindingPosition;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
        OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Nested", groupTable, rowType, false, null, extraInfo); // NOTE: keepInput is N/A here
        for (UserTable table : ancestors)

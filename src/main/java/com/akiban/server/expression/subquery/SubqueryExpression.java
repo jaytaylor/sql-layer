@@ -56,7 +56,7 @@ public abstract class SubqueryExpression implements Expression {
     }
     
     @Override
-    public Explainer getExplainer(Map extraInfo) {
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
         
         Attributes states = new Attributes();
         states.put(Label.NAME, PrimitiveExplainer.getInstance(name()));

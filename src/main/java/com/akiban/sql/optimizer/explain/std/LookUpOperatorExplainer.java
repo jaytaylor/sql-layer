@@ -33,12 +33,12 @@ import java.util.Map;
 
 public class LookUpOperatorExplainer extends OperationExplainer
 {
-    public LookUpOperatorExplainer (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map extraInfo)
+    public LookUpOperatorExplainer (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         super(Type.LOOKUP_OPERATOR, buildAtts(name, gTable, iRowType, keepInput, inputOp, extraInfo));
     }
     
-    private static Attributes buildAtts (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map extraInfo)
+    private static Attributes buildAtts (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         

@@ -139,7 +139,7 @@ public final class LiteralExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         StringBuilder sb = new StringBuilder();
         SqlLiteralValueFormatter formatter = new SqlLiteralValueFormatter(sb);

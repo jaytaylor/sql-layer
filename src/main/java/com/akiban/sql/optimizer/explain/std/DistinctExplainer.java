@@ -37,12 +37,12 @@ import java.util.Map;
 
 public class DistinctExplainer extends OperationExplainer
 {
-    public DistinctExplainer (String name, RowType distinctType, Operator inputOp, Map extraInfo)
+    public DistinctExplainer (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         super(Type.DISTINCT, buildMap(name, distinctType, inputOp, extraInfo));
     }
     
-    private static Attributes buildMap (String name, RowType distinctType, Operator inputOp, Map extraInfo)
+    private static Attributes buildMap (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         

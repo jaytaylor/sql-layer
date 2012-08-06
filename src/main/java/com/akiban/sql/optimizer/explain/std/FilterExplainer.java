@@ -38,13 +38,13 @@ import java.util.Set;
 
 public class FilterExplainer extends OperationExplainer
 {
-    public FilterExplainer (String name, Set<RowType> keepType, Operator inputOp, Map extraInfo)
+    public FilterExplainer (String name, Set<RowType> keepType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         super(Type.FILTER, buildMap(name, keepType, inputOp, extraInfo));
         
     }
     
-    private static Attributes buildMap (String name, Set<RowType> keepType, Operator inputOp, Map extraInfo)
+    private static Attributes buildMap (String name, Set<RowType> keepType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         

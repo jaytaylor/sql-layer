@@ -207,7 +207,7 @@ public class LikeExpression extends AbstractCompositeExpression
     }
     
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
     }

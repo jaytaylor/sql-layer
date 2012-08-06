@@ -123,7 +123,7 @@ class GroupScan_Default extends Operator
     private final GroupCursorCreator cursorCreator;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes att = new Attributes();
         

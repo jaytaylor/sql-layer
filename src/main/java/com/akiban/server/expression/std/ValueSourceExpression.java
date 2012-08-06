@@ -99,7 +99,7 @@ public final class ValueSourceExpression implements Expression
     }
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, (List)null);
         ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(valueSource));

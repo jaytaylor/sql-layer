@@ -90,7 +90,7 @@ public final class BoundFieldExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, fieldExpression);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(rowBindingPosition));

@@ -184,7 +184,7 @@ class Project_Default extends Operator
     protected ProjectedRowType projectType;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes att = new Attributes();
         

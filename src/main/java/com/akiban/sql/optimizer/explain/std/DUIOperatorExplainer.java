@@ -35,12 +35,12 @@ import java.util.Map;
 
 public class DUIOperatorExplainer extends OperationExplainer
 {
-    public DUIOperatorExplainer (String name, Operator inputOp, Map extraInfo)
+    public DUIOperatorExplainer (String name, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         super(Type.DUI, buildAtts(name, inputOp, extraInfo));
     }
     
-    private static Attributes buildAtts (String name, Operator inputOp, Map extraInfo)
+    private static Attributes buildAtts (String name, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         

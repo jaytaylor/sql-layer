@@ -41,7 +41,7 @@ public abstract class AbstractUnaryExpression implements Expression {
     // for most expressions this returns TRUE
     // Those that treat NULL specially must override the method
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, operand);
     }

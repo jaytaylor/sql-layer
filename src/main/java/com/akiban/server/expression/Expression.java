@@ -83,5 +83,5 @@ public interface Expression {
      * 
      * @return the explainer for this expression
      */
-    Explainer getExplainer(Map extraInfo);
+    Explainer getExplainer(Map<Object, Explainer> extraInfo);
 }

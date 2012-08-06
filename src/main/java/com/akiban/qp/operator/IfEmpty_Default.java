@@ -198,7 +198,7 @@ class IfEmpty_Default extends Operator
     private final API.InputPreservationOption inputPreservation;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes att = new Attributes();
         

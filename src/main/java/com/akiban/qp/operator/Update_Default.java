@@ -149,7 +149,7 @@ class Update_Default implements UpdatePlannable {
     private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: Update_Default");
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         OperationExplainer ex = new DUIOperatorExplainer("UPDATE DEFAULT", inputOperator, extraInfo);
         ex.addAttribute(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));

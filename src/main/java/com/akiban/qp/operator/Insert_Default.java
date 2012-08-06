@@ -128,7 +128,7 @@ class Insert_Default implements UpdatePlannable {
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new DUIOperatorExplainer("Insert", inputOperator, extraInfo);
     }

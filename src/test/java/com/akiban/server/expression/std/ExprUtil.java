@@ -130,7 +130,7 @@ final class ExprUtil {
         }
 
         @Override
-        public Explainer getExplainer(Map extraInfo)
+        public Explainer getExplainer(Map<Object, Explainer> extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -219,7 +219,7 @@ final class ExprUtil {
         }
 
         @Override
-        public Explainer getExplainer(Map extraInfo)
+        public Explainer getExplainer(Map<Object, Explainer> extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -275,7 +275,7 @@ final class ExprUtil {
         }
 
         @Override
-        public Explainer getExplainer(Map extraInfo)
+        public Explainer getExplainer(Map<Object, Explainer> extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }

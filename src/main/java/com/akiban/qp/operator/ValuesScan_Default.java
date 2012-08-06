@@ -116,7 +116,7 @@ public class ValuesScan_Default extends Operator
     private final RowType rowType;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes att = new Attributes();
         

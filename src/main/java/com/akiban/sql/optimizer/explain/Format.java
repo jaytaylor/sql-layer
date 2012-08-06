@@ -100,7 +100,7 @@ public class Format {
         }
         else if (explainer.getType().equals(Type.SUBQUERY))
         {
-            sb.append("SUBQUERY ").append(numSubqueries++);
+            sb.append("SUBQUERY ").append(++numSubqueries);
             subqueries.add(atts.get(Label.OPERAND).get(0));
         }
         else if (name.startsWith("CAST"))

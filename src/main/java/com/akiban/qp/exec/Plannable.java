@@ -39,5 +39,5 @@ public interface Plannable {
 
     String describePlan(Operator inputOperator);
     
-    Explainer getExplainer(Map extraInfo);
+    Explainer getExplainer(Map<Object, Explainer> extraInfo);
 }

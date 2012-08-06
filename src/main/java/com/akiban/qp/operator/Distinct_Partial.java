@@ -154,7 +154,7 @@ class Distinct_Partial extends Operator
     private final boolean usePValue;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new DistinctExplainer("DISTINCT PARTIAL", distinctType, inputOperator, extraInfo);
     }

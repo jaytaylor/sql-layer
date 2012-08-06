@@ -147,12 +147,6 @@
             <artifactId>icu4j</artifactId>
             <version>49.1</version>
         </dependency>
-        <dependency>
-            <groupId>com.akiban</groupId>
-            <artifactId>akiban-server</artifactId>
-            <version>1.3.0-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
     </dependencies>
     <build>
         <resources>

@@ -275,7 +275,7 @@ public class ArithExpression extends AbstractBinaryExpression
     }
     
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
         if (op.isInfix())

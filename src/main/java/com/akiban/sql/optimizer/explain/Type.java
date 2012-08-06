@@ -77,6 +77,10 @@ public enum Type
     FLOATING_POINT(GeneralType.SCALAR_VALUE),
     EXACT_NUMERIC(GeneralType.SCALAR_VALUE),
     STRING(GeneralType.SCALAR_VALUE),
+    
+    // SCALAR 
+    //--------------------------------------------------------------------------
+    EXTRA_INFO(GeneralType.EXTRA_INFO),
     ;
     
     private final GeneralType generalType;
@@ -96,6 +100,7 @@ public enum Type
         EXPRESSION,
         OPERATOR,
         SCALAR_VALUE,
-        ROWTYPE // may not be needed?
+        ROWTYPE, // may not be needed?
+        EXTRA_INFO
     }
 }

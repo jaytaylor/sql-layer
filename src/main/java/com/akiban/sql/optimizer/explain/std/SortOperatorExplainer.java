@@ -37,12 +37,12 @@ import java.util.Map;
 
 public class SortOperatorExplainer extends OperationExplainer
 {
-    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map extraInfo)
+    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
     {
         super(Type.SORT, buildMap(name, sortOption, sortType, inputOp, ordering, extraInfo));
     }
     
-    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map extraInfo)
+    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
     {
         Attributes map = new Attributes();
         

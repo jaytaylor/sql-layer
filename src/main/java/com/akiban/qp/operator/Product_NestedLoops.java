@@ -124,7 +124,7 @@ class Product_NestedLoops extends Operator
     }
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new NestedLoopsExplainer("Product", innerInputOperator, outerInputOperator, innerType, outerType, extraInfo);
     }

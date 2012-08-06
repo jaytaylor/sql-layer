@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Format;
 
 import java.util.*;
@@ -38,7 +39,7 @@ public abstract class BasePlannable extends BasePlanNode
 {
     private Plannable plannable;
     private DataTypeDescriptor[] parameterTypes;
-    private Map extraInfo;
+    private Map<Object, Explainer> extraInfo;
     
     protected BasePlannable(Plannable plannable,
                             DataTypeDescriptor[] parameterTypes) {
@@ -87,7 +88,7 @@ public abstract class BasePlannable extends BasePlanNode
     }
 
     protected static void explainPlan(Plannable operator,
-                                      List<String> into, Map extraInfo) {
+                                      List<String> into, Map<Object, Explainer> extraInfo) {
         Format f = new Format(true);
         into.add(f.Describe(operator.getExplainer(extraInfo)));
     }

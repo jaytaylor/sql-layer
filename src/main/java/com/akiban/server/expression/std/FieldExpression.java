@@ -96,12 +96,15 @@ public final class FieldExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, (List)null);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(fieldIndex));
         ex.addAttribute(Label.ROWTYPE, PrimitiveExplainer.getInstance(rowType.toString())); // TODO: Explainer for RowType?
-        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(extraInfo.get(this)));
+        if (null == extraInfo || !extraInfo.containsKey(this))
+            ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(toString()));
+        else
+            ex.addAttribute(Label.OPERAND, extraInfo.get(this));
         return ex;
     }
     

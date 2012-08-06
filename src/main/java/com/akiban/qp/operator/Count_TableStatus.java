@@ -137,7 +137,7 @@ class Count_TableStatus extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new CountOperatorExplainer("Count TableStatus", tableType, resultType, null, extraInfo);
     }

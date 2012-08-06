@@ -27,22 +27,18 @@ package com.akiban.sql.optimizer.explain.std;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.*;
 import java.util.Map;
 
 
 public class NestedLoopsExplainer extends OperationExplainer
 {
-    public NestedLoopsExplainer (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map extraInfo)
+    public NestedLoopsExplainer (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map<Object, Explainer> extraInfo)
     {
         super(Type.NESTED_LOOPS, buildMap(name, innerOp, outerOp, innerType, outerType, extraInfo));
     }
     
-    private static Attributes buildMap (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map extraInfo)
+    private static Attributes buildMap (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map<Object, Explainer> extraInfo)
     {
         Attributes att = new Attributes();
         

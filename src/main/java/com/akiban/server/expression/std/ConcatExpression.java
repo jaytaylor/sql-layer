@@ -104,7 +104,7 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     }
     
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Explainer ex = super.getExplainer(extraInfo);
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance("||"));

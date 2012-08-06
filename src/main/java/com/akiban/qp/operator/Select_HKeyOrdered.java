@@ -166,7 +166,7 @@ class Select_HKeyOrdered extends Operator
     private final TPreparedExpression pPredicate;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes att = new Attributes();
         

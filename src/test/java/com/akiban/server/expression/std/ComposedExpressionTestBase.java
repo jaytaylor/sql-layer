@@ -346,7 +346,7 @@ public abstract class ComposedExpressionTestBase {
         }
 
         @Override
-        public Explainer getExplainer(Map extraInfo)
+        public Explainer getExplainer(Map<Object, Explainer> extraInfo)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }

@@ -195,7 +195,7 @@ final class UnionAll_Default extends Operator {
     private final RowType outputRowType;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes att = new Attributes();
         

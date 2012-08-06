@@ -346,7 +346,7 @@ final class Aggregate_Partial extends Operator
     private final List<? extends TAggregator> pAggrs;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));

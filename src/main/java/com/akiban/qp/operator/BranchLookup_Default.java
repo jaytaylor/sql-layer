@@ -304,7 +304,7 @@ public class BranchLookup_Default extends Operator
     private final Limit limit;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         OperationExplainer ex = new LookUpOperatorExplainer("Branch Lookup Default", groupTable, inputRowType, keepInput, inputOperator, extraInfo);        
         ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));

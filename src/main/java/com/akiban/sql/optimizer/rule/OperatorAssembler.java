@@ -89,6 +89,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
 import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -679,6 +680,15 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
             UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
+            
+            Attributes atts = new Attributes();
+            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(insertStatement.getTargetTable().getTable().getName()));
+            for (Column column : insertStatement.getTargetColumns())
+            {
+                atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
+            }
+            planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -695,6 +705,15 @@ public class OperatorAssembler extends BaseRule
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
             UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
+            
+            Attributes atts = new Attributes();
+            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(updateStatement.getTargetTable().getTable().getName()));
+            for (UpdateColumn column : updateStatement.getUpdateColumns())
+            {
+                atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
+            }
+            planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -702,6 +721,11 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
             UpdatePlannable plan = API.delete_Default(stream.operator, usePValues);
+            
+            Attributes atts = new Attributes();
+            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName()));
+            planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 

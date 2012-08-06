@@ -183,7 +183,7 @@ final class Limit_Default extends Operator
     private final boolean usePVals;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));

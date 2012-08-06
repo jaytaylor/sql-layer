@@ -33,12 +33,12 @@ import java.util.Map;
 
 public class CountOperatorExplainer extends OperationExplainer
 {
-    public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp, Map extraInfo)
+    public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         super(Type.COUNT_OPERATOR, buildAtts(opName, inputType, resultType, inputOp, extraInfo));
     }
     
-    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp, Map extraInfo)
+    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         

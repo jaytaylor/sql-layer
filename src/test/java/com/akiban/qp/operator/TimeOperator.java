@@ -91,7 +91,7 @@ public class TimeOperator extends Operator
     private long elapsedNsec = 0;
 
     @Override
-    public Explainer getExplainer(Map extraInfo) {
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

@@ -45,7 +45,7 @@ public abstract class AbstractCompositeExpression implements Expression {
     // Expression interface
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, children);
     }

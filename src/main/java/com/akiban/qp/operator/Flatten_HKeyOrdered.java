@@ -275,7 +275,7 @@ class Flatten_HKeyOrdered extends Operator
     private final int parentHKeySegments;
 
     @Override
-    public Explainer getExplainer(Map extraInfo)
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
        
         Attributes att = new Attributes();

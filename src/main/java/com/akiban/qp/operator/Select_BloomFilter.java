@@ -165,7 +165,7 @@ class Select_BloomFilter extends Operator
     private final List<AkCollator> collators;
 
     @Override
-    public Explainer getExplainer(Map extraInfo) {
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
         return PrimitiveExplainer.getInstance(toString());
     }
 
