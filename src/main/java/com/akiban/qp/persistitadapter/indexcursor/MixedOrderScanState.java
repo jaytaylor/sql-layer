@@ -24,54 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
-import com.akiban.server.service.tree.TreeCache;
-import com.akiban.server.service.tree.TreeLink;
+import com.persistit.exception.PersistitException;
 
-class SortTreeLink implements TreeLink
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
+
+abstract class MixedOrderScanState<S>
 {
-    // TreeLink interface
+    public abstract boolean startScan() throws PersistitException;
 
-    @Override
-    public String getSchemaName()
+    public abstract boolean jump(S fieldValue) throws PersistitException;
+
+    public final int field()
     {
-        return SCHEMA_NAME;
+        return field;
     }
 
-    @Override
-    public String getTreeName()
+    public boolean advance() throws PersistitException
     {
-        return tableName;
+        SORT_TRAVERSE.hit();
+        return ascending ? cursor.exchange.next(false) : cursor.exchange.previous(false);
     }
 
-    @Override
-    public void setTreeCache(TreeCache cache)
+    protected MixedOrderScanState(IndexCursorMixedOrder cursor, int field, boolean ascending) throws PersistitException
     {
-        this.cache = cache;
+        this.cursor = cursor;
+        this.field = field;
+        this.ascending = ascending;
     }
 
-    @Override
-    public TreeCache getTreeCache()
-    {
-        return cache;
-    }
-
-    // SortTreeLink interface
-
-    public SortTreeLink(String tableName)
-    {
-        this.tableName = tableName;
-    }
-
-    // Class state
-
-    // All data is currently in one volume. Any schema name can be used to find it. Later, we may want multiple
-    // volumes, and a "schema" for temp trees. If/when we do that, the schema name will be significant.
-    private static final String SCHEMA_NAME = "TEMP_SCHEMA";
-
-    // Object state
-
-    private final String tableName;
-    private TreeCache cache;
+    protected final IndexCursorMixedOrder cursor;
+    protected final int field;
+    protected final boolean ascending;
 }

@@ -29,8 +29,8 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.akiban.qp.persistitadapter.sort.IterationHelper;
-import com.akiban.qp.persistitadapter.sort.SortCursor;
+import com.akiban.qp.persistitadapter.indexcursor.IndexCursor;
+import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -47,8 +47,8 @@ class PersistitIndexCursor implements Cursor
     {
         CursorLifecycle.checkIdle(this);
         exchange = adapter.takeExchange(indexRowType.index());
-        sortCursor = SortCursor.create(context, keyRange, ordering, new IndexScanIterationHelper(), usePValues);
-        sortCursor.open();
+        indexCursor = IndexCursor.create(context, keyRange, ordering, new IndexScanIterationHelper(), usePValues);
+        indexCursor.open();
         idle = false;
     }
 
@@ -59,7 +59,7 @@ class PersistitIndexCursor implements Cursor
         CursorLifecycle.checkIdleOrActive(this);
         boolean needAnother;
         do {
-            if ((next = (PersistitIndexRow) sortCursor.next()) != null) {
+            if ((next = (PersistitIndexRow) indexCursor.next()) != null) {
                 needAnother = !(isTableIndex ||
                                 selector.matchesAll() ||
                                 !next.keyEmpty() && selector.matches(next.tableBitmap()));
@@ -79,7 +79,7 @@ class PersistitIndexCursor implements Cursor
             exchange = adapter.takeExchange(indexRowType.index());
             idle = false;
         }
-        sortCursor.jump(row, columnSelector);
+        indexCursor.jump(row, columnSelector);
     }
 
     @Override
@@ -98,7 +98,7 @@ class PersistitIndexCursor implements Cursor
     public void destroy()
     {
         destroyed = true;
-        sortCursor = null;
+        indexCursor = null;
     }
 
     @Override
@@ -163,7 +163,7 @@ class PersistitIndexCursor implements Cursor
     private final boolean usePValues;
     private IndexScanSelector selector;
     private Exchange exchange;
-    private SortCursor sortCursor;
+    private IndexCursor indexCursor;
     private boolean idle;
     private boolean destroyed = false;
 

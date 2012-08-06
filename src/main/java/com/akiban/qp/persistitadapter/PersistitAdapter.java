@@ -306,11 +306,6 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
-    public PersistitIndexRowBuffer newIndexRow(Index index, Key key, Value value)
-    {
-        return PersistitIndexRowBuffer.createEmpty(this, index, key, value);
-    }
-
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
     {
         return

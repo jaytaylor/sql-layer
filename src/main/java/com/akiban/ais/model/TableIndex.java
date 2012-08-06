@@ -50,6 +50,14 @@ public class TableIndex extends Index
         return index;
     }
 
+    public String toString()
+    {
+        return
+            isSpatial()
+            ? super.toString() + space.toString()
+            : super.toString();
+    }
+
     /**
      * Create an independent copy of an existing TableIndex.
      * @param table Destination Table.

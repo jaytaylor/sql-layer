@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
@@ -39,7 +39,7 @@ import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-public abstract class SortCursor implements Cursor
+public abstract class IndexCursor implements Cursor
 {
     // Cursor interface
 
@@ -95,9 +95,9 @@ public abstract class SortCursor implements Cursor
         return destroyed;
     }
 
-    // SortCursor interface
+    // IndexCursor interface
 
-    public static SortCursor create(QueryContext context,
+    public static IndexCursor create(QueryContext context,
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
                                     IterationHelper iterationHelper,
@@ -109,14 +109,14 @@ public abstract class SortCursor implements Cursor
         return
             ordering.allAscending() || ordering.allDescending()
             ? (keyRange != null && keyRange.lexicographic()
-               ? SortCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
-               : SortCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
-            : SortCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
+               ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
+               : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
+            : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
     }
 
     // For use by subclasses
 
-    protected SortCursor(QueryContext context, IterationHelper iterationHelper)
+    protected IndexCursor(QueryContext context, IterationHelper iterationHelper)
     {
         this.context = context;
         this.adapter = (PersistitAdapter)context.getStore();

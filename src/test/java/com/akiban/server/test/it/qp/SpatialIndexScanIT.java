@@ -27,31 +27,29 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.types.ValueSource;
+import com.akiban.server.geophile.Space;
+import com.akiban.util.StringsTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static junit.framework.Assert.assertEquals;
 
-@Ignore
 public class SpatialIndexScanIT extends OperatorITBase
 {
     @Before
@@ -69,6 +67,7 @@ public class SpatialIndexScanIT extends OperatorITBase
         pointRowType = schema.userTableRowType(userTable(point));
         xyIndexRowType = indexType(point, "x", "y");
         group = groupTable(point);
+        space = new Space(LO, HI);
         db = new NewRow[]{
         };
         adapter = persistitAdapter(schema);
@@ -77,24 +76,131 @@ public class SpatialIndexScanIT extends OperatorITBase
     }
 
     @Test
-    public void test()
+    public void testLoad()
     {
-        long id = 0;
-        for (long x = 100; x <= 300; x += 100) {
-            for (long y = 100; y <= 300; y += 100) {
+        loadDB();
+        {
+            // Check index
+            Operator plan = indexScan_Default(xyIndexRowType);
+            RowBase[] expected = new RowBase[zToId.size()];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                expected[r++] = row(xyIndexRowType, z, (long) id);
+            }
+            compareRows(expected, cursor(plan, queryContext));
+        }
+    }
+
+    @Test
+    public void testLoadAndRemove()
+    {
+        loadDB();
+        {
+            // Delete rows with odd ids
+            for (Integer id : zToId.values()) {
+                if ((id % 2) == 1) {
+                    dml().deleteRow(session(), createNewRow(point, id, xs.get(id), ys.get(id)));
+                }
+            }
+        }
+        {
+            // Check index
+            Operator plan = indexScan_Default(xyIndexRowType);
+            int rowsRemaining = zToId.size() / 2;
+            if ((zToId.size() % 2) == 1) {
+                rowsRemaining += 1;
+            }
+            RowBase[] expected = new RowBase[rowsRemaining];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                // Only even ids should remain
+                if ((id % 2) == 0) {
+                    expected[r++] = row(xyIndexRowType, z, (long) id);
+                }
+            }
+            compareRows(expected, cursor(plan, queryContext));
+        }
+    }
+
+    @Test
+    public void testLoadAndUpdate()
+    {
+        loadDB();
+        int n = xs.size();
+        zToId.clear();
+        {
+            // Increment y values
+            for (int id = 0; id < n; id++) {
+                Long x = xs.get(id);
+                Long y = ys.get(id);
+                NewRow before = createNewRow(point, id, x, y);
+                NewRow after = createNewRow(point, id, x, y + 1);
+                long z = space.shuffle(new long[]{x, y + 1});
+                zToId.put(z, id);
+                dml().updateRow(session(), before, after, null);
+            }
+        }
+        {
+            // Check index
+            Operator plan = indexScan_Default(xyIndexRowType);
+            RowBase[] expected = new RowBase[zToId.size()];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                expected[r++] = row(xyIndexRowType, z, (long) id);
+            }
+            compareRows(expected, cursor(plan, queryContext));
+        }
+    }
+
+    @Test
+    public void testSpatialQuery()
+    {
+/*
+        IndexBound lowerLeft = new IndexBound(row(xyIndexRowType, 50, 150), new SetColumnSelector(0, 1));
+        IndexBound upperRight = new IndexBound(row(xyIndexRowType, 150, 250), new SetColumnSelector(0, 1));
+        IndexKeyRange box = IndexKeyRange.spatial(xyIndexRowType,
+                                                  lowerLeft, true,
+                                                  upperRight, true);
+        loadDB();
+        Operator plan = indexScan_Default(xyIndexRowType, false, box);
+        dump(plan);
+*/
+    }
+
+    private void loadDB()
+    {
+        int id = 0;
+        for (long x = DX; x < END_X; x += DX) {
+            for (long y = DY; y < END_Y; y += DY) {
                 dml().writeRow(session(), createNewRow(point, id, x, y));
+                long z = space.shuffle(new long[]{x, y});
+                zToId.put(z, id);
+                xs.add(x);
+                ys.add(y);
                 id++;
             }
         }
-        Operator plan = indexScan_Default(xyIndexRowType);
-        dump(plan);
     }
 
+    private static final long END_X = 1000L;
+    private static final long END_Y = 1000L;
     private static final long[] LO = {0L, 0L};
-    private static final long[] HI = {999L, 999L};
+    private static final long[] HI = {END_X - 1, END_Y - 1};
+    private static final int DX = 100;
+    private static final int DY = 100;
 
     private int point;
     private UserTableRowType pointRowType;
     private IndexRowType xyIndexRowType;
     private GroupTable group;
+    private Space space;
+    private Map<Long, Integer> zToId = new TreeMap<Long, Integer>();
+    List<Long> xs = new ArrayList<Long>(); // indexed by id
+    List<Long> ys = new ArrayList<Long>(); // indexed by id
 }

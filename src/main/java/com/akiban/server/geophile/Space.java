@@ -101,6 +101,26 @@ import java.util.Arrays;
 
 public class Space
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append('[');
+        for (int d = 0; d < dimensions; d++) {
+            if (d > 0) {
+                buffer.append(", ");
+            }
+            buffer.append(lo[d]);
+            buffer.append(':');
+            buffer.append(hi[d]);
+        }
+        buffer.append(']');
+        return buffer.toString();
+    }
+
+
     // Space interface
 
     /**
