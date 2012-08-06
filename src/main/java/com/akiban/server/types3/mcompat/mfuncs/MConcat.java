@@ -85,7 +85,7 @@ public class MConcat extends TOverloadBase {
             assert inputStr != null;
             sb.append(inputStr);
         }
-        output.putObject(sb.toString());
+        output.putString(sb.toString(), null);
     }
 
     @Override

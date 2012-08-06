@@ -177,7 +177,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(Double.toString(source.getDouble()));
+            target.putString(Double.toString(source.getDouble()), null);
         }
     }
 
@@ -192,7 +192,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(Byte.toString(source.getInt8()));
+            target.putString(Byte.toString(source.getInt8()), null);
         }
     }
 
@@ -327,7 +327,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(Short.toString(source.getInt16()));
+            target.putString(Short.toString(source.getInt16()), null);
         }
     }
     
@@ -477,7 +477,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(Integer.toString(source.getInt32()));
+            target.putString(Integer.toString(source.getInt32()), null);
         }
     }
 
@@ -627,7 +627,7 @@ public class MNumericCastBase
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(Long.toString(source.getInt64()));
+            target.putString(Long.toString(source.getInt64()), null);
         }
     }
     

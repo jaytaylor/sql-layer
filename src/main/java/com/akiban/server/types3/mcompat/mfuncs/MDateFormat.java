@@ -123,7 +123,7 @@ public abstract class MDateFormat extends TOverloadBase
         }
         
         if (ret != null)
-            output.putObject(ret);
+            output.putString(ret, null);
         else
         {
             output.putNull();

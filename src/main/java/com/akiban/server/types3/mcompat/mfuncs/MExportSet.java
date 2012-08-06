@@ -164,11 +164,12 @@ public abstract class  MExportSet extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        output.putObject(computeSet(getUnsignedBigint64(inputs.get(0).getInt64()),
-                                     new String[]{inputs.get(2).getString(),
-                                                  inputs.get(1).getString()},
-                                     getDelimeter(inputs),
-                                     getLength(inputs)));
+        String s = computeSet(
+                getUnsignedBigint64(inputs.get(0).getInt64()),
+                new String[]{inputs.get(2).getString(), inputs.get(1).getString()},
+                getDelimeter(inputs),
+                getLength(inputs));
+        output.putString(s, null);
         
     }
     

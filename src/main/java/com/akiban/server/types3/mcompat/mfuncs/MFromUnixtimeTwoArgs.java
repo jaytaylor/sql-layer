@@ -86,7 +86,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
             context.warnClient(error);
         }
         else
-            output.putObject(ret);
+            output.putString(ret, null);
     }
 
     @Override

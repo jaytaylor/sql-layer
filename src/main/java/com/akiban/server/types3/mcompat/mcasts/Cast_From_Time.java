@@ -86,7 +86,8 @@ public class Cast_From_Time {
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            target.putObject(MDatetimes.parseTime(source.getString(), context));
+            int asInt = MDatetimes.parseTime(source.getString(), context);
+            target.putString(Integer.toString(asInt), null);
         }
     };
     

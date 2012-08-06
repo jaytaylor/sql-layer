@@ -83,7 +83,7 @@ public class MSubstringIndex extends TOverloadBase {
         boolean signed;
 
         if (count == 0 || str.isEmpty() || substr.isEmpty()) {
-            output.putObject("");
+            output.putString("", null);
             return;
         } else if (signed = count < 0) {
             count = -count;
@@ -105,7 +105,7 @@ public class MSubstringIndex extends TOverloadBase {
             ret = new StringBuilder(ret).reverse().toString();
         }
 
-        output.putObject(ret);
+        output.putString(ret, null);
     }
 
     @Override

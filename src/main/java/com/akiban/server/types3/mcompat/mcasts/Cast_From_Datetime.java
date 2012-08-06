@@ -103,7 +103,7 @@ public class Cast_From_Datetime
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(MDatetimes.datetimeToString(source.getInt64()));
+            target.putString(MDatetimes.datetimeToString(source.getInt64()), null);
         }
     };
 }
