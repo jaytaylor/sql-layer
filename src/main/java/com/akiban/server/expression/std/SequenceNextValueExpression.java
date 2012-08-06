@@ -27,6 +27,8 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -83,6 +85,16 @@ public final class SequenceNextValueExpression extends AbstractBinaryExpression 
         return "NEXTVAL";
     }
 
+    @Override
+    public boolean isConstant() {
+        return false;
+    }
+
+    @Override
+    public boolean needsBindings() {
+        return true;
+    }
+
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation {
 
         private InnerEvaluation(List<? extends ExpressionEvaluation> children) {
@@ -90,17 +102,34 @@ public final class SequenceNextValueExpression extends AbstractBinaryExpression 
         }
 
         @Override
+        public void of(QueryContext context) {
+            super.of(context);
+            needAnother = true;
+        }
+
+        @Override
+        public void of(Row row) {
+            super.of(row);
+            needAnother = true;
+        }
+
+        @Override
         public ValueSource eval() {
-            String schema = left().getString();
-            String sequence = right().getString();
-            logger.debug("Sequence loading : {}.{}", schema, sequence);
+            if (needAnother) {
+                String schema = left().getString();
+                String sequence = right().getString();
+                logger.debug("Sequence loading : {}.{}", schema, sequence);
 
-            TableName sequenceName = new TableName (schema, sequence);
+                TableName sequenceName = new TableName (schema, sequence);
 
-            long value = queryContext().sequenceNextValue(sequenceName);
-            valueHolder().putLong(value);
+                long value = queryContext().sequenceNextValue(sequenceName);
+                valueHolder().putLong(value);
+                needAnother = false;
+            }
             return valueHolder();
         }
+
+        private boolean needAnother;
     }
 
     private static final Logger logger = LoggerFactory.getLogger(SequenceNextValueExpression.class);
