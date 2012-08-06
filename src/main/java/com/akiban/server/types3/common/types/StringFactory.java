@@ -49,7 +49,7 @@ public class StringFactory implements TFactory
         
         public static Charset of(String value) {
             // Could optimize this with a StringBuilder, for-loop, etc
-            value = value.toUpperCase().replace('-', '_');
+            value = value.toUpperCase();
             Charset charset = lookupMap.get(value);
             if (charset == null)
                 throw new AkibanInternalException("not a valid encoding: " + value);
