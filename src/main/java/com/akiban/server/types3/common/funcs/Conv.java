@@ -76,7 +76,7 @@ public class Conv extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String st = (String) inputs.get(0).getObject();
+        String st = inputs.get(0).getString();
         int fromBase = inputs.get(1).getInt32();
         int toBase = inputs.get(2).getInt32();
         

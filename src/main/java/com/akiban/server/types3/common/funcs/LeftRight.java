@@ -91,7 +91,7 @@ public abstract class LeftRight extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String st = (String)inputs.get(0).getObject();
+        String st = inputs.get(0).getString();
         int len = inputs.get(1).getInt32();
 
         // adjust the length
@@ -128,7 +128,7 @@ public abstract class LeftRight extends TOverloadBase
                     if (st.value() == null || st.value().isNull())
                         return st.instance();
                     else // if the string is available, return its length
-                        return stringType.instance(((String)st.value().getObject()).length());
+                        return stringType.instance((st.value().getString()).length());
                 }
                 else
                     return stringType.instance(len.value().getInt32());

@@ -52,7 +52,7 @@ public abstract class UpperLower extends TOverloadBase
                 @Override
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
                 {
-                    output.putObject(((String)inputs.get(0).getObject()).toUpperCase());
+                    output.putObject((inputs.get(0).getString()).toUpperCase());
                 }
                 
                 @Override
@@ -66,7 +66,7 @@ public abstract class UpperLower extends TOverloadBase
                 @Override
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
                 {
-                    output.putObject(((String)inputs.get(0).getObject()).toLowerCase());
+                    output.putObject((inputs.get(0).getString()).toLowerCase());
                 }
                 
                 @Override

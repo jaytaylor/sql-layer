@@ -64,8 +64,8 @@ public abstract class Trim extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String trim = (String) inputs.get(1).getObject();
-                String st = (String) inputs.get(2).getObject();
+                String trim = inputs.get(1).getString();
+                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
                     output.putObject(st);
@@ -84,8 +84,8 @@ public abstract class Trim extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String trim = (String) inputs.get(1).getObject();
-                String st = (String) inputs.get(2).getObject();
+                String trim = inputs.get(1).getString();
+                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
                     output.putObject(st);
@@ -105,8 +105,8 @@ public abstract class Trim extends TOverloadBase {
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 int trimType = inputs.get(0).getInt32();
-                String trim = (String) inputs.get(1).getObject();
-                String st = (String) inputs.get(2).getObject();
+                String trim = inputs.get(1).getString();
+                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
                     output.putObject(st);

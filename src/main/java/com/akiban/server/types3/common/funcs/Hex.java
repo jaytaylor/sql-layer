@@ -74,7 +74,7 @@ public abstract class Hex extends TOverloadBase {
 
                     @Override
                     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                        String st = (String) inputs.get(0).getObject();
+                        String st = inputs.get(0).getString();
                         StringBuilder builder = new StringBuilder();
                         int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
                         String charsetName = (StringFactory.Charset.values())[charsetId].name();

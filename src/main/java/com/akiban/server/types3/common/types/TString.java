@@ -149,7 +149,7 @@ public abstract class TString extends TClass
                     && getClass().isAssignableFrom(targetInstance.typeClass().getClass())
                 : "expected instances of TString";
         
-        String raw = (String) sourceValue.getObject();
+        String raw = sourceValue.getString();
         int maxLen = targetInstance.attribute(StringAttribute.LENGTH);
         
         if (raw.length() > maxLen)
