@@ -225,7 +225,13 @@ public final class PValueSources {
         }
         else if (object instanceof BigDecimal) {
             BigDecimal bd = (BigDecimal) object;
-            tInstance = MNumeric.DECIMAL.instance(bd.precision(), bd.scale());
+            int precision = bd.precision();
+            int scale = bd.scale();
+            if (precision < scale) {
+                // BigDecimal interprets something like "0.01" as having a scale of 2 and precision of 1.
+                precision = scale;
+            }
+            tInstance = MNumeric.DECIMAL.instance(precision, scale);
             value = new PValue(PUnderlying.BYTES);
             value.putObject(new MBigDecimalWrapper(bd));
         }
