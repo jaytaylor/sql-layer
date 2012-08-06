@@ -53,7 +53,7 @@ public class MUnhex extends TOverloadBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        String st = (String) inputs.get(0).getObject();
+        String st = inputs.get(0).getString();
         
         try {
             output.putBytes(Strings.parseHexWithout0x(st).byteArray());

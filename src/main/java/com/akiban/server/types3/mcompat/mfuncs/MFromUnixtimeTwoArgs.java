@@ -73,7 +73,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
                 && (ret = (String)context.preptimeObjectAt(RET_INDEX)) == null)
         {
             Object objs[] = computeResult(inputs.get(0).getInt32(),
-                                          (String)inputs.get(1).getObject(),
+                                          inputs.get(1).getString(),
                                           context.getCurrentTimezone());
             
             ret = (String) objs[RET_INDEX];
@@ -119,13 +119,13 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
                     
                     // if the unix time value is not literal, get the length
                     // from the format string
-                    length = computeLength((String)format.getObject());
+                    length = computeLength(format.getString());
                     
                     // if the unix time is available, get the actual length
                     if (unixTime != null)
                     {
                         Object prepObjects[] = computeResult(unixTime.getInt32(),
-                                                            (String) format.getObject(),
+                                                            format.getString(),
                                                             context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
                         context.set(ERROR_INDEX, prepObjects[ERROR_INDEX]);
