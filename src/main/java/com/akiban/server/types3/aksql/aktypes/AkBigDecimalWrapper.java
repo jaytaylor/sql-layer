@@ -139,12 +139,9 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
-    public int compareTo(Object o)
+    public int compareTo(BigDecimalWrapper o)
     {
-         if (o == null)
-            return 1;
-
-        return value.compareTo(((AkBigDecimalWrapper)o).value);
+        return value.compareTo(o.asBigDecimal());
     }
     
     @Override

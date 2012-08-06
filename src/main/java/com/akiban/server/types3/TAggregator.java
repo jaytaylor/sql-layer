@@ -31,7 +31,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
 public interface TAggregator {
-    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
+    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst);
     void emptyValue(PValueTarget state);
     TInstance resultType(TPreptimeValue value);
     TClass getTypeClass();

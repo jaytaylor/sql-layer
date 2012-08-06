@@ -154,12 +154,9 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
-    public int compareTo(Object o)
+    public int compareTo(BigDecimalWrapper o)
     {
-        if (o == null)
-            return 1;
-        
-        return value.compareTo(((MBigDecimalWrapper)o).value);
+        return value.compareTo(o.asBigDecimal());
     }
 
     @Override
