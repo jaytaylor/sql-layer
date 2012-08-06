@@ -74,7 +74,7 @@ public abstract class Hex extends TOverloadBase {
 
                     @Override
                     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                        String st = (String) inputs.get(0).getObject();
+                        String st = inputs.get(0).getString();
                         StringBuilder builder = new StringBuilder();
                         int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
                         String charsetName = (StringFactory.Charset.values())[charsetId].name();
@@ -83,7 +83,7 @@ public abstract class Hex extends TOverloadBase {
                         for (byte ch : st.getBytes(charset)) {
                             builder.append(String.format("%02X", ch));
                         }
-                        output.putObject(builder.toString());
+                        output.putString(builder.toString(), null);
                     }
                 };
         TOverload numericHex =
@@ -96,7 +96,7 @@ public abstract class Hex extends TOverloadBase {
 
                     @Override
                     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                        output.putObject(Long.toHexString(inputs.get(0).getInt64()));
+                        output.putString(Long.toHexString(inputs.get(0).getInt64()), null);
                     }
                 };
         return new TOverload[]{stringHex, numericHex};

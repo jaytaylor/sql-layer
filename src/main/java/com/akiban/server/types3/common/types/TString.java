@@ -149,7 +149,7 @@ public abstract class TString extends TClass
                     && getClass().isAssignableFrom(targetInstance.typeClass().getClass())
                 : "expected instances of TString";
         
-        String raw = (String) sourceValue.getObject();
+        String raw = sourceValue.getString();
         int maxLen = targetInstance.attribute(StringAttribute.LENGTH);
         
         if (raw.length() > maxLen)
@@ -157,10 +157,10 @@ public abstract class TString extends TClass
             String truncated = raw.substring(0, maxLen);
             // TODO: check charset and collation, too
             context.warnClient(new StringTruncationException(raw, truncated));
-            targetValue.putObject(truncated);
+            targetValue.putString(truncated, null);
         }
         else
-            targetValue.putObject(raw);
+            targetValue.putString(raw, null);
     }
      
     @Override

@@ -102,18 +102,18 @@ public abstract class Pad extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String st = (String) inputs.get(0).getObject();
+        String st = inputs.get(0).getString();
         int length = inputs.get(1).getInt32();
-        String toAdd = (String) inputs.get(2).getObject();
+        String toAdd = inputs.get(2).getString();
         
         if (length < 0)
             output.putNull();
         else if (length <= st.length())
-            output.putObject(st.substring(0, length));
+            output.putString(st.substring(0, length), null);
         else if (toAdd.isEmpty())
             output.putNull();
         else
-            output.putObject(doPadding(st, length, toAdd));
+            output.putString(doPadding(st, length, toAdd), null);
     }
     
     @Override

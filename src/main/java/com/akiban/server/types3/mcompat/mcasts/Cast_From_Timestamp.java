@@ -101,7 +101,7 @@ public class Cast_From_Timestamp
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(MDatetimes.timestampToString(source.getInt32(), context.getCurrentTimezone()));
+            target.putString(MDatetimes.timestampToString(source.getInt32(), context.getCurrentTimezone()), null);
         }
     };
 }
