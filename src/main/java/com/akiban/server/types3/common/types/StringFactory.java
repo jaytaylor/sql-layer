@@ -44,22 +44,8 @@ public class StringFactory implements TFactory
     //TODO: add more charsets as needed
     public static enum Charset
     {
-        LATIN1, UTF_8("utf-8"), UTF_16, ISO88591
+        LATIN1, UTF8, UTF16, ISO_8859_1
         ;
-
-        private Charset() {
-            this(null);
-        }
-
-        private Charset(String charsetName) {
-            this.charsetName = charsetName;
-        }
-
-        private final String charsetName;
-
-        public String charsetName() {
-            return (charsetName == null) ? name() : charsetName;
-        }
         
         public static Charset of(String value) {
             // Could optimize this with a StringBuilder, for-loop, etc
@@ -84,8 +70,8 @@ public class StringFactory implements TFactory
             }
             // aliases
             map.put("ISO_8859_1", LATIN1);
-            map.put("UTF8", UTF_8);
-            map.put("UTF16", UTF_16);
+            map.put("UTF8", UTF8);
+            map.put("UTF16", UTF16);
             return map;
         }
     }
@@ -95,7 +81,7 @@ public class StringFactory implements TFactory
     // default number of characters in a string      
     protected static final int DEFAULT_LENGTH = 255;
     
-    protected static final Charset DEFAULT_CHARSET = Charset.UTF_8;
+    protected static final Charset DEFAULT_CHARSET = Charset.UTF8;
     
     protected static final int DEFAULT_COLLATION_ID = 0; // TODO:
     
