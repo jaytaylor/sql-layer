@@ -54,6 +54,10 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     public final int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
+        // The dependence on field positions and fieldCount is a problem for spatial indexes
+        if (index.isSpatial()) {
+            throw new UnsupportedOperationException(index.toString());
+        }
         PersistitIndexRowBuffer that = (PersistitIndexRowBuffer) row;
         Key thisKey = this.keyAppender.key();
         Key thatKey = that.keyAppender.key();
@@ -92,13 +96,16 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     public void append(Column column, ValueSource source)
     {
+        // There is no hard requirement that the index is a group index. But while we're adding support for
+        // spatial, we just want to be precise about what kind of index is in use.
+        assert index.isGroupIndex();
         keyAppender.append(source, column);
     }
 
     public void initialize(RowData rowData, Key hKey)
     {
         int indexField = 0;
-        if (index.isSpatial()) {
+        if (spatialHandler != null) {
             spatialHandler.bind(rowData);
             keyAppender.append(spatialHandler.zValue());
             indexField = spatialHandler.dimensions();
@@ -139,10 +146,13 @@ public class PersistitIndexRowBuffer extends IndexRow
         key.clear();
         this.keyAppender = PersistitKeyAppender.create(key);
         this.value = null;
-        this.spatialHandler =
-            index.isSpatial()
-            ? new SpatialHandler()
-            : null;
+        if (index.isSpatial()) {
+            this.spatialHandler = new SpatialHandler();
+            this.nIndexFields = index.getAllColumns().size() - index.getKeyColumns().size() + 1;
+        } else {
+            this.spatialHandler = null;
+            this.nIndexFields = index.getAllColumns().size();
+        }
     }
 
     // For group index rows
@@ -162,6 +172,9 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     protected void attach(PersistitKeyPValueSource source, int position, PUnderlying type)
     {
+        if (index.isSpatial()) {
+            throw new UnsupportedOperationException("Spatial indexes don't implement types3 yet");
+        }
         source.attach(keyAppender.key(), position, type);
     }
 
@@ -174,12 +187,15 @@ public class PersistitIndexRowBuffer extends IndexRow
     {
         Key indexRowKey = keyAppender.key();
         hKey.clear();
-        for(int i = 0; i < indexToHKey.getLength(); ++i) {
-            if(indexToHKey.isOrdinal(i)) {
+        for (int i = 0; i < indexToHKey.getLength(); i++) {
+            if (indexToHKey.isOrdinal(i)) {
                 hKey.append(indexToHKey.getOrdinal(i));
-            }
-            else {
+            } else {
                 int depth = indexToHKey.getIndexRowPosition(i);
+                if (index.isSpatial()) {
+                    // A spatial index has a single key column (the z-value), representing the declared key columns.
+                    depth = depth - index.getKeyColumns().size() + 1;
+                }
                 if (depth < 0 || depth > indexRowKey.getDepth()) {
                     throw new IllegalStateException(
                         "IndexKey too shallow - requires depth=" + depth
@@ -192,7 +208,8 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     // Object state
 
-    private Index index;
+    protected Index index;
+    protected int nIndexFields;
     private PersistitKeyAppender keyAppender;
     private Value value;
     private SpatialHandler spatialHandler;
