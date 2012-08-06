@@ -99,7 +99,7 @@ public class TAesEncryptDecrypt extends TOverloadBase
         try
         {
             output.putBytes(aes_decrypt_encrypt(inputs.get(0).getBytes(),
-                                                (String)inputs.get(1).getObject(),
+                                                inputs.get(1).getString(),
                                                 keyLength,
                                                 mode));
         }
