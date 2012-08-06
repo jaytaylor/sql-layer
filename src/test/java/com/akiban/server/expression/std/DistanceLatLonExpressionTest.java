@@ -49,25 +49,25 @@ public class DistanceLatLonExpressionTest {
     
     @Test
     public void testPosNoWrap() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(90), getDecimal(0), getDecimal(100), getDecimal(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(90), getDecimal(0), getDecimal(100)));
         test(10.0, lst);
     }
     
     @Test
     public void testPosWrap() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(0), getDecimal(180), getDecimal(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(0), getDecimal(0), getDecimal(180)));
         test(180.0, lst);
     }
     
     @Test
     public void testNegNoWrap() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(90), getDecimal(-90), getDecimal(100), getDecimal(-90)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-90), getDecimal(90), getDecimal(-90), getDecimal(100)));
         test(10.0, lst);
     }
     
     @Test
     public void testNegWrap() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-179), getDecimal(0), getDecimal(180), getDecimal(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-179), getDecimal(0), getDecimal(180)));
         test(1.0, lst);
     }
     
@@ -79,7 +79,7 @@ public class DistanceLatLonExpressionTest {
     
     @Test 
     public void testWrapAround() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-1), getDecimal(0), getDecimal(1), getDecimal(0)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-1), getDecimal(0), getDecimal(1)));
         test(2.0, lst);
     }
 

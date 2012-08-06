@@ -97,10 +97,10 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             AkType type = children().get(0).eval().getConversionType();
             switch (type) {
                 case DECIMAL: 
-                    x1 = children().get(0).eval().getDecimal().longValueExact();
-                    y1 = children().get(1).eval().getDecimal().longValueExact();
-                    x2 = children().get(2).eval().getDecimal().longValueExact();
-                    y2 = children().get(3).eval().getDecimal().longValueExact();
+                    y1 = children().get(0).eval().getDecimal().longValueExact();
+                    x1 = children().get(1).eval().getDecimal().longValueExact();
+                    y2 = children().get(2).eval().getDecimal().longValueExact();
+                    x2 = children().get(3).eval().getDecimal().longValueExact();
                     break;
                 default:
                         throw new InvalidArgumentTypeException("Type " + type + "is not supported in DISTANCE_LAT_LON");
@@ -112,7 +112,7 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             double X = Math.pow(x1 - x2, 2.0);
             double Y = Math.pow(y1 - y2, 2.0);
             
-            double result = shiftCalculation(x1, x2, X, Y);   
+            double result = getShortestDistance(x1, x2, X, Y);   
             valueHolder().putDouble(result);
             
             return valueHolder();
@@ -123,7 +123,7 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             return num;
         }
         
-        private double shiftCalculation(double arg1, double arg2, double noShift, double c) {
+        private double getShortestDistance(double arg1, double arg2, double noShift, double c) {
             double shift = noShift;    
             if (arg1 < arg2) shift = Math.pow(UPPER_BOUND - arg2 + arg1, 2.0);
             if (arg2 < arg1) shift = Math.pow(UPPER_BOUND - arg1 + arg2, 2.0);
