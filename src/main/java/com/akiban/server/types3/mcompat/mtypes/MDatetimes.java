@@ -347,6 +347,16 @@ public class MDatetimes
         }
     }
     
+    public static long encodeDatetime(DateTime dt)
+    {
+        return dt.getYear() * DATETIME_YEAR_SCALE
+                + dt.getMonthOfYear() * DATETIME_MONTH_SCALE
+                + dt.getDayOfMonth() * DATETIME_DAY_SCALE
+                + dt.getHourOfDay() * DATETIME_HOUR_SCALE
+                + dt.getMinuteOfHour() * DATETIME_MIN_SCALE
+                + dt.getSecondOfMinute();
+    }
+    
     /**
      * TODO: Same as encodeDate(long, String)'s
      * 

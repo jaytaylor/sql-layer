@@ -453,7 +453,7 @@ public final class PValueSources {
         plainConverter.convert(null, source, result, tInstance);
         return result;
     }
-    
+
     public static void toStringSimple(PValueSource source, StringBuilder out) {
         if (source.isNull()) {
             out.append("NULL");

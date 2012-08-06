@@ -74,7 +74,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     // TODO: This is not a correct implementation of hKey, because it returns an empty hKey to be filled in
     // TODO: by the caller. Normally, hKey returns the HKey of the row.
     @Override
-    public HKey hKey()
+    public final HKey hKey()
     {
         return hKeyCache.hKey(leafmostTable);
     }
@@ -94,7 +94,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     }
 
     @Override
-    public PValueSource pvalue(int i) {
+    public final PValueSource pvalue(int i) {
         PUnderlying underlying = rowType().typeInstanceAt(i).typeClass().underlyingType();
         PersistitKeyPValueSource keySource = keyPSource(i, underlying);
         attach(keySource, i, underlying);
@@ -130,11 +130,10 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        reset(adapter.persistit().getKey());
-        this.adapter = adapter;
+        super(adapter);
+        resetForWrite(indexRowType.index(), adapter.persistit().getKey());
         this.indexRowType = indexRowType;
         int nfields = indexRowType.nFields();
-        assert nfields == indexRowType.index().getAllColumns().size();
         this.akTypes = new AkType[nfields];
         this.akCollators = new AkCollator[nfields];
         for (IndexColumn indexColumn : indexRowType.index().getAllColumns()) {
@@ -173,13 +172,11 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     // Object state
 
-    protected final PersistitAdapter adapter;
-    protected final IndexRowType indexRowType;
-    protected AkType[] akTypes;
-    protected AkCollator[] akCollators;
-    protected PersistitKeyValueSource[] keySources;
-    protected PersistitKeyPValueSource[] keyPSources;
     protected final HKeyCache<PersistitHKey> hKeyCache;
     protected final UserTable leafmostTable;
-
+    private final IndexRowType indexRowType;
+    private final AkType[] akTypes;
+    private final AkCollator[] akCollators;
+    private PersistitKeyValueSource[] keySources;
+    private PersistitKeyPValueSource[] keyPSources;
 }

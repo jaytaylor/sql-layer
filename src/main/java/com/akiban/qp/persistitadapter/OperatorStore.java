@@ -74,7 +74,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final boolean WITH_STEPS = false;
 
     private PersistitAdapter createAdapter(AkibanInformationSchema ais, Session session) {
-        return new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session, config, WITH_STEPS);
+        PersistitAdapter adapter =
+            new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                 getPersistitStore(),
+                                 treeService,
+                                 session,
+                                 config,
+                                 WITH_STEPS);
+        session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
+        return adapter;
     }
 
     // Store interface
@@ -315,8 +323,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             GroupIndex groupIndex,
             Operator rootOperator,
             OperatorStoreGIHandler handler,
-            OperatorStoreGIHandler.Action action
-    )
+            OperatorStoreGIHandler.Action action)
     {
         Cursor cursor = API.cursor(rootOperator, context);
         cursor.open();
@@ -380,15 +387,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
         return true;
-    }
-
-    private PersistitAdapter newAdapter(Session session)
-    {
-        return new PersistitAdapter(SchemaCache.globalSchema(aisHolder.getAis()),
-                                                             getPersistitStore(),
-                                                             treeService,
-                                                             session,
-                                                             config);
     }
 
     // object state

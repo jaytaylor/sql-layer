@@ -76,6 +76,7 @@ public final class Cast_From_Double {
             MApproximateNumber.DOUBLE,
             MString.VARCHAR
     );
+
     public static final TCast TO_FLOAT = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.FLOAT) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
@@ -105,7 +106,7 @@ public final class Cast_From_Double {
         }
     };
 
-    public static final TCast TO_DOUBLE_UNSIGNED = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE_UNSIGNED, true) {
+    public static final TCast TO_DOUBLE_UNSIGNED = new TCastBase(MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE_UNSIGNED) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             double orig = source.getDouble();

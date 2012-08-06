@@ -48,15 +48,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.View;
+import com.akiban.ais.model.*;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
@@ -86,18 +81,12 @@ import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.util.ListUtils;
 
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -547,7 +536,25 @@ public class ApiTestBase {
         return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
     }
 
-    private AkibanInformationSchema createIndexInternal(String schema, String table, String indexName, String... indexCols) {
+    private AkibanInformationSchema createUniqueIndexInternal(String schema,
+                                                              String table,
+                                                              String indexName,
+                                                              String... indexCols) {
+        return createIndexInternal(schema, table, indexName, true, indexCols);
+    }
+
+    private AkibanInformationSchema createIndexInternal(String schema,
+                                                        String table,
+                                                        String indexName,
+                                                        String... indexCols) {
+        return createIndexInternal(schema, table, indexName, false, indexCols);
+    }
+
+    private AkibanInformationSchema createIndexInternal(String schema,
+                                                        String table,
+                                                        String indexName,
+                                                        boolean unique,
+                                                        String... indexCols) {
         String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
                                    Strings.join(Arrays.asList(indexCols), ","));
         return createFromDDL(schema, ddl);
@@ -555,6 +562,14 @@ public class ApiTestBase {
 
     protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
         AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
+        Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
+    }
+
+    protected final TableIndex createUniqueIndex(String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createUniqueIndexInternal(schema, table, indexName, indexCols);
         Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
@@ -738,9 +753,9 @@ public class ApiTestBase {
             throw new RuntimeException("no such index: " + index);
         }
         return openFullScan(
-                userTable.getTableId(),
-                aisIndex.getIndexId()
-        );
+            userTable.getTableId(),
+            aisIndex.getIndexId()
+                           );
     }
 
     protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
@@ -818,6 +833,7 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables() throws InvalidOperationException {
+        ensureAdapter();
         for(View view : ddl().getAIS(session()).getViews().values()) {
             // In case one view references another, avoid having to delete in proper order.
             view.getTableColumnReferences().clear();
@@ -1024,7 +1040,17 @@ public class ApiTestBase {
             }
         });
     }
-    
+
+    private void ensureAdapter()
+    {
+        Session session = session();
+        if (session.get(StoreAdapter.STORE_ADAPTER_KEY) == null) {
+            Schema schema = new Schema(sm.getSchemaManager().getAis(session));
+            PersistitAdapter adapter = persistitAdapter(schema);
+            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
+        }
+    }
+
     protected boolean usingPValues() {
         return Types3Switch.ON && testSupportsPValues();
     }

@@ -27,7 +27,7 @@ package com.akiban.server.types3.common;
 
 import java.math.BigDecimal;
 
-public interface BigDecimalWrapper {
+public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
     
      BigDecimalWrapper add(BigDecimalWrapper augend);
      BigDecimalWrapper subtract(BigDecimalWrapper augend);
@@ -43,7 +43,7 @@ public interface BigDecimalWrapper {
      BigDecimalWrapper negate();
      BigDecimalWrapper abs();
      
-     int compareTo (Object o);
+     int compareTo (BigDecimalWrapper o);
      int getScale();
      int getPrecision();
      int getSign();
