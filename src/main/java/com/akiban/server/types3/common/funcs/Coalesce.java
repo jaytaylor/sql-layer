@@ -29,7 +29,6 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -56,7 +55,6 @@ public class Coalesce extends TOverloadBase {
         for (int i = 0; i < inputs.size(); ++i) {
             if (!inputs.get(i).isNull()) {
                 PValueTargets.copyFrom(inputs.get(i), output);
-                output.putObject(inputs.get(i).getObject());
                 return;
             }
         }
