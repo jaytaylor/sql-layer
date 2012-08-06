@@ -26,27 +26,23 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.persistitadapter.sort.Sorter;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.persistitadapter.indexcursor.Sorter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.expression.std.Expressions.field;
 import static junit.framework.Assert.assertTrue;
 
 public class Sort_TreeIT extends OperatorITBase

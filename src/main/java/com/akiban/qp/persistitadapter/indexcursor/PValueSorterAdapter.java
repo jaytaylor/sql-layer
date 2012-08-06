@@ -23,67 +23,63 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.PersistitValueValueSource;
-import com.akiban.server.PersistitValueValueTarget;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.PersistitValuePValueSource;
+import com.akiban.server.PersistitValuePValueTarget;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TNullExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.persistit.Value;
 
-final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, ExpressionEvaluation> {
+final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExpression, TEvaluatableExpression> {
     @Override
     protected void appendDummy(API.Ordering ordering) {
-        ordering.append(DUMMY_EXPRESSION, null, ordering.ascending(0));
+        ordering.append(null, DUMMY_EXPRESSION, ordering.ascending(0));
     }
 
     @Override
     protected TInstance[] tinstances(int size) {
-        return null;
+        return new TInstance[size];
     }
 
     @Override
     protected AkType[] aktypes(int size) {
-        return new AkType[size];
+        return null;
     }
 
     @Override
     protected void initTypes(RowType rowType, AkType[] ofFieldTypes, TInstance[] tFieldTypes, int i) {
-        ofFieldTypes[i] = rowType.typeAt(i);
+        tFieldTypes[i] = rowType.typeInstanceAt(i);
     }
 
     @Override
     protected void initTypes(API.Ordering ordering, int i, AkType[] akTypes, TInstance[] tInstances) {
-        akTypes[i] = ordering.type(i);
+        tInstances[i] = ordering.tInstance(i);
     }
 
     @Override
-    protected ExpressionEvaluation evaluation(API.Ordering ordering, QueryContext context, int i) {
-        ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
-        evaluation.of(context);
+    protected TEvaluatableExpression evaluation(API.Ordering ordering, QueryContext context, int i) {
+        TEvaluatableExpression evaluation = ordering.tExpression(i).build();
+        evaluation.with(context);
         return evaluation;
     }
 
     @Override
-    protected ValueSource evaluateRow(ExpressionEvaluation evaluation, Row row) {
-        evaluation.of(row);
-        return evaluation.eval();
-    }
-
-    @Override
-    protected PersistitValueSourceAdapter createValueAdapter() {
-        return new InternalAdapter();
+    protected PValueSource evaluateRow(TEvaluatableExpression evaluation, Row row) {
+        evaluation.with(row);
+        evaluation.evaluate();
+        return evaluation.resultValue();
     }
 
     @Override
@@ -92,16 +88,21 @@ final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, Expr
     }
 
     @Override
-    protected void putFieldToTarget(ValueSource value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
-        valueTarget.expectingType(oFieldTypes[i]);
-        Converters.convert(value, valueTarget);
+    protected PersistitValueSourceAdapter createValueAdapter() {
+        return new InternalPAdapter();
     }
 
-    OldSorterAdapter() {
-        super(OldExpressionsSortKeyAdapter.INSTANCE);
+    @Override
+    protected void putFieldToTarget(PValueSource value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
+        PValueTargets.copyFrom(value, valueTarget);
+    }
+
+    PValueSorterAdapter() {
+        super(PValueSortKeyAdapter.INSTANCE);
     }
     
-    private class InternalAdapter implements PersistitValueSourceAdapter {
+    private class InternalPAdapter implements PersistitValueSourceAdapter {
+
         @Override
         public void attach(Value value) {
             valueSource.attach(value);
@@ -109,16 +110,14 @@ final class OldSorterAdapter extends SorterAdapter<ValueSource, Expression, Expr
 
         @Override
         public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes) {
-            ValueHolder valueHolder = row.holderAt(i);
-            valueSource.expectedType(oFieldTypes[i]);
-            valueHolder.copyFrom(valueSource);
+            valueSource.getReady();
+            PValueTargets.copyFrom(valueSource, row.pvalueAt(i));
         }
 
-        private final PersistitValueValueSource valueSource = new PersistitValueValueSource();
+        private final PersistitValuePValueSource valueSource = new PersistitValuePValueSource();
     }
     
-    private final PersistitValueValueTarget valueTarget =
-            new PersistitValueValueTarget();
-
-    private static final Expression DUMMY_EXPRESSION = LiteralExpression.forNull();
+    private final PersistitValuePValueTarget valueTarget = new PersistitValuePValueTarget();
+    
+    private static final TPreparedExpression DUMMY_EXPRESSION = new TNullExpression(MNumeric.BIGINT.instance());
 }

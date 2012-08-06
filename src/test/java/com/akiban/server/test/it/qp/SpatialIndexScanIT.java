@@ -28,11 +28,14 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.geophile.Space;
 import com.akiban.util.StringsTest;
@@ -64,6 +67,7 @@ public class SpatialIndexScanIT extends OperatorITBase
         pointRowType = schema.userTableRowType(userTable(point));
         xyIndexRowType = indexType(point, "x", "y");
         group = groupTable(point);
+        space = new Space(LO, HI);
         db = new NewRow[]{
         };
         adapter = persistitAdapter(schema);
@@ -74,20 +78,7 @@ public class SpatialIndexScanIT extends OperatorITBase
     @Test
     public void testLoad()
     {
-        Map<Long, Integer> zToId = new TreeMap<Long, Integer>();
-        Space space = new Space(LO, HI);
-        {
-            // Load
-            int id = 0;
-            for (long x = DX; x < END_X; x += DX) {
-                for (long y = DY; y < END_Y; y += DY) {
-                    dml().writeRow(session(), createNewRow(point, id, x, y));
-                    long z = space.shuffle(new long[]{x, y});
-                    zToId.put(z, id);
-                    id++;
-                }
-            }
-        }
+        loadDB();
         {
             // Check index
             Operator plan = indexScan_Default(xyIndexRowType);
@@ -105,24 +96,7 @@ public class SpatialIndexScanIT extends OperatorITBase
     @Test
     public void testLoadAndRemove()
     {
-        Space space = new Space(LO, HI);
-        Map<Long, Integer> zToId = new TreeMap<Long, Integer>();
-        List<Long> xs = new ArrayList<Long>(); // indexed by id
-        List<Long> ys = new ArrayList<Long>(); // indexed by id
-        {
-            // Load
-            int id = 0;
-            for (long x = DX; x < END_X; x += DX) {
-                for (long y = DY; y < END_Y; y += DY) {
-                    dml().writeRow(session(), createNewRow(point, id, x, y));
-                    long z = space.shuffle(new long[]{x, y});
-                    zToId.put(z, id);
-                    xs.add(x);
-                    ys.add(y);
-                    id++;
-                }
-            }
-        }
+        loadDB();
         {
             // Delete rows with odd ids
             for (Integer id : zToId.values()) {
@@ -155,24 +129,9 @@ public class SpatialIndexScanIT extends OperatorITBase
     @Test
     public void testLoadAndUpdate()
     {
-        Space space = new Space(LO, HI);
-        List<Long> xs = new ArrayList<Long>(); // indexed by id
-        List<Long> ys = new ArrayList<Long>(); // indexed by id
-        int n;
-        {
-            // Load
-            int id = 0;
-            for (long x = DX; x < END_X; x += DX) {
-                for (long y = DY; y < END_Y; y += DY) {
-                    dml().writeRow(session(), createNewRow(point, id, x, y));
-                    xs.add(x);
-                    ys.add(y);
-                    id++;
-                }
-            }
-            n = id;
-        }
-        Map<Long, Integer> zToId = new TreeMap<Long, Integer>();
+        loadDB();
+        int n = xs.size();
+        zToId.clear();
         {
             // Increment y values
             for (int id = 0; id < n; id++) {
@@ -199,6 +158,36 @@ public class SpatialIndexScanIT extends OperatorITBase
         }
     }
 
+    @Test
+    public void testSpatialQuery()
+    {
+/*
+        IndexBound lowerLeft = new IndexBound(row(xyIndexRowType, 50, 150), new SetColumnSelector(0, 1));
+        IndexBound upperRight = new IndexBound(row(xyIndexRowType, 150, 250), new SetColumnSelector(0, 1));
+        IndexKeyRange box = IndexKeyRange.spatial(xyIndexRowType,
+                                                  lowerLeft, true,
+                                                  upperRight, true);
+        loadDB();
+        Operator plan = indexScan_Default(xyIndexRowType, false, box);
+        dump(plan);
+*/
+    }
+
+    private void loadDB()
+    {
+        int id = 0;
+        for (long x = DX; x < END_X; x += DX) {
+            for (long y = DY; y < END_Y; y += DY) {
+                dml().writeRow(session(), createNewRow(point, id, x, y));
+                long z = space.shuffle(new long[]{x, y});
+                zToId.put(z, id);
+                xs.add(x);
+                ys.add(y);
+                id++;
+            }
+        }
+    }
+
     private static final long END_X = 1000L;
     private static final long END_Y = 1000L;
     private static final long[] LO = {0L, 0L};
@@ -210,4 +199,8 @@ public class SpatialIndexScanIT extends OperatorITBase
     private UserTableRowType pointRowType;
     private IndexRowType xyIndexRowType;
     private GroupTable group;
+    private Space space;
+    private Map<Long, Integer> zToId = new TreeMap<Long, Integer>();
+    List<Long> xs = new ArrayList<Long>(); // indexed by id
+    List<Long> ys = new ArrayList<Long>(); // indexed by id
 }
