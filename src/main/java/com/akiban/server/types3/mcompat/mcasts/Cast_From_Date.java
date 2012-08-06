@@ -90,7 +90,7 @@ public class Cast_From_Date
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeDate(source.getInt32())));
+            target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeDatetime(source.getInt32())));
         }
     };
     
