@@ -103,7 +103,7 @@ public class TableGroupJoin extends BasePlanElement
         for (ComparisonCondition condition : conditions)
             condition.setImplementation(ConditionExpression.Implementation.POTENTIAL_GROUP_JOIN);
         child.setParentJoin(null);
-        group.getJoins().remove(this);
+        group.rejectJoin(this);
     }
 
 }

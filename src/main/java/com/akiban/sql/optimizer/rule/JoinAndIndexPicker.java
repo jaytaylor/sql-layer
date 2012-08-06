@@ -322,7 +322,7 @@ public class JoinAndIndexPicker extends BaseRule
         public boolean containsColumn(ColumnExpression column) {
             ColumnSource table = column.getTable();
             if (!(table instanceof TableSource)) return false;
-            return (groupGoal.getTables().getRoot().findTable((TableSource)table) != null);
+            return groupGoal.getTables().containsTable((TableSource)table);
         }
 
         @Override

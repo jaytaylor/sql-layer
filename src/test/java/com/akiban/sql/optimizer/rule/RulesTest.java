@@ -143,6 +143,9 @@ public class RulesTest extends OptimizerTestBase
         rules = RulesTestContext.create(ais, statsFile, extraDDL != null,
                                         RulesTestHelper.loadRules(rulesFile), 
                                         properties);
+        // Normally set as a consequence of OutputFormat.
+        binder.setAllowSubqueryMultipleColumns(Boolean.parseBoolean(properties.getProperty("allowSubqueryMultipleColumns",
+                                                                                           "false")));
     }
 
     @Test
