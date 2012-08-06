@@ -69,9 +69,9 @@ public class StringFactory implements TFactory
                 map.put(charset.name(), charset);
             }
             // aliases
-            map.put("ISO_8859_1", LATIN1);
-            map.put("UTF8", UTF8);
-            map.put("UTF16", UTF16);
+            map.put("ISO-8859-1", LATIN1);
+            map.put("UTF-8", UTF8);
+            map.put("UTF-16", UTF16);
             return map;
         }
     }
