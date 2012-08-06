@@ -76,9 +76,9 @@ public abstract class Substring extends TOverloadBase {
                         int from = adjustIndex(str, inputs.get(1).getInt32());
 
                         if (from == -1) {
-                            output.putObject("");
+                            output.putString("", null);
                         } else {
-                            output.putObject(getSubstring(str.length() - 1, from, str));
+                            output.putString(getSubstring(str.length() - 1, from, str), null);
                         }
                     }
 
@@ -122,9 +122,9 @@ public abstract class Substring extends TOverloadBase {
                 int from = adjustIndex(str, inputs.get(1).getInt32());
 
                 if (from == -1) {
-                    output.putObject("");
+                    output.putString("", null);
                 } else {
-                    output.putObject(getSubstring(from + inputs.get(2).getInt32() - 1, from, str));
+                    output.putString(getSubstring(from + inputs.get(2).getInt32() - 1, from, str), null);
                 }
             }
 

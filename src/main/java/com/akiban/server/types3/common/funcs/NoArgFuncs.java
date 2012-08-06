@@ -169,7 +169,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putObject(context.getCurrentUser());
+            target.putString(context.getCurrentUser(), null);
         }
     };
     
@@ -184,7 +184,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putObject(context.getSessionUser());
+            target.putString(context.getSessionUser(), null);
         }
     };
     
@@ -199,7 +199,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putObject(context.getSystemUser());
+            target.putString(context.getSystemUser(), null);
         }
     };
 }

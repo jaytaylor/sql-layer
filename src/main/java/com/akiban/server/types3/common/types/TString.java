@@ -157,10 +157,10 @@ public abstract class TString extends TClass
             String truncated = raw.substring(0, maxLen);
             // TODO: check charset and collation, too
             context.warnClient(new StringTruncationException(raw, truncated));
-            targetValue.putObject(truncated);
+            targetValue.putString(truncated, null);
         }
         else
-            targetValue.putObject(raw);
+            targetValue.putString(raw, null);
     }
      
     @Override

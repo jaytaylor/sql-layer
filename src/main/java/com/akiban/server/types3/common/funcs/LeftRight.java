@@ -99,7 +99,7 @@ public abstract class LeftRight extends TOverloadBase
                 ? 0
                 : len > st.length() ? st.length() : len;
 
-        output.putObject(getSubstring(st, len));
+        output.putString(getSubstring(st, len), null);
     }
     
     @Override

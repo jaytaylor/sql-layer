@@ -109,11 +109,11 @@ public abstract class Pad extends TOverloadBase
         if (length < 0)
             output.putNull();
         else if (length <= st.length())
-            output.putObject(st.substring(0, length));
+            output.putString(st.substring(0, length), null);
         else if (toAdd.isEmpty())
             output.putNull();
         else
-            output.putObject(doPadding(st, length, toAdd));
+            output.putString(doPadding(st, length, toAdd), null);
     }
     
     @Override

@@ -84,7 +84,7 @@ public class Conv extends TOverloadBase
                 || !isInRange(Math.abs(toBase), MIN_BASE, MAX_BASE)) // toBase can be negative
             output.putNull();
         else
-            output.putObject(doConvert(truncateNonDigits(st),fromBase, toBase));
+            output.putString(doConvert(truncateNonDigits(st),fromBase, toBase), null);
     }
 
     @Override

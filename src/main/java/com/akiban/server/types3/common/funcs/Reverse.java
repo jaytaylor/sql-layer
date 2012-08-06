@@ -52,7 +52,7 @@ public class Reverse extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        output.putObject(new StringBuilder(inputs.get(0).getString()).reverse().toString());
+        output.putString(new StringBuilder(inputs.get(0).getString()).reverse().toString(), null);
     }
 
     @Override
