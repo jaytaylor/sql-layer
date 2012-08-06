@@ -30,11 +30,8 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -59,7 +56,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
     public void put(PValueSource source, NewRow into, FieldDef fieldDef, int f) {
 
         // TODO efficiency warning
-        // NewRow and its users are pretty flexible about typse, so let's just convert everything to a String.
+        // NewRow and its users are pretty flexible about types, so let's just convert everything to a String.
         // It's not efficient, but it works.
 
         if (source.isNull()) {
