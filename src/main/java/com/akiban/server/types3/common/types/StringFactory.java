@@ -44,8 +44,22 @@ public class StringFactory implements TFactory
     //TODO: add more charsets as needed
     public static enum Charset
     {
-        LATIN1, UTF_8, UTF_16, ISO88591
+        LATIN1, UTF_8("utf-8"), UTF_16, ISO88591
         ;
+
+        private Charset() {
+            this(null);
+        }
+
+        private Charset(String charsetName) {
+            this.charsetName = charsetName;
+        }
+
+        private final String charsetName;
+
+        public String charsetName() {
+            return (charsetName == null) ? name() : charsetName;
+        }
         
         public static Charset of(String value) {
             // Could optimize this with a StringBuilder, for-loop, etc

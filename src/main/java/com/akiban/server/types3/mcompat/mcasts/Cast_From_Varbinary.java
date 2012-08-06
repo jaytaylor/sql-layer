@@ -114,7 +114,7 @@ public final class Cast_From_Varbinary {
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             String in = source.getString();
             int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
-            String charsetName = StringFactory.Charset.values()[charsetId].name();
+            String charsetName = StringFactory.Charset.values()[charsetId].charsetName();
             byte[] bytes;
             try {
                 bytes = in.getBytes(charsetName);
