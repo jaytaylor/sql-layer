@@ -63,7 +63,7 @@ public class TableComparerTest {
                                                   ChangeLevel finalChangeLevel) {
         TableComparer comparer = new TableComparer(t1, t2, colChanges, idxChanges);
         comparer.compare();
-        assertEquals("Final change level", finalChangeLevel, comparer.getTableChangeLevel());
+        assertEquals("Final change level", finalChangeLevel, comparer.getFinalChangeLevel());
         return comparer;
     }
 
@@ -270,6 +270,31 @@ public class TableComparerTest {
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "y").pk("id"));
         checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
     }
+
+    @Test(expected=UndeclaredIndexChangeException.class)
+    public void modifyIndexedColumnIndexUnspecified() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colString("x", 32).key("x", "x").pk("id"));
+        checkCompare(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, null);
+    }
+
+    //
+    // Group
+    //
+
+    @Test
+    public void modifyPKColumnType() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colString("id", 32).pk("id"));
+        checkCompare(t1, t2,
+                     asList(TableChange.createModify("id", "id")),
+                     asList(TableChange.createModify("PRIMARY", "PRIMARY")),
+                     ChangeLevel.GROUP);
+    }
+
+    //
+    // Group (negative)
+    //
 
     //
     // Multi-part

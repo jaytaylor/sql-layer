@@ -39,7 +39,6 @@ import com.google.common.base.Objects;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -63,10 +62,10 @@ public class TableComparer {
     private final UserTable newTable;
     private final List<TableChange> columnChanges;
     private final List<TableChange> indexChanges;
-    private final Set<ChangeLevel> columnChangeLevels;
-    private final Set<ChangeLevel> indexChangeLevels;
     private final List<RuntimeException> errors;
-    private ChangeLevel tableChangeLevel;
+    private ChangeLevel finalChangeLevel;
+    private boolean parentChange;
+    private boolean childrenChange;
     private boolean didCompare;
 
     public TableComparer(UserTable oldTable, UserTable newTable,
@@ -78,12 +77,19 @@ public class TableComparer {
         this.columnChanges = (columnChanges == null) ? Collections.<TableChange>emptyList() : columnChanges;
         this.indexChanges = (indexChanges == null) ? Collections.<TableChange>emptyList() : indexChanges;
         this.errors = new ArrayList<RuntimeException>();
-        this.columnChangeLevels = EnumSet.noneOf(ChangeLevel.class);
-        this.indexChangeLevels = EnumSet.noneOf(ChangeLevel.class);
+        this.finalChangeLevel = ChangeLevel.NONE;
     }
 
-    public ChangeLevel getTableChangeLevel() {
-        return tableChangeLevel;
+    public ChangeLevel getFinalChangeLevel() {
+        return finalChangeLevel;
+    }
+
+    public boolean didParentChange() {
+        return parentChange;
+    }
+
+    public boolean didChildrenChange() {
+        return childrenChange;
     }
 
     public void compare() {
@@ -92,7 +98,7 @@ public class TableComparer {
             compareColumns();
             compareIndexes();
             compareGrouping();
-            setFinalChangeLevel();
+            updateFinalChangeLevel(ChangeLevel.NONE);
             didCompare = true;
         }
     }
@@ -113,22 +119,20 @@ public class TableComparer {
         }
     }
 
-    private void setFinalChangeLevel() {
-        if(!errors.isEmpty()) {
-            tableChangeLevel = null;
+    private void updateFinalChangeLevel(ChangeLevel level) {
+        if(errors.isEmpty()) {
+            if(level.ordinal() > finalChangeLevel.ordinal()) {
+                finalChangeLevel = level;
+            }
         } else {
-            for(ChangeLevel level : columnChangeLevels) {
-                tableChangeLevel = (level.ordinal() > tableChangeLevel.ordinal()) ? level : tableChangeLevel;
-            }
-            for(ChangeLevel level : indexChangeLevels) {
-                tableChangeLevel = (level.ordinal() > tableChangeLevel.ordinal()) ? level : tableChangeLevel;
-            }
+            finalChangeLevel = null;
         }
     }
 
     private void compareTable() {
-        boolean namesEqual = oldTable.getName().equals(newTable.getName());
-        tableChangeLevel = namesEqual ? ChangeLevel.NONE : ChangeLevel.METADATA;
+        if(!oldTable.getName().equals(newTable.getName())) {
+            updateFinalChangeLevel(ChangeLevel.METADATA);
+        }
     }
 
     private void compareColumns() {
@@ -140,7 +144,7 @@ public class TableComparer {
         for(Column column : newTable.getColumnsIncludingInternal()) {
             newColumns.put(column.getName(), column);
         }
-        checkChanges(ChangeLevel.TABLE, columnChangeLevels, columnChanges, oldColumns, newColumns);
+        checkChanges(ChangeLevel.TABLE, columnChanges, oldColumns, newColumns);
     }
 
     private void compareIndexes() {
@@ -152,11 +156,10 @@ public class TableComparer {
         for(Index index : newTable.getIndexesIncludingInternal()) {
             newIndexes.put(index.getIndexName().getName(), index);
         }
-        checkChanges(ChangeLevel.INDEX, indexChangeLevels, indexChanges, oldIndexes, newIndexes);
+        checkChanges(ChangeLevel.INDEX, indexChanges, oldIndexes, newIndexes);
     }
 
-    private <T> void checkChanges(ChangeLevel level, Set<ChangeLevel> changeLevels,
-                                  List<TableChange> changeList, Map<String,T> oldMap, Map<String,T> newMap) {
+    private <T> void checkChanges(ChangeLevel level, List<TableChange> changeList, Map<String,T> oldMap, Map<String,T> newMap) {
         final boolean isIndex = (level == ChangeLevel.INDEX);
         Set<String> oldExcludes = new HashSet<String>();
         Set<String> newExcludes = new HashSet<String>();
@@ -170,18 +173,22 @@ public class TableComparer {
                     if(newMap.get(newName) == null) {
                         addNotPresent(isIndex, change);
                     } else {
-                        changeLevels.add(level);
+                        updateFinalChangeLevel(level);
                         newExcludes.add(newName);
                     }
-                } break;
+                }
+                break;
+
                 case DROP: {
                     if(oldMap.get(oldName) == null) {
                         dropNotPresent(isIndex, change);
                     } else {
-                        changeLevels.add(level);
+                        updateFinalChangeLevel(level);
                         oldExcludes.add(oldName);
                     }
-                } break;
+                }
+                break;
+
                 case MODIFY: {
                     T oldVal = oldMap.get(oldName);
                     T newVal = newMap.get(newName);
@@ -192,12 +199,13 @@ public class TableComparer {
                         if(curChange == ChangeLevel.NONE) {
                             modifyNotChanged(isIndex, change);
                         } else {
-                            changeLevels.add(curChange);
+                            updateFinalChangeLevel(curChange);
                             oldExcludes.add(oldName);
                             newExcludes.add(newName);
                         }
                     }
-                } break;
+                }
+                break;
             }
         }
 
@@ -228,7 +236,26 @@ public class TableComparer {
 
     private void compareGrouping() {
         // Note: PK (grouping) changes checked in compareColumns()
-        compare(oldTable.getParentJoin(), newTable.getParentJoin());
+        parentChange = joinChanged(oldTable.getParentJoin(), newTable.getParentJoin());
+
+        // PRIMARY was added or removed or column in PRIMARY was modified
+        // No need to inspect columnChanges as any affecting should is required (and checked) to be in indexChanges
+        childrenChange = false;
+        for(TableChange change : indexChanges) {
+            switch(change.getChangeType()) {
+                case DROP:
+                case MODIFY:
+                    if(Index.PRIMARY_KEY_CONSTRAINT.equals(change.getOldName()) ||
+                       Index.PRIMARY_KEY_CONSTRAINT.equals(change.getNewName())) {
+                        childrenChange = true;
+                    }
+                break;
+            }
+        }
+
+        if(parentChange || childrenChange) {
+            updateFinalChangeLevel(ChangeLevel.GROUP);
+        }
     }
 
     private String findNewColumnName(String oldName) {
@@ -313,8 +340,7 @@ public class TableComparer {
         return ChangeLevel.NONE;
     }
 
-    /** false = same, true = different **/
-    private static boolean compare(Join oldJoin, Join newJoin) {
+    private static boolean joinChanged(Join oldJoin, Join newJoin) {
         if(oldJoin == null && newJoin == null) {
             return false;
         }
@@ -344,6 +370,16 @@ public class TableComparer {
         }
         return false;
     }
+
+    private static boolean coversColumn(List<IndexColumn> indexColumns, String columnName) {
+        for(IndexColumn iCol : indexColumns) {
+            if(iCol.getColumn().getName().equals(columnName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private void addNotPresent(boolean isIndex, TableChange change) {
         String detail = change.toString();
