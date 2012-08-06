@@ -49,6 +49,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.ais.util.TableChange;
+import com.akiban.ais.util.TableComparer;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -289,7 +290,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
 
-        // TODO: Run TableComparer
+        TableComparer comparer = new TableComparer(origTable, newDefinition, columnChanges, indexChanges);
+        comparer.compareAndThrowIfNecessary();
 
         boolean rollBackNeeded = false;
         List<Index> indexesToDrop = new ArrayList<Index>();

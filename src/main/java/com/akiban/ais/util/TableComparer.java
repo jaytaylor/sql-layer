@@ -289,8 +289,8 @@ public class TableComparer {
             }
         } else {
             if(!oldCol.getType().equals(newCol.getType()) ||
-               !Objects.equal(oldCol.getTypeParameter1(), oldCol.getTypeParameter2()) ||
-               !Objects.equal(oldCol.getTypeParameter1(), oldCol.getTypeParameter2()) ||
+               !Objects.equal(oldCol.getTypeParameter1(), newCol.getTypeParameter1()) ||
+               !Objects.equal(oldCol.getTypeParameter2(), newCol.getTypeParameter2()) ||
                (oldCol.getType().usesCollator() && !Objects.equal(oldCol.getCharsetAndCollation(), newCol.getCharsetAndCollation()))) {
                 return ChangeLevel.TABLE;
             }
