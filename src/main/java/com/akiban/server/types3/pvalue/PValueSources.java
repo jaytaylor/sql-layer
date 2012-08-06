@@ -339,9 +339,26 @@ public final class PValueSources {
                 return new WrappingByteSource(valueSource.getBytes());
             if (valueSource.hasCacheValue())
                 return valueSource.getObject();
-            throw new UnsupportedOperationException("couldn't convert " + valueSource + " to object as " + akType);
+            return toObject(valueSource);
         default:
             throw new AssertionError(akType + " with underlying " + akType.underlyingType());
+        }
+    }
+
+    private static Object toObject(PValueSource source) {
+        PUnderlying underlying = source.getUnderlyingType();
+        switch (underlying) {
+        case BOOL:      return source.getBoolean();
+        case INT_8:     return source.getInt8();
+        case INT_16:    return source.getInt16();
+        case UINT_16:   return source.getUInt16();
+        case INT_32:    return source.getInt32();
+        case INT_64:    return source.getInt64();
+        case FLOAT:     return source.getFloat();
+        case DOUBLE:    return source.getDouble();
+        case BYTES:     return source.getBytes();
+        case STRING:    return source.getString();
+        default:        throw new AssertionError(underlying);
         }
     }
 
