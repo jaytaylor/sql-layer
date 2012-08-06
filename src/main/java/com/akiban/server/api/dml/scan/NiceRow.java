@@ -65,7 +65,6 @@ public class NiceRow extends NewRow {
 
     @Override
     public Object put(int index, Object object) {
-        ArgumentValidation.notNull("column", index);
         return fields.put(index, object);
     }
 
