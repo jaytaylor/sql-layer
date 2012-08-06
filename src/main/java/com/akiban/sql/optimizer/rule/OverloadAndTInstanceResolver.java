@@ -465,12 +465,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         @Override
         public boolean visitEnter(PlanNode n) {
-            boolean recurse = false;
             // set up the targets
             if (n instanceof InsertStatement) {
                 InsertStatement insert = (InsertStatement) n;
                 setTargets(insert.getTargetColumns());
-                recurse = true;
             }
             else if (n instanceof UpdateStatement) {
                 UpdateStatement update = (UpdateStatement) n;
@@ -482,7 +480,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     if (casted != value)
                         updateColumn.setExpression(casted);
                 }
-                recurse = true;
             }
 
             // use the targets
@@ -490,7 +487,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 handleProject((Project) n);
             else if (n instanceof ExpressionsSource)
                 handleExpressionSource((ExpressionsSource) n);
-            return recurse;
+            return true;
         }
 
         @Override
