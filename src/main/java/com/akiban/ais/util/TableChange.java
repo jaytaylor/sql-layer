@@ -24,16 +24,16 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.api;
+package com.akiban.ais.util;
 
-public class AlterTableChange {
+public class TableChange {
     public static enum ChangeType { ADD, DROP, MODIFY }
 
     private final String oldName;
     private final String newName;
     private final ChangeType changeType;
 
-    private AlterTableChange(String oldName, String newName, ChangeType changeType) {
+    private TableChange(String oldName, String newName, ChangeType changeType) {
         this.oldName = oldName;
         this.newName = newName;
         this.changeType = changeType;
@@ -60,15 +60,15 @@ public class AlterTableChange {
         return changeType + ":" + oldName + "->" + newName;
     }
 
-    public static AlterTableChange createAdd(String name) {
-        return new AlterTableChange(null, name, ChangeType.ADD);
+    public static TableChange createAdd(String name) {
+        return new TableChange(null, name, ChangeType.ADD);
     }
 
-    public static AlterTableChange createDrop(String name) {
-        return new AlterTableChange(name, null, ChangeType.DROP);
+    public static TableChange createDrop(String name) {
+        return new TableChange(name, null, ChangeType.DROP);
     }
 
-    public static AlterTableChange createModify(String oldName, String newName) {
-        return new AlterTableChange(oldName, newName, ChangeType.MODIFY);
+    public static TableChange createModify(String oldName, String newName) {
+        return new TableChange(oldName, newName, ChangeType.MODIFY);
     }
 }

@@ -48,6 +48,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.util.TableChange;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -61,7 +62,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
-import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -284,7 +284,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges)
+                           List<TableChange> columnChanges, List<TableChange> indexChanges)
     {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);

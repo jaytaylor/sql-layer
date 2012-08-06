@@ -38,28 +38,26 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.server.api.AlterTableChange;
+import com.akiban.ais.util.TableChange;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class AlterTableHelper {
-    final List<AlterTableChange> columnChanges;
-    final List<AlterTableChange> indexChanges;
+    final List<TableChange> columnChanges;
+    final List<TableChange> indexChanges;
 
-    public AlterTableHelper(List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
+    public AlterTableHelper(List<TableChange> columnChanges, List<TableChange> indexChanges) {
         checkChangeTypes(columnChanges);
         checkChangeTypes(indexChanges);
         this.columnChanges = columnChanges;
         this.indexChanges = indexChanges;
     }
 
-    private static void checkChangeTypes(List<AlterTableChange> changes) {
-        for(AlterTableChange change : changes) {
+    private static void checkChangeTypes(List<TableChange> changes) {
+        for(TableChange change : changes) {
             switch(change.getChangeType()) {
                 case ADD:
                 case DROP:
@@ -72,7 +70,7 @@ public class AlterTableHelper {
     }
 
     public Column findNewColumn(UserTable newTable, String oldName) {
-        for(AlterTableChange change : columnChanges) {
+        for(TableChange change : columnChanges) {
             switch(change.getChangeType()) {
                 case DROP:
                     if(oldName.equals(change.getOldName())) {
@@ -90,7 +88,7 @@ public class AlterTableHelper {
     }
 
     public Integer findOldPosition(Column oldColumn, Column newColumn) {
-        for(AlterTableChange change : columnChanges) {
+        for(TableChange change : columnChanges) {
             String newName = newColumn.getName();
             if(newName.equals(change.getNewName())) {
                 switch(change.getChangeType()) {
@@ -120,7 +118,7 @@ public class AlterTableHelper {
     }
 
     public void findAffectedOldIndexes(UserTable table, List<Index> toTruncate, List<Index> toDrop) {
-        for(AlterTableChange change : indexChanges) {
+        for(TableChange change : indexChanges) {
             switch(change.getChangeType()) {
                 case MODIFY:
                     toTruncate.add(table.getIndex(change.getOldName()));
@@ -134,7 +132,7 @@ public class AlterTableHelper {
 
     public Map<String,String> buildIndexMapping(UserTable table) {
         Map<String,String> map = new HashMap<String,String>();
-        for(AlterTableChange change : indexChanges) {
+        for(TableChange change : indexChanges) {
             switch(change.getChangeType()) {
                 case ADD:
                     map.put(change.getNewName(), null);
@@ -155,7 +153,7 @@ public class AlterTableHelper {
 
     public List<Index> findAffectedNewIndexes(UserTable table) {
         List<Index> indexes = new ArrayList<Index>();
-        for(AlterTableChange change : indexChanges) {
+        for(TableChange change : indexChanges) {
             switch(change.getChangeType()) {
                 case ADD:
                 case MODIFY:
@@ -168,8 +166,8 @@ public class AlterTableHelper {
 
     public List<GroupIndex> findAffectedGroupIndexes(UserTable table) {
         List<GroupIndex> affected = new ArrayList<GroupIndex>();
-        for(AlterTableChange change : columnChanges) {
-            if(change.getChangeType() == AlterTableChange.ChangeType.ADD) {
+        for(TableChange change : columnChanges) {
+            if(change.getChangeType() == TableChange.ChangeType.ADD) {
                 continue;
             }
             for(GroupIndex index : table.getGroupIndexes()) {

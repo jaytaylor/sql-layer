@@ -42,10 +42,9 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.server.api.AlterTableChange;
+import com.akiban.ais.util.TableChange;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.JoinToUnknownTableException;
@@ -72,7 +71,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.server.api.AlterTableChange.ChangeType;
+import static com.akiban.ais.util.TableChange.ChangeType;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.ALTER_TABLE_TEMP_TABLE;
 import static com.akiban.sql.aisddl.DDLHelper.convertName;
 import static com.akiban.sql.parser.ConstraintDefinitionNode.ConstraintType;
@@ -254,8 +253,8 @@ public class AlterTableDDL {
             return false;
         }
 
-        List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
-        List<AlterTableChange> indexChanges = new ArrayList<AlterTableChange>();
+        List<TableChange> columnChanges = new ArrayList<TableChange>();
+        List<TableChange> indexChanges = new ArrayList<TableChange>();
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<ColumnDefinitionNode>();
         List<ConstraintDefinitionNode> indexDefNodes = new ArrayList<ConstraintDefinitionNode>();
 
@@ -263,18 +262,18 @@ public class AlterTableDDL {
             switch(node.getNodeType()) {
                 case NodeTypes.COLUMN_DEFINITION_NODE: {
                     ColumnDefinitionNode cdn = (ColumnDefinitionNode) node;
-                    columnChanges.add(AlterTableChange.createAdd(cdn.getColumnName()));
+                    columnChanges.add(TableChange.createAdd(cdn.getColumnName()));
                     columnDefNodes.add(cdn);
                 } break;
 
                 case NodeTypes.DROP_COLUMN_NODE: {
                     String columnName = ((ModifyColumnNode)node).getColumnName();
-                    columnChanges.add(AlterTableChange.createDrop(columnName));
+                    columnChanges.add(TableChange.createDrop(columnName));
                 } break;
 
                 case NodeTypes.MODIFY_COLUMN_TYPE_NODE: {
                     String columnName = ((ModifyColumnNode)node).getColumnName();
-                    columnChanges.add(AlterTableChange.createModify(columnName, columnName));
+                    columnChanges.add(TableChange.createModify(columnName, columnName));
                     columnDefNodes.add((ColumnDefinitionNode) node);
                 } break;
 
@@ -304,7 +303,7 @@ public class AlterTableDDL {
                             case CHECK:
                                 throw new UnsupportedCheckConstraintException();
                         }
-                        indexChanges.add(AlterTableChange.createDrop(name));
+                        indexChanges.add(TableChange.createDrop(name));
                     } else {
                         indexDefNodes.add((ConstraintDefinitionNode)node);
                     }
@@ -337,7 +336,7 @@ public class AlterTableDDL {
             assert cdn.getConstraintType() != ConstraintType.DROP;
             String name = TableDDL.addIndex(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName());
             checkIndexChange(table, name, true);
-            indexChanges.add(AlterTableChange.createAdd(name));
+            indexChanges.add(TableChange.createAdd(name));
         }
 
         ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges);
@@ -379,8 +378,8 @@ public class AlterTableDDL {
         }
     }
 
-    private static ChangeType findOldName(List<AlterTableChange> changes, String oldName) {
-        for(AlterTableChange change : changes) {
+    private static ChangeType findOldName(List<TableChange> changes, String oldName) {
+        for(TableChange change : changes) {
             if(oldName.equals(change.getOldName())) {
                 return change.getChangeType();
             }
@@ -388,17 +387,17 @@ public class AlterTableDDL {
         return null;
     }
 
-    private static UserTable copyTable(UserTable origTable, List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
+    private static UserTable copyTable(UserTable origTable, List<TableChange> columnChanges, List<TableChange> indexChanges) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         UserTable tableCopy = UserTable.create(ais, origTable);
 
-        for(AlterTableChange change : columnChanges) {
+        for(TableChange change : columnChanges) {
             if(change.getChangeType() != ChangeType.ADD) {
                 checkColumnChange(origTable, change.getOldName());
             }
         }
 
-        for(AlterTableChange change : indexChanges) {
+        for(TableChange change : indexChanges) {
             checkIndexChange(origTable, change.getOldName(), change.getChangeType() == ChangeType.ADD);
         }
 
@@ -432,10 +431,10 @@ public class AlterTableDDL {
             // Automatically mark indexes for drop or modification
             if(indexCopy.getKeyColumns().isEmpty()) {
                 indexesToDrop.add(indexCopy);
-                indexChanges.add(AlterTableChange.createDrop(indexCopy.getIndexName().getName()));
+                indexChanges.add(TableChange.createDrop(indexCopy.getIndexName().getName()));
             } else if(didModify && (indexChange == null)) {
                 String indexName = indexCopy.getIndexName().getName();
-                indexChanges.add(AlterTableChange.createModify(indexName, indexName));
+                indexChanges.add(TableChange.createModify(indexName, indexName));
             }
         }
 

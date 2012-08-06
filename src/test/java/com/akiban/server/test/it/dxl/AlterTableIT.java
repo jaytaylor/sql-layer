@@ -32,6 +32,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.util.TableChange;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -43,7 +44,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.error.NotNullViolationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.test.it.ITBase;
@@ -333,12 +333,12 @@ public class AlterTableIT extends ITBase {
         builder.basicSchemaIsComplete();
         UserTable newTable = builder.akibanInformationSchema().getUserTable(SCHEMA, "c");
 
-        List<AlterTableChange> changes = new ArrayList<AlterTableChange>();
-        changes.add(AlterTableChange.createAdd("c5"));
-        changes.add(AlterTableChange.createDrop("c2"));
-        changes.add(AlterTableChange.createModify("c3", "c3"));
+        List<TableChange> changes = new ArrayList<TableChange>();
+        changes.add(TableChange.createAdd("c5"));
+        changes.add(TableChange.createDrop("c2"));
+        changes.add(TableChange.createModify("c3", "c3"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, Collections.<AlterTableChange>emptyList());
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, Collections.<TableChange>emptyList());
         updateAISGeneration();
 
         expectFullRows(
@@ -379,11 +379,11 @@ public class AlterTableIT extends ITBase {
         builder.index(SCHEMA, "c", "foo", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "c", "foo", "c2", 0, true, null);
 
-        List<AlterTableChange> changes = new ArrayList<AlterTableChange>();
-        changes.add(AlterTableChange.createDrop("foo"));
-        changes.add(AlterTableChange.createAdd("foo"));
+        List<TableChange> changes = new ArrayList<TableChange>();
+        changes.add(TableChange.createDrop("foo"));
+        changes.add(TableChange.createAdd("foo"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<AlterTableChange>emptyList(), changes);
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<TableChange>emptyList(), changes);
         updateAISGeneration();
 
         expectIndexes(cid, "foo", "PRIMARY");
@@ -413,10 +413,10 @@ public class AlterTableIT extends ITBase {
         builder.indexColumn(SCHEMA, "c", "foo", "c2", 0, true, null);
         builder.indexColumn(SCHEMA, "c", "foo", "c1", 1, true, null);
 
-        List<AlterTableChange> changes = new ArrayList<AlterTableChange>();
-        changes.add(AlterTableChange.createModify("foo", "foo"));
+        List<TableChange> changes = new ArrayList<TableChange>();
+        changes.add(TableChange.createModify("foo", "foo"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<AlterTableChange>emptyList(), changes);
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<TableChange>emptyList(), changes);
         updateAISGeneration();
 
         expectIndexes(cid, "foo", "PRIMARY");
@@ -443,12 +443,12 @@ public class AlterTableIT extends ITBase {
         builder.index(SCHEMA, "o", "y", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "o", "y", "cid", 0, true, null);
 
-        List<AlterTableChange> columnChanges = new ArrayList<AlterTableChange>();
-        columnChanges.add(AlterTableChange.createDrop("o1"));
-        columnChanges.add(AlterTableChange.createAdd("o1"));
-        List<AlterTableChange> indexChanges = new ArrayList<AlterTableChange>();
-        indexChanges.add(AlterTableChange.createAdd("x"));
-        indexChanges.add(AlterTableChange.createAdd("y"));
+        List<TableChange> columnChanges = new ArrayList<TableChange>();
+        columnChanges.add(TableChange.createDrop("o1"));
+        columnChanges.add(TableChange.createAdd("o1"));
+        List<TableChange> indexChanges = new ArrayList<TableChange>();
+        indexChanges.add(TableChange.createAdd("x"));
+        indexChanges.add(TableChange.createAdd("y"));
 
         ddl().alterTable(session(), new TableName(SCHEMA, "o"), table, columnChanges, indexChanges);
         updateAISGeneration();

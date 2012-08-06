@@ -38,7 +38,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.server.api.AlterTableChange;
+import com.akiban.ais.util.TableChange;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -46,7 +46,6 @@ import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
 import com.akiban.server.error.ProtectedIndexException;
@@ -1110,11 +1109,11 @@ public class AlterTableDDLTest {
 
         @Override
         public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                               List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
-            for(AlterTableChange change : columnChanges) {
+                               List<TableChange> columnChanges, List<TableChange> indexChanges) {
+            for(TableChange change : columnChanges) {
                 columnChangeDesc.add(change.toString());
             }
-            for(AlterTableChange change : indexChanges) {
+            for(TableChange change : indexChanges) {
                 indexChangeDesc.add(change.toString());
             }
             newTableDesc = simpleDescribeTable(newDefinition);
