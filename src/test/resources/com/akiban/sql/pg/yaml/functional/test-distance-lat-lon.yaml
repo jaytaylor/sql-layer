@@ -10,11 +10,11 @@
 - error: [4250C]
 ---
 # Test NULL
-- Statement: INSERT INTO all_types (double_field, int_field, bigint_field)
+- Statement: INSERT INTO all_types (double_field, integer_field, bigint_field)
     VALUES (null, null, null)
 ---
 - Statement: SELECT DISTANCE_LAT_LON(double_field, double_field, double_field, double_field),
-    DISTANCE_LAT_LON(int_field, int_field, int_field, int_field),
+    DISTANCE_LAT_LON(integer_field, integer_field, integer_field, integer_field),
     DISTANCE_LAT_LON(bigint_field, bigint_field, bigint_field, bigint_field) FROM all_types
 - output: [[null, null, null]]
 ---
@@ -31,3 +31,4 @@
 ---
 - Statement: SELECT DISTANCE_LAT_LON(-179, 0, 180, 0)
 - output: [[1.0]]
+...
