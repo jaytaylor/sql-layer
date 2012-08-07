@@ -46,6 +46,7 @@ import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.AnyCondition;
+import com.akiban.sql.optimizer.plan.BasePlanWithInput;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
@@ -53,6 +54,7 @@ import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
+import com.akiban.sql.optimizer.plan.Distinct;
 import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
@@ -61,6 +63,7 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.InsertStatement;
+import com.akiban.sql.optimizer.plan.Limit;
 import com.akiban.sql.optimizer.plan.NullSource;
 import com.akiban.sql.optimizer.plan.ParameterCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
@@ -70,6 +73,7 @@ import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.plan.Sort;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
@@ -104,7 +108,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         private NewFolder folder;
         private OverloadResolver resolver;
         private QueryContext queryContext;
-        private Project foundProject;
 
         ResolvingVistor(PlanContext context) {
             folder = new NewFolder(context);
@@ -129,14 +132,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         @Override
         public boolean visitLeave(PlanNode n) {
-            if (n instanceof Project) {
-                foundProject = (Project) n;
-            }
             if (n instanceof ResultSet) {
                 ResultSet rs = (ResultSet) n;
-                if (foundProject != null) {
+                Project project = findProject(rs);
+                if (project != null) {
                     List<ResultField> rsFields = rs.getFields();
-                    List<ExpressionNode> projectFields = foundProject.getFields();
+                    List<ExpressionNode> projectFields = project.getFields();
                     assert rsFields.size() == projectFields.size() : rsFields + " not applicable to " + projectFields;
                     for (int i = 0, size = rsFields.size(); i < size; i++) {
                         ResultField rsField = rsFields.get(i);
@@ -153,6 +154,17 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
             }
             return true;
+        }
+
+        private Project findProject(PlanNode n) {
+            while (true) {
+                if (n instanceof Project)
+                    return (Project) n;
+                if ( (n instanceof ResultSet) || (n instanceof Limit) )
+                    n = ((BasePlanWithInput)n).getInput();
+                else
+                    return null;
+            }
         }
 
         @Override
