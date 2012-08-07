@@ -34,7 +34,7 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.Collections;
 
-public final class DropTablesInNewSession extends ITBase {
+public final class DropTablesInNewSessionIT extends ITBase {
     @Test
     public void test() {
         int c = createTable("schema", "customers", "cid int not null primary key, name varchar(32)");
