@@ -46,9 +46,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.akiban.ais.util.TableComparerExceptions.*;
+import static com.akiban.ais.util.TableChangeValidatorException.*;
 
-public class TableComparer {
+public class TableChangeValidator {
     public static enum ChangeLevel {
         NONE,
         METADATA,
@@ -68,8 +68,8 @@ public class TableComparer {
     private boolean childrenChange;
     private boolean didCompare;
 
-    public TableComparer(UserTable oldTable, UserTable newTable,
-                         List<TableChange> columnChanges, List<TableChange> indexChanges) {
+    public TableChangeValidator(UserTable oldTable, UserTable newTable,
+                                List<TableChange> columnChanges, List<TableChange> indexChanges) {
         ArgumentValidation.notNull("oldTable", oldTable);
         ArgumentValidation.notNull("newTable", newTable);
         this.oldTable = oldTable;
@@ -365,15 +365,6 @@ public class TableComparer {
             JoinColumn newCol = newIt.next();
             if(!oldCol.getParent().getName().equals(newCol.getParent().getName()) ||
                !oldCol.getChild().getName().equals(newCol.getChild().getName())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean coversColumn(List<IndexColumn> indexColumns, String columnName) {
-        for(IndexColumn iCol : indexColumns) {
-            if(iCol.getColumn().getName().equals(columnName)) {
                 return true;
             }
         }

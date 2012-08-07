@@ -49,7 +49,8 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.ais.util.TableChange;
-import com.akiban.ais.util.TableComparer;
+import com.akiban.ais.util.TableChangeValidator;
+import com.akiban.ais.util.TableChangeValidatorException;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -63,6 +64,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
+import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -290,26 +292,46 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
 
-        TableComparer comparer = new TableComparer(origTable, newDefinition, columnChanges, indexChanges);
-        comparer.compareAndThrowIfNecessary();
+        TableChangeValidator comparer = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges);
+
+        try {
+            comparer.compareAndThrowIfNecessary();
+        } catch(TableChangeValidatorException e) {
+            throw new InvalidAlterException(tableName, e.getMessage());
+        }
+
+        switch(comparer.getFinalChangeLevel()) {
+            case INDEX:
+            case TABLE:
+                // Handled below
+            break;
+            default:
+                throw new UnsupportedOperationException("Unsupported ChangeLevel: " + comparer.getFinalChangeLevel());
+        }
 
         boolean rollBackNeeded = false;
         List<Index> indexesToDrop = new ArrayList<Index>();
         try {
             AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges);
 
+            // TODO: Don't truncate, create new tree names
             // Simple prep: truncate dropped or changed indexes (not drop tree as it is non-transactional)
             List<Index> indexesToTruncate = new ArrayList<Index>();
             helper.findAffectedOldIndexes(origTable, indexesToTruncate, indexesToDrop);
 
-            if(!indexesToTruncate.isEmpty()) {
-                store().truncateIndex(session, indexesToTruncate);
-            }
+            switch(comparer.getFinalChangeLevel()) {
+                case INDEX:
+                    store().truncateIndex(session, indexesToTruncate);
+                    doIndexChange(session, tableName, newDefinition, helper);
+                break;
 
-            if(columnChanges.isEmpty()) {
-                doIndexChange(session, tableName, newDefinition, helper);
-            } else {
-                doTableChange(session, tableName, newDefinition, helper, indexesToDrop);
+                case TABLE:
+                    store().truncateIndex(session, indexesToTruncate);
+                    doTableChange(session, tableName, newDefinition, helper, indexesToDrop);
+                break;
+
+                default:
+                    throw new IllegalStateException("Unsupported ChangeLevel: " + comparer.getFinalChangeLevel());
             }
         } catch(Exception e) {
             rollBackNeeded = true;

@@ -32,6 +32,8 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.util.TableChange;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
@@ -44,6 +46,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.error.NotNullViolationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.test.it.ITBase;
@@ -57,6 +60,7 @@ import com.akiban.sql.parser.StatementNode;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -109,6 +113,39 @@ public class AlterTableIT extends ITBase {
                     createNewRow(oid, 30L, 3L, 33L),
                         createNewRow(iid, 300L, 30L, 330L)
         );
+    }
+
+    @Test(expected=InvalidAlterException.class)
+    public void unspecifiedColumnChange() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA, "c").colLong("c1").pk("c1");
+        UserTable table = builder.ais().getUserTable(SCHEMA, "c");
+
+        ddl().createTable(session(),  table);
+        updateAISGeneration();
+
+        builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA, "c").colLong("c1").colLong("c2").colLong("c3").pk("c1");
+        table = builder.ais().getUserTable(SCHEMA, "c");
+
+        ddl().alterTable(session(), table.getName(), table,
+                         Arrays.asList(TableChange.createAdd("c2")), Collections.<TableChange>emptyList());
+    }
+
+    @Test(expected=UnsupportedOperationException.class)
+    public void dropPKColumn() throws StandardException {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA, "c").colLong("c1").colLong("c2").pk("c1", "c2");
+        UserTable table = builder.ais().getUserTable(SCHEMA, "c");
+
+        ddl().createTable(session(), table);
+
+        builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA, "c").colLong("c2").pk("c2");
+        table = builder.ais().getUserTable(SCHEMA, "c");
+
+        ddl().alterTable(session(), table.getName(), table,
+                         Arrays.asList(TableChange.createDrop("c1")), Arrays.asList(TableChange.createModify("PRIMARY", "PRIMARY")));
     }
 
     @Test

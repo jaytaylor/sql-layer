@@ -35,12 +35,12 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.akiban.ais.util.TableComparer.ChangeLevel;
-import static com.akiban.ais.util.TableComparerExceptions.*;
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
+import static com.akiban.ais.util.TableChangeValidatorException.*;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-public class TableComparerTest {
+public class TableChangeValidatorTest {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
@@ -57,21 +57,13 @@ public class TableComparerTest {
         return ais.getUserTables().values().iterator().next();
     }
 
-
-    private static TableComparer uncheckedCompare(UserTable t1, UserTable t2,
-                                                  List<TableChange> colChanges, List<TableChange> idxChanges,
-                                                  ChangeLevel finalChangeLevel) {
-        TableComparer comparer = new TableComparer(t1, t2, colChanges, idxChanges);
+    private static TableChangeValidator validate(UserTable t1, UserTable t2,
+                                                 List<TableChange> columnChanges, List<TableChange> indexChanges,
+                                                 ChangeLevel expectedChangeLevel) {
+        TableChangeValidator comparer = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
         comparer.compare();
-        assertEquals("Final change level", finalChangeLevel, comparer.getFinalChangeLevel());
-        return comparer;
-    }
-
-    private static TableComparer checkCompare(UserTable t1, UserTable t2,
-                                              List<TableChange> colChanges, List<TableChange> idxChanges,
-                                              ChangeLevel finalChangeLevel) {
-        TableComparer comparer = uncheckedCompare(t1, t2, colChanges, idxChanges, finalChangeLevel);
         comparer.compareAndThrowIfNecessary();
+        assertEquals("Final change level", expectedChangeLevel, comparer.getFinalChangeLevel());
         return comparer;
     }
 
@@ -83,14 +75,14 @@ public class TableComparerTest {
     @Test
     public void sameTable() {
         UserTable t = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        checkCompare(t, t, NO_CHANGES, NO_CHANGES, ChangeLevel.NONE);
+        validate(t, t, NO_CHANGES, NO_CHANGES, ChangeLevel.NONE);
     }
 
     @Test
     public void unchangedTable() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.NONE);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.NONE);
     }
 
     @Test
@@ -98,7 +90,7 @@ public class TableComparerTest {
         TableName name2 = new TableName("x", "y");
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(name2).colBigInt("id").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
     }
 
     //
@@ -109,35 +101,35 @@ public class TableComparerTest {
     public void addColumn() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createAdd("x")), NO_CHANGES, ChangeLevel.TABLE);
+        validate(t1, t2, asList(TableChange.createAdd("x")), NO_CHANGES, ChangeLevel.TABLE);
     }
 
     @Test
     public void dropColumn() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createDrop("x")), NO_CHANGES, ChangeLevel.TABLE);
+        validate(t1, t2, asList(TableChange.createDrop("x")), NO_CHANGES, ChangeLevel.TABLE);
     }
 
     @Test
     public void modifyColumnDataType() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("y").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colString("y", 32).pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createModify("y", "y")), NO_CHANGES, ChangeLevel.TABLE);
+        validate(t1, t2, asList(TableChange.createModify("y", "y")), NO_CHANGES, ChangeLevel.TABLE);
     }
 
     @Test
     public void modifyColumnName() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("y").pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createModify("x", "y")), NO_CHANGES, ChangeLevel.METADATA);
+        validate(t1, t2, asList(TableChange.createModify("x", "y")), NO_CHANGES, ChangeLevel.METADATA);
     }
 
     @Test
     public void modifyColumnNullability() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", true).pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA_NULL);
+        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA_NULL);
     }
 
     //
@@ -148,42 +140,42 @@ public class TableComparerTest {
     public void addColumnUnspecified() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, null);
     }
 
     @Test(expected=UnchangedColumnNotPresentException.class)
     public void dropColumnUnspecified() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, null);
     }
 
     @Test(expected=DropColumnNotPresentException.class)
     public void dropColumnUnknown() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createDrop("x")), NO_CHANGES, null);
+        validate(t1, t2, asList(TableChange.createDrop("x")), NO_CHANGES, null);
     }
 
     @Test(expected=ModifyColumnNotChangedException.class)
     public void modifyColumnNotChanged() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, null);
+        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, null);
     }
 
     @Test(expected=ModifyColumnNotPresentException.class)
     public void modifyColumnUnknown() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createModify("y", "y")), NO_CHANGES, null);
+        validate(t1, t2, asList(TableChange.createModify("y", "y")), NO_CHANGES, null);
     }
 
     @Test(expected=UndeclaredColumnChangeException.class)
     public void modifyColumnUnspecified() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colString("x", 32).pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, null);
     }
 
     //
@@ -194,35 +186,36 @@ public class TableComparerTest {
     public void addIndex() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createAdd("x")), ChangeLevel.INDEX);
+        validate(t1, t2, NO_CHANGES, asList(TableChange.createAdd("x")), ChangeLevel.INDEX);
     }
 
     @Test
     public void dropIndex() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createDrop("x")), ChangeLevel.INDEX);
+        validate(t1, t2, NO_CHANGES, asList(TableChange.createDrop("x")), ChangeLevel.INDEX);
     }
 
     @Test
     public void modifyIndexedColumn() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "y").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createModify("k", "k")), ChangeLevel.INDEX);
+        validate(t1, t2, NO_CHANGES, asList(TableChange.createModify("k", "k")), ChangeLevel.INDEX);
     }
 
     @Test
     public void modifyIndexedType() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colString("x", 32).key("x", "x").pk("id"));
-        checkCompare(t1, t2,asList(TableChange.createModify("x", "x")), asList(TableChange.createModify("x", "x")), ChangeLevel.TABLE);
+        validate(t1, t2, asList(TableChange.createModify("x", "x")), asList(TableChange.createModify("x", "x")),
+                 ChangeLevel.TABLE);
     }
 
     @Test
     public void modifyIndexName() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("a", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("b", "x").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createModify("a", "b")), ChangeLevel.METADATA);
+        validate(t1, t2, NO_CHANGES, asList(TableChange.createModify("a", "b")), ChangeLevel.METADATA);
     }
 
     //
@@ -233,49 +226,49 @@ public class TableComparerTest {
     public void addIndexUnspecified() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, null);
     }
 
     @Test(expected=UnchangedIndexNotPresentException.class)
     public void dropIndexUnspecified() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, null);
     }
 
     @Test(expected=DropIndexNotPresentException.class)
     public void dropIndexUnknown() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createDrop("x")), null);
+        validate(t1, t2, NO_CHANGES, asList(TableChange.createDrop("x")), null);
     }
 
     @Test(expected=ModifyIndexNotChangedException.class)
     public void modifyIndexNotChanged() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createModify("x", "x")), null);
+        validate(t1, t2, NO_CHANGES, asList(TableChange.createModify("x", "x")), null);
     }
 
     @Test(expected=ModifyIndexNotPresentException.class)
     public void modifyIndexUnknown() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, asList(TableChange.createModify("y", "y")), null);
+        validate(t1, t2, NO_CHANGES, asList(TableChange.createModify("y", "y")), null);
     }
 
     @Test(expected=UndeclaredIndexChangeException.class)
     public void modifyIndexUnspecified() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").colBigInt("y").key("k", "y").pk("id"));
-        checkCompare(t1, t2, NO_CHANGES, NO_CHANGES, null);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, null);
     }
 
     @Test(expected=UndeclaredIndexChangeException.class)
     public void modifyIndexedColumnIndexUnspecified() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colString("x", 32).key("x", "x").pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, null);
+        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, null);
     }
 
     //
@@ -286,10 +279,10 @@ public class TableComparerTest {
     public void modifyPKColumnType() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colString("id", 32).pk("id"));
-        checkCompare(t1, t2,
-                     asList(TableChange.createModify("id", "id")),
-                     asList(TableChange.createModify("PRIMARY", "PRIMARY")),
-                     ChangeLevel.GROUP);
+        validate(t1, t2,
+                 asList(TableChange.createModify("id", "id")),
+                 asList(TableChange.createModify("PRIMARY", "PRIMARY")),
+                 ChangeLevel.GROUP);
     }
 
     //
@@ -304,7 +297,7 @@ public class TableComparerTest {
     public void addAndDropColumn() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("y").pk("id"));
-        checkCompare(t1, t2, asList(TableChange.createDrop("x"), TableChange.createAdd("y")), NO_CHANGES, ChangeLevel.TABLE);
+        validate(t1, t2, asList(TableChange.createDrop("x"), TableChange.createAdd("y")), NO_CHANGES, ChangeLevel.TABLE);
     }
 
     @Test
@@ -313,9 +306,9 @@ public class TableComparerTest {
                 key("d", "d").key("l", "l").uniqueKey("k", "l", "d").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colDouble("d").colVarBinary("v", 32).colString("s", 64).
                 key("d", "d").key("v", "v").uniqueKey("k", "v", "d").pk("id"));
-        checkCompare(t1, t2,
-                     asList(TableChange.createDrop("l"), TableChange.createModify("s", "s"), TableChange.createAdd("v")),
-                     asList(TableChange.createDrop("l"), TableChange.createAdd("v"), TableChange.createModify("k", "k")),
-                     ChangeLevel.TABLE);
+        validate(t1, t2,
+                 asList(TableChange.createDrop("l"), TableChange.createModify("s", "s"), TableChange.createAdd("v")),
+                 asList(TableChange.createDrop("l"), TableChange.createAdd("v"), TableChange.createModify("k", "k")),
+                 ChangeLevel.TABLE);
     }
 }
