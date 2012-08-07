@@ -51,6 +51,8 @@ import java.util.Arrays;
 
 public final class MBinary extends SimpleDtdTClass {
 
+    private static final TParser parser = new BinaryParser();
+
     public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
     public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "varbinary", -1);
     public static final TClass TINYBLOB = new MBinary(TypeId.BLOB_ID, "tinyblob", 256);
@@ -139,13 +141,22 @@ public final class MBinary extends SimpleDtdTClass {
     }
     
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, null, typeId);
+        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, parser, typeId);
         this.defaultLength = defaultLength;
     }
         
     private final int defaultLength;
 
-    private static final TParser parser = new TParser() {
+    public static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {
+        int maxLen = context.outputTInstance().attribute(MBinary.Attrs.LENGTH);
+        if (bytes.length > maxLen) {
+            context.reportTruncate("bytes of length " + bytes.length,  "bytes of length " + maxLen);
+            bytes = Arrays.copyOf(bytes, maxLen);
+        }
+        target.putBytes(bytes);
+    }
+
+    private static class BinaryParser implements TParser {
         @Override
         public void parse(TExecutionContext context, PValueSource in, PValueTarget out) {
             String string = in.getString();
@@ -159,14 +170,5 @@ public final class MBinary extends SimpleDtdTClass {
             }
             putBytes(context, out, bytes);
         }
-    };
-
-    public static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {
-        int maxLen = context.outputTInstance().attribute(MBinary.Attrs.LENGTH);
-        if (bytes.length > maxLen) {
-            context.reportTruncate("bytes of length " + bytes.length,  "bytes of length " + maxLen);
-            bytes = Arrays.copyOf(bytes, maxLen);
-        }
-        target.putBytes(bytes);
     }
 }
