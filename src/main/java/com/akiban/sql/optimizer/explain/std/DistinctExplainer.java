@@ -27,11 +27,7 @@ package com.akiban.sql.optimizer.explain.std;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.*;
 import java.math.BigDecimal;
 import java.util.Map;
 

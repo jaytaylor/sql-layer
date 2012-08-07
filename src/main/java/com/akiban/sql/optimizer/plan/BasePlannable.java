@@ -90,7 +90,8 @@ public abstract class BasePlannable extends BasePlanNode
     protected static void explainPlan(Plannable operator,
                                       List<String> into, Map<Object, Explainer> extraInfo) {
         Format f = new Format(true);
-        into.add(f.Describe(operator.getExplainer(extraInfo)));
+        for (String row : f.Describe(operator.getExplainer(extraInfo)))
+            into.add(row);
     }
     
     @Override

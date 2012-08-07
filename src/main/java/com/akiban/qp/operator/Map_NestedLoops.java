@@ -28,9 +28,7 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.sql.optimizer.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -156,6 +154,10 @@ class Map_NestedLoops extends Operator
     {
         Explainer ex = new NestedLoopsExplainer("Map_NestedLoops", innerInputOperator, outerInputOperator, null, null, extraInfo);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        if (extraInfo != null && extraInfo.containsKey(this))
+        {
+            ex.addAttribute(Label.TABLE_CORRELATION, ((OperationExplainer)extraInfo.get(this)).get().get(Label.TABLE_CORRELATION).get(0));
+        }
         return ex;
     }
 

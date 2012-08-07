@@ -705,15 +705,16 @@ public class OperatorAssembler extends BaseRule
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
             UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
-            
-            Attributes atts = new Attributes();
-            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(updateStatement.getTargetTable().getTable().getName()));
-            for (UpdateColumn column : updateStatement.getUpdateColumns())
+            if (planContext.hasInfo())
             {
-                atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
+                Attributes atts = new Attributes();
+                atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(updateStatement.getTargetTable().getTable().getName()));
+                for (UpdateColumn column : updateStatement.getUpdateColumns())
+                {
+                    atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
+                }
+                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
-            planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
-            
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -721,11 +722,12 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
             UpdatePlannable plan = API.delete_Default(stream.operator, usePValues);
-            
-            Attributes atts = new Attributes();
-            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName()));
-            planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
-            
+            if (planContext.hasInfo())
+            {
+                Attributes atts = new Attributes();
+                atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName()));
+                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            }
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
@@ -1128,13 +1130,27 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
             int pos = pushBoundRow(null); // Allocate slot in case loops in outer.
-            RowStream ostream = assembleStream(mapJoin.getOuter());
+            PlanNode outer = mapJoin.getOuter();
+            RowStream ostream = assembleStream(outer);
             boundRows.set(pos, ostream.fieldOffsets);
             RowStream stream = assembleStream(mapJoin.getInner());
             stream.operator = API.map_NestedLoops(ostream.operator, 
                                                   stream.operator,
                                                   currentBindingPosition());
             popBoundRow();
+            if (planContext.hasInfo())
+            {
+                Attributes atts = new Attributes();
+                if (outer instanceof Flatten)
+                {
+                    List nodes = ((Flatten)outer).getTableNodes();
+                    if (nodes.size() == 1)
+                    {
+                        atts.put(Label.TABLE_CORRELATION, (Explainer)nodes.get(0));
+                        planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                    }
+                }
+            }
             return stream;
         }
 
@@ -1244,6 +1260,15 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
+            if (planContext.hasInfo())
+            {
+                Attributes atts = new Attributes();
+                for (ExpressionNode node : aggregateSource.getGroupBy())
+                {
+                    atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(node.toString()));
+                }
+                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            }
             return stream;
         }
 

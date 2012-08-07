@@ -350,20 +350,34 @@ final class Aggregate_Partial extends Operator
     {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));
+        int aggs;
         
         if (pAggrs != null) {
             for (TAggregator agg : pAggrs)
                 atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+            aggs = pAggrs.size();
         }
         else {
             for (AggregatorFactory agg : aggregatorFactories)
                 atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+            aggs = aggregatorFactories.size();
         }
-        
-        atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
+        if (extraInfo.containsKey(this))
+        {
+            StringBuilder sb = new StringBuilder("GROUP BY ");
+            for (Explainer ex : ((OperationExplainer)extraInfo.get(this)).get().get(Label.GROUPING_OPTION))
+            {
+                sb.append(ex.get()).append(", ");
+            }
+            sb.setLength(sb.length()-2);
+            atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(sb.toString()));
+        }
+        else
+            atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputRowType.toString()));
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputType.toString()));
+        atts.put(Label.BRIEF, PrimitiveExplainer.getInstance(inputsIndex + " keys, " + aggs + " aggregates"));
         
         return new OperationExplainer(Type.PHYSICAL_OPERATOR, atts);
     }
