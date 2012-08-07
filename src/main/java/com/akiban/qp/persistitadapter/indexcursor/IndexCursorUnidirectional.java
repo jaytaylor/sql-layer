@@ -68,7 +68,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 SORT_TRAVERSE.hit();
                 if (exchange.traverse(keyComparison, true)) {
                     next = row();
-                    if (pastEnd()) {
+                    if (pastEnd(next)) {
                         next = null;
                         close();
                     } else {
@@ -123,9 +123,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
-        this.endKey = endBoundColumns == 0 ? null : adapter.newKey();
+        this.endKey = endBoundColumns == 0 ? null : PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
         this.sortKeyAdapter = sortKeyAdapter;
-        this.endKeyTarget = sortKeyAdapter.createTarget();
         initializeCursor(keyRange, ordering);
     }
 
@@ -177,14 +176,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     endValues[f] = keyAdapter.get(endExpressions, f);
                 }
                 clear(startKey);
-                endKey.clear();
-                endKeyTarget.attach(endKey);
+                clear(endKey);
                 // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
                 // interpret the nulls literally.
                 int f = 0;
                 while (f < startBoundColumns - 1) {
                     startKey.append(startValues[f], type(f), tInstance(f), collator(f));
-                    endKeyTarget.append(startValues[f], f, types, tInstances, collators);
+                    endKey.append(startValues[f], type(f), tInstance(f), collator(f));
                     f++;
                 }
                 // For the last column:
@@ -213,7 +211,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                         if (endInclusive) {
                             if (startInclusive && keyAdapter.isNull(startValues[f])) {
                                 // Case 10:
-                                endKeyTarget.append(endValues[f], f, types, tInstances,collators);
+                                endKey.append(endValues[f], type(f), tInstance(f), collator(f));
                             } else {
                                 // Cases 2, 6, 14:
                                 throw new IllegalArgumentException();
@@ -224,12 +222,12 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                         }
                     } else {
                         // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                        endKeyTarget.append(endValues[f], f, types, tInstances,collators);
+                        endKey.append(endValues[f], type(f), tInstance(f), collator(f));
                     }
                 } else {
                     // Same as above, swapping start and end
                     // End values
-                    endKeyTarget.append(endValues[f], f, types, tInstances,collators);
+                    endKey.append(endValues[f], type(f), tInstance(f), collator(f));
                     // Start values
                     if (keyAdapter.isNull(startValues[f])) {
                         if (startInclusive) {
@@ -293,15 +291,14 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         }
     }
 
-    protected boolean pastEnd()
+    protected boolean pastEnd(Row row)
     {
         boolean pastEnd;
         if (endKey == null) {
             pastEnd = false;
         } else {
-            Key key = exchange.getKey();
-            assert key.getDepth() >= endKey.getDepth();
-            int c = key.compareKeyFragment(endKey, 0, endKey.getEncodedSize()) * direction;
+            PersistitIndexRow current = (PersistitIndexRow) row;
+            int c = current.compareTo(endKey) * direction;
             pastEnd = c > 0 || c == 0 && !endInclusive;
         }
         return pastEnd;
@@ -309,7 +306,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     protected void clear(PersistitIndexRow bound)
     {
-        assert bound == startKey; // TODO: || bound == endKey;
+        assert bound == startKey || bound == endKey;
         bound.resetForWrite(index(), adapter.newKey(), null); // TODO: Reuse the existing key
     }
 
@@ -422,7 +419,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         this.startBoundColumns = 0;
         this.endBoundColumns = 0;
         this.sortKeyAdapter = sortKeyAdapter;
-        this.endKeyTarget = sortKeyAdapter.createTarget();
     }
 
     // Class state
@@ -452,7 +448,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected boolean startInclusive;
     protected boolean endInclusive;
     protected PersistitIndexRow startKey;
-    protected Key endKey;
+    protected PersistitIndexRow endKey;
     private SortKeyAdapter<S, ?> sortKeyAdapter;
-    protected final SortKeyTarget<S> endKeyTarget;
 }

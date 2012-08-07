@@ -79,15 +79,14 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
             endKey = null;
         } else {
             endExpressions = end.boundExpressions(context);
-            endKey.clear();
-            endKeyTarget.attach(endKey);
+            clear(endKey);
             for (int f = 0; f < endBoundColumns; f++) {
                 if (end.columnSelector().includesColumn(f)) {
                     S source = keyAdapter.get(endExpressions, f);
                     if (keyAdapter.isNull(source) && startExpressions != null && !startExpressions.eval(f).isNull()) {
                         endKey.append(Key.AFTER);
                     } else {
-                        endKeyTarget.append(source, f, types, tInstances, collators);
+                        endKey.append(source, type(f), tInstance(f), collator(f));
                     }
                 } else {
                     endKey.append(Key.AFTER);

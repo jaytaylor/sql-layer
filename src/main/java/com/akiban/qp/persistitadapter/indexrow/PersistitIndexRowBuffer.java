@@ -52,6 +52,8 @@ import com.persistit.Key;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
+import static java.lang.Math.min;
+
 /*
  * 
  * Index row formats:
@@ -80,8 +82,55 @@ import com.persistit.exception.PersistitException;
  * 
  */
 
-public class PersistitIndexRowBuffer extends IndexRow
+public class PersistitIndexRowBuffer extends IndexRow implements Comparable<PersistitIndexRowBuffer>
 {
+    // Comparable interface
+
+    @Override
+    public int compareTo(PersistitIndexRowBuffer that)
+    {
+        int c;
+        byte[] thisBytes = this.pKey.getEncodedBytes();
+        byte[] thatBytes = that.pKey.getEncodedBytes();
+        int p = 0;
+        int end = min(this.pKey.getEncodedSize(), that.pKey.getEncodedSize());
+        while (p < end) {
+            c = (thisBytes[p] & 0xff) - (thatBytes[p] & 0xff);
+            if (c != 0) {
+                return c;
+            } else {
+                p++;
+            }
+        }
+        c = thisBytes.length - thatBytes.length;
+        if (c != 0) {
+            return c;
+        }
+        // Compare pValues, if there are any
+        thisBytes = this.pValue == null ? null : this.pValue.getEncodedBytes();
+        thatBytes = that.pValue == null ? null : that.pValue.getEncodedBytes();
+        if (thisBytes == null && thatBytes == null) {
+            return 0;
+        } else if (thisBytes == null) {
+            return -1;
+        } else if (thatBytes == null) {
+            return 1;
+        }
+        p = 0;
+        end = min(this.pValue.getEncodedSize(), that.pValue.getEncodedSize());
+        while (p < end) {
+            c = (thisBytes[p] & 0xff) - (thatBytes[p] & 0xff);
+            if (c != 0) {
+                return c;
+            } else {
+                p++;
+            }
+        }
+        c = thisBytes.length - thatBytes.length;
+        return c;
+    }
+
+
     // BoundExpressions interface
 
     public final int compareTo(BoundExpressions row, int thisStartIndex, int thatStartIndex, int fieldCount)
@@ -116,7 +165,7 @@ public class PersistitIndexRowBuffer extends IndexRow
         while (eqSegments < fieldCount) {
             byte thisByte = thisBytes[thisPosition++];
             byte thatByte = thatBytes[thatPosition++];
-            c = thisByte - thatByte;
+            c = (thisByte & 0xff) - (thatByte & 0xff);
             if (c != 0) {
                 break;
             } else if (thisByte == 0) {
