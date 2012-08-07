@@ -290,6 +290,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void deleteIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
+        ensureAdapter(session);
         for (Index index : indexes) {
             try {
                 storeStats.deleteIndexStatistics(session, index);
