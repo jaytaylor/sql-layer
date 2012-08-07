@@ -150,6 +150,22 @@ public class IndexKeyRange
     }
 
     /**
+     * Describes a range of keys starting at lo and expanding out,
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @return IndexKeyRange covering the keys lying starting at lo.
+     */
+    public static IndexKeyRange around(IndexRowType indexRowType,
+                                       IndexBound lo)
+    {
+        if (lo == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL);
+    }
+
+    /**
      * Describes all keys in the index starting at or after lo, depending on loInclusive.
      * This is used only in lexicographic scans.
      *
