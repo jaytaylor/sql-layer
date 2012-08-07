@@ -645,7 +645,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
         return indexFromRecords(records, orderRD, 
-                                o_when, 
+                                o_when, NULL_SEPARATOR_COLUMN,
                                 o_vid1, o_vid2,
                                 o_cid1, o_cid2,
                                 o_oid1, o_oid2);

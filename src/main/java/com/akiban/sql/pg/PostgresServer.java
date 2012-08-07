@@ -70,7 +70,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
-    private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
+    private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(true);
     // AIS-dependent state
     private volatile long aisTimestamp = -1;
     private volatile int statementCacheCapacity;

@@ -23,14 +23,16 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.qp.persistitadapter.indexcursor;
 
-package com.akiban.server.types3.aksql.akfuncs;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.persistit.Key;
 
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.Rand;
-
-
-public class AkRand {
-    public static final TOverload[] INSTANCES = Rand.create(AkNumeric.BIGINT, AkNumeric.DOUBLE);
+public interface SortKeyTarget<S> {
+    void attach(Key key);
+    void append(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
+    void append(S source, AkType akType, TInstance tInstance, AkCollator collator);
+    void append(S source, AkCollator collator, TInstance tInstance);
 }

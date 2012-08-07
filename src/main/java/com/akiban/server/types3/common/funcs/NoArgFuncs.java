@@ -142,6 +142,23 @@ public class NoArgFuncs
         }
     };
     
+    public static final TOverload UNIX_TIMESTAMP = new NoArgExpression("UNIX_TIMESTAMP", true)
+    {
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putInt32((int)MDatetimes.encodeTimetamp(context.getCurrentDate(), context));
+        }
+
+        @Override
+        protected TInstance tInstance()
+        {
+            return MDatetimes.TIMESTAMP.instance();
+        }
+        
+    };
+    
     public static final TOverload SYSDATE = new NoArgExpression("SYSDATE", false)
     {
         @Override

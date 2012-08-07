@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
@@ -42,7 +42,7 @@ import com.persistit.exception.PersistitException;
 import java.util.ArrayList;
 import java.util.List;
 
-class SortCursorMixedOrder<S,E> extends SortCursor
+class IndexCursorMixedOrder<S,E> extends IndexCursor
 {
     // Cursor interface
 
@@ -120,15 +120,15 @@ class SortCursorMixedOrder<S,E> extends SortCursor
         }
     }
 
-    // SortCursorMixedOrder interface
+    // IndexCursorMixedOrder interface
 
-    public static <S, E> SortCursorMixedOrder<S, E> create(QueryContext context,
+    public static <S, E> IndexCursorMixedOrder<S, E> create(QueryContext context,
                                               IterationHelper iterationHelper,
                                               IndexKeyRange keyRange,
                                               API.Ordering ordering,
                                               SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        return new SortCursorMixedOrder<S, E>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        return new IndexCursorMixedOrder<S, E>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     public void initializeScanStates() throws PersistitException
@@ -203,11 +203,11 @@ class SortCursorMixedOrder<S,E> extends SortCursor
 
     // For use by subclasses
 
-    protected SortCursorMixedOrder(QueryContext context,
-                                   IterationHelper iterationHelper,
-                                   IndexKeyRange keyRange,
-                                   API.Ordering ordering,
-                                   SortKeyAdapter<S, E> sortKeyAdapter)
+    protected IndexCursorMixedOrder(QueryContext context,
+                                    IterationHelper iterationHelper,
+                                    IndexKeyRange keyRange,
+                                    API.Ordering ordering,
+                                    SortKeyAdapter<S, E> sortKeyAdapter)
     {
         super(context, iterationHelper);
         this.keyRange = keyRange;

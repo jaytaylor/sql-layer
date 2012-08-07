@@ -26,9 +26,8 @@
 
 package com.akiban.server.store.statistics;
 
-import static com.akiban.server.store.statistics.IndexStatistics.*;
-
 import com.akiban.ais.model.Index;
+import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
@@ -37,22 +36,21 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.store.PersistitStore;
-
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
-import com.persistit.exception.TransactionFailedException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
+import static com.akiban.server.store.statistics.IndexStatistics.Histogram;
+import static com.akiban.server.store.statistics.IndexStatistics.HistogramEntry;
 import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME;
+import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
 
 /** Manage index statistics for / stored in Persistit
  */
@@ -87,16 +85,19 @@ public class PersistitStoreIndexStatistics
             .append(indexStatisticsRowDef.getOrdinal())
             .append((long)indexDef.getRowDef().getRowDefId())
             .append((long)index.getIndexId());
-        if (!exchange.fetch().getValue().isDefined())
+        if (!exchange.fetch().getValue().isDefined()) {
             return null;
+        }
         IndexStatistics result = decodeHeader(exchange, indexStatisticsRowDef, index);
         while (exchange.traverse(Key.GT, true)) {
-            if (exchange.getKey().getDepth() <= indexStatisticsRowDef.getHKeyDepth())
+            if (exchange.getKey().getDepth() <= indexStatisticsRowDef.getHKeyDepth()) {
                 break;          // End of children.
+            }
             decodeEntry(exchange, indexStatisticsEntryRowDef, index, result);
         }
-        if (logger.isDebugEnabled())
+        if (logger.isDebugEnabled()) {
             logger.debug("Loaded: " + result.toString(index));
+        }
         return result;
     }
 
@@ -192,56 +193,46 @@ public class PersistitStoreIndexStatistics
     /** Store statistics into database. */
     public void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics)
             throws PersistitException {
-        IndexDef indexDef = index.indexDef();
-        RowDef indexStatisticsRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_TABLE_NAME);
-        RowDef indexStatisticsEntryRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        int tableId = index.indexDef().getRowDef().getRowDefId();
+        RowDef indexStatisticsRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_TABLE_NAME);
+        RowDef indexStatisticsEntryRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         Transaction transaction = exchange.getTransaction();
 
         transaction.begin();
         try {
-            RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
-
-            // First delete any old entries.
-            rowData.createRow(indexStatisticsRowDef, new Object[] {
-                                  indexDef.getRowDef().getRowDefId(),
-                                  index.getIndexId() 
-                              });
-            store.constructHKey(session, exchange, 
-                                indexStatisticsRowDef, rowData, false);
-            exchange.remove(Key.GTEQ);
-            // TODO: Need to get a count back from
-            // exchange.remove() in order to tell the row count in
-            // treeService.getTableStatusCache() what changed.
+            // Remove existing statistics for the index
+            removeStatistics(session, index, exchange);
 
             // Parent header row.
+            RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
             rowData.createRow(indexStatisticsRowDef, new Object[] {
-                                  indexDef.getRowDef().getRowDefId(),
-                                  index.getIndexId(),
-                                  indexStatistics.getAnalysisTimestamp() / 1000,
-                                  indexStatistics.getRowCount(),
-                                  indexStatistics.getSampledCount()
-                              });
+                tableId,
+                index.getIndexId(),
+                indexStatistics.getAnalysisTimestamp() / 1000,
+                indexStatistics.getRowCount(),
+                indexStatistics.getSampledCount()
+            });
             store.writeRow(session, rowData);
-                
+
             for (int i = 0; i < index.getKeyColumns().size(); i++) {
                 Histogram histogram = indexStatistics.getHistogram(i + 1);
-                if (histogram == null) continue;
+                if (histogram == null) {
+                    continue;
+                }
                 int itemNumber = 0;
                 for (HistogramEntry entry : histogram.getEntries()) {
                     rowData.createRow(indexStatisticsEntryRowDef, new Object[] {
-                                          indexDef.getRowDef().getRowDefId(),
-                                          index.getIndexId(),
-                                          histogram.getColumnCount(),
-                                          ++itemNumber,
-                                          entry.getKeyString(),
-                                          entry.getKeyBytes(),
-                                          entry.getEqualCount(),
-                                          entry.getLessCount(),
-                                          entry.getDistinctCount()
-                                      });
+                        tableId,
+                        index.getIndexId(),
+                        histogram.getColumnCount(),
+                        ++itemNumber,
+                        entry.getKeyString(),
+                        entry.getKeyBytes(),
+                        entry.getEqualCount(),
+                        entry.getLessCount(),
+                        entry.getDistinctCount()
+                    });
                     store.writeRow(session, rowData);
                 }
             }
@@ -252,29 +243,55 @@ public class PersistitStoreIndexStatistics
         }
     }
 
+    private void removeStatistics(Session session, Index index, Exchange exchange)
+        throws PersistitException
+    {
+        RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
+        RowDef indexStatisticsRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_TABLE_NAME);
+        RowDef indexStatisticsEntryRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        int tableId = index.indexDef().getRowDef().getRowDefId();
+        int indexId = index.getIndexId();
+        // Delete index_statistics_entry rows.
+        exchange.append(Key.BEFORE);
+        while (exchange.traverse(Key.Direction.GT, true)) {
+            store.expandRowData(exchange, rowData);
+            if (rowData.getRowDefId() == indexStatisticsEntryRowDef.getRowDefId() &&
+                selectedIndex(rowData, tableId, indexId)) {
+                store.deleteRow(session, rowData);
+            }
+        }
+        // Delete only the parent index_statistics row
+        exchange.clear().append(Key.BEFORE);
+        while (exchange.traverse(Key.Direction.GT, true)) {
+            store.expandRowData(exchange, rowData);
+            if (rowData.getRowDefId() == indexStatisticsRowDef.getRowDefId() &&
+                selectedIndex(rowData, tableId, indexId)) {
+                store.deleteRow(session, rowData);
+            }
+        }
+        // TODO: Maintain row counts for index_statistics and index_statistics_entry tables.
+    }
+
+    private boolean selectedIndex(RowData rowData, long tableId, long indexId)
+    {
+        LegacyRowWrapper row = new LegacyRowWrapper(rowData, store);
+        long rowTableId = (Long) row.get(0);
+        long rowIndexId = (Long) row.get(1);
+        return rowTableId == tableId && rowIndexId == indexId;
+    }
+
     /** Delete any stored statistics for the given index. */
     public void deleteIndexStatistics(Session session, Index index)
-            throws PersistitException {
-        IndexDef indexDef = index.indexDef();
-        RowDef indexStatisticsRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_TABLE_NAME);
+            throws PersistitException
+    {
+        RowDef indexStatisticsRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_TABLE_NAME);
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         Transaction transaction = exchange.getTransaction();
-
         transaction.begin();
         try {
-            RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
-            rowData.createRow(indexStatisticsRowDef, new Object[] {
-                                  indexDef.getRowDef().getRowDefId(),
-                                  index.getIndexId() 
-                              });
-            store.constructHKey(session, exchange, 
-                                indexStatisticsRowDef, rowData, false);
-            exchange.remove(Key.GTEQ);
-            // TODO: See exchange.remove() above.
+            removeStatistics(session, index, exchange);
             transaction.commit();
-        } 
-        finally {
+        } finally {
             transaction.end();
         }
     }
@@ -289,8 +306,9 @@ public class PersistitStoreIndexStatistics
         store.traverse(session, index, visitor);
         visitor.finish();
         IndexStatistics result = visitor.getIndexStatistics();
-        if (logger.isDebugEnabled())
+        if (logger.isDebugEnabled()) {
             logger.debug("Analyzed: " + result.toString(index));
+        }
         return result;
     }
     
@@ -300,8 +318,9 @@ public class PersistitStoreIndexStatistics
             try {
                 IndexStatistics indexStatistics = computeIndexStatistics(session, index);
                 if (indexStatistics != null) {
-                    if (logger.isDebugEnabled())
+                    if (logger.isDebugEnabled()) {
                         logger.debug("Analyzed: " + indexStatistics.toString(index));
+                    }
                     storeIndexStatistics(session, index, indexStatistics);
                 }
             }

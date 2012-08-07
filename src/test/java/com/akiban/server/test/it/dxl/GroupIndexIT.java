@@ -238,6 +238,12 @@ public class GroupIndexIT extends ITBase {
         final String indexName = groupIndex.getIndexName().getName();
         persistitStore().traverse(session(), groupIndex, new IndexKeyVisitor() {
             @Override
+            public boolean groupIndex()
+            {
+                return true;
+            }
+
+            @Override
             protected void visit(List<?> actual) {
                 if(!keyIt.hasNext()) {
                     extraKeys.add(actual);

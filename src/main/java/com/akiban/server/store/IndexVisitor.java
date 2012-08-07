@@ -36,6 +36,10 @@ import com.persistit.exception.PersistitException;
 public abstract class IndexVisitor {
     protected abstract void visit(Key key, Value value) throws PersistitException, InvalidOperationException;
 
+    public boolean groupIndex() {
+        return false;
+    }
+
     final void visit() throws PersistitException, InvalidOperationException {
         visit(exchange.getKey(), exchange.getValue());
     }
