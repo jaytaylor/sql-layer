@@ -27,9 +27,12 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+
+import java.math.BigDecimal;
 
 public class TParsers
 {
@@ -183,6 +186,19 @@ public class TParsers
                                     CastUtils.parseDecimalString(source.getString(),context),
                                     target);
         }   
+    };
+
+    public static final TParser DECIMAL_UNSIGNED = new TParser()
+    {
+        @Override
+        public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            MBigDecimalWrapper wrapped = CastUtils.parseDecimalString(source.getString(), context);
+            BigDecimal bd = wrapped.asBigDecimal();
+            if (BigDecimal.ZERO.compareTo(bd) < 0)
+                wrapped.reset();
+            CastUtils.doCastDecimal(context, wrapped, target);
+        }
     };
     
     public static final TParser DATE = new TParser()

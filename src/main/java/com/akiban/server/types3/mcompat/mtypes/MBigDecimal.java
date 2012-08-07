@@ -59,9 +59,23 @@ public class MBigDecimal extends TClassBase {
 
     public static final int MAX_INDEX = 0;
     public static final int MIN_INDEX = 1;
-    
-    public MBigDecimal(){
-        super(MBundle.INSTANCE.id(), "decimal", AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8, PUnderlying.BYTES, TParsers.DECIMAL);
+
+    public static void adjustAttrsAsNeeded(TExecutionContext context, PValueSource source,
+                                           TInstance targetInstance, PValueTarget target)
+    {
+        // TODO!
+        target.putObject(source.getObject());
+    }
+
+    public MBigDecimal(String name){
+        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8, PUnderlying.BYTES, TParsers.DECIMAL);
+    }
+
+    @Override
+    public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
+                         TInstance targetInstance, PValueTarget target)
+    {
+        adjustAttrsAsNeeded(context, source, targetInstance, target);
     }
 
     @Override

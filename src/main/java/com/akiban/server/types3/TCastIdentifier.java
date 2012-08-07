@@ -28,6 +28,9 @@ package com.akiban.server.types3;
 
 import com.google.common.base.Objects;
 
+import java.util.Arrays;
+import java.util.List;
+
 public final class TCastIdentifier {
 
     public TClass getSource() {
@@ -71,4 +74,5 @@ public final class TCastIdentifier {
 
     private final TClass source;
     private final TClass target;
+    private final List<?> stack = Arrays.asList(Thread.currentThread().getStackTrace());
 }
