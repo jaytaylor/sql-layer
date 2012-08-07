@@ -27,6 +27,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
 import com.akiban.server.expression.ExpressionComposer.NullTreating;
@@ -97,10 +98,10 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             AkType type = children().get(0).eval().getConversionType();
             switch (type) {
                 case DECIMAL: 
-                    y1 = children().get(0).eval().getDecimal().longValueExact();
-                    x1 = children().get(1).eval().getDecimal().longValueExact();
-                    y2 = children().get(2).eval().getDecimal().longValueExact();
-                    x2 = children().get(3).eval().getDecimal().longValueExact();
+                    y1 = latInRange(children().get(0).eval().getDecimal().longValueExact());
+                    x1 = lonInRange(children().get(1).eval().getDecimal().longValueExact());
+                    y2 = latInRange(children().get(2).eval().getDecimal().longValueExact());
+                    x2 = lonInRange(children().get(3).eval().getDecimal().longValueExact());
                     break;
                 default:
                         throw new InvalidArgumentTypeException("Type " + type + "is not supported in DISTANCE_LAT_LON");
@@ -116,6 +117,16 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             valueHolder().putDouble(result);
             
             return valueHolder();
+        }
+        
+        private double lonInRange(double x) {
+            if(x > 180 || x < -180) throw new OutOfRangeException(x + " should be in the range of -180 to 180 inclusive");
+            return x;
+        }
+        
+        private double latInRange(double y) {
+            if(y > 90 || y < -90) throw new OutOfRangeException(y + " should be in the range of -90 to 90 inclusive"); 
+            return y;
         }
         
         private double getShift(double num) {

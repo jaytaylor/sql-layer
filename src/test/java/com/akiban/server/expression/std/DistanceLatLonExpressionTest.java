@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
@@ -87,6 +88,13 @@ public class DistanceLatLonExpressionTest {
     public void testNegPosWrapAround() {
         List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-179), getDecimal(0), getDecimal(180)));
         test(1.0, lst);
+    }
+    
+    @Test (expected=OutOfRangeException.class) 
+    public void testOutOfRange() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-91), getDecimal(0), getDecimal(0), getDecimal(180)));
+        Expression exp = new DistanceLatLonExpression(lst);
+        ValueSource result = exp.evaluation().eval();
     }
     
     private void test(double expected, List<Expression> lst) {
