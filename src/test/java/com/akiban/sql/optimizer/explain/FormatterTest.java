@@ -111,27 +111,14 @@ public class FormatterTest {
         
         Explainer explainer = substr.getExplainer(null);
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \'%Y-%m-%d\'), 9 + 10, 11)";
-        Format f = new Format(true);
-        String result = f.Describe(explainer);
+        Format f1 = new Format(true);
+        String result = f1.Describe(explainer).get(0);
         assertEquals(expResult, result);
         
+        Format f2 = new Format(true);
         explainer = substr_.getExplainer(null);
         expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \'%Y-%m-%d\'), 9 + 10, 11)";
-        result = f.Describe(explainer);
+        result = f2.Describe(explainer).get(0);
         assertEquals(expResult, result);
-    }
-
-    @Test
-    public void testDescribePrimitive() {
-        System.out.println("describePrimitive");
-        PrimitiveExplainer explainer1 = PrimitiveExplainer.getInstance(27);
-        PrimitiveExplainer explainer2 = PrimitiveExplainer.getInstance("27");
-        StringBuilder sb1 = new StringBuilder();
-        StringBuilder sb2 = new StringBuilder();
-        Format f = new Format(true);
-        f.describePrimitive(explainer1, sb1);
-        f.describePrimitive(explainer2, sb2);
-        assertEquals("27", sb1.toString());
-        assertEquals("\'27\'", sb2.toString());
     }
 }

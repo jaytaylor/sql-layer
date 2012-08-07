@@ -39,7 +39,6 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -102,7 +101,7 @@ public final class FieldExpression implements Expression {
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(fieldIndex));
         ex.addAttribute(Label.ROWTYPE, PrimitiveExplainer.getInstance(rowType.toString())); // TODO: Explainer for RowType?
         if (null == extraInfo || !extraInfo.containsKey(this))
-            ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(toString()));
+            ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(fieldIndex));
         else
             ex.addAttribute(Label.OPERAND, extraInfo.get(this));
         return ex;

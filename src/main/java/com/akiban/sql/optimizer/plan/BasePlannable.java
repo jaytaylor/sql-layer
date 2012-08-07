@@ -82,16 +82,8 @@ public abstract class BasePlannable extends BasePlanNode
     }
     
     public List<String> explainPlan() {
-        List<String> result = new ArrayList<String>();
-        explainPlan(plannable, result, extraInfo);
-        return result;
-    }
-
-    protected static void explainPlan(Plannable operator,
-                                      List<String> into, Map<Object, Explainer> extraInfo) {
         Format f = new Format(true);
-        for (String row : f.Describe(operator.getExplainer(extraInfo)))
-            into.add(row);
+        return f.Describe(plannable.getExplainer(extraInfo));
     }
     
     @Override

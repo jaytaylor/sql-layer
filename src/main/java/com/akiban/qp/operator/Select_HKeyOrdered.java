@@ -95,7 +95,13 @@ class Select_HKeyOrdered extends Operator
     public String toString()
     {
         Format f = new Format(true);
-        return f.Describe(this.getExplainer(new HashMap()));
+        StringBuilder sb = new StringBuilder();
+        for (String row : f.Describe(this.getExplainer(null)))
+        {
+            sb.append(row).append('\n');
+        }
+        sb.setLength(sb.length()-1);
+        return sb.toString();
     }
 
     // Operator interface

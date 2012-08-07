@@ -162,10 +162,9 @@ public class Format {
         String name = atts.get(Label.NAME).get(0).get().toString();
         Type type = explainer.getType();
         
-        sb.append(name);
-        
         if (!verbose)
         {
+            sb.append(name.substring(0, name.indexOf('_')));
             switch (type)
             {
                 case LOOKUP_OPERATOR:
@@ -193,7 +192,7 @@ public class Format {
         }
         else
         {
-            sb.append("(");
+            sb.append(name).append("(");
             switch (type) 
             {
                 case SELECT_HKEY:
@@ -299,12 +298,9 @@ public class Format {
                         sb.setLength(sb.length()-3);
                     }
                     break;
-                case FLATTEN_OPERATOR: // Eventually may want to implement associativity for this
-                    describe(atts.get(Label.PARENT_TYPE).get(0));
-                    sb.append(" ");
-                    describe(atts.get(Label.JOIN_OPTION).get(0));
-                    sb.append(" ");
-                    describe(atts.get(Label.CHILD_TYPE).get(0));
+                case FLATTEN_OPERATOR:
+                    sb.append(atts.get(Label.PARENT_TYPE).get(0).get()).append(" ").append
+                            (atts.get(Label.JOIN_OPTION).get(0).get()).append(" ").append(atts.get(Label.CHILD_TYPE).get(0).get());
                     break;
                 case ORDERED:
                     sb.append("skip ");
@@ -435,5 +431,6 @@ public class Format {
     private void newRow()
     {
         rows.add(sb.toString());
+        sb.delete(0, sb.length());
     }
 }

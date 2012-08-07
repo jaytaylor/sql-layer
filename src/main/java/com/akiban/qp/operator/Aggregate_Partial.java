@@ -362,7 +362,7 @@ final class Aggregate_Partial extends Operator
                 atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
             aggs = aggregatorFactories.size();
         }
-        if (extraInfo.containsKey(this))
+        if (extraInfo != null && extraInfo.containsKey(this))
         {
             StringBuilder sb = new StringBuilder("GROUP BY ");
             for (Explainer ex : ((OperationExplainer)extraInfo.get(this)).get().get(Label.GROUPING_OPTION))

@@ -132,7 +132,7 @@ class Filter_Default extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        return new FilterExplainer("Filter Default", keepTypes, inputOperator, extraInfo);
+        return new FilterExplainer("Filter_Default", keepTypes, inputOperator, extraInfo);
     }
 
     // Inner classes
