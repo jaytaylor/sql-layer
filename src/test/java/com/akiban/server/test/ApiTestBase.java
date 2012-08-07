@@ -831,30 +831,34 @@ public class ApiTestBase {
         }
         return row;
     }
-
     protected final void dropAllTables() throws InvalidOperationException {
-        ensureAdapter();
-        for(View view : ddl().getAIS(session()).getViews().values()) {
+        dropAllTables(session(), true);
+    }
+
+    protected final void dropAllTables(Session session, boolean ensureAdapater) throws InvalidOperationException {
+        if (ensureAdapater)
+            ensureAdapter();
+        for(View view : ddl().getAIS(session).getViews().values()) {
             // In case one view references another, avoid having to delete in proper order.
             view.getTableColumnReferences().clear();
         }
-        for(View view : ddl().getAIS(session()).getViews().values()) {
-            ddl().dropView(session(), view.getName());
+        for(View view : ddl().getAIS(session).getViews().values()) {
+            ddl().dropView(session, view.getName());
         }
 
         // Note: Group names, being derived, can change across DDL. Save root names instead.
         Set<TableName> groupRoots = new HashSet<TableName>();
-        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+        for(UserTable table : ddl().getAIS(session).getUserTables().values()) {
             if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
                 groupRoots.add(table.getName());
             }
         }
         for(TableName rootName : groupRoots) {
-            ddl().dropGroup(session(), getUserTable(rootName).getGroup().getName());
+            ddl().dropGroup(session, getUserTable(rootName).getGroup().getName());
         }
 
         // Now sanity check
-        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
+        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
             if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
@@ -862,7 +866,7 @@ public class ApiTestBase {
         }
         Assert.assertEquals("user table count", Collections.<TableName>emptySet(), uTables);
 
-        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session()).getViews().keySet());
+        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session).getViews().keySet());
         Assert.assertEquals("user table count", Collections.<TableName>emptySet(), views);
     }
 
