@@ -36,7 +36,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
-import java.math.BigDecimal;
 import java.util.List;
 
 public class DistanceLatLonExpression extends AbstractCompositeExpression {
@@ -98,10 +97,10 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             AkType type = children().get(0).eval().getConversionType();
             switch (type) {
                 case DECIMAL: 
-                    y1 = latInRange(children().get(0).eval().getDecimal().longValueExact());
-                    x1 = lonInRange(children().get(1).eval().getDecimal().longValueExact());
-                    y2 = latInRange(children().get(2).eval().getDecimal().longValueExact());
-                    x2 = lonInRange(children().get(3).eval().getDecimal().longValueExact());
+                    y1 = latInRange(children().get(0).eval().getDecimal().doubleValue());
+                    x1 = lonInRange(children().get(1).eval().getDecimal().doubleValue());
+                    y2 = latInRange(children().get(2).eval().getDecimal().doubleValue());
+                    x2 = lonInRange(children().get(3).eval().getDecimal().doubleValue());
                     break;
                 default:
                         throw new InvalidArgumentTypeException("Type " + type + "is not supported in DISTANCE_LAT_LON");
