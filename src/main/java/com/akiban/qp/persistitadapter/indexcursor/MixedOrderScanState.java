@@ -24,11 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.persistit.exception.PersistitException;
 
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
 
 abstract class MixedOrderScanState<S>
 {
@@ -47,14 +47,14 @@ abstract class MixedOrderScanState<S>
         return ascending ? cursor.exchange.next(false) : cursor.exchange.previous(false);
     }
 
-    protected MixedOrderScanState(SortCursorMixedOrder cursor, int field, boolean ascending) throws PersistitException
+    protected MixedOrderScanState(IndexCursorMixedOrder cursor, int field, boolean ascending) throws PersistitException
     {
         this.cursor = cursor;
         this.field = field;
         this.ascending = ascending;
     }
 
-    protected final SortCursorMixedOrder cursor;
+    protected final IndexCursorMixedOrder cursor;
     protected final int field;
     protected final boolean ascending;
 }

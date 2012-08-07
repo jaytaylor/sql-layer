@@ -280,7 +280,7 @@ public final class OverloadResolver {
                 continue;
             // ... input can be strongly cast to input set
             TCast cast = registry.cast(inputInstance.typeClass(), inputSet.targetType());
-            if (cast != null && cast.isAutomatic())
+            if (isStrong(cast))
                 continue;
             // This input precludes the use of the overload
             return false;
@@ -394,8 +394,8 @@ public final class OverloadResolver {
         return castGroups;
     }
 
-    private static boolean isStrong(TCast cast) {
-        return (cast != null) && cast.isAutomatic();
+    private boolean isStrong(TCast cast) {
+        return (cast != null) && registry.isStrong(cast);
     }
 
     // TODO replace with InvalidOperationExceptions

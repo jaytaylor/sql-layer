@@ -531,7 +531,7 @@ public class KeyUpdateIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD, o_when, HKeyElement.from(1), o_cid, o_oid);
+        return indexFromRecords(records, orderRD, o_when, NULL_SEPARATOR_COLUMN, HKeyElement.from(1), o_cid, o_oid);
     }
 
     @Override

@@ -95,12 +95,12 @@ public class TLike extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String left = (String)inputs.get(0).getObject();
-        String right = (String)inputs.get(1).getObject();
+        String left = inputs.get(0).getString();
+        String right = inputs.get(1).getString();
         char esca = '\\';        
         if (inputs.size() == 3)
         {
-            String escapeString = (String)inputs.get(2).getObject();
+            String escapeString = inputs.get(2).getString();
             if (escapeString.length() != 1)
                 throw new InvalidParameterValueException("Invalid escape character: " + escapeString); 
             esca = escapeString.charAt(0);

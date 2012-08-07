@@ -110,8 +110,8 @@ public class MDatetimes
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(timestampToString(source.getInt32(), null));
             }
-        };
-    };
+        }
+    }
     
     static
     {
@@ -145,7 +145,7 @@ public class MDatetimes
         return getVal(numericRep - 1, locale, context, MONTHS, "month", 11, 0);
     }
     
-    public static String getShortMontName(int numericRep, String locale, TExecutionContext context)
+    public static String getShortMonthName(int numericRep, String locale, TExecutionContext context)
     {
         return getVal(numericRep -1, locale, context, SHORT_MONTHS, "month", 11, 0);
     }
@@ -275,7 +275,10 @@ public class MDatetimes
         {
             val / 512,
             val / 32 % 16,
-            val % 32
+            val % 32,
+            0,
+            0,
+            0
         };
     }
     
@@ -347,6 +350,16 @@ public class MDatetimes
         }
     }
     
+    public static long encodeDatetime(DateTime dt)
+    {
+        return dt.getYear() * DATETIME_YEAR_SCALE
+                + dt.getMonthOfYear() * DATETIME_MONTH_SCALE
+                + dt.getDayOfMonth() * DATETIME_DAY_SCALE
+                + dt.getHourOfDay() * DATETIME_HOUR_SCALE
+                + dt.getMinuteOfHour() * DATETIME_MIN_SCALE
+                + dt.getSecondOfMinute();
+    }
+    
     /**
      * TODO: Same as encodeDate(long, String)'s
      * 
@@ -395,9 +408,8 @@ public class MDatetimes
         int m = (int)(val / DATETIME_MIN_SCALE);
         int s = (int)val;
         
-        return String.format("%d:%02:%02d", h, m, s);
-        
-    };
+        return String.format("%d:%02d:%02d", h, m, s);
+    }
 
     public static int parseTime (String string, TExecutionContext context)
     {
@@ -408,7 +420,7 @@ public class MDatetimes
             mul = -1;
             string = string.substring(1);
         }
-        
+
         int hours = 0;
         int minutes = 0;
         int seconds = 0;

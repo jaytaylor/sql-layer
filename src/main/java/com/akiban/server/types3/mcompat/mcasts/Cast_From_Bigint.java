@@ -84,7 +84,7 @@ public class Cast_From_Bigint
     
     public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.BIGINT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, false, Constantness.UNKNOWN)
+    public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, Constantness.UNKNOWN)
     {
 
         @Override
@@ -102,7 +102,7 @@ public class Cast_From_Bigint
     };
 
 
-    public static final TCast TO_DATETIME = new TCastBase(MNumeric.BIGINT, MDatetimes.DATETIME, false, Constantness.UNKNOWN)
+    public static final TCast TO_DATETIME = new TCastBase(MNumeric.BIGINT, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 
         @Override
@@ -120,7 +120,7 @@ public class Cast_From_Bigint
         }
     };
     
-    public static final TCast TO_TIMESTAMP = new TCastBase(MNumeric.BIGINT, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MNumeric.BIGINT, MDatetimes.TIMESTAMP, Constantness.UNKNOWN)
     {
 
         @Override
@@ -131,7 +131,7 @@ public class Cast_From_Bigint
         }
     };
 
-    public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDatetimes.TIME, false, Constantness.UNKNOWN)
+    public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDatetimes.TIME, Constantness.UNKNOWN)
     {
 
         @Override
@@ -149,17 +149,17 @@ public class Cast_From_Bigint
         }
     };
     
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.BIGINT, MString.VARCHAR, false, Constantness.UNKNOWN)
+    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.BIGINT, MString.VARCHAR, Constantness.UNKNOWN)
     {
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(Long.toString(source.getInt64()));
+            target.putString(Long.toString(source.getInt64()), null);
         }
     };
     
-    public static final TCast TO_AK_BOOLEAN = new TCastBase(MNumeric.BIGINT, AkBool.INSTANCE, false, Constantness.UNKNOWN) {
+    public static final TCast TO_AK_BOOLEAN = new TCastBase(MNumeric.BIGINT, AkBool.INSTANCE, Constantness.UNKNOWN) {
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {

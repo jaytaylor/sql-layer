@@ -33,11 +33,13 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TStrongCasts;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -51,6 +53,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,6 +100,13 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         if (aggrs == null)
             throw new NoSuchFunctionException(name);
         return aggrs;
+    }
+
+    @Override
+    public boolean isStrong(TCast cast) {
+        TClass source = cast.sourceClass();
+        TClass target = cast.targetClass();
+        return stronglyCastableTo(target).contains(source);
     }
 
     // Service interface
@@ -160,7 +170,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         castsBySource = createCasts(tClasses, finder);
         createDerivedCasts(castsBySource, finder);
         deriveCastsFromVarchar();
-        strongCastsByTarget = createStrongCastsMap(castsBySource);
+        strongCastsByTarget = createStrongCastsMap(castsBySource, finder);
         checkDag(strongCastsByTarget);
 
         overloadsByName = createScalars(finder);
@@ -355,19 +365,47 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     }
 
     // package-local; also used in testing
-    static Map<TClass,Map<TClass,TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource) {
+
+    static Map<TClass, Map<TClass, TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource,
+                                                                        Set<TCastIdentifier> strongCasts) {
         Map<TClass,Map<TClass,TCast>> result = new HashMap<TClass, Map<TClass, TCast>>();
         for (Map.Entry<TClass, Map<TClass,TCast>> origEntry : castsBySource.entrySet()) {
-            Map<TClass, TCast> strongs = new HashMap<TClass, TCast>();
-            for (Map.Entry<TClass,TCast> castByTarget : origEntry.getValue().entrySet()) {
+            TClass source = origEntry.getKey();
+            Map<TClass, TCast> castsByTarget = origEntry.getValue();
+            for (Map.Entry<TClass,TCast> castByTarget : castsByTarget.entrySet()) {
                 TCast cast = castByTarget.getValue();
-                if (cast.isAutomatic())
-                    strongs.put(castByTarget.getKey(), cast);
+                TClass target = castByTarget.getKey();
+                if ( (source == target) || strongCasts.contains(new TCastIdentifier(cast))) {
+                    Map<TClass,TCast> map = result.get(target);
+                    if (map == null) {
+                        map = new HashMap<TClass, TCast>();
+                        result.put(target, map);
+                    }
+                    map.put(source, cast);
+                }
             }
-            assert ! strongs.isEmpty() : origEntry; // self-casts are strong, so there should be at least one entry
-            result.put(origEntry.getKey(), strongs);
         }
         return result;
+    }
+
+    // private
+
+    private static Map<TClass,Map<TClass,TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource,
+                                                                      InstanceFinder finder)
+    {
+        Collection<? extends TStrongCasts> strongCastIds = finder.find(TStrongCasts.class);
+        Set<TCastIdentifier> strongCasts = new HashSet<TCastIdentifier>(strongCastIds.size()); // rough guess
+        for (TStrongCasts strongCastGenerator : strongCastIds) {
+            for (TCastIdentifier castId : strongCastGenerator.get(castsBySource.keySet())) {
+                TCast cast = cast(castsBySource, castId.getSource(), castId.getTarget());
+                if (cast == null)
+                    throw new AkibanInternalException("no cast defined for " + castId +", which is marked as strong");
+                if (!strongCasts.add(castId)) {
+                    logger.warn("multiple sources have listed cast {} as strong", castId);
+                }
+            }
+        }
+        return createStrongCastsMap(castsBySource, strongCasts);
     }
 
     // class state
@@ -383,11 +421,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     // inner classes
 
     private static class SelfCast implements TCast {
-
-        @Override
-        public boolean isAutomatic() {
-            return true;
-        }
 
         @Override
         public Constantness constness() {
@@ -423,11 +456,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     }
 
     private static class ChainedCast implements TCast {
-
-        @Override
-        public boolean isAutomatic() {
-            return first.isAutomatic() && second.isAutomatic();
-        }
 
         @Override
         public Constantness constness() {
@@ -551,7 +579,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
                     Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
                     buildTName("source_bundle", "source_type", tCast.sourceClass(), map);
                     buildTName("target_bundle", "target_type", tCast.targetClass(), map);
-                    map.put("strong", tCast.isAutomatic());
+                    map.put("strong", isStrong(tCast));
                     map.put("isDerived", tCast instanceof ChainedCast);
                     result.add(map);
                 }

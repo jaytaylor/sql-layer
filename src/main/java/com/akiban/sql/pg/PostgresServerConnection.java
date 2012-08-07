@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
@@ -90,7 +89,6 @@ public class PostgresServerConnection extends ServerSessionBase
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
     
-    private boolean instrumentationEnabled = false;
     private String sql;
     
     public PostgresServerConnection(PostgresServer server, Socket socket, 
@@ -827,7 +825,8 @@ public class PostgresServerConnection extends ServerSessionBase
             "parserInfixLogical".equals(key) ||
             "parserDoubleQuoted".equals(key) ||
             "columnAsFunc".equals(key) ||
-            "cbo".equals(key)) {
+            "cbo".equals(key) ||
+            "newtypes".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();
             return true;
@@ -838,17 +837,15 @@ public class PostgresServerConnection extends ServerSessionBase
     /* MBean-related access */
 
     public boolean isInstrumentationEnabled() {
-        return instrumentationEnabled;
+        return sessionTracer.isEnabled();
     }
     
     public void enableInstrumentation() {
         sessionTracer.enable();
-        instrumentationEnabled = true;
     }
     
     public void disableInstrumentation() {
         sessionTracer.disable();
-        instrumentationEnabled = false;
     }
     
     public String getSqlString() {

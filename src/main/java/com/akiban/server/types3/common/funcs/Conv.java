@@ -76,7 +76,7 @@ public class Conv extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String st = (String) inputs.get(0).getObject();
+        String st = inputs.get(0).getString();
         int fromBase = inputs.get(1).getInt32();
         int toBase = inputs.get(2).getInt32();
         
@@ -84,7 +84,7 @@ public class Conv extends TOverloadBase
                 || !isInRange(Math.abs(toBase), MIN_BASE, MAX_BASE)) // toBase can be negative
             output.putNull();
         else
-            output.putObject(doConvert(truncateNonDigits(st),fromBase, toBase));
+            output.putString(doConvert(truncateNonDigits(st),fromBase, toBase), null);
     }
 
     @Override

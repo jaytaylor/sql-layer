@@ -271,6 +271,9 @@ public abstract class KeyUpdateBase extends ITBase {
                     else if (column instanceof HKeyElement) {
                         indexEntryElement = record.hKey().objectArray()[ ((HKeyElement) column).getIndex() ];
                     }
+                    else if (column instanceof NullSeparatorColumn) {
+                        indexEntryElement = 0L;
+                    }
                     else {
                         String msg = String.format(
                                 "column must be an Integer or HKeyElement: %s in %s:",
@@ -406,6 +409,7 @@ public abstract class KeyUpdateBase extends ITBase {
     }
 
     private static final String HKEY_PROPAGATION_TAP_PATTERN = ".*propagate_hkey_change.*";
+    protected static final NullSeparatorColumn NULL_SEPARATOR_COLUMN = new NullSeparatorColumn();
 
     abstract protected void createSchema() throws Exception;
     abstract protected void populateTables() throws Exception;
@@ -421,5 +425,6 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestStore testStore;
     protected Map<Integer,Integer> rowDefsToCounts;
-    
+
+    protected static class NullSeparatorColumn {}
 }

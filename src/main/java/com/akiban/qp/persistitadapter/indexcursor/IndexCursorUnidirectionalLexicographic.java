@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -34,26 +34,26 @@ import com.persistit.Key;
 
 // For a lexicographic (mysqlish) index scan
 
-class SortCursorUnidirectionalLexicographic<S> extends SortCursorUnidirectional<S>
+class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectional<S>
 {
-    // SortCursorUnidirectional interface
+    // IndexCursorUnidirectional interface
 
-    public static <S> SortCursorUnidirectionalLexicographic<S> create(QueryContext context,
+    public static <S> IndexCursorUnidirectionalLexicographic<S> create(QueryContext context,
                                                                IterationHelper iterationHelper,
                                                                IndexKeyRange keyRange,
                                                                API.Ordering ordering,
                                                                SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        return new SortCursorUnidirectionalLexicographic<S>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        return new IndexCursorUnidirectionalLexicographic<S>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     // For use by this class
 
-    private SortCursorUnidirectionalLexicographic(QueryContext context,
-                                                  IterationHelper iterationHelper,
-                                                  IndexKeyRange keyRange,
-                                                  API.Ordering ordering,
-                                                  SortKeyAdapter<S, ?> sortKeyAdapter)
+    private IndexCursorUnidirectionalLexicographic(QueryContext context,
+                                                   IterationHelper iterationHelper,
+                                                   IndexKeyRange keyRange,
+                                                   API.Ordering ordering,
+                                                   SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         super(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }

@@ -32,8 +32,10 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
+import com.persistit.exception.PersistitException;
 
 public abstract class IndexRow extends AbstractRow
 {
@@ -64,7 +66,10 @@ public abstract class IndexRow extends AbstractRow
 
     // IndexRow interface
 
+    public abstract void initialize(RowData rowData, Key hKey);
+
     public abstract void append(Column column, ValueSource source);
 
-    public abstract void initialize(RowData rowData, Key hKey);
+    public abstract void close();
+
 }

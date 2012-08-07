@@ -24,13 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.sort.SorterAdapter.PersistitValueSourceAdapter;
+import com.akiban.qp.persistitadapter.indexcursor.SorterAdapter.PersistitValueSourceAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
@@ -127,9 +127,9 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        return SortCursor.create(context, null, ordering,
-                new SorterIterationHelper(sorterAdapter.createValueAdapter()),
-                usePValues);
+        return IndexCursor.create(context, null, ordering,
+                                  new SorterIterationHelper(sorterAdapter.createValueAdapter()),
+                                  usePValues);
     }
 
     private void createKey(Row row)

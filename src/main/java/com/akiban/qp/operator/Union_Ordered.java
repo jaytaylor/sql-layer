@@ -164,7 +164,7 @@ class Union_Ordered extends Operator
         this.fixedFields = rowType.nFields() - leftOrderingFields;
         this.fieldsToCompare = leftOrderingFields;
         this.ascending = Arrays.copyOf(ascending, ascending.length);
-        // TODO (in Execution): Check that ascending bits are consistent with SortCursor directions.
+        // TODO (in Execution): Check that ascending bits are consistent with IndexCursor directions.
         this.usePValues = usePValues;
     }
 

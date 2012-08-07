@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
@@ -44,7 +44,7 @@ import com.persistit.exception.PersistitException;
 
 import java.util.List;
 
-class SortCursorUnidirectional<S> extends SortCursor
+class IndexCursorUnidirectional<S> extends IndexCursor
 {
     // Cursor interface
 
@@ -96,9 +96,9 @@ class SortCursorUnidirectional<S> extends SortCursor
         initializeForOpen();
     }
 
-    // SortCursorUnidirectional interface
+    // IndexCursorUnidirectional interface
 
-    public static <S> SortCursorUnidirectional<S> create(QueryContext context,
+    public static <S> IndexCursorUnidirectional<S> create(QueryContext context,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering,
@@ -106,17 +106,17 @@ class SortCursorUnidirectional<S> extends SortCursor
     {
         return
             keyRange == null // occurs if we're doing a Sort_Tree
-            ? new SortCursorUnidirectional<S>(context, iterationHelper, ordering, sortKeyAdapter)
-            : new SortCursorUnidirectional<S>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+            ? new IndexCursorUnidirectional<S>(context, iterationHelper, ordering, sortKeyAdapter)
+            : new IndexCursorUnidirectional<S>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     // For use by this subclasses
 
-    protected SortCursorUnidirectional(QueryContext context,
-                                       IterationHelper iterationHelper,
-                                       IndexKeyRange keyRange,
-                                       API.Ordering ordering,
-                                       SortKeyAdapter<S, ?> sortKeyAdapter)
+    protected IndexCursorUnidirectional(QueryContext context,
+                                        IterationHelper iterationHelper,
+                                        IndexKeyRange keyRange,
+                                        API.Ordering ordering,
+                                        SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
@@ -365,10 +365,10 @@ class SortCursorUnidirectional<S> extends SortCursor
         startKey.copyTo(exchange.getKey());
     }
 
-    private SortCursorUnidirectional(QueryContext context,
-                                     IterationHelper iterationHelper,
-                                     API.Ordering ordering,
-                                     SortKeyAdapter<S, ?> sortKeyAdapter)
+    private IndexCursorUnidirectional(QueryContext context,
+                                      IterationHelper iterationHelper,
+                                      API.Ordering ordering,
+                                      SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         super(context, iterationHelper);
         this.keyRange = null;

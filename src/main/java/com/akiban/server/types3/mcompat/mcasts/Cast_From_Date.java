@@ -84,7 +84,7 @@ public class Cast_From_Date
     
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.DATE, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.DATE, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.DATE, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 
         @Override
@@ -94,7 +94,7 @@ public class Cast_From_Date
         }
     };
     
-    public static final TCast TO_TIME = new TCastBase(MDatetimes.DATE, MDatetimes.TIME, false, Constantness.UNKNOWN)
+    public static final TCast TO_TIME = new TCastBase(MDatetimes.DATE, MDatetimes.TIME, Constantness.UNKNOWN)
     {
 
         @Override
@@ -105,7 +105,7 @@ public class Cast_From_Date
         }
     };
     
-    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.DATE, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.DATE, MDatetimes.TIMESTAMP, Constantness.UNKNOWN)
     {
 
         @Override
@@ -117,13 +117,13 @@ public class Cast_From_Date
         }
     };
     
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, false, Constantness.UNKNOWN)
+    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, Constantness.UNKNOWN)
     {
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(MDatetimes.dateToString(source.getInt32()));
+            target.putString(MDatetimes.dateToString(source.getInt32()), null);
         }
     };
 }

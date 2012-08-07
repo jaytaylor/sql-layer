@@ -30,6 +30,7 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -58,6 +59,7 @@ import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
+import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
@@ -260,8 +262,7 @@ public class PersistitAdapter extends StoreAdapter
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             S source = creator.eval(row, i);
-            AkType type = rowDef.getFieldDef(i).getType().akType();
-            creator.put(source, niceRow, type, i);
+            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
         }
         return niceRow.toRowData();
     }
@@ -293,8 +294,7 @@ public class PersistitAdapter extends StoreAdapter
             }
 
             // TODO: Validate column Check Constraints.
-            AkType type = rowDef.getFieldDef(i).getType().akType();
-            creator.put(source, niceRow, type, i);
+            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
         }
         return niceRow.toRowData();
     }
@@ -401,6 +401,7 @@ public class PersistitAdapter extends StoreAdapter
         assert this.persistit != null : store;
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
+        session.put(STORE_ADAPTER_KEY, this);
     }
 
     // For use by this class

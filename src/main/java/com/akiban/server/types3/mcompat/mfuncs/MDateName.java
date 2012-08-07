@@ -50,7 +50,7 @@ public class MDateName extends TOverloadBase {
             void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
                 // TODO: update with new method that gets locale
                 String month = MONTHS[(int)dateArr[MDatetimes.MONTH_INDEX]];
-                output.putObject(month);
+                output.putString(month, null);
             }
         }, 
         DAYNAME() {
@@ -58,7 +58,7 @@ public class MDateName extends TOverloadBase {
             void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
                 MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
                 String day = DAYS[datetime.getDayOfWeek()%7];
-                output.putObject(day);
+                output.putString(day, null);
             }
         };
         abstract void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output);

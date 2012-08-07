@@ -82,15 +82,16 @@ public class Cast_From_Time {
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIME, MString.VARCHAR, false, Constantness.UNKNOWN) {
+    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIME, MString.VARCHAR, Constantness.UNKNOWN) {
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            target.putObject(MDatetimes.parseTime((String) source.getObject(), context));
+            int asInt = MDatetimes.parseTime(source.getString(), context);
+            target.putString(Integer.toString(asInt), null);
         }
     };
     
-    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, false, Constantness.UNKNOWN)
+    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 
         @Override
@@ -100,7 +101,7 @@ public class Cast_From_Time {
         }
     };
     
-    public static final TCast TO_DATE = new TCastBase(MDatetimes.TIME, MDatetimes.DATE, false, Constantness.UNKNOWN)
+    public static final TCast TO_DATE = new TCastBase(MDatetimes.TIME, MDatetimes.DATE, Constantness.UNKNOWN)
     {
 
         @Override
@@ -111,7 +112,7 @@ public class Cast_From_Time {
         }
     };
     
-    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.TIME, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.TIME, MDatetimes.TIMESTAMP, Constantness.UNKNOWN)
     {
 
         @Override

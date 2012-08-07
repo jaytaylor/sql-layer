@@ -66,6 +66,7 @@ abstract class ExpressionAssembler<T> {
     protected abstract  T assembleCastExpression(CastExpression castExpression,
                                                 ColumnExpressionContext columnContext,
                                                 SubqueryOperatorAssembler<T> subqueryAssembler);
+    protected abstract T tryLiteral(ExpressionNode node);
     protected abstract T literal(ConstantExpression expression);
     protected abstract T variable(ParameterExpression expression);
     protected abstract T compare(T left, Comparison comparison, T right);
@@ -79,6 +80,9 @@ abstract class ExpressionAssembler<T> {
     public T assembleExpression(ExpressionNode node,
                          ColumnExpressionContext columnContext,
                          SubqueryOperatorAssembler<T> subqueryAssembler)  {
+        T possiblyLiteral = tryLiteral(node);
+        if (possiblyLiteral != null)
+            return possiblyLiteral;
         if (node instanceof ConstantExpression)
             return literal(((ConstantExpression)node));
         else if (node instanceof ColumnExpression)

@@ -41,6 +41,7 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
+import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,7 +50,13 @@ import java.util.List;
 
 final class OperatorStoreMaintenance {
 
-    public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
+    public void run(OperatorStoreGIHandler.Action action,
+                    PersistitHKey hKey,
+                    RowData forRow,
+                    StoreAdapter adapter,
+                    OperatorStoreGIHandler handler)
+        throws PersistitException
+    {
         if (storePlan.noMaintenanceRequired())
             return;
         Cursor cursor = null;
@@ -167,7 +174,9 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row) {
+    private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row)
+        throws PersistitException
+    {
         InOutTap actionTap = actionTap(action);
         actionTap.in();
         try {
