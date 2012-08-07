@@ -51,6 +51,7 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -61,41 +62,49 @@ public abstract class Rand extends TOverloadBase {
 
     private static final int RAND_INDEX = 0; // the cached Random Object's index
     
-    public static TOverload[] create(TClass inputType, TClass resultType) {
-        TOverload noArg = new Rand(inputType, resultType) {
-
-            @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
-            }
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    public static TOverload[] create(TClass inputType, TClass resultType)
+    {
+        return new TOverload[]
+        {
+            new Rand(inputType, resultType)
             {
-                putRandom(context, output, System.currentTimeMillis());
+                @Override
+                protected long getSeed(LazyList<? extends PValueSource> inputs)
+                {
+                    return System.currentTimeMillis();
+                }
+
+                @Override
+                protected void buildInputSets(TInputSetBuilder builder)
+                {
+                    // does nothing. Takes 0 arg
+                }
+            },
+            new Rand(inputType, resultType)
+            {
+                @Override
+                protected long getSeed(LazyList<? extends PValueSource> inputs)
+                {
+                    return inputs.get(0).getInt64();
+                }
+
+                @Override
+                protected void buildInputSets(TInputSetBuilder builder)
+                {
+                    builder.covers(inputType, 0);
+                }
             }
         };
-
-        TOverload oneArg = new Rand(inputType, resultType) {
-
-            @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
-                builder.covers(inputType, 0);
-            }
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-            {
-                putRandom(context, output, inputs.get(0).getInt64());
-            }
-        };
-
-        return new TOverload[]{noArg, oneArg};
     }
-
+    
+    protected abstract  long getSeed (LazyList<? extends PValueSource> inputs);
     protected final TClass inputType;
     protected final TClass resultType;
 
     protected Rand(TClass inputType, TClass resultType) {
+        if (inputType.underlyingType() != PUnderlying.INT_64
+                || resultType.underlyingType() != PUnderlying.DOUBLE)
+            throw new IllegalArgumentException("Wrong types");
         this.inputType = inputType;
         this.resultType = resultType;
     }
@@ -110,14 +119,15 @@ public abstract class Rand extends TOverloadBase {
         return TOverloadResult.fixed(resultType.instance());
     }
     
-    private static void putRandom(TExecutionContext context, PValueTarget out, long seed)
-    {
-         Random rand;
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget out)
+    { 
+        Random rand;
         if (context.hasExectimeObject(RAND_INDEX))
             rand = (Random) context.exectimeObjectAt(RAND_INDEX);
         else
             context.putExectimeObject(RAND_INDEX,
-                                      rand = new Random(seed));
+                                      rand = new Random(getSeed(inputs)));
 
         out.putDouble(rand.nextDouble());
     }
