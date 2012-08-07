@@ -177,6 +177,29 @@ public class Space
 
     }
 
+    /**
+     * The lowest z-value (interpreted as an integer) in the region covered by the given z-value.
+     * @param z A z-value
+     * @return The lowest z-value (interpreted as an integer) in the region covered by the given z-value.
+     */
+    public long zLo(long z)
+    {
+        return z;
+    }
+
+    /**
+     * The lowest z-value (interpreted as an integer) in the region covered by the given z-value.
+     * @param z A z-value
+     * @return The lowest z-value (interpreted as an integer) in the region covered by the given z-value.
+     */
+    public long zHi(long z)
+    {
+        // Fill the unused bits of the z-value with 1s (but leave the length intact).
+        int length = zLength(z);
+        long mask = ((1L << (MAX_LENGTH - length)) - 1) << (LENGTH_BITS);
+        return z | mask;
+    }
+
     public Space(long[] lo, long[] hi)
     {
         this(lo, hi, null);
@@ -362,6 +385,7 @@ public class Space
     //  58-63: length
     private static final int MAX_LENGTH = 57;
     private static final long LENGTH_MASK = 0x3f;
+    private static final int LENGTH_BITS = 5;
 
     // Object state
 

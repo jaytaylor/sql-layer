@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
@@ -75,8 +76,11 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
+        Index index = indexRowType.index();
+        // Jump not yet supported for spatial indexes
+        assert !index.isSpatial();
         if (exchange == null) {
-            exchange = adapter.takeExchange(indexRowType.index());
+            exchange = adapter.takeExchange(index);
             idle = false;
         }
         indexCursor.jump(row, columnSelector);

@@ -94,7 +94,7 @@ public class Schema extends DerivedTypesSchema
         for (UserTable userTable : ais.getUserTables().values()) {
             UserTableRowType userTableRowType = userTableRowType(userTable);
             for (TableIndex index : userTable.getIndexesIncludingInternal()) {
-                IndexRowType indexRowType = new IndexRowType(this, userTableRowType, index);
+                IndexRowType indexRowType = IndexRowType.createIndexRowType(this, userTableRowType, index);
                 userTableRowType.addIndexRowType(indexRowType);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
             }
@@ -103,7 +103,7 @@ public class Schema extends DerivedTypesSchema
         for (Group group : ais.getGroups().values()) {
             for (GroupIndex groupIndex : group.getIndexes()) {
                 IndexRowType indexRowType =
-                    new IndexRowType(this, userTableRowType(groupIndex.leafMostTable()), groupIndex);
+                    IndexRowType.createIndexRowType(this, userTableRowType(groupIndex.leafMostTable()), groupIndex);
                 rowTypes.put(indexRowType.typeId(), indexRowType);
                 groupIndexRowTypes.add(indexRowType);
             }
