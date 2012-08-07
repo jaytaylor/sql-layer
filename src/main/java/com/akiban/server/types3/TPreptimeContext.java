@@ -30,6 +30,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.util.SparseArray;
 
 import java.util.List;
+import java.util.TimeZone;
 
 public final class TPreptimeContext {
     public void setOutputType(TInstance outputType) {
@@ -44,8 +45,8 @@ public final class TPreptimeContext {
     
     public String getCurrentTimezone()
     {
-        //TODO:
-        throw new UnsupportedOperationException("not supported yet");
+        // TODO need to get this from the session
+        return TimeZone.getDefault().getID();
     }
     
     public String getLocale()

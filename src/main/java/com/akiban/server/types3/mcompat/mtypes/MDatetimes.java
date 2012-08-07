@@ -275,7 +275,10 @@ public class MDatetimes
         {
             val / 512,
             val / 32 % 16,
-            val % 32
+            val % 32,
+            0,
+            0,
+            0
         };
     }
     
@@ -417,7 +420,7 @@ public class MDatetimes
             mul = -1;
             string = string.substring(1);
         }
-        
+
         int hours = 0;
         int minutes = 0;
         int seconds = 0;
