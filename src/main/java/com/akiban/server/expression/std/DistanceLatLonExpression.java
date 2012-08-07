@@ -126,7 +126,7 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
         private double getShortestDistance(double arg1, double arg2, double noShift, double c) {
             double shift = noShift;    
             if (arg1 < arg2) shift = Math.pow(UPPER_BOUND - arg2 + arg1, 2.0);
-            if (arg2 < arg1) shift = Math.pow(UPPER_BOUND - arg1 + arg2, 2.0);
+            else if (arg2 < arg1) shift = Math.pow(UPPER_BOUND - arg1 + arg2, 2.0);
             return Math.sqrt(Math.min(shift, noShift) + c);
         }
     }
@@ -143,14 +143,14 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
         return new CompositeEvaluation(childrenEvaluations());
     }
     
-    private static AkType getTopType(List<? extends Expression> args) {
+    private static AkType getType(List<? extends Expression> args) {
         if (args.size() != 4) throw new WrongExpressionArityException(4, args.size());
-        return args.get(0).valueType();
+        return AkType.DOUBLE;
     }
     
     protected DistanceLatLonExpression(List<? extends Expression> children)
     {
-        super(getTopType(children), children);
+        super(getType(children), children);
     }
 
 }

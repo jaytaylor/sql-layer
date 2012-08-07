@@ -82,7 +82,12 @@ public class DistanceLatLonExpressionTest {
         List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-1), getDecimal(0), getDecimal(1)));
         test(2.0, lst);
     }
-
+    
+    @Test
+    public void testNegPosWrapAround() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-179), getDecimal(0), getDecimal(180)));
+        test(1.0, lst);
+    }
     
     private void test(double expected, List<Expression> lst) {
         Expression exp = new DistanceLatLonExpression(lst);
