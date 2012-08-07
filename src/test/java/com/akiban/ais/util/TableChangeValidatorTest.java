@@ -27,6 +27,8 @@
 package com.akiban.ais.util;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -39,6 +41,7 @@ import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.ais.util.TableChangeValidatorException.*;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class TableChangeValidatorTest {
     private static final String SCHEMA = "test";
@@ -57,14 +60,28 @@ public class TableChangeValidatorTest {
         return ais.getUserTables().values().iterator().next();
     }
 
+    private UserTable table(NewUserTableBuilder builder, TableName tableName) {
+        UserTable table = builder.ais().getUserTable(tableName);
+        assertNotNull("Found table: " + tableName, table);
+        return table;
+    }
+
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
                                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
                                                  ChangeLevel expectedChangeLevel) {
-        TableChangeValidator comparer = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
-        comparer.compare();
-        comparer.compareAndThrowIfNecessary();
-        assertEquals("Final change level", expectedChangeLevel, comparer.getFinalChangeLevel());
-        return comparer;
+        return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel, false, false);
+    }
+
+    private static TableChangeValidator validate(UserTable t1, UserTable t2,
+                                                 List<TableChange> columnChanges, List<TableChange> indexChanges,
+                                                 ChangeLevel expectedChangeLevel,
+                                                 boolean expectedParentChange, boolean expectedChildChange) {
+        TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
+        validator.compareAndThrowIfNecessary();
+        assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
+        assertEquals("Parent changed", expectedParentChange, validator.didParentChange());
+        assertEquals("Children changed", expectedChildChange, validator.didChildrenChange());
+        return validator;
     }
 
 
@@ -281,13 +298,34 @@ public class TableChangeValidatorTest {
         UserTable t2 = table(builder(TABLE_NAME).colString("id", 32).pk("id"));
         validate(t1, t2,
                  asList(TableChange.createModify("id", "id")),
-                 asList(TableChange.createModify("PRIMARY", "PRIMARY")),
-                 ChangeLevel.GROUP);
+                 asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
+                 ChangeLevel.GROUP, false, true);
     }
 
-    //
-    // Group (negative)
-    //
+    @Test
+    public void dropPrimaryKey() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id"));
+        validate(t1, t2,
+                 asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
+                 asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
+                 ChangeLevel.GROUP, false, true);
+    }
+
+    @Test
+    public void dropParentJoin() {
+        TableName parentName = new TableName(SCHEMA, "parent");
+        UserTable t1 = table(
+                builder(parentName).colLong("id").pk("id").
+                        userTable(TABLE_NAME).colBigInt("id").colLong("pid").pk("id").joinTo(SCHEMA, "parent", "fk").on("pid", "id"),
+                TABLE_NAME
+        );
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colLong("pid").pk("id"));
+        validate(t1, t2,
+                 NO_CHANGES,
+                 asList(TableChange.createDrop("__akiban_fk")),
+                 ChangeLevel.GROUP, true, false);
+    }
 
     //
     // Multi-part
