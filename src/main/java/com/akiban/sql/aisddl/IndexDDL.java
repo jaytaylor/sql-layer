@@ -54,12 +54,15 @@ import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.IndexColumn;
 import com.akiban.sql.parser.RenameNode;
+import com.akiban.sql.parser.SpecialIndexFuncNode;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
@@ -185,6 +188,22 @@ public class IndexDDL
         indexesToAdd.add(buildIndex(ais, defaultSchemaName, createIndex));
         
         ddlFunctions.createIndexes(session, indexesToAdd);
+
+        // TODO: This is not real but just enough to make isSpatial() return true.
+        if (createIndex.getColumnList() instanceof SpecialIndexFuncNode) {
+            ais = ddlFunctions.getAIS(session);
+            IndexName indexName = indexesToAdd.iterator().next().getIndexName();
+            TableIndex index = ais.getTable(indexName.getSchemaName(), 
+                                            indexName.getTableName())
+                .getIndex(indexName.getName());
+            switch (((SpecialIndexFuncNode)createIndex.getColumnList()).getFunctionType()) {
+            case Z_ORDER_LAT_LON:
+                index.spatialIndexDimensions(new long[] { 0, 0 },
+                                             new long[] { 100, 100 });
+                assert index.isSpatial() : index;
+                break;
+            }
+        }
     }
     
     private static Index buildIndex (AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index) {
