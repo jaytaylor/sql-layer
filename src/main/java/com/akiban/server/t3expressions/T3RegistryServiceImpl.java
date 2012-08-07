@@ -242,6 +242,12 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             localCastsMap.put(tClass, map);
         }
 
+        // Next, to/from varchar
+        for (TClass tClass : tClasses) {
+            putCast(localCastsMap, tClass.castToVarchar());
+            putCast(localCastsMap, tClass.castFromVarchar());
+        }
+
         // Now the registered casts
         for (TCast cast : finder.find(TCast.class)) {
             putCast(localCastsMap, cast);
@@ -250,6 +256,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     }
 
     private static void putCast(Map<TClass, Map<TClass, TCast>> toMap, TCast cast) {
+        if (cast == null)
+            return;
         TClass source = cast.sourceClass();
         TClass target = cast.targetClass();
         if (source.equals(target))
