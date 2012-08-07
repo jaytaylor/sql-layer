@@ -266,8 +266,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             return;
         TClass source = cast.sourceClass();
         TClass target = cast.targetClass();
-        if (source.equals(target))
-            return;
         Map<TClass,TCast> castsByTarget = toMap.get(source);
         TCast old = castsByTarget.put(target, cast);
         if (old != null) {
