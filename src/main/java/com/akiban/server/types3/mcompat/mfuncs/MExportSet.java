@@ -84,7 +84,7 @@ public abstract class  MExportSet extends TOverloadBase
                 @Override
                 protected String getDelimeter(LazyList<? extends PValueSource> inputs)
                 {
-                    return (String)inputs.get(3).getObject();
+                    return inputs.get(3).getString();
                 }
 
                 @Override
@@ -106,7 +106,7 @@ public abstract class  MExportSet extends TOverloadBase
                 @Override
                 protected String getDelimeter(LazyList<? extends PValueSource> inputs)
                 {
-                    return (String)inputs.get(3).getObject();
+                    return inputs.get(3).getString();
                 }
 
                 @Override
@@ -164,11 +164,12 @@ public abstract class  MExportSet extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        output.putObject(computeSet(getUnsignedBigint64(inputs.get(0).getInt64()),
-                                     new String[]{(String)inputs.get(2).getObject(),
-                                                  (String)inputs.get(1).getObject()},
-                                     getDelimeter(inputs),
-                                     getLength(inputs)));
+        String s = computeSet(
+                getUnsignedBigint64(inputs.get(0).getInt64()),
+                new String[]{inputs.get(2).getString(), inputs.get(1).getString()},
+                getDelimeter(inputs),
+                getLength(inputs));
+        output.putString(s, null);
         
     }
     
@@ -199,8 +200,8 @@ public abstract class  MExportSet extends TOverloadBase
                 // compute the length
                 
                 // get the digits length
-                int digitLength = Math.max(((String)on.value().getObject()).length(), 
-                                            ((String)off.value().getObject()).length());
+                int digitLength = Math.max((on.value().getString()).length(), 
+                                            (off.value().getString()).length());
                 int length = DEFAULT_LENGTH; // number of digits
                 int delimLength = DEFAULT_DELIM.length();
                 
@@ -211,7 +212,7 @@ public abstract class  MExportSet extends TOverloadBase
                             length = inputs.get(5).value().getInt32();  // fall thru
                     case 4:
                         if (inputs.get(3) != null && !inputs.get(3).value().isNull())
-                            delimLength = ((String)inputs.get(3).value().getObject()).length();
+                            delimLength = (inputs.get(3).value().getString()).length();
                 }
                 // There would only be [length - 1] number of delimiter characters
                 // in the string. But we'd give it enough space for [length]

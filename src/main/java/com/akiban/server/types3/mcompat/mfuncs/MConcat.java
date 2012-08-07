@@ -81,11 +81,11 @@ public class MConcat extends TOverloadBase {
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < inputs.size(); ++i) {
-            String inputStr = (String) inputs.get(i).getObject();
+            String inputStr = inputs.get(i).getString();
             assert inputStr != null;
             sb.append(inputStr);
         }
-        output.putObject(sb.toString());
+        output.putString(sb.toString(), null);
     }
 
     @Override

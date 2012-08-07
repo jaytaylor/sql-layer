@@ -23,7 +23,7 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.API.Ordering;

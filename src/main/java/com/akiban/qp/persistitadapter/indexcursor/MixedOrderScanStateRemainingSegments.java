@@ -24,12 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
 
 class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
 {
@@ -55,7 +55,7 @@ class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
         }
         if (!more) {
             // Restore exchange key to where it was before exploring this subtree. But also attach one
-            // more key segment since SortCursorMixedOrder is going to cut one.
+            // more key segment since IndexCursorMixedOrder is going to cut one.
             subtreeRootKey.copyTo(cursor.exchange.getKey());
             cursor.exchange.getKey().append(Key.BEFORE);
         }
@@ -68,9 +68,9 @@ class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
         return startScan();
     }
 
-    public MixedOrderScanStateRemainingSegments(SortCursorMixedOrder sortCursor, int field) throws PersistitException
+    public MixedOrderScanStateRemainingSegments(IndexCursorMixedOrder indexCursor, int field) throws PersistitException
     {
-        super(sortCursor, field, true);
+        super(indexCursor, field, true);
     }
 
     private Key subtreeRootKey;

@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter.indexcursor;
 
 
 import com.akiban.server.collation.AkCollator;
@@ -34,7 +34,7 @@ import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
 
 class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
 {
@@ -84,7 +84,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         return more;
     }
 
-    public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor,
+    public MixedOrderScanStateSingleSegment(IndexCursorMixedOrder cursor,
                                             int field,
                                             S lo,
                                             boolean loInclusive,
@@ -124,7 +124,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         }
     }
 
-    public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor, int field, SortKeyAdapter<S, E> sortKeyAdapter)
+    public MixedOrderScanStateSingleSegment(IndexCursorMixedOrder cursor, int field, SortKeyAdapter<S, E> sortKeyAdapter)
         throws PersistitException
     {
         super(cursor, field, cursor.ordering().ascending(field));
@@ -158,7 +158,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
 
     private Key.Direction startBoundedScan() throws PersistitException
     {
-        // About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
+        // About null handling: See comment in IndexCursorUnidirectional.evaluateBoundaries.
         Key.Direction direction;
         if (ascending) {
             if (sortKeyAdapter.isNull(loSource)) {

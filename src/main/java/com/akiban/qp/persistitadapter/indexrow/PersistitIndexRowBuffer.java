@@ -42,6 +42,7 @@ import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -81,6 +82,10 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     public final int compareTo(BoundExpressions row, int thisStartIndex, int thatStartIndex, int fieldCount)
     {
+        // The dependence on field positions and fieldCount is a problem for spatial indexes
+        if (index.isSpatial()) {
+            throw new UnsupportedOperationException(index.toString());
+        }
         // field and byte indexing is as if the pKey and pValue were one contiguous array of bytes. But we switch
         // from pKey to pValue as needed to avoid having to actually copy the bytes into such an array.
         PersistitIndexRowBuffer that = (PersistitIndexRowBuffer) row;
@@ -139,7 +144,7 @@ public class PersistitIndexRowBuffer extends IndexRow
     {
         pKeyAppends = 0;
         int indexField = 0;
-        if (index.isSpatial()) {
+        if (spatialHandler != null) {
             spatialHandler.bind(rowData);
             keyAppender().append(spatialHandler.zValue());
             indexField = spatialHandler.dimensions();
@@ -159,8 +164,12 @@ public class PersistitIndexRowBuffer extends IndexRow
         }
     }
 
+    @Override
     public void append(Column column, ValueSource source)
     {
+        // There is no hard requirement that the index is a group index. But while we're adding support for
+        // spatial, we just want to be precise about what kind of index is in use.
+        assert index.isGroupIndex();
         keyAppender().append(source, column);
         pKeyAppends++;
     }
@@ -226,31 +235,8 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     public PersistitIndexRowBuffer(PersistitAdapter adapter)
     {
+        ArgumentValidation.notNull("adapter", adapter);
         this.adapter = adapter;
-    }
-
-    public static PersistitIndexRowBuffer createEmpty(PersistitAdapter adapter, Index index, Key key, Value value)
-    {
-        // TODO: Obsolete?
-        assert false;
-        return null;
-/*
-        key.clear();
-        if (value != null) {
-            value.clear();
-        }
-        return new PersistitIndexRowBuffer(adapter, index, key, value, true);
-*/
-    }
-
-    public static PersistitIndexRowBuffer createInitialized(PersistitAdapter adapter, Index index, Key key, Value value)
-    {
-        // TODO: Obsolete:
-        assert false;
-        return null;
-/*
-        return new PersistitIndexRowBuffer(adapter, index, key, value, false);
-*/
     }
 
     public boolean keyEmpty()
@@ -271,6 +257,9 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     protected void attach(PersistitKeyPValueSource source, int position, PUnderlying type)
     {
+        if (index.isSpatial()) {
+            throw new UnsupportedOperationException("Spatial indexes don't implement types3 yet");
+        }
         if (position < pKeyFields) {
             source.attach(pKey, position, type);
         } else {
@@ -292,11 +281,15 @@ public class PersistitIndexRowBuffer extends IndexRow
     protected void constructHKeyFromIndexKey(Key hKey, IndexToHKey indexToHKey)
     {
         hKey.clear();
-        for (int i = 0; i < indexToHKey.getLength(); ++i) {
+        for (int i = 0; i < indexToHKey.getLength(); i++) {
             if (indexToHKey.isOrdinal(i)) {
                 hKey.append(indexToHKey.getOrdinal(i));
             } else {
                 int indexField = indexToHKey.getIndexRowPosition(i);
+                if (index.isSpatial()) {
+                    // A spatial index has a single key column (the z-value), representing the declared key columns.
+                    indexField = indexField - index.getKeyColumns().size() + 1;
+                }
                 Key keySource;
                 if (indexField < pKeyFields) {
                     keySource = pKey;
@@ -325,10 +318,17 @@ public class PersistitIndexRowBuffer extends IndexRow
         assert !index.isUnique() || index.isTableIndex() : index;
         this.index = index;
         this.pKey = key;
-        this.pKeyFields =
-            index.isSpatial() ? index.getAllColumns().size() - index.getKeyColumns().size() + 1 :
-            index.isUnique() ? index.getKeyColumns().size() : index.getAllColumns().size();
         this.pValue = adapter.newKey();
+        this.value = value;
+        if (index.isSpatial()) {
+            this.nIndexFields = index.getAllColumns().size() - index.getKeyColumns().size() + 1;
+            this.pKeyFields = this.nIndexFields;
+            this.spatialHandler = new SpatialHandler();
+        } else {
+            this.nIndexFields = index.getAllColumns().size();
+            this.pKeyFields = index.isUnique() ? index.getKeyColumns().size() : index.getAllColumns().size();
+            this.spatialHandler = null;
+        }
         if (writable) {
             this.pKeyAppender = PersistitKeyAppender.create(key);
             this.pKeyAppends = 0;
@@ -347,11 +347,6 @@ public class PersistitIndexRowBuffer extends IndexRow
             this.pKeyAppender = null;
             this.pValueAppender = null;
         }
-        this.value = value;
-        this.spatialHandler =
-            index.isSpatial()
-            ? new SpatialHandler()
-            : null;
     }
 
     // Object state
@@ -382,7 +377,8 @@ public class PersistitIndexRowBuffer extends IndexRow
     // Only when it is time to write the row are the bytes managed by the pValueAppender written as a single
     // Persistit Value.
     protected final PersistitAdapter adapter;
-    private Index index;
+    protected Index index;
+    protected int nIndexFields;
     private Key pKey;
     private Key pValue;
     private PersistitKeyAppender pKeyAppender;

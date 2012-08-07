@@ -58,7 +58,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     {
         ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
         buffer.putString("(");
-        for (int i = 0; i < indexRowType.nFields(); i++) {
+        for (int i = 0; i < nIndexFields; i++) {
             if (i > 0) {
                 buffer.putString(", ");
             }
@@ -94,7 +94,11 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     }
 
     @Override
-    public final PValueSource pvalue(int i) {
+    public final PValueSource pvalue(int i)
+    {
+        if (index.isSpatial()) {
+            throw new UnsupportedOperationException("Spatial indexes don't implement types3 yet");
+        }
         PUnderlying underlying = rowType().typeInstanceAt(i).typeClass().underlyingType();
         PersistitKeyPValueSource keySource = keyPSource(i, underlying);
         attach(keySource, i, underlying);
@@ -133,17 +137,35 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         super(adapter);
         resetForWrite(indexRowType.index(), adapter.persistit().getKey());
         this.indexRowType = indexRowType;
-        int nfields = indexRowType.nFields();
-        this.akTypes = new AkType[nfields];
-        this.akCollators = new AkCollator[nfields];
-        for (IndexColumn indexColumn : indexRowType.index().getAllColumns()) {
-            int position = indexColumn.getPosition();
-            Column column = indexColumn.getColumn();
-            this.akTypes[position] = column.getType().akType();
-            this.akCollators[position] = column.getCollator();
-        }
-        this.leafmostTable = (UserTable) indexRowType.index().leafMostTable();
+        this.leafmostTable = (UserTable) index.leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
+        this.akTypes = new AkType[nIndexFields];
+        this.akCollators = new AkCollator[nIndexFields];
+        if (index.isSpatial()) {
+            // TODO: Getting the AIS and Schema to know about spatial indexes is a lot of work, and will probably
+            // TODO: be done when we support function indexes. Until then, just deal with the differences using
+            // TODO: brute force.
+            // nPhysicalFields counts the z-value field plus the number of undeclared (hkey) columns.
+            this.akTypes[0] = AkType.LONG;
+            this.akCollators[0] = null;
+            int physicalPosition = 1;
+            int logicalPosition = index.getKeyColumns().size();
+            while (physicalPosition < nIndexFields) {
+                IndexColumn indexColumn = index.getAllColumns().get(logicalPosition);
+                Column column = indexColumn.getColumn();
+                this.akTypes[physicalPosition] = column.getType().akType();
+                this.akCollators[physicalPosition] = column.getCollator();
+                logicalPosition++;
+                physicalPosition++;
+            }
+        } else {
+            for (IndexColumn indexColumn : index.getAllColumns()) {
+                int position = indexColumn.getPosition();
+                Column column = indexColumn.getColumn();
+                this.akTypes[position] = column.getType().akType();
+                this.akCollators[position] = column.getCollator();
+            }
+        }
     }
 
     // For use by this class
@@ -151,7 +173,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     private PersistitKeyValueSource keySource(int i)
     {
         if (keySources == null)
-            keySources = new PersistitKeyValueSource[indexRowType.nFields()];
+            keySources = new PersistitKeyValueSource[nIndexFields];
         if (keySources[i] == null) {
             keySources[i] = new PersistitKeyValueSource();
         }
@@ -161,7 +183,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     private PersistitKeyPValueSource keyPSource(int i, PUnderlying underlying)
     {
         if (keyPSources == null)
-            keyPSources = new PersistitKeyPValueSource[indexRowType.nFields()];
+            keyPSources = new PersistitKeyPValueSource[nIndexFields];
         if (keyPSources[i] == null) {
             keyPSources[i] = new PersistitKeyPValueSource(underlying);
         }

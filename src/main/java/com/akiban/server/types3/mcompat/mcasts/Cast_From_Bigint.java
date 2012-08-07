@@ -155,7 +155,7 @@ public class Cast_From_Bigint
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(Long.toString(source.getInt64()));
+            target.putString(Long.toString(source.getInt64()), null);
         }
     };
     

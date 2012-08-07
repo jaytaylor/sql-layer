@@ -64,14 +64,14 @@ public abstract class Trim extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String trim = (String) inputs.get(1).getObject();
-                String st = (String) inputs.get(2).getObject();
+                String trim = inputs.get(1).getString();
+                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
-                    output.putObject(st);
+                    output.putString(st, null);
                     return;
                 }
-                output.putObject(rtrim(st, trim));
+                output.putString(rtrim(st, trim), null);
             }
 
             @Override
@@ -84,14 +84,14 @@ public abstract class Trim extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String trim = (String) inputs.get(1).getObject();
-                String st = (String) inputs.get(2).getObject();
+                String trim = inputs.get(1).getString();
+                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
-                    output.putObject(st);
+                    output.putString(st, null);
                     return;
                 }
-                output.putObject(ltrim(st, trim));
+                output.putString(ltrim(st, trim), null);
             }
 
             @Override
@@ -105,11 +105,11 @@ public abstract class Trim extends TOverloadBase {
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 int trimType = inputs.get(0).getInt32();
-                String trim = (String) inputs.get(1).getObject();
-                String st = (String) inputs.get(2).getObject();
+                String trim = inputs.get(1).getString();
+                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
-                    output.putObject(st);
+                    output.putString(st, null);
                     return;
                 }
 
@@ -117,7 +117,7 @@ public abstract class Trim extends TOverloadBase {
                     st = ltrim(st, trim);
                 if (trimType != LTRIM)
                     st = rtrim(st, trim);
-                output.putObject(st);
+                output.putString(st, null);
             }
 
             @Override

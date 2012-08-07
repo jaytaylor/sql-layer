@@ -115,7 +115,7 @@ public abstract class MDateFormat extends TOverloadBase
                 && (ret = (String)context.preptimeObjectAt(RET_INDEX)) == null)
         {
             Object objs[] = computeResult (getYMDHMS(inputs.get(0)),
-                                           (String)inputs.get(1).getObject(),
+                                           inputs.get(1).getString(),
                                            context.getCurrentTimezone());
             ret = (String) objs[RET_INDEX];
             error = (InvalidOperationException) objs[ERROR_INDEX];
@@ -123,7 +123,7 @@ public abstract class MDateFormat extends TOverloadBase
         }
         
         if (ret != null)
-            output.putObject(ret);
+            output.putString(ret, null);
         else
         {
             output.putNull();
@@ -161,12 +161,12 @@ public abstract class MDateFormat extends TOverloadBase
                     
                     // if the date string is not literal, get the length
                     // from the format string
-                    length = computeLength((String)format.getObject());
+                    length = computeLength(format.getString());
                     
                     // if date is literal, get the actual length
                     if (date != null)
                     {
-                        Object prepObjects[] = computeResult(getYMDHMS(date), (String) format.getObject(), context.getCurrentTimezone());
+                        Object prepObjects[] = computeResult(getYMDHMS(date), format.getString(), context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
                         context.set(ERROR_INDEX, prepObjects[ERROR_INDEX]);
                         

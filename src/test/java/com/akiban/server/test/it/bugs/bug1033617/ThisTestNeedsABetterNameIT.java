@@ -24,39 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.akiban.server.test.it.bugs.bug1033617;
 
-import com.akiban.qp.row.RowBase;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
+import com.akiban.ais.model.TableName;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.test.it.ITBase;
+import org.junit.Test;
 
-final class OldRowDataCreator implements RowDataCreator<ValueSource> {
+import java.util.Collection;
+import java.util.Collections;
 
-    @Override
-    public ValueSource eval(RowBase row, int f) {
-        return row.eval(f);
+public final class ThisTestNeedsABetterNameIT extends ITBase {
+    @Test
+    public void test() {
+        int c = createTable("schema", "customers", "cid int not null primary key, name varchar(32)");
+        int o = createTable("schema", "orders", "oid int not null primary key, cid int not null, placed date",
+                akibanFK("cid", "customers", "cid"));
+        String groupName = getUserTable(c).getGroup().getName();
+        createGroupIndex(groupName, "name_placed", "customers.name,orders.placed");
+
+        writeRow(c, 1L, "bob");
+        writeRow(o, 11L, 1L, "2012-01-01");
+
+        Collection<String> indexesToUpdate = Collections.singleton("name_placed");
+        ddl().updateTableStatistics(session(), TableName.create("schema", "customers"), indexesToUpdate);
+
+        Session session = serviceManager().getSessionService().createSession();
+        try {
+            dropAllTables(session, false);
+        }
+        finally {
+            session.close();
+        }
     }
-
-    @Override
-    public boolean isNull(ValueSource source) {
-        return source.isNull();
-    }
-
-    @Override
-    public ValueSource createId(long id) {
-        FromObjectValueSource objectSource = new FromObjectValueSource();
-        objectSource.setExplicitly(id, AkType.LONG);
-        return objectSource;
-    }
-
-    @Override
-    public void put(ValueSource source, NewRow into, FieldDef fieldDef, int f) {
-        into.put(f, target.convertFromSource(source));
-    }
-
-    private ToObjectValueTarget target = new ToObjectValueTarget();
 }

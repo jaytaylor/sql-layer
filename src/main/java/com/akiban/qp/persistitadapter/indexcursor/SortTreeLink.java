@@ -23,16 +23,55 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
-import com.persistit.Key;
+package com.akiban.qp.persistitadapter.indexcursor;
 
-public interface SortKeyTarget<S> {
-    void attach(Key key);
-    void append(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
-    void append(S source, AkType akType, TInstance tInstance, AkCollator collator);
-    void append(S source, AkCollator collator, TInstance tInstance);
+import com.akiban.server.service.tree.TreeCache;
+import com.akiban.server.service.tree.TreeLink;
+
+class SortTreeLink implements TreeLink
+{
+    // TreeLink interface
+
+    @Override
+    public String getSchemaName()
+    {
+        return SCHEMA_NAME;
+    }
+
+    @Override
+    public String getTreeName()
+    {
+        return tableName;
+    }
+
+    @Override
+    public void setTreeCache(TreeCache cache)
+    {
+        this.cache = cache;
+    }
+
+    @Override
+    public TreeCache getTreeCache()
+    {
+        return cache;
+    }
+
+    // SortTreeLink interface
+
+    public SortTreeLink(String tableName)
+    {
+        this.tableName = tableName;
+    }
+
+    // Class state
+
+    // All data is currently in one volume. Any schema name can be used to find it. Later, we may want multiple
+    // volumes, and a "schema" for temp trees. If/when we do that, the schema name will be significant.
+    private static final String SCHEMA_NAME = "TEMP_SCHEMA";
+
+    // Object state
+
+    private final String tableName;
+    private TreeCache cache;
 }

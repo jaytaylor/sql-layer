@@ -28,11 +28,13 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.types.AkType;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
     @Override
@@ -51,10 +53,10 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
     }
 
     @Override
-    public void put(PValueSource source, NewRow into, AkType akType, int f) {
+    public void put(PValueSource source, NewRow into, FieldDef fieldDef, int f) {
 
         // TODO efficiency warning
-        // NewRow and its users are pretty flexible about typse, so let's just convert everything to a String.
+        // NewRow and its users are pretty flexible about types, so let's just convert everything to a String.
         // It's not efficient, but it works.
 
         if (source.isNull()) {
@@ -94,14 +96,19 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
             case STRING:
                 putObj = source.getString();
                 break;
-            default:
-                throw new AssertionError(source.getUnderlyingType());
-
             case BYTES:
                 // bytes are a special case, in that they're not easily to-stringable
-                ByteSource byteSource = new WrappingByteSource(source.getBytes());
-                into.put(f, byteSource);
-                return;
+                byte[] bytes = source.getBytes();
+                String charset = fieldDef.column().getCharsetAndCollation().charset();
+                try {
+                    putObj = new String(bytes, charset);
+                } catch (UnsupportedEncodingException e) {
+                    throw new AkibanInternalException("while encoding bytes as " + charset
+                            + ": " + Arrays.toString(bytes));
+                }
+                break;
+            default:
+                throw new AssertionError(source.getUnderlyingType());
             }
         }
         into.put(f, putObj);
