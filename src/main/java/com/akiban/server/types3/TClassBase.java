@@ -26,9 +26,12 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.util.AkibanAppender;
 
 public abstract class TClassBase extends TClass
 {
@@ -83,4 +86,45 @@ public abstract class TClassBase extends TClass
          else
             parser.parse(context, in, out);
      }
+
+    @Override
+    public TCast castToVarchar() {
+        return new TCastBase(this, MString.VARCHAR) {
+            @Override
+            protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+                AkibanAppender appender = (AkibanAppender) context.exectimeObjectAt(APPENDER_CACHE_INDEX);
+                StringBuilder sb;
+                if (appender == null) {
+                    sb = new StringBuilder();
+                    appender = AkibanAppender.of(sb);
+                    context.putExectimeObject(APPENDER_CACHE_INDEX, appender);
+                }
+                else {
+                    sb = (StringBuilder) appender.getAppendable();
+                    sb.setLength(0);
+                }
+                format(context.inputTInstanceAt(0), source, appender);
+                String string = sb.toString();
+                int maxlen = context.outputTInstance().attribute(StringAttribute.LENGTH);
+                if (maxlen > string.length()) {
+                    String trunc = sb.substring(0, maxlen);
+                    context.reportTruncate(string, trunc);
+                    string = trunc;
+                }
+                target.putString(string, null);
+            }
+        };
+    }
+
+    @Override
+    public TCast castFromVarchar() {
+        return new TCastBase(MString.VARCHAR, this) {
+            @Override
+            protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+                parser.parse(context, source, target);
+            }
+        };
+    }
+
+    private static final int APPENDER_CACHE_INDEX = 0;
 }
