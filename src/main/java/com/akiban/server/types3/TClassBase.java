@@ -106,7 +106,7 @@ public abstract class TClassBase extends TClass
                 format(context.inputTInstanceAt(0), source, appender);
                 String string = sb.toString();
                 int maxlen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-                if (maxlen > string.length()) {
+                if (string.length() > maxlen) {
                     String trunc = sb.substring(0, maxlen);
                     context.reportTruncate(string, trunc);
                     string = trunc;
