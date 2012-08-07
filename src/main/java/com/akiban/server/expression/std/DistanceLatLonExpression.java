@@ -106,8 +106,8 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
                         throw new InvalidArgumentTypeException("Type " + type + "is not supported in DISTANCE_LAT_LON");
             }
             
-            x1 = getPositive(x1);
-            x2 = getPositive(x2);
+            x1 = getShift(x1);
+            x2 = getShift(x2);
             
             double X = Math.pow(x1 - x2, 2.0);
             double Y = Math.pow(y1 - y2, 2.0);
@@ -118,9 +118,8 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             return valueHolder();
         }
         
-        private double getPositive(double num) {
-            if (num < 0) num += UPPER_BOUND;
-            return num;
+        private double getShift(double num) {
+            return num += UPPER_BOUND / 2;
         }
         
         private double getShortestDistance(double arg1, double arg2, double noShift, double c) {
