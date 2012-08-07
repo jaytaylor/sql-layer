@@ -41,6 +41,7 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.Property;
+import com.akiban.server.service.instrumentation.Event;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
@@ -172,12 +173,17 @@ public class ServerSchemaTablesServiceImpl
                 } while (manager.getServer().getConnection(sessionID) == null);
                 
                 SessionTracer trace = manager.getServer().getConnection(sessionID).getSessionTracer();
-                
+                String eventName = null;
+                if (trace.getCurrentEvents().length > 0) {
+                    Event event = (Event)trace.getCurrentEvents()[0];
+                    eventName = event.getName();
+                }
+                        
                 ValuesRow row = new ValuesRow (rowType,
                         sessionID,
                         trace.getStartTime().getTime(),
                         boolResult(trace.isEnabled()),
-                        trace.getCurrentEvents().length > 0 ? trace.getCurrentEvents()[0] : null,
+                        eventName,
                         trace.getRemoteAddress(),
                         trace.getCurrentStatement(),
                         ++rowCounter);

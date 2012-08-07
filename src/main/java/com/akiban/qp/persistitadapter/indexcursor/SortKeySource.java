@@ -23,16 +23,13 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.qp.persistitadapter.indexcursor;
 
-package com.akiban.qp.persistitadapter.sort;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.persistit.Key;
 
-import com.akiban.qp.row.Row;
-import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
-
-public interface IterationHelper
-{
-    Row row() throws PersistitException;
-    void close();
-    Exchange exchange();
+public interface SortKeySource<S> {
+    void attach(Key key, int i, AkType fieldType, TInstance tInstance);
+    S asSource();
 }

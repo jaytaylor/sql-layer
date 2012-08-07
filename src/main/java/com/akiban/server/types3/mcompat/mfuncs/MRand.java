@@ -32,5 +32,5 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
 public class MRand {
-    public static final TOverload[] INSTANCES = Rand.create(MNumeric.INT, MApproximateNumber.DOUBLE);
+    public static final TOverload[] INSTANCES = Rand.create(MNumeric.BIGINT, MApproximateNumber.DOUBLE);
 }

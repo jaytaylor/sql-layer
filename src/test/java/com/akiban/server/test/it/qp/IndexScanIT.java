@@ -158,7 +158,7 @@ public class IndexScanIT extends OperatorITBase
     }
 
     // The next three tests are light tests of unbounded multi-column index scanning, including mixed-mode.
-    // A more serious test of index scans with mixed-mode and bounds is in IndexScanComplexIT
+    // More serious tests of index scans with mixed-mode and bounds are in IndexScanBoundedIT
 
     @Test
     public void testFullScan()

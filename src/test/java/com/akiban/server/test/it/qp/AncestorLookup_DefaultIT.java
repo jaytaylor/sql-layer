@@ -144,6 +144,7 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge")
         };
+        dump(plan);
         compareRows(expected, cursor);
     }
 

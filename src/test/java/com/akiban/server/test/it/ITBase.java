@@ -26,10 +26,16 @@
 
 package com.akiban.server.test.it;
 
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.geophile.Space;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -102,7 +108,12 @@ public abstract class ITBase extends ApiTestBase {
         }
         else {
             ToObjectValueTarget target = new ToObjectValueTarget();
-            for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
+            int nFields = actual.rowType().nFields();
+            Space space = space(expected.rowType());
+            if (space != null) {
+                nFields = nFields - space.dimensions() + 1;
+            }
+            for (int i = 0; equal && i < nFields; i++) {
                 Object expectedField = target.convertFromSource(expected.eval(i));
                 Object actualField = target.convertFromSource(actual.eval(i));
                 if (expectedField == null && actualField == null) {
@@ -119,6 +130,18 @@ public abstract class ITBase extends ApiTestBase {
             }
             return equal;
         }
+    }
+
+    private Space space(RowType rowType)
+    {
+        Space space = null;
+        if (rowType instanceof IndexRowType) {
+            Index index = ((IndexRowType)rowType).index();
+            if (index.isSpatial()) {
+                space = ((TableIndex)index).space();
+            }
+        }
+        return space;
     }
 
     private AkCollator collator(AkCollator[] collators, int i)

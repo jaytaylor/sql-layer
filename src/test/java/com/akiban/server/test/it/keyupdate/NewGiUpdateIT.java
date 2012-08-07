@@ -2167,6 +2167,15 @@ public final class NewGiUpdateIT extends ITBase {
 
     private static class StringsIndexScanner extends IndexRecordVisitor {
 
+        // IndexVisitor interface
+
+        @Override
+        public boolean groupIndex()
+        {
+            return true;
+        }
+
+
         // IndexRecordVisitor interface
 
         @Override

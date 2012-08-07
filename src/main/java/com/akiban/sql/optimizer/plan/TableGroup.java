@@ -41,7 +41,7 @@ public class TableGroup extends BasePlanElement
 {
     private Group group;
     private Set<TableSource> tables;
-    private List<TableGroupJoin> joins;
+    private List<TableGroupJoin> joins, rejectedJoins;
 
     public TableGroup(Group group) {
         this.group = group;
@@ -65,6 +65,17 @@ public class TableGroup extends BasePlanElement
         joins.add(join);
         tables.add(join.getParent());
         tables.add(join.getChild());
+    }
+
+    public List<TableGroupJoin> getRejectedJoins() {
+        return rejectedJoins;
+    }
+
+    public void rejectJoin(TableGroupJoin join) {
+        joins.remove(join);
+        if (rejectedJoins == null)
+            rejectedJoins = new ArrayList<TableGroupJoin>();
+        rejectedJoins.add(join);
     }
 
     public void merge(TableGroup other) {
@@ -112,6 +123,8 @@ public class TableGroup extends BasePlanElement
         super.deepCopy(map);
         tables = duplicateSet(tables, map);
         joins = duplicateList(joins, map);
+        if (rejectedJoins != null)
+            rejectedJoins = duplicateList(rejectedJoins, map);
     }
 
 }
