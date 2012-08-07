@@ -91,8 +91,29 @@ public class DistanceLatLonExpressionTest {
     }
     
     @Test (expected=OutOfRangeException.class) 
-    public void testOutOfRange() {
+    public void testRangeTooLargeY() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(91), getDecimal(0), getDecimal(0), getDecimal(180)));
+        Expression exp = new DistanceLatLonExpression(lst);
+        ValueSource result = exp.evaluation().eval();
+    }
+    
+    @Test (expected=OutOfRangeException.class) 
+    public void testRangeTooSmallY() {
         List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-91), getDecimal(0), getDecimal(0), getDecimal(180)));
+        Expression exp = new DistanceLatLonExpression(lst);
+        ValueSource result = exp.evaluation().eval();
+    }
+    
+    @Test (expected=OutOfRangeException.class) 
+    public void testRangeTooLargeX() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(181), getDecimal(0), getDecimal(180)));
+        Expression exp = new DistanceLatLonExpression(lst);
+        ValueSource result = exp.evaluation().eval();
+    }
+    
+    @Test (expected=OutOfRangeException.class) 
+    public void testRangeTooSmallX() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-181), getDecimal(0), getDecimal(180)));
         Expression exp = new DistanceLatLonExpression(lst);
         ValueSource result = exp.evaluation().eval();
     }
