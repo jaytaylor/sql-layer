@@ -51,7 +51,7 @@ public final class ThisTestNeedsABetterNameIT extends ITBase {
 
         Session session = serviceManager().getSessionService().createSession();
         try {
-            dropAllTables(session, false);
+            dropAllTables(session);
         }
         finally {
             session.close();
