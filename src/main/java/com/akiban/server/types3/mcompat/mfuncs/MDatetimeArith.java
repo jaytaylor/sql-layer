@@ -41,7 +41,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
     private final String name;
     private static final long DAY_FACTOR = 3600L * 1000 * 24;
     
-    public static TOverload DATE_ADD = new MDatetimeArith("DATE_ADD") {
+    public static final TOverload DATE_ADD = new MDatetimeArith("DATE_ADD") {
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
@@ -61,7 +61,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         }
     };
     
-    public static TOverload DATE_SUB = new MDatetimeArith("DATE_SUB") {
+    public static final TOverload DATE_SUB = new MDatetimeArith("DATE_SUB") {
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
@@ -81,7 +81,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         }
     };
     
-    public static TOverload SUBTIME = new MDatetimeArith("SUBTIME") {
+    public static final TOverload SUBTIME = new MDatetimeArith("SUBTIME") {
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
@@ -100,7 +100,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         }
     };
     
-    public static TOverload ADDTIME = new MDatetimeArith("ADDTIME") {
+    public static final TOverload ADDTIME = new MDatetimeArith("ADDTIME") {
        
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
@@ -120,7 +120,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         }
     };
     
-    public static TOverload DATEDIFF = new MDatetimeArith("DATEDIFF") {
+    public static final TOverload DATEDIFF = new MDatetimeArith("DATEDIFF") {
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
@@ -139,7 +139,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         }
     };
     
-    public static TOverload TIMEDIFF = new MDatetimeArith("TIMEDIFF") {
+    public static final TOverload TIMEDIFF = new MDatetimeArith("TIMEDIFF") {
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
