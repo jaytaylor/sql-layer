@@ -182,6 +182,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
+
                 startKeyTarget.append(startValues[f], f, types, tInstances, collators);
                 endKeyTarget.append(startValues[f], f, types, tInstances, collators);
                 f++;
@@ -384,7 +385,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         } else {
             assert false : ordering;
         }
-        this.startKey = adapter.newKey();
+        this.startKey = adapter.newKey(); // PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
         this.endKey = null;
         this.startBoundColumns = 0;
         this.endBoundColumns = 0;
