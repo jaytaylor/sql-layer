@@ -1698,6 +1698,7 @@ public class OperatorAssembler extends BaseRule
                 ExpressionNode centerX = operands.get(1);
                 ExpressionNode radius = operands.get(2);
                 // Make circle into box. Comparison still remains to eliminate corners.
+                // TODO: May need some casts.
                 ExpressionNode bottom = new FunctionExpression("minus",
                                                                Arrays.asList(centerY, radius),
                                                                null, null);

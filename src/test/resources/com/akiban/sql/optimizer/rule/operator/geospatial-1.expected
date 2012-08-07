@@ -1,0 +1,8 @@
+PhysicalSelect@2c6fc505[_SQL_COL_1]
+  project(Field(0))
+    Aggregation(without GROUP BY: [maxDOUBLE])
+      project(DISTANCE_LAT_LON(Field(0), Field(1), 42.3583, -71.0603))
+        Limit_Default(limit=10: project(Field(3), Field(4)))
+          project(Field(3), Field(4))
+            AncestorLookup_Default(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[0:100, 0:100] -> [test.places])
+              IndexScan_Default(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[0:100, 0:100] (>=UnboundExpressions[Literal(42.3583), Literal(-71.0603)],))
