@@ -10,25 +10,22 @@
 - error: [4250C]
 ---
 # Test NULL
-- Statement: INSERT INTO all_types (double_field, integer_field, bigint_field)
-    VALUES (null, null, null)
+- Statement: INSERT INTO all_types (decimal_field) VALUES (null)
 ---
-- Statement: SELECT DISTANCE_LAT_LON(double_field, double_field, double_field, double_field),
-    DISTANCE_LAT_LON(integer_field, integer_field, integer_field, integer_field),
-    DISTANCE_LAT_LON(bigint_field, bigint_field, bigint_field, bigint_field) FROM all_types
-- output: [[null, null, null]]
+- Statement: SELECT DISTANCE_LAT_LON(decimal_field, decimal_field, decimal_field, decimal_field) FROM all_types
+- output: [[null]]
 ---
 - Statement: DELETE FROM all_types
 ---
-- Statement: SELECT DISTANCE_LAT_LON(90.0, 0.0, 100.0, 0.0)
+- Statement: SELECT DISTANCE_LAT_LON(0.0, 90.0, 0.0, 100.0)
 - output: [[10.0]]
 ---
-- Statement: SELECT DISTANCE_LAT_LON(0, 0, 180, 0)
+- Statement: SELECT DISTANCE_LAT_LON(0, 0, 0, 180)
 - output: [[180.0]]
 ---
-- Statement: SELECT DISTANCE_LAT_LON(90, -90, 100, -90)
+- Statement: SELECT DISTANCE_LAT_LON(-90, 90, -90, 100)
 - output: [[10.0]]
 ---
-- Statement: SELECT DISTANCE_LAT_LON(-179, 0, 180, 0)
+- Statement: SELECT DISTANCE_LAT_LON(0, -179, 0, 180)
 - output: [[1.0]]
 ...

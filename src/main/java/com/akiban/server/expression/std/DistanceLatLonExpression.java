@@ -97,10 +97,10 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             AkType type = children().get(0).eval().getConversionType();
             switch (type) {
                 case DECIMAL: 
-                    y1 = latInRange(children().get(0).eval().getDecimal().doubleValue());
-                    x1 = lonInRange(children().get(1).eval().getDecimal().doubleValue());
-                    y2 = latInRange(children().get(2).eval().getDecimal().doubleValue());
-                    x2 = lonInRange(children().get(3).eval().getDecimal().doubleValue());
+                    y1 = inRange(children().get(0).eval().getDecimal().doubleValue(), -90, 90);
+                    x1 = inRange(children().get(1).eval().getDecimal().doubleValue(), -180, 180);
+                    y2 = inRange(children().get(2).eval().getDecimal().doubleValue(), -90, 90);
+                    x2 = inRange(children().get(3).eval().getDecimal().doubleValue(), -180, 180);
                     break;
                 default:
                         throw new InvalidArgumentTypeException("Type " + type + "is not supported in DISTANCE_LAT_LON");
@@ -109,34 +109,29 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
             x1 = getShift(x1);
             x2 = getShift(x2);
             
-            double X = Math.pow(x1 - x2, 2.0);
-            double Y = Math.pow(y1 - y2, 2.0);
-            
-            double result = getShortestDistance(x1, x2, X, Y);   
+            double result = getShortestDistance(x1, x2, x1-x2, y1-y2);   
             valueHolder().putDouble(result);
             
             return valueHolder();
         }
         
-        private double lonInRange(double x) {
-            if(x > 180 || x < -180) throw new OutOfRangeException(x + " should be in the range of -180 to 180 inclusive");
+        private double inRange(double x, double lowerBound, double upperBound) {
+            if (x > upperBound || x < lowerBound) throw new OutOfRangeException(x + " should be in the range of " + lowerBound + " to " + 
+                    upperBound + " inclusive.");
             return x;
-        }
-        
-        private double latInRange(double y) {
-            if(y > 90 || y < -90) throw new OutOfRangeException(y + " should be in the range of -90 to 90 inclusive"); 
-            return y;
         }
         
         private double getShift(double num) {
             return num += UPPER_BOUND / 2;
         }
         
-        private double getShortestDistance(double arg1, double arg2, double noShift, double c) {
-            double shift = noShift;    
-            if (arg1 < arg2) shift = Math.pow(UPPER_BOUND - arg2 + arg1, 2.0);
-            else if (arg2 < arg1) shift = Math.pow(UPPER_BOUND - arg1 + arg2, 2.0);
-            return Math.sqrt(Math.min(shift, noShift) + c);
+        private double getShortestDistance(double arg1, double arg2, double X, double Y) {
+            if (arg1 == arg2) return Math.abs(Y);
+            else {
+                double wrapAroundX = Math.pow(UPPER_BOUND + (arg1 - arg2), 2.0);
+                double noWrapAroundX = Math.pow(X, 2.0);
+                return Math.sqrt(Math.min(wrapAroundX, noWrapAroundX) + Math.pow(Y, 2.0));
+            } 
         }
     }
     

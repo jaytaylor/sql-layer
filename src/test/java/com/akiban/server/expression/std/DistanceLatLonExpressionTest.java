@@ -118,6 +118,12 @@ public class DistanceLatLonExpressionTest {
         ValueSource result = exp.evaluation().eval();
     }
     
+    @Test
+    public void testSameLon() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(80), getDecimal(10), getDecimal(80)));
+        test(10.0, lst);
+    }
+    
     private void test(double expected, List<Expression> lst) {
         Expression exp = new DistanceLatLonExpression(lst);
         
