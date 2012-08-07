@@ -59,6 +59,8 @@ import java.util.Random;
 
 public abstract class Rand extends TOverloadBase {
 
+    private static final int RAND_INDEX = 0; // the cached Random Object's index
+    
     public static TOverload[] create(TClass inputType, TClass resultType) {
         TOverload noArg = new Rand(inputType, resultType) {
 
@@ -67,10 +69,9 @@ public abstract class Rand extends TOverloadBase {
             }
 
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                if (!hasExectimeObject(context, output)) {
-                    putRandom(context, new Random(System.currentTimeMillis()), output);
-                }
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+            {
+                putRandom(context, output, System.currentTimeMillis());
             }
         };
 
@@ -82,36 +83,21 @@ public abstract class Rand extends TOverloadBase {
             }
 
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                if (!hasExectimeObject(context, output)) {
-                    putRandom(context, new Random(inputs.get(0).getInt32()), output);
-                }
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+            {
+                putRandom(context, output, inputs.get(0).getInt64());
             }
         };
 
         return new TOverload[]{noArg, oneArg};
     }
+
     protected final TClass inputType;
     protected final TClass resultType;
 
     protected Rand(TClass inputType, TClass resultType) {
         this.inputType = inputType;
         this.resultType = resultType;
-    }
-
-    protected boolean hasExectimeObject(TExecutionContext context, PValueTarget output) {
-        boolean hasExectimeObject = context.hasExectimeObject(0);
-
-        if (hasExectimeObject) {
-            output.putDouble(((Random) context.exectimeObjectAt(0)).nextDouble());
-        }
-        return hasExectimeObject;
-
-    }
-
-    protected void putRandom(TExecutionContext context, Random rand, PValueTarget output) {
-        context.putExectimeObject(0, rand);
-        output.putDouble(rand.nextDouble());
     }
 
     @Override
@@ -122,5 +108,17 @@ public abstract class Rand extends TOverloadBase {
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(resultType.instance());
+    }
+    
+    private static void putRandom(TExecutionContext context, PValueTarget out, long seed)
+    {
+         Random rand;
+        if (context.hasExectimeObject(RAND_INDEX))
+            rand = (Random) context.exectimeObjectAt(RAND_INDEX);
+        else
+            context.putExectimeObject(RAND_INDEX,
+                                      rand = new Random(seed));
+
+        out.putDouble(rand.nextDouble());
     }
 }
