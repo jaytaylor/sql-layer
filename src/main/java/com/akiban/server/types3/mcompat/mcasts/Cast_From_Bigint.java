@@ -149,16 +149,6 @@ public class Cast_From_Bigint
         }
     };
     
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.BIGINT, MString.VARCHAR, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(Long.toString(source.getInt64()), null);
-        }
-    };
-    
     public static final TCast TO_AK_BOOLEAN = new TCastBase(MNumeric.BIGINT, AkBool.INSTANCE, Constantness.UNKNOWN) {
 
         @Override

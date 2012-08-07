@@ -82,6 +82,4 @@ public class Cast_From_Int
     public static final TCast TO_DOUBLE = new FromInt32ToDouble(MNumeric.INT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MNumeric.INT, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
-    
-    public static final TCast TO_VARCHAR = new FromInt32ToString(MNumeric.INT, MString.VARCHAR, false, Constantness.UNKNOWN);
 }

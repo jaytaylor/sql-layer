@@ -166,36 +166,6 @@ public class MNumericCastBase
         }
     }
 
-    static class FromDoubleToString extends TCastBase
-    {
-        public FromDoubleToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.STRING), c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(Double.toString(source.getDouble()), null);
-        }
-    }
-
-    static class FromInt8ToString extends TCastBase
-    {
-        public FromInt8ToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.STRING), c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(Byte.toString(source.getInt8()), null);
-        }
-    }
-
     static class FromInt8ToUnsignedInt8 extends TCastBase
     {
         public FromInt8ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
@@ -313,21 +283,6 @@ public class MNumericCastBase
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt8()));
-        }
-    }
-    
-    static class FromInt16ToString extends TCastBase
-    {
-        public FromInt16ToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.STRING), c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(Short.toString(source.getInt16()), null);
         }
     }
     
@@ -465,21 +420,6 @@ public class MNumericCastBase
             target.putObject(new MBigDecimalWrapper(source.getInt16()));
         }
     }
-    
-    static class FromInt32ToString extends TCastBase
-    {
-        public FromInt32ToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.STRING), c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(Integer.toString(source.getInt32()), null);
-        }
-    }
 
     static class FromInt32ToInt8 extends TCastBase
     {
@@ -613,21 +553,6 @@ public class MNumericCastBase
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt32()));
-        }
-    }
-    
-    static class FromInt64ToString extends TCastBase
-    {
-        public FromInt64ToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.STRING), c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(Long.toString(source.getInt64()), null);
         }
     }
     
