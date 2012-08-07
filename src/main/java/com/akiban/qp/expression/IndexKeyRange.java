@@ -136,8 +136,7 @@ public class IndexKeyRange
      * @param indexRowType The row type of index keys.
      * @param lo           Lower bound of the range.
      * @param hi           Upper bound of the range.
-     * @return IndexKeyRange covering the keys lying between lo and hi, subject to the loInclusive and
-     * hiInclusive flags.
+     * @return IndexKeyRange covering the keys lying between lo and hi.
      */
     public static IndexKeyRange spatial(IndexRowType indexRowType,
                                         IndexBound lo,
