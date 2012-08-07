@@ -66,12 +66,11 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
             startKey.append(startBoundary);
         } else {
             startExpressions = start.boundExpressions(context);
-            startKey.clear();
-            startKeyTarget.attach(startKey);
+            clear(startKey);
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
                     S source = keyAdapter.get(startExpressions, f);
-                    startKeyTarget.append(source, f, types, tInstances, collators);
+                    startKey.append(source, type(f), tInstance(f), collator(f));
                 }
             }
         }

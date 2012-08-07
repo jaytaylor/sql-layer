@@ -44,6 +44,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.persistit.Exchange;
@@ -172,12 +173,9 @@ public class PersistitIndexRowBuffer extends IndexRow
     }
 
     @Override
-    public void append(Column column, ValueSource source)
+    public <S> void append(S source, AkType type, TInstance tInstance, AkCollator collator)
     {
-        // There is no hard requirement that the index is a group index. But while we're adding support for
-        // spatial, we just want to be precise about what kind of index is in use.
-        assert index.isGroupIndex();
-        pKeyTarget().append(source, column.getType().akType(), column.tInstance(), column.getCollator());
+        pKeyTarget().append(source, type, tInstance, collator);
         pKeyAppends++;
     }
 
@@ -218,9 +216,20 @@ public class PersistitIndexRowBuffer extends IndexRow
         pKeyAppends++;
     }
 
+    public void append(Key.EdgeValue edgeValue)
+    {
+        pKey().append(edgeValue);
+        pKeyAppends++;
+    }
+
     public void tableBitmap(long bitmap)
     {
         value.put(bitmap);
+    }
+
+    public void copyPersistitKeyTo(Key key)
+    {
+        pKey.copyTo(key);
     }
 
     // For table index rows
@@ -314,7 +323,7 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     // For use by this class
 
-    private SortKeyTarget pKeyTarget()
+    private <S> SortKeyTarget<S> pKeyTarget()
     {
         return pKeyAppends < pKeyFields ? pKeyTarget : pValueTarget;
     }
@@ -326,6 +335,8 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     private void reset(Index index, Key key, Value value, boolean writable)
     {
+        // TODO: Lots of this, especially allocations, should be moved to the constructor.
+        // TODO: Or at least not repeated on reset.
         assert !index.isUnique() || index.isTableIndex() : index;
         this.index = index;
         this.pKey = key;
