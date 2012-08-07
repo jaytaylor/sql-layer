@@ -35,7 +35,6 @@ import com.akiban.server.types3.texpressions.Constantness;
 
 public class Cast_From_Int
 {
-
     /**
      * TODO:
      * 
