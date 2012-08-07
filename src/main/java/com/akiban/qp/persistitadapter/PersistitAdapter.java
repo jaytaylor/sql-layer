@@ -91,8 +91,12 @@ public class PersistitAdapter extends StoreAdapter
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(context, schema.indexRowType(index), keyRange, ordering,
-                    selector, usePValues);
+            cursor = new PersistitIndexCursor(context,
+                                              schema.indexRowType(index),
+                                              keyRange,
+                                              ordering,
+                                              selector,
+                                              usePValues);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();

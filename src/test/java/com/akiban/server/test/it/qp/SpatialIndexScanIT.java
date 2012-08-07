@@ -158,10 +158,10 @@ public class SpatialIndexScanIT extends OperatorITBase
         }
     }
 
+/*
     @Test
     public void testSpatialQuery()
     {
-/*
         IndexBound lowerLeft = new IndexBound(row(xyIndexRowType, 50, 150), new SetColumnSelector(0, 1));
         IndexBound upperRight = new IndexBound(row(xyIndexRowType, 150, 250), new SetColumnSelector(0, 1));
         IndexKeyRange box = IndexKeyRange.spatial(xyIndexRowType,
@@ -170,8 +170,8 @@ public class SpatialIndexScanIT extends OperatorITBase
         loadDB();
         Operator plan = indexScan_Default(xyIndexRowType, false, box);
         dump(plan);
-*/
     }
+*/
 
     private void loadDB()
     {
