@@ -11,6 +11,8 @@
 ---
 - Statement: Create Table states (code char(2) not null, name varchar(50) not null);
 ---
+- Statement: Create View v1 (sku,quan) as SELECT sku, quan from items;
+---
 # Test dropping non-existant groups 
 - Statement: Drop Group not_here;
 - error: [42501]
@@ -36,7 +38,13 @@
 - Statement: Drop Group orders;
 - error: [5000S]
 ---
-# Drop the multi table group
+# Drop group with view attached fails
+- Statement: Drop Group customers;
+- error: [2B000]
+---
+- Statement: Drop View v1;
+---
+# Drop the group, verify tables gone too
 - Statement: Drop Group customers;
 ---
 - Statement: Select * from log;
