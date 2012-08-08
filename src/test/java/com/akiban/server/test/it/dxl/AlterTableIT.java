@@ -156,6 +156,39 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
+    public void dropPKFromMiddleOfGroup() throws StandardException {
+        createAndLoadCOI();
+
+        // Will yield 2 groups: C-O and I
+        runAlter("ALTER TABLE o DROP PRIMARY KEY");
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
+        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
+        RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
+        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        compareRows(
+                new RowBase[]{
+                        testRow(cType, 1L, "a"),
+                        testRow(oType, 10L, 1L, 11L),
+                        testRow(oType, 11L, 1L, 12L),
+                        testRow(cType, 2L, "b"),
+                        testRow(oType, 30L, 3L, 33L),
+                },
+                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+        );
+        compareRows(
+                new RowBase[]{
+                        testRow(iType, 100L, 10L, 110L),
+                        testRow(iType, 101L, 10L, 111L),
+                        testRow(iType, 111L, 11L, 122L),
+                        testRow(iType, 300L, 30L, 330L)
+                },
+                adapter.newGroupCursor(iType.userTable().getGroup().getGroupTable())
+        );
+    }
+
+    @Test
     public void cannotAddNotNullColumn() throws StandardException {
         createAndLoadSingleTableGroup();
 

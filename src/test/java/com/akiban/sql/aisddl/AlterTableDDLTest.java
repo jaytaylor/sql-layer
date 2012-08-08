@@ -575,7 +575,8 @@ public class AlterTableDDLTest {
     @Test
     public void dropPrimaryKeyLeafTableTwoTableGroup() throws StandardException {
         builder.userTable(C_NAME).colBigInt("id", false).colBigInt("c_c", true).pk("id");
-        builder.userTable(O_NAME).colBigInt("id", false).colBigInt("cid", true).pk("id").joinTo(SCHEMA, "c", "fk").on("cid", "id");
+        builder.userTable(O_NAME).colBigInt("id", false).colBigInt("cid", true).pk("id").joinTo(SCHEMA, "c", "fk").on(
+                "cid", "id");
         parseAndRun("ALTER TABLE o DROP PRIMARY KEY");
         expectColumnChanges();
         expectIndexChanges("DROP:PRIMARY", "MODIFY:__akiban_fk->__akiban_fk");
@@ -583,6 +584,21 @@ public class AlterTableDDLTest {
             expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "join(cid->id)");
         else
             expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "__akiban_fk(cid)", "join(cid->id)");
+        expectUnchangedTables(C_NAME);
+    }
+
+    @Test
+    public void dropPrimaryKeyMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE o DROP PRIMARY KEY");
+        expectColumnChanges();
+        expectIndexChanges("DROP:PRIMARY", "MODIFY:__akiban_fk1->__akiban_fk1");
+        if(Types3Switch.ON)
+             expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
+                              "__akiban_fk1(cid)", "join(cid->id)");
+        else
+            expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "o_o bigint NULL", "__akiban_fk1(cid)", "join(cid->id)");
+        // Note: Cannot check I_NAME, grouping change propagated below AlterTableDDL layer
         expectUnchangedTables(C_NAME);
     }
 
