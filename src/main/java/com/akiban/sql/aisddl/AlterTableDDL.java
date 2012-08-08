@@ -38,6 +38,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.PrimaryKey;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -73,6 +74,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.ais.util.TableChange.ChangeType;
+import static com.akiban.ais.util.TableChange.createDrop;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.ALTER_TABLE_TEMP_TABLE;
 import static com.akiban.sql.aisddl.DDLHelper.convertName;
 import static com.akiban.sql.parser.ConstraintDefinitionNode.ConstraintType;
@@ -259,7 +261,6 @@ public class AlterTableDDL {
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<ColumnDefinitionNode>();
         List<ConstraintDefinitionNode> indexDefNodes = new ArrayList<ConstraintDefinitionNode>();
 
-        boolean primaryChanging = false;
         for(TableElementNode node : elementList) {
             switch(node.getNodeType()) {
                 case NodeTypes.COLUMN_DEFINITION_NODE: {
@@ -292,7 +293,6 @@ public class AlterTableDDL {
                         String name = cdn.getName();
                         switch(cdn.getVerifyType()) {
                             case PRIMARY_KEY:
-                                primaryChanging = true;
                                 name = Index.PRIMARY_KEY_CONSTRAINT;
                             break;
                             // TODO: Should add flags to AlterTableChange to avoid checks in multiple places
@@ -308,7 +308,7 @@ public class AlterTableDDL {
                         }
                         indexChanges.add(TableChange.createDrop(name));
                     } else {
-                        indexDefNodes.add((ConstraintDefinitionNode)node);
+                        indexDefNodes.add(cdn);
                     }
                 } break;
 
@@ -339,17 +339,9 @@ public class AlterTableDDL {
             assert cdn.getConstraintType() != ConstraintType.DROP;
             String name = TableDDL.addIndex(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName());
             indexChanges.add(TableChange.createAdd(name));
-            primaryChanging |= Index.PRIMARY_KEY_CONSTRAINT.equals(name);
         }
 
-        if(primaryChanging) {
-            for(Index index : tableCopy.getIndexes()) {
-                String name = index.getIndexName().getName();
-                if(!containsNewName(indexChanges, name)) {
-                    indexChanges.add(TableChange.createModify(name, name));
-                }
-            }
-        }
+        tableCopy.endTable();
 
         ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges);
         return true;
@@ -392,9 +384,6 @@ public class AlterTableDDL {
     }
 
     private static UserTable copyTable(UserTable origTable, List<TableChange> columnChanges, List<TableChange> indexChanges) {
-        AkibanInformationSchema ais = new AkibanInformationSchema();
-        UserTable tableCopy = UserTable.create(ais, origTable);
-
         for(TableChange change : columnChanges) {
             if(change.getChangeType() != ChangeType.ADD) {
                 checkColumnChange(origTable, change.getOldName());
@@ -404,6 +393,13 @@ public class AlterTableDDL {
         for(TableChange change : indexChanges) {
             checkIndexChange(origTable, change.getOldName(), change.getChangeType() == ChangeType.ADD);
         }
+
+        AkibanInformationSchema aisCopy = AISCloner.clone(origTable.getAIS(), new GroupSelector(origTable.getGroup()));
+        UserTable tableCopy = aisCopy.getUserTable(origTable.getName());
+
+        // Remove all and recreate (note: hidden PK and column are handled by DDL interface)
+        tableCopy.dropColumns();
+        tableCopy.removeIndexes(tableCopy.getIndexesIncludingInternal());
 
         int colPos = 0;
         for(Column origColumn : origTable.getColumns()) {
@@ -442,28 +438,7 @@ public class AlterTableDDL {
             }
         }
 
-        if(!indexesToDrop.isEmpty()) {
-            tableCopy.removeIndexes(indexesToDrop);
-        }
-
-        Join origJoin = origTable.getParentJoin();
-        if(origJoin != null) {
-            UserTable origParent = origJoin.getParent();
-            // Need just a stub, only need referenced columns
-            UserTable parentCopy = UserTable.create(ais, origParent);
-            Join joinCopy = Join.create(ais, origJoin.getName(), parentCopy, tableCopy);
-            for(JoinColumn origJoinCol : origJoin.getJoinColumns()) {
-                Column origParentCol = origParent.getColumn(origJoinCol.getParent().getName());
-                Column parentColCopy = Column.create(parentCopy, origParentCol, null);
-                JoinColumn.create(joinCopy, parentColCopy, tableCopy.getColumn(origJoinCol.getChild().getName()));
-            }
-
-            Group groupCopy = Group.create(ais, origParent.getGroup().getName());
-            parentCopy.setGroup(groupCopy);
-            tableCopy.setGroup(groupCopy);
-            joinCopy.setGroup(groupCopy);
-        }
-
+        tableCopy.removeIndexes(indexesToDrop);
         return tableCopy;
     }
 
@@ -534,5 +509,18 @@ public class AlterTableDDL {
             names = new String[0];
         }
         return names;
+    }
+
+    private static class GroupSelector extends ProtobufWriter.TableSelector {
+        private final Group group;
+
+        public GroupSelector(Group group) {
+            this.group = group;
+        }
+
+        @Override
+        public boolean isSelected(Columnar columnar) {
+            return columnar.isTable() && ((Table)columnar).getGroup() == group;
+        }
     }
 }

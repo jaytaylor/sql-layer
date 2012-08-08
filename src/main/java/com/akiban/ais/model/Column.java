@@ -703,8 +703,8 @@ public class Column implements ColumnContainer
     private final String columnName;
     private final Type type;
     private final Columnar table;
+    private final Integer position;
     private Boolean nullable;
-    private Integer position;
     private Long typeParameter1;
     private Long typeParameter2;
     private Long initialAutoIncrementValue;

@@ -500,6 +500,7 @@ public class AlterTableDDLTest {
     public void dropUniqueMiddleOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
         AISBuilder builder2 = new AISBuilder(builder.unvalidatedAIS());
+        builder2.setIndexIdOffset(10);
         builder2.index(SCHEMA, "o", "x", true, Index.UNIQUE_KEY_CONSTRAINT);
         builder2.indexColumn(SCHEMA, "o", "x", "o_o", 0, true, null);
         parseAndRun("ALTER TABLE o DROP UNIQUE x");
@@ -542,7 +543,8 @@ public class AlterTableDDLTest {
         builder.userTable(O_NAME).colBigInt("id", false).colBigInt("cid", true).joinTo(SCHEMA, "c", "fk").on("cid", "id");
         parseAndRun("ALTER TABLE o ADD PRIMARY KEY(id)");
         expectColumnChanges();
-        expectIndexChanges("ADD:PRIMARY", "MODIFY:__akiban_fk->__akiban_fk");
+        // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
+        expectIndexChanges("ADD:PRIMARY");
         if(Types3Switch.ON)
             expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "PRIMARY(id)", "join(cid->id)");
         else
@@ -579,7 +581,8 @@ public class AlterTableDDLTest {
                 "cid", "id");
         parseAndRun("ALTER TABLE o DROP PRIMARY KEY");
         expectColumnChanges();
-        expectIndexChanges("DROP:PRIMARY", "MODIFY:__akiban_fk->__akiban_fk");
+        // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
+        expectIndexChanges("DROP:PRIMARY");
         if(Types3Switch.ON)
             expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "join(cid->id)");
         else
@@ -592,7 +595,8 @@ public class AlterTableDDLTest {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE o DROP PRIMARY KEY");
         expectColumnChanges();
-        expectIndexChanges("DROP:PRIMARY", "MODIFY:__akiban_fk1->__akiban_fk1");
+        // Cascading changes due to PK (e.g. additional indexes) handled by lower layer
+        expectIndexChanges("DROP:PRIMARY");
         if(Types3Switch.ON)
              expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
                               "__akiban_fk1(cid)", "join(cid->id)");
@@ -618,7 +622,7 @@ public class AlterTableDDLTest {
 
     @Test(expected=UnsupportedCheckConstraintException.class)
     public void cannotDropCheckConstraint() throws StandardException {
-        builder.userTable(C_NAME).colBigInt("c1", false).uniqueKey("c1");
+        builder.userTable(C_NAME).colBigInt("c1", false).uniqueKey("c1", "c1");
         parseAndRun("ALTER TABLE c DROP CHECK c1");
     }
 
@@ -646,7 +650,7 @@ public class AlterTableDDLTest {
 
     @Test
     public void dropConstraintIsUnique() throws StandardException {
-        builder.userTable(C_NAME).colBigInt("c1", false).uniqueKey("c1");
+        builder.userTable(C_NAME).colBigInt("c1", false).uniqueKey("c1", "c1");
         parseAndRun("ALTER TABLE c DROP CONSTRAINT c1");
         if(Types3Switch.ON)
             expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
@@ -1010,7 +1014,7 @@ public class AlterTableDDLTest {
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
-        ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
+        ddlFunctions = new DDLFunctionsMock(builder.ais());
         AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
     }
 

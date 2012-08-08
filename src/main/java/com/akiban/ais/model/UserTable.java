@@ -73,6 +73,20 @@ public class UserTable extends Table
             primaryKey = new PrimaryKey(index);
         }
     }
+
+    @Override
+    public void dropColumns() {
+        columnsStale = true;
+        super.dropColumns();
+    }
+
+    @Override
+    public void removeIndexes(Collection<TableIndex> indexesToDrop) {
+        if((primaryKey != null) && indexesToDrop.contains(primaryKey.getIndex())) {
+            primaryKey = null;
+        }
+        super.removeIndexes(indexesToDrop);
+    }
     
     /**
     * Returns the columns in this table that are constrained to match the given column, e.g.
