@@ -49,7 +49,6 @@ public class SwingConsole extends JFrame implements WindowListener
     private JTextArea textArea;
     private PrintStream printStream;
     private final String[] RUN_PSQL_CMD;
-    private String PSQL_ARGS = null;
 
     public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
@@ -141,7 +140,7 @@ public class SwingConsole extends JFrame implements WindowListener
             int port = 15432;
             try
             {
-                port = this.serviceManager.getPostgresService().getPort();
+                    port = this.serviceManager.getPostgresService().getPort();
             }
             catch (Exception e)
             {
