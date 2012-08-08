@@ -30,6 +30,6 @@ public abstract class TAggregatorBase implements TAggregator {
 
     @Override
     public String id() {
-        return getClass().getCanonicalName();
+        return getClass().getName();
     }
 }
