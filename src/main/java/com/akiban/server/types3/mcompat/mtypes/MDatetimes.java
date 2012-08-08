@@ -405,8 +405,8 @@ public class MDatetimes
     public static String timeToString(int val)
     {
         int h  = (int)(val / DATETIME_HOUR_SCALE);
-        int m = (int)(val / DATETIME_MIN_SCALE);
-        int s = (int)val;
+        int m = (int)(val / DATETIME_MIN_SCALE) % 100;
+        int s = (int)val % 100;
         
         return String.format("%d:%02d:%02d", h, m, s);
     }
