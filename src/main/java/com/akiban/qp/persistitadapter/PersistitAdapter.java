@@ -306,12 +306,8 @@ public class PersistitAdapter extends StoreAdapter
 
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
     {
-        return
-            indexRowType.index().isTableIndex()
-            ? PersistitIndexRow.tableIndexRow(this, indexRowType)
-            : PersistitIndexRow.groupIndexRow(this, indexRowType);
+        return PersistitIndexRow.newIndexRow(this, indexRowType);
     }
-
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {
