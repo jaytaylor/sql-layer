@@ -126,12 +126,11 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
         }
         
         private double getShortestDistance(double arg1, double arg2, double X, double Y) {
-            if (arg1 == arg2) return Math.abs(Y);
-            else {
-                double wrapAroundX = Math.pow(UPPER_BOUND + (arg1 - arg2), 2.0);
-                double noWrapAroundX = Math.pow(X, 2.0);
-                return Math.sqrt(Math.min(wrapAroundX, noWrapAroundX) + Math.pow(Y, 2.0));
-            } 
+            double wrapAroundX, noWrapAroundX;
+            wrapAroundX = noWrapAroundX = Math.pow(X, 2.0);
+            if (arg1 < arg2) wrapAroundX = Math.pow(UPPER_BOUND - arg2 + arg1, 2.0);
+            else if (arg2 < arg1) wrapAroundX = Math.pow(UPPER_BOUND - arg1 + arg2, 2.0);
+            return Math.sqrt(Math.min(wrapAroundX, noWrapAroundX) + Math.pow(Y, 2.0));
         }
     }
     

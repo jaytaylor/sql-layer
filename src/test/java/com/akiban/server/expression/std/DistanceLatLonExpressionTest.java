@@ -124,6 +124,18 @@ public class DistanceLatLonExpressionTest {
         test(10.0, lst);
     }
     
+    @Test
+    public void testVy1() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(180), getDecimal(0), getDecimal(-180)));
+        test(0.0, lst); 
+    }
+    
+    @Test
+    public void testVy2() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(179), getDecimal(0), getDecimal(-180)));
+        test(1.0, lst);
+    }
+    
     private void test(double expected, List<Expression> lst) {
         Expression exp = new DistanceLatLonExpression(lst);
         
