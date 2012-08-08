@@ -78,6 +78,9 @@ public abstract class TClassBase extends TClass
     @Override
      public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
      {
-         parser.parse(context, in, out);
+         if (in.isNull())
+             out.putNull();
+         else
+            parser.parse(context, in, out);
      }
 }

@@ -37,6 +37,7 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 public class MSum implements TAggregator {
 
@@ -100,7 +101,10 @@ public class MSum implements TAggregator {
     
     @Override
     public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst) {
-        sumType.input(instance, source, stateType, state);
+        if (isFirst)
+            PValueTargets.copyFrom(source, state);
+        else
+            sumType.input(instance, source, stateType, state);
     }
 
     @Override
