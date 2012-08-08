@@ -362,14 +362,16 @@ public abstract class IndexCursor<S> implements Cursor
         this.exchange = iterationHelper.exchange();
         this.sortKeyAdapter = sortKeyAdapter;
         this.keyRange = keyRange;
-        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
-        int nColumns = indexColumns.size();
-        this.types = sortKeyAdapter.createAkTypes(nColumns);
-        this.collators = sortKeyAdapter.createAkCollators(nColumns);
-        this.tInstances = sortKeyAdapter.createTInstances(nColumns);
-        for (int f = 0; f < nColumns; f++) {
-            Column column = indexColumns.get(f).getColumn();
-            sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
+        if (keyRange != null) {
+            List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
+            int nColumns = indexColumns.size();
+            this.types = sortKeyAdapter.createAkTypes(nColumns);
+            this.collators = sortKeyAdapter.createAkCollators(nColumns);
+            this.tInstances = sortKeyAdapter.createTInstances(nColumns);
+            for (int f = 0; f < nColumns; f++) {
+                Column column = indexColumns.get(f).getColumn();
+                sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
+            }
         }
     }
 
