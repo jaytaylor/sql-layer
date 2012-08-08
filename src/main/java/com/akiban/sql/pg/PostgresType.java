@@ -463,7 +463,7 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             oid = TypeOid.VARCHAR_TYPE_OID.getOid();
             akType = AkType.VARCHAR;
-            tInstance = MString.VARCHAR.instance(type.getMaximumWidth());
+            tInstance = charType(type, MString.VARCHAR);
             break;
         case TypeId.FormatIds.CLOB_TYPE_ID:
             oid = TypeOid.TEXT_TYPE_OID.getOid();

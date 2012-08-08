@@ -93,18 +93,10 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
                     return NullValueSource.only();
             }
             
-            double x1, x2, y1, y2;
-            AkType type = children().get(0).eval().getConversionType();
-            switch (type) {
-                case DECIMAL: 
-                    y1 = inRange(children().get(0).eval().getDecimal().doubleValue(), -90, 90);
-                    x1 = inRange(children().get(1).eval().getDecimal().doubleValue(), -180, 180);
-                    y2 = inRange(children().get(2).eval().getDecimal().doubleValue(), -90, 90);
-                    x2 = inRange(children().get(3).eval().getDecimal().doubleValue(), -180, 180);
-                    break;
-                default:
-                        throw new InvalidArgumentTypeException("Type " + type + "is not supported in DISTANCE_LAT_LON");
-            }
+            double y1 = inRange(children().get(0).eval().getDecimal().doubleValue(), -90, 90);
+            double x1 = inRange(children().get(1).eval().getDecimal().doubleValue(), -180, 180);
+            double y2 = inRange(children().get(2).eval().getDecimal().doubleValue(), -90, 90);
+            double x2 = inRange(children().get(3).eval().getDecimal().doubleValue(), -180, 180);
             
             x1 = getShift(x1);
             x2 = getShift(x2);
@@ -126,12 +118,11 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
         }
         
         private double getShortestDistance(double arg1, double arg2, double X, double Y) {
-            if (arg1 == arg2) return Math.abs(Y);
-            else {
-                double wrapAroundX = Math.pow(UPPER_BOUND + (arg1 - arg2), 2.0);
-                double noWrapAroundX = Math.pow(X, 2.0);
-                return Math.sqrt(Math.min(wrapAroundX, noWrapAroundX) + Math.pow(Y, 2.0));
-            } 
+            double wrapAroundX, noWrapAroundX;
+            wrapAroundX = noWrapAroundX = Math.pow(X, 2.0);
+            if (arg1 < arg2) wrapAroundX = Math.pow(UPPER_BOUND - arg2 + arg1, 2.0);
+            else if (arg2 < arg1) wrapAroundX = Math.pow(UPPER_BOUND - arg1 + arg2, 2.0);
+            return Math.sqrt(Math.min(wrapAroundX, noWrapAroundX) + Math.pow(Y, 2.0));
         }
     }
     

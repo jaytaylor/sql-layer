@@ -379,14 +379,14 @@ public class MDatetimes
                 + dt.getSecondOfMinute();
     }
         
-    public static long encodeDatetime(long ymd[])
+    public static long encodeDatetime(long ymdHMS[])
     {
-        return ymd[YEAR_INDEX] * DATETIME_YEAR_SCALE 
-                + ymd[MONTH_INDEX] * DATETIME_MONTH_SCALE
-                + ymd[DAY_INDEX] * DATETIME_DAY_SCALE
-                + ymd[HOUR_INDEX] * DATETIME_HOUR_SCALE
-                + ymd[MIN_INDEX] * DATETIME_MIN_SCALE
-                + ymd[SEC_INDEX];
+        return ymdHMS[YEAR_INDEX] * DATETIME_YEAR_SCALE
+                + ymdHMS[MONTH_INDEX] * DATETIME_MONTH_SCALE
+                + ymdHMS[DAY_INDEX] * DATETIME_DAY_SCALE
+                + ymdHMS[HOUR_INDEX] * DATETIME_HOUR_SCALE
+                + ymdHMS[MIN_INDEX] * DATETIME_MIN_SCALE
+                + ymdHMS[SEC_INDEX];
     }
 
     public static long[] decodeDatetime (long val)

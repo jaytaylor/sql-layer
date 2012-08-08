@@ -26,10 +26,13 @@
 
 package com.akiban.server.types3.common;
 
+import com.akiban.server.rowdata.ConversionHelperBigDecimal;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.StringFactory;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 import java.math.BigDecimal;
@@ -81,9 +84,16 @@ public class NumericFormatter {
         BIGDECIMAL{
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-                BigDecimal num = ((BigDecimalWrapper) source.getObject()).asBigDecimal();
-                out.append(num.toString());
+                if (source.hasCacheValue()) {
+                    BigDecimal num = ((BigDecimalWrapper) source.getObject()).asBigDecimal();
+                    out.append(num.toString());
+                }
+                else {
+                    int precision = instance.attribute(Attrs.PRECISION);
+                    int scale = instance.attribute(Attrs.SCALE);
+                    ConversionHelperBigDecimal.decodeToString(source.getBytes(), 0, precision, scale, out);
+                }
             }
-        };
+        }
     }
 }
