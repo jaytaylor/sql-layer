@@ -68,11 +68,24 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 SORT_TRAVERSE.hit();
                 if (exchange.traverse(keyComparison, true)) {
                     next = row();
-                    if (pastEnd(next)) {
+                    // If we're scanning a unique key index, then the row format has the declared key in the
+                    // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
+                    // restrict the entire declared key and leading hkeys fields. If this happens, then the first
+                    // row found by exchange.traverse may actually not qualify -- those values may be lower than
+                    // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
+                    // past the startKey.
+                    if (!pastStart && beforeStart(next)) {
+                        next = null;
+                        if (exchange.traverse(subsequentKeyComparison, true)) {
+                            next = row();
+                            pastStart = true;
+                        } else {
+                            close();
+                        }
+                    }
+                    if (next != null && pastEnd(next)) {
                         next = null;
                         close();
-                    } else {
-                        keyComparison = subsequentKeyComparison;
                     }
                 } else {
                     close();
@@ -82,6 +95,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 adapter.handlePersistitException(e);
             }
         }
+        keyComparison = subsequentKeyComparison;
         return next;
     }
 
@@ -291,6 +305,19 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         }
     }
 
+    protected boolean beforeStart(Row row)
+    {
+        boolean beforeStart;
+        if (startKey == null) {
+            beforeStart = false;
+        } else {
+            PersistitIndexRow current = (PersistitIndexRow) row;
+            int c = current.compareTo(startKey) * direction;
+            beforeStart = c < 0 || c == 0 && !startInclusive;
+        }
+        return beforeStart;
+    }
+
     protected boolean pastEnd(Row row)
     {
         boolean pastEnd;
@@ -387,6 +414,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // scan may specify a value for both. But the persistit search can only deal with the [childPK] part of
             // the traversal.
             startKey.copyPersistitKeyTo(exchange.getKey());
+            pastStart = false;
         }
     }
 
@@ -449,5 +477,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected boolean endInclusive;
     protected PersistitIndexRow startKey;
     protected PersistitIndexRow endKey;
+    private boolean pastStart;
     private SortKeyAdapter<S, ?> sortKeyAdapter;
 }

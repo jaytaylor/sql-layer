@@ -81,15 +81,60 @@ public class IndexScanNonRootPKIT extends OperatorITBase
     // Inspired by bug 1033754
 
     @Test
-    public void testBindPKAndValue()
+    public void testAtChildAtParent()
     {
-        IndexBound bound = new IndexBound(row(childPKRowType, 11L, 1L), new SetColumnSelector(0, 1));
-        IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, bound, true, bound, true);
-        API.Ordering ordering = new API.Ordering();
-        ordering.append(Expressions.field(childPKRowType, 0), true);
-        ordering.append(Expressions.field(childPKRowType, 1), true);
-        Operator plan = indexScan_Default(childPKRowType, range, ordering);
-        dump(plan);
+        long[] childPKs = new long[]{11, 12, 21, 22};
+        for (long childPK : childPKs) {
+            long parentPK = childPK / 10;
+            IndexBound bound = new IndexBound(row(childPKRowType, childPK, parentPK), new SetColumnSelector(0, 1));
+            IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, bound, true, bound, true);
+            API.Ordering ordering = new API.Ordering();
+            ordering.append(Expressions.field(childPKRowType, 0), true);
+            ordering.append(Expressions.field(childPKRowType, 1), true);
+            Operator plan = indexScan_Default(childPKRowType, range, ordering);
+            RowBase[] expected = new RowBase[] {
+                row(childRowType, childPK, parentPK),
+            };
+            compareRows(expected, cursor(plan, queryContext));
+        }
+    }
+
+    @Test
+    public void testAtChildAfterParent()
+    {
+        long[] childPKs = new long[]{11, 12, 21, 22};
+        for (long childPK : childPKs) {
+            long parentPK = childPK / 10;
+            IndexBound bound = new IndexBound(row(childPKRowType, childPK, parentPK + 1), new SetColumnSelector(0, 1));
+            IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, bound, true, bound, true);
+            API.Ordering ordering = new API.Ordering();
+            ordering.append(Expressions.field(childPKRowType, 0), true);
+            ordering.append(Expressions.field(childPKRowType, 1), true);
+            Operator plan = indexScan_Default(childPKRowType, range, ordering);
+            RowBase[] expected = new RowBase[] {
+            };
+            compareRows(expected, cursor(plan, queryContext));
+        }
+    }
+
+    @Test
+    public void testAtChildBeforeParent()
+    {
+        long[] childPKs = new long[]{11, 12, 21, 22};
+        for (long childPK : childPKs) {
+            long parentPK = childPK / 10;
+            IndexBound loBound = new IndexBound(row(childPKRowType, childPK, parentPK - 1), new SetColumnSelector(0, 1));
+            IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK), new SetColumnSelector(0, 1));
+            IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
+            API.Ordering ordering = new API.Ordering();
+            ordering.append(Expressions.field(childPKRowType, 0), true);
+            ordering.append(Expressions.field(childPKRowType, 1), true);
+            Operator plan = indexScan_Default(childPKRowType, range, ordering);
+            RowBase[] expected = new RowBase[] {
+                row(childRowType, childPK, parentPK),
+            };
+            compareRows(expected, cursor(plan, queryContext));
+        }
     }
 
     private int parent;
