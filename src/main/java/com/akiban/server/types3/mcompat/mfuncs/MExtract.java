@@ -102,8 +102,8 @@ public abstract class MExtract extends TOverloadBase
         };
     }
     
-    private TClass type;
-    private String name;
+    private final TClass type;
+    private final String name;
     
     private MExtract (TClass ret, String name)
     {
