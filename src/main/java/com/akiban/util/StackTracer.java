@@ -26,36 +26,31 @@
 
 package com.akiban.util;
 
-import java.util.Arrays;
+import java.util.AbstractList;
 
 /**
  * Utility class for seeing stack traces. Basically a thin shim around <tt>Thread.currentThread().getStackTrace()</tt>
- * with a nice toString. Put one of these as a field in a class, and you'll be able to see where its instances come
- * from.
+ * that looks like a {@code List&lt;StackTraceElement&gt;}. Put one of these as a field in a class, and you'll be able
+ * to see where its instances come from.
  */
-public final class StackTracer {
-
-    @Override
-    public String toString() {
-        return Strings.join(trace);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        StackTracer that = (StackTracer) o;
-
-        return Arrays.equals(trace, that.trace);
-
-    }
+public final class StackTracer extends AbstractList<StackTraceElement> {
 
     public StackTracer() {
-        // trim off the top two of the stack, which are getStackTrace and this constructor
-        StackTraceElement[] fullTrace = Thread.currentThread().getStackTrace();
-        this.trace = Arrays.copyOfRange(fullTrace, 2, fullTrace.length);
+        this.trace = Thread.currentThread().getStackTrace();
+    }
+
+    // AbstractList methods
+
+    @Override
+    public StackTraceElement get(int index) {
+        return trace[index + TRIM];
+    }
+
+    @Override
+    public int size() {
+        return trace.length - TRIM;
     }
 
     private final StackTraceElement[] trace;
+    private static final int TRIM = 2; // trim off the top two of the stack, which are getStackTrace and constructor
 }
