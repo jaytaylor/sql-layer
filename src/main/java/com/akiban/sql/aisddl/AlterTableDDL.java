@@ -49,6 +49,7 @@ import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
 import com.akiban.server.error.ProtectedIndexException;
@@ -258,6 +259,7 @@ public class AlterTableDDL {
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<ColumnDefinitionNode>();
         List<ConstraintDefinitionNode> indexDefNodes = new ArrayList<ConstraintDefinitionNode>();
 
+        boolean primaryChanging = false;
         for(TableElementNode node : elementList) {
             switch(node.getNodeType()) {
                 case NodeTypes.COLUMN_DEFINITION_NODE: {
@@ -290,6 +292,7 @@ public class AlterTableDDL {
                         String name = cdn.getName();
                         switch(cdn.getVerifyType()) {
                             case PRIMARY_KEY:
+                                primaryChanging = true;
                                 name = Index.PRIMARY_KEY_CONSTRAINT;
                             break;
                             // TODO: Should add flags to AlterTableChange to avoid checks in multiple places
@@ -335,8 +338,17 @@ public class AlterTableDDL {
         for(ConstraintDefinitionNode cdn : indexDefNodes) {
             assert cdn.getConstraintType() != ConstraintType.DROP;
             String name = TableDDL.addIndex(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName());
-            checkIndexChange(table, name, true);
             indexChanges.add(TableChange.createAdd(name));
+            primaryChanging |= Index.PRIMARY_KEY_CONSTRAINT.equals(name);
+        }
+
+        if(primaryChanging) {
+            for(Index index : tableCopy.getIndexes()) {
+                String name = index.getIndexName().getName();
+                if(!containsNewName(indexChanges, name)) {
+                    indexChanges.add(TableChange.createModify(name, name));
+                }
+            }
         }
 
         ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges);
@@ -347,15 +359,6 @@ public class AlterTableDDL {
         Column column = table.getColumn(columnName);
         if(column == null) {
             throw new NoSuchColumnException(columnName);
-        }
-        // Reject PK changes until supported
-        PrimaryKey pk = table.getPrimaryKey();
-        if(pk != null) {
-            for(IndexColumn indexColumn : pk.getIndex().getKeyColumns()) {
-                if(columnName.equals(indexColumn.getColumn().getName())) {
-                    throw new UnsupportedSQLException(String.format(GROUP_CHANGE_ERROR_MSG, columnName, table.getName()), null);
-                }
-            }
         }
         // Reject until automatic grouping changes supported
         Join join = table.getParentJoin();
@@ -369,12 +372,13 @@ public class AlterTableDDL {
     }
 
     private static void checkIndexChange(UserTable table, String indexName, boolean isNew) {
-        if(Index.PRIMARY_KEY_CONSTRAINT.equals(indexName)) {
-            throw new ProtectedIndexException(indexName, table.getName());
-        }
         Index index = table.getIndex(indexName);
         if(index == null && !isNew) {
-            throw new NoSuchUniqueException(table.getName(), indexName);
+            if(Index.PRIMARY_KEY_CONSTRAINT.equals(indexName)) {
+                throw new NoSuchIndexException(indexName);
+            } else {
+                throw new NoSuchUniqueException(table.getName(), indexName);
+            }
         }
     }
 
@@ -461,6 +465,15 @@ public class AlterTableDDL {
         }
 
         return tableCopy;
+    }
+
+    private static boolean containsNewName(List<TableChange> changes, String name) {
+        for(TableChange change : changes) {
+            if(name.equals(change.getNewName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static FKConstraintDefinitionNode getOnlyAddGFKNode(AlterTableNode node) {

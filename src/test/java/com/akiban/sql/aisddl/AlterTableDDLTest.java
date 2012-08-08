@@ -46,6 +46,7 @@ import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
 import com.akiban.server.error.ProtectedIndexException;
@@ -214,16 +215,21 @@ public class AlterTableDDLTest {
 
     // TODO: Remove when implemented
     @Test(expected=UnsupportedSQLException.class)
-    public void cannotDropColumnPKColumn() throws StandardException {
-        builder.userTable(A_NAME).colBigInt("aid", false).colBigInt("x").pk("aid");
-        parseAndRun("ALTER TABLE a DROP COLUMN aid");
-    }
-
-    // TODO: Remove when implemented
-    @Test(expected=UnsupportedSQLException.class)
     public void cannotDropColumnGroupingColumn() throws StandardException {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE i DROP COLUMN oid");
+    }
+
+    @Test
+    public void dropColumnPKColumn() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).colBigInt("x", true).pk("aid");
+        parseAndRun("ALTER TABLE a DROP COLUMN aid");
+        expectColumnChanges("DROP:aid");
+        expectIndexChanges("DROP:PRIMARY");
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "x MCOMPAT_ BIGINT(21)");
+        else
+            expectFinalTable(A_NAME, "x bigint NULL");
     }
 
     @Test
@@ -325,16 +331,21 @@ public class AlterTableDDLTest {
 
     // TODO: Remove when implemented
     @Test(expected=UnsupportedSQLException.class)
-    public void cannotAlterColumnPKColumn() throws StandardException {
-        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
-        parseAndRun("ALTER TABLE a ALTER COLUMN aid SET DATA TYPE INT");
-    }
-
-    // TODO: Remove when implemented
-    @Test(expected=UnsupportedSQLException.class)
     public void cannotAlterColumnGroupingColumn() throws StandardException {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE i DROP COLUMN oid");
+    }
+
+    @Test
+    public void alterColumnPKColumnSingleTableGroup() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
+        parseAndRun("ALTER TABLE a ALTER COLUMN aid SET DATA TYPE INT");
+        expectColumnChanges("MODIFY:aid->aid");
+        expectIndexChanges("MODIFY:PRIMARY->PRIMARY");
+        if(Types3Switch.ON)
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "PRIMARY(aid)");
+        else
+            expectFinalTable(A_NAME, "aid int NOT NULL", "PRIMARY(aid)");
     }
 
     @Test
@@ -507,34 +518,72 @@ public class AlterTableDDLTest {
     // ADD [CONSTRAINT] PRIMARY KEY
     //
 
-    @Test(expected=ProtectedIndexException.class)
-    public void cannotAddPrimaryKeySingleTableGroupNoPK() throws StandardException {
-        builder.userTable(C_NAME).colBigInt("c1", false);
-        parseAndRun("ALTER TABLE c ADD PRIMARY KEY(c1)");
-    }
-
     @Test(expected=DuplicateIndexException.class)
     public void cannotAddPrimaryKeyAnotherPK() throws StandardException {
         builder.userTable(C_NAME).colBigInt("c1", false).pk("c1");
         parseAndRun("ALTER TABLE c ADD PRIMARY KEY(c1)");
     }
 
+    @Test
+    public void addPrimaryKeySingleTableGroupNoPK() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ADD PRIMARY KEY(c1)");
+        expectColumnChanges();
+        expectIndexChanges("ADD:PRIMARY");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(c1)");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL", "PRIMARY(c1)");
+    }
+
+    @Test
+    public void addPrimaryKeyLeafTableTwoTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("c_c", true).pk("id");
+        builder.userTable(O_NAME).colBigInt("id", false).colBigInt("cid", true).joinTo(SCHEMA, "c", "fk").on("cid", "id");
+        parseAndRun("ALTER TABLE o ADD PRIMARY KEY(id)");
+        expectColumnChanges();
+        expectIndexChanges("ADD:PRIMARY", "MODIFY:__akiban_fk->__akiban_fk");
+        if(Types3Switch.ON)
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "PRIMARY(id)", "join(cid->id)");
+        else
+            expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "__akiban_fk(cid)", "PRIMARY(id)", "join(cid->id)");
+        expectUnchangedTables(C_NAME);
+    }
+
     //
     // DROP PRIMARY KEY
     //
 
-    // TODO: Update when supported
-    @Test(expected=ProtectedIndexException.class)
+    @Test(expected=NoSuchIndexException.class)
     public void cannotDropPrimaryKeySingleTableGroupNoPK() throws StandardException {
         builder.userTable(C_NAME).colBigInt("c1", false);
         parseAndRun("ALTER TABLE c DROP PRIMARY KEY");
     }
 
-    // TODO: Update when supported
-    @Test(expected=ProtectedIndexException.class)
-    public void cannotDropPrimaryKeySingleTableGroup() throws StandardException {
+    @Test
+    public void dropPrimaryKeySingleTableGroup() throws StandardException {
         builder.userTable(C_NAME).colBigInt("c1", false).pk("c1");
         parseAndRun("ALTER TABLE c DROP PRIMARY KEY");
+        expectColumnChanges();
+        expectIndexChanges("DROP:PRIMARY");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL");
+    }
+
+    @Test
+    public void dropPrimaryKeyLeafTableTwoTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("c_c", true).pk("id");
+        builder.userTable(O_NAME).colBigInt("id", false).colBigInt("cid", true).pk("id").joinTo(SCHEMA, "c", "fk").on("cid", "id");
+        parseAndRun("ALTER TABLE o DROP PRIMARY KEY");
+        expectColumnChanges();
+        expectIndexChanges("DROP:PRIMARY", "MODIFY:__akiban_fk->__akiban_fk");
+        if(Types3Switch.ON)
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "__akiban_fk(cid)", "join(cid->id)");
+        else
+            expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "__akiban_fk(cid)", "join(cid->id)");
+        expectUnchangedTables(C_NAME);
     }
 
     //
@@ -561,16 +610,22 @@ public class AlterTableDDLTest {
     // DROP CONSTRAINT
     //
 
-    @Test(expected=ProtectedIndexException.class)
-    public void cannotDropConstraintIsPrimaryKey() throws StandardException {
-        builder.userTable(C_NAME).colBigInt("c1", false).pk("c1");
-        parseAndRun("ALTER TABLE c DROP CONSTRAINT \"PRIMARY\"");
-    }
-
     @Test(expected=NoSuchUniqueException.class)
     public void cannotDropConstraintRegularIndex() throws StandardException {
         builder.userTable(C_NAME).colBigInt("c1", false).key("c1", "c1");
         parseAndRun("ALTER TABLE c DROP CONSTRAINT c1");
+    }
+
+    @Test
+    public void dropConstraintIsPrimaryKey() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).pk("c1");
+        parseAndRun("ALTER TABLE c DROP CONSTRAINT \"PRIMARY\"");
+        expectColumnChanges();
+        expectIndexChanges("DROP:PRIMARY");
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL");
     }
 
     @Test
