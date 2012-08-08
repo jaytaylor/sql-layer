@@ -27,6 +27,7 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -41,6 +42,8 @@ import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.Math.min;
 
 class IndexCursorMixedOrder<S,E> extends IndexCursor
 {
@@ -134,7 +137,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     public void initializeScanStates() throws PersistitException
     {
         int f = 0;
-        while (f < boundColumns) {
+        // Use maxSegments to limit MixedOrderScanStates to just those corresponding to the columns
+        // stored in a Persistit key. The off-by-one-row problems due to columns in the Persistit value
+        // are dealt with in IndexCursorMixedOrder.
+        int maxSegments = index().isUnique() ? index().getKeyColumns().size() : index().getAllColumns().size();
+        while (f < min(boundColumns, maxSegments)) {
             BoundExpressions lo = keyRange.lo().boundExpressions(context);
             BoundExpressions hi = keyRange.hi().boundExpressions(context);
             S loSource = sortKeyAdapter.get(lo, f);
@@ -188,13 +195,13 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             scanStates.add(scanState);
             f++;
         }
-        while (f < orderingColumns()) {
+        while (f < min(orderingColumns(), maxSegments)) {
             MixedOrderScanStateSingleSegment<S, E> scanState =
                 new MixedOrderScanStateSingleSegment<S, E>(this, f, sortKeyAdapter);
             scanStates.add(scanState);
             f++;
         }
-        if (f < keyColumns()) {
+        if (f < min(keyColumns(), maxSegments)) {
             MixedOrderScanStateRemainingSegments<S> scanState =
                 new MixedOrderScanStateRemainingSegments<S>(this, orderingColumns());
             scanStates.add(scanState);
@@ -295,6 +302,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private MixedOrderScanStateSingleSegment scanState(int field)
     {
         return (MixedOrderScanStateSingleSegment) scanStates.get(field);
+    }
+
+    private Index index()
+    {
+        return keyRange.indexRowType().index();
     }
 
     public AkCollator collatorAt(int field) {
