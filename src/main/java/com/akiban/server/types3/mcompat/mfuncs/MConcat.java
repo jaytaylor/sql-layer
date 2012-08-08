@@ -94,6 +94,11 @@ public class MConcat extends TOverloadBase {
     }
 
     @Override
+    public String[] registeredNames() {
+        return new String[] { "concatenate", "concat" };
+    }
+
+    @Override
     public TOverloadResult resultType() {
         return TOverloadResult.custom(new TCustomOverloadResult() {
             @Override
