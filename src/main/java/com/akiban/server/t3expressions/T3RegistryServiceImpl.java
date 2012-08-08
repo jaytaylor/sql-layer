@@ -620,12 +620,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
                 Map<String,String> overloadDescriptions = new TreeMap<String, String>();
                 int idSuffix = 1;
                 for (T overload : overloads) {
-                    String origId = overload.id();
-                    String overloadId = origId;
-                    while (overloadDescriptions.containsKey(overloadId))
-                        overloadId = origId + Integer.toString(idSuffix++); // don't care about efficiency
-                    String overloadDescription = String.valueOf(format.apply(overload));
-                    overloadDescriptions.put(overloadId, overloadDescription);
+                    final String overloadId = overload.id();
+                    final String origDescription = String.valueOf(format.apply(overload));
+                    String overloadDescription = origDescription;
+
+                    // We don't care about efficiency in this loop, so let's keep the code simple
+                    while (overloadDescriptions.containsKey(overloadDescription)) {
+                        overloadDescription = origDescription + " [" + Integer.toString(idSuffix++) + ']';
+                    }
+                    overloadDescriptions.put(overloadDescription, overloadId);
                 }
                 result.put(entry.getKey(), overloadDescriptions);
             }

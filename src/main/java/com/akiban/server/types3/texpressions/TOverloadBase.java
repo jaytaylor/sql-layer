@@ -94,7 +94,7 @@ public abstract class TOverloadBase implements TOverload {
 
     @Override
     public String id() {
-        return getClass().getCanonicalName();
+        return getClass().getName();
     }
 
     @Override
