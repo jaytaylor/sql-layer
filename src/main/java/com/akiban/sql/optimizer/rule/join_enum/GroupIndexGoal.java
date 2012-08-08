@@ -882,6 +882,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             else {
                 continue;
             }
+            if (mightFlatten(outside)) {
+                continue;       // Lookup_Nested won't be allowed.
+            }
             GroupLoopScan forJoin = new GroupLoopScan(inside, outside, insideIsParent,
                                                       join.getConditions());
             determineRequiredTables(forJoin);
@@ -900,6 +903,18 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         return bestScan;
+    }
+
+    private boolean mightFlatten(TableSource table) {
+        if (!(table.getOutput() instanceof TableGroupJoinTree))
+            return true;        // Don't know; be conservative.
+        TableGroupJoinTree tree = (TableGroupJoinTree)table.getOutput();
+        TableGroupJoinNode root = tree.getRoot();
+        if (root.getTable() != table)
+            return true;
+        if (root.getFirstChild() != null)
+            return true;
+        return false;           // Only table in this join tree, shouldn't flatten.
     }
 
     public int compare(BaseScan i1, BaseScan i2) {
