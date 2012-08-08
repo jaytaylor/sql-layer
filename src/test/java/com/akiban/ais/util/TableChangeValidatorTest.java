@@ -29,12 +29,16 @@ package com.akiban.ais.util;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import org.junit.Test;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
@@ -42,12 +46,15 @@ import static com.akiban.ais.util.TableChangeValidatorException.*;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class TableChangeValidatorTest {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
     private static final List<TableChange> NO_CHANGES = null;
+    private static final Collection<TableName> NO_CHILD_CHANGE = Collections.emptySet();
+    private static final Collection<IndexName> NO_INDEX_CHANGE = Collections.emptySet();
 
 
     private static NewUserTableBuilder builder(TableName name) {
@@ -69,18 +76,26 @@ public class TableChangeValidatorTest {
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
                                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
                                                  ChangeLevel expectedChangeLevel) {
-        return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel, false, false);
+        return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel,
+                        false, false, NO_CHILD_CHANGE, NO_INDEX_CHANGE, NO_INDEX_CHANGE);
     }
 
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
                                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
                                                  ChangeLevel expectedChangeLevel,
-                                                 boolean expectedParentChange, boolean expectedChildChange) {
+                                                 boolean expectedParentChange,
+                                                 boolean expectedPrimaryKeyChange,
+                                                 Collection<TableName> expectedAutoChildChange,
+                                                 Collection<IndexName> expectedAutoTableIndexChange,
+                                                 Collection<IndexName> expectedAutoGroupIndexChange) {
         TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
         validator.compareAndThrowIfNecessary();
         assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
-        assertEquals("Parent changed", expectedParentChange, validator.didParentChange());
-        assertEquals("Children changed", expectedChildChange, validator.didChildrenChange());
+        assertEquals("Parent changed", expectedParentChange, validator.isParentChanged());
+        assertEquals("Primary key changed", expectedPrimaryKeyChange, validator.isPrimaryKeyChanged());
+        assertEquals("Auto changed children", expectedAutoChildChange.toString(), validator.getAutoAffectedChildren().toString());
+        assertEquals("Auto table index changes", expectedAutoTableIndexChange.toString(), validator.getAutoAffectedTableIndexes().toString());
+        assertEquals("Auto group index changes", expectedAutoGroupIndexChange.toString(), validator.getAutoAffectedGroupIndexes().toString());
         return validator;
     }
 
@@ -293,27 +308,28 @@ public class TableChangeValidatorTest {
     //
 
     @Test
-    public void modifyPKColumnType() {
+    public void modifyPKColumnTypeSingleTableGroup() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colString("id", 32).pk("id"));
         validate(t1, t2,
                  asList(TableChange.createModify("id", "id")),
                  asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
-                 ChangeLevel.GROUP, false, true);
+                 ChangeLevel.GROUP,
+                 false, true, NO_CHILD_CHANGE, NO_INDEX_CHANGE, NO_INDEX_CHANGE);
     }
 
     @Test
-    public void dropPrimaryKey() {
+    public void dropPrimaryKeySingleTableGroup() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id"));
         validate(t1, t2,
-                 asList(TableChange.createAdd(Column.AKIBAN_PK_NAME)),
-                 asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
-                 ChangeLevel.GROUP, false, true);
+                 NO_CHANGES,
+                 asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                 ChangeLevel.GROUP, false, true, NO_CHILD_CHANGE, NO_INDEX_CHANGE, NO_INDEX_CHANGE);
     }
 
     @Test
-    public void dropParentJoin() {
+    public void dropParentJoinTwoTableGroup() {
         TableName parentName = new TableName(SCHEMA, "parent");
         UserTable t1 = table(
                 builder(parentName).colLong("id").pk("id").
@@ -324,7 +340,35 @@ public class TableChangeValidatorTest {
         validate(t1, t2,
                  NO_CHANGES,
                  asList(TableChange.createDrop("__akiban_fk")),
-                 ChangeLevel.GROUP, true, false);
+                 ChangeLevel.GROUP, true, false, NO_CHILD_CHANGE, NO_INDEX_CHANGE, NO_INDEX_CHANGE);
+    }
+
+    @Test
+    public void dropPrimaryKeyMiddleOfGroup() {
+        TableName cName = new TableName(SCHEMA, "c");
+        TableName oName = new TableName(SCHEMA, "o");
+        TableName iName = new TableName(SCHEMA, "i");
+        NewAISBuilder builder1 = AISBBasedBuilder.create();
+        builder1.userTable(cName).colBigInt("id", false).pk("id")
+                .userTable(oName).colBigInt("id", false).colBigInt("cid", true).pk("id").joinTo(SCHEMA, "c", "fk1").on("cid", "id")
+                .userTable(iName).colBigInt("id", false).colBigInt("oid", true).pk("id").joinTo(SCHEMA, "o", "fk2").on("oid", "id");
+        NewAISBuilder builder2 = AISBBasedBuilder.create();
+        builder2.userTable(cName).colBigInt("id", false).pk("id")
+                .userTable(oName).colBigInt("id", false).colBigInt("cid", true).joinTo(SCHEMA, "c", "fk1").on("cid", "id")
+                .userTable(iName).colBigInt("id", false).colBigInt("oid", true).pk("id").joinTo(SCHEMA, "o", "fk2").on("oid", "id");
+        UserTable t1 = builder1.unvalidatedAIS().getUserTable(oName);
+        UserTable t2 = builder2.unvalidatedAIS().getUserTable(oName);
+        validate(
+                t1, t2,
+                NO_CHANGES,
+                asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
+                ChangeLevel.GROUP,
+                false,
+                true,
+                asList(iName),
+                asList(new IndexName(iName, "PRIMARY"), new IndexName(iName, "__akiban_fk2"), new IndexName(oName, "__akiban_fk1")),
+                NO_INDEX_CHANGE
+        );
     }
 
     //

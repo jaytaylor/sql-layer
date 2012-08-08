@@ -292,6 +292,24 @@ public class UserTable extends Table
         }
     }
 
+    public void traverseTableAndDescendents(Visitor visitor) {
+        List<UserTable> remainingTables = new ArrayList<UserTable>();
+        List<Join> remainingJoins = new ArrayList<Join>();
+        remainingTables.add(this);
+        remainingJoins.addAll(getChildJoins());
+        // Add before visit in-case visitor changes group or joins
+        while(!remainingJoins.isEmpty()) {
+            Join join = remainingJoins.remove(remainingJoins.size() - 1);
+            UserTable child = join.getChild();
+            remainingTables.add(child);
+            remainingJoins.addAll(child.getChildJoins());
+        }
+        while(!remainingTables.isEmpty()) {
+            UserTable table = remainingTables.remove(remainingTables.size() - 1);
+            visitor.visitUserTable(table);
+        }
+    }
+
     public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
     {
         for (Column column : getColumns()) {
