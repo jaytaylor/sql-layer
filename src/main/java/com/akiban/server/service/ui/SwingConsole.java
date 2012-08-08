@@ -37,6 +37,8 @@ import javax.swing.text.*;
 
 import java.net.URL;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class SwingConsole extends JFrame implements WindowListener 
 {
@@ -136,7 +138,18 @@ public class SwingConsole extends JFrame implements WindowListener
             runPsql.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6,
                                                           shift));
 
-            int port = this.serviceManager.getPostgresService().getPort();
+            int port = 15432;
+            try
+            {
+                port = this.serviceManager.getPostgresService().getPort();
+            }
+            catch (Exception e)
+            {
+                StringWriter errors = new StringWriter();
+                e.printStackTrace(new PrintWriter(errors));
+                textArea.append("\n" + errors.toString());
+            }
+
             if (macOSX)
                 RUN_PSQL_CMD = new String[] { "osascript", "-e",
                                               "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p" + port + "\"\n end tell" };
