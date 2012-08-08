@@ -37,15 +37,19 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.ais.util.TableChangeValidatorException.*;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TableChangeValidatorTest {
@@ -53,7 +57,6 @@ public class TableChangeValidatorTest {
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
     private static final List<TableChange> NO_CHANGES = null;
-    private static final Collection<TableName> NO_CHILD_CHANGE = Collections.emptySet();
     private static final Collection<IndexName> NO_INDEX_CHANGE = Collections.emptySet();
 
 
@@ -77,26 +80,46 @@ public class TableChangeValidatorTest {
                                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
                                                  ChangeLevel expectedChangeLevel) {
         return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel,
-                        false, false, NO_CHILD_CHANGE, NO_INDEX_CHANGE, NO_INDEX_CHANGE);
+                        asList(changeDesc(TABLE_NAME, TABLE_NAME, false, "PRIMARY", "PRIMARY")),
+                        false, false, NO_INDEX_CHANGE);
     }
 
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
                                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
                                                  ChangeLevel expectedChangeLevel,
+                                                 List<String> expectedChangedTables) {
+        return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel,
+                        expectedChangedTables,
+                        false, false, NO_INDEX_CHANGE);
+    }
+    private static TableChangeValidator validate(UserTable t1, UserTable t2,
+                                                 List<TableChange> columnChanges, List<TableChange> indexChanges,
+                                                 ChangeLevel expectedChangeLevel,
+                                                 List<String> expectedChangedTables,
                                                  boolean expectedParentChange,
                                                  boolean expectedPrimaryKeyChange,
-                                                 Collection<TableName> expectedAutoChildChange,
-                                                 Collection<IndexName> expectedAutoTableIndexChange,
                                                  Collection<IndexName> expectedAutoGroupIndexChange) {
         TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
         validator.compareAndThrowIfNecessary();
         assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
         assertEquals("Parent changed", expectedParentChange, validator.isParentChanged());
         assertEquals("Primary key changed", expectedPrimaryKeyChange, validator.isPrimaryKeyChanged());
-        assertEquals("Auto changed children", expectedAutoChildChange.toString(), validator.getAutoAffectedChildren().toString());
-        assertEquals("Auto table index changes", expectedAutoTableIndexChange.toString(), validator.getAutoAffectedTableIndexes().toString());
+        assertEquals("Changed tables", expectedChangedTables.toString(), validator.getAllChangedTables().toString());
         assertEquals("Auto group index changes", expectedAutoGroupIndexChange.toString(), validator.getAutoAffectedGroupIndexes().toString());
         return validator;
+    }
+
+    private static Map<String,String> map(String... pairs) {
+        assertTrue("Even number of pairs", (pairs.length % 2) == 0);
+        Map<String,String> map = new TreeMap<String, String>();
+        for(int i = 0; i < pairs.length; i += 2) {
+            map.put(pairs[i], pairs[i+1]);
+        }
+        return map;
+    }
+
+    private static String changeDesc(TableName oldName, TableName newName, boolean newGroup, String... indexPairs) {
+        return ChangedTableDescription.toString(oldName, newName, newGroup, map(indexPairs));
     }
 
 
@@ -122,7 +145,8 @@ public class TableChangeValidatorTest {
         TableName name2 = new TableName("x", "y");
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(name2).colBigInt("id").pk("id"));
-        validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA,
+                 asList(changeDesc(TABLE_NAME, name2, false, "PRIMARY", "PRIMARY")));
     }
 
     //
@@ -315,7 +339,8 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createModify("id", "id")),
                  asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
-                 false, true, NO_CHILD_CHANGE, NO_INDEX_CHANGE, NO_INDEX_CHANGE);
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false)),
+                 false, true, NO_INDEX_CHANGE);
     }
 
     @Test
@@ -325,7 +350,9 @@ public class TableChangeValidatorTest {
         validate(t1, t2,
                  NO_CHANGES,
                  asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
-                 ChangeLevel.GROUP, false, true, NO_CHILD_CHANGE, NO_INDEX_CHANGE, NO_INDEX_CHANGE);
+                 ChangeLevel.GROUP,
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false)),
+                 false, true, NO_INDEX_CHANGE);
     }
 
     @Test
@@ -340,7 +367,9 @@ public class TableChangeValidatorTest {
         validate(t1, t2,
                  NO_CHANGES,
                  asList(TableChange.createDrop("__akiban_fk")),
-                 ChangeLevel.GROUP, true, false, NO_CHILD_CHANGE, NO_INDEX_CHANGE, NO_INDEX_CHANGE);
+                 ChangeLevel.GROUP,
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, true)),
+                 true, false, NO_INDEX_CHANGE);
     }
 
     @Test
@@ -363,10 +392,12 @@ public class TableChangeValidatorTest {
                 NO_CHANGES,
                 asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
                 ChangeLevel.GROUP,
+                asList(
+                        changeDesc(oName, oName, false),
+                        changeDesc(iName, iName, true)
+                ),
                 false,
                 true,
-                asList(iName),
-                asList(new IndexName(iName, "PRIMARY"), new IndexName(iName, "__akiban_fk2"), new IndexName(oName, "__akiban_fk1")),
                 NO_INDEX_CHANGE
         );
     }
@@ -388,9 +419,12 @@ public class TableChangeValidatorTest {
                 key("d", "d").key("l", "l").uniqueKey("k", "l", "d").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colDouble("d").colVarBinary("v", 32).colString("s", 64).
                 key("d", "d").key("v", "v").uniqueKey("k", "v", "d").pk("id"));
-        validate(t1, t2,
-                 asList(TableChange.createDrop("l"), TableChange.createModify("s", "s"), TableChange.createAdd("v")),
-                 asList(TableChange.createDrop("l"), TableChange.createAdd("v"), TableChange.createModify("k", "k")),
-                 ChangeLevel.TABLE);
+        validate(
+                t1, t2,
+                asList(TableChange.createDrop("l"), TableChange.createModify("s", "s"), TableChange.createAdd("v")),
+                asList(TableChange.createDrop("l"), TableChange.createAdd("v"), TableChange.createModify("k", "k")),
+                ChangeLevel.TABLE,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, "PRIMARY", "PRIMARY", "d", "d"))
+        );
     }
 }

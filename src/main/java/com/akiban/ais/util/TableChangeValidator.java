@@ -51,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static com.akiban.ais.util.TableChangeValidatorException.*;
@@ -70,8 +71,7 @@ public class TableChangeValidator {
     private final List<TableChange> columnChanges;
     private final List<TableChange> indexChanges;
     private final List<RuntimeException> errors;
-    private final Collection<TableName> autoAffectedChildren;
-    private final Collection<IndexName> autoAffectedTableIndexes;
+    private final Collection<ChangedTableDescription> changedTables;
     private final Collection<IndexName> autoAffectedGroupIndexes;
     private ChangeLevel finalChangeLevel;
     private boolean parentChanged;
@@ -87,8 +87,7 @@ public class TableChangeValidator {
         this.columnChanges = (columnChanges == null) ? Collections.<TableChange>emptyList() : columnChanges;
         this.indexChanges = (indexChanges == null) ? Collections.<TableChange>emptyList() : indexChanges;
         this.errors = new ArrayList<RuntimeException>();
-        this.autoAffectedChildren = new TreeSet<TableName>();
-        this.autoAffectedTableIndexes = new TreeSet<IndexName>();
+        this.changedTables = new ArrayList<ChangedTableDescription>();
         this.autoAffectedGroupIndexes = new TreeSet<IndexName>();
         this.finalChangeLevel = ChangeLevel.NONE;
     }
@@ -97,12 +96,8 @@ public class TableChangeValidator {
         return finalChangeLevel;
     }
 
-    public Collection<TableName> getAutoAffectedChildren() {
-        return autoAffectedChildren;
-    }
-
-    public Collection<IndexName> getAutoAffectedTableIndexes() {
-        return autoAffectedTableIndexes;
+    public Collection<ChangedTableDescription> getAllChangedTables() {
+        return changedTables;
     }
 
     public Collection<IndexName> getAutoAffectedGroupIndexes() {
@@ -155,7 +150,9 @@ public class TableChangeValidator {
     }
 
     private void compareTable() {
-        if(!oldTable.getName().equals(newTable.getName())) {
+        TableName oldName = oldTable.getName();
+        TableName newName = newTable.getName();
+        if(!oldName.equals(newName)) {
             updateFinalChangeLevel(ChangeLevel.METADATA);
         }
     }
@@ -263,6 +260,19 @@ public class TableChangeValidator {
         parentChanged = joinChanged(oldTable.getParentJoin(), newTable.getParentJoin());
         primaryKeyChanged = containsOldOrNew(indexChanges, Index.PRIMARY_KEY_CONSTRAINT);
 
+        Map<String,String> preserveIndexes = new TreeMap<String,String>();
+        changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, parentChanged, preserveIndexes));
+
+        if(!parentChanged && !primaryKeyChanged) {
+            for(Index index : newTable.getIndexes()) {
+                String oldName = index.getIndexName().getName();
+                String newName = findNewName(indexChanges, oldName);
+                if(!containsOldOrNew(indexChanges, oldName)) {
+                    preserveIndexes.put(oldName, newName);
+                }
+            }
+        }
+
         for(Join join : newTable.getChildJoins()) {
             UserTable childTable = join.getChild();
             childTable.removeCandidateParentJoin(join);
@@ -278,54 +288,42 @@ public class TableChangeValidator {
             }
 
             if(primaryKeyChanged || (newJoin.getJoinColumns().size() == 0)) {
-                autoAffectedChildren.add(childTable.getName());
                 childTable.removeCandidateParentJoin(newJoin);
-                createNewGroupAndPropagate(childTable);
+                propagateChange(childTable, true);
             }
             else if(newJoin.getJoinColumns().size() != join.getJoinColumns().size()) {
-                autoAffectedChildren.add(childTable.getName());
+                propagateChange(childTable, false);
             }
         }
 
-        if(primaryKeyChanged) {
-            newTable.traverseTableAndDescendents(new NopVisitor() {
-                @Override
-                public void visitUserTable(UserTable table) {
-                    addAllIndexes(autoAffectedTableIndexes, table);
-                }
-            });
-        }
-
-        if(parentChanged || primaryKeyChanged || !autoAffectedChildren.isEmpty()) {
+        if(parentChanged || primaryKeyChanged || (changedTables.size() > 1)) {
             updateFinalChangeLevel(ChangeLevel.GROUP);
         }
     }
 
-    private void createNewGroupAndPropagate(final UserTable newRoot) {
-        assert newRoot.getParentJoin() == null;
-        assert newRoot != newTable;
-
-        final Group newGroup = Group.create(newRoot.getAIS(), newRoot.getName() + "_temp");
-        GroupTable groupTable = GroupTable.create(newRoot.getAIS(), newRoot.getName().getSchemaName(), "temp", 0);
-        groupTable.setGroup(newGroup);
-        newGroup.setGroupTable(groupTable);
+    private void propagateChange(final UserTable newRoot, final boolean withNewGroup) {
+        if(withNewGroup) {
+            Group newGroup = Group.create(newRoot.getAIS(), newRoot.getName() + "_temp");
+            GroupTable groupTable = GroupTable.create(newRoot.getAIS(), newRoot.getName().getSchemaName(), "temp", 0);
+            groupTable.setGroup(newGroup);
+            newGroup.setGroupTable(groupTable);
+            newRoot.setGroup(newGroup);
+        }
 
         newRoot.traverseTableAndDescendents(new NopVisitor() {
             @Override
             public void visitUserTable(UserTable curTable) {
-                curTable.setGroup(newGroup);
-                curTable.setTreeName(null);
+                trackChangedChild(newRoot);
 
-                addAllIndexes(autoAffectedTableIndexes, curTable);
-
-                // Rebuild join
-                if(curTable != newRoot) {
+                if(withNewGroup && (curTable != newRoot)) {
+                    // Rebuild join
+                    curTable.setGroup(newRoot.getGroup());
                     Join oldJoin = curTable.getParentJoin();
                     curTable.removeCandidateParentJoin(oldJoin);
 
                     Join newJoin = Join.create(curTable.getAIS(), oldJoin.getName(), oldJoin.getParent(),
                                                oldJoin.getChild());
-                    newJoin.setGroup(newGroup);
+                    newJoin.setGroup(newRoot.getGroup());
                     for(JoinColumn joinColumn : oldJoin.getJoinColumns()) {
                         JoinColumn.create(newJoin,
                                           oldJoin.getParent().getColumn(joinColumn.getParent().getName()),
@@ -334,6 +332,10 @@ public class TableChangeValidator {
                 }
             }
         });
+    }
+
+    private void trackChangedChild(UserTable table) {
+        changedTables.add(new ChangedTableDescription(table.getName(), table, true, new HashMap<String, String>()));
     }
 
     private static boolean containsOldOrNew(List<TableChange> changes, String name) {
@@ -456,19 +458,6 @@ public class TableChangeValidator {
             }
         }
         return false;
-    }
-
-    private void addAllIndexes(Collection<IndexName> indexes, UserTable table) {
-        for(Index index : table.getIndexesIncludingInternal()) {
-            IndexName name = index.getIndexName();
-            if(table == newTable) {
-                if(!containsOldOrNew(indexChanges, name.getName())) {
-                    indexes.add(name);
-                }
-            } else {
-                indexes.add(name);
-            }
-        }
     }
 
     private void addNotPresent(boolean isIndex, TableChange change) {

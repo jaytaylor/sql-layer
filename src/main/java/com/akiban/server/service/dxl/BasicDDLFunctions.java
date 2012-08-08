@@ -48,6 +48,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.ais.util.TableChange;
 import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.ais.util.TableChangeValidatorException;
@@ -56,7 +57,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
@@ -172,8 +172,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, table);
     }
 
-    private void doIndexChange(Session session, TableName tableName, UserTable newDefinition, AlterTableHelper helper) {
-        schemaManager().alterTableDefinition(session, tableName, newDefinition, helper.buildIndexMapping(newDefinition));
+    private void doIndexChange(Session session, UserTable newDefinition,
+                               Collection<ChangedTableDescription> changedTables, AlterTableHelper helper) {
+        schemaManager().alterTableDefinitions(session, changedTables);
         AkibanInformationSchema newAIS = getAIS(session);
         UserTable newTable = newAIS.getUserTable(newDefinition.getName());
         List<Index> indexes = helper.findAffectedNewIndexes(newTable);
@@ -181,7 +182,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private void doTableChange(Session session, TableName tableName, UserTable newDefinition,
+                               Collection<ChangedTableDescription> changedTables,
                                AlterTableHelper helper, List<Index> indexesToDrop, final boolean groupChange) {
+
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = origAIS.getUserTable(tableName);
 
@@ -198,7 +201,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final RowType oldSourceType = oldSchema.userTableRowType(origTable);
 
         // Alter through schemaManager to get new definitions and RowDefs
-        schemaManager().alterTableDefinition(session, tableName, newDefinition, helper.buildIndexMapping(newDefinition));
+        schemaManager().alterTableDefinitions(session, changedTables);
 
         // Build transformation
         final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
@@ -247,21 +250,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections);
 
         final UpdatePlannable plan;
-        final Set<RowType> filterTypes;
+        final Set<RowType> filterTypes = new HashSet<RowType>();
 
-        if(groupChange) {
-            filterTypes = new HashSet<RowType>();
-            List<UserTable> remainingTables = new ArrayList<UserTable>();
-            remainingTables.add(origTable);
-            while(!remainingTables.isEmpty()) {
-                UserTable curTable = remainingTables.remove(remainingTables.size() - 1);
-                filterTypes.add(oldSchema.userTableRowType(curTable));
-                for(Join childJoin : curTable.getChildJoins()) {
-                    remainingTables.add(childJoin.getChild());
+        for(ChangedTableDescription desc : changedTables) {
+            UserTable oldTable = origAIS.getUserTable(desc.getOldName());
+            filterTypes.add(oldSchema.userTableRowType(oldTable));
+
+            for(Index index : oldTable.getIndexesIncludingInternal()) {
+                if(desc.getPreserveIndexes().get(index.getIndexName().getName()) == null) {
+                    indexesToDrop.add(index);
                 }
             }
-        } else {
-            filterTypes = Collections.singleton(oldSourceType);
         }
 
         plan = update_Default(
@@ -328,22 +327,22 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
 
-        TableChangeValidator comparer = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges);
+        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges);
 
         try {
-            comparer.compareAndThrowIfNecessary();
+            validator.compareAndThrowIfNecessary();
         } catch(TableChangeValidatorException e) {
             throw new InvalidAlterException(tableName, e.getMessage());
         }
 
-        switch(comparer.getFinalChangeLevel()) {
+        switch(validator.getFinalChangeLevel()) {
             case INDEX:
             case TABLE:
             case GROUP:
                 // Handled below
             break;
             default:
-                throw new UnsupportedOperationException("Unsupported ChangeLevel: " + comparer.getFinalChangeLevel());
+                throw new UnsupportedOperationException("Unsupported ChangeLevel: " + validator.getFinalChangeLevel());
         }
 
         boolean rollBackNeeded = false;
@@ -357,22 +356,27 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             helper.findAffectedOldIndexes(origTable, indexesToTruncate, indexesToDrop);
 
             boolean groupChange = false;
-            switch(comparer.getFinalChangeLevel()) {
+            switch(validator.getFinalChangeLevel()) {
                 case INDEX:
                     store().truncateIndex(session, indexesToTruncate);
-                    doIndexChange(session, tableName, newDefinition, helper);
+                    doIndexChange(session, newDefinition, validator.getAllChangedTables(), helper);
                 break;
 
                 case GROUP:
                     groupChange = true;
+                    // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
+                    for(ChangedTableDescription desc : validator.getAllChangedTables()) {
+                        desc.getPreserveIndexes().put(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT);
+                        indexesToTruncate.add(origAIS.getUserTable(desc.getOldName()).getPrimaryKeyIncludingInternal().getIndex());
+                    }
                 // Fall
                 case TABLE:
                     store().truncateIndex(session, indexesToTruncate);
-                    doTableChange(session, tableName, newDefinition, helper, indexesToDrop, groupChange);
+                    doTableChange(session, tableName, newDefinition, validator.getAllChangedTables(), helper, indexesToDrop, groupChange);
                 break;
 
                 default:
-                    throw new IllegalStateException("Unsupported ChangeLevel: " + comparer.getFinalChangeLevel());
+                    throw new IllegalStateException("Unsupported ChangeLevel: " + validator.getFinalChangeLevel());
             }
         } catch(Exception e) {
             rollBackNeeded = true;

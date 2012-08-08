@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -63,6 +62,7 @@ import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
@@ -87,6 +87,7 @@ import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.util.ArgumentValidation;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
@@ -447,15 +448,19 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public void alterTableDefinition(Session session, TableName tableName, final UserTable newDefinition, Map<String,String> indexNameMap) {
-        checkTableName(tableName, true, false);
-
-        AISMerge merge = new AISMerge(aish.getAis(), newDefinition, indexNameMap);
-        merge.merge();
+    public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
+        ArgumentValidation.isTrue("Altered list is not empty", !alteredTables.isEmpty());
 
         Set<String> schemas = new HashSet<String>();
-        schemas.add(tableName.getSchemaName());
-        schemas.add(newDefinition.getName().getSchemaName());
+        for(ChangedTableDescription desc : alteredTables) {
+            checkTableName(desc.getOldName(), true, false);
+            schemas.add(desc.getOldName().getSchemaName());
+            schemas.add(desc.getNewName().getSchemaName());
+        }
+
+        AISMerge merge = new AISMerge(aish.getAis(), alteredTables);
+        merge.merge();
+
         saveAISChangeWithRowDefs(session, merge.getAIS(), schemas);
     }
 

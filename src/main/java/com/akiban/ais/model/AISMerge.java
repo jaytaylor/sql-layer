@@ -28,6 +28,7 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.ais.util.ChangedTableDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,6 @@ import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,72 +79,83 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
-        this(primaryAIS, copyAISForAdd(primaryAIS), newTable, MergeType.ADD_TABLE);
-    }
-
-    public AISMerge (AkibanInformationSchema primaryAIS, UserTable table, Map<String,String> indexMap) {
-        this(primaryAIS, copyAISForModify(primaryAIS, table, indexMap), table, MergeType.MODIFY_TABLE);
-    }
-
-    private AISMerge (AkibanInformationSchema primaryAIS, AkibanInformationSchema targetAIS, UserTable sourceTable, MergeType mergeType) {
-        this.targetAIS = targetAIS;
-        this.sourceTable = sourceTable;
-        this.mergeType = mergeType;
-        nameGenerator = new DefaultNameGenerator().
-                setDefaultGroupNames(primaryAIS.getGroups().keySet()).
-                setDefaultSequenceNames(computeSequenceNames(primaryAIS)).
-                setDefaultTreeNames(computeTreeNames(primaryAIS));
         collectTableIDs(primaryAIS);
+        this.nameGenerator = makeGenerator(primaryAIS);
+        this.targetAIS = copyAISForAdd(primaryAIS);
+        this.sourceTable = newTable;
+        this.mergeType = MergeType.ADD_TABLE;
     }
+
+    public AISMerge (AkibanInformationSchema primaryAIS, Collection<ChangedTableDescription> alteredTables) {
+        collectTableIDs(primaryAIS);
+        this.nameGenerator = makeGenerator(primaryAIS);
+        this.targetAIS = copyAISForModify(primaryAIS, this.nameGenerator, alteredTables);
+        this.sourceTable = null;
+        this.mergeType = MergeType.MODIFY_TABLE;
+    }
+
+    private static NameGenerator makeGenerator(AkibanInformationSchema ais) {
+        return new DefaultNameGenerator().
+                setDefaultGroupNames(ais.getGroups().keySet()).
+                setDefaultSequenceNames(computeSequenceNames(ais)).
+                setDefaultTreeNames(computeTreeNames(ais));
+    }
+
 
     public static AkibanInformationSchema copyAISForAdd(AkibanInformationSchema oldAIS) {
         return AISCloner.clone(oldAIS);
     }
 
-    public static AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS, final UserTable table,
-                                                           Map<String,String> indexMap) {
-        // Copy tree names and IDs for pre-existing table and it's indexes
-        final UserTable oldTable = oldAIS.getUserTable(table.getName());
-        table.setTreeName(oldTable.getTreeName());
-        table.setTableId(oldTable.getTableId());
-        if(table.getParentJoin() == null) {
-            table.setGroup(oldTable.getGroup());
-        }
-
-        for(UserTable newTable : table.getAIS().getUserTables().values()) {
-            if(newTable.getTreeName() == null) {
-                newTable.setTreeName("");
-            }
-        }
-
-        for(Index newIndex : table.getIndexesIncludingInternal()) {
-            String oldName = indexMap.get(newIndex.getIndexName().getName());
-            Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
-            if(oldIndex != null) {
-                newIndex.setIndexId(oldIndex.getIndexId());
-                newIndex.setTreeName(oldIndex.getTreeName());
-            } else {
-                // Will be fixed up in doModifyMerge()
-                newIndex.setIndexId(TEMP_INDEX_ID);
-            }
-        }
+    private static AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS, NameGenerator generator,
+                                                            Collection<ChangedTableDescription> changedTables)
+    {
+        Map<Group,String> groupTrees = new HashMap<Group, String>();
 
         final Map<TableName,UserTable> filteredTables = new HashMap<TableName,UserTable>();
-        oldTable.traverseTableAndDescendents(new NopVisitor() {
-            @Override
-            public void visitUserTable(UserTable useTable) {
-                TableName name = useTable.getName();
-                filteredTables.put(name, table.getAIS().getUserTable(name));
+        for(ChangedTableDescription desc : changedTables) {
+            // Copy tree names and IDs for pre-existing table and it's indexes
+            UserTable oldTable = oldAIS.getUserTable(desc.getOldName());
+            UserTable newTable = desc.getNewDefinition();
+            newTable.setTableId(oldTable.getTableId());
+            if(!desc.isNewGroup()) {
+                newTable.setTreeName(oldTable.getTreeName());
+            } else {
+                String treeName = groupTrees.get(newTable.getGroup());
+                if(treeName == null) {
+                    treeName = generator.generateGroupTreeName(newTable.getGroup());
+                    newTable.getGroup().getGroupTable().setTreeName(treeName);
+                    groupTrees.put(newTable.getGroup(), treeName);
+                }
+                newTable.setTreeName(treeName);
             }
-        });
+            filteredTables.put(desc.getOldName(), newTable);
+
+            int maxID = findMaxIndexIDInGroup(newTable.getAIS(), newTable.getGroup());
+            for(Index newIndex : newTable.getIndexesIncludingInternal()) {
+                String oldName = desc.getPreserveIndexes().get(newIndex.getIndexName().getName());
+                Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
+                if(oldIndex != null) {
+                    newIndex.setIndexId(oldIndex.getIndexId());
+                    newIndex.setTreeName(oldIndex.getTreeName());
+                } else {
+                    newIndex.setIndexId(++maxID);
+                    newIndex.setTreeName(generator.generateIndexTreeName(newIndex));
+                }
+            }
+        }
 
         return AISCloner.clone(
                 oldAIS,
                 new ProtobufWriter.TableFilterSelector() {
                     @Override
                     public Columnar getSelected(Columnar columnar) {
-                        Columnar filtered = filteredTables.get(columnar.getName());
-                        return (filtered != null) ? filtered : columnar;
+                        if(columnar.isTable()) {
+                            Columnar filtered = filteredTables.get(columnar.getName());
+                            if(filtered != null) {
+                                return filtered;
+                            }
+                        }
+                        return columnar;
                     }
             });
     }
@@ -227,32 +238,7 @@ public class AISMerge {
     }
 
     private void doModifyMerge() {
-        LOG.debug("Merging changed table {} into targetAIS", sourceTable.getName());
         AISBuilder builder = new AISBuilder(targetAIS);
-
-        Map<Group,String> treeNames = new HashMap<Group,String>();
-        for(UserTable table : targetAIS.getUserTables().values()) {
-            if(table.getTreeName().isEmpty()) {
-                String treeName = treeNames.get(table.getGroup());
-                if(treeName == null) {
-                    treeName = nameGenerator.generateGroupTreeName(table.getGroup());
-                    treeNames.put(table.getGroup(), treeName);
-                    table.getGroup().getGroupTable().setTreeName(treeName);
-                }
-                table.setTreeName(treeName);
-            }
-        }
-
-        // Fix up new index trees and IDs
-        UserTable newTable = targetAIS.getUserTable(sourceTable.getName());
-        int maxID = findMaxIndexIDInGroup(targetAIS, newTable.getGroup());
-        for(Index index : newTable.getIndexesIncludingInternal()) {
-            if(index.getIndexId().equals(TEMP_INDEX_ID)) {
-                index.setTreeName(nameGenerator.generateIndexTreeName(index));
-                index.setIndexId(++maxID);
-            }
-        }
-
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();

@@ -409,6 +409,8 @@ public class AlterTableIT extends ITBase {
         builder.index(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         builder.basicSchemaIsComplete();
+        builder.createGroup("c", SCHEMA, "_akiba_c");
+        builder.addTableToGroup("c", SCHEMA, "c");
         UserTable newTable = builder.akibanInformationSchema().getUserTable(SCHEMA, "c");
 
         List<TableChange> changes = new ArrayList<TableChange>();
