@@ -63,7 +63,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     public void dropTable(Session session, TableName tableName) {
         throw new UnsupportedOperationException();
     }
-
+    
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
                            List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
