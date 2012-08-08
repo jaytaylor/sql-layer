@@ -129,21 +129,14 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         if (!toType.equals(sourceInstance))
         {
             // Do type conversion.
-            TypeId id = castExpression.getSQLtype().getTypeId();
-            if (id.isIntervalTypeId()) {
-                throw new UnsupportedOperationException(); // TODO
-//                expr = new IntervalCastExpression(expr, id);
+            TCast tcast = overloadResolver.getTCast(sourceInstance, toType);
+            if (tcast == null) {
+                String castName = "CAST("
+                        + sourceInstance.typeClass()
+                        + " to " + toType.typeClass() + ')';
+                throw new NoSuchMethodError(castName); // TODO should be a NoSuchCastError
             }
-            else {
-                TCast tcast = overloadResolver.getTCast(sourceInstance, toType);
-                if (tcast == null) {
-                    String castName = "CAST("
-                            + sourceInstance.typeClass()
-                            + " to " + toType.typeClass() + ')';
-                    throw new NoSuchMethodError(castName); // TODO should be a NoSuchCastError
-                }
-                expr = new TCastExpression(expr, tcast, toType, queryContext);
-            }
+            expr = new TCastExpression(expr, tcast, toType, queryContext);
         }
         return expr;
     }
