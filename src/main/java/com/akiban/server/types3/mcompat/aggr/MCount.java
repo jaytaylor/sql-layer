@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.aggr;
 
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -37,7 +38,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public abstract class MCount extends TAggregatorBase {
 
-    public static final TAggregatorBase[] INSTANCES = {
+    public static final TAggregator[] INSTANCES = {
         // COUNT(*)
         new MCount() {
 

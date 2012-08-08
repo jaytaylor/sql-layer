@@ -32,7 +32,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.LazyListBase;
-import com.akiban.server.types3.TAggregatorBase;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
@@ -333,13 +333,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             ExpressionNode operand = expression.getOperand();
             TInstance resultType;
             if (operand == null) {
-                TAggregatorBase tAggregator = resolver.getAggregation(expression.getFunction(), null);
+                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), null);
                 resultType = tAggregator.resultType(null);
                 expression.setPreptimeValue(new TPreptimeValue(resultType));
             }
             else {
                 TClass inputTClass = tclass(operand);
-                TAggregatorBase tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
+                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
                 TClass aggrTypeClass = tAggregator.getTypeClass();
                 if (aggrTypeClass != null && !aggrTypeClass.equals(inputTClass)) {
                     operand = castTo(operand, aggrTypeClass);

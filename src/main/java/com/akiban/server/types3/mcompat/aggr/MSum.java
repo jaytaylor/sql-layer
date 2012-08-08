@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.aggr;
 
 import com.akiban.server.error.OverflowException;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -89,7 +90,7 @@ public class MSum extends TAggregatorBase {
         }
     }
     
-    public static final TAggregatorBase[] INSTANCES = {
+    public static final TAggregator[] INSTANCES = {
         new MSum(SumType.DECIMAL),
         new MSum(SumType.DOUBLE),
         new MSum(SumType.BIGINT)

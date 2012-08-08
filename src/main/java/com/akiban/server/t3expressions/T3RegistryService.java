@@ -26,7 +26,7 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TAggregatorBase;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
@@ -35,7 +35,7 @@ import java.util.Collection;
 import java.util.Set;
 
 public interface T3RegistryService {
-    Collection<? extends TAggregatorBase> getAggregates(String name);
+    Collection<? extends TAggregator> getAggregates(String name);
     Collection<? extends TValidatedOverload> getOverloads(String name);
 
     /**

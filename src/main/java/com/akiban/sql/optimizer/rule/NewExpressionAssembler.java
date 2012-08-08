@@ -36,7 +36,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
-import com.akiban.server.types3.TAggregatorBase;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -213,12 +213,12 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     @Override
     public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names) {
         int naggrs = names.size();
-        List<TAggregatorBase> aggregators = new ArrayList<TAggregatorBase>(naggrs);
+        List<TAggregator> aggregators = new ArrayList<TAggregator>(naggrs);
         List<TInstance> outputInstances = new ArrayList<TInstance>(naggrs);
         for (int i = 0; i < naggrs; ++i) {
             int inputIndex = nkeys + i;
             TInstance inputInstance = rowType.typeInstanceAt(inputIndex);
-            TAggregatorBase aggr = overloadResolver.getAggregation(names.get(i), inputInstance.typeClass());
+            TAggregator aggr = overloadResolver.getAggregation(names.get(i), inputInstance.typeClass());
             TPreptimeValue preptimeValue = new TPreptimeValue(inputInstance);
             TInstance outputInstance = aggr.resultType(preptimeValue);
             aggregators.add(aggr);

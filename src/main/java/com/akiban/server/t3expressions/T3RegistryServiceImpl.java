@@ -31,7 +31,7 @@ import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.types3.TAggregatorBase;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TCastPath;
@@ -94,9 +94,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     }
 
     @Override
-    public Collection<? extends TAggregatorBase> getAggregates(String name) {
+    public Collection<? extends TAggregator> getAggregates(String name) {
         name = name.toLowerCase();
-        Collection<? extends TAggregatorBase> aggrs = aggregatorsByName.get(name);
+        Collection<? extends TAggregator> aggrs = aggregatorsByName.get(name);
         if (aggrs == null)
             throw new NoSuchFunctionException(name);
         return aggrs;
@@ -178,14 +178,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         aggregatorsByName = createAggregates(finder);
     }
 
-    private static Map<String, Collection<TAggregatorBase>> createAggregates(InstanceFinder finder) {
-        Collection<? extends TAggregatorBase> aggrs = finder.find(TAggregatorBase.class);
-        Map<String, Collection<TAggregatorBase>> local = new HashMap<String, Collection<TAggregatorBase>>(aggrs.size());
-        for (TAggregatorBase aggr : aggrs) {
+    private static Map<String, Collection<TAggregator>> createAggregates(InstanceFinder finder) {
+        Collection<? extends TAggregator> aggrs = finder.find(TAggregator.class);
+        Map<String, Collection<TAggregator>> local = new HashMap<String, Collection<TAggregator>>(aggrs.size());
+        for (TAggregator aggr : aggrs) {
             String name = aggr.name().toLowerCase();
-            Collection<TAggregatorBase> values = local.get(name);
+            Collection<TAggregator> values = local.get(name);
             if (values == null) {
-                values = new ArrayList<TAggregatorBase>(2); // most aggrs don't have many overloads
+                values = new ArrayList<TAggregator>(2); // most aggrs don't have many overloads
                 local.put(name, values);
             }
             values.add(aggr);
@@ -415,7 +415,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsByTarget;
     private volatile Multimap<String, TValidatedOverload> overloadsByName;
-    private volatile Map<String,Collection<TAggregatorBase>> aggregatorsByName;
+    private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
     private volatile Collection<? extends TClass> tClasses;
 
     // inner classes
@@ -603,9 +603,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         }
 
         private Object aggregateDescriptors() {
-            return describeOverloads(aggregatorsByName, new Function<TAggregatorBase, TClass>() {
+            return describeOverloads(aggregatorsByName, new Function<TAggregator, TClass>() {
                 @Override
-                public TClass apply(TAggregatorBase aggr) {
+                public TClass apply(TAggregator aggr) {
                     return aggr.getTypeClass();
                 }
             });

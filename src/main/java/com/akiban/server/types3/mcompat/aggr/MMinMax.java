@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.aggr;
 
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -55,8 +56,8 @@ public class MMinMax extends TAggregatorBase {
         abstract boolean condition (int a);
     }
 
-    public static final TAggregatorBase MIN = new MMinMax(MType.MIN);
-    public static final TAggregatorBase MAX = new MMinMax(MType.MAX);
+    public static final TAggregator MIN = new MMinMax(MType.MIN);
+    public static final TAggregator MAX = new MMinMax(MType.MAX);
     
     private MMinMax(MType mType) {
         this.mType = mType;
