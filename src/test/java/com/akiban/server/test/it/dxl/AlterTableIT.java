@@ -167,13 +167,14 @@ public class AlterTableIT extends ITBase {
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
         RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
         StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        long pk = 1;
         compareRows(
                 new RowBase[]{
                         testRow(cType, 1L, "a"),
-                        testRow(oType, 10L, 1L, 11L),
-                        testRow(oType, 11L, 1L, 12L),
+                        testRow(oType, 10L, 1L, 11L, pk++),
+                        testRow(oType, 11L, 1L, 12L, pk++),
                         testRow(cType, 2L, "b"),
-                        testRow(oType, 30L, 3L, 33L),
+                        testRow(oType, 30L, 3L, 33L, pk++),
                 },
                 adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
         );

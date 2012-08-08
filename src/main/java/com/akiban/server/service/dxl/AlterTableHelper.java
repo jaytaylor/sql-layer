@@ -102,6 +102,9 @@ public class AlterTableHelper {
                 }
             }
         }
+        if(oldColumn == null && newColumn.isAkibanPKColumn()) {
+            return null;
+        }
         // Not in change list, must be an original column
         assert oldColumn != null : newColumn;
         return oldColumn.getPosition();

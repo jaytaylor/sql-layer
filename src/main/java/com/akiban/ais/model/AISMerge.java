@@ -111,6 +111,12 @@ public class AISMerge {
             table.setGroup(oldTable.getGroup());
         }
 
+        for(UserTable newTable : table.getAIS().getUserTables().values()) {
+            if(newTable.getTreeName() == null) {
+                newTable.setTreeName("");
+            }
+        }
+
         for(Index newIndex : table.getIndexesIncludingInternal()) {
             String oldName = indexMap.get(newIndex.getIndexName().getName());
             Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
@@ -123,12 +129,22 @@ public class AISMerge {
             }
         }
 
+        final Map<TableName,UserTable> filteredTables = new HashMap<TableName,UserTable>();
+        oldTable.traverseTableAndDescendents(new NopVisitor() {
+            @Override
+            public void visitUserTable(UserTable useTable) {
+                TableName name = useTable.getName();
+                filteredTables.put(name, table.getAIS().getUserTable(name));
+            }
+        });
+
         return AISCloner.clone(
                 oldAIS,
                 new ProtobufWriter.TableFilterSelector() {
                     @Override
                     public Columnar getSelected(Columnar columnar) {
-                        return (columnar == oldTable) ? table : columnar;
+                        Columnar filtered = filteredTables.get(columnar.getName());
+                        return (filtered != null) ? filtered : columnar;
                     }
             });
     }
@@ -213,6 +229,19 @@ public class AISMerge {
     private void doModifyMerge() {
         LOG.debug("Merging changed table {} into targetAIS", sourceTable.getName());
         AISBuilder builder = new AISBuilder(targetAIS);
+
+        Map<Group,String> treeNames = new HashMap<Group,String>();
+        for(UserTable table : targetAIS.getUserTables().values()) {
+            if(table.getTreeName().isEmpty()) {
+                String treeName = treeNames.get(table.getGroup());
+                if(treeName == null) {
+                    treeName = nameGenerator.generateGroupTreeName(table.getGroup());
+                    treeNames.put(table.getGroup(), treeName);
+                    table.getGroup().getGroupTable().setTreeName(treeName);
+                }
+                table.setTreeName(treeName);
+            }
+        }
 
         // Fix up new index trees and IDs
         UserTable newTable = targetAIS.getUserTable(sourceTable.getName());

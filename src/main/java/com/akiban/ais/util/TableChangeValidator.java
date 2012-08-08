@@ -28,6 +28,7 @@ package com.akiban.ais.util;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
@@ -305,6 +306,9 @@ public class TableChangeValidator {
         assert newRoot != newTable;
 
         final Group newGroup = Group.create(newRoot.getAIS(), newRoot.getName() + "_temp");
+        GroupTable groupTable = GroupTable.create(newRoot.getAIS(), newRoot.getName().getSchemaName(), "temp", 0);
+        groupTable.setGroup(newGroup);
+        newGroup.setGroupTable(groupTable);
 
         newRoot.traverseTableAndDescendents(new NopVisitor() {
             @Override
