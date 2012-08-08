@@ -36,161 +36,95 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * 
  * implement TIMESTAMP(<expr>), DATE(<expr>), TIME(<expr>), ... functions
  */
-public class MExtract extends TOverloadBase
+public abstract class MExtract extends TOverloadBase
 {
-    public static List<? extends TOverload> create ()
+    public static TOverload[] create()
     {
-        LinkedList<MExtract> list = new LinkedList<MExtract>();
-
-        for (RetType ret : RetType.values())
-            for (InputType input : InputType.values())
-                list.add(new MExtract(input, ret));
-        return list;
-    }
-    
-    private static enum RetType
-    {
-        TIMESTAMP(MDatetimes.DATETIME)
+        return new TOverload[]
         {
-            @Override
-            void putVal(PValueTarget target, long ymd[], TExecutionContext context)
+            new MExtract(MDatetimes.DATE, "DATE")
             {
-                if (!MDatetimes.isValidDatetime(ymd))
+                @Override
+                protected void putVal(long[] ymd, PValueTarget target, TExecutionContext context)
                 {
-                    context.reportBadValue("Invalid DATETIME value");
-                    target.putNull();
+                    if (!MDatetimes.isValidDatetime(ymd))
+                    {
+                        context.reportBadValue("Invalid DATETIME value");
+                        target.putNull();
+                    }
+                    else
+                        target.putInt32(MDatetimes.encodeDate(ymd));
                 }
-                else
-                    target.putInt64(MDatetimes.encodeDatetime(ymd));
-            }
-        },
-        DATE(MDatetimes.DATE)
-        {
-            @Override
-            void putVal(PValueTarget target, long ymd[], TExecutionContext context)
+            },
+            new MExtract(MDatetimes.DATETIME, "TIMESTAMP")
             {
-                if (!MDatetimes.isValidDatetime(ymd))
+                @Override
+                protected void putVal(long[] ymd, PValueTarget target, TExecutionContext context)
                 {
-                    context.reportBadValue("Invalid DATETIME value");
-                    target.putNull();
+                    if (!MDatetimes.isValidDatetime(ymd))
+                    {
+                        context.reportBadValue("Invalid DATETIME value");
+                        target.putNull();
+                    }
+                    else
+                        target.putInt64(MDatetimes.encodeDatetime(ymd));
                 }
-                else
-                    target.putInt32(MDatetimes.encodeDate(ymd));
-            }
-        },
-        TIME(MDatetimes.TIME)
-        {
-            @Override
-            void putVal(PValueTarget target, long ymd[], TExecutionContext context)
+            },
+            new MExtract(MDatetimes.TIME, "TIME")
             {
-                if (!MDatetimes.isValidDatetime(ymd))
+                @Override
+                protected void putVal(long[] ymd, PValueTarget target, TExecutionContext context)
                 {
-                    context.reportBadValue("Invalid DATETIME value");
-                    target.putNull();
+                    if (!MDatetimes.isValidDatetime(ymd))
+                    {
+                        context.reportBadValue("Invalid DATETIME value");
+                        target.putNull();
+                    }
+                    else
+                        target.putInt32(MDatetimes.encodeTime(ymd));
                 }
-                else
-                    target.putInt32(MDatetimes.encodeTime(ymd));
             }
         };
-        
-        final TClass type;
-        
-        abstract void putVal (PValueTarget target, long ymd[], TExecutionContext context);
-        
-        private RetType( TClass t)
-        {
-            type = t;
-        }
     }
-
-    private static enum InputType
-    {
-        DATE(MDatetimes.DATE)
-        {
-            @Override
-            long[] extract (PValueSource source, TExecutionContext context)
-            {
-                return MDatetimes.decodeDate(source.getInt32());
-            }
-        },
-        DATETIME(MDatetimes.DATETIME)
-        {
-            @Override
-            long[] extract (PValueSource source, TExecutionContext context)
-            {
-                return MDatetimes.decodeDatetime(source.getInt64());
-            }
-        },
-        TIMESTAMP(MDatetimes.TIMESTAMP)
-        {
-            @Override
-            long[] extract (PValueSource source, TExecutionContext context)
-            {
-                return MDatetimes.decodeTimestamp(source.getInt32(), context.getCurrentTimezone());
-            }
-        },
-        TIME(MDatetimes.TIME)
-        {
-            @Override
-            long[] extract (PValueSource source, TExecutionContext context)
-            {
-                long val[] = MDatetimes.decodeTime(source.getInt32());
-                
-                //adjust YEAR, MONTH, DAY to 0
-                val[MDatetimes.YEAR_INDEX] = 0;
-                val[MDatetimes.MONTH_INDEX] = 0;
-                val[MDatetimes.DAY_INDEX] = 0;
-                return val;
-            }
-        }
-        ;
-        
-        abstract long[] extract (PValueSource source, TExecutionContext context);
-        
-        final TClass type;
-        private InputType(TClass t)
-        {
-            type = t;
-        }
-    }
-
-    private final InputType inputType;
-    private final RetType retType;
+    protected abstract void putVal(long ymd[], PValueTarget target, TExecutionContext context);
     
-    private MExtract (InputType input, RetType ret)
+    private TClass retType;
+    private String name;
+    
+    private MExtract (TClass ret, String name)
     {
-        inputType = input;
         retType = ret;
+        this.name = name;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(inputType.type, 0);
+        builder.covers(MDatetimes.DATETIME, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        retType.putVal(output, inputType.extract(inputs.get(0), context), context);
+        putVal(MDatetimes.decodeDatetime(inputs.get(0).getInt64()),
+               output,
+               context);
     }
 
     @Override
     public String displayName()
     {
-        return retType.name();
+        return name;
     }
 
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(retType.type.instance());
+        return TOverloadResult.fixed(retType.instance());
     }
 }
