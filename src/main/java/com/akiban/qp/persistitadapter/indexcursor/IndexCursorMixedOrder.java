@@ -42,7 +42,7 @@ import com.persistit.exception.PersistitException;
 import java.util.ArrayList;
 import java.util.List;
 
-class IndexCursorMixedOrder<S,E> extends IndexCursor<S>
+class IndexCursorMixedOrder<S,E> extends IndexCursor
 {
     // Cursor interface
 
@@ -209,7 +209,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor<S>
                                     API.Ordering ordering,
                                     SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        super(context, iterationHelper, sortKeyAdapter, keyRange);
+        super(context, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
         this.sortKeyAdapter = sortKeyAdapter;
@@ -223,6 +223,15 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor<S>
         } else {
             keyColumns = keyRange.indexRowType().index().indexRowComposition().getLength();
             boundColumns = keyRange.boundColumns();
+
+            collators = sortKeyAdapter.createAkCollators(boundColumns);
+            akTypes = sortKeyAdapter.createAkTypes(boundColumns);
+            tInstances = sortKeyAdapter.createTInstances(boundColumns + orderingColumns);
+            List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
+            for (int f = 0; f < boundColumns; f++) {
+                Column column = indexColumns.get(f).getColumn();
+                sortKeyAdapter.setColumnMetadata(column, f, akTypes, collators, tInstances);
+            }
         }
         for (int i = 0; i < orderingColumns; ++i) {
             sortKeyAdapter.setOrderingMetadata(i, ordering, boundColumns, tInstances);
@@ -230,6 +239,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor<S>
     }
 
     // For use by this package
+
+    IndexKeyRange keyRange()
+    {
+        return keyRange;
+    }
 
     API.Ordering ordering()
     {
@@ -278,12 +292,34 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor<S>
         }
     }
 
+    private MixedOrderScanStateSingleSegment scanState(int field)
+    {
+        return (MixedOrderScanStateSingleSegment) scanStates.get(field);
+    }
+
+    public AkCollator collatorAt(int field) {
+        return collators == null ? null : collators[field];
+    }
+    
+    public AkType akTypeAt(int field) {
+        return akTypes == null ? null : akTypes[field];
+    }
+    
+    public TInstance tInstanceAt(int field) {
+        return tInstances == null ? null : tInstances[field];
+    }
+    
     // Object state
 
+    protected final IndexKeyRange keyRange;
+    protected final API.Ordering ordering;
     protected final List<MixedOrderScanState<S>> scanStates = new ArrayList<MixedOrderScanState<S>>();
     private final SortKeyAdapter<S, E> sortKeyAdapter;
     private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
     private final int boundColumns;
     private boolean more;
     private boolean justOpened;
+    private AkCollator[] collators;
+    private AkType[] akTypes;
+    private TInstance[] tInstances;
 }

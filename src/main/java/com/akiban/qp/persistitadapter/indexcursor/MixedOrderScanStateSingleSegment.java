@@ -98,9 +98,9 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         super(cursor, field, ascending);
         assert lo != null;
         assert hi != null;
-        this.fieldType = cursor.type(field);
-        this.collator = cursor.collator(field);
-        this.fieldTInstance = cursor.tInstance(field);
+        this.fieldType = cursor.akTypeAt(field);
+        this.collator = cursor.collatorAt(field);
+        this.fieldTInstance = cursor.tInstanceAt(field);
         this.keyTarget = sortKeyAdapter.createTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
         this.keySource = sortKeyAdapter.createSource(fieldTInstance);
@@ -130,7 +130,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         super(cursor, field, cursor.ordering().ascending(field));
         this.keyTarget = sortKeyAdapter.createTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
-        this.keySource = sortKeyAdapter.createSource(cursor.tInstance(field));
+        this.keySource = sortKeyAdapter.createSource(cursor.tInstanceAt(field));
         this.sortKeyAdapter = sortKeyAdapter;
     }
 

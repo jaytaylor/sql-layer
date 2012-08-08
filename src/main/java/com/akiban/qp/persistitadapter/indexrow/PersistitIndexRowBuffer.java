@@ -404,7 +404,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
         if (writable) {
             this.pKeyTarget = SORT_KEY_ADAPTER.createTarget();
-            key.clear();
             this.pKeyTarget.attach(key);
             this.pKeyAppends = 0;
             if (index.isUnique()) {
