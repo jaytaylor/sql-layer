@@ -49,71 +49,72 @@ public abstract class MExtract extends TOverloadBase
         {
             new MExtract(MDatetimes.DATE, "DATE")
             {
+
                 @Override
-                protected void putVal(long[] ymd, PValueTarget target, TExecutionContext context)
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
                 {
+                    int date = inputs.get(0).getInt32();
+                    long ymd[] = MDatetimes.decodeDate(date);
+
                     if (!MDatetimes.isValidDatetime(ymd))
                     {
-                        context.reportBadValue("Invalid DATETIME value");
-                        target.putNull();
+                        context.reportBadValue("Invalid DATE value " + date);
+                        output.putNull();
                     }
                     else
-                        target.putInt32(MDatetimes.encodeDate(ymd));
+                        output.putInt32(date);
                 }
             },
             new MExtract(MDatetimes.DATETIME, "TIMESTAMP")
             {
                 @Override
-                protected void putVal(long[] ymd, PValueTarget target, TExecutionContext context)
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
                 {
+                    long datetime = inputs.get(0).getInt64();
+                    long ymd[] = MDatetimes.decodeDatetime(datetime);
+
                     if (!MDatetimes.isValidDatetime(ymd))
                     {
-                        context.reportBadValue("Invalid DATETIME value");
-                        target.putNull();
+                        context.reportBadValue("Invalid DATETIME value " + datetime);
+                        output.putNull();
                     }
                     else
-                        target.putInt64(MDatetimes.encodeDatetime(ymd));
+                        output.putInt64(datetime);
                 }
             },
             new MExtract(MDatetimes.TIME, "TIME")
             {
                 @Override
-                protected void putVal(long[] ymd, PValueTarget target, TExecutionContext context)
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
                 {
-                    if (!MDatetimes.isValidDatetime(ymd))
+                    int time = inputs.get(0).getInt32();
+                    long hms[] = MDatetimes.decodeTime(time);
+
+                    if (!MDatetimes.isValidHrMinSec(hms))
                     {
-                        context.reportBadValue("Invalid DATETIME value");
-                        target.putNull();
+                        context.reportBadValue("Invalid TIME value: " + time);
+                        output.putNull();
                     }
                     else
-                        target.putInt32(MDatetimes.encodeTime(ymd));
+                        output.putInt32(time);
                 }
             }
         };
     }
-    protected abstract void putVal(long ymd[], PValueTarget target, TExecutionContext context);
     
-    private TClass retType;
+    private TClass type;
     private String name;
     
     private MExtract (TClass ret, String name)
     {
-        retType = ret;
+        type = ret;
         this.name = name;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MDatetimes.DATETIME, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        putVal(MDatetimes.decodeDatetime(inputs.get(0).getInt64()),
-               output,
-               context);
+        builder.covers(type, 0);
     }
 
     @Override
@@ -125,6 +126,6 @@ public abstract class MExtract extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(retType.instance());
+        return TOverloadResult.fixed(type.instance());
     }
 }
