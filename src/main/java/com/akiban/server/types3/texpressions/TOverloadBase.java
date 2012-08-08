@@ -93,6 +93,11 @@ public abstract class TOverloadBase implements TOverload {
     }
 
     @Override
+    public String id() {
+        return getClass().getCanonicalName();
+    }
+
+    @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, final LazyList<? extends TPreptimeValue> inputs) {
         if (neverConstant()) {
             return null;

@@ -28,7 +28,7 @@ package com.akiban.server.t3expressions;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
@@ -155,10 +155,10 @@ public final class OverloadResolver {
         }
     }
 
-    public TAggregator getAggregation(String name, TClass inputType) {
-        List<TAggregator> candidates = new ArrayList<TAggregator>(registry.getAggregates(name));
-        for (Iterator<TAggregator> iterator = candidates.iterator(); iterator.hasNext(); ) {
-            TAggregator candidate = iterator.next();
+    public TAggregatorBase getAggregation(String name, TClass inputType) {
+        List<TAggregatorBase> candidates = new ArrayList<TAggregatorBase>(registry.getAggregates(name));
+        for (Iterator<TAggregatorBase> iterator = candidates.iterator(); iterator.hasNext(); ) {
+            TAggregatorBase candidate = iterator.next();
             TClass expectedInput = candidate.getTypeClass();
             if (expectedInput == null || expectedInput.equals(inputType)) // null means input type is irrelevant
                 return candidate;
@@ -173,13 +173,13 @@ public final class OverloadResolver {
         if (nCandidates == 1)
             return candidates.get(0);
         Set<TClass> aggrRequiredTClasses = new HashSet<TClass>(nCandidates);
-        for (TAggregator candidate : candidates) {
+        for (TAggregatorBase candidate : candidates) {
             TClass aggrRequiredTClass = candidate.getTypeClass();
             boolean added = aggrRequiredTClasses.add(aggrRequiredTClass);
             assert added : "multiple aggregates of " + name + " expect " + aggrRequiredTClass;
         }
-        TAggregator result = null;
-        for (TAggregator candidate : candidates) {
+        TAggregatorBase result = null;
+        for (TAggregatorBase candidate : candidates) {
             TClass aggrRequiredTClass = candidate.getTypeClass();
             if (isMostSpecific(aggrRequiredTClass, aggrRequiredTClasses)) {
                 if (result != null)

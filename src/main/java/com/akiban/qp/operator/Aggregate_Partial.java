@@ -34,7 +34,7 @@ import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.aggr.MCount;
 import com.akiban.server.types3.pvalue.PValue;
@@ -237,7 +237,7 @@ final class Aggregate_Partial extends Operator
     public Aggregate_Partial(Operator inputOperator,
                              RowType inputRowType,
                              int inputsIndex,
-                             List<? extends TAggregator> aggregatorFactories,
+                             List<? extends TAggregatorBase> aggregatorFactories,
                              List<? extends TInstance> pAggrTypes) {
         this(
                 inputOperator,
@@ -270,7 +270,7 @@ final class Aggregate_Partial extends Operator
         StringBuilder sb = new StringBuilder(pAggersLen * 6); // guess at the size, doesn't matter much
         sb.append('[');
         for (int i = 0; i < pAggersLen; ++i) {
-            TAggregator aggregator = pAggrs.get(i);
+            TAggregatorBase aggregator = pAggrs.get(i);
             sb.append(aggregator);
             if (! (aggregator instanceof MCount)) {
                 sb.append(rowType().typeInstanceAt(i+inputsIndex).typeClass().name().unqualifiedName());
@@ -297,7 +297,7 @@ final class Aggregate_Partial extends Operator
                       RowType inputRowType,
                       int inputsIndex,
                       List<AggregatorFactory> aggregatorFactories,
-                      List<? extends TAggregator> pAggrs,
+                      List<? extends TAggregatorBase> pAggrs,
                       List<? extends TInstance> pAggrTypes,
                       AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
@@ -346,7 +346,7 @@ final class Aggregate_Partial extends Operator
     private final int inputsIndex;
     private final List<AggregatorFactory> aggregatorFactories;
     private final List<? extends TInstance> pAggrTypes;
-    private final List<? extends TAggregator> pAggrs;
+    private final List<? extends TAggregatorBase> pAggrs;
 
     @Override
     public Explainer getExplainer()
@@ -355,7 +355,7 @@ final class Aggregate_Partial extends Operator
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));
         
         if (pAggrs != null) {
-            for (TAggregator agg : pAggrs)
+            for (TAggregatorBase agg : pAggrs)
                 atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
         }
         else {
@@ -485,7 +485,7 @@ final class Aggregate_Partial extends Operator
             }
             else {
                 for (int i=0; i < pAggrs.size(); ++i) {
-                    TAggregator aggregator = pAggrs.get(i);
+                    TAggregatorBase aggregator = pAggrs.get(i);
                     int inputIndex = i + inputsIndex;
                     TInstance inputType = input.rowType().typeInstanceAt(inputIndex);
                     PValueSource inputSource = input.pvalue(inputIndex);
@@ -646,7 +646,7 @@ final class Aggregate_Partial extends Operator
                 int nAggrs = pAggrs.size();
                 pAggrsStates = new ArrayList<PValue>(nAggrs);
                 for (int i = 0; i < nAggrs; i++) {
-                    TAggregator aggr = pAggrs.get(i);
+                    TAggregatorBase aggr = pAggrs.get(i);
                     TInstance stateInstance = pAggrTypes.get(i);
                     PValue state = new PValue(stateInstance.typeClass().underlyingType());
                     aggr.emptyValue(state);

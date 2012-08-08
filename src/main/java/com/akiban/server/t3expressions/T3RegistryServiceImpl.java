@@ -31,7 +31,7 @@ import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TCastPath;
@@ -49,11 +49,11 @@ import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.DagChecker;
+import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,9 +94,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     }
 
     @Override
-    public Collection<? extends TAggregator> getAggregates(String name) {
+    public Collection<? extends TAggregatorBase> getAggregates(String name) {
         name = name.toLowerCase();
-        Collection<? extends TAggregator> aggrs = aggregatorsByName.get(name);
+        Collection<? extends TAggregatorBase> aggrs = aggregatorsByName.get(name);
         if (aggrs == null)
             throw new NoSuchFunctionException(name);
         return aggrs;
@@ -178,14 +178,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         aggregatorsByName = createAggregates(finder);
     }
 
-    private static Map<String, Collection<TAggregator>> createAggregates(InstanceFinder finder) {
-        Collection<? extends TAggregator> aggrs = finder.find(TAggregator.class);
-        Map<String, Collection<TAggregator>> local = new HashMap<String, Collection<TAggregator>>(aggrs.size());
-        for (TAggregator aggr : aggrs) {
+    private static Map<String, Collection<TAggregatorBase>> createAggregates(InstanceFinder finder) {
+        Collection<? extends TAggregatorBase> aggrs = finder.find(TAggregatorBase.class);
+        Map<String, Collection<TAggregatorBase>> local = new HashMap<String, Collection<TAggregatorBase>>(aggrs.size());
+        for (TAggregatorBase aggr : aggrs) {
             String name = aggr.name().toLowerCase();
-            Collection<TAggregator> values = local.get(name);
+            Collection<TAggregatorBase> values = local.get(name);
             if (values == null) {
-                values = new ArrayList<TAggregator>(2); // most aggrs don't have many overloads
+                values = new ArrayList<TAggregatorBase>(2); // most aggrs don't have many overloads
                 local.put(name, values);
             }
             values.add(aggr);
@@ -415,7 +415,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsByTarget;
     private volatile Multimap<String, TValidatedOverload> overloadsByName;
-    private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
+    private volatile Map<String,Collection<TAggregatorBase>> aggregatorsByName;
     private volatile Collection<? extends TClass> tClasses;
 
     // inner classes
@@ -603,22 +603,30 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
         }
 
         private Object aggregateDescriptors() {
-            return describeOverloads(aggregatorsByName, new Function<TAggregator, TClass>() {
+            return describeOverloads(aggregatorsByName, new Function<TAggregatorBase, TClass>() {
                 @Override
-                public TClass apply(TAggregator aggr) {
+                public TClass apply(TAggregatorBase aggr) {
                     return aggr.getTypeClass();
                 }
             });
         }
 
-        private <T,S> Object describeOverloads(Map<String, Collection<T>> elems, Function<? super T, S> format) {
-            Map<String,List<String>> result = new TreeMap<String, List<String>>();
+        private <T extends HasId,S> Object describeOverloads(
+                Map<String, Collection<T>> elems, Function<? super T, S> format)
+        {
+            Map<String,Map<String,String>> result = new TreeMap<String, Map<String,String>>();
             for (Map.Entry<String, ? extends Collection<T>> entry : elems.entrySet()) {
                 Collection<T> overloads = entry.getValue();
-                List<String> overloadDescriptions = new ArrayList<String>(overloads.size());
-                for (T overload : overloads)
-                    overloadDescriptions.add(String.valueOf(format.apply(overload)));
-                Collections.sort(overloadDescriptions);
+                Map<String,String> overloadDescriptions = new TreeMap<String, String>();
+                int idSuffix = 1;
+                for (T overload : overloads) {
+                    String origId = overload.id();
+                    String overloadId = origId;
+                    while (overloadDescriptions.containsKey(overloadId))
+                        overloadId = origId + Integer.toString(idSuffix++); // don't care about efficiency
+                    String overloadDescription = String.valueOf(format.apply(overload));
+                    overloadDescriptions.put(overloadId, overloadDescription);
+                }
                 result.put(entry.getKey(), overloadDescriptions);
             }
             return result;

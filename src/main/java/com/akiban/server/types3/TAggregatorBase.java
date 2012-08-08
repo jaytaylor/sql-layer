@@ -26,37 +26,21 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.HasId;
 
-import java.util.List;
+public abstract class TAggregatorBase implements HasId {
+    public abstract void input(TInstance instance, PValueSource source, TInstance stateType, PValue state,
+                               boolean isFirst);
+    public abstract void emptyValue(PValueTarget state);
+    public abstract TInstance resultType(TPreptimeValue value);
+    public abstract TClass getTypeClass();
+    public abstract String name();
 
-public interface TOverload extends HasId {
-    
-    /**
-     * 
-     * Name that the user will see/use
-     */
-    String displayName();
-    
-    /**
-     * 
-     * Name(s) used internally by the parser/registry.
-     * 
-     * Most of the times, the two names are the same, but they could be different
-     * for certain functions, especially those that need "special treatment"
-     * 
-     * This needs to be an array because we could be defining different functions
-     * with the same implementation
-     */
-    String[] registeredNames();
-
-    TOverloadResult resultType();
-    List<TInputSet> inputSets();
-    TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
-    void finishPreptimePhase(TPreptimeContext context);
-    void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
-    String toString(List<? extends TPreparedExpression> inputs, TInstance resultType);
+    @Override
+    public String id() {
+        return getClass().getCanonicalName();
+    }
 }

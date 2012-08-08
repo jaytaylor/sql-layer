@@ -29,7 +29,7 @@ import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadException;
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
@@ -133,7 +133,7 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public Collection<? extends TAggregator> getAggregates(String name) {
+        public Collection<? extends TAggregatorBase> getAggregates(String name) {
             throw new UnsupportedOperationException();
         }
 

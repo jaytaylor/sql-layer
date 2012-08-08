@@ -32,7 +32,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.LazyListBase;
-import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
@@ -54,7 +54,6 @@ import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
-import com.akiban.sql.optimizer.plan.Distinct;
 import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
@@ -73,7 +72,6 @@ import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.plan.Sort;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
@@ -335,13 +333,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             ExpressionNode operand = expression.getOperand();
             TInstance resultType;
             if (operand == null) {
-                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), null);
+                TAggregatorBase tAggregator = resolver.getAggregation(expression.getFunction(), null);
                 resultType = tAggregator.resultType(null);
                 expression.setPreptimeValue(new TPreptimeValue(resultType));
             }
             else {
                 TClass inputTClass = tclass(operand);
-                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
+                TAggregatorBase tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
                 TClass aggrTypeClass = tAggregator.getTypeClass();
                 if (aggrTypeClass != null && !aggrTypeClass.equals(inputTClass)) {
                     operand = castTo(operand, aggrTypeClass);
