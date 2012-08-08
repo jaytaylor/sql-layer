@@ -56,6 +56,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
@@ -108,6 +109,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
+import static com.akiban.qp.operator.API.insert_Default;
 import static com.akiban.qp.operator.API.update_Default;
 import static com.akiban.util.Exceptions.throwAlways;
 
@@ -179,7 +181,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private void doTableChange(Session session, TableName tableName, UserTable newDefinition,
-                               AlterTableHelper helper, List<Index> indexesToDrop) {
+                               AlterTableHelper helper, List<Index> indexesToDrop, final boolean groupChange) {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = origAIS.getUserTable(tableName);
 
@@ -199,8 +201,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().alterTableDefinition(session, tableName, newDefinition, helper.buildIndexMapping(newDefinition));
 
         // Build transformation
-        PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
-        QueryContext queryContext = new SimpleQueryContext(adapter);
+        final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
+        final QueryContext queryContext = new SimpleQueryContext(adapter);
 
         final AkibanInformationSchema newAIS = getAIS(session);
         final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
@@ -244,15 +246,37 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // PUTRT for constraint checking
         final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections);
 
-        UpdatePlannable plan = update_Default(
+        final UpdatePlannable plan;
+        final Set<RowType> filterTypes;
+
+        if(groupChange) {
+            filterTypes = new HashSet<RowType>();
+            List<UserTable> remainingTables = new ArrayList<UserTable>();
+            remainingTables.add(origTable);
+            while(!remainingTables.isEmpty()) {
+                UserTable curTable = remainingTables.remove(remainingTables.size() - 1);
+                filterTypes.add(oldSchema.userTableRowType(curTable));
+                for(Join childJoin : curTable.getChildJoins()) {
+                    remainingTables.add(childJoin.getChild());
+                }
+            }
+        } else {
+            filterTypes = Collections.singleton(oldSourceType);
+        }
+
+        plan = update_Default(
                 filter_Default(
                         groupScan_Default(origTable.getGroup().getGroupTable()),
-                        Collections.singleton(oldSourceType)
+                        filterTypes
                 ),
                 new UpdateFunction() {
+                    private Row makeProjected(Row original, QueryContext context) {
+                        return new ProjectedRow(newType, original, context, projections, pProjections);
+                    }
+
                     @Override
                     public Row evaluate(Row original, QueryContext context) {
-                        return new ProjectedRow(newType, original, context, projections, pProjections);
+                        return makeProjected(original, context);
                     }
 
                     @Override
@@ -262,7 +286,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
                     @Override
                     public boolean rowIsSelected(Row row) {
-                        return true;
+                        if(groupChange) {
+                            Row insertRow = (row.rowType() == oldSourceType) ? makeProjected(row, queryContext) : row;
+                            adapter.deleteRow(row, usePValues());
+                            int step = adapter.enterUpdateStep(true);
+                            try {
+                                adapter.writeRow(insertRow, usePValues());
+                            } finally {
+                                adapter.leaveUpdateStep(step);
+                            }
+                            return false;
+                        } else {
+                            return true;
+                        }
                     }
                 }
         );
@@ -303,6 +339,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         switch(comparer.getFinalChangeLevel()) {
             case INDEX:
             case TABLE:
+            case GROUP:
                 // Handled below
             break;
             default:
@@ -319,15 +356,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             List<Index> indexesToTruncate = new ArrayList<Index>();
             helper.findAffectedOldIndexes(origTable, indexesToTruncate, indexesToDrop);
 
+            boolean groupChange = false;
             switch(comparer.getFinalChangeLevel()) {
                 case INDEX:
                     store().truncateIndex(session, indexesToTruncate);
                     doIndexChange(session, tableName, newDefinition, helper);
                 break;
 
+                case GROUP:
+                    groupChange = true;
+                // Fall
                 case TABLE:
                     store().truncateIndex(session, indexesToTruncate);
-                    doTableChange(session, tableName, newDefinition, helper, indexesToDrop);
+                    doTableChange(session, tableName, newDefinition, helper, indexesToDrop, groupChange);
                 break;
 
                 default:

@@ -530,7 +530,7 @@ public class PersistitStore implements Store {
         throws PersistitException
     {
         int rowDefId = rowData.getRowDefId();
-        RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        RowDef rowDef = rowDefFromExplicitOrId(rowData);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         DELETE_ROW_TAP.in();

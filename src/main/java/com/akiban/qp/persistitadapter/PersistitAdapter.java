@@ -178,6 +178,7 @@ public class PersistitAdapter extends StoreAdapter
     public void deleteRow (Row oldRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = oldRowData(rowDef, oldRow, rowDataCreator(usePValues));
+        oldRowData.setExplicitRowDef(rowDef);
         int oldStep = enterUpdateStep();
         try {
             store.deleteRow(getSession(), oldRowData);
@@ -360,9 +361,14 @@ public class PersistitAdapter extends StoreAdapter
 
     public int enterUpdateStep()
     {
+        return enterUpdateStep(false);
+    }
+
+    public int enterUpdateStep(boolean evenIfZero)
+    {
         Transaction transaction = transaction();
         int step = transaction.getStep();
-        if (step > 0 && withStepChanging)
+        if ((evenIfZero || step > 0) && withStepChanging)
             transaction.incrementStep();
         return step;
     }

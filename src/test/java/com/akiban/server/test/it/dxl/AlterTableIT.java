@@ -132,20 +132,27 @@ public class AlterTableIT extends ITBase {
                          Arrays.asList(TableChange.createAdd("c2")), Collections.<TableChange>emptyList());
     }
 
-    @Test(expected=UnsupportedOperationException.class)
-    public void dropPKColumn() throws StandardException {
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMA, "c").colLong("c1").colLong("c2").pk("c1", "c2");
-        UserTable table = builder.ais().getUserTable(SCHEMA, "c");
-
-        ddl().createTable(session(), table);
-
-        builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMA, "c").colLong("c2").pk("c2");
-        table = builder.ais().getUserTable(SCHEMA, "c");
-
-        ddl().alterTable(session(), table.getName(), table,
-                         Arrays.asList(TableChange.createDrop("c1")), Arrays.asList(TableChange.createModify("PRIMARY", "PRIMARY")));
+    @Test
+    public void dropSingleColumnFromMultiColumnPK() throws StandardException {
+        cid = createTable(SCHEMA, "c", "c1 int not null, c2 char(1), c3 int not null, primary key(c1,c3)");
+        writeRows(
+                createNewRow(cid, 1L, "A", 50L),
+                createNewRow(cid, 2L, "B", 20L),
+                createNewRow(cid, 5L, "C", 10L)
+        );
+        runAlter("ALTER TABLE c DROP COLUMN c1");
+        expectFullRows(
+                cid,
+                createNewRow(cid, "C", 10L),
+                createNewRow(cid, "B", 20L),
+                createNewRow(cid, "A", 50L)
+        );
+        expectRows(
+                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex(Index.PRIMARY_KEY_CONSTRAINT)),
+                createNewRow(store(), cid, UNDEF, 10L),
+                createNewRow(store(), cid, UNDEF, 20L),
+                createNewRow(store(), cid, UNDEF, 50L)
+        );
     }
 
     @Test
