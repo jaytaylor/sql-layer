@@ -233,44 +233,68 @@ public class Format {
                     {
                         describe(atts.get(Label.GROUP_TABLE).get(0));
                         sb.append(" -> ");
-                        for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
                         {
-                            describe(table);
-                            sb.append(", ");
+                            for (Explainer table : atts.get(Label.TABLE_CORRELATION))
+                                sb.append(table.get()).append(", ");
+                            sb.setLength(sb.length()-2);
                         }
-                        if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
+                        else
                         {
-                            sb.setLength(sb.length() - 2);
+                            for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                                sb.append(table.get()).append(", ");
+                            if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
+                            {
+                                sb.setLength(sb.length() - 2);
+                            }
                         }
                     }
                     else if (name.equals("Ancestor Lookup Nested"))
                     {
-                        describe(atts.get(Label.BINDING_POSITION).get(0));
-                        sb.append(" -> ");
-                        for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                        sb.append(atts.get(Label.BINDING_POSITION).get(0).get()).append(" -> ");
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
                         {
-                            describe(table);
-                            sb.append(", ");
+                            for (Explainer table : atts.get(Label.TABLE_CORRELATION))
+                                sb.append(table.get()).append(", ");
+                            sb.setLength(sb.length()-2);
                         }
-                        if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
+                        else
                         {
-                            sb.setLength(sb.length() - 2);
+                            for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                                sb.append(table.get()).append(", ");
+                            if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
+                            {
+                                sb.setLength(sb.length() - 2);
+                            }
                         }
                     }
                     else if (name.equals("Branch Lookup Default"))
                     {
                         describe(atts.get(Label.GROUP_TABLE).get(0));
                         sb.append(" -> ");
-                        describe(atts.get(Label.OUTPUT_TYPE).get(0));
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
+                        {
+                            for (Explainer table : atts.get(Label.TABLE_CORRELATION))
+                                sb.append(table.get()).append(", ");
+                            sb.setLength(sb.length()-2);
+                        }
+                        else
+                            describe(atts.get(Label.OUTPUT_TYPE).get(0));
                         sb.append(" (via ");
                         describe(atts.get(Label.ANCESTOR_TYPE).get(0));
                         sb.append(")");
                     }
                     else if (name.equals("Branch Lookup Nested"))
                     {
-                        describe(atts.get(Label.BINDING_POSITION).get(0));
-                        sb.append(" -> ");
-                        describe(atts.get(Label.OUTPUT_TYPE).get(0));
+                        sb.append(atts.get(Label.BINDING_POSITION).get(0).get()).append(" -> ");
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
+                        {
+                            for (Explainer table : atts.get(Label.TABLE_CORRELATION))
+                                sb.append(table.get()).append(", ");
+                            sb.setLength(sb.length()-2);
+                        }
+                        else
+                            describe(atts.get(Label.OUTPUT_TYPE).get(0));
                         sb.append(" (via ");
                         describe(atts.get(Label.ANCESTOR_TYPE).get(0));
                         sb.append(")");

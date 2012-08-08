@@ -1102,6 +1102,22 @@ public class OperatorAssembler extends BaseRule
             }
             stream.rowType = null;
             stream.fieldOffsets = null;
+            
+            if (planContext.hasInfo())
+            {
+                Attributes atts = new Attributes();
+                for (TableSource tableSource : ancestorLookup.getTables())
+                {
+                    atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(tableSource.getTable().getTable().getName().toString()));
+                }
+                int binding = currentBindingPosition();
+                if (lookupBindings.containsKey(binding));
+                {
+                    atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(lookupBindings.get(binding)));
+                }
+                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            }
+            
             return stream;
         }
 
@@ -1152,6 +1168,22 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = null;
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
+            
+            if (planContext.hasInfo())
+            {
+                Attributes atts = new Attributes();
+                for (TableSource tableSource : branchLookup.getTables())
+                {
+                    atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(tableSource.getTable().getTable().getName().toString()));
+                }
+                int binding = currentBindingPosition();
+                if (lookupBindings.containsKey(binding));
+                {
+                    atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(lookupBindings.get(binding)));
+                }
+                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            }
+            
             return stream;
         }
 
@@ -1170,11 +1202,14 @@ public class OperatorAssembler extends BaseRule
                 Attributes atts = new Attributes();
                 if (outer instanceof Flatten)
                 {
-                    List nodes = ((Flatten)outer).getTableNodes();
+                    List<TableNode> nodes = ((Flatten)outer).getTableNodes();
                     if (nodes.size() == 1)
                     {
-                        atts.put(Label.TABLE_CORRELATION, (Explainer)nodes.get(0));
+                        String name = nodes.get(0).getTable().getName().toString();
+                        atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(name));
                         planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                        
+                        lookupBindings.put(pos, name);
                     }
                 }
             }
@@ -1771,6 +1806,7 @@ public class OperatorAssembler extends BaseRule
         protected int expressionBindingsOffset, loopBindingsOffset;
         protected Stack<ColumnExpressionToIndex> boundRows = new Stack<ColumnExpressionToIndex>(); // Needs to be List<>.
         protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<BaseHashTable,Integer>();
+        protected Map<Integer,String> lookupBindings = new HashMap<Integer,String>();
 
         protected void computeBindingsOffsets() {
             expressionBindingsOffset = 0;

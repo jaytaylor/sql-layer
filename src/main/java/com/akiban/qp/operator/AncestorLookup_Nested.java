@@ -39,6 +39,7 @@ import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -240,6 +241,18 @@ class AncestorLookup_Nested extends Operator
        for (UserTable table : ancestors)
            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+       
+       if (extraInfo != null && extraInfo.containsKey(this))
+        {
+            for (Explainer table : ((OperationExplainer)extraInfo.get(this)).get().get(Label.TABLE_CORRELATION))
+                ex.addAttribute(Label.TABLE_CORRELATION, table);
+            Attributes atts = (Attributes)extraInfo.get(this).get();
+            if (atts.containsKey(Label.BINDING_POSITION))
+                ex.addAttribute(Label.BINDING_POSITION, atts.get(Label.BINDING_POSITION).get(0));
+            else
+                ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        }
+       
        return ex;
     }
 

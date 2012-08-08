@@ -310,6 +310,13 @@ public class BranchLookup_Default extends Operator
         ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
+        
+        if (extraInfo != null && extraInfo.containsKey(this))
+        {
+            for (Explainer table : ((OperationExplainer)extraInfo.get(this)).get().get(Label.TABLE_CORRELATION))
+                ex.addAttribute(Label.TABLE_CORRELATION, table);
+        }
+        
         return ex;
     }
 
