@@ -85,7 +85,7 @@ public class MExtract extends TOverloadBase
                     target.putInt32(MDatetimes.encodeDate(ymd));
             }
         },
-        TIME(MDatetimes.DATE)
+        TIME(MDatetimes.TIME)
         {
             @Override
             void putVal(PValueTarget target, long ymd[], TExecutionContext context)
