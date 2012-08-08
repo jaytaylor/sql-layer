@@ -32,7 +32,6 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,7 +50,6 @@ import java.util.concurrent.Callable;
 import com.akiban.ais.model.*;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
@@ -831,30 +829,32 @@ public class ApiTestBase {
         }
         return row;
     }
-
     protected final void dropAllTables() throws InvalidOperationException {
-        ensureAdapter();
-        for(View view : ddl().getAIS(session()).getViews().values()) {
+        dropAllTables(session());
+    }
+
+    protected final void dropAllTables(Session session) throws InvalidOperationException {
+        for(View view : ddl().getAIS(session).getViews().values()) {
             // In case one view references another, avoid having to delete in proper order.
             view.getTableColumnReferences().clear();
         }
-        for(View view : ddl().getAIS(session()).getViews().values()) {
-            ddl().dropView(session(), view.getName());
+        for(View view : ddl().getAIS(session).getViews().values()) {
+            ddl().dropView(session, view.getName());
         }
 
         // Note: Group names, being derived, can change across DDL. Save root names instead.
         Set<TableName> groupRoots = new HashSet<TableName>();
-        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+        for(UserTable table : ddl().getAIS(session).getUserTables().values()) {
             if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
                 groupRoots.add(table.getName());
             }
         }
         for(TableName rootName : groupRoots) {
-            ddl().dropGroup(session(), getUserTable(rootName).getGroup().getName());
+            ddl().dropGroup(session, getUserTable(rootName).getGroup().getName());
         }
 
         // Now sanity check
-        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
+        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
             if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
@@ -862,7 +862,7 @@ public class ApiTestBase {
         }
         Assert.assertEquals("user table count", Collections.<TableName>emptySet(), uTables);
 
-        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session()).getViews().keySet());
+        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session).getViews().keySet());
         Assert.assertEquals("user table count", Collections.<TableName>emptySet(), views);
     }
 
@@ -1039,16 +1039,6 @@ public class ApiTestBase {
                 return null;
             }
         });
-    }
-
-    private void ensureAdapter()
-    {
-        Session session = session();
-        if (session.get(StoreAdapter.STORE_ADAPTER_KEY) == null) {
-            Schema schema = new Schema(sm.getSchemaManager().getAis(session));
-            PersistitAdapter adapter = persistitAdapter(schema);
-            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
-        }
     }
 
     protected boolean usingPValues() {

@@ -47,6 +47,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -300,6 +301,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     public PersistitIndexRowBuffer(PersistitAdapter adapter)
     {
+        ArgumentValidation.notNull("adapter", adapter);
         this.adapter = adapter;
     }
 
