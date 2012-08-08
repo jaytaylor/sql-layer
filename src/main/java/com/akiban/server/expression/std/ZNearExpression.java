@@ -44,7 +44,10 @@ public class ZNearExpression extends AbstractCompositeExpression {
             int size = argumentTypes.size();
             if (size != 4) throw new WrongExpressionArityException(4, size);
             
-            return ExpressionTypes.UNSUPPORTED;
+            for (int i = 0; i < size; ++i) {
+                argumentTypes.setType(i, AkType.DECIMAL);
+            }
+            return ExpressionTypes.LONG;
         }
 
         @Override
@@ -99,7 +102,7 @@ public class ZNearExpression extends AbstractCompositeExpression {
     }
     
     protected ZNearExpression(List<? extends Expression> children) {
-        super(AkType.UNSUPPORTED, checkArity(children));
+        super(AkType.LONG, checkArity(children));
     }
 
 }
