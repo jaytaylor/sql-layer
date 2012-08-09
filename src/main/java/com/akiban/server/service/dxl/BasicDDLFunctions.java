@@ -166,7 +166,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
     }
-
+    
     private void doIndexChange(Session session, TableName tableName, UserTable newDefinition, AlterTableHelper helper) {
         schemaManager().alterTableDefinition(session, tableName, newDefinition, helper.buildIndexMapping(newDefinition));
         AkibanInformationSchema newAIS = getAIS(session);

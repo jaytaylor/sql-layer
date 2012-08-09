@@ -24,17 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.error;
 
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.util.HasId;
+import com.akiban.ais.model.TableName;
 
-public interface TAggregator extends HasId {
-    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst);
-    void emptyValue(PValueTarget state);
-    TInstance resultType(TPreptimeValue value);
-    TClass getTypeClass();
-    String name();
+public class DropGroupNotRootException extends InvalidOperationException {
+    public DropGroupNotRootException (TableName tableName) {
+        super (ErrorCode.DROP_GROUP_NOT_ROOT, tableName.getSchemaName(), tableName.getTableName());
+    }
+
 }

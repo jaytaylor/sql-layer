@@ -78,6 +78,11 @@ public final class TValidatedOverload implements TOverload {
         return overload.toString(inputs, resultType);
     }
 
+    @Override
+    public String id() {
+        return overload.id();
+    }
+
     // TOverload methods (cached)
 
     @Override

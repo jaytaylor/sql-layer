@@ -29,7 +29,6 @@ package com.akiban.qp.rowtype;
 import com.akiban.server.types.AkType;
 
 import com.akiban.server.aggregation.AggregatorFactory;
-import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TInstance;
 
 import java.util.List;

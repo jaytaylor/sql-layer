@@ -1,0 +1,16 @@
+SelectQuery@163caf76
+  ResultSet@6a237761[name, state, _SQL_COL_1]
+    Project@3e72b7b7[customers.name, addresses.state, Subquery@1676076c]
+      Select@5d7b6f68[]
+        TableGroupJoinTree@52cf44ca(TableGroup@ffac9ec(customers), customers INNER addresses - GroupScan@19dead26(Group(customers -> test._akiban_customers), rows = 100, cost = 22815.0))
+          TableSource@5e1e8f4a(customers - TableGroup@ffac9ec(customers))
+            TableSource@1bdf40e9(addresses - TableGroupJoin@6a39a70e(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+
+Subquery@1676076c
+  ResultSet@1ee14ef9[_SQL_COL_2]
+    Project@1e37f33a[MAX(orders.order_date)]
+      Select@5a07cd45[]
+        AggregateSource@6b417455(UNGROUPED,[])
+          Select@36359b30[]
+            TableGroupJoinTree@795f881d(TableGroup@ffac9ec(customers), orders - SingleIndexScan@6f06be9d(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =customers.cid, rows = 10, cost = 76.0860))
+              TableSource@453127fb(orders - TableGroup@ffac9ec(customers))
