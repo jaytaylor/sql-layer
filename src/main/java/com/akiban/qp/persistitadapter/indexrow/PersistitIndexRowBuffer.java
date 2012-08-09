@@ -43,7 +43,6 @@ import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -90,47 +89,8 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     @Override
     public int compareTo(PersistitIndexRowBuffer that)
     {
-        int c;
-        byte[] thisBytes = this.pKey.getEncodedBytes();
-        byte[] thatBytes = that.pKey.getEncodedBytes();
-        int p = 0;
-        int end = min(this.pKey.getEncodedSize(), that.pKey.getEncodedSize());
-        while (p < end) {
-            c = (thisBytes[p] & 0xff) - (thatBytes[p] & 0xff);
-            if (c != 0) {
-                return c;
-            } else {
-                p++;
-            }
-        }
-        c = thisBytes.length - thatBytes.length;
-        if (c != 0) {
-            return c;
-        }
-        // Compare pValues, if there are any
-        thisBytes = this.pValue == null ? null : this.pValue.getEncodedBytes();
-        thatBytes = that.pValue == null ? null : that.pValue.getEncodedBytes();
-        if (thisBytes == null && thatBytes == null) {
-            return 0;
-        } else if (thisBytes == null) {
-            return -1;
-        } else if (thatBytes == null) {
-            return 1;
-        }
-        p = 0;
-        end = min(this.pValue.getEncodedSize(), that.pValue.getEncodedSize());
-        while (p < end) {
-            c = (thisBytes[p] & 0xff) - (thatBytes[p] & 0xff);
-            if (c != 0) {
-                return c;
-            } else {
-                p++;
-            }
-        }
-        c = thisBytes.length - thatBytes.length;
-        return c;
+        return compareTo(that, null);
     }
-
 
     // BoundExpressions interface
 
@@ -308,6 +268,55 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     public boolean keyEmpty()
     {
         return pKey.getEncodedSize() == 0;
+    }
+
+    public int compareTo(PersistitIndexRowBuffer that, boolean[] ascending)
+    {
+        int c;
+        byte[] thisBytes = this.pKey.getEncodedBytes();
+        byte[] thatBytes = that.pKey.getEncodedBytes();
+        int b = 0; // byte position
+        int f = 0; // field position
+        int end = min(this.pKey.getEncodedSize(), that.pKey.getEncodedSize());
+        while (b < end) {
+            int thisByte = thisBytes[b] & 0xff;
+            int thatByte = thatBytes[b] & 0xff;
+            c = thisByte - thatByte;
+            if (c != 0) {
+                return ascending == null || ascending[f] ? c : -c;
+            } else {
+                b++;
+                if (thisByte == 0) {
+                    f++;
+                }
+            }
+        }
+        // Compare pValues, if there are any
+        thisBytes = this.pValue == null ? null : this.pValue.getEncodedBytes();
+        thatBytes = that.pValue == null ? null : that.pValue.getEncodedBytes();
+        if (thisBytes == null && thatBytes == null) {
+            return 0;
+        } else if (thisBytes == null) {
+            return ascending == null || ascending[f] ? -1 : 1;
+        } else if (thatBytes == null) {
+            return ascending == null || ascending[f] ? 1 : -1;
+        }
+        b = 0;
+        end = min(this.pValue.getEncodedSize(), that.pValue.getEncodedSize());
+        while (b < end) {
+            int thisByte = thisBytes[b] & 0xff;
+            int thatByte = thatBytes[b] & 0xff;
+            c = thisByte - thatByte;
+            if (c != 0) {
+                return ascending == null || ascending[f] ? c : -c;
+            } else {
+                b++;
+                if (thisByte == 0) {
+                    f++;
+                }
+            }
+        }
+        return 0;
     }
 
     // For use by subclasses
