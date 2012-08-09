@@ -27,11 +27,15 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.collation.AkCollator;
@@ -41,6 +45,8 @@ import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.Math.min;
 
 class IndexCursorMixedOrder<S,E> extends IndexCursor
 {
@@ -53,9 +59,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         exchange.clear();
         scanStates.clear();
         try {
+            setBoundaries();
             initializeScanStates();
             repositionExchange(0);
             justOpened = true;
+            pastStart = false;
         } catch (PersistitException e) {
             close();
             adapter.handlePersistitException(e);
@@ -76,6 +84,26 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             }
             if (more) {
                 next = row();
+                // If we're scanning a unique key index, then the row format has the declared key in the
+                // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
+                // restrict the entire declared key and leading hkeys fields. If this happens, then the first
+                // row found by exchange.traverse may actually not qualify -- those values may be lower than
+                // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
+                // past the startKey.
+                if (!pastStart && beforeStart(next)) {
+                    next = null;
+                    advance(scanStates.size() - 1);
+                    if (more) {
+                        next = row();
+                        pastStart = true;
+                    } else {
+                        close();
+                    }
+                }
+                if (next != null && pastEnd(next)) {
+                    next = null;
+                    close();
+                }
             } else {
                 close();
             }
@@ -134,7 +162,13 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     public void initializeScanStates() throws PersistitException
     {
         int f = 0;
-        while (f < boundColumns) {
+        // Use maxSegments to limit MixedOrderScanStates to just those corresponding to the columns
+        // stored in a Persistit key. The off-by-one-row problems due to columns in the Persistit value
+        // are dealt with in IndexCursorMixedOrder.
+        int maxSegments =
+            keyRange == null /* sorting */ ? Integer.MAX_VALUE :
+            index().isUnique() ? index().getKeyColumns().size() : index().getAllColumns().size();
+        while (f < min(boundColumns, maxSegments)) {
             BoundExpressions lo = keyRange.lo().boundExpressions(context);
             BoundExpressions hi = keyRange.hi().boundExpressions(context);
             S loSource = sortKeyAdapter.get(lo, f);
@@ -188,13 +222,13 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             scanStates.add(scanState);
             f++;
         }
-        while (f < orderingColumns()) {
+        while (f < min(orderingColumns(), maxSegments)) {
             MixedOrderScanStateSingleSegment<S, E> scanState =
                 new MixedOrderScanStateSingleSegment<S, E>(this, f, sortKeyAdapter);
             scanStates.add(scanState);
             f++;
         }
-        if (f < keyColumns()) {
+        if (f < min(keyColumns(), maxSegments)) {
             MixedOrderScanStateRemainingSegments<S> scanState =
                 new MixedOrderScanStateRemainingSegments<S>(this, orderingColumns());
             scanStates.add(scanState);
@@ -212,6 +246,10 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         super(context, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
+        this.ascending = new boolean[ordering.sortColumns()];
+        for (int f = 0; f < orderingColumns(); f++) {
+            this.ascending[f] = ordering.ascending(f);
+        }
         this.sortKeyAdapter = sortKeyAdapter;
         // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
         // IndexRowType in that case, so an IndexKeyRange can't be created.
@@ -221,16 +259,21 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             boundColumns = 0;
             tInstances = sortKeyAdapter.createTInstances(orderingColumns);
         } else {
-            keyColumns = keyRange.indexRowType().index().indexRowComposition().getLength();
+            Index index = keyRange.indexRowType().index();
+            keyColumns = index.indexRowComposition().getLength();
             boundColumns = keyRange.boundColumns();
 
             collators = sortKeyAdapter.createAkCollators(boundColumns);
             akTypes = sortKeyAdapter.createAkTypes(boundColumns);
             tInstances = sortKeyAdapter.createTInstances(boundColumns + orderingColumns);
-            List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
+            List<IndexColumn> indexColumns = index.getAllColumns();
             for (int f = 0; f < boundColumns; f++) {
                 Column column = indexColumns.get(f).getColumn();
                 sortKeyAdapter.setColumnMetadata(column, f, akTypes, collators, tInstances);
+            }
+            if (index.isUnique()) {
+                startKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+                endKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
             }
         }
         for (int i = 0; i < orderingColumns; ++i) {
@@ -239,11 +282,6 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     }
 
     // For use by this package
-
-    IndexKeyRange keyRange()
-    {
-        return keyRange;
-    }
 
     API.Ordering ordering()
     {
@@ -255,11 +293,6 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     protected int orderingColumns()
     {
         return ordering.sortColumns();
-    }
-
-    protected int boundColumns()
-    {
-        return boundColumns;
     }
 
     protected int keyColumns()
@@ -292,9 +325,69 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         }
     }
 
-    private MixedOrderScanStateSingleSegment scanState(int field)
+    private Index index()
     {
-        return (MixedOrderScanStateSingleSegment) scanStates.get(field);
+        return keyRange.indexRowType().index();
+    }
+
+    private void setBoundaries()
+    {
+        if (keyRange != null && index().isUnique()) {
+            assert startKey != null : index();
+            assert endKey != null : index();
+            IndexBound lo = keyRange.lo();
+            IndexBound hi = keyRange.hi();
+            BoundExpressions loExpressions = lo.boundExpressions(context);
+            BoundExpressions hiExpressions = hi.boundExpressions(context);
+            int nColumns = index().getAllColumns().size();
+            clear(startKey);
+            clear(endKey);
+            for (int f = 0; f < nColumns; f++) {
+                BoundExpressions startExpressions;
+                BoundExpressions endExpressions;
+                if (ordering().ascending(f)) {
+                    startExpressions = loExpressions;
+                    endExpressions = hiExpressions;
+                } else {
+                    startExpressions = hiExpressions;
+                    endExpressions = loExpressions;
+                }
+                startKey.append(sortKeyAdapter.get(startExpressions, f), akTypeAt(f), tInstanceAt(f), collatorAt(f));
+                endKey.append(sortKeyAdapter.get(endExpressions, f), akTypeAt(f), tInstanceAt(f), collatorAt(f));
+            }
+        }
+    }
+
+    private void clear(PersistitIndexRowBuffer bound)
+    {
+        assert bound == startKey || bound == endKey;
+        bound.resetForWrite(index(), adapter.newKey(), null); // TODO: Reuse the existing key
+    }
+
+    private boolean beforeStart(Row row)
+    {
+        boolean beforeStart;
+        if (startKey == null) {
+            beforeStart = false;
+        } else {
+            PersistitIndexRow current = (PersistitIndexRow) row;
+            int c = current.compareTo(startKey, ascending);
+            beforeStart = c < 0 || c == 0 && !keyRange.loInclusive();
+        }
+        return beforeStart;
+    }
+
+    private boolean pastEnd(Row row)
+    {
+        boolean pastEnd;
+        if (endKey == null) {
+            pastEnd = false;
+        } else {
+            PersistitIndexRow current = (PersistitIndexRow) row;
+            int c = current.compareTo(endKey, ascending);
+            pastEnd = c > 0 || c == 0 && !keyRange.hiInclusive();
+        }
+        return pastEnd;
     }
 
     public AkCollator collatorAt(int field) {
@@ -322,4 +415,10 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private AkCollator[] collators;
     private AkType[] akTypes;
     private TInstance[] tInstances;
+    private boolean[] ascending;
+    // Used for checking first and last row in case of unique indexes. These indexes have some key state in
+    // the Persistit value, and are therefore not visible to the ICMO implementation.
+    private PersistitIndexRow startKey;
+    private PersistitIndexRow endKey;
+    private boolean pastStart;
 }
