@@ -73,6 +73,7 @@ import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
+import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchSequenceException;
@@ -454,6 +455,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         Set<String> schemas = new HashSet<String>();
         for(ChangedTableDescription desc : alteredTables) {
             checkTableName(desc.getOldName(), true, false);
+            checkTableName(desc.getNewName(), true, false);
+            checkJoinTo(desc.getNewDefinition().getParentJoin(), desc.getNewName(), false);
             schemas.add(desc.getOldName().getSchemaName());
             schemas.add(desc.getNewName().getSchemaName());
         }
@@ -1209,6 +1212,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                                         Integer version, MemoryTableFactory factory) {
         final TableName newName = newTable.getName();
         checkTableName(newName, false, isInternal);
+        checkJoinTo(newTable.getParentJoin(), newName, isInternal);
         AISMerge merge = new AISMerge(getAis(), newTable);
         merge.merge();
         UserTable mergedTable = merge.getAIS().getUserTable(newName);
@@ -1243,6 +1247,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
         if(!shouldBeIS && inIS) {
             throw new ProtectedTableDDLException(tableName);
+        }
+    }
+
+    private static void checkJoinTo(Join join, TableName childName, boolean isInternal) {
+        TableName parentName = (join != null) ? join.getParent().getName() : null;
+        if(parentName != null) {
+            boolean inAIS = TableName.INFORMATION_SCHEMA.equals(parentName.getSchemaName());
+            if(inAIS && !isInternal) {
+                throw new JoinToProtectedTableException(parentName, childName);
+            } else if(!inAIS && isInternal) {
+                throw new IllegalArgumentException("Internal table join to non-IS table: " + childName);
+            }
         }
     }
 
