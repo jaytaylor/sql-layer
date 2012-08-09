@@ -71,6 +71,7 @@ class IndexCursorSpatial<S> extends IndexCursorUnidirectional<S>
             startKey.append(startBoundary);
         } else {
             startExpressions = start.boundExpressions(context);
+            /* TODO: Obsolete
             startKey.clear();
             startKeyTarget.attach(startKey);
             for (int f = 0; f < startBoundColumns; f++) {
@@ -79,12 +80,14 @@ class IndexCursorSpatial<S> extends IndexCursorUnidirectional<S>
                     startKeyTarget.append(source, f, types, tInstances, collators);
                 }
             }
+            */
         }
         BoundExpressions endExpressions;
         if (endBoundColumns == 0 || end == null) {
             endKey = null;
         } else {
             endExpressions = end.boundExpressions(context);
+            /* TODO: Obsolete
             endKey.clear();
             endKeyTarget.attach(endKey);
             for (int f = 0; f < endBoundColumns; f++) {
@@ -99,6 +102,7 @@ class IndexCursorSpatial<S> extends IndexCursorUnidirectional<S>
                     endKey.append(Key.AFTER);
                 }
             }
+            */
         }
     }
     // For use by this class
