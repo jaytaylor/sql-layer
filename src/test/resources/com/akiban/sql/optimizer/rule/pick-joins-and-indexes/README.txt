@@ -104,6 +104,8 @@ duplicate-table-conditions: condition between two occurrences of same table
 
 whole-group-nested: whole group as nested result set
 
+group-branch-subquery: subquery from different branch (no group loop from flatten)
+
 geospatial-1: compute max radius for N neighbors
 
 geospatial-2: get within that radius
