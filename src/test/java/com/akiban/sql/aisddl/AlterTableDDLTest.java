@@ -44,8 +44,10 @@ import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchGroupingFKException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
@@ -659,19 +661,11 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(other) REFERENCES zap(id)");
     }
 
-    @Test(expected=UnsupportedSQLException.class)
+    @Test(expected=JoinToMultipleParentsException.class)
     public void cannotAddGFKToTableWithParent() throws StandardException {
         builder.userTable(C_NAME).colBigInt("cid", false).pk("cid");
         builder.userTable(O_NAME).colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo(C_NAME).on("cid", "cid");
         parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
-    }
-
-    @Test(expected=UnsupportedSQLException.class)
-    public void cannotAddGFKToTableWithChild() throws StandardException {
-        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
-        builder.userTable(C_NAME).colBigInt("cid", false).colBigInt("aid").pk("cid");
-        builder.userTable(O_NAME).colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo(C_NAME).on("cid", "cid");
-        parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(aid) REFERENCES a(aid)");
     }
 
     @Test(expected=NoSuchColumnException.class)
@@ -698,6 +692,17 @@ public class AlterTableDDLTest {
         builder.userTable(C_NAME).colBigInt("id", false).colBigInt("x").pk("id");
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("y").pk("id");
         parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(y) REFERENCES c(id,x)");
+    }
+
+    @Test
+    public void dropGFKToTableWithChild() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
+        builder.userTable(C_NAME).colBigInt("cid", false).colBigInt("aid").pk("cid");
+        builder.userTable(O_NAME).colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo(C_NAME).on("cid", "cid");
+        parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(aid) REFERENCES a(aid)");
+        expectGroupIsSame(A_NAME, C_NAME, true);
+        expectChildOf(A_NAME, C_NAME);
+        expectChildOf(C_NAME, O_NAME);
     }
 
     @Test
@@ -813,40 +818,38 @@ public class AlterTableDDLTest {
     // DROP [CONSTRAINT] GROUPING FOREIGN KEY
     //
 
-    @Test(expected=UnsupportedSQLException.class)
+    @Test(expected=NoSuchGroupingFKException.class)
     public void cannotDropGFKFromSingleTableGroup() throws StandardException {
         builder.userTable(C_NAME).colBigInt("id", false).pk("id");
         parseAndRun("ALTER TABLE c DROP GROUPING FOREIGN KEY");
     }
 
-    @Test(expected=UnsupportedSQLException.class)
+    @Test(expected=NoSuchGroupingFKException.class)
     public void cannotDropGFKFromRootOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE c DROP GROUPING FOREIGN KEY");
     }
 
-    @Test(expected=UnsupportedSQLException.class)
-    public void cannotDropGFKFromMiddleOfGroup() throws StandardException {
+    @Test
+    public void dropGFKFromMiddleOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE o DROP GROUPING FOREIGN KEY");
+        expectGroupIsSame(C_NAME, O_NAME, false);
+        expectChildOf(O_NAME, I_NAME);
     }
 
     @Test
      public void dropGFKLeafFromTwoTableGroup() throws StandardException {
         builder.userTable(C_NAME).colBigInt("id", false).pk("id");
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
-
         parseAndRun("ALTER TABLE a DROP GROUPING FOREIGN KEY");
-
         expectGroupIsSame(C_NAME, A_NAME, false);
     }
 
     @Test
     public void dropGFKLeafFromGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
-
         parseAndRun("ALTER TABLE i DROP GROUPING FOREIGN KEY");
-
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
@@ -854,9 +857,7 @@ public class AlterTableDDLTest {
     public void dropGFKLeafWithNoPKFromGroup() throws StandardException {
         builder.userTable(C_NAME).colBigInt("id", false).pk("id");
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("cid").joinTo(C_NAME).on("cid", "id");
-
         parseAndRun("ALTER TABLE a DROP GROUPING FOREIGN KEY");
-
         expectGroupIsSame(C_NAME, A_NAME, false);
     }
 
@@ -864,12 +865,9 @@ public class AlterTableDDLTest {
     public void dropGFKFromCrossSchemaGroup() throws StandardException {
         String schema2 = "foo";
         TableName xName = tn(schema2, "x");
-
         builder.userTable(C_NAME).colBigInt("id", false).pk("id");
         builder.userTable(xName).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
-
         parseAndRun("ALTER TABLE foo.x DROP GROUPING FOREIGN KEY");
-
         expectGroupIsSame(C_NAME, xName, false);
     }
 
@@ -881,9 +879,7 @@ public class AlterTableDDLTest {
     @Test
     public void groupAddSimple() throws StandardException {
         buildCOIJoinedAUnJoined();
-
         parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c(id)");
-
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectChildOf(C_NAME, A_NAME);
     }
@@ -891,9 +887,7 @@ public class AlterTableDDLTest {
     @Test
     public void groupAddNoReferencedSingleColumn() throws StandardException {
         buildCOIJoinedAUnJoined();
-
         parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c");
-
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectChildOf(C_NAME, A_NAME);
     }
@@ -902,9 +896,7 @@ public class AlterTableDDLTest {
     public void groupAddNoReferencedMultiColumn() throws StandardException {
         builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
-
         parseAndRun("ALTER GROUP ADD TABLE a(other_id,other_id2) TO c");
-
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectChildOf(C_NAME, A_NAME);
     }
@@ -931,18 +923,14 @@ public class AlterTableDDLTest {
     public void groupDropTableTwoTableGroup() throws StandardException {
         builder.userTable(C_NAME).colBigInt("id", false).pk("id");
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
-
         parseAndRun("ALTER GROUP DROP TABLE a");
-
         expectGroupIsSame(C_NAME, A_NAME, false);
     }
 
     @Test
     public void groupDropTableLeafOfMultiple() throws StandardException {
         buildCOIJoinedAUnJoined();
-
         parseAndRun("ALTER GROUP DROP TABLE i");
-
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
@@ -967,12 +955,12 @@ public class AlterTableDDLTest {
         }
     }
 
-    private void expectChildOf(TableName t1, TableName t2) {
+    private void expectChildOf(TableName pTableName, TableName cTableName) {
         // Only check the names of tables, DDLFunctionsMock doesn't re-serialize
-        UserTable table1 = ddlFunctions.ais.getUserTable(t2);
+        UserTable table1 = ddlFunctions.ais.getUserTable(cTableName);
         UserTable parent = (table1.getParentJoin() != null) ? table1.getParentJoin().getParent() : null;
         TableName parentName = (parent != null) ? parent.getName() : null;
-        assertEquals(t2 + " parent name", t1, parentName);
+        assertEquals(cTableName + " parent name", pTableName, parentName);
     }
 
     private void expectColumnChanges(String... changes) {

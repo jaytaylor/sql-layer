@@ -47,9 +47,11 @@ import com.akiban.ais.util.TableChange;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchGroupingFKException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
@@ -252,14 +254,16 @@ public class AlterTableDDL {
     }
 
     private static boolean doGenericAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table, TableElementList elementList) {
-        if(elementList == null) {
+        // Should never come this way from the parser, but be defensive
+        if((elementList == null) || elementList.isEmpty()) {
             return false;
         }
 
         List<TableChange> columnChanges = new ArrayList<TableChange>();
         List<TableChange> indexChanges = new ArrayList<TableChange>();
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<ColumnDefinitionNode>();
-        List<ConstraintDefinitionNode> indexDefNodes = new ArrayList<ConstraintDefinitionNode>();
+        List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<FKConstraintDefinitionNode>();
+        List<ConstraintDefinitionNode> conDefNodes = new ArrayList<ConstraintDefinitionNode>();
 
         for(TableElementNode node : elementList) {
             switch(node.getNodeType()) {
@@ -282,7 +286,7 @@ public class AlterTableDDL {
 
                 case NodeTypes.FK_CONSTRAINT_DEFINITION_NODE: {
                     FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode) node;
-                    indexDefNodes.add(fkNode);
+                    fkDefNodes.add(fkNode);
                 } break;
 
                 case NodeTypes.CONSTRAINT_DEFINITION_NODE: {
@@ -306,7 +310,7 @@ public class AlterTableDDL {
                         }
                         indexChanges.add(TableChange.createDrop(name));
                     } else {
-                        indexDefNodes.add(cdn);
+                        conDefNodes.add(cdn);
                     }
                 } break;
 
@@ -315,8 +319,10 @@ public class AlterTableDDL {
             }
         }
 
-        UserTable tableCopy = copyTable(table, columnChanges, indexChanges);
-        AISBuilder builder = new AISBuilder(tableCopy.getAIS());
+        final AkibanInformationSchema origAIS = table.getAIS();
+        final UserTable tableCopy = copyTable(table, columnChanges, indexChanges);
+        final AkibanInformationSchema aisCopy = tableCopy.getAIS();
+        final AISBuilder builder = new AISBuilder(aisCopy);
 
         for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
@@ -334,21 +340,31 @@ public class AlterTableDDL {
         }
 
         TableName newName = tableCopy.getName();
-        for(ConstraintDefinitionNode cdn : indexDefNodes) {
-            assert cdn.getConstraintType() != ConstraintType.DROP;
-            if(cdn instanceof FKConstraintDefinitionNode) {
-                if(tableCopy.getParentJoin() == null) {
-                    tableCopy.setGroup(null);
+        for(ConstraintDefinitionNode cdn : conDefNodes) {
+            assert cdn.getConstraintType() != ConstraintType.DROP : cdn;
+            String name = TableDDL.addIndex(builder, cdn, newName.getSchemaName(), newName.getTableName());
+            indexChanges.add(TableChange.createAdd(name));
+        }
+
+        for(FKConstraintDefinitionNode fk : fkDefNodes) {
+            if(fk.getConstraintType() == ConstraintType.DROP) {
+                Join parentJoin = tableCopy.getParentJoin();
+                if(parentJoin == null) {
+                    throw new NoSuchGroupingFKException(table.getName());
                 }
-                FKConstraintDefinitionNode fkcdn = (FKConstraintDefinitionNode)cdn;
-                TableName parent = TableDDL.getReferencedName(defaultSchema, fkcdn);
-                if((tableCopy.getAIS().getUserTable(parent) == null) && (table.getAIS().getUserTable(parent) != null)) {
-                    TableDDL.addParentTable(builder, table.getAIS(), fkcdn, defaultSchema);
-                }
-                TableDDL.addJoin(builder, fkcdn, defaultSchema, newName.getSchemaName(), newName.getTableName());
+                tableCopy.setGroup(null);
+                tableCopy.removeCandidateParentJoin(parentJoin);
+                parentJoin.getParent().removeCandidateChildJoin(parentJoin);
             } else {
-                String name = TableDDL.addIndex(builder, cdn, newName.getSchemaName(), newName.getTableName());
-                indexChanges.add(TableChange.createAdd(name));
+                if(table.getParentJoin() != null) {
+                    throw new JoinToMultipleParentsException(table.getName());
+                }
+                TableName parent = TableDDL.getReferencedName(defaultSchema, fk);
+                if((aisCopy.getUserTable(parent) == null) && (origAIS.getUserTable(parent) != null)) {
+                    TableDDL.addParentTable(builder, origAIS, fk, defaultSchema);
+                }
+                tableCopy.setGroup(null);
+                TableDDL.addJoin(builder, fk, defaultSchema, newName.getSchemaName(), newName.getTableName());
             }
         }
 

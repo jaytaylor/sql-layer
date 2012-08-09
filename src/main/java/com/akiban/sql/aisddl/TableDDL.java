@@ -287,7 +287,8 @@ public class TableDDL
         String[] fkColumns = columnNamesFromListOrPK(fkdn.getColumnList(), null); // No defaults for child table
         String[] pkColumns = columnNamesFromListOrPK(fkdn.getRefResultColumnList(), parentTable.getPrimaryKey());
 
-        if (fkColumns.length != parentTable.getPrimaryKeyIncludingInternal().getColumns().size()) {
+        int actualPkColCount = parentTable.getPrimaryKeyIncludingInternal().getColumns().size();
+        if ((fkColumns.length != actualPkColCount) || (pkColumns.length != actualPkColCount)) {
             throw new JoinColumnMismatchException(fkdn.getColumnList().size(),
                                                   new TableName(schemaName, tableName),
                                                   parentName,
