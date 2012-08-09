@@ -45,7 +45,7 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
-class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpression> {
+public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpression> {
 
     private PValueSortKeyAdapter() {}
     
