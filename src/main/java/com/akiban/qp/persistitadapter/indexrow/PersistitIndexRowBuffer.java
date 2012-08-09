@@ -41,6 +41,8 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataPValueSource;
+import com.akiban.server.rowdata.RowDataSource;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
@@ -165,7 +167,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
         IndexRowComposition indexRowComp = index.indexRowComposition();
         FieldDef[] fieldDefs = index.indexDef().getRowDef().getFieldDefs();
-        RowDataValueSource rowDataValueSource = new RowDataValueSource();
+        RowDataSource rowDataValueSource = Types3Switch.ON ? new RowDataPValueSource() : new RowDataValueSource();
         while (indexField < indexRowComp.getLength()) {
             if (indexRowComp.isInRowData(indexField)) {
                 FieldDef fieldDef = fieldDefs[indexRowComp.getFieldPosition(indexField)];
