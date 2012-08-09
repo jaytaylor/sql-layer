@@ -36,7 +36,7 @@
 ---
 # verify dropping a non-root table errors
 - Statement: Drop Group orders;
-- error: [5000S]
+- error: [5000U]
 ---
 # Drop group with view attached fails
 - Statement: Drop Group customers;
