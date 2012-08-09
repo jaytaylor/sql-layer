@@ -340,7 +340,7 @@ public class OperatorITBase extends ITBase
                 } else if (value instanceof Integer) {
                     valueHolder.putInt((Integer) value);
                 } else if (value instanceof Long) {
-                    valueHolder.putInt((Long) value);
+                    valueHolder.putLong((Long) value);
                 } else if (value instanceof String) {
                     valueHolder.putString((String) value);
                 } else {
