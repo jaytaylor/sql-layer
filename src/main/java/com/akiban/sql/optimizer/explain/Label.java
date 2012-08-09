@@ -23,6 +23,7 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.sql.optimizer.explain;
 
 /**
@@ -56,6 +57,7 @@ public enum Label
     EXTRA_TAG(Category.DESCRIPTION), // extra info
     INFIX_REPRESENTATION(Category.DESCRIPTION),
     ASSOCIATIVE(Category.DESCRIPTION),
+    INDEX(Category.DESCRIPTION),
     
     // IDENTIFIER
     //--------------------------------------------------------------------------

@@ -169,14 +169,18 @@ public class Format {
             {
                 case LOOKUP_OPERATOR:
                     sb.append('(');
-                    for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                    if (atts.containsKey(Label.TABLE_CORRELATION))
                     {
-                        describe(table);
-                        sb.append(", ");
+                        for (Explainer table : atts.get(Label.TABLE_CORRELATION))
+                            sb.append(table.get()).append(", ");
+                        sb.setLength(sb.length()-2);
                     }
-                    if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
+                    else
                     {
-                        sb.setLength(sb.length() - 2);
+                        for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                            sb.append(table.get()).append(", ");
+                        if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
+                            sb.setLength(sb.length() - 2);
                     }
                     sb.append(')');
                     break;
@@ -187,14 +191,14 @@ public class Format {
                     sb.append('(').append(atts.get(Label.BRIEF)).append(')');
                     break;
                 case DUI:
-                    if (name.equals("Delete"))
-                    {
+                    if (name.equals("Delete_Default"))
                         sb.append(" FROM ").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0));
-                    }
-                    else if (name.equals("Insert"))
-                    {
+                    else if (name.equals("Insert_Default"))
                         sb.append("INTO").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0));
-                    }
+                    break;
+                case SCAN_OPERATOR:
+                    if (name.equals("IndexScan_Default"))
+                        sb.append(atts.get(Label.INDEX).get(0).get());
                     break;
                 default:
                     // Nothing needed, as there are many operators which display nothing in brief mode
@@ -217,7 +221,7 @@ public class Format {
                     sb.setLength(sb.length()-2);
                     break;
                 case SCAN_OPERATOR:
-                    if (name.equals("Values Scan"))
+                    if (name.equals("ValuesScan_Default"))
                     {
                         for (Explainer row : atts.get(Label.ROWTYPE))
                         {
@@ -229,13 +233,13 @@ public class Format {
                             sb.setLength(sb.length() - 2);
                         }
                     }
-                    else if (name.equals("Group Scan"))
+                    else if (name.equals("GroupScan_Default"))
                     {
                         describe(atts.get(Label.GROUP_TABLE).get(0));
                     }
-                    //else if (name.equals("Index Scan"))
+                    else if (name.equals("IndexScan_Default"))
                     {
-                        // TODO
+                        sb.append(atts.get(Label.INDEX).get(0).get());
                     }
                     break;
                 case LOOKUP_OPERATOR:
@@ -420,8 +424,12 @@ public class Format {
                         if (atts.containsKey(Label.COLUMN_NAME))
                         {
                             sb.append(" SET ");
-                            for (Explainer ex : atts.get(Label.COLUMN_NAME))
-                                sb.append(ex.get()).append(", ");
+                            for (int j = 0; j < Math.min(atts.get(Label.COLUMN_NAME).size(), atts.get(Label.EXPRESSIONS).size()); j++)
+                            {
+                                sb.append(atts.get(Label.COLUMN_NAME).get(j).get()).append(" = ");
+                                describe(atts.get(Label.EXPRESSIONS).get(j));
+                                sb.append(", ");
+                            }
                             sb.setLength(sb.length()-2);
                         }
                     }

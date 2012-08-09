@@ -92,6 +92,7 @@ import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
+import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -682,7 +683,7 @@ public class OperatorAssembler extends BaseRule
             UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
             
             Attributes atts = new Attributes();
-            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(insertStatement.getTargetTable().getTable().getName()));
+            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(insertStatement.getTargetTable().getTable().getName().toString()));
             for (Column column : insertStatement.getTargetColumns())
             {
                 atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
@@ -708,11 +709,15 @@ public class OperatorAssembler extends BaseRule
             if (planContext.hasInfo())
             {
                 Attributes atts = new Attributes();
-                atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(updateStatement.getTargetTable().getTable().getName()));
+                atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(updateStatement.getTargetTable().getTable().getName().toString()));
                 for (UpdateColumn column : updateColumns)
-                {
                     atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
-                }
+                if (usePValues)
+                    for (TPreparedExpression expression : updatesP)
+                        atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(expression.toString()));
+                else
+                    for (Expression expression : updates)
+                        atts.put(Label.EXPRESSIONS, expression.getExplainer(planContext.getInfo()));
                 planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
             return new PhysicalUpdate(plan, getParameterTypes());
@@ -725,7 +730,7 @@ public class OperatorAssembler extends BaseRule
             if (planContext.hasInfo())
             {
                 Attributes atts = new Attributes();
-                atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName()));
+                atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName().toString()));
                 planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
             return new PhysicalUpdate(plan, getParameterTypes());
