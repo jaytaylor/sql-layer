@@ -302,6 +302,7 @@ public enum ErrorCode {
     INDEX_COL_NOT_IN_GROUP  ("50", "00R", Importance.DEBUG, IndexColNotInGroupException.class),
     INDEX_TABLE_NOT_IN_GROUP("50", "00S", Importance.DEBUG, IndexTableNotInGroupException.class),
     INDISTINGUISHABLE_INDEX ("50", "00T", Importance.DEBUG, IndistinguishableIndexException.class),
+    DROP_GROUP_NOT_ROOT     ("50", "00U", Importance.DEBUG, DropGroupNotRootException.class),
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
     GROUP_MULTIPLE_ROOTS    ("50", "010", Importance.DEBUG, GroupHasMultipleRootsException.class),
