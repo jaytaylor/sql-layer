@@ -206,13 +206,6 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE a DROP COLUMN bar");
     }
 
-    // TODO: Remove when implemented
-    @Test(expected=UnsupportedSQLException.class)
-    public void cannotDropColumnGroupingColumn() throws StandardException {
-        buildCOIJoinedAUnJoined();
-        parseAndRun("ALTER TABLE i DROP COLUMN oid");
-    }
-
     @Test
     public void dropColumnPKColumn() throws StandardException {
         builder.userTable(A_NAME).colBigInt("aid", false).colBigInt("x", true).pk("aid");
@@ -312,6 +305,19 @@ public class AlterTableDDLTest {
             expectFinalTable(C_NAME, "id bigint NOT NULL", "c2 bigint NULL", "c1_c2(c2)", "PRIMARY(id)");
     }
 
+    @Test
+    public void dropColumnFromChildIsGroupedToParent() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE i DROP COLUMN oid");
+        expectColumnChanges("DROP:oid");
+        expectIndexChanges("DROP:__akiban_fk2");
+        // Do not check group and assume join removal handled at lower level (TableChangeValidator)
+        if(Types3Switch.ON)
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "i_i MCOMPAT_ BIGINT(21) NULL", "PRIMARY(id)", "join(oid->id)");
+        else
+            expectFinalTable(I_NAME, "id bigint NOT NULL", "i_i bigint NULL", "PRIMARY(id)", "join(oid->id)");
+    }
+
     //
     // ALTER COLUMN SET DATA TYPE
     //
@@ -322,11 +328,19 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE a ALTER COLUMN bar SET DATA TYPE INT");
     }
 
-    // TODO: Remove when implemented
-    @Test(expected=UnsupportedSQLException.class)
-    public void cannotAlterColumnGroupingColumn() throws StandardException {
+    @Test
+    public void alterColumnFromChildIsGroupedToParent() throws StandardException {
         buildCOIJoinedAUnJoined();
-        parseAndRun("ALTER TABLE i DROP COLUMN oid");
+        parseAndRun("ALTER TABLE i ALTER COLUMN oid SET DATA TYPE varchar(32)");
+        expectColumnChanges("MODIFY:oid->oid");
+        expectIndexChanges("MODIFY:__akiban_fk2->__akiban_fk2");
+        // Do not check group and assume join removal handled at lower level (TableChangeValidator)
+        if(Types3Switch.ON)
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ VARCHAR(32) NULL",
+                             "i_i MCOMPAT_ BIGINT(21) NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+        else
+            expectFinalTable(I_NAME, "id bigint NOT NULL", "oid varchar(32) NULL", "i_i bigint NULL", "__akiban_fk2(oid)",
+                             "PRIMARY(id)", "join(oid->id)");
     }
 
     @Test

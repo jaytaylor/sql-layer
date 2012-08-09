@@ -73,8 +73,6 @@ import static com.akiban.sql.parser.ConstraintDefinitionNode.ConstraintType;
 import static com.akiban.util.Exceptions.throwAlways;
 
 public class AlterTableDDL {
-    private static final String GROUP_CHANGE_ERROR_MSG = "Cannot change column %s from %s (primary or grouping key)";
-
     private AlterTableDDL() {}
 
     public static void alterTable(DDLFunctions ddlFunctions,
@@ -238,15 +236,6 @@ public class AlterTableDDL {
         Column column = table.getColumn(columnName);
         if(column == null) {
             throw new NoSuchColumnException(columnName);
-        }
-        // Reject until automatic grouping changes supported
-        Join join = table.getParentJoin();
-        if(join != null) {
-            for(JoinColumn joinColumn : join.getJoinColumns()) {
-                if(columnName.equals(joinColumn.getChild().getName())) {
-                    throw new UnsupportedSQLException(String.format(GROUP_CHANGE_ERROR_MSG, columnName, table.getName()), null);
-                }
-            }
         }
     }
 
