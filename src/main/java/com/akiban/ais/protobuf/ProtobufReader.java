@@ -566,7 +566,8 @@ public class ProtobufReader {
                 pbIndex,
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
-                AISProtobuf.Index.JOINTYPE_FIELD_NUMBER
+                AISProtobuf.Index.JOINTYPE_FIELD_NUMBER,
+                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER
         );
     }
 
@@ -574,7 +575,8 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbIndex,
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
-                AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER
+                AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
+                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER
         );
     }
 
