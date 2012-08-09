@@ -32,6 +32,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import org.junit.Test;
 
@@ -51,16 +52,16 @@ public class TableChangeValidatorTest {
 
 
     private static NewUserTableBuilder builder(TableName name) {
-        return AISBBasedBuilder.create().userTable(name);
+        return AISBBasedBuilder.create(SCHEMA).userTable(name);
     }
 
-    private UserTable table(NewUserTableBuilder builder) {
+    private UserTable table(NewAISBuilder builder) {
         AkibanInformationSchema ais = builder.ais();
         assertEquals("User table count", 1, ais.getUserTables().size());
         return ais.getUserTables().values().iterator().next();
     }
 
-    private UserTable table(NewUserTableBuilder builder, TableName tableName) {
+    private UserTable table(NewAISBuilder builder, TableName tableName) {
         UserTable table = builder.ais().getUserTable(tableName);
         assertNotNull("Found table: " + tableName, table);
         return table;
@@ -147,6 +148,26 @@ public class TableChangeValidatorTest {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", true).pk("id"));
         validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA_NULL);
+    }
+
+    @Test
+    public void modifyAddGeneratedBy() {
+        final TableName SEQ_NAME = new TableName(SCHEMA, "seq-1");
+        UserTable t1 = table(builder(TABLE_NAME).colLong("id", false).pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colLong("id", false).pk("id").sequence(SEQ_NAME.getTableName()));
+        t2.getColumn("id").setIdentityGenerator(t2.getAIS().getSequence(SEQ_NAME));
+        t2.getColumn("id").setDefaultIdentity(true);
+        validate(t1, t2, asList(TableChange.createModify("id", "id")), NO_CHANGES, ChangeLevel.METADATA);
+    }
+
+    @Test
+    public void modifyDropGeneratedBy() {
+        final TableName SEQ_NAME = new TableName(SCHEMA, "seq-1");
+        UserTable t1 = table(builder(TABLE_NAME).colLong("id", false).pk("id").sequence(SEQ_NAME.getTableName()));
+        t1.getColumn("id").setIdentityGenerator(t1.getAIS().getSequence(SEQ_NAME));
+        t1.getColumn("id").setDefaultIdentity(true);
+        UserTable t2 = table(builder(TABLE_NAME).colLong("id", false).pk("id"));
+        validate(t1, t2, asList(TableChange.createModify("id", "id")), NO_CHANGES, ChangeLevel.METADATA);
     }
 
     //
