@@ -186,6 +186,16 @@ public class Format {
                 case PHYSICAL_OPERATOR:
                     sb.append('(').append(atts.get(Label.BRIEF)).append(')');
                     break;
+                case DUI:
+                    if (name.equals("Delete"))
+                    {
+                        sb.append(" FROM ").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0));
+                    }
+                    else if (name.equals("Insert"))
+                    {
+                        sb.append("INTO").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0));
+                    }
+                    break;
                 default:
                     // Nothing needed, as there are many operators which display nothing in brief mode
             }
@@ -388,17 +398,33 @@ public class Format {
                     sb.append(atts.get(Label.SORT_OPTION).get(0).get());
                     break;
                 case DUI:
-                    if (name.equals("Delete"))
+                    if (name.equals("Delete_Default"))
                     {
-                        sb.append(" FROM ");
-                        describe(atts.get(Label.TABLE_TYPE).get(0));
+                        sb.append(" FROM ").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0));
                     }
-                    else if (name.equals("Insert"))
+                    else if (name.equals("Insert_Default"))
                     {
-                        sb.append("INTO");
-                        describe(atts.get(Label.TABLE_TYPE).get(0));
+                        sb.append(" INTO ").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0));
+                        if (atts.containsKey(Label.COLUMN_NAME))
+                        {
+                            sb.append('(');
+                            for (Explainer ex : atts.get(Label.COLUMN_NAME))
+                                sb.append(ex.get()).append(", ");
+                            sb.setLength(sb.length()-2);
+                            sb.append(')');
+                        }
                     }
-                    // TODO: "Update"
+                    else if (name.equals("Update_Default"))
+                    {
+                        sb.append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0));
+                        if (atts.containsKey(Label.COLUMN_NAME))
+                        {
+                            sb.append(" SET ");
+                            for (Explainer ex : atts.get(Label.COLUMN_NAME))
+                                sb.append(ex.get()).append(", ");
+                            sb.setLength(sb.length()-2);
+                        }
+                    }
                     break;
                 case PHYSICAL_OPERATOR:
                     sb.append(atts.get(Label.GROUPING_OPTION).get(0)).append(": ");
@@ -408,6 +434,19 @@ public class Format {
                         sb.append(", ");
                     }
                     sb.setLength(sb.length()-2);
+                    break;
+                case BLOOM_FILTER:
+                    if (name.equals("Select_BloomFilter") && atts.containsKey(Label.BLOOM_FILTER))
+                    {
+                        sb.append(atts.get(Label.BLOOM_FILTER).get(0).get());
+                    }
+                    else if (name.equals("Using_BloomFilter"))
+                    {
+                        sb.append(atts.get(Label.BINDING_POSITION).get(0).get());
+                        if (atts.containsKey(Label.EXPRESSIONS))
+                            for (Explainer ex : atts.get(Label.EXPRESSIONS))
+                                sb.append(", ").append(ex.get());
+                    }
                     break;
                 default:
                     throw new UnsupportedOperationException("Formatter does not recognize " + type.name());

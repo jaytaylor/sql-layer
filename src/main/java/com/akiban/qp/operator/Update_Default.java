@@ -29,10 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
@@ -151,7 +148,12 @@ class Update_Default implements UpdatePlannable {
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        OperationExplainer ex = new DUIOperatorExplainer("UPDATE DEFAULT", inputOperator, extraInfo);
+        Attributes atts = new Attributes();
+        if (extraInfo != null && extraInfo.containsKey(this))
+        {
+            atts = ((OperationExplainer)extraInfo.get(this)).get();
+        }
+        OperationExplainer ex = new DUIOperatorExplainer("Update_Default", atts, inputOperator, extraInfo);
         ex.addAttribute(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
         return ex;
     }

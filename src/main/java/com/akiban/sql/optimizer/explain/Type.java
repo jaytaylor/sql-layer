@@ -67,6 +67,7 @@ public enum Type
     SELECT_HKEY(GeneralType.OPERATOR),
     PHYSICAL_OPERATOR(GeneralType.OPERATOR), // could be broken down to scan_operator, sort operator, etc?
     ORDERED(GeneralType.OPERATOR),
+    BLOOM_FILTER(GeneralType.OPERATOR),
     
     // ROWTYPE    
     //--------------------------------------------------------------------------

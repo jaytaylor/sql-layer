@@ -31,15 +31,13 @@ import java.util.Map;
 
 public class DUIOperatorExplainer extends OperationExplainer
 {
-    public DUIOperatorExplainer (String name, Operator inputOp, Map<Object, Explainer> extraInfo)
+    public DUIOperatorExplainer (String name, Attributes atts, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
-        super(Type.DUI, buildAtts(name, inputOp, extraInfo));
+        super(Type.DUI, buildAtts(name, atts, inputOp, extraInfo));
     }
     
-    private static Attributes buildAtts (String name, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Attributes buildAtts (String name, Attributes atts, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
-        Attributes atts = new Attributes();
-        
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         try

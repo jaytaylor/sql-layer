@@ -709,7 +709,7 @@ public class OperatorAssembler extends BaseRule
             {
                 Attributes atts = new Attributes();
                 atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(updateStatement.getTargetTable().getTable().getName()));
-                for (UpdateColumn column : updateStatement.getUpdateColumns())
+                for (UpdateColumn column : updateColumns)
                 {
                     atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
                 }
@@ -1508,7 +1508,7 @@ public class OperatorAssembler extends BaseRule
                 
                 for (ExpressionNode field : ((Project)usingBloomFilter.getLoader()).getFields())
                 {
-                    
+                    atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(field.toString()));
                 }
                 
                 planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));

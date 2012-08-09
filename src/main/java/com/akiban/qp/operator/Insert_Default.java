@@ -37,8 +37,7 @@ import org.slf4j.LoggerFactory;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.Tap;
@@ -130,7 +129,12 @@ class Insert_Default implements UpdatePlannable {
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        return new DUIOperatorExplainer("Insert", inputOperator, extraInfo);
+        Attributes atts = new Attributes();
+        if (extraInfo != null && extraInfo.containsKey(this))
+        {
+            atts = ((OperationExplainer)extraInfo.get(this)).get();
+        }
+        return new DUIOperatorExplainer("Insert_Default", atts, inputOperator, extraInfo);
     }
 
     // Inner classes

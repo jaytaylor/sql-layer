@@ -33,8 +33,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
@@ -171,7 +170,12 @@ class Using_BloomFilter extends Operator
 
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
-        return PrimitiveExplainer.getInstance(toString());
+        Attributes atts = new Attributes();
+        if (extraInfo != null && extraInfo.containsKey(this))
+            atts = (Attributes)extraInfo.get(this).get();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Using_BloomFilter"));
+        atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(filterBindingPosition));
+        return new OperationExplainer(Type.BLOOM_FILTER, atts);
     }
 
     // Inner classes
