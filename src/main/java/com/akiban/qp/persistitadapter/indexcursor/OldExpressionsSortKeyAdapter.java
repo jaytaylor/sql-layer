@@ -44,7 +44,7 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
-class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expression> {
+public class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expression> {
 
     private OldExpressionsSortKeyAdapter() {}
     
