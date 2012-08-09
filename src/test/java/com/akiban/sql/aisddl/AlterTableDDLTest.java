@@ -76,19 +76,10 @@ import static org.junit.Assert.fail;
 
 public class AlterTableDDLTest {
     private static final String SCHEMA = "test";
-    private static final TableName TEMP_NAME_1 = new TableName(SCHEMA, AlterTableDDL.TEMP_TABLE_NAME_NEW);
-    private static final TableName TEMP_NAME_2 = new TableName(SCHEMA, AlterTableDDL.TEMP_TABLE_NAME_OLD);
     private static final TableName C_NAME = tn(SCHEMA, "c");
     private static final TableName O_NAME = tn(SCHEMA, "o");
     private static final TableName I_NAME = tn(SCHEMA, "i");
     private static final TableName A_NAME = tn(SCHEMA, "a");
-
-    private static final TableCopier NOP_COPIER = new TableCopier() {
-        @Override
-        public void copyFullTable(AkibanInformationSchema ais, TableName source, TableName destination) {
-        }
-    };
-
 
     private SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
@@ -716,9 +707,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(O_NAME, TEMP_NAME_2, TEMP_NAME_1, O_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, O_NAME, true);
         expectChildOf(C_NAME, O_NAME);
     }
@@ -730,9 +718,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(O_NAME, TEMP_NAME_2, TEMP_NAME_1, O_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, O_NAME, true);
         expectChildOf(C_NAME, O_NAME);
     }
@@ -743,9 +728,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES c(id)");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectGroupIsSame(C_NAME, O_NAME, true);
         expectGroupIsSame(C_NAME, I_NAME, true);
@@ -758,9 +740,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES o(id)");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectGroupIsSame(C_NAME, O_NAME, true);
         expectGroupIsSame(C_NAME, I_NAME, true);
@@ -773,9 +752,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES i(id)");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectGroupIsSame(C_NAME, O_NAME, true);
         expectGroupIsSame(C_NAME, I_NAME, true);
@@ -786,17 +762,12 @@ public class AlterTableDDLTest {
     public void addGFKToTableDifferentSchema() throws StandardException {
         String schema2 = "foo";
         TableName xName = tn(schema2, "x");
-        TableName temp1 = tn(schema2, TEMP_NAME_1.getTableName());
-        TableName temp2 = tn(schema2, TEMP_NAME_2.getTableName());
 
         builder.userTable(C_NAME).colBigInt("id", false).pk("id");
         builder.userTable(xName).colBigInt("id", false).colBigInt("cid").pk("id");
 
         parseAndRun("ALTER TABLE foo.x ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
 
-        expectCreated(temp1);
-        expectRenamed(xName, temp2, temp1, xName);
-        expectDropped(temp2);
         expectGroupIsSame(C_NAME, xName, true);
         expectChildOf(C_NAME, xName);
     }
@@ -808,9 +779,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES c");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectChildOf(C_NAME, A_NAME);
     }
@@ -822,9 +790,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES c");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectChildOf(C_NAME, A_NAME);
     }
@@ -873,9 +838,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE a DROP GROUPING FOREIGN KEY");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, false);
     }
 
@@ -885,9 +847,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE i DROP GROUPING FOREIGN KEY");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(I_NAME, TEMP_NAME_2, TEMP_NAME_1, I_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
@@ -898,9 +857,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER TABLE a DROP GROUPING FOREIGN KEY");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, false);
     }
 
@@ -908,17 +864,12 @@ public class AlterTableDDLTest {
     public void dropGFKFromCrossSchemaGroup() throws StandardException {
         String schema2 = "foo";
         TableName xName = tn(schema2, "x");
-        TableName temp1 = tn(schema2, TEMP_NAME_1.getTableName());
-        TableName temp2 = tn(schema2, TEMP_NAME_2.getTableName());
 
         builder.userTable(C_NAME).colBigInt("id", false).pk("id");
         builder.userTable(xName).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
 
         parseAndRun("ALTER TABLE foo.x DROP GROUPING FOREIGN KEY");
 
-        expectCreated(temp1);
-        expectRenamed(xName, temp2, temp1, xName);
-        expectDropped(temp2);
         expectGroupIsSame(C_NAME, xName, false);
     }
 
@@ -933,9 +884,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c(id)");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectChildOf(C_NAME, A_NAME);
     }
@@ -946,9 +894,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectChildOf(C_NAME, A_NAME);
     }
@@ -960,9 +905,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER GROUP ADD TABLE a(other_id,other_id2) TO c");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, true);
         expectChildOf(C_NAME, A_NAME);
     }
@@ -992,9 +934,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER GROUP DROP TABLE a");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, false);
     }
 
@@ -1004,9 +943,6 @@ public class AlterTableDDLTest {
 
         parseAndRun("ALTER GROUP DROP TABLE i");
 
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(I_NAME, TEMP_NAME_2, TEMP_NAME_1, I_NAME);
-        expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
@@ -1015,30 +951,7 @@ public class AlterTableDDLTest {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.ais());
-        AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
-    }
-
-    private void expectCreated(TableName... names) {
-        assertEquals("Creation order",
-                     Arrays.asList(names).toString(),
-                     ddlFunctions.createdTables.toString());
-    }
-
-    private void expectRenamed(TableName... pairs) {
-        assertTrue("Even number of names", (pairs.length % 2) == 0);
-        List<TableNamePair> pairList = new ArrayList<TableNamePair>();
-        for(int i = 0; i < pairs.length; i += 2) {
-            pairList.add(new TableNamePair(pairs[i], pairs[i + 1]));
-        }
-        assertEquals("Renamed order",
-                     pairList.toString(),
-                     ddlFunctions.renamedTables.toString());
-    }
-
-    private void expectDropped(TableName... names) {
-        assertEquals("Dropped order",
-                     Arrays.asList(names).toString(),
-                     ddlFunctions.droppedTables.toString());
+        AlterTableDDL.alterTable(ddlFunctions, null, null, SCHEMA, (AlterTableNode)node);
     }
 
     private void expectGroupIsSame(TableName t1, TableName t2, boolean equal) {
@@ -1116,30 +1029,8 @@ public class AlterTableDDLTest {
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id", true).pk("id");
     }
 
-    private static class TableNamePair {
-        private final TableName tn1;
-        private final TableName tn2;
-
-        public TableNamePair(TableName tn1, TableName tn2) {
-            assertNotNull("tn1", tn1);
-            assertNotNull("tn2", tn2);
-            this.tn1 = tn1;
-            this.tn2 = tn2;
-        }
-
-        @Override
-        public String toString() {
-            return "{" + tn1 + "," + tn2 + "}";
-        }
-    }
-
     private static class DDLFunctionsMock extends DDLFunctionsMockBase {
         final AkibanInformationSchema ais;
-        // While "slow path" GFK changes still in place
-        final List<TableName> createdTables = new ArrayList<TableName>();
-        final List<TableName> droppedTables = new ArrayList<TableName>();
-        final List<TableNamePair> renamedTables = new ArrayList<TableNamePair>();
-        // Alters going through proper sequence
         final List<String> columnChangeDesc = new ArrayList<String>();
         final List<String> indexChangeDesc = new ArrayList<String>();
         String newTableDesc = "";
@@ -1149,42 +1040,13 @@ public class AlterTableDDLTest {
         }
 
         @Override
-        public void createTable(Session session, UserTable table) {
-            if(ais.getUserTable(table.getName()) != null) {
-                throw new DuplicateTableNameException(table.getName());
-            }
-            createdTables.add(table.getName());
-            ais.addUserTable(table);
-        }
-
-        @Override
-        public void renameTable(Session session, TableName currentName, TableName newName) {
-            if(ais.getUserTable(newName) != null) {
-                throw new DuplicateTableNameException(newName);
-            }
-            UserTable currentTable = ais.getUserTable(currentName);
-            if(currentTable == null) {
-                throw new NoSuchTableException(currentName);
-            }
-            renamedTables.add(new TableNamePair(currentName, newName));
-            AISTableNameChanger changer = new AISTableNameChanger(currentTable, newName.getSchemaName(), newName.getTableName());
-            changer.doChange();
-            ais.getUserTables().remove(currentName);
-            ais.getUserTables().put(newName, currentTable);
-        }
-
-        @Override
-        public void dropTable(Session session, TableName tableName) {
+        public void alterTable(Session session, TableName tableName, UserTable newDefinition,
+                               List<TableChange> columnChanges, List<TableChange> indexChanges) {
             if(ais.getUserTable(tableName) == null) {
                 throw new NoSuchTableException(tableName);
             }
-            droppedTables.add(tableName);
             ais.getUserTables().remove(tableName);
-        }
-
-        @Override
-        public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                               List<TableChange> columnChanges, List<TableChange> indexChanges) {
+            ais.getUserTables().put(newDefinition.getName(), newDefinition);
             for(TableChange change : columnChanges) {
                 columnChangeDesc.add(change.toString());
             }
@@ -1197,20 +1059,6 @@ public class AlterTableDDLTest {
         @Override
         public AkibanInformationSchema getAIS(Session session) {
             return ais;
-        }
-    }
-
-    private static class MockHook implements DXLFunctionsHook {
-        @Override
-        public void hookFunctionIn(Session session, DXLFunction function) {
-        }
-
-        @Override
-        public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
-        }
-
-        @Override
-        public void hookFunctionFinally(Session session, DXLFunction function, Throwable throwable) {
         }
     }
 

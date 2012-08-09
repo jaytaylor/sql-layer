@@ -89,11 +89,9 @@ public class AlterTableDDL {
 
     private AlterTableDDL() {}
 
-    public static void alterTable(DXLFunctionsHook hook,
-                                  DDLFunctions ddlFunctions,
+    public static void alterTable(DDLFunctions ddlFunctions,
                                   DMLFunctions dmlFunctions,
                                   Session session,
-                                  TableCopier tableCopier,
                                   String defaultSchemaName,
                                   AlterTableNode alterTable) {
         AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
@@ -114,10 +112,11 @@ public class AlterTableDDL {
             return;
         }
 
-        if (doGenericAlter(session, ddlFunctions, table, alterTable.tableElementList)) {
+        if (doGenericAlter(session, ddlFunctions, defaultSchemaName, table, alterTable.tableElementList)) {
             return;
         }
 
+        /*
         FKConstraintDefinitionNode fkNode = getOnlyAddGFKNode(alterTable);
         ConstraintDefinitionNode conNode = getOnlyDropGFKNode(alterTable);
         if((fkNode != null) || (conNode != null)) {
@@ -139,6 +138,7 @@ public class AlterTableDDL {
             }
             return;
         }
+        */
 
         throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
     }
@@ -251,7 +251,7 @@ public class AlterTableDDL {
         ddl.dropTable(session, tempName2);
     }
 
-    private static boolean doGenericAlter(Session session, DDLFunctions ddl, UserTable table, TableElementList elementList) {
+    private static boolean doGenericAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table, TableElementList elementList) {
         if(elementList == null) {
             return false;
         }
@@ -282,11 +282,9 @@ public class AlterTableDDL {
 
                 case NodeTypes.FK_CONSTRAINT_DEFINITION_NODE: {
                     FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode) node;
-                    if(fkNode.isGrouping()) {
-                        return false; // Not yet supported by generic
-                    }
-                }
-                // Fall
+                    indexDefNodes.add(fkNode);
+                } break;
+
                 case NodeTypes.CONSTRAINT_DEFINITION_NODE: {
                     ConstraintDefinitionNode cdn = (ConstraintDefinitionNode) node;
                     if(cdn.getConstraintType() == ConstraintType.DROP) {
@@ -335,10 +333,23 @@ public class AlterTableDDL {
             }
         }
 
+        TableName newName = tableCopy.getName();
         for(ConstraintDefinitionNode cdn : indexDefNodes) {
             assert cdn.getConstraintType() != ConstraintType.DROP;
-            String name = TableDDL.addIndex(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName());
-            indexChanges.add(TableChange.createAdd(name));
+            if(cdn instanceof FKConstraintDefinitionNode) {
+                if(tableCopy.getParentJoin() == null) {
+                    tableCopy.setGroup(null);
+                }
+                FKConstraintDefinitionNode fkcdn = (FKConstraintDefinitionNode)cdn;
+                TableName parent = TableDDL.getReferencedName(defaultSchema, fkcdn);
+                if((tableCopy.getAIS().getUserTable(parent) == null) && (table.getAIS().getUserTable(parent) != null)) {
+                    TableDDL.addParentTable(builder, table.getAIS(), fkcdn, defaultSchema);
+                }
+                TableDDL.addJoin(builder, fkcdn, defaultSchema, newName.getSchemaName(), newName.getTableName());
+            } else {
+                String name = TableDDL.addIndex(builder, cdn, newName.getSchemaName(), newName.getTableName());
+                indexChanges.add(TableChange.createAdd(name));
+            }
         }
 
         tableCopy.endTable();
