@@ -43,6 +43,7 @@ public enum Label
     RIGHT(Category.CHILD),
     NUM_COMPARE(Category.CHILD),
     EXPRESSIONS(Category.CHILD),
+    BLOOM_FILTER(Category.CHILD),
     
     
     // COST

@@ -38,8 +38,6 @@ import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
-import java.math.BigDecimal;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;

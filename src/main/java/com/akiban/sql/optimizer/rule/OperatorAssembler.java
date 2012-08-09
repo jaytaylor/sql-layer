@@ -1501,6 +1501,19 @@ public class OperatorAssembler extends BaseRule
                                                     collators,
                                                     usePValues);
             popHashTable(bloomFilter);
+            
+            if (planContext.hasInfo())
+            {
+                Attributes atts = new Attributes();
+                
+                for (ExpressionNode field : ((Project)usingBloomFilter.getLoader()).getFields())
+                {
+                    
+                }
+                
+                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            }
+            
             return stream;
         }
 
@@ -1522,6 +1535,16 @@ public class OperatorAssembler extends BaseRule
                                                      fields,
                                                      collators,
                                                      pos);
+            
+            if (planContext.hasInfo())
+            {
+                Attributes atts = new Attributes();
+                
+                atts.put(Label.BLOOM_FILTER,  PrimitiveExplainer.getInstance(bloomFilterFilter.getInput().summaryString()));
+                
+                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            }
+            
             return stream;
         }        
 

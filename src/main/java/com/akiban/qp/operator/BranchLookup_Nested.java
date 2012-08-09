@@ -300,7 +300,7 @@ public class BranchLookup_Nested extends Operator
             if (atts.containsKey(Label.BINDING_POSITION))
                 ex.addAttribute(Label.BINDING_POSITION, atts.get(Label.BINDING_POSITION).get(0));
             else
-                ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+                ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
         }
         
         return ex;
