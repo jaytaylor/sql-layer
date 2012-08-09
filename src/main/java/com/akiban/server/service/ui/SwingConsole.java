@@ -156,6 +156,7 @@ public class SwingConsole extends JFrame implements WindowListener
                             StringWriter errors = new StringWriter();
                             e.printStackTrace(new PrintWriter(errors));
                             textArea.append("\n" + errors.toString());
+                            return; // no need to try further
                         }
 
                         if (macOSX)
