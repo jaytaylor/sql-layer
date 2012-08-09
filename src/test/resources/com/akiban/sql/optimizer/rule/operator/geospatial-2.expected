@@ -2,5 +2,5 @@ PhysicalSelect@1b43f4ce[city, state]
   project(Field(2), Field(1))
     Sort_Tree(test.places)
       Select_HKeyOrdered(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) <= 0.0466)
-        AncestorLookup_Default(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[0:100, 0:100] -> [test.places])
-          IndexScan_Default(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[0:100, 0:100] (>=UnboundExpressions[Arith(- -> Literal(42.3583), Literal(0.0466) -> DECIMAL), Arith(- -> Literal(-71.0603), Literal(0.0466) -> DECIMAL)],<=UnboundExpressions[Arith(+ -> Literal(42.3583), Literal(0.0466) -> DECIMAL), Arith(+ -> Literal(-71.0603), Literal(0.0466) -> DECIMAL)]))
+        AncestorLookup_Default(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[0:3600000, 0:3600000] -> [test.places])
+          IndexScan_Default(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[0:3600000, 0:3600000] (>=UnboundExpressions[Arith(- -> Literal(42.3583), Literal(0.0466) -> DECIMAL), Arith(- -> Literal(-71.0603), Literal(0.0466) -> DECIMAL)],<=UnboundExpressions[Arith(+ -> Literal(42.3583), Literal(0.0466) -> DECIMAL), Arith(+ -> Literal(-71.0603), Literal(0.0466) -> DECIMAL)]))

@@ -46,8 +46,9 @@ public class SpaceHelper
         long lonScale = BigInteger.TEN.pow(lonCol.getTypeParameter2().intValue()).longValue();
         // TODO: Maybe there should be subclasses of Space for
         // different coordinate systems?
-        return new Space(new long[] { -90 * latScale, -180 * lonScale },
-                         new long[] { +90 * latScale, +180 * lonScale });
+        // Latitude is actually -90 - +90 or 0 - 180, but dims apparently have to be the same.
+        return new Space(new long[] { 0, 0 },
+                         new long[] { 360 * latScale, 360 * lonScale });
     }
 
     private SpaceHelper() {
