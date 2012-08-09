@@ -436,14 +436,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
-    // Class state
-
-    private static final SortKeyAdapter SORT_KEY_ADAPTER =
-        Types3Switch.ON
-        ? PValueSortKeyAdapter.INSTANCE
-        : OldExpressionsSortKeyAdapter.INSTANCE;
-
-
     // Object state
 
     // The notation involving "keys" and "values" is tricky because this code deals with both the index view and
@@ -482,6 +474,10 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     private Value value;
     private int pKeyAppends = 0;
     private SpatialHandler spatialHandler;
+    private final SortKeyAdapter SORT_KEY_ADAPTER =
+            Types3Switch.ON
+                    ? PValueSortKeyAdapter.INSTANCE
+                    : OldExpressionsSortKeyAdapter.INSTANCE;
 
     // Inner classes
 
