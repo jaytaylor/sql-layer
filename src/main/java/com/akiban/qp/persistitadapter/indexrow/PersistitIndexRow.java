@@ -120,14 +120,12 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
     }
 
-    public static PersistitTableIndexRow tableIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    public static PersistitIndexRow newIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        return new PersistitTableIndexRow(adapter, indexRowType);
-    }
-
-    public static PersistitGroupIndexRow groupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
-    {
-        return new PersistitGroupIndexRow(adapter, indexRowType);
+        return
+            indexRowType.index().isTableIndex()
+            ? new PersistitTableIndexRow(adapter, indexRowType)
+            : new PersistitGroupIndexRow(adapter, indexRowType);
     }
 
     // For use by subclasses

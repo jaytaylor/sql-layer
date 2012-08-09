@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.aggr;
 
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
@@ -39,7 +40,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
 
-public class MSum implements TAggregator {
+public class MSum extends TAggregatorBase {
 
     private final SumType sumType;
     

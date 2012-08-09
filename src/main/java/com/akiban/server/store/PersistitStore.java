@@ -293,7 +293,7 @@ public class PersistitStore implements Store {
                         ++i2hPosition;
                     }
                     if (parentPKIndexRow != null) {
-                        parentPKIndexRow.appendFieldTo(indexToHKey.getIndexRowPosition(i2hPosition), hKeyAppender);
+                        parentPKIndexRow.appendFieldTo(indexToHKey.getIndexRowPosition(i2hPosition), hKeyAppender.key());
                     } else {
                         hKeyAppender.appendNull(); // orphan row
                     }
