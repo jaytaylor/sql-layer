@@ -27,6 +27,7 @@
 package com.akiban.ais.util;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -34,6 +35,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -303,8 +305,10 @@ public class TableChangeValidator {
 
     private void propagateChange(final UserTable newRoot, final boolean withNewGroup) {
         if(withNewGroup) {
-            Group newGroup = Group.create(newRoot.getAIS(), newRoot.getName() + "_temp");
-            GroupTable groupTable = GroupTable.create(newRoot.getAIS(), newRoot.getName().getSchemaName(), "temp", 0);
+            NameGenerator generator = new DefaultNameGenerator();
+            String groupName = generator.generateGroupName(newRoot);
+            Group newGroup = Group.create(newRoot.getAIS(), groupName);
+            GroupTable groupTable = GroupTable.create(newRoot.getAIS(), newRoot.getName().getSchemaName(), generator.generateGroupTableName(groupName), 0);
             groupTable.setGroup(newGroup);
             newGroup.setGroupTable(groupTable);
             newRoot.setGroup(newGroup);

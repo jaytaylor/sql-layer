@@ -89,7 +89,7 @@ public class AISMerge {
     public AISMerge (AkibanInformationSchema primaryAIS, Collection<ChangedTableDescription> alteredTables) {
         collectTableIDs(primaryAIS);
         this.nameGenerator = makeGenerator(primaryAIS);
-        this.targetAIS = copyAISForModify(primaryAIS, this.nameGenerator, alteredTables);
+        this.targetAIS = copyAISForModify(primaryAIS, alteredTables);
         this.sourceTable = null;
         this.mergeType = MergeType.MODIFY_TABLE;
     }
@@ -106,8 +106,7 @@ public class AISMerge {
         return AISCloner.clone(oldAIS);
     }
 
-    private static AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS, NameGenerator generator,
-                                                            Collection<ChangedTableDescription> changedTables)
+    private AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS, Collection<ChangedTableDescription> changedTables)
     {
         Map<Group,String> groupTrees = new HashMap<Group, String>();
 
@@ -122,8 +121,10 @@ public class AISMerge {
             } else {
                 String treeName = groupTrees.get(newTable.getGroup());
                 if(treeName == null) {
-                    treeName = generator.generateGroupTreeName(newTable.getGroup());
-                    newTable.getGroup().getGroupTable().setTreeName(treeName);
+                    treeName = nameGenerator.generateGroupTreeName(newTable.getGroup());
+                    GroupTable groupTable = newTable.getGroup().getGroupTable();
+                    groupTable.setTreeName(treeName);
+                    groupTable.setTableId(getNextTableID(false));
                     groupTrees.put(newTable.getGroup(), treeName);
                 }
                 newTable.setTreeName(treeName);
@@ -139,7 +140,7 @@ public class AISMerge {
                     newIndex.setTreeName(oldIndex.getTreeName());
                 } else {
                     newIndex.setIndexId(++maxID);
-                    newIndex.setTreeName(generator.generateIndexTreeName(newIndex));
+                    newIndex.setTreeName(nameGenerator.generateIndexTreeName(newIndex));
                 }
             }
         }

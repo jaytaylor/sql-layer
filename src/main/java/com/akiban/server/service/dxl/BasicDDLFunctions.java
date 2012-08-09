@@ -53,6 +53,7 @@ import com.akiban.ais.util.TableChange;
 import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.ais.util.TableChangeValidatorException;
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.UpdateFunction;
@@ -98,6 +99,7 @@ import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
@@ -250,12 +252,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections);
 
         final UpdatePlannable plan;
-        final Set<RowType> filterTypes = new HashSet<RowType>();
+
+        // For a group change, deleting parent will re-insert children
+        // Since they didn't change that is all that is needed
+        final Set<RowType> filterTypes = Collections.singleton(oldSourceType);
 
         for(ChangedTableDescription desc : changedTables) {
             UserTable oldTable = origAIS.getUserTable(desc.getOldName());
-            filterTypes.add(oldSchema.userTableRowType(oldTable));
-
             for(Index index : oldTable.getIndexesIncludingInternal()) {
                 if(desc.getPreserveIndexes().get(index.getIndexName().getName()) == null) {
                     indexesToDrop.add(index);
@@ -286,14 +289,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     @Override
                     public boolean rowIsSelected(Row row) {
                         if(groupChange) {
-                            Row insertRow = (row.rowType() == oldSourceType) ? makeProjected(row, queryContext) : row;
+                            Row insertRow = makeProjected(row, queryContext);
                             adapter.deleteRow(row, usePValues());
-                            int step = adapter.enterUpdateStep(true);
-                            try {
-                                adapter.writeRow(insertRow, usePValues());
-                            } finally {
-                                adapter.leaveUpdateStep(step);
-                            }
+                            adapter.writeRow(insertRow, usePValues());
                             return false;
                         } else {
                             return true;
@@ -308,7 +306,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         // Perform transformation
-        plan.run(queryContext);
+        int step = adapter.enterUpdateStep(true);
+        try {
+            plan.run(queryContext);
+        } finally {
+            adapter.leaveUpdateStep(step);
+        }
 
         // Now rebuild any group indexes, leaving out empty ones
         if(!affectedGroupIndexes.isEmpty()) {
@@ -367,7 +370,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
                     for(ChangedTableDescription desc : validator.getAllChangedTables()) {
                         desc.getPreserveIndexes().put(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT);
-                        indexesToTruncate.add(origAIS.getUserTable(desc.getOldName()).getPrimaryKeyIncludingInternal().getIndex());
+                        Index index = origAIS.getUserTable(desc.getOldName()).getPrimaryKeyIncludingInternal().getIndex();
+                        indexesToTruncate.add(index);
+                        indexesToDrop.remove(index);
                     }
                 // Fall
                 case TABLE:
