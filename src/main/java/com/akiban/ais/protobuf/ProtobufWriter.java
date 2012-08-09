@@ -409,7 +409,7 @@ public class ProtobufWriter {
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
                 setJoinType(convertJoinType(index.getJoinType())).
-                setIndexType(index.isSpatial() ? AISProtobuf.IndexType.SPATIAL_LAT_LON : AISProtobuf.IndexType.NORMAL);
+                setIndexMethod(convertIndexMethod(index.getIndexMethod()));
                 // Not yet in AIS: description
 
         if(index.getTreeName() != null) {
@@ -473,6 +473,16 @@ public class ProtobufWriter {
                 build();
     }
     
+    private static AISProtobuf.IndexMethod convertIndexMethod(Index.IndexMethod indexMethod) {
+        switch (indexMethod) {
+        case NORMAL: 
+        default:
+            return AISProtobuf.IndexMethod.NORMAL;
+        case Z_ORDER_LAT_LON: 
+            return AISProtobuf.IndexMethod.Z_ORDER_LAT_LON;
+        }
+    }
+
     private static void writeSequence (AISProtobuf.Schema.Builder schemaBuilder, Sequence sequence) {
         AISProtobuf.Sequence.Builder sequenceBuilder = AISProtobuf.Sequence.newBuilder()
                 .setSequenceName(sequence.getSequenceName().getTableName())

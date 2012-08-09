@@ -175,20 +175,32 @@ public class TableIndex extends Index
         return uniqueAndMayContainNulls;
     }
 
-    public boolean isSpatial()
+    @Override
+    public IndexMethod getIndexMethod()
     {
-        return space != null;
+        if (space != null)
+            return IndexMethod.Z_ORDER_LAT_LON;
+        else
+            return IndexMethod.NORMAL;
+    }
+
+    public void setIndexMethod(IndexMethod indexMethod)
+    {
+        checkMutability();
+        switch (indexMethod) {
+        case NORMAL:
+            space = null;
+            break;
+        case Z_ORDER_LAT_LON:
+            space = SpaceHelper.latLon(getKeyColumns().get(0).getColumn(),
+                                       getKeyColumns().get(1).getColumn());
+            break;
+        }
     }
 
     public Space space()
     {
         return space;
-    }
-
-    public void setSpatialLatLon() {
-        checkMutability();
-        space = SpaceHelper.latLon(getKeyColumns().get(0).getColumn(),
-                                   getKeyColumns().get(1).getColumn());
     }
 
     // For a user table index: the user table hkey

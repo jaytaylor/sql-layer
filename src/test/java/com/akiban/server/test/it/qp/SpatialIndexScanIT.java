@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -64,7 +65,7 @@ public class SpatialIndexScanIT extends OperatorITBase
         TableIndex xyIndex = createIndex("schema", "point", "xy", "x", "y");
         // TODO: Need to convert to DECIMAL lat, lon or add an
         // alternative Space for testing.
-        xyIndex.setSpatialLatLon();
+        xyIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
         schema = new Schema(rowDefCache().ais());
         pointRowType = schema.userTableRowType(userTable(point));
         xyIndexRowType = indexType(point, "x", "y");

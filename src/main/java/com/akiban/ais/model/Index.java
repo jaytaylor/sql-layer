@@ -159,9 +159,18 @@ public abstract class Index implements Traversable
         return allColumns;
     }
 
-    public boolean isSpatial()
+    public IndexMethod getIndexMethod() {
+        return IndexMethod.NORMAL;
+    }
+
+    public final boolean isSpatial()
     {
-        return false;
+        switch (getIndexMethod()) {
+        case Z_ORDER_LAT_LON:
+            return true;
+        default:
+            return false;
+        }
     }
 
     private void sortColumnsIfNeeded() {
@@ -349,6 +358,10 @@ public abstract class Index implements Traversable
         }
 
         private final String asString;
+    }
+
+    public enum IndexMethod {
+        NORMAL, Z_ORDER_LAT_LON
     }
 
     public String getTreeName() {

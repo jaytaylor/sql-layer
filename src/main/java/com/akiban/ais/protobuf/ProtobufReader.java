@@ -392,10 +392,10 @@ public class ProtobufReader {
                 tableIndex.setTreeName(pbIndex.getTreeName());
             }
             loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
-            if (pbIndex.hasIndexType()) {
-                switch (pbIndex.getIndexType()) {
-                case SPATIAL_LAT_LON:
-                    tableIndex.setSpatialLatLon();
+            if (pbIndex.hasIndexMethod()) {
+                switch (pbIndex.getIndexMethod()) {
+                case Z_ORDER_LAT_LON:
+                    tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
                     break;
                 }
             }

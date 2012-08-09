@@ -56,9 +56,9 @@ message Sequence {
     optional bool   isCycle         = 8; // cycle values
 }
 
-enum IndexType {
+enum IndexMethod {
    NORMAL          = 0;                  // Regular column index.
-   SPATIAL_LAT_LON = 1;                  // Spatial index on latitude, longitude.
+   Z_ORDER_LAT_LON = 1;                  // Spatial index on latitude, longitude.
 }
 
 message IndexColumn {
@@ -79,7 +79,7 @@ message Index {
     repeated IndexColumn columns  = 7;  // list of columns for this index
     optional string   description = 8;  // index comment holder 
     optional JoinType joinType    = 9;  // Type of join used for GroupIndex
-    optional IndexType indexType  = 10; // Type of special index
+    optional IndexMethod indexMethod  = 10; // Kind of special index
 }
 
 message Group {

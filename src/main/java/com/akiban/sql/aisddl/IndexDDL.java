@@ -266,7 +266,7 @@ public class IndexDDL
         if (index.getColumnList() instanceof SpecialIndexFuncNode) {
             switch (((SpecialIndexFuncNode)index.getColumnList()).getFunctionType()) {
             case Z_ORDER_LAT_LON:
-                tableIndex.setSpatialLatLon();
+                tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
                 assert tableIndex.isSpatial() : tableIndex;
                 break;
             }
