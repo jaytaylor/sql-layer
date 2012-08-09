@@ -189,7 +189,6 @@ public class IndexDDL
         
         ddlFunctions.createIndexes(session, indexesToAdd);
 
-        // TODO: This is not real but just enough to make isSpatial() return true.
         if (createIndex.getColumnList() instanceof SpecialIndexFuncNode) {
             ais = ddlFunctions.getAIS(session);
             IndexName indexName = indexesToAdd.iterator().next().getIndexName();
@@ -198,8 +197,7 @@ public class IndexDDL
                 .getIndex(indexName.getName());
             switch (((SpecialIndexFuncNode)createIndex.getColumnList()).getFunctionType()) {
             case Z_ORDER_LAT_LON:
-                index.spatialIndexDimensions(new long[] { 0, 0 },
-                                             new long[] { 100, 100 });
+                index.setSpatialLatLon();
                 assert index.isSpatial() : index;
                 break;
             }

@@ -62,7 +62,9 @@ public class SpatialIndexScanIT extends OperatorITBase
             "y int",
             "primary key(id)");
         TableIndex xyIndex = createIndex("schema", "point", "xy", "x", "y");
-        xyIndex.spatialIndexDimensions(LO, HI);
+        // TODO: Need to convert to DECIMAL lat, lon or add an
+        // alternative Space for testing.
+        xyIndex.setSpatialLatLon();
         schema = new Schema(rowDefCache().ais());
         pointRowType = schema.userTableRowType(userTable(point));
         xyIndexRowType = indexType(point, "x", "y");

@@ -175,16 +175,6 @@ public class TableIndex extends Index
         return uniqueAndMayContainNulls;
     }
 
-    // TODO: Set spatial index state from constructor?
-
-    public synchronized void spatialIndexDimensions(long[] lo, long[] hi)
-    {
-        assert lo != null;
-        assert hi != null;
-        space = new Space(lo, hi);
-        // computeFieldAssociations(null);
-    }
-
     public boolean isSpatial()
     {
         return space != null;
@@ -193,6 +183,12 @@ public class TableIndex extends Index
     public Space space()
     {
         return space;
+    }
+
+    public void setSpatialLatLon() {
+        checkMutability();
+        space = SpaceHelper.latLon(getKeyColumns().get(0).getColumn(),
+                                   getKeyColumns().get(1).getColumn());
     }
 
     // For a user table index: the user table hkey
