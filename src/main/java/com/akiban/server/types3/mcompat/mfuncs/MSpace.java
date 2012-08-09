@@ -68,13 +68,13 @@ public class MSpace extends TOverloadBase
     {
         int count = inputs.get(0).getInt32();
         if (count <= 0)
-            output.putObject("");
+            output.putString("", null);
         else
         {
             char ret[] = new char[count];
             Arrays.fill(ret, ' ');
 
-            output.putObject(new String(ret));
+            output.putString(new String(ret), null);
         }
     }
 

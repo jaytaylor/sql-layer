@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -53,7 +54,7 @@ final class OldRowDataCreator implements RowDataCreator<ValueSource> {
     }
 
     @Override
-    public void put(ValueSource source, NewRow into, AkType akType, int f) {
+    public void put(ValueSource source, NewRow into, FieldDef fieldDef, int f) {
         into.put(f, target.convertFromSource(source));
     }
 

@@ -77,13 +77,13 @@ public class MSubstringIndex extends TOverloadBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        String str = (String) inputs.get(0).getObject();
-        String substr = (String) inputs.get(1).getObject();
+        String str = inputs.get(0).getString();
+        String substr = inputs.get(1).getString();
         int count = inputs.get(2).getInt32();
         boolean signed;
 
         if (count == 0 || str.isEmpty() || substr.isEmpty()) {
-            output.putObject("");
+            output.putString("", null);
             return;
         } else if (signed = count < 0) {
             count = -count;
@@ -105,7 +105,7 @@ public class MSubstringIndex extends TOverloadBase {
             ret = new StringBuilder(ret).reverse().toString();
         }
 
-        output.putObject(ret);
+        output.putString(ret, null);
     }
 
     @Override

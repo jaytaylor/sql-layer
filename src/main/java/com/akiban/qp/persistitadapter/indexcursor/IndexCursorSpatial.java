@@ -32,84 +32,111 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.util.MultiCursor;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.geophile.Box2;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.types.AkType;
-import com.persistit.Key;
+import com.akiban.server.types.ValueSource;
 
 import java.util.ArrayList;
 import java.util.List;
 
-// For a z-order scan. A single IndexKeyRange will usually result in multiple scans
+// A scan of an IndexCursorSpatial will be implemented as one or more IndexCursorUnidirectional scans.
 
-class IndexCursorSpatial<S> extends IndexCursorUnidirectional<S>
+class IndexCursorSpatial extends IndexCursor
 {
-    // IndexCursorUnidirectional interface
-
-    public static <S> IndexCursorSpatial<S> create(QueryContext context,
-                                                   IterationHelper iterationHelper,
-                                                   IndexKeyRange keyRange,
-                                                   SortKeyAdapter<S, ?> sortKeyAdapter)
+    @Override
+    public void open()
     {
-        assert keyRange.spatial();
-        // We get here while opening an IndexScan_Default cursor, so any IndexKeyRange variables are bound.
-        // (The parent class as written before this was true, so it delays evaluation. We're relying on that
-        // class so evaluation will be repeated.)
-        List<IndexKeyRange> zKeyRanges = zKeyRanges(context, keyRange);
-        return new IndexCursorSpatial<S>(context, iterationHelper, keyRange, zAscending(), sortKeyAdapter);
+        super.open();
+        // iterationHelper.closeIteration() closes the PersistitIndexCursor, releasing its Exchange.
+        // iterationHelper.reopen() will reopen the PIC, getting a new Exchange for each constituent
+        // Cursor of multiCursor. (For more information, see the comment below on ReopeningCursor.)
+        iterationHelper.closeIteration();
+        multiCursor.open();
     }
 
     @Override
-    protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S, ?> keyAdapter)
+    public Row next()
     {
-        BoundExpressions startExpressions = null;
-        if (startBoundColumns == 0 || start == null) {
-            startKey.append(startBoundary);
-        } else {
-            startExpressions = start.boundExpressions(context);
-            startKey.clear();
-            startKeyTarget.attach(startKey);
-            for (int f = 0; f < startBoundColumns; f++) {
-                if (start.columnSelector().includesColumn(f)) {
-                    S source = keyAdapter.get(startExpressions, f);
-                    startKeyTarget.append(source, f, types, tInstances, collators);
-                }
-            }
-        }
-        BoundExpressions endExpressions;
-        if (endBoundColumns == 0 || end == null) {
-            endKey = null;
-        } else {
-            endExpressions = end.boundExpressions(context);
-            endKey.clear();
-            endKeyTarget.attach(endKey);
-            for (int f = 0; f < endBoundColumns; f++) {
-                if (end.columnSelector().includesColumn(f)) {
-                    S source = keyAdapter.get(endExpressions, f);
-                    if (keyAdapter.isNull(source) && startExpressions != null && !startExpressions.eval(f).isNull()) {
-                        endKey.append(Key.AFTER);
-                    } else {
-                        endKeyTarget.append(source, f, types, tInstances, collators);
-                    }
-                } else {
-                    endKey.append(Key.AFTER);
-                }
-            }
-        }
+        super.next();
+        return multiCursor.next();
     }
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void close()
+    {
+        super.close();
+        multiCursor.close();
+    }
+
+    @Override
+    public void destroy()
+    {
+        super.destroy();
+        multiCursor.destroy();
+    }
+
+    @Override
+    public boolean isIdle()
+    {
+        return super.isIdle();
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        return super.isActive();
+    }
+
+    @Override
+    public boolean isDestroyed()
+    {
+        return super.isDestroyed();
+    }
+
+    // IndexCursorSpatial interface
+
+    public static IndexCursorSpatial create(QueryContext context,
+                                            IterationHelper iterationHelper,
+                                            IndexKeyRange keyRange)
+    {
+        return new IndexCursorSpatial(context, iterationHelper, keyRange);
+    }
+
     // For use by this class
 
-    private IndexCursorSpatial(QueryContext context,
-                               IterationHelper iterationHelper,
-                               IndexKeyRange keyRange,
-                               API.Ordering ordering,
-                               SortKeyAdapter<S, ?> sortKeyAdapter)
+    private IndexCursorSpatial(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
     {
-        super(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        super(context, iterationHelper);
+        assert keyRange.spatial();
+        this.multiCursor = new MultiCursor();
+        this.iterationHelper = iterationHelper;
+        API.Ordering zOrdering = new API.Ordering();
+        zOrdering.append(Expressions.field(keyRange.indexRowType().physicalRowType(), 0), true);
+        for (IndexKeyRange zKeyRange : zKeyRanges(context, keyRange)) {
+            IndexCursorUnidirectional<ValueSource> zIntervalCursor =
+                new IndexCursorUnidirectional<ValueSource>(context,
+                                                           iterationHelper,
+                                                           zKeyRange,
+                                                           zOrdering,
+                                                           OldExpressionsSortKeyAdapter.INSTANCE);
+            multiCursor.addCursor(new ReopeningCursor(zIntervalCursor, iterationHelper));
+        }
     }
 
     private static List<IndexKeyRange> zKeyRanges(QueryContext context, IndexKeyRange keyRange)
@@ -134,13 +161,15 @@ class IndexCursorSpatial<S> extends IndexCursorUnidirectional<S>
             long z = zValues[i];
             if (z != -1L) {
                 IndexRowType physicalRowType = keyRange.indexRowType().physicalRowType();
+                // lo bound of z
                 ValuesHolderRow zLoRow = new ValuesHolderRow(physicalRowType, false);
-                ValuesHolderRow zHiRow = new ValuesHolderRow(physicalRowType, false);
                 zLoRow.holderAt(0).expectType(AkType.LONG);
                 zLoRow.holderAt(0).putLong(space.zLo(z));
+                IndexBound zLo = new IndexBound(zLoRow, new SetColumnSelector(0));
+                // hi bound of z
+                ValuesHolderRow zHiRow = new ValuesHolderRow(physicalRowType, false);
                 zHiRow.holderAt(0).expectType(AkType.LONG);
                 zHiRow.holderAt(0).putLong(space.zHi(z));
-                IndexBound zLo = new IndexBound(zLoRow, new SetColumnSelector(0));
                 IndexBound zHi = new IndexBound(zHiRow, new SetColumnSelector(0));
                 IndexKeyRange zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);
                 zKeyRanges.add(zKeyRange);
@@ -149,10 +178,82 @@ class IndexCursorSpatial<S> extends IndexCursorUnidirectional<S>
         return zKeyRanges;
     }
 
-    private static API.Ordering zAscending()
+    // Object state
+
+    private final MultiCursor multiCursor;
+    private final IterationHelper iterationHelper;
+
+    // Inner classes
+
+    // Why ReopeningCursor is needed: An IndexCursorSpatial is wrapped by a PersistitIndexCursor. The PICs
+    // IterationHelper provides access to the PICs Exchange and current row to the IndexCursorUnidirectionals
+    // managed by the MultiCursor. Closing an ICU results in the PIC being closed, which returns the Exchange.
+    // Need to reopen via the IterationHelper to get a new exchange.
+
+    private static class ReopeningCursor implements Cursor
     {
-        API.Ordering ordering = new API.Ordering();
-        ordering.append(null, true);
-        return ordering;
+        // Cursor interface
+
+        @Override
+        public void open()
+        {
+            iterationHelper.reopenIteration();
+            input.open();
+        }
+
+        @Override
+        public Row next()
+        {
+            return input.next();
+        }
+
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector)
+        {
+            input.jump(row, columnSelector);
+        }
+
+        @Override
+        public void close()
+        {
+            input.close();
+        }
+
+        @Override
+        public void destroy()
+        {
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return input.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return input.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
+        }
+
+        // ReopeningCursor interface
+
+        public ReopeningCursor(Cursor input, IterationHelper iterationHelper)
+        {
+            this.input = input;
+            this.iterationHelper = iterationHelper;
+        }
+
+        // Object state
+
+        private final Cursor input;
+        private final IterationHelper iterationHelper;
     }
 }

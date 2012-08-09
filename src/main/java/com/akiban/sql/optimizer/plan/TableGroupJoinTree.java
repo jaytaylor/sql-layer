@@ -203,6 +203,10 @@ public class TableGroupJoinTree extends BaseJoinable
         this.scan = scan;
     }
     
+    public boolean containsTable(TableSource table) {
+        return (root.findTable(table) != null);
+    }
+
     public <V> Map<TableGroupJoinNode,V> findLeaves(LeafFinderPredicate<V> predicate) {
         Map<TableGroupJoinNode,V> results = new HashMap<TableGroupJoinNode, V>();
         if (predicate.includeAndContinue(root, this))

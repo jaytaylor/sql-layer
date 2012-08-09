@@ -72,13 +72,13 @@ public abstract class Substring extends TOverloadBase {
 
                     @Override
                     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                        String str = (String) inputs.get(0).getObject();
+                        String str = inputs.get(0).getString();
                         int from = adjustIndex(str, inputs.get(1).getInt32());
 
                         if (from == -1) {
-                            output.putObject("");
+                            output.putString("", null);
                         } else {
-                            output.putObject(getSubstring(str.length() - 1, from, str));
+                            output.putString(getSubstring(str.length() - 1, from, str), null);
                         }
                     }
 
@@ -117,14 +117,14 @@ public abstract class Substring extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String str = (String) inputs.get(0).getObject();
+                String str = inputs.get(0).getString();
                 int length = str.length();
                 int from = adjustIndex(str, inputs.get(1).getInt32());
 
                 if (from == -1) {
-                    output.putObject("");
+                    output.putString("", null);
                 } else {
-                    output.putObject(getSubstring(from + inputs.get(2).getInt32() - 1, from, str));
+                    output.putString(getSubstring(from + inputs.get(2).getInt32() - 1, from, str), null);
                 }
             }
 

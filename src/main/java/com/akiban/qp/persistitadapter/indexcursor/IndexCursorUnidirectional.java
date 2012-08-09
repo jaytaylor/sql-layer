@@ -27,6 +27,7 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
@@ -34,6 +35,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.collation.AkCollator;
@@ -59,18 +61,31 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     @Override
     public Row next()
     {
-        CursorLifecycle.checkIdleOrActive(this);
+        super.next();
         Row next = null;
         if (exchange != null) {
             try {
                 SORT_TRAVERSE.hit();
                 if (exchange.traverse(keyComparison, true)) {
                     next = row();
-                    if (pastEnd()) {
+                    // If we're scanning a unique key index, then the row format has the declared key in the
+                    // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
+                    // restrict the entire declared key and leading hkeys fields. If this happens, then the first
+                    // row found by exchange.traverse may actually not qualify -- those values may be lower than
+                    // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
+                    // past the startKey.
+                    if (!pastStart && beforeStart(next)) {
+                        next = null;
+                        if (exchange.traverse(subsequentKeyComparison, true)) {
+                            next = row();
+                            pastStart = true;
+                        } else {
+                            close();
+                        }
+                    }
+                    if (next != null && pastEnd(next)) {
                         next = null;
                         close();
-                    } else {
-                        keyComparison = subsequentKeyComparison;
                     }
                 } else {
                     close();
@@ -80,6 +95,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 adapter.handlePersistitException(e);
             }
         }
+        keyComparison = subsequentKeyComparison;
         return next;
     }
 
@@ -121,131 +137,129 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
-        this.endKey = endBoundColumns == 0 ? null : adapter.newKey();
+        this.endKey = endBoundColumns == 0 ? null : PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
         this.sortKeyAdapter = sortKeyAdapter;
-        this.startKeyTarget = sortKeyAdapter.createTarget();
-        this.endKeyTarget = sortKeyAdapter.createTarget();
         initializeCursor(keyRange, ordering);
     }
 
     protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S, ?> keyAdapter)
     {
-        if (startBoundColumns == 0) {
-            startKey.append(startBoundary);
-        } else {
-            // Check constraints on start and end
-            BoundExpressions loExpressions = lo.boundExpressions(context);
-            BoundExpressions hiExpressions = hi.boundExpressions(context);
-            for (int f = 0; f < endBoundColumns - 1; f++) {
-                keyAdapter.checkConstraints(loExpressions, hiExpressions, f, collators, tInstances);
-            }
-            /*
-                Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
-                two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
-                described by the IndexBound's ColumnSelector. The only index restrictions supported specify:
-                a) equality for zero or more fields of the index,
-                b) 0-1 inequality, and
-                c) any remaining columns unbounded.
-
-                By the time we get here, we've stopped paying attention to part c. Parts a and b occupy the first
-                orderingColumns columns of the index. Now about the nulls: For each field of parts a and b, we have a
-                lo value and a hi value. There are four cases:
-
-                - both lo and hi are non-null: Just write the field values into startKey and endKey.
-
-                - lo is null: Write null into the startKey.
-
-                - hi is null, lo is not null: This restriction says that we want everything to the right of
-                  the lo value. Persistit ranks null lower than anything, so instead of writing null to endKey,
-                  we write Key.AFTER.
-
-                - lo and hi are both null: This is NOT an unbounded case. This means that we are restricting both
-                  lo and hi to be null, so write null, not Key.AFTER to endKey.
-            */
-            // Construct start and end keys
-            BoundExpressions startExpressions = start.boundExpressions(context);
-            BoundExpressions endExpressions = end.boundExpressions(context);
-            // startBoundColumns == endBoundColumns because jump() hasn't been called.
-            // If it had we'd be in reevaluateBoundaries, not here.
-            assert startBoundColumns == endBoundColumns;
-            S[] startValues = keyAdapter.createSourceArray(startBoundColumns);
-            S[] endValues = keyAdapter.createSourceArray(endBoundColumns);
-            for (int f = 0; f < startBoundColumns; f++) {
-                startValues[f] = keyAdapter.get(startExpressions, f);
-                endValues[f] = keyAdapter.get(endExpressions, f);
-            }
-            startKey.clear();
-            startKeyTarget.attach(startKey);
-            endKey.clear();
-            endKeyTarget.attach(endKey);
-            // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
-            // interpret the nulls literally.
-            int f = 0;
-            while (f < startBoundColumns - 1) {
-                startKeyTarget.append(startValues[f], f, types, tInstances, collators);
-                endKeyTarget.append(startValues[f], f, types, tInstances, collators);
-                f++;
-            }
-            // For the last column:
-            //  0   >   null      <   null:      (null, AFTER)
-            //  1   >   null      <   non-null:  (null, end)
-            //  2   >   null      <=  null:      Shouldn't happen
-            //  3   >   null      <=  non-null:  (null, end]
-            //  4   >   non-null  <   null:      (start, AFTER)
-            //  5   >   non-null  <   non-null:  (start, end)
-            //  6   >   non-null  <=  null:      Shouldn't happen
-            //  7   >   non-null  <=  non-null:  (start, end]
-            //  8   >=  null      <   null:      [null, AFTER)
-            //  9   >=  null      <   non-null:  [null, end)
-            // 10   >=  null      <=  null:      [null, null]
-            // 11   >=  null      <=  non-null:  [null, end]
-            // 12   >=  non-null  <   null:      [start, AFTER)
-            // 13   >=  non-null  <   non-null:  [start, end)
-            // 14   >=  non-null  <=  null:      Shouldn't happen
-            // 15   >=  non-null  <=  non-null:  [start, end]
-            //
-            if (direction == FORWARD) {
-                // Start values
-                startKeyTarget.append(startValues[f], f, types, tInstances,collators);
-                // End values
-                if (keyAdapter.isNull(endValues[f])) {
-                    if (endInclusive) {
-                        if (startInclusive && keyAdapter.isNull(startValues[f])) {
-                            // Case 10:
-                            endKeyTarget.append(endValues[f], f, types, tInstances,collators);
-                        } else {
-                            // Cases 2, 6, 14:
-                            throw new IllegalArgumentException();
-                        }
-                    } else {
-                        // Cases 0, 4, 8, 12
-                        endKey.append(Key.AFTER);
-                    }
-                } else {
-                    // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    endKeyTarget.append(endValues[f], f, types, tInstances,collators);
-                }
+        if (startKey != null) {
+            if (startBoundColumns == 0) {
+                startKey.append(startBoundary);
             } else {
-                // Same as above, swapping start and end
-                // End values
-                endKeyTarget.append(endValues[f], f, types, tInstances,collators);
-                // Start values
-                if (keyAdapter.isNull(startValues[f])) {
-                    if (startInclusive) {
-                        if (endInclusive && keyAdapter.isNull(endValues[f])) {
-                            // Case 10:
-                            startKeyTarget.append(startValues[f], f, types, tInstances,collators);
+                // Check constraints on start and end
+                BoundExpressions loExpressions = lo.boundExpressions(context);
+                BoundExpressions hiExpressions = hi.boundExpressions(context);
+                for (int f = 0; f < endBoundColumns - 1; f++) {
+                    keyAdapter.checkConstraints(loExpressions, hiExpressions, f, collators, tInstances);
+                }
+                /*
+                    Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
+                    two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
+                    described by the IndexBound's ColumnSelector. The only index restrictions supported specify:
+                    a) equality for zero or more fields of the index,
+                    b) 0-1 inequality, and
+                    c) any remaining columns unbounded.
+
+                    By the time we get here, we've stopped paying attention to part c. Parts a and b occupy the first
+                    orderingColumns columns of the index. Now about the nulls: For each field of parts a and b, we have a
+                    lo value and a hi value. There are four cases:
+
+                    - both lo and hi are non-null: Just write the field values into startKey and endKey.
+
+                    - lo is null: Write null into the startKey.
+
+                    - hi is null, lo is not null: This restriction says that we want everything to the right of
+                      the lo value. Persistit ranks null lower than anything, so instead of writing null to endKey,
+                      we write Key.AFTER.
+
+                    - lo and hi are both null: This is NOT an unbounded case. This means that we are restricting both
+                      lo and hi to be null, so write null, not Key.AFTER to endKey.
+                */
+                // Construct start and end keys
+                BoundExpressions startExpressions = start.boundExpressions(context);
+                BoundExpressions endExpressions = end.boundExpressions(context);
+                // startBoundColumns == endBoundColumns because jump() hasn't been called.
+                // If it had we'd be in reevaluateBoundaries, not here.
+                assert startBoundColumns == endBoundColumns;
+                S[] startValues = keyAdapter.createSourceArray(startBoundColumns);
+                S[] endValues = keyAdapter.createSourceArray(endBoundColumns);
+                for (int f = 0; f < startBoundColumns; f++) {
+                    startValues[f] = keyAdapter.get(startExpressions, f);
+                    endValues[f] = keyAdapter.get(endExpressions, f);
+                }
+                clear(startKey);
+                clear(endKey);
+                // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
+                // interpret the nulls literally.
+                int f = 0;
+                while (f < startBoundColumns - 1) {
+                    startKey.append(startValues[f], type(f), tInstance(f), collator(f));
+                    endKey.append(startValues[f], type(f), tInstance(f), collator(f));
+                    f++;
+                }
+                // For the last column:
+                //  0   >   null      <   null:      (null, AFTER)
+                //  1   >   null      <   non-null:  (null, end)
+                //  2   >   null      <=  null:      Shouldn't happen
+                //  3   >   null      <=  non-null:  (null, end]
+                //  4   >   non-null  <   null:      (start, AFTER)
+                //  5   >   non-null  <   non-null:  (start, end)
+                //  6   >   non-null  <=  null:      Shouldn't happen
+                //  7   >   non-null  <=  non-null:  (start, end]
+                //  8   >=  null      <   null:      [null, AFTER)
+                //  9   >=  null      <   non-null:  [null, end)
+                // 10   >=  null      <=  null:      [null, null]
+                // 11   >=  null      <=  non-null:  [null, end]
+                // 12   >=  non-null  <   null:      [start, AFTER)
+                // 13   >=  non-null  <   non-null:  [start, end)
+                // 14   >=  non-null  <=  null:      Shouldn't happen
+                // 15   >=  non-null  <=  non-null:  [start, end]
+                //
+                if (direction == FORWARD) {
+                    // Start values
+                    startKey.append(startValues[f], type(f), tInstance(f), collator(f));
+                    // End values
+                    if (keyAdapter.isNull(endValues[f])) {
+                        if (endInclusive) {
+                            if (startInclusive && keyAdapter.isNull(startValues[f])) {
+                                // Case 10:
+                                endKey.append(endValues[f], type(f), tInstance(f), collator(f));
+                            } else {
+                                // Cases 2, 6, 14:
+                                throw new IllegalArgumentException();
+                            }
                         } else {
-                            // Cases 2, 6, 14:
-                            throw new IllegalArgumentException();
+                            // Cases 0, 4, 8, 12
+                            endKey.append(Key.AFTER);
                         }
                     } else {
-                        // Cases 0, 4, 8, 12
-                        startKey.append(Key.AFTER);
+                        // Cases 1, 3, 5, 7, 9, 11, 13, 15
+                        endKey.append(endValues[f], type(f), tInstance(f), collator(f));
                     }
                 } else {
-                    // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    startKeyTarget.append(startValues[f], f, types, tInstances,collators);
+                    // Same as above, swapping start and end
+                    // End values
+                    endKey.append(endValues[f], type(f), tInstance(f), collator(f));
+                    // Start values
+                    if (keyAdapter.isNull(startValues[f])) {
+                        if (startInclusive) {
+                            if (endInclusive && keyAdapter.isNull(endValues[f])) {
+                                // Case 10:
+                                startKey.append(startValues[f], type(f), tInstance(f), collator(f));
+                            } else {
+                                // Cases 2, 6, 14:
+                                throw new IllegalArgumentException();
+                            }
+                        } else {
+                            // Cases 0, 4, 8, 12
+                            startKey.append(Key.AFTER);
+                        }
+                    } else {
+                        // Cases 1, 3, 5, 7, 9, 11, 13, 15
+                        startKey.append(startValues[f], type(f), tInstance(f), collator(f));
+                    }
                 }
             }
         }
@@ -263,47 +277,79 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             for (int f = 0; f < startBoundColumns; f++) {
                 startValues[f] = keyAdapter.get(startExpressions, f);
             }
-            startKey.clear();
-            startKeyTarget.attach(startKey);
+            clear(startKey);
             // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                startKeyTarget.append(startValues[f], f, types, tInstances,collators);
+                startKey.append(startValues[f], type(f), tInstance(f), collator(f));
                 f++;
             }
             if (direction == FORWARD) {
-                startKeyTarget.append(startValues[f], f, types, tInstances,collators);
+                startKey.append(startValues[f], type(f), tInstance(f), collator(f));
             } else {
                 if (keyAdapter.isNull(startValues[f])) {
                     if (startInclusive) {
                         // Assume case 10, the only valid choice here. On evaluateBoundaries, cases 2, 6, 14
                         // would have thrown IllegalArgumentException.
-                        startKeyTarget.append(startValues[f], f, types, tInstances,collators);
+                        startKey.append(startValues[f], type(f), tInstance(f), collator(f));
                     } else {
                         // Cases 0, 4, 8, 12
                         startKey.append(Key.AFTER);
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    startKeyTarget.append(startValues[f], f, types, tInstances,collators);
+                    startKey.append(startValues[f], type(f), tInstance(f), collator(f));
                 }
             }
         }
     }
 
-    protected boolean pastEnd()
+    protected boolean beforeStart(Row row)
+    {
+        boolean beforeStart;
+        if (startKey == null) {
+            beforeStart = false;
+        } else {
+            PersistitIndexRow current = (PersistitIndexRow) row;
+            int c = current.compareTo(startKey) * direction;
+            beforeStart = c < 0 || c == 0 && !startInclusive;
+        }
+        return beforeStart;
+    }
+
+    protected boolean pastEnd(Row row)
     {
         boolean pastEnd;
         if (endKey == null) {
             pastEnd = false;
         } else {
-            Key key = exchange.getKey();
-            assert key.getDepth() >= endKey.getDepth();
-            int c = key.compareKeyFragment(endKey, 0, endKey.getEncodedSize()) * direction;
+            PersistitIndexRow current = (PersistitIndexRow) row;
+            int c = current.compareTo(endKey) * direction;
             pastEnd = c > 0 || c == 0 && !endInclusive;
         }
         return pastEnd;
+    }
+
+    protected void clear(PersistitIndexRow bound)
+    {
+        assert bound == startKey || bound == endKey;
+        bound.resetForWrite(index(), adapter.newKey(), null); // TODO: Reuse the existing key
+    }
+
+    protected AkType type(int f)
+    {
+        return types == null ? null : types[f];
+    }
+
+    protected TInstance tInstance(int f)
+    {
+        return tInstances == null ? null : tInstances[f];
+    }
+
+    protected AkCollator collator(int f)
+    {
+        return collators == null ? null : collators[f];
     }
 
     // For use by this class
@@ -336,11 +382,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         } else {
             assert false : ordering;
         }
-        this.startKey = adapter.newKey();
+        this.startKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
         this.types = sortKeyAdapter.createAkTypes(startBoundColumns);
         this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
         this.tInstances = sortKeyAdapter.createTInstances(startBoundColumns);
-        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
+        List<IndexColumn> indexColumns = index().getAllColumns();
         for (int f = 0; f < startBoundColumns; f++) {
             Column column = indexColumns.get(f).getColumn();
             sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
@@ -350,19 +396,31 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     private void initializeForOpen()
     {
         exchange.clear();
-        // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
-        // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
-        if ((startBoundColumns > 0 && start != null) &&
-            (direction == FORWARD && !startInclusive || direction == BACKWARD && startInclusive)) {
-            // - direction == FORWARD && !startInclusive: If the search key is (10, 5) and there are
-            //   rows (10, 5, ...) then we do not want them if !startInclusive. Making the search key
-            //   (10, 5, AFTER) will cause these records to be skipped.
-            // - direction == BACKWARD && startInclusive: Similarly, going in the other direction, we do the
-            //   (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
-            //   for (10, 5, AFTER).
-            startKey.append(Key.AFTER);
+        if (startKey != null) {
+            // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
+            // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
+            if ((startBoundColumns > 0 && start != null) &&
+                (direction == FORWARD && !startInclusive || direction == BACKWARD && startInclusive)) {
+                // - direction == FORWARD && !startInclusive: If the search key is (10, 5) and there are
+                //   rows (10, 5, ...) then we do not want them if !startInclusive. Making the search key
+                //   (10, 5, AFTER) will cause these records to be skipped.
+                // - direction == BACKWARD && startInclusive: Similarly, going in the other direction, we do the
+                //   (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
+                //   for (10, 5, AFTER).
+                startKey.append(Key.AFTER);
+            }
+            // Copy just the persistit key part of startKey to the exchange's key. startKey may be overspecified.
+            // E.g., if we have a PK index for a non-root table, the index row is [childPK, parentPK], and an index
+            // scan may specify a value for both. But the persistit search can only deal with the [childPK] part of
+            // the traversal.
+            startKey.copyPersistitKeyTo(exchange.getKey());
+            pastStart = false;
         }
-        startKey.copyTo(exchange.getKey());
+    }
+
+    private Index index()
+    {
+        return keyRange.indexRowType().index();
     }
 
     private IndexCursorUnidirectional(QueryContext context,
@@ -384,13 +442,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         } else {
             assert false : ordering;
         }
-        this.startKey = adapter.newKey();
+        this.startKey = null;
         this.endKey = null;
         this.startBoundColumns = 0;
         this.endBoundColumns = 0;
         this.sortKeyAdapter = sortKeyAdapter;
-        this.startKeyTarget = sortKeyAdapter.createTarget();
-        this.endKeyTarget = sortKeyAdapter.createTarget();
     }
 
     // Class state
@@ -419,9 +475,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected IndexBound end;
     protected boolean startInclusive;
     protected boolean endInclusive;
-    protected Key startKey;
-    protected Key endKey;
+    protected PersistitIndexRow startKey;
+    protected PersistitIndexRow endKey;
+    private boolean pastStart;
     private SortKeyAdapter<S, ?> sortKeyAdapter;
-    protected final SortKeyTarget<S> startKeyTarget;
-    protected final SortKeyTarget<S> endKeyTarget;
 }

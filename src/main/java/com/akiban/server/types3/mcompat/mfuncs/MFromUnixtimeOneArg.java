@@ -48,7 +48,7 @@ public class MFromUnixtimeOneArg extends TOverloadBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MNumeric.INT, 0);
+        builder.covers(MNumeric.BIGINT, 0);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class MFromUnixtimeOneArg extends TOverloadBase
     {
         // unixtime is in second
         // convert it to millis
-        long millis = inputs.get(0).getInt32() * 1000L;
+        long millis = inputs.get(0).getInt64() * 1000L;
         output.putInt64(MDatetimes.encodeDatetime(
                 MDatetimes.fromJodaDatetime(
                     new DateTime(millis, DateTimeZone.forID(context.getCurrentTimezone())))));

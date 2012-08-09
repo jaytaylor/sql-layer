@@ -63,7 +63,7 @@ public class InetAton extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String tks[] = ((String)inputs.get(0).getObject()).split("\\.");
+        String tks[] = (inputs.get(0).getString()).split("\\.");
         if (tks.length > 4)
             output.putNull();
         else

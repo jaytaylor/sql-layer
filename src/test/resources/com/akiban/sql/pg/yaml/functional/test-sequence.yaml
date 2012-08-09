@@ -1,7 +1,5 @@
 # Testing sequences for basic functionality
 ---
-- Statement: Set newtypes to 'True'
----
 - CreateTable: t (c1 integer not null primary key, c2 varchar(20))
 ---
 - Statement: Create Sequence sequence1 start with 1 increment by 1 
@@ -85,14 +83,5 @@
 ---
 - Statement: create sequence bad_sequence start with 1 increment by 1 minvalue 1 maxvalue 1 no cycle;
 - error: [50020]
----
-- Statement: Set newtypes to DEFAULT
----
-- Statement: create sequence sequence5 start with 1 increment by 1 no cycle;
----
-- Statement: select next value for sequence5
-- error: [4250D]
----
-- Statement: drop sequence sequence5 restrict;
 ...
 

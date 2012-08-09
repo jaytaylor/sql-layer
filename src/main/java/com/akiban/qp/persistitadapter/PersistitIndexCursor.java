@@ -48,7 +48,7 @@ class PersistitIndexCursor implements Cursor
     {
         CursorLifecycle.checkIdle(this);
         exchange = adapter.takeExchange(indexRowType.index());
-        indexCursor = IndexCursor.create(context, keyRange, ordering, new IndexScanIterationHelper(), usePValues);
+        indexCursor = IndexCursor.create(context, keyRange, ordering, iterationHelper, usePValues);
         indexCursor.open();
         idle = false;
     }
@@ -90,12 +90,12 @@ class PersistitIndexCursor implements Cursor
     public void close()
     {
         CursorLifecycle.checkIdleOrActive(this);
-        if (!idle) {
-            row.release();
+        row.release();
+        if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
-            idle = true;
         }
+        idle = true;
     }
 
     @Override
@@ -143,6 +143,7 @@ class PersistitIndexCursor implements Cursor
         this.usePValues = usePValues;
         this.selector = selector;
         this.idle = true;
+        this.iterationHelper = new IndexScanIterationHelper();
     }
 
     // For use by this class
@@ -165,6 +166,7 @@ class PersistitIndexCursor implements Cursor
     private final API.Ordering ordering;
     private final boolean isTableIndex;
     private final boolean usePValues;
+    private final IterationHelper iterationHelper;
     private IndexScanSelector selector;
     private Exchange exchange;
     private IndexCursor indexCursor;
@@ -183,9 +185,15 @@ class PersistitIndexCursor implements Cursor
         }
 
         @Override
-        public void close()
+        public void closeIteration()
         {
             PersistitIndexCursor.this.close();
+        }
+
+        @Override
+        public void reopenIteration()
+        {
+            PersistitIndexCursor.this.exchange = adapter.takeExchange(indexRowType.index());
         }
 
         @Override

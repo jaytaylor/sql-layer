@@ -266,8 +266,7 @@ public class PersistitAdapter extends StoreAdapter
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             S source = creator.eval(row, i);
-            AkType type = rowDef.getFieldDef(i).getType().akType();
-            creator.put(source, niceRow, type, i);
+            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
         }
         return niceRow.toRowData();
     }
@@ -299,8 +298,7 @@ public class PersistitAdapter extends StoreAdapter
             }
 
             // TODO: Validate column Check Constraints.
-            AkType type = rowDef.getFieldDef(i).getType().akType();
-            creator.put(source, niceRow, type, i);
+            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
         }
         return niceRow.toRowData();
     }
@@ -312,12 +310,8 @@ public class PersistitAdapter extends StoreAdapter
 
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
     {
-        return
-            indexRowType.index().isTableIndex()
-            ? PersistitIndexRow.tableIndexRow(this, indexRowType)
-            : PersistitIndexRow.groupIndexRow(this, indexRowType);
+        return PersistitIndexRow.newIndexRow(this, indexRowType);
     }
-
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {

@@ -60,7 +60,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MNumeric.INT, 0).covers(MString.VARCHAR, 1);
+        builder.covers(MNumeric.BIGINT, 0).covers(MString.VARCHAR, 1);
     }
 
     @Override
@@ -72,8 +72,8 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
         if ((error = (InvalidOperationException) context.preptimeObjectAt(ERROR_INDEX)) == null
                 && (ret = (String)context.preptimeObjectAt(RET_INDEX)) == null)
         {
-            Object objs[] = computeResult(inputs.get(0).getInt32(),
-                                          (String)inputs.get(1).getObject(),
+            Object objs[] = computeResult(inputs.get(0).getInt64(),
+                                          inputs.get(1).getString(),
                                           context.getCurrentTimezone());
             
             ret = (String) objs[RET_INDEX];
@@ -86,7 +86,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
             context.warnClient(error);
         }
         else
-            output.putObject(ret);
+            output.putString(ret, null);
     }
 
     @Override
@@ -119,13 +119,13 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
                     
                     // if the unix time value is not literal, get the length
                     // from the format string
-                    length = computeLength((String)format.getObject());
+                    length = computeLength(format.getString());
                     
                     // if the unix time is available, get the actual length
                     if (unixTime != null)
                     {
-                        Object prepObjects[] = computeResult(unixTime.getInt32(),
-                                                            (String) format.getObject(),
+                        Object prepObjects[] = computeResult(unixTime.getInt64(),
+                                                            format.getString(),
                                                             context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
                         context.set(ERROR_INDEX, prepObjects[ERROR_INDEX]);
@@ -140,7 +140,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
         });
     }
     
-    private static Object[] computeResult(int unix, String format, String tz)
+    private static Object[] computeResult(long unix, String format, String tz)
     {
         String st = null;
         InvalidOperationException error = null;

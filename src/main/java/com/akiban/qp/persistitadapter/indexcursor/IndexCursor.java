@@ -64,10 +64,10 @@ public abstract class IndexCursor implements Cursor
     }
 
     @Override
-    public final void close()
+    public void close()
     {
         CursorLifecycle.checkIdleOrActive(this);
-        iterationHelper.close();
+        iterationHelper.closeIteration();
         idle = true;
     }
 
@@ -109,7 +109,7 @@ public abstract class IndexCursor implements Cursor
             : OldExpressionsSortKeyAdapter.INSTANCE;
         return
             keyRange != null && keyRange.spatial()
-            ? IndexCursorSpatial.create(context, iterationHelper, keyRange, adapter)
+            ? IndexCursorSpatial.create(context, iterationHelper, keyRange)
             : ordering.allAscending() || ordering.allDescending()
               ? (keyRange != null && keyRange.lexicographic()
                  ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)

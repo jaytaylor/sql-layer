@@ -231,12 +231,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
 
+        AkibanInformationSchema ais = aisHolder.getAis();
+        PersistitAdapter adapter = createAdapter(ais, session);
+
         if(!tableIndexes.isEmpty()) {
             super.buildIndexes(session, tableIndexes, defer);
         }
 
-        AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter = createAdapter(ais, session);
         QueryContext context = new SimpleQueryContext(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);

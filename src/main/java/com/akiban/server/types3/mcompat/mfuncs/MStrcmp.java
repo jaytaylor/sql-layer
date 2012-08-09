@@ -49,8 +49,8 @@ public class MStrcmp extends TOverloadBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        String st1 = (String) inputs.get(0).getObject();
-        String st2 = (String) inputs.get(1).getObject();
+        String st1 = inputs.get(0).getString();
+        String st2 = inputs.get(1).getString();
         
         output.putInt32(st1.compareTo(st2));
     }

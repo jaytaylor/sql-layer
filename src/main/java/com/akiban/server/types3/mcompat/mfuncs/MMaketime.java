@@ -67,14 +67,14 @@ public class MMaketime extends TOverloadBase {
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MNumeric.BIGINT, 0, 1, 2);
+        builder.covers(MNumeric.INT, 0, 1, 2);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         // Time input format HHMMSS
-        int hours = inputs.get(0).getInt32(); 
+        int hours = inputs.get(0).getInt32();
         int minutes = inputs.get(1).getInt32();
         int seconds = inputs.get(2).getInt32();
         

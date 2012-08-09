@@ -64,22 +64,45 @@ public class MultiCursorIT extends OperatorITBase
     }
 
     @Test
-    public void testOneEmptyCursor()
+    public void testOneCursor()
     {
-        Cursor multiCursor = multiCursor(new TestCursor());
-        multiCursor.open();
-        assertTrue(multiCursor.isActive());
-        assertNull(multiCursor.next());
-        assertTrue(multiCursor.isIdle());
+        for (int n = 0; n < 10; n++) {
+            int[] a = new int[n];
+            for (int i = 0; i < n; i++) {
+                a[i] = i;
+            }
+            Cursor multiCursor = multiCursor(new TestCursor(a));
+            multiCursor.open();
+            assertTrue(multiCursor.isActive());
+            Row row;
+            long expected = 0;
+            while ((row = multiCursor.next()) != null) {
+                assertEquals(expected, unwrap(row));
+                expected++;
+            }
+            assertEquals(n, expected);
+            assertTrue(multiCursor.isIdle());
+        }
     }
 
     @Test
-    public void testOneCursorWithStuff()
+    public void testMultipleCursors()
     {
-        Cursor multiCursor = multiCursor(new TestCursor(1));
+        Cursor multiCursor = multiCursor(new TestCursor(new int[]{}),
+                                         new TestCursor(new int[]{0, 1, 2}),
+                                         new TestCursor(new int[]{}),
+                                         new TestCursor(new int[]{}),
+                                         new TestCursor(new int[]{3}),
+                                         new TestCursor(new int[]{}),
+                                         new TestCursor(new int[]{}));
         multiCursor.open();
-        assertEquals(1, unwrap(multiCursor.next()));
-        assertNull(multiCursor.next());
+        Row row;
+        long expected = 0;
+        while ((row = multiCursor.next()) != null) {
+            assertEquals(expected, unwrap(row));
+            expected++;
+        }
+        assertEquals(4, expected);
         assertTrue(multiCursor.isIdle());
     }
 
@@ -158,7 +181,7 @@ public class MultiCursorIT extends OperatorITBase
 
         // TestCursor interface
 
-        public TestCursor(int ... items)
+        public TestCursor(int[] items)
         {
             this.items = items;
         }

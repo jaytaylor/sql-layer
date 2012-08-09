@@ -36,7 +36,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
-abstract class SortKeyAdapter<S, E> {
+public abstract class SortKeyAdapter<S, E> {
     public abstract AkType[] createAkTypes(int size);
     public abstract AkCollator[] createAkCollators(int size);
     public abstract TInstance[] createTInstances(int size);

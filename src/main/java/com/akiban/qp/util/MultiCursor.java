@@ -43,7 +43,7 @@ public class MultiCursor implements Cursor
     {
         sealed = false;
         cursorIterator = cursors.iterator();
-        current = cursorIterator.hasNext() ? cursorIterator.next() : null;
+        startNextCursor();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class MultiCursor implements Cursor
         do {
             next = current != null ? current.next() : null;
             if (next == null) {
-                current = cursorIterator.hasNext() ? cursorIterator.next() : null;
+                startNextCursor();
             }
         } while (next == null && current != null);
         return next;
@@ -68,6 +68,13 @@ public class MultiCursor implements Cursor
     @Override
     public void close()
     {
+        if (current != null) {
+            current.close();
+        }
+        while (cursorIterator.hasNext()) {
+            current = cursorIterator.next();
+            current.close();
+        }
         current = null;
     }
 
@@ -103,6 +110,18 @@ public class MultiCursor implements Cursor
             throw new IllegalStateException();
         }
         cursors.add(cursor);
+    }
+
+    // For use by this class
+
+    private void startNextCursor()
+    {
+        if (cursorIterator.hasNext()) {
+            current = cursorIterator.next();
+            current.open();
+        } else {
+            current = null;
+        }
     }
 
     // Object state

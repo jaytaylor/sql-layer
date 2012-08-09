@@ -196,7 +196,7 @@ public class Space
     {
         // Fill the unused bits of the z-value with 1s (but leave the length intact).
         int length = zLength(z);
-        long mask = ((1L << (MAX_LENGTH - length)) - 1) << (LENGTH_BITS);
+        long mask = ((1L << (MAX_LENGTH - length)) - 1) << LENGTH_BITS;
         return z | mask;
     }
 
@@ -385,7 +385,7 @@ public class Space
     //  58-63: length
     private static final int MAX_LENGTH = 57;
     private static final long LENGTH_MASK = 0x3f;
-    private static final int LENGTH_BITS = 5;
+    private static final int LENGTH_BITS = 6;
 
     // Object state
 
