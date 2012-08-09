@@ -48,7 +48,8 @@ public class SwingConsole extends JFrame implements WindowListener
     private final ServiceManager serviceManager;
     private JTextArea textArea;
     private PrintStream printStream;
-    private final String[] RUN_PSQL_CMD;
+    private  String[] RUN_PSQL_CMD;
+    private boolean adjusted = false;
 
     public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
@@ -69,8 +70,8 @@ public class SwingConsole extends JFrame implements WindowListener
         // menu
         addWindowListener(this);
         {
-            String osName = System.getProperty("os.name");
-            boolean macOSX = "Mac OS X".equals(osName);
+            final String osName = System.getProperty("os.name");
+            final boolean macOSX = "Mac OS X".equals(osName);
             int shift = (macOSX) ? InputEvent.META_MASK : InputEvent.CTRL_MASK;
 
             JMenuBar menuBar = new JMenuBar();
@@ -137,38 +138,53 @@ public class SwingConsole extends JFrame implements WindowListener
             runPsql.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6,
                                                           shift));
 
-            int port = 15432;
-            try
-            {
-                    port = this.serviceManager.getPostgresService().getPort();
-            }
-            catch (Exception e)
-            {
-                StringWriter errors = new StringWriter();
-                e.printStackTrace(new PrintWriter(errors));
-                textArea.append("\n" + errors.toString());
-            }
-
-            if (macOSX)
-                RUN_PSQL_CMD = new String[] { "osascript", "-e",
-                                              "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p" + port + "\"\n end tell" };
-            else if (osName.startsWith("Window"))
-                RUN_PSQL_CMD = new String[]{"cmd.exe", "/c",
-                                            "start psql -h localhost -p" + port };
-            else // assuming unix-based system
-                RUN_PSQL_CMD = new String[]{new File("/etc/alternatives/x-terminal-emulator").exists() 
-                                                    ? "x-terminal-emulator" 
-                                                    : "xterm", 
-                                            "-e", "psql -h localhost -p" + port};
-
-            
-                    
-                    
             runPsql.addActionListener(new ActionListener()
             {
                 @Override
                 public void actionPerformed(ActionEvent ae)
                 {
+                   
+                    if (!adjusted)
+                    {
+                        int port = 15432;
+                        try
+                        {
+                            port = SwingConsole.this.serviceManager.getPostgresService().getPort();
+                        }
+                        catch (Exception e)
+                        {
+                            StringWriter errors = new StringWriter();
+                            e.printStackTrace(new PrintWriter(errors));
+                            textArea.append("\n" + errors.toString());
+                        }
+
+                        if (macOSX)
+                            RUN_PSQL_CMD = new String[]
+                            {
+                                "osascript",
+                                "-e",
+                                "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p" + port + "\"\n end tell"
+                            };
+                        else if (osName.startsWith("Window"))
+                            RUN_PSQL_CMD = new String[]
+                            {
+                                "cmd.exe",
+                                "/c",
+                                "start psql -h localhost -p" + port
+                            };
+                        else // assuming unix-based system
+                            RUN_PSQL_CMD = new String[]
+                            {
+                                new File("/etc/alternatives/x-terminal-emulator").exists()
+                                    ? "x-terminal-emulator"
+                                    : "xterm",
+                                "-e",
+                                "psql -h localhost -p" + port
+                            };
+
+                        adjusted = true;
+                    }
+                        
                     try
                     {
                         Runtime.getRuntime().exec(RUN_PSQL_CMD);
@@ -202,6 +218,7 @@ public class SwingConsole extends JFrame implements WindowListener
         }
     }
 
+    
     @Override
     public void windowClosing(WindowEvent arg0) {
         quit();
