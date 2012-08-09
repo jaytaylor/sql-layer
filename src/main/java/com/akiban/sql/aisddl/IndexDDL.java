@@ -188,20 +188,6 @@ public class IndexDDL
         indexesToAdd.add(buildIndex(ais, defaultSchemaName, createIndex));
         
         ddlFunctions.createIndexes(session, indexesToAdd);
-
-        if (createIndex.getColumnList() instanceof SpecialIndexFuncNode) {
-            ais = ddlFunctions.getAIS(session);
-            IndexName indexName = indexesToAdd.iterator().next().getIndexName();
-            TableIndex index = ais.getTable(indexName.getSchemaName(), 
-                                            indexName.getTableName())
-                .getIndex(indexName.getName());
-            switch (((SpecialIndexFuncNode)createIndex.getColumnList()).getFunctionType()) {
-            case Z_ORDER_LAT_LON:
-                index.setSpatialLatLon();
-                assert index.isSpatial() : index;
-                break;
-            }
-        }
     }
     
     private static Index buildIndex (AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index) {
@@ -275,7 +261,18 @@ public class IndexDDL
         }
         builder.basicSchemaIsComplete();
         
-        return builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
+        TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
+
+        if (index.getColumnList() instanceof SpecialIndexFuncNode) {
+            switch (((SpecialIndexFuncNode)index.getColumnList()).getFunctionType()) {
+            case Z_ORDER_LAT_LON:
+                tableIndex.setSpatialLatLon();
+                assert tableIndex.isSpatial() : tableIndex;
+                break;
+            }
+        }
+
+        return tableIndex;
     }
     
     

@@ -408,7 +408,8 @@ public class ProtobufWriter {
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
-                setJoinType(convertJoinType(index.getJoinType()));
+                setJoinType(convertJoinType(index.getJoinType())).
+                setIndexType(index.isSpatial() ? AISProtobuf.IndexType.SPATIAL_LAT_LON : AISProtobuf.IndexType.NORMAL);
                 // Not yet in AIS: description
 
         if(index.getTreeName() != null) {

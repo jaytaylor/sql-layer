@@ -392,6 +392,13 @@ public class ProtobufReader {
                 tableIndex.setTreeName(pbIndex.getTreeName());
             }
             loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
+            if (pbIndex.hasIndexType()) {
+                switch (pbIndex.getIndexType()) {
+                case SPATIAL_LAT_LON:
+                    tableIndex.setSpatialLatLon();
+                    break;
+                }
+            }
         }
     }
 
