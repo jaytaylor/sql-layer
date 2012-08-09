@@ -34,7 +34,7 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.Collections;
 
-public final class ThisTestNeedsABetterNameIT extends ITBase {
+public final class DropTablesInNewSessionIT extends ITBase {
     @Test
     public void test() {
         int c = createTable("schema", "customers", "cid int not null primary key, name varchar(32)");
@@ -51,7 +51,7 @@ public final class ThisTestNeedsABetterNameIT extends ITBase {
 
         Session session = serviceManager().getSessionService().createSession();
         try {
-            dropAllTables(session, false);
+            dropAllTables(session);
         }
         finally {
             session.close();
