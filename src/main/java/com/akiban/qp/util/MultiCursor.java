@@ -117,6 +117,9 @@ public class MultiCursor implements Cursor
     private void startNextCursor()
     {
         if (cursorIterator.hasNext()) {
+            if (current != null) {
+                current.close();
+            }
             current = cursorIterator.next();
             current.open();
         } else {

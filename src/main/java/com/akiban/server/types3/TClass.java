@@ -52,6 +52,9 @@ public abstract class TClass {
 
     public abstract void fromObject (TExecutionContext contextForErrors, PValueSource in, PValueTarget out);
 
+    public abstract TCast castToVarchar();
+    public abstract TCast castFromVarchar();
+
     public void selfCast(TExecutionContext context,
                          TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
         PValueTargets.copyFrom(source, target);
@@ -330,6 +333,7 @@ public abstract class TClass {
     private final int serializationVersion;
     private final int serializationSize;
     private final PUnderlying pUnderlying;
+
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
     private static final int EMPTY = -1;
 }

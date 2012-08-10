@@ -24,29 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.akiban.server.error;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.ais.model.TableName;
 
-public final class Cast_From_Mediumint {
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.MEDIUMINT, MString.VARCHAR) {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            String asString = Double.toString(source.getInt32());
-            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-            if (asString.length() > maxLen) {
-                String truncated = asString.substring(0, maxLen);
-                context.reportTruncate(asString, truncated);
-                asString = truncated;
-            }
-            target.putString(asString, null);
-        }
-    };
+public class InvalidAlterException extends InvalidOperationException {
+    public InvalidAlterException(TableName tableName, String detail) {
+        super(ErrorCode.INVALID_ALTER, tableName.getSchemaName(), tableName.getTableName(), detail);
+    }
 }
