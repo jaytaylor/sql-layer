@@ -30,7 +30,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
@@ -38,17 +41,16 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.geophile.Space;
-import com.akiban.util.StringsTest;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static java.lang.Math.abs;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SpatialIndexScanIT extends OperatorITBase
 {
@@ -162,25 +164,90 @@ public class SpatialIndexScanIT extends OperatorITBase
     public void testSpatialQuery()
     {
         loadDB();
-        IndexBound lowerLeft = new IndexBound(row(xyIndexRowType, 50L, 150L),
-                                              new SetColumnSelector(0, 1));
-        IndexBound upperRight = new IndexBound(row(xyIndexRowType, 150L, 250L),
-                                               new SetColumnSelector(0, 1));
-        IndexKeyRange box = IndexKeyRange.spatial(xyIndexRowType, lowerLeft, upperRight);
-        Operator plan = indexScan_Default(xyIndexRowType, false, box);
-        dump(plan);
+        Random random = new Random(987564);
+        long xLo;
+        long xHi;
+        long yLo;
+        long yHi;
+        final int N = 100;
+        for (int i = 0; i < N; i++) {
+            xLo = abs(random.nextLong() % END_X);
+            xHi = abs(random.nextLong() % END_X);
+            if (xLo > xHi) {
+                long swap = xLo;
+                xLo = xHi;
+                xHi = swap;
+            }
+            yLo = abs(random.nextLong() % END_Y);
+            yHi = abs(random.nextLong() % END_Y);
+            if (yLo > yHi) {
+                long swap = yLo;
+                yLo = yHi;
+                yHi = swap;
+            }
+            // Get the right answer
+            Set<Integer> expected = new HashSet<Integer>();
+            for (int id = 0; id < xs.size(); id++) {
+                long x = xs.get(id);
+                long y = ys.get(id);
+                if (xLo <= x && x <= xHi && yLo <= y && y <= yHi) {
+                    expected.add(id);
+                }
+            }
+            // Get the query result
+            Set<Integer> actual = new HashSet<Integer>();
+            IndexBound lowerLeft = new IndexBound(row(xyIndexRowType, xLo, yLo),
+                                                  new SetColumnSelector(0, 1));
+            IndexBound upperRight = new IndexBound(row(xyIndexRowType, xHi, yHi),
+                                                   new SetColumnSelector(0, 1));
+            IndexKeyRange box = IndexKeyRange.spatial(xyIndexRowType, lowerLeft, upperRight);
+            Operator plan = indexScan_Default(xyIndexRowType, false, box);
+            Cursor cursor = API.cursor(plan, queryContext);
+            cursor.open();
+            Row row;
+            while ((row = cursor.next()) != null) {
+                int id = (int) row.eval(1).getInt();
+                actual.add(id);
+            }
+            // There should be no false negatives
+            assertTrue(actual.containsAll(expected));
+        }
     }
 
     @Test
     public void testNearPoint()
     {
         loadDB();
-        IndexBound zStartBound = new IndexBound(row(xyIndexRowType.physicalRowType(),
-                                                    space.shuffle(new long[]{500L, 500L})),
-                                                new SetColumnSelector(0));
-        IndexKeyRange zStart = IndexKeyRange.spatial(xyIndexRowType, zStartBound, null);
-        Operator plan = indexScan_Default(xyIndexRowType, false, zStart);
-        dump(plan);
+        Random random = new Random(123456);
+        final int N = 100;
+        long[] startingPoint = new long[2];
+        for (int i = 0; i < N; i++) {
+            startingPoint[0] = abs(random.nextLong() % END_X);
+            startingPoint[1] = abs(random.nextLong() % END_Y);
+            long zStart = space.shuffle(startingPoint);
+            IndexBound zStartBound = new IndexBound(row(xyIndexRowType.physicalRowType(), space.shuffle(startingPoint)),
+                                                    new SetColumnSelector(0));
+            IndexKeyRange zStartRange = IndexKeyRange.spatial(xyIndexRowType, zStartBound, null);
+            Operator plan = indexScan_Default(xyIndexRowType, false, zStartRange);
+            Cursor cursor = API.cursor(plan, queryContext);
+            cursor.open();
+            Row row;
+            long previousDistance = Long.MIN_VALUE;
+            int count = 0;
+            while ((row = cursor.next()) != null) {
+                long zActual = row.eval(0).getLong();
+                int id = (int) row.eval(1).getInt();
+                long x = xs.get(id);
+                long y = ys.get(id);
+                long zExpected = space.shuffle(new long[]{x, y});
+                assertEquals(zExpected, zActual);
+                long distance = abs(zExpected - zStart);
+                assertTrue(distance >= previousDistance);
+                previousDistance = distance;
+                count++;
+            }
+            assertEquals(zToId.size(), count);
+        }
     }
 
     private void loadDB()

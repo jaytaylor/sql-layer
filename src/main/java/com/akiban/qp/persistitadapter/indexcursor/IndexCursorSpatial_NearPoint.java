@@ -60,9 +60,11 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         geCursor.open();
         geRow = geCursor.next();
         geDistance = distanceFromStart(geRow);
+        geNeedToAdvance = false;
         ltCursor.open();
         ltRow = ltCursor.next();
         ltDistance = distanceFromStart(ltRow);
+        ltNeedToAdvance = false;
     }
 
     @Override
@@ -70,14 +72,21 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
     {
         Row next;
         super.next();
-        if (ltDistance < geDistance) {
-            next = ltRow;
-            ltRow = ltCursor.next();
-            ltDistance = distanceFromStart(ltRow);
-        } else {
-            next = geRow;
+        if (geNeedToAdvance) {
             geRow = geCursor.next();
             geDistance = distanceFromStart(geRow);
+            geNeedToAdvance = false;
+        } else if (ltNeedToAdvance) {
+            ltRow = ltCursor.next();
+            ltDistance = distanceFromStart(ltRow);
+            ltNeedToAdvance = false;
+        }
+        if (ltDistance < geDistance) {
+            next = ltRow;
+            ltNeedToAdvance = true;
+        } else {
+            next = geRow;
+            geNeedToAdvance = true;
         }
         if (next == null) {
             close();
@@ -141,10 +150,10 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             new RowBasedUnboundExpressions(physicalIndexRowType,
                                            Collections.singletonList(Expressions.literal(Long.MIN_VALUE)));
         IndexBound zMin = new IndexBound(zMinRow, Z_SELECTOR);
-        IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, keyRange.lo(), false, zMin, false);
+        IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zMin, false, keyRange.lo(), false);
         IndexScanRowState ltRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
         API.Ordering downOrdering = new API.Ordering();
-        upOrdering.append(Expressions.field(physicalIndexRowType, 0), false);
+        downOrdering.append(Expressions.field(physicalIndexRowType, 0), false);
         ltCursor = new IndexCursorUnidirectional<ValueSource>(context,
                                                               ltRowState,
                                                               ltKeyRange,
@@ -174,12 +183,19 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
 
     // Object state
 
+    // Iteration control is slightly convoluted. lt/geNeedToAdvance are set to indicate if the lt/geCursor
+    // need to be advanced on the *next* iteration. This simplifies row management. It would be simpler to advance
+    // in next() after determining the next row. But then the state carrying next gets advanced and next doesn't
+    // have the state that it should.
+
     private final IterationHelper iterationHelper;
     private long zStart;
     private Cursor geCursor;
     private Row geRow;
     private long geDistance;
+    private boolean geNeedToAdvance;
     private Cursor ltCursor;
     private Row ltRow;
     private long ltDistance;
+    private boolean ltNeedToAdvance;
 }
