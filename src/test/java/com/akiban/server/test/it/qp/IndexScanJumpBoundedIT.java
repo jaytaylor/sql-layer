@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import java.util.ArrayList;
+import java.lang.Long;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
@@ -712,24 +714,120 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
     }
 
-    private void testJump(Cursor cursor, long[] idOrdering, int nudge)
+    @Test
+    public void testDDDDLegalRange()
     {
-        for (int start = 0; start < idOrdering.length; start++) {
+        API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
+        long idOrdering[] = longs(1015, 1014, 1013, 1012, 1011, 1010);
+        Operator plan = indexScan_Default(idxRowType, bounded(1, 13, true, 15, true), ordering);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
+        testJump(cursor,
+                 idOrdering,
+                 0,
+                 new long[][] // range is: [1015 - 1013]
+                 {
+                     {1015, 1014, 1013}, 
+                     {1014, 1013},
+                     {1013},
+                     {},
+                     {},
+                     {}
+                 });
+        cursor.close();
+    }
+
+    @Test
+    public void testDDDDOutOfRangeUpperBound()
+    {
+        API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
+        long idOrdering[] = longs(1015, 1014, 1013, 1012, 1011, 1010);
+        Operator plan = indexScan_Default(idxRowType, bounded(1, 13, true, 21, true), ordering);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
+        testJump(cursor,
+                 idOrdering,
+                 0,
+                 new long[][] // specified range: [21-13],
+                 {            // but it should still only see [15 - 13]
+                     {1015, 1014, 1013}, 
+                     {1014, 1013},
+                     {1013},
+                     {},
+                     {},
+                     {}
+                 });
+        cursor.close();
+    }
+
+    @Test
+    public void testDDDDOutOfRangeLowerBound()
+    {
+        API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
+        long idOrdering[] = longs(1015, 1014, 1013, 1012, 1011, 1010);
+        Operator plan = indexScan_Default(idxRowType, bounded(1, 3, true, 14, true), ordering);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
+        testJump(cursor,
+                 idOrdering,
+                 0,
+                 new long[][] // specified range: [14-3],
+                 {            // but it should still only see  [15 - 10]
+                     {1015, 1014, 1013, 1012, 1011, 1010}, 
+                     {1014, 1013, 1012, 1011, 1010},
+                     {1013, 1012, 1011, 1010},
+                     {1012, 1011, 1010},
+                     {1011, 1010},
+                     {1010}
+                 });
+        cursor.close();
+    }
+
+    private void testJump(Cursor cursor, long idOrdering[], int nudge, long expectedsAr[][])
+    {
+        List<List<Long>> expecteds = new ArrayList<List<Long>>(expectedsAr.length);
+        
+        for (long expectedAr[] : expectedsAr)
+        {
+            List<Long> expected = new ArrayList();
+            for (long val : expectedAr)
+                expected.add(val);
+            expecteds.add(expected);
+        }
+       
+        doTestJump(cursor, idOrdering, nudge, expecteds);
+    }
+
+    private void testJump(Cursor cursor, long idOrdering[], int nudge)
+    {
+        List<List<Long>> expecteds = new ArrayList<List<Long>>();
+        
+        
+        for (int idIndex = 0; idIndex < idOrdering.length; ++idIndex)
+        {
+            List<Long> expected = new ArrayList<Long>();
+            for (int i = idIndex; i < idOrdering.length; i++)
+                expected.add(idOrdering[i]);
+            expecteds.add(expected);
+        }
+        
+        doTestJump(cursor, idOrdering, nudge, expecteds);
+    }
+
+    private void doTestJump(Cursor cursor, long idOrdering[], int nudge, List<List<Long>> expecteds)
+    {
+        for (int start = 0; start < idOrdering.length; ++start)
+        {
             TestRow target = indexRow(idOrdering[start]);
-            // Add nudge to last field
             OverlayingRow nudgedTarget = new OverlayingRow(target);
             nudgedTarget.overlay(3, target.eval(3).getLong() + nudge);
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
             List<Long> actualIds = new ArrayList<Long>();
-            while ((row = cursor.next()) != null) {
+            while ((row = cursor.next()) != null)
                 actualIds.add(row.eval(3).getInt());
-            }
-            List<Long> expectedIds = new ArrayList<Long>();
-            for (int i = start; i < idOrdering.length; i++) {
-                expectedIds.add(idOrdering[i]);
-            }
-            assertEquals(expectedIds, actualIds);
+
+            assertEquals(expecteds.get(start), actualIds);
         }
     }
 
