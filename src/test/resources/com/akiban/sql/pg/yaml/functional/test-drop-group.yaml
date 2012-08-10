@@ -18,7 +18,7 @@
 - error: [42501]
 ---
 - Statement: Drop Group if exists not_here;
-- warnings: [[42501, 'Cannot find the table `test`.`not_here`']]
+- warnings: [[42501, 'WARN:  Cannot find the table `test`.`not_here`']]
 ---
 # Test dropping a single table group 
 - Statement: Drop Group if exists states;
