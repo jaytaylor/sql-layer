@@ -364,7 +364,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     store().truncateIndex(session, indexesToTruncate);
                     doIndexChange(session, newDefinition, validator.getAllChangedTables(), helper);
                 break;
-
+                
                 case GROUP:
                     groupChange = true;
                     // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
