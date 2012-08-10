@@ -140,11 +140,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     for (int i = 0, size = rsFields.size(); i < size; i++) {
                         ResultField rsField = rsFields.get(i);
                         ExpressionNode projectField = projectFields.get(i);
-                        DataTypeDescriptor projectionType = projectField.getSQLtype();
-                        DataTypeDescriptor rsFieldType = rsField.getSQLtype();
-                        if (!projectionType.equals(rsFieldType)) {
-                            rsField.setSQLtype(projectionType);
-                        }
+                        rsField.setTInstance(projectField.getPreptimeValue().instance());
                     }
                 }
                 else {
