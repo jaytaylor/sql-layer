@@ -275,7 +275,8 @@ public class TableChangeValidator {
             }
         }
 
-        for(Join join : newTable.getChildJoins()) {
+        Collection<Join> childJoins = new ArrayList<Join>(newTable.getCandidateChildJoins());
+        for(Join join : childJoins) {
             UserTable childTable = join.getChild();
             childTable.removeCandidateParentJoin(join);
 
@@ -293,7 +294,7 @@ public class TableChangeValidator {
                 childTable.removeCandidateParentJoin(newJoin);
                 propagateChange(childTable, true);
             }
-            else if(newJoin.getJoinColumns().size() != join.getJoinColumns().size()) {
+            else if(parentChanged || (newJoin.getJoinColumns().size() != join.getJoinColumns().size())) {
                 propagateChange(childTable, false);
             }
         }

@@ -43,6 +43,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -289,6 +290,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         );
         com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
 
+        Operator orphanPlan = null;
+        if(groupChange && !origTable.getChildJoins().isEmpty()) {
+            // Only direct children needed, propagation during delete/write will fix the rest
+            final Set<RowType> childTypes = new HashSet<RowType>();
+            for(Join join : origTable.getChildJoins()) {
+                childTypes.add(oldSchema.userTableRowType(join.getChild()));
+            }
+            orphanPlan = filter_Default(
+                    groupScan_Default(origTable.getGroup().getGroupTable()),
+                    childTypes
+            );
+        }
+
         cursor.open();
         int step = adapter.enterUpdateStep(true);
         try {
@@ -297,6 +311,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 Row newRow = new ProjectedRow(newType, oldRow, queryContext, projections, pProjections);
                 queryContext.checkConstraints(newRow, usePValues);
                 adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
+            }
+
+            if(orphanPlan != null) {
+                // Now, fix any orphans
+                cursor.close();
+                cursor = API.cursor(orphanPlan, queryContext);
+                cursor.open();
+                adapter.enterUpdateStep(true);
+                while((oldRow = cursor.next()) != null) {
+                    RowType newRowType = newSchema.userTableRowType(oldRow.rowType().userTable());
+                    Row newRow = new OverlayingRow(oldRow, newRowType, usePValues);
+                    adapter.alterRow(oldRow, newRow, null, groupChange, usePValues);
+                }
             }
         } finally {
             cursor.close();

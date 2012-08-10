@@ -37,9 +37,11 @@ import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -57,6 +59,16 @@ import java.util.TreeSet;
 public class AISMerge {
     public enum MergeType { ADD_TABLE, MODIFY_TABLE }
 
+    private static class TableNameAndJoin {
+        public final TableName tableName;
+        public final Join join;
+
+        private TableNameAndJoin(TableName tableName, Join join) {
+            this.tableName = tableName;
+            this.join = join;
+        }
+    }
+
     // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
     static final int USER_TABLE_ID_OFFSET = 1;
     static final int AIS_TABLE_ID_OFFSET = 1000000000;
@@ -69,7 +81,7 @@ public class AISMerge {
     private final MergeType mergeType;
     private final SortedSet<Integer> userTableIDSet = new TreeSet<Integer>();
     private final SortedSet<Integer> isTableIDSet = new TreeSet<Integer>();
-    private final Map<TableName,Join> joinsToFix;
+    private final List<TableNameAndJoin> joinsToFix;
     private final Set<IndexName> indexesToFix;
 
     /**
@@ -94,9 +106,9 @@ public class AISMerge {
         this.targetAIS = new AkibanInformationSchema();
         this.sourceTable = null;
         this.mergeType = MergeType.MODIFY_TABLE;
-        this.joinsToFix = new HashMap<TableName,Join>();
+        this.joinsToFix = new ArrayList<TableNameAndJoin>();
         this.indexesToFix = new HashSet<IndexName>();
-        copyAISForModify(primaryAIS, targetAIS, nameGenerator, joinsToFix, indexesToFix, alteredTables);
+        copyAISForModify(primaryAIS, targetAIS, joinsToFix, indexesToFix, alteredTables);
     }
 
     private static NameGenerator makeGenerator(AkibanInformationSchema ais) {
@@ -111,8 +123,7 @@ public class AISMerge {
         return AISCloner.clone(oldAIS);
     }
 
-    private static void copyAISForModify(AkibanInformationSchema oldAIS, AkibanInformationSchema targetAIS,
-                                         NameGenerator generator, Map<TableName, Join> savedJoins,
+    private static void copyAISForModify(AkibanInformationSchema oldAIS, AkibanInformationSchema targetAIS, List<TableNameAndJoin> joinsToFix,
                                          Set<IndexName> indexesToFix, Collection<ChangedTableDescription> changedTables)
     {
         final Map<TableName,UserTable> filteredTables = new HashMap<TableName,UserTable>();
@@ -124,9 +135,17 @@ public class AISMerge {
             if(!desc.isNewGroup()) {
                 newTable.setTreeName(oldTable.getTreeName());
             } else {
-                savedJoins.put(newTable.getName(), newTable.getParentJoin());
+                final Join join;
+                List<Join> parentJoins = newTable.getCandidateParentJoins();
+                switch(parentJoins.size()) {
+                    case 0: join = null; break;
+                    case 1: join = parentJoins.get(0); break;
+                    default:
+                        throw new IllegalStateException("More than 1 join: " + parentJoins);
+                }
+                joinsToFix.add(new TableNameAndJoin(newTable.getName(), join));
                 newTable.setGroup(null);
-                newTable.removeCandidateParentJoin(newTable.getParentJoin());
+                newTable.removeCandidateParentJoin(join);
             }
             filteredTables.put(desc.getOldName(), newTable);
 
@@ -224,7 +243,7 @@ public class AISMerge {
             // But since the AIS supports multiples, so does the merge.
             // This gets flagged in JoinToOneParent validation. 
             for (Join join : sourceTable.getCandidateParentJoins()) {
-                addJoin (builder, join, sourceTable);
+                addJoin(builder, join, sourceTable);
             }
         }
         builder.groupingIsComplete();
@@ -237,13 +256,12 @@ public class AISMerge {
         AISBuilder builder = new AISBuilder(targetAIS);
 
         // Fix up groups
-        for(Map.Entry<TableName,Join> entry : joinsToFix.entrySet()) {
-            Join join = entry.getValue();
-            UserTable table = targetAIS.getUserTable(entry.getKey());
-            if(join == null) {
+        for(TableNameAndJoin tnj : joinsToFix) {
+            UserTable table = targetAIS.getUserTable(tnj.tableName);
+            if(tnj.join == null) {
                 addNewGroup(builder, table, false);
             } else {
-                addJoin(builder, join, table);
+                addJoin(builder, tnj.join, table);
             }
         }
 

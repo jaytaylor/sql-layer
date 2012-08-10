@@ -155,7 +155,7 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
-    public void dropPKFromMiddleOfGroup() throws StandardException {
+    public void dropPrimaryKeyMiddleOfGroup() throws StandardException {
         createAndLoadCOI();
 
         // Will yield 2 groups: C-O and I
@@ -557,7 +557,7 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
-    public void simpleAddGroupingForeignKey() throws StandardException {
+    public void addGroupingForeignSingleToTwoTableGroup() throws StandardException {
         int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
         int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
         int iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1)");
@@ -643,6 +643,112 @@ public class AlterTableIT extends ITBase {
                 new RowBase[] {
                         testRow(oType, 10, 1, "a"),
                         testRow(oType, 11, 1, "b"),
+                        testRow(oType, 60, 6, "c"),
+                },
+                adapter.newGroupCursor(oType.userTable().getGroup().getGroupTable())
+        );
+    }
+
+    @Test
+    public void addGroupingForeignKeyToExistingParent() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1)");
+        int iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1), grouping foreign key(spare_id) references o(id)");
+
+        writeRows(
+                createNewRow(cid, 1, "asdf"),
+                createNewRow(cid, 5, "qwer"),
+                createNewRow(cid, 10, "zxcv")
+        );
+        writeRows(
+                createNewRow(oid, 10, 1, "a"),
+                createNewRow(oid, 11, 1, "b"),
+                createNewRow(oid, 60, 6, "c")
+        );
+        writeRows(
+                createNewRow(iid, 100, 10, "d"),
+                createNewRow(iid, 101, 10, "e"),
+                createNewRow(iid, 102, 10, "f"),
+                createNewRow(iid, 200, 20, "d")
+        );
+
+        runAlter("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
+        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
+        RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
+
+        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        compareRows(
+                new RowBase[] {
+                        // ?
+                            // null
+                                testRow(iType, 200, 20, "d"),
+                        testRow(cType, 1, "asdf"),
+                            testRow(oType, 10, 1, "a"),
+                                testRow(iType, 100, 10, "d"),
+                                testRow(iType, 101, 10, "e"),
+                                testRow(iType, 102, 10, "f"),
+                            testRow(oType, 11, 1, "b"),
+                        testRow(cType, 5, "qwer"),
+                        // null
+                            testRow(oType, 60, 6, "c"),
+                        testRow(cType, 10, "zxcv"),
+                },
+                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+        );
+    }
+
+    @Test
+    public void dropGroupingForeignKeyMiddleOfGroup() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
+        int iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1), grouping foreign key(spare_id) references o(id)");
+
+        writeRows(
+                createNewRow(cid, 1, "asdf"),
+                createNewRow(cid, 5, "qwer"),
+                createNewRow(cid, 10, "zxcv")
+        );
+        writeRows(
+                createNewRow(oid, 10, 1, "a"),
+                createNewRow(oid, 11, 1, "b"),
+                createNewRow(oid, 60, 6, "c")
+        );
+        writeRows(
+                createNewRow(iid, 100, 10, "d"),
+                createNewRow(iid, 101, 10, "e"),
+                createNewRow(iid, 102, 10, "f"),
+                createNewRow(iid, 200, 20, "d")
+        );
+
+        runAlter("ALTER TABLE o DROP GROUPING FOREIGN KEY");
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
+        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
+        RowType iType = schema.userTableRowType(getUserTable(SCHEMA, "i"));
+
+        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        compareRows(
+                new RowBase[] {
+                        testRow(cType, 1, "asdf"),
+                        testRow(cType, 5, "qwer"),
+                        testRow(cType, 10, "zxcv")
+                },
+                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+        );
+
+        compareRows(
+                new RowBase[] {
+                        testRow(oType, 10, 1, "a"),
+                            testRow(iType, 100, 10, "d"),
+                            testRow(iType, 101, 10, "e"),
+                            testRow(iType, 102, 10, "f"),
+                        testRow(oType, 11, 1, "b"),
+                        // none
+                            testRow(iType, 200, 20, "d"),
                         testRow(oType, 60, 6, "c"),
                 },
                 adapter.newGroupCursor(oType.userTable().getGroup().getGroupTable())
