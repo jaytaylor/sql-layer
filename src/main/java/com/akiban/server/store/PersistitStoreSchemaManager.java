@@ -93,6 +93,7 @@ import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
 import com.persistit.Key;
+import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -463,8 +464,20 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         AISMerge merge = new AISMerge(aish.getAis(), alteredTables);
         merge.merge();
+        AkibanInformationSchema newAIS = merge.getAIS();
 
-        saveAISChangeWithRowDefs(session, merge.getAIS(), schemas);
+        for(ChangedTableDescription desc : alteredTables) {
+            if(desc.isNewGroup()) {
+                UserTable table = newAIS.getUserTable(desc.getNewName());
+                try {
+                    treeService.getTableStatusCache().setOrdinal(table.getTableId(), 0);
+                } catch(PersistitInterruptedException e) {
+                    throw new PersistitAdapterException(e);
+                }
+            }
+        }
+
+        saveAISChangeWithRowDefs(session, newAIS, schemas);
     }
 
     private void deleteTableCommon(Session session, TableName tableName, boolean isInternal, boolean mustBeMemory) {

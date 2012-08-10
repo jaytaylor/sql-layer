@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,11 +54,13 @@ import com.akiban.ais.util.TableChange;
 import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.ais.util.TableChangeValidatorException;
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
@@ -185,7 +188,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private void doTableChange(Session session, TableName tableName, UserTable newDefinition,
                                Collection<ChangedTableDescription> changedTables,
-                               AlterTableHelper helper, List<Index> indexesToDrop, final boolean groupChange) {
+                               AlterTableHelper helper, List<Index> indexesToDrop, boolean groupChange) {
+
+        final boolean usePValues = Types3Switch.ON;
 
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = origAIS.getUserTable(tableName);
@@ -251,11 +256,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // PUTRT for constraint checking
         final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections);
 
-        final UpdatePlannable plan;
-
-        // For a group change, deleting parent will re-insert children
-        // Since they didn't change that is all that is needed
-        final Set<RowType> filterTypes = Collections.singleton(oldSourceType);
 
         for(ChangedTableDescription desc : changedTables) {
             UserTable oldTable = origAIS.getUserTable(desc.getOldName());
@@ -266,50 +266,40 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         }
 
-        plan = update_Default(
-                filter_Default(
-                        groupScan_Default(origTable.getGroup().getGroupTable()),
-                        filterTypes
-                ),
-                new UpdateFunction() {
-                    private Row makeProjected(Row original, QueryContext context) {
-                        return new ProjectedRow(newType, original, context, projections, pProjections);
-                    }
-
-                    @Override
-                    public Row evaluate(Row original, QueryContext context) {
-                        return makeProjected(original, context);
-                    }
-
-                    @Override
-                    public boolean usePValues() {
-                        return Types3Switch.ON;
-                    }
-
-                    @Override
-                    public boolean rowIsSelected(Row row) {
-                        if(groupChange) {
-                            Row insertRow = makeProjected(row, queryContext);
-                            adapter.deleteRow(row, usePValues());
-                            adapter.writeRow(insertRow, usePValues());
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-                }
-        );
-
-        List<Index> indexesToBuild = helper.findAffectedNewIndexes(newTable);
-        if(!indexesToBuild.isEmpty()) {
-            adapter.setIndexesToInsert(indexesToBuild.toArray(new Index[indexesToBuild.size()]));
+        Index[] oldTypeIndexes = null;
+        if(!groupChange) {
+            List<Index> indexesToBuild = helper.findAffectedNewIndexes(newTable);
+            oldTypeIndexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
         }
 
-        // Perform transformation
+        // NB: Delicate:
+        // We only need to scan the table being changed because
+        // - It is the only row contents needing transformed
+        // - For a non-group change we don't need to look at others anyway
+        // - For a group change, this table is the "pivot" so only it's descendants need updated
+        // -- A group change is performed by alterRow() as a delete and then a write
+        // -- Delete will remove current *and* its descendants. When the descendants are re-inserted,
+        //    they automatically get their new hkey (as the RowDef is gotten from the cache == newest)
+        // -- When the row is re-written, only it is touched and no descendants are updated
+        Set<RowType> filteredTypes = Collections.singleton(oldSourceType);
+
+        Operator plan = filter_Default(
+                groupScan_Default(origTable.getGroup().getGroupTable()),
+                filteredTypes
+        );
+        com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+
+        cursor.open();
         int step = adapter.enterUpdateStep(true);
         try {
-            plan.run(queryContext);
+            Row oldRow;
+            while((oldRow = cursor.next()) != null) {
+                Row newRow = new ProjectedRow(newType, oldRow, queryContext, projections, pProjections);
+                queryContext.checkConstraints(newRow, usePValues);
+                adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
+            }
         } finally {
+            cursor.close();
             adapter.leaveUpdateStep(step);
         }
 

@@ -67,6 +67,8 @@ public abstract class StoreAdapter
     
     public abstract void deleteRow (Row oldRow, boolean usePValues);
 
+    public abstract void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues);
+
     public abstract Cursor sort(QueryContext context,
                                 Cursor input,
                                 RowType rowType,

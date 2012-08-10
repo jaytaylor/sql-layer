@@ -79,7 +79,6 @@ public class AlterTableIT extends ITBase {
         SQLParser parser = new SQLParser();
         StatementNode node = parser.parseStatement(sql);
         assertTrue("is alter node", node instanceof AlterTableNode);
-        OperatorBasedTableCopier copier = new OperatorBasedTableCopier(configService(), treeService(), session(), store(), Types3Switch.ON);
         AlterTableDDL.alterTable( ddl(), dml(), session(), SCHEMA, (AlterTableNode)node);
         updateAISGeneration();
     }
