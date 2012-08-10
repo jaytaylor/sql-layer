@@ -38,17 +38,26 @@ public class SpaceHelper
      * {@link Space}.
      */
     public static Space latLon(Column latCol, Column lonCol) {
-        if ((latCol.getType() != Types.DECIMAL) ||
-            (lonCol.getType() != Types.DECIMAL)) {
-            throw new InvalidArgumentTypeException("Columns must both be DECIMAL");
-        }
-        long latScale = BigInteger.TEN.pow(latCol.getTypeParameter2().intValue()).longValue();
-        long lonScale = BigInteger.TEN.pow(lonCol.getTypeParameter2().intValue()).longValue();
+        long latScale, lonScale;
+        if (latCol.getType() == Types.INT)
+            latScale = 1;
+        else if (latCol.getType() == Types.DECIMAL)
+            latScale = BigInteger.TEN.pow(latCol.getTypeParameter2().intValue()).longValue();
+        else
+            throw new InvalidArgumentTypeException("Latitude must be DECIMAL or INT");
+        if (lonCol.getType() == Types.INT)
+            lonScale = 1;
+        else if (lonCol.getType() == Types.DECIMAL)
+            lonScale = BigInteger.TEN.pow(lonCol.getTypeParameter2().intValue()).longValue();
+        else
+            throw new InvalidArgumentTypeException("Longitude must be DECIMAL or INT");
+
         // TODO: Maybe there should be subclasses of Space for
         // different coordinate systems?
         // Latitude is actually -90 - +90 or 0 - 180, but dims apparently have to be the same.
-        return new Space(new long[] { 0, 0 },
-                         new long[] { 360 * latScale, 360 * lonScale });
+        // Jack says that's because I let the third argument default.
+        return new Space(new long[] { -180 * latScale, -180 * lonScale },
+                         new long[] { 180 * latScale, 180 * lonScale });
     }
 
     private SpaceHelper() {
