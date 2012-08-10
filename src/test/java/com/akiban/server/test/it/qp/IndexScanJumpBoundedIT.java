@@ -26,8 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import java.util.ArrayList;
-import java.lang.Long;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
@@ -675,6 +673,65 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
     }
 
+        @Test
+    public void testDDDALegalBound()
+    {
+        testRange(getDDDA(),
+                  getDDDAId(),
+                  0,
+                  13, true,
+                  15, true,
+                  new long [][]     // range: [15 - 13]
+                  {
+                      {1015, 1014, 1013},
+                      {1014, 1013},
+                      {1013},
+                      {},
+                      {},
+                      {}
+                  });
+    }
+
+     
+    @Test
+    public void testDDDAOutOfRangeLowerBound()
+    {
+        testRange(getDDDA(),
+                  getDDDAId(),
+                  0,
+                  1, true,
+                  15, true,
+                  new long [][]     // specified range [15 - 1]
+                  {                 // but it should still only see [15 - 10]
+                      {1015, 1014, 1013, 1012, 1011, 1010},
+                      {1014, 1013, 1012, 1011, 1010},
+                      {1013, 1012, 1011, 1010},
+                      {1012, 1011, 1010},
+                      {1011, 1010},
+                      {1010}
+                  });
+    }
+
+    @Test
+    public void testDDDAOutOfRangeUpperBound()
+    {
+        testRange(getDDDA(),
+                  getDDDAId(),
+                  0,
+                  12, true,
+                  30, true,
+                  new long [][]     // specified range [30 - 12]
+                  {                 // but it should still only see [15 - 12]
+                      {1015, 1014, 1013, 1012},
+                      {1014, 1013, 1012},
+                      {1013, 1012},
+                      {1012},
+                      {},
+                      {}
+
+                  });
+    }
+
     @Test
     public void testDDDD()
     {
@@ -717,7 +774,9 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     @Test
     public void testDDDDLegalRange()
     {
-        testRange(0,
+        testRange(getDDDD(),
+                  getDDDDId(),
+                  0,
                   13, true,
                   15, true,
                   new long [][]     // range is: [1015 - 1013]
@@ -734,7 +793,9 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     @Test
     public void testDDDDOutOfRangeUpperBound()
     {
-        testRange(0,
+        testRange(getDDDD(),
+                  getDDDDId(),
+                  0,
                   13, true,
                   21, true,
                   new long [][]     // specified range: [21-13],
@@ -751,7 +812,9 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     @Test
     public void testDDDDOutOfRangeLowerBound()
     {
-        testRange(0,
+        testRange(getDDDD(),
+                  getDDDDId(),
+                  0,
                   3, true,
                   14, true,
                   new long [][]     // specified range: [14-3],
@@ -768,7 +831,9 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     @Test
     public void testDDDDOutOfRange() // both upper and lower bound
     {
-        testRange(0,
+        testRange(getDDDD(),
+                  getDDDDId(),
+                  0,
                   8, true,
                   20, true,
                   new long [][]     // specified range: [20 - 8],
@@ -782,10 +847,63 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
                   });
     }
 
-    private void testRange(int nudge, int lo, boolean loInclusive, int hi, boolean hiInclusive, long expectedArs[][])
+    private API.Ordering getDADD()
     {
-        API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
-        long idOrdering[] = longs(1015, 1014, 1013, 1012, 1011, 1010);
+        return ordering(A, DESC, B, ASC, C, DESC, ID, DESC);
+    }
+    
+    private long[] getDADDId()
+    {
+        return longs(1011, 1010, 1013, 1012, 1015, 1014);
+    }
+
+    private API.Ordering getDDAA()
+    {
+        return ordering(A, DESC, B, DESC, C, ASC, ID, ASC);
+    }
+    
+    private long[] getDDAAId()
+    {
+        return longs(1014, 1015, 1012, 1013, 1010, 1011);
+    }
+
+    private API.Ordering getDDAD()
+    {
+        return ordering(A, DESC, B, DESC, C, ASC, ID, DESC);
+    }
+
+    private long[] getDDADId()
+    {
+        return longs(1014, 1015, 1012, 1013, 1010, 1011);
+    }
+
+    private API.Ordering getDDDA()
+    {
+         return ordering(A, DESC, B, DESC, C, DESC, ID, ASC);
+    }
+    
+    private long[] getDDDAId()
+    {
+        return longs(1015, 1014, 1013, 1012, 1011, 1010);
+    }
+
+    private API.Ordering getDDDD()
+    {
+        return ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
+    }
+    
+    private long[] getDDDDId()
+    {
+        return longs(1015, 1014, 1013, 1012, 1011, 1010);
+    }
+
+    private void testRange(API.Ordering ordering,
+                           long idOrdering[],
+                           int nudge,
+                           int lo, boolean loInclusive,
+                           int hi, boolean hiInclusive,
+                           long expectedArs[][])
+    {
         Operator plan = indexScan_Default(idxRowType, bounded(1, lo, loInclusive, hi, hiInclusive), ordering);
         Cursor cursor = cursor(plan, queryContext);
         cursor.open();
