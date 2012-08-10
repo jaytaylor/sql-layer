@@ -27,6 +27,7 @@
 package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.StringAttribute;

@@ -110,21 +110,6 @@ public final class Cast_From_Decimal {
 
     };
 
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.DECIMAL, MString.VARCHAR) {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            BigDecimalWrapper wrapper = (BigDecimalWrapper) source.getObject();
-            String asString = wrapper.asBigDecimal().toString();
-            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-            if (asString.length() > maxLen) {
-                String truncated = asString.substring(0, maxLen);
-                context.reportTruncate(asString, truncated);
-                asString = truncated;
-            }
-            target.putString(asString, null);
-        }
-    };
-
     private Cast_From_Decimal() {}
 
     private static BigDecimal LONG_MAXVAL = BigDecimal.valueOf(Long.MAX_VALUE);

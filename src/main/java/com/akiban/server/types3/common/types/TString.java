@@ -32,6 +32,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -198,7 +199,17 @@ public abstract class TString extends TClass
         int collaitonid = instance.attribute(StringAttribute.COLLATION);
         // TODO
     }
-    
+
+    @Override
+    public TCast castToVarchar() {
+        return null;
+    }
+
+    @Override
+    public TCast castFromVarchar() {
+        return null;
+    }
+
     private final int fixedLength;
     private final TypeId typeId;
     private static final Logger logger = LoggerFactory.getLogger(TString.class);

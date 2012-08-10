@@ -25,6 +25,7 @@
  */
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TAttributeValues;
@@ -33,17 +34,24 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
+
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 public final class MBinary extends SimpleDtdTClass {
+
+    private static final TParser parser = new BinaryParser();
 
     public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
     public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "varbinary", -1);
@@ -133,9 +141,34 @@ public final class MBinary extends SimpleDtdTClass {
     }
     
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, null, typeId);
+        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, parser, typeId);
         this.defaultLength = defaultLength;
     }
         
     private final int defaultLength;
+
+    public static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {
+        int maxLen = context.outputTInstance().attribute(MBinary.Attrs.LENGTH);
+        if (bytes.length > maxLen) {
+            context.reportTruncate("bytes of length " + bytes.length,  "bytes of length " + maxLen);
+            bytes = Arrays.copyOf(bytes, maxLen);
+        }
+        target.putBytes(bytes);
+    }
+
+    private static class BinaryParser implements TParser {
+        @Override
+        public void parse(TExecutionContext context, PValueSource in, PValueTarget out) {
+            String string = in.getString();
+            int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
+            String charsetName = StringFactory.Charset.values()[charsetId].name();
+            byte[] bytes;
+            try {
+                bytes = string.getBytes(charsetName);
+            } catch (UnsupportedEncodingException e) {
+                throw new AkibanInternalException("while decoding string using " + charsetName, e);
+            }
+            putBytes(context, out, bytes);
+        }
+    }
 }

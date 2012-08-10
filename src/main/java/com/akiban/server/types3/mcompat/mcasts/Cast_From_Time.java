@@ -82,15 +82,6 @@ public class Cast_From_Time {
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIME, MString.VARCHAR, Constantness.UNKNOWN) {
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            int asInt = MDatetimes.parseTime(source.getString(), context);
-            target.putString(Integer.toString(asInt), null);
-        }
-    };
-    
     public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 
