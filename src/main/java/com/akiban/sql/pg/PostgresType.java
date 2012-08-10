@@ -230,10 +230,10 @@ public class PostgresType extends ServerType
     }
 
     public static PostgresType fromAIS(Column aisColumn) {
-        return fromAIS(aisColumn.getType(), aisColumn, aisColumn.getNullable());
+        return fromAIS(aisColumn.getType(), aisColumn, aisColumn.getNullable(), null);
     }
         
-    public static PostgresType fromAIS(Type aisType, Column aisColumn, boolean nullable)  {
+    public static PostgresType fromAIS(Type aisType, Column aisColumn, boolean nullable, TInstance tInstance)  {
         int oid;
         short length = -1;
         int modifier = -1;
@@ -297,7 +297,10 @@ public class PostgresType extends ServerType
             length = aisType.maxSizeBytes().shortValue();
 
         TInstance instance;
-        if (aisColumn != null) {
+        if (tInstance != null) {
+            instance = tInstance;
+        }
+        else if (aisColumn != null) {
             switch (aisType.nTypeParameters()) {
             case 1:
                 // VARCHAR(n).
@@ -483,7 +486,7 @@ public class PostgresType extends ServerType
                 String name = typeId.getSQLTypeName();
                 for (Type aisType : Types.types()) {
                     if (aisType.name().equalsIgnoreCase(name)) {
-                        return fromAIS(aisType, null, type.isNullable());
+                        return fromAIS(aisType, null, type.isNullable(), tInstance);
                     }
                 }
             }
