@@ -225,7 +225,7 @@ public class Sorter
         }
 
         @Override
-        public void reopenIteration()
+        public void openIteration()
         {
             throw new UnsupportedOperationException();
         }

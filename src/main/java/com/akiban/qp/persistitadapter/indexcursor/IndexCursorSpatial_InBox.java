@@ -49,9 +49,9 @@ import com.akiban.server.types.ValueSource;
 import java.util.ArrayList;
 import java.util.List;
 
-// A scan of an IndexCursorSpatial will be implemented as one or more IndexCursorUnidirectional scans.
+// A scan of an IndexCursorSpatial_InBox will be implemented as one or more IndexCursorUnidirectional scans.
 
-class IndexCursorSpatial extends IndexCursor
+class IndexCursorSpatial_InBox extends IndexCursor
 {
     @Override
     public void open()
@@ -72,12 +72,6 @@ class IndexCursorSpatial extends IndexCursor
     }
 
     @Override
-    public void jump(Row row, ColumnSelector columnSelector)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void close()
     {
         super.close();
@@ -91,36 +85,18 @@ class IndexCursorSpatial extends IndexCursor
         multiCursor.destroy();
     }
 
-    @Override
-    public boolean isIdle()
-    {
-        return super.isIdle();
-    }
+    // IndexCursorSpatial_InBox interface
 
-    @Override
-    public boolean isActive()
-    {
-        return super.isActive();
-    }
-
-    @Override
-    public boolean isDestroyed()
-    {
-        return super.isDestroyed();
-    }
-
-    // IndexCursorSpatial interface
-
-    public static IndexCursorSpatial create(QueryContext context,
+    public static IndexCursorSpatial_InBox create(QueryContext context,
                                             IterationHelper iterationHelper,
                                             IndexKeyRange keyRange)
     {
-        return new IndexCursorSpatial(context, iterationHelper, keyRange);
+        return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange);
     }
 
     // For use by this class
 
-    private IndexCursorSpatial(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
+    private IndexCursorSpatial_InBox(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
     {
         super(context, iterationHelper);
         assert keyRange.spatial();
@@ -185,7 +161,7 @@ class IndexCursorSpatial extends IndexCursor
 
     // Inner classes
 
-    // Why ReopeningCursor is needed: An IndexCursorSpatial is wrapped by a PersistitIndexCursor. The PICs
+    // Why ReopeningCursor is needed: An IndexCursorSpatial_InBox is wrapped by a PersistitIndexCursor. The PICs
     // IterationHelper provides access to the PICs Exchange and current row to the IndexCursorUnidirectionals
     // managed by the MultiCursor. Closing an ICU results in the PIC being closed, which returns the Exchange.
     // Need to reopen via the IterationHelper to get a new exchange.
@@ -197,7 +173,7 @@ class IndexCursorSpatial extends IndexCursor
         @Override
         public void open()
         {
-            iterationHelper.reopenIteration();
+            iterationHelper.openIteration();
             input.open();
         }
 

@@ -109,12 +109,14 @@ public abstract class IndexCursor implements Cursor
             : OldExpressionsSortKeyAdapter.INSTANCE;
         return
             keyRange != null && keyRange.spatial()
-            ? IndexCursorSpatial.create(context, iterationHelper, keyRange)
+            ? keyRange.hi() == null
+                ? IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange)
+                : IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange)
             : ordering.allAscending() || ordering.allDescending()
-              ? (keyRange != null && keyRange.lexicographic()
-                 ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
-                 : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
-              : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
+                ? (keyRange != null && keyRange.lexicographic()
+                    ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
+                    : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
+                : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
     }
 
     // For use by subclasses

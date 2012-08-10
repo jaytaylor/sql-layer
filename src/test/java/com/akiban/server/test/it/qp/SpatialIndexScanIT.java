@@ -166,7 +166,7 @@ public class SpatialIndexScanIT extends OperatorITBase
         IndexKeyRange box = IndexKeyRange.spatial(xyIndexRowType, lowerLeft, upperRight);
         loadDB();
         Operator plan = indexScan_Default(xyIndexRowType, false, box);
-        // dump(plan);
+        dump(plan);
     }
 
     private void loadDB()
