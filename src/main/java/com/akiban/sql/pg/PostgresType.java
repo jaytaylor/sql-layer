@@ -386,9 +386,11 @@ public class PostgresType extends ServerType
             }
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            if (typeId.isUnsigned())
+            if (typeId.isUnsigned()) {
+                if (tInstance == null) tInstance = MNumeric.BIGINT_UNSIGNED.instance();
                 return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
-                                        AkType.U_BIGINT, MNumeric.BIGINT_UNSIGNED.instance());
+                                        AkType.U_BIGINT, tInstance);
+            }
             oid = TypeOid.INT8_TYPE_OID.getOid();
             akType = AkType.LONG;
             if (tInstance == null) tInstance = MNumeric.BIGINT.instance();
