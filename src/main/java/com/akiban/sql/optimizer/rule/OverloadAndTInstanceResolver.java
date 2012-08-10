@@ -72,6 +72,7 @@ import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.plan.Subquery;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
@@ -221,7 +222,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleCastExpression(CastExpression expression) {
             DataTypeDescriptor dtd = expression.getSQLtype();
-            TInstance instance = TypesTranslation.toTInstance(dtd);
+            TInstance instance = TypesTranslation.toTInstance(dtd, null);
             expression.setPreptimeValue(new TPreptimeValue(instance));
             return expression;
         }
@@ -398,8 +399,24 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 expression.setPreptimeValue(ptv);
             }
             else if (columnSource instanceof SubquerySource) {
-                TInstance tInstance = TypesTranslation.toTInstance(expression.getSQLtype());
-                expression.setPreptimeValue(new TPreptimeValue(tInstance));
+                TPreptimeValue tpv;
+                Subquery subquery = ((SubquerySource)columnSource).getSubquery();
+                Project project = findProject(subquery);
+                if (project != null) {
+                    List<ExpressionNode> fields = project.getFields();
+                    if (fields == null || fields.size() != 1) {
+                        logger.warn("subquery should have only had one field: {} in {}", fields, columnSource);
+                        tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype(), null));
+                    }
+                    else {
+                        tpv = fields.get(0).getPreptimeValue();
+                    }
+                }
+                else {
+                    logger.warn("no Project found for subquery: {}", columnSource);
+                    tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype(), null));
+                }
+                expression.setPreptimeValue(tpv);
                 return expression;
             }
             else if (columnSource instanceof NullSource) {
@@ -435,7 +452,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             if (sqlType != null) {
                 // TODO eventually we'll probably want to ignore this completely, and do all the type inference
                 // from within the types3 framework. For now, use what we have.
-                TInstance tinst = TypesTranslation.toTInstance(sqlType);
+                TInstance tinst = TypesTranslation.toTInstance(sqlType, null);
                 expression.setPreptimeValue(new TPreptimeValue(tinst));
             }
             return expression;
