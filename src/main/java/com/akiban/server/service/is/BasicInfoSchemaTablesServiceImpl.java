@@ -654,6 +654,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      indexType,
                                      boolResult(index.isUnique()),
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
+                                     index.isSpatial() ? index.getIndexMethod().name() : null,
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -1059,7 +1060,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("tree_name", PATH_MAX, true)
                 .colString("index_type", IDENT_MAX, false)
                 .colString("is_unique", YES_NO_MAX, false)
-                .colString("join_type", DESCRIPTOR_MAX, true);
+                .colString("join_type", DESCRIPTOR_MAX, true)
+                .colString("index_method", IDENT_MAX, true);
         //primary key(schema_name, table_name, index_name)
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)

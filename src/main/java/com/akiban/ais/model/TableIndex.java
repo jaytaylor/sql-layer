@@ -175,19 +175,27 @@ public class TableIndex extends Index
         return uniqueAndMayContainNulls;
     }
 
-    // TODO: Set spatial index state from constructor?
-
-    public synchronized void spatialIndexDimensions(long[] lo, long[] hi)
+    @Override
+    public IndexMethod getIndexMethod()
     {
-        assert lo != null;
-        assert hi != null;
-        space = new Space(lo, hi);
-        // computeFieldAssociations(null);
+        if (space != null)
+            return IndexMethod.Z_ORDER_LAT_LON;
+        else
+            return IndexMethod.NORMAL;
     }
 
-    public boolean isSpatial()
+    public void setIndexMethod(IndexMethod indexMethod)
     {
-        return space != null;
+        checkMutability();
+        switch (indexMethod) {
+        case NORMAL:
+            space = null;
+            break;
+        case Z_ORDER_LAT_LON:
+            space = SpaceHelper.latLon(getKeyColumns().get(0).getColumn(),
+                                       getKeyColumns().get(1).getColumn());
+            break;
+        }
     }
 
     public Space space()
