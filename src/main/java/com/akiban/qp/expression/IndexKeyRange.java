@@ -143,8 +143,8 @@ public class IndexKeyRange
                                         IndexBound lo,
                                         IndexBound hi)
     {
-        if (lo == null || hi == null) {
-            throw new IllegalArgumentException("IndexBound arguments must not be null");
+        if (lo == null) {
+            throw new IllegalArgumentException("lo must not be null");
         }
         return new IndexKeyRange(indexRowType, lo, true, hi, true, IndexKind.SPATIAL);
     }

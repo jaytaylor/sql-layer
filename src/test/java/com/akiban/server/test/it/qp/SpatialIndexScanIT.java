@@ -161,11 +161,25 @@ public class SpatialIndexScanIT extends OperatorITBase
     @Test
     public void testSpatialQuery()
     {
-        IndexBound lowerLeft = new IndexBound(row(xyIndexRowType, 50L, 150L), new SetColumnSelector(0, 1));
-        IndexBound upperRight = new IndexBound(row(xyIndexRowType, 150L, 250L), new SetColumnSelector(0, 1));
-        IndexKeyRange box = IndexKeyRange.spatial(xyIndexRowType, lowerLeft, upperRight);
         loadDB();
+        IndexBound lowerLeft = new IndexBound(row(xyIndexRowType, 50L, 150L),
+                                              new SetColumnSelector(0, 1));
+        IndexBound upperRight = new IndexBound(row(xyIndexRowType, 150L, 250L),
+                                               new SetColumnSelector(0, 1));
+        IndexKeyRange box = IndexKeyRange.spatial(xyIndexRowType, lowerLeft, upperRight);
         Operator plan = indexScan_Default(xyIndexRowType, false, box);
+        dump(plan);
+    }
+
+    @Test
+    public void testNearPoint()
+    {
+        loadDB();
+        IndexBound zStartBound = new IndexBound(row(xyIndexRowType.physicalRowType(),
+                                                    space.shuffle(new long[]{500L, 500L})),
+                                                new SetColumnSelector(0));
+        IndexKeyRange zStart = IndexKeyRange.spatial(xyIndexRowType, zStartBound, null);
+        Operator plan = indexScan_Default(xyIndexRowType, false, zStart);
         dump(plan);
     }
 

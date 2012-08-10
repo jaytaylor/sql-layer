@@ -45,8 +45,8 @@ class PersistitIndexCursor implements Cursor
     public void open()
     {
         CursorLifecycle.checkIdle(this);
-        iterationHelper.openIteration();
-        indexCursor = IndexCursor.create(context, keyRange, ordering, iterationHelper, usePValues);
+        rowState.openIteration();
+        indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues);
         indexCursor.open();
         idle = false;
     }
@@ -76,7 +76,7 @@ class PersistitIndexCursor implements Cursor
     {
         Index index = indexRowType.index();
         assert !index.isSpatial(); // Jump not yet supported for spatial indexes
-        iterationHelper.openIteration();
+        rowState.openIteration();
         idle = false;
         indexCursor.jump(row, columnSelector);
     }
@@ -85,7 +85,7 @@ class PersistitIndexCursor implements Cursor
     public void close()
     {
         CursorLifecycle.checkIdleOrActive(this);
-        iterationHelper.closeIteration();
+        rowState.closeIteration();
         idle = true;
     }
 
@@ -132,7 +132,7 @@ class PersistitIndexCursor implements Cursor
         this.usePValues = usePValues;
         this.selector = selector;
         this.idle = true;
-        this.iterationHelper = new IndexScanIterationHelper((PersistitAdapter)context.getStore(), indexRowType);
+        this.rowState = new IndexScanRowState((PersistitAdapter)context.getStore(), indexRowType);
     }
 
     // For use by this class
@@ -145,9 +145,9 @@ class PersistitIndexCursor implements Cursor
     private final API.Ordering ordering;
     private final boolean isTableIndex;
     private final boolean usePValues;
-    private final IterationHelper iterationHelper;
+    private final IterationHelper rowState;
     private IndexScanSelector selector;
     private IndexCursor indexCursor;
     private boolean idle;
     private boolean destroyed = false;
-}
+    }

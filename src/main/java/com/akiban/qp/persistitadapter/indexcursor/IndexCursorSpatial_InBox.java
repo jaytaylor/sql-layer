@@ -34,6 +34,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.persistitadapter.IndexScanRowState;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -58,8 +59,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
     {
         super.open();
         // iterationHelper.closeIteration() closes the PersistitIndexCursor, releasing its Exchange.
-        // iterationHelper.reopen() will reopen the PIC, getting a new Exchange for each constituent
-        // Cursor of multiCursor. (For more information, see the comment below on ReopeningCursor.)
+        // This iteration uses the Exchanges in the IndexScanRowStates owned by each cursor of the MultiCursor.
         iterationHelper.closeIteration();
         multiCursor.open();
     }
@@ -105,13 +105,14 @@ class IndexCursorSpatial_InBox extends IndexCursor
         API.Ordering zOrdering = new API.Ordering();
         zOrdering.append(Expressions.field(keyRange.indexRowType().physicalRowType(), 0), true);
         for (IndexKeyRange zKeyRange : zKeyRanges(context, keyRange)) {
+            IndexScanRowState rowState = new IndexScanRowState(adapter, keyRange.indexRowType());
             IndexCursorUnidirectional<ValueSource> zIntervalCursor =
                 new IndexCursorUnidirectional<ValueSource>(context,
-                                                           iterationHelper,
+                                                           rowState,
                                                            zKeyRange,
                                                            zOrdering,
                                                            OldExpressionsSortKeyAdapter.INSTANCE);
-            multiCursor.addCursor(new ReopeningCursor(zIntervalCursor, iterationHelper));
+            multiCursor.addCursor(zIntervalCursor);
         }
     }
 
@@ -158,78 +159,4 @@ class IndexCursorSpatial_InBox extends IndexCursor
 
     private final MultiCursor multiCursor;
     private final IterationHelper iterationHelper;
-
-    // Inner classes
-
-    // Why ReopeningCursor is needed: An IndexCursorSpatial_InBox is wrapped by a PersistitIndexCursor. The PICs
-    // IterationHelper provides access to the PICs Exchange and current row to the IndexCursorUnidirectionals
-    // managed by the MultiCursor. Closing an ICU results in the PIC being closed, which returns the Exchange.
-    // Need to reopen via the IterationHelper to get a new exchange.
-
-    private static class ReopeningCursor implements Cursor
-    {
-        // Cursor interface
-
-        @Override
-        public void open()
-        {
-            iterationHelper.openIteration();
-            input.open();
-        }
-
-        @Override
-        public Row next()
-        {
-            return input.next();
-        }
-
-        @Override
-        public void jump(Row row, ColumnSelector columnSelector)
-        {
-            input.jump(row, columnSelector);
-        }
-
-        @Override
-        public void close()
-        {
-            input.close();
-        }
-
-        @Override
-        public void destroy()
-        {
-            input.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return input.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return input.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
-
-        // ReopeningCursor interface
-
-        public ReopeningCursor(Cursor input, IterationHelper iterationHelper)
-        {
-            this.input = input;
-            this.iterationHelper = iterationHelper;
-        }
-
-        // Object state
-
-        private final Cursor input;
-        private final IterationHelper iterationHelper;
-    }
 }

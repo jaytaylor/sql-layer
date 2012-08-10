@@ -56,7 +56,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     public void open()
     {
         super.open();
-        exchange.clear();
+        exchange().clear();
         scanStates.clear();
         try {
             setBoundaries();
@@ -118,7 +118,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     public void jump(Row row, ColumnSelector columnSelector)
     {
         assert keyRange != null; // keyRange is null when used from a Sorter
-        exchange.clear();
+        exchange().clear();
         int field = 0;
         more = true;
         try {
@@ -308,7 +308,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         if (scanState.advance()) {
             repositionExchange(field + 1);
         } else {
-            exchange.cut();
+            exchange().cut();
             if (field == 0) {
                 more = false;
             } else {

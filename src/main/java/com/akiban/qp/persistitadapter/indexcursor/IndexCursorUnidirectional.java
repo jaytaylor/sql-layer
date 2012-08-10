@@ -63,10 +63,10 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         super.next();
         Row next = null;
-        if (exchange != null) {
+        if (exchange() != null) {
             try {
                 SORT_TRAVERSE.hit();
-                if (exchange.traverse(keyComparison, true)) {
+                if (exchange().traverse(keyComparison, true)) {
                     next = row();
                     // If we're scanning a unique key index, then the row format has the declared key in the
                     // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
@@ -76,7 +76,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     // past the startKey.
                     if (!pastStart && beforeStart(next)) {
                         next = null;
-                        if (exchange.traverse(subsequentKeyComparison, true)) {
+                        if (exchange().traverse(subsequentKeyComparison, true)) {
                             next = row();
                             pastStart = true;
                         } else {
@@ -395,7 +395,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     private void initializeForOpen()
     {
-        exchange.clear();
+        exchange().clear();
         if (startKey != null) {
             // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
             // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
@@ -413,7 +413,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // E.g., if we have a PK index for a non-root table, the index row is [childPK, parentPK], and an index
             // scan may specify a value for both. But the persistit search can only deal with the [childPK] part of
             // the traversal.
-            startKey.copyPersistitKeyTo(exchange.getKey());
+            startKey.copyPersistitKeyTo(exchange().getKey());
             pastStart = false;
         }
     }

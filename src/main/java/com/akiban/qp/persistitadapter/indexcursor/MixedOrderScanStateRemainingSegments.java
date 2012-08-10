@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter.indexcursor;
 
+import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
@@ -36,28 +37,30 @@ class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
     @Override
     public boolean startScan() throws PersistitException
     {
+        Exchange exchange = cursor.exchange();
         if (subtreeRootKey == null) {
-            subtreeRootKey = new Key(cursor.exchange.getKey());
+            subtreeRootKey = new Key(exchange.getKey());
         } else {
-            cursor.exchange.getKey().copyTo(subtreeRootKey);
+            exchange.getKey().copyTo(subtreeRootKey);
         }
         SORT_TRAVERSE.hit();
-        return cursor.exchange.traverse(Key.GT, true);
+        return exchange.traverse(Key.GT, true);
     }
 
     @Override
     public boolean advance() throws PersistitException
     {
         SORT_TRAVERSE.hit();
-        boolean more = ascending ? cursor.exchange.next(true) : cursor.exchange.previous(true);
+        Exchange exchange = cursor.exchange();
+        boolean more = ascending ? exchange.next(true) : exchange.previous(true);
         if (more) {
-            more = cursor.exchange.getKey().firstUniqueByteIndex(subtreeRootKey) >= subtreeRootKey.getEncodedSize();
+            more = exchange.getKey().firstUniqueByteIndex(subtreeRootKey) >= subtreeRootKey.getEncodedSize();
         }
         if (!more) {
             // Restore exchange key to where it was before exploring this subtree. But also attach one
             // more key segment since IndexCursorMixedOrder is going to cut one.
-            subtreeRootKey.copyTo(cursor.exchange.getKey());
-            cursor.exchange.getKey().append(Key.BEFORE);
+            subtreeRootKey.copyTo(exchange.getKey());
+            exchange.getKey().append(Key.BEFORE);
         }
         return more;
     }
