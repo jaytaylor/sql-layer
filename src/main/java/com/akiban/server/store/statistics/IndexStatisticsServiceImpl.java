@@ -305,6 +305,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void loadIndexStatistics(Session session, 
                                     String schema, File file) throws IOException {
+        ensureAdapter(session);
         AkibanInformationSchema ais = schemaManager.getAis(session);
         Map<Index,IndexStatistics> stats = 
             new IndexStatisticsYamlLoader(ais, schema, treeService).load(file);
