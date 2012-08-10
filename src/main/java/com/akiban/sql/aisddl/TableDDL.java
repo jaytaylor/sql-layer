@@ -37,8 +37,10 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.ColumnDefinitionNode;
+import com.akiban.sql.parser.ConstantNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.DefaultNode;
 import com.akiban.sql.parser.DropGroupNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.FKConstraintDefinitionNode;
@@ -47,6 +49,7 @@ import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.parser.ResultColumnList;
 import com.akiban.sql.parser.TableElementNode;
 
+import com.akiban.sql.parser.ValueNode;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -206,14 +209,14 @@ public class TableDDL
     }
     
     static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
-            final String schemaName, final String tableName, int colpos) {
+                           final String schemaName, final String tableName, int colpos) {
         boolean autoIncrement = cdn.isAutoincrementColumn();
         addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
-                  cdn.getType(), cdn.getType().isNullable(), autoIncrement);
+                  cdn.getType(), cdn.getType().isNullable(), autoIncrement, getColumnDefault(cdn));
         if (autoIncrement) {
             // if the cdn has a default node-> GENERATE BY DEFAULT
             // if no default node -> GENERATE ALWAYS
-            Boolean defaultIdentity = new Boolean (cdn.getDefaultNode() != null);
+            Boolean defaultIdentity = cdn.getDefaultNode() != null;
             // The merge process will generate a real sequence name
             String sequenceName = "temp-sequence-1"; 
             // Create a sequence to hold the IDENTITY Information
@@ -229,9 +232,25 @@ public class TableDDL
         }
     }
 
+    static String getColumnDefault(ColumnDefinitionNode cdn) {
+        String defaultStr = null;
+        DefaultNode defNode = (cdn != null) ? cdn.getDefaultNode() : null;
+        if(defNode != null) {
+            // TODO: This seems plausible, but also fragile. Better way to derive this?
+            ValueNode valueNode = defNode.getDefaultTree();
+            if(valueNode instanceof ConstantNode) {
+                defaultStr = ((ConstantNode)valueNode).getValue().toString();
+            } else {
+                defaultStr = defNode.getDefaultText();
+            }
+        }
+        return defaultStr;
+    }
+
     static void addColumn(final AISBuilder builder,
                           final String schemaName, final String tableName, final String columnName,
-                          int colpos, DataTypeDescriptor type, boolean nullable, boolean autoIncrement) {
+                          int colpos, DataTypeDescriptor type, boolean nullable, boolean autoIncrement,
+                          final String defaultValue) {
         Long typeParameter1 = null, typeParameter2 = null;
         Type builderType = typeMap.get(type.getTypeId());
         if (builderType == null) {
@@ -256,7 +275,8 @@ public class TableDDL
                        typeParameter1, typeParameter2, 
                        nullable,
                        autoIncrement,
-                       charset, collation);
+                       charset, collation,
+                       defaultValue);
     }
 
     public static String addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn,

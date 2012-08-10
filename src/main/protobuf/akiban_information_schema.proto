@@ -105,6 +105,7 @@ message Column {
     optional int32  prefixSize     = 13; // number of bytes to describe maxStorageSize
     optional string typeBundleUUID = 14; // bundle UUID of type. null if old style type
     optional int32  typeVersion    = 15; // serialization version of type. null if old style type
+    optional string defaultValue   = 16; // default value for column (null if none specified)
 }
 
 // UserTable.  
