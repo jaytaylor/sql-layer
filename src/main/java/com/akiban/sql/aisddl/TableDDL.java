@@ -39,6 +39,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.ColumnDefinitionNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.DropGroupNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.FKConstraintDefinitionNode;
 import com.akiban.sql.parser.RenameNode;
@@ -53,6 +54,7 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.DefaultNameGenerator;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Type;
@@ -77,9 +79,6 @@ public class TableDDL
                                   String defaultSchemaName,
                                   DropTableNode dropTable,
                                   PostgresQueryContext context) {
-        com.akiban.sql.parser.TableName parserName = dropTable.getObjectName();
-        
-        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName tableName = convertName(defaultSchemaName, dropTable.getObjectName());
         ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
 
@@ -99,6 +98,39 @@ public class TableDDL
         ddlFunctions.dropTable(session, tableName);
     }
 
+    public static void dropGroup (DDLFunctions ddlFunctions,
+                                    Session session,
+                                    String defaultSchemaName,
+                                    DropGroupNode dropGroup,
+                                    PostgresQueryContext context)
+    {
+        TableName tableName = convertName(defaultSchemaName, dropGroup.getObjectName());
+        ExistenceCheck existenceCheck = dropGroup.getExistenceCheck();
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+        
+        if (ais.getUserTable(tableName) == null && 
+                ais.getGroupTable(tableName) == null) {
+            if (existenceCheck == ExistenceCheck.IF_EXISTS) {
+                if (context != null) {
+                    context.warnClient(new NoSuchTableException (tableName));
+                }
+                return;
+            }
+            throw new NoSuchTableException (tableName);
+        } 
+        if (!ais.getUserTable(tableName).isRoot()) {
+            throw new DropGroupNotRootException (tableName);
+        }
+        
+        final Group root = ais.getUserTable(tableName).getGroup();
+        for (UserTable table : ais.getUserTables().values()) {
+            if (table.getGroup() == root) {
+                ViewDDL.checkDropTable(ddlFunctions, session, table.getName());
+            }
+        }
+        ddlFunctions.dropGroup(session, root.getName());
+    }
+    
     public static void renameTable (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,

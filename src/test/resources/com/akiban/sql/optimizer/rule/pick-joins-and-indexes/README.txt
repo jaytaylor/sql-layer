@@ -103,3 +103,5 @@ group-scan-small-limit: with much smaller limit
 duplicate-table-conditions: condition between two occurrences of same table
 
 whole-group-nested: whole group as nested result set
+
+group-branch-subquery: subquery from different branch (no group loop from flatten)

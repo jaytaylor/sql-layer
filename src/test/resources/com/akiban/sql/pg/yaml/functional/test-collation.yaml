@@ -31,6 +31,14 @@
 - Statement: SELECT * FROM t ORDER BY s
 - output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, 'Ångström']]
 ---
+- Statement: DELETE FROM t
+---
+- Statement: INSERT INTO t(id, s)
+    VALUES (1, 'aaa'), (2, 'aaa'), (3, 'bbb'), (4, 'BBB'), (5, 'AAA')
+---
+- Statement: SELECT COUNT(DISTINCT s) FROM t
+- output: [[2]]
+---
 - CreateTable: parent (name VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL PRIMARY KEY, i INT)
 ---
 - CreateTable: child (name VARCHAR(12) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL PRIMARY KEY, GROUPING FOREIGN KEY(name) REFERENCES parent(name), j INT)

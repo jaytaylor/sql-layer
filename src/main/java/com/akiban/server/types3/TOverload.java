@@ -29,10 +29,11 @@ package com.akiban.server.types3;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.util.HasId;
 
 import java.util.List;
 
-public interface TOverload {
+public interface TOverload extends HasId {
     
     /**
      * 
