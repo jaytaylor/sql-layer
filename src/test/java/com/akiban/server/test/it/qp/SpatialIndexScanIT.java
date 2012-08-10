@@ -41,6 +41,7 @@ import com.akiban.server.geophile.Space;
 import com.akiban.util.StringsTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,7 @@ import java.util.TreeMap;
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
 
+@Ignore
 public class SpatialIndexScanIT extends OperatorITBase
 {
     @Before
