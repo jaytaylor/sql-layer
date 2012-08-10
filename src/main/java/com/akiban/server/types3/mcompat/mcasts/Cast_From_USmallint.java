@@ -79,6 +79,4 @@ public class Cast_From_USmallint
     public static final TCast TO_DOUBLE = new FromInt32ToDouble(MNumeric.SMALLINT_UNSIGNED, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MNumeric.SMALLINT_UNSIGNED, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
-    
-    public static final TCast TO_VARCHAR = new FromInt32ToString(MNumeric.SMALLINT_UNSIGNED, MString.VARCHAR, false, Constantness.UNKNOWN);
 }

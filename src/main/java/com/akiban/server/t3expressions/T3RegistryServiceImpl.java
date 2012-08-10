@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 public final class T3RegistryServiceImpl implements T3RegistryService, Service<T3RegistryService>, JmxManageable {
 
@@ -243,25 +244,38 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             localCastsMap.put(tClass, map);
         }
 
+        Set<TCastIdentifier> duplicates = new TreeSet<TCastIdentifier>(tcastIdentifierComparator);
+
+        // Next, to/from varchar
+        for (TClass tClass : tClasses) {
+            putCast(localCastsMap, tClass.castToVarchar(), duplicates);
+            putCast(localCastsMap, tClass.castFromVarchar(), duplicates);
+        }
+
         // Now the registered casts
         for (TCast cast : finder.find(TCast.class)) {
-            putCast(localCastsMap, cast);
+            putCast(localCastsMap, cast, duplicates);
         }
+
+        if (!duplicates.isEmpty())
+            throw new AkibanInternalException("duplicate casts found for: " + duplicates);
         return localCastsMap;
     }
 
-    private static void putCast(Map<TClass, Map<TClass, TCast>> toMap, TCast cast) {
+    private static void putCast(Map<TClass, Map<TClass, TCast>> toMap, TCast cast, Set<TCastIdentifier> duplicates) {
+        if (cast == null)
+            return;
         TClass source = cast.sourceClass();
         TClass target = cast.targetClass();
-        if (source.equals(target))
-            return;
         Map<TClass,TCast> castsByTarget = toMap.get(source);
         TCast old = castsByTarget.put(target, cast);
         if (old != null) {
             logger.error("CAST({} AS {}): {} replaced by {} ", new Object[]{
                     source, target,  old.getClass(), cast.getClass()
             });
-            throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
+            if (duplicates == null)
+                throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
+            duplicates.add(new TCastIdentifier(source, target));
         }
     }
 
@@ -331,7 +345,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             throw new AkibanInternalException("couldn't derive cast between " + source + " and " + intermediateClass
                     + " while creating cast path: " + path);
         TCast result = new ChainedCast(first, second);
-        putCast(castsBySource, result);
+        putCast(castsBySource, result, null);
         return result;
     }
 
@@ -417,6 +431,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     private volatile Multimap<String, TValidatedOverload> overloadsByName;
     private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
     private volatile Collection<? extends TClass> tClasses;
+    private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {
+        @Override
+        public int compare(TCastIdentifier o1, TCastIdentifier o2) {
+            String o1Str = o1.toString();
+            String o2Str = o2.toString();
+            return o1Str.compareTo(o2Str);
+        }
+    };
 
     // inner classes
 

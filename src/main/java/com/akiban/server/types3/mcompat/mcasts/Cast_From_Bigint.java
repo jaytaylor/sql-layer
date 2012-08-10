@@ -75,8 +75,6 @@ public class Cast_From_Bigint
     public static final TCast TO_INT = new FromInt64ToInt32(MNumeric.BIGINT, MNumeric.INT, false, Constantness.UNKNOWN);
 
     public static final TCast TO_INT_UNSIGNED = new FromInt64ToUnsignedInt32(MNumeric.BIGINT, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
-
-    public static final TCast TO_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT, true, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, false, Constantness.UNKNOWN);
     
@@ -146,16 +144,6 @@ public class Cast_From_Bigint
             }
             else
                 target.putInt32((int)CastUtils.getInRange(MDatetimes.TIME_MAX, MDatetimes.TIME_MIN, raw, context));
-        }
-    };
-    
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.BIGINT, MString.VARCHAR, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(Long.toString(source.getInt64()), null);
         }
     };
     
