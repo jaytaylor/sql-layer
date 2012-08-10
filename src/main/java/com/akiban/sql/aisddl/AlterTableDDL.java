@@ -144,7 +144,9 @@ public class AlterTableDDL {
 
                 case NodeTypes.FK_CONSTRAINT_DEFINITION_NODE: {
                     FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode) node;
-                    fkDefNodes.add(fkNode);
+                    if(fkNode.isGrouping()) {
+                        fkDefNodes.add(fkNode);
+                    }
                 } break;
 
                 case NodeTypes.CONSTRAINT_DEFINITION_NODE: {

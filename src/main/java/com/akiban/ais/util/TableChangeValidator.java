@@ -37,6 +37,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.NopVisitor;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.types3.Types3Switch;
@@ -393,7 +394,7 @@ public class TableChangeValidator {
             return ChangeLevel.METADATA_NULL;
         }
         if(!oldCol.getName().equals(newCol.getName()) ||
-           !Objects.equal(oldCol.getIdentityGenerator(), newCol.getIdentityGenerator())) {
+           sequenceChanged(oldCol.getIdentityGenerator(), newCol.getIdentityGenerator())) {
           return ChangeLevel.METADATA;
         }
 
@@ -432,6 +433,23 @@ public class TableChangeValidator {
             return ChangeLevel.METADATA;
         }
         return ChangeLevel.NONE;
+    }
+
+    private static boolean sequenceChanged(Sequence oldSeq, Sequence newSeq) {
+        if(oldSeq == null && newSeq == null) {
+            return false;
+        }
+        if(oldSeq != null && newSeq == null) {
+            return true;
+        }
+        if(oldSeq == null /*&& newSeq != null**/) {
+            return true;
+        }
+        return (oldSeq.getStartsWith() != newSeq.getStartsWith()) ||
+               (oldSeq.getIncrement() != newSeq.getIncrement()) ||
+               (oldSeq.getMinValue() != newSeq.getMinValue()) ||
+               (oldSeq.getMaxValue() != newSeq.getMaxValue()) ||
+               (oldSeq.isCycle() != newSeq.isCycle());
     }
 
     private static boolean joinChanged(Join oldJoin, Join newJoin) {
