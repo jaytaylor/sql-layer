@@ -66,6 +66,10 @@ public class MString extends TString
     @Override
     public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
     {
+        if (in.isNull()) {
+            out.putNull();
+            return;
+        }
         int expectedLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
         int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
         int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);

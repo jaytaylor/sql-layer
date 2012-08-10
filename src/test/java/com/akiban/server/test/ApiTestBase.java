@@ -32,7 +32,6 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,7 +50,6 @@ import java.util.concurrent.Callable;
 import com.akiban.ais.model.*;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
@@ -832,12 +830,10 @@ public class ApiTestBase {
         return row;
     }
     protected final void dropAllTables() throws InvalidOperationException {
-        dropAllTables(session(), true);
+        dropAllTables(session());
     }
 
-    protected final void dropAllTables(Session session, boolean ensureAdapater) throws InvalidOperationException {
-        if (ensureAdapater)
-            ensureAdapter();
+    protected final void dropAllTables(Session session) throws InvalidOperationException {
         for(View view : ddl().getAIS(session).getViews().values()) {
             // In case one view references another, avoid having to delete in proper order.
             view.getTableColumnReferences().clear();
@@ -1043,16 +1039,6 @@ public class ApiTestBase {
                 return null;
             }
         });
-    }
-
-    private void ensureAdapter()
-    {
-        Session session = session();
-        if (session.get(StoreAdapter.STORE_ADAPTER_KEY) == null) {
-            Schema schema = new Schema(sm.getSchemaManager().getAis(session));
-            PersistitAdapter adapter = persistitAdapter(schema);
-            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
-        }
     }
 
     protected boolean usingPValues() {

@@ -63,6 +63,10 @@ public final class MBinary extends SimpleDtdTClass {
     @Override
     public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
     {
+        if (in.isNull()) {
+            out.putNull();
+            return;
+        }
         byte[] bytes = in.getBytes();
         int expectedLength = context.outputTInstance().attribute(Attrs.LENGTH);
         if (bytes.length > expectedLength)

@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.aggr;
 
 import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
@@ -35,7 +36,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
 
-public class MMinMax implements TAggregator {
+public class MMinMax extends TAggregatorBase {
 
     private MType mType;
     

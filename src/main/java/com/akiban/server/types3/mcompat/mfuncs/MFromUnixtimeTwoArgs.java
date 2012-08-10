@@ -60,7 +60,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MNumeric.INT, 0).covers(MString.VARCHAR, 1);
+        builder.covers(MNumeric.BIGINT, 0).covers(MString.VARCHAR, 1);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
         if ((error = (InvalidOperationException) context.preptimeObjectAt(ERROR_INDEX)) == null
                 && (ret = (String)context.preptimeObjectAt(RET_INDEX)) == null)
         {
-            Object objs[] = computeResult(inputs.get(0).getInt32(),
+            Object objs[] = computeResult(inputs.get(0).getInt64(),
                                           inputs.get(1).getString(),
                                           context.getCurrentTimezone());
             
@@ -124,7 +124,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
                     // if the unix time is available, get the actual length
                     if (unixTime != null)
                     {
-                        Object prepObjects[] = computeResult(unixTime.getInt32(),
+                        Object prepObjects[] = computeResult(unixTime.getInt64(),
                                                             format.getString(),
                                                             context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
@@ -140,7 +140,7 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
         });
     }
     
-    private static Object[] computeResult(int unix, String format, String tz)
+    private static Object[] computeResult(long unix, String format, String tz)
     {
         String st = null;
         InvalidOperationException error = null;

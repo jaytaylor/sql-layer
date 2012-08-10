@@ -223,6 +223,16 @@ public class Cast_From_Varchar
             DECIMAL.parse(context, source, target);
         }   
     };
+
+    public static final TCast TO_DECIMAL_UNSIGNED = new TCastBase(MString.VARCHAR, MNumeric.DECIMAL_UNSIGNED)
+    {
+
+        @Override
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            DECIMAL_UNSIGNED.parse(context, source, target);
+        }
+    };
     
     public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, Constantness.UNKNOWN)
     {

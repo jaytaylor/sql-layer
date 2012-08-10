@@ -275,7 +275,10 @@ public class MDatetimes
         {
             val / 512,
             val / 32 % 16,
-            val % 32
+            val % 32,
+            0,
+            0,
+            0
         };
     }
     
@@ -376,14 +379,14 @@ public class MDatetimes
                 + dt.getSecondOfMinute();
     }
         
-    public static long encodeDatetime(long ymd[])
+    public static long encodeDatetime(long ymdHMS[])
     {
-        return ymd[YEAR_INDEX] * DATETIME_YEAR_SCALE 
-                + ymd[MONTH_INDEX] * DATETIME_MONTH_SCALE
-                + ymd[DAY_INDEX] * DATETIME_DAY_SCALE
-                + ymd[HOUR_INDEX] * DATETIME_HOUR_SCALE
-                + ymd[MIN_INDEX] * DATETIME_MIN_SCALE
-                + ymd[SEC_INDEX];
+        return ymdHMS[YEAR_INDEX] * DATETIME_YEAR_SCALE
+                + ymdHMS[MONTH_INDEX] * DATETIME_MONTH_SCALE
+                + ymdHMS[DAY_INDEX] * DATETIME_DAY_SCALE
+                + ymdHMS[HOUR_INDEX] * DATETIME_HOUR_SCALE
+                + ymdHMS[MIN_INDEX] * DATETIME_MIN_SCALE
+                + ymdHMS[SEC_INDEX];
     }
 
     public static long[] decodeDatetime (long val)
@@ -402,8 +405,8 @@ public class MDatetimes
     public static String timeToString(int val)
     {
         int h  = (int)(val / DATETIME_HOUR_SCALE);
-        int m = (int)(val / DATETIME_MIN_SCALE);
-        int s = (int)val;
+        int m = (int)(val / DATETIME_MIN_SCALE) % 100;
+        int s = (int)val % 100;
         
         return String.format("%d:%02d:%02d", h, m, s);
     }
@@ -417,7 +420,7 @@ public class MDatetimes
             mul = -1;
             string = string.substring(1);
         }
-        
+
         int hours = 0;
         int minutes = 0;
         int seconds = 0;

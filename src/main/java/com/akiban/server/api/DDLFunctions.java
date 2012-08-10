@@ -66,7 +66,7 @@ public interface DDLFunctions {
      * @throws NullPointerException if tableName is null
      */
     void dropTable(Session session, TableName tableName);
-
+    
     /**
      * Alter an existing table's definition.
      * @param tableName the table to alter

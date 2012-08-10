@@ -367,7 +367,7 @@ public class TableDDLIT extends PostgresServerITBase {
         
 
     }
-    
+      
     protected DDLFunctions ddlServer() {
         return serviceManager().getDXL().ddlFunctions();
     }

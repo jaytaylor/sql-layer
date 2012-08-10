@@ -49,11 +49,11 @@ import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.DagChecker;
+import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -611,14 +611,25 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
             });
         }
 
-        private <T,S> Object describeOverloads(Map<String, Collection<T>> elems, Function<? super T, S> format) {
-            Map<String,List<String>> result = new TreeMap<String, List<String>>();
+        private <T extends HasId,S> Object describeOverloads(
+                Map<String, Collection<T>> elems, Function<? super T, S> format)
+        {
+            Map<String,Map<String,String>> result = new TreeMap<String, Map<String,String>>();
             for (Map.Entry<String, ? extends Collection<T>> entry : elems.entrySet()) {
                 Collection<T> overloads = entry.getValue();
-                List<String> overloadDescriptions = new ArrayList<String>(overloads.size());
-                for (T overload : overloads)
-                    overloadDescriptions.add(String.valueOf(format.apply(overload)));
-                Collections.sort(overloadDescriptions);
+                Map<String,String> overloadDescriptions = new TreeMap<String, String>();
+                int idSuffix = 1;
+                for (T overload : overloads) {
+                    final String overloadId = overload.id();
+                    final String origDescription = String.valueOf(format.apply(overload));
+                    String overloadDescription = origDescription;
+
+                    // We don't care about efficiency in this loop, so let's keep the code simple
+                    while (overloadDescriptions.containsKey(overloadDescription)) {
+                        overloadDescription = origDescription + " [" + Integer.toString(idSuffix++) + ']';
+                    }
+                    overloadDescriptions.put(overloadDescription, overloadId);
+                }
                 result.put(entry.getKey(), overloadDescriptions);
             }
             return result;
