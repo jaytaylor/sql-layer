@@ -61,7 +61,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     @Override
     public Row next()
     {
-        CursorLifecycle.checkIdleOrActive(this);
+        super.next();
         Row next = null;
         if (exchange != null) {
             try {

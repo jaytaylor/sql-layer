@@ -229,6 +229,8 @@ public class SpaceTest
         assertFalse(space.contains(space.zEncode(0xfedca00000000000L, 20), z));
     }
 
+    // TODO: space.zLo, space.zHI
+
     private static long[] longs(long ... longs)
     {
         return longs;
