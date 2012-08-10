@@ -47,6 +47,7 @@ public abstract class IndexCursor implements Cursor
     public void open()
     {
         CursorLifecycle.checkIdle(this);
+        iterationHelper.openIteration();
         idle = false;
     }
 
@@ -95,6 +96,13 @@ public abstract class IndexCursor implements Cursor
         return destroyed;
     }
 
+    // For use by subclasses
+
+    protected Exchange exchange()
+    {
+        return iterationHelper.exchange();
+    }
+
     // IndexCursor interface
 
     public static IndexCursor create(QueryContext context,
@@ -109,12 +117,14 @@ public abstract class IndexCursor implements Cursor
             : OldExpressionsSortKeyAdapter.INSTANCE;
         return
             keyRange != null && keyRange.spatial()
-            ? IndexCursorSpatial.create(context, iterationHelper, keyRange)
+            ? keyRange.hi() == null
+                ? IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange)
+                : IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange)
             : ordering.allAscending() || ordering.allDescending()
-              ? (keyRange != null && keyRange.lexicographic()
-                 ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
-                 : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
-              : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
+                ? (keyRange != null && keyRange.lexicographic()
+                    ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
+                    : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
+                : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
     }
 
     // For use by subclasses
@@ -124,7 +134,6 @@ public abstract class IndexCursor implements Cursor
         this.context = context;
         this.adapter = (PersistitAdapter)context.getStore();
         this.iterationHelper = iterationHelper;
-        this.exchange = iterationHelper.exchange();
     }
 
     protected Row row() throws PersistitException
@@ -136,7 +145,6 @@ public abstract class IndexCursor implements Cursor
 
     protected final QueryContext context;
     protected final PersistitAdapter adapter;
-    protected final Exchange exchange;
     protected final IterationHelper iterationHelper;
     private boolean idle = true;
     private boolean destroyed = false;
