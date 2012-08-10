@@ -1355,11 +1355,13 @@ public class OperatorAssembler extends BaseRule
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,
                                     API.SortOption sortOption) {
+            List<AkCollator> collators = findCollators(input);
             API.Ordering ordering = partialAssembler.createOrdering();
             for (int i = 0; i < nkeys; i++) {
                 Expression expr = oldPartialAssembler.field(stream.rowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(stream.rowType, i);
-                ordering.append(expr, tExpr, true);
+                ordering.append(expr, tExpr, true,
+                                (collators == null) ? null : collators.get(i));
             }
             assembleSort(stream, ordering, input, null, sortOption);
         }

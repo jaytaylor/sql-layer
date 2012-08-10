@@ -655,6 +655,9 @@ public class GroupJoinFinder extends BaseRule
         Set<TableSource> required = new HashSet<TableSource>();
         getRequiredTables(joins, required);
         tree.setRequired(required);
+        for (TableGroupJoinNode node : root) {
+            node.getTable().setOutput(tree); // Instead of join that is going away.
+        }
         return tree;
     }
 

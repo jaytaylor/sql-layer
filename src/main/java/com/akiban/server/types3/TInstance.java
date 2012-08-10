@@ -134,6 +134,18 @@ public final class TInstance {
 
     @Override
     public boolean equals(Object o) {
+        return equalsIncludingNullable(o);
+    }
+
+    public boolean equalsIncludingNullable(Object o) {
+        return equals(o, true);
+    }
+
+    public boolean equalsExcludingNullable(Object o) {
+        return equals(o, false);
+    }
+
+    private boolean equals(Object o, boolean withNullable) {
         if (this == o) return true;
         if (!(o instanceof TInstance)) return false;
 
@@ -143,9 +155,8 @@ public final class TInstance {
                 && attr1 == other.attr1
                 && attr2 == other.attr2
                 && attr3 == other.attr3
-                && ((isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable))
+                && (!withNullable || ((isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable)))
                 && tclass.equals(other.tclass);
-
     }
 
     @Override

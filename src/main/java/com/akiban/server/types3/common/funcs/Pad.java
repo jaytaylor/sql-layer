@@ -35,6 +35,7 @@ import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -141,7 +142,7 @@ public abstract class Pad extends TOverloadBase
                 // if the argument isn't availabe
                 // return LONGTEXT 
                 if (len == null)
-                    throw new UnsupportedOperationException("LONGTEXT type is not available");
+                    return MString.LONGTEXT.instance();
                 else if (len.isNull())
                     return stringType.instance(0);
                 else

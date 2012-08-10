@@ -30,7 +30,6 @@ import com.akiban.ais.model.HKey;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 

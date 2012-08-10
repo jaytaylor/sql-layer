@@ -91,8 +91,12 @@ public class PersistitAdapter extends StoreAdapter
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(context, schema.indexRowType(index), keyRange, ordering,
-                    selector, usePValues);
+            cursor = new PersistitIndexCursor(context,
+                                              schema.indexRowType(index),
+                                              keyRange,
+                                              ordering,
+                                              selector,
+                                              usePValues);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -306,12 +310,8 @@ public class PersistitAdapter extends StoreAdapter
 
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
     {
-        return
-            indexRowType.index().isTableIndex()
-            ? PersistitIndexRow.tableIndexRow(this, indexRowType)
-            : PersistitIndexRow.groupIndexRow(this, indexRowType);
+        return PersistitIndexRow.newIndexRow(this, indexRowType);
     }
-
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {

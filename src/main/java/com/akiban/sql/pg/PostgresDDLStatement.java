@@ -39,6 +39,7 @@ import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.CreateViewNode;
+import com.akiban.sql.parser.DropGroupNode;
 import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.DropSequenceNode;
 import com.akiban.sql.parser.DropTableNode;
@@ -112,6 +113,9 @@ public class PostgresDDLStatement implements PostgresStatement
                 break;
             case NodeTypes.DROP_TABLE_NODE:
                 TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl, context);
+                break;
+            case NodeTypes.DROP_GROUP_NODE:
+                TableDDL.dropGroup(ddlFunctions, session, schema, (DropGroupNode)ddl, context);
                 break;
             case NodeTypes.CREATE_VIEW_NODE:
                 ViewDDL.createView(ddlFunctions, session, schema, (CreateViewNode)ddl,

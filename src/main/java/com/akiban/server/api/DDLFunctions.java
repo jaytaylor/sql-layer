@@ -36,6 +36,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.RowDefNotFoundException;
@@ -65,7 +66,7 @@ public interface DDLFunctions {
      * @throws NullPointerException if tableName is null
      */
     void dropTable(Session session, TableName tableName);
-
+    
     /**
      * Alter an existing table's definition.
      * @param tableName the table to alter
@@ -74,7 +75,7 @@ public interface DDLFunctions {
      * @param indexChanges list of all index changes
      */
     void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                    List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges);
+                    List<TableChange> columnChanges, List<TableChange> indexChanges);
 
     /**
      * Drops a table if it exists, and possibly its children.

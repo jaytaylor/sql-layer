@@ -29,6 +29,10 @@ package com.akiban.qp.persistitadapter.indexrow;
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.indexcursor.OldExpressionsSortKeyAdapter;
+import com.akiban.qp.persistitadapter.indexcursor.PValueSortKeyAdapter;
+import com.akiban.qp.persistitadapter.indexcursor.SortKeyAdapter;
+import com.akiban.qp.persistitadapter.indexcursor.SortKeyTarget;
 import com.akiban.qp.row.IndexRow;
 import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.PersistitKeyPValueSource;
@@ -38,15 +42,17 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
-import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
+
+import static java.lang.Math.min;
 
 /*
  * 
@@ -76,8 +82,16 @@ import com.persistit.exception.PersistitException;
  * 
  */
 
-public class PersistitIndexRowBuffer extends IndexRow
+public class PersistitIndexRowBuffer extends IndexRow implements Comparable<PersistitIndexRowBuffer>
 {
+    // Comparable interface
+
+    @Override
+    public int compareTo(PersistitIndexRowBuffer that)
+    {
+        return compareTo(that, null);
+    }
+
     // BoundExpressions interface
 
     public final int compareTo(BoundExpressions row, int thisStartIndex, int thatStartIndex, int fieldCount)
@@ -112,7 +126,7 @@ public class PersistitIndexRowBuffer extends IndexRow
         while (eqSegments < fieldCount) {
             byte thisByte = thisBytes[thisPosition++];
             byte thatByte = thatBytes[thatPosition++];
-            c = thisByte - thatByte;
+            c = (thisByte & 0xff) - (thatByte & 0xff);
             if (c != 0) {
                 break;
             } else if (thisByte == 0) {
@@ -146,16 +160,20 @@ public class PersistitIndexRowBuffer extends IndexRow
         int indexField = 0;
         if (spatialHandler != null) {
             spatialHandler.bind(rowData);
-            keyAppender().append(spatialHandler.zValue());
+            pKey().append(spatialHandler.zValue());
             indexField = spatialHandler.dimensions();
         }
         IndexRowComposition indexRowComp = index.indexRowComposition();
         FieldDef[] fieldDefs = index.indexDef().getRowDef().getFieldDefs();
+        RowDataValueSource rowDataValueSource = new RowDataValueSource();
         while (indexField < indexRowComp.getLength()) {
             if (indexRowComp.isInRowData(indexField)) {
-                keyAppender().append(fieldDefs[indexRowComp.getFieldPosition(indexField)], rowData);
+                FieldDef fieldDef = fieldDefs[indexRowComp.getFieldPosition(indexField)];
+                Column column = fieldDef.column();
+                rowDataValueSource.bind(fieldDef, rowData);
+                pKeyTarget().append(rowDataValueSource, column.getType().akType(), column.tInstance(), column.getCollator());
             } else if (indexRowComp.isInHKey(indexField)) {
-                keyAppender().appendFieldFromKey(hKey, indexRowComp.getHKeyPosition(indexField));
+                PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField));
             } else {
                 throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
             }
@@ -165,12 +183,9 @@ public class PersistitIndexRowBuffer extends IndexRow
     }
 
     @Override
-    public void append(Column column, ValueSource source)
+    public <S> void append(S source, AkType type, TInstance tInstance, AkCollator collator)
     {
-        // There is no hard requirement that the index is a group index. But while we're adding support for
-        // spatial, we just want to be precise about what kind of index is in use.
-        assert index.isGroupIndex();
-        keyAppender().append(source, column);
+        pKeyTarget().append(source, type, tInstance, collator);
         pKeyAppends++;
     }
 
@@ -189,11 +204,11 @@ public class PersistitIndexRowBuffer extends IndexRow
             if (hasNull) {
                 nullSeparator = index.nextNullSeparatorValue(adapter.persistit().treeService());
             }
-            pKeyAppender.append(nullSeparator);
+            pKey.append(nullSeparator);
         }
         // If necessary, copy pValue state into value. (Check pValueAppender, because that is non-null only in
         // a writeable PIRB.)
-        if (pValueAppender != null) {
+        if (pValueTarget != null) {
             value.clear();
             value.putByteArray(pValue.getEncodedBytes(), 0, pValue.getEncodedSize());
         }
@@ -201,19 +216,30 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     // PersistitIndexRowBuffer interface
 
-    public void appendFieldTo(int position, PersistitKeyAppender target)
+    public void appendFieldTo(int position, Key target)
     {
         if (position < pKeyFields) {
-            PersistitKey.appendFieldFromKey(target.key(), pKey, position);
+            PersistitKey.appendFieldFromKey(target, pKey, position);
         } else {
-            PersistitKey.appendFieldFromKey(target.key(), pValue, position - pKeyFields);
+            PersistitKey.appendFieldFromKey(target, pValue, position - pKeyFields);
         }
+        pKeyAppends++;
+    }
+
+    public void append(Key.EdgeValue edgeValue)
+    {
+        pKey().append(edgeValue);
         pKeyAppends++;
     }
 
     public void tableBitmap(long bitmap)
     {
         value.put(bitmap);
+    }
+
+    public void copyPersistitKeyTo(Key key)
+    {
+        pKey.copyTo(key);
     }
 
     // For table index rows
@@ -242,6 +268,55 @@ public class PersistitIndexRowBuffer extends IndexRow
     public boolean keyEmpty()
     {
         return pKey.getEncodedSize() == 0;
+    }
+
+    public int compareTo(PersistitIndexRowBuffer that, boolean[] ascending)
+    {
+        int c;
+        byte[] thisBytes = this.pKey.getEncodedBytes();
+        byte[] thatBytes = that.pKey.getEncodedBytes();
+        int b = 0; // byte position
+        int f = 0; // field position
+        int end = min(this.pKey.getEncodedSize(), that.pKey.getEncodedSize());
+        while (b < end) {
+            int thisByte = thisBytes[b] & 0xff;
+            int thatByte = thatBytes[b] & 0xff;
+            c = thisByte - thatByte;
+            if (c != 0) {
+                return ascending == null || ascending[f] ? c : -c;
+            } else {
+                b++;
+                if (thisByte == 0) {
+                    f++;
+                }
+            }
+        }
+        // Compare pValues, if there are any
+        thisBytes = this.pValue == null ? null : this.pValue.getEncodedBytes();
+        thatBytes = that.pValue == null ? null : that.pValue.getEncodedBytes();
+        if (thisBytes == null && thatBytes == null) {
+            return 0;
+        } else if (thisBytes == null) {
+            return ascending == null || ascending[f] ? -1 : 1;
+        } else if (thatBytes == null) {
+            return ascending == null || ascending[f] ? 1 : -1;
+        }
+        b = 0;
+        end = min(this.pValue.getEncodedSize(), that.pValue.getEncodedSize());
+        while (b < end) {
+            int thisByte = thisBytes[b] & 0xff;
+            int thatByte = thatBytes[b] & 0xff;
+            c = thisByte - thatByte;
+            if (c != 0) {
+                return ascending == null || ascending[f] ? c : -c;
+            } else {
+                b++;
+                if (thisByte == 0) {
+                    f++;
+                }
+            }
+        }
+        return 0;
     }
 
     // For use by subclasses
@@ -308,13 +383,20 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     // For use by this class
 
-    private PersistitKeyAppender keyAppender()
+    private <S> SortKeyTarget<S> pKeyTarget()
     {
-        return pKeyAppends < pKeyFields ? pKeyAppender : pValueAppender;
+        return pKeyAppends < pKeyFields ? pKeyTarget : pValueTarget;
+    }
+
+    private Key pKey()
+    {
+        return pKeyAppends < pKeyFields ? pKey : pValue;
     }
 
     private void reset(Index index, Key key, Value value, boolean writable)
     {
+        // TODO: Lots of this, especially allocations, should be moved to the constructor.
+        // TODO: Or at least not repeated on reset.
         assert !index.isUnique() || index.isTableIndex() : index;
         this.index = index;
         this.pKey = key;
@@ -330,12 +412,15 @@ public class PersistitIndexRowBuffer extends IndexRow
             this.spatialHandler = null;
         }
         if (writable) {
-            this.pKeyAppender = PersistitKeyAppender.create(key);
+            this.pKeyTarget = SORT_KEY_ADAPTER.createTarget();
+            this.pKeyTarget.attach(key);
             this.pKeyAppends = 0;
-            this.pValueAppender =
-                index.isUnique()
-                ? PersistitKeyAppender.create(this.pValue)
-                : null;
+            if (index.isUnique()) {
+                this.pValueTarget = SORT_KEY_ADAPTER.createTarget();
+                this.pValueTarget.attach(this.pValue);
+            } else {
+                this.pValueTarget = null;
+            }
             if (value != null) {
                 value.clear();
             }
@@ -344,10 +429,18 @@ public class PersistitIndexRowBuffer extends IndexRow
                 value.getByteArray(pValue.getEncodedBytes(), 0, 0, value.getArrayLength());
                 pValue.setEncodedSize(value.getArrayLength());
             }
-            this.pKeyAppender = null;
-            this.pValueAppender = null;
+            this.pKeyTarget = null;
+            this.pValueTarget = null;
         }
     }
+
+    // Class state
+
+    private static final SortKeyAdapter SORT_KEY_ADAPTER =
+        Types3Switch.ON
+        ? PValueSortKeyAdapter.INSTANCE
+        : OldExpressionsSortKeyAdapter.INSTANCE;
+
 
     // Object state
 
@@ -381,8 +474,8 @@ public class PersistitIndexRowBuffer extends IndexRow
     protected int nIndexFields;
     private Key pKey;
     private Key pValue;
-    private PersistitKeyAppender pKeyAppender;
-    private PersistitKeyAppender pValueAppender;
+    private SortKeyTarget pKeyTarget;
+    private SortKeyTarget pValueTarget;
     private int pKeyFields;
     private Value value;
     private int pKeyAppends = 0;
