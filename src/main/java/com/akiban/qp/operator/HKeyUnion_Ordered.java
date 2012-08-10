@@ -197,7 +197,7 @@ class HKeyUnion_Ordered extends Operator
     public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
         Attributes atts = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("HKeyUnion"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("HKeyUnion_Ordered"));
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(compareFields));

@@ -42,6 +42,7 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -186,6 +187,7 @@ final class Limit_Default extends Operator
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Limit_Default"));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
         
         return new OperationExplainer(Type.LIMIT_OPERATOR, atts);

@@ -139,7 +139,7 @@ class Count_TableStatus extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        return new CountOperatorExplainer("Count TableStatus", tableType, resultType, null, extraInfo);
+        return new CountOperatorExplainer("Count_TableStatus", tableType, resultType, null, extraInfo);
     }
 
     // Inner classes

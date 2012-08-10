@@ -237,7 +237,7 @@ class AncestorLookup_Nested extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-       OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Nested", groupTable, rowType, false, null, extraInfo); // NOTE: keepInput is N/A here
+       OperationExplainer ex = new LookUpOperatorExplainer("AncestorLookup_Nested", groupTable, rowType, false, null, extraInfo); // NOTE: keepInput is N/A here
        for (UserTable table : ancestors)
            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));

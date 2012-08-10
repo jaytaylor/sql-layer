@@ -248,7 +248,7 @@ class Intersect_Ordered extends Operator
     {
         Attributes atts = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Intersect"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Intersect_Ordered"));
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFixedFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFixedFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));

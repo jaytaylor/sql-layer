@@ -908,6 +908,16 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
+            
+            if (planContext.hasInfo())
+            {
+                Attributes atts = new Attributes();
+                for (IndexColumn column : index.getAllColumns())
+                    atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
+                for ( : getEqualityComparands())
+                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            }
+            
             return stream;
         }
 
@@ -1648,6 +1658,9 @@ public class OperatorAssembler extends BaseRule
                     if (comp != null) {
                         newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
                         oldPartialAssembler.assembleExpressionInto(comp, fieldOffsets, keys, kidx);
+                        if (planContext.hasInfo()) 
+                            
+                        
                     }
                     kidx++;
                 }

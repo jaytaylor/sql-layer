@@ -156,7 +156,7 @@ class Distinct_Partial extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        return new DistinctExplainer("DISTINCT PARTIAL", distinctType, inputOperator, extraInfo);
+        return new DistinctExplainer("Distinct_Partial", distinctType, inputOperator, extraInfo);
     }
 
     // Inner classes

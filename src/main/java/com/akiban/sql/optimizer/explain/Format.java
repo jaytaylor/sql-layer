@@ -243,7 +243,7 @@ public class Format {
                     }
                     break;
                 case LOOKUP_OPERATOR:
-                    if (name.equals("Ancestor Lookup Default"))
+                    if (name.equals("AncestorLookup_Default"))
                     {
                         describe(atts.get(Label.GROUP_TABLE).get(0));
                         sb.append(" -> ");
@@ -263,7 +263,7 @@ public class Format {
                             }
                         }
                     }
-                    else if (name.equals("Ancestor Lookup Nested"))
+                    else if (name.equals("AncestorLookup_Nested"))
                     {
                         sb.append(atts.get(Label.BINDING_POSITION).get(0).get()).append(" -> ");
                         if (atts.containsKey(Label.TABLE_CORRELATION))
@@ -282,7 +282,7 @@ public class Format {
                             }
                         }
                     }
-                    else if (name.equals("Branch Lookup Default"))
+                    else if (name.equals("BranchLookup_Default"))
                     {
                         describe(atts.get(Label.GROUP_TABLE).get(0));
                         sb.append(" -> ");
@@ -298,7 +298,7 @@ public class Format {
                         describe(atts.get(Label.ANCESTOR_TYPE).get(0));
                         sb.append(")");
                     }
-                    else if (name.equals("Branch Lookup Nested"))
+                    else if (name.equals("BranchLookup_Nested"))
                     {
                         sb.append(atts.get(Label.BINDING_POSITION).get(0).get()).append(" -> ");
                         if (atts.containsKey(Label.TABLE_CORRELATION))
@@ -316,14 +316,11 @@ public class Format {
                     break;
                 case COUNT_OPERATOR:
                     sb.append("*");
-                    if (name.equals("Count TableStatus"));
+                    if (name.equals("Count_TableStatus"));
                     {
                         sb.append(" FROM ");
                         describe(atts.get(Label.INPUT_TYPE).get(0));
                     }
-                    break;
-                case DISTINCT:
-                case UNION_ALL:
                     break;
                 case FILTER:
                     for (Explainer rowtype : atts.get(Label.KEEP_TYPE))
@@ -352,7 +349,7 @@ public class Format {
                         sb.append(", shorten to ");
                         describe(atts.get(Label.OUTPUT_TYPE).get(0));
                     }
-                    else if (name.equals("Intersect"))
+                    else if (name.equals("Intersect_Ordered"))
                     {
                         sb.append(", USING ");
                         describe(atts.get(Label.JOIN_OPTION).get(0));
@@ -380,7 +377,7 @@ public class Format {
                         else
                             sb.append("loop_").append(atts.get(Label.BINDING_POSITION).get(0));
                     }
-                    else if (name.equals("Product"))
+                    else if (name.equals("Product_NestedLoops"))
                     {
                         describe(atts.get(Label.INNER_TYPE).get(0));
                         sb.append(" x ");
@@ -455,6 +452,10 @@ public class Format {
                             for (Explainer ex : atts.get(Label.EXPRESSIONS))
                                 sb.append(", ").append(ex.get());
                     }
+                    break;
+                case DISTINCT:
+                case UNION_ALL:
+                case UNION:
                     break;
                 default:
                     throw new UnsupportedOperationException("Formatter does not recognize " + type.name());

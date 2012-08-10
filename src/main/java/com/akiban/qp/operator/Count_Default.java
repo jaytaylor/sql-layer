@@ -152,7 +152,7 @@ class Count_Default extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        return new CountOperatorExplainer("Count Default", countType, resultType, null, extraInfo);
+        return new CountOperatorExplainer("Count_Default", countType, resultType, null, extraInfo);
     }
 
     // Inner classes

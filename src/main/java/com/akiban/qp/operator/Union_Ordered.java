@@ -32,7 +32,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -188,7 +188,9 @@ class Union_Ordered extends Operator
 
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        OperationExplainer ex = new OperationExplainer(Type.UNION, null);
+        ex.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("Union_Ordered"));
+        return ex;
     }
 
     // Inner classes

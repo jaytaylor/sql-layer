@@ -199,7 +199,7 @@ final class UnionAll_Default extends Operator {
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("UNION ALL"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("UnionAll_Default"));
         
         for (Operator op : inputs)
             att.put(Label.INPUT_OPERATOR, op.getExplainer(extraInfo));

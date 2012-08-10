@@ -306,7 +306,7 @@ public class BranchLookup_Default extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        OperationExplainer ex = new LookUpOperatorExplainer("Branch Lookup Default", groupTable, inputRowType, keepInput, inputOperator, extraInfo);        
+        OperationExplainer ex = new LookUpOperatorExplainer("BranchLookup_Default", groupTable, inputRowType, keepInput, inputOperator, extraInfo);        
         ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));

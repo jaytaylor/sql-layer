@@ -194,7 +194,7 @@ class Project_Default extends Operator
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("project"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("Project_Default"));
         if (projectType.hasUserTable())
             att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));

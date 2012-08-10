@@ -202,7 +202,7 @@ class IfEmpty_Default extends Operator
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("If Empty"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("IfEmpty_Default"));
         if (pExpressions != null) {
             for (TPreparedExpression ex : pExpressions)
                 throw new UnsupportedOperationException(); // TODO

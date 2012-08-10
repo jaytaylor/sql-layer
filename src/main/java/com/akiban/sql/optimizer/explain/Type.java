@@ -61,6 +61,7 @@ public enum Type
     NESTED_LOOPS(GeneralType.OPERATOR),
     IF_EMPTY(GeneralType.OPERATOR),
     UNION_ALL(GeneralType.OPERATOR),
+    UNION(GeneralType.OPERATOR),
     SORT(GeneralType.OPERATOR),
     FILTER(GeneralType.OPERATOR),
     PROJECT(GeneralType.OPERATOR),
