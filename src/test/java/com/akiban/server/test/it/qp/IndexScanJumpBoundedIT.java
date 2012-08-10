@@ -717,69 +717,82 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     @Test
     public void testDDDDLegalRange()
     {
-        API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
-        long idOrdering[] = longs(1015, 1014, 1013, 1012, 1011, 1010);
-        Operator plan = indexScan_Default(idxRowType, bounded(1, 13, true, 15, true), ordering);
-        Cursor cursor = cursor(plan, queryContext);
-        cursor.open();
-        testJump(cursor,
-                 idOrdering,
-                 0,
-                 new long[][] // range is: [1015 - 1013]
-                 {
+        testRange(0,
+                  13, true,
+                  15, true,
+                  new long [][]     // range is: [1015 - 1013]
+                  {
                      {1015, 1014, 1013}, 
                      {1014, 1013},
                      {1013},
                      {},
                      {},
                      {}
-                 });
-        cursor.close();
+                  });
     }
 
     @Test
     public void testDDDDOutOfRangeUpperBound()
     {
-        API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
-        long idOrdering[] = longs(1015, 1014, 1013, 1012, 1011, 1010);
-        Operator plan = indexScan_Default(idxRowType, bounded(1, 13, true, 21, true), ordering);
-        Cursor cursor = cursor(plan, queryContext);
-        cursor.open();
-        testJump(cursor,
-                 idOrdering,
-                 0,
-                 new long[][] // specified range: [21-13],
-                 {            // but it should still only see [15 - 13]
+        testRange(0,
+                  13, true,
+                  21, true,
+                  new long [][]     // specified range: [21-13],
+                  {                 // but it should still only see  [15 - 13]
                      {1015, 1014, 1013}, 
                      {1014, 1013},
                      {1013},
                      {},
                      {},
                      {}
-                 });
-        cursor.close();
+                  });
     }
 
     @Test
     public void testDDDDOutOfRangeLowerBound()
     {
-        API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
-        long idOrdering[] = longs(1015, 1014, 1013, 1012, 1011, 1010);
-        Operator plan = indexScan_Default(idxRowType, bounded(1, 3, true, 14, true), ordering);
-        Cursor cursor = cursor(plan, queryContext);
-        cursor.open();
-        testJump(cursor,
-                 idOrdering,
-                 0,
-                 new long[][] // specified range: [14-3],
-                 {            // but it should still only see  [15 - 10]
+        testRange(0,
+                  3, true,
+                  14, true,
+                  new long [][]     // specified range: [14-3],
+                  {                 // but it should still only see  [15 - 10]
                      {1015, 1014, 1013, 1012, 1011, 1010}, 
                      {1014, 1013, 1012, 1011, 1010},
                      {1013, 1012, 1011, 1010},
                      {1012, 1011, 1010},
                      {1011, 1010},
                      {1010}
-                 });
+                  });
+    }
+
+    @Test
+    public void testDDDDOutOfRange() // both upper and lower bound
+    {
+        testRange(0,
+                  8, true,
+                  20, true,
+                  new long [][]     // specified range: [20 - 8],
+                  {                 // but it should still only see [15 - 10]
+                     {1015, 1014, 1013, 1012, 1011, 1010}, 
+                     {1014, 1013, 1012, 1011, 1010},
+                     {1013, 1012, 1011, 1010},
+                     {1012, 1011, 1010},
+                     {1011, 1010},
+                     {1010}
+                  });
+    }
+
+    private void testRange(int nudge, int lo, boolean loInclusive, int hi, boolean hiInclusive, long expectedArs[][])
+    {
+        API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
+        long idOrdering[] = longs(1015, 1014, 1013, 1012, 1011, 1010);
+        Operator plan = indexScan_Default(idxRowType, bounded(1, lo, loInclusive, hi, hiInclusive), ordering);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
+        testJump(cursor,
+                 idOrdering,
+                 nudge,
+                 expectedArs);
         cursor.close();
     }
 
