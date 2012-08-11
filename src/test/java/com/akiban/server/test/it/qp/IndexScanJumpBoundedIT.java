@@ -633,6 +633,64 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
 
     }
+    
+    @Test
+    public void testDDADLegalRange()
+    {
+        testRange(getDDAD(),
+                  getDDADId(),
+                  0,
+                  10, true,
+                  14, true,
+                  new long [][]
+                  {
+                      {1014, 1015, 1012, 1013, 1010, 1011},
+                      {1015, 1012, 1013, 1010, 1011},
+                      {1012, 1013, 1010, 1011},
+                      {1013, 1010, 1011},
+                      {1010, 1011},
+                      {1011}
+
+                  });
+    }
+
+    @Test
+    public void testDDADOutOfRangeUpperBound()
+    {
+        testRange(getDDAD(),
+                  getDDADId(),
+                  0,
+                  12, true,
+                  16, true,
+                  new long [][]
+                  {
+                      {1014, 1015, 1012, 1013},
+                      {1015, 1012, 1013},
+                      {1012, 1013},
+                      {1013},
+                      {1014, 1015, 1012, 1013},
+                      {1014, 1015, 1012, 1013}
+                  });
+    }
+
+    @Test
+    public void testDDADOutOfRangeLowerBound()
+    {
+        testRange(getDDAD(),
+                  getDDADId(),
+                  0,
+                  9, true,
+                  14, true,
+                  new long [][]
+                  {
+                        {1014, 1015, 1012, 1013, 1010, 1011},
+                        {1015, 1012, 1013, 1010, 1011},
+                        {1012, 1013, 1010, 1011},
+                        {1013, 1010, 1011},
+                        {1010, 1011},
+                        {1011}
+                  });
+    }
 
     @Test
     public void testDDDA()
@@ -673,8 +731,8 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
     }
 
-        @Test
-    public void testDDDALegalBound()
+    @Test
+    public void testDDDALegalRange()
     {
         testRange(getDDDA(),
                   getDDDAId(),
