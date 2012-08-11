@@ -455,11 +455,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         Set<String> schemas = new HashSet<String>();
         for(ChangedTableDescription desc : alteredTables) {
-            checkTableName(desc.getOldName(), true, false);
-            checkTableName(desc.getNewName(), true, false);
-            checkJoinTo(desc.getNewDefinition().getParentJoin(), desc.getNewName(), false);
-            schemas.add(desc.getOldName().getSchemaName());
-            schemas.add(desc.getNewName().getSchemaName());
+            TableName oldName = desc.getOldName();
+            TableName newName = desc.getNewName();
+            checkTableName(oldName, true, false);
+            if(!oldName.equals(newName)) {
+                checkTableName(newName, false, false);
+            }
+            checkJoinTo(desc.getNewDefinition().getParentJoin(), newName, false);
+            schemas.add(oldName.getSchemaName());
+            schemas.add(newName.getSchemaName());
         }
 
         AISMerge merge = new AISMerge(aish.getAis(), alteredTables);
