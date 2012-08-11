@@ -1488,17 +1488,49 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
+        // TODO: Do we want to keep this once DECIMAL is working?
+        // DISTANCE_LAT_LON is defined on DECIMAL. If we have an INT, it will be cast.
+        // At that time, the other operands will also be DECIMAL and
+        // need to be cast the other way.
+        boolean cast1 = false, cast2 = false, cast3 = false, cast4 = false;
+        if (op1 instanceof CastExpression) {
+            op1 = ((CastExpression)op1).getOperand();
+            cast1 = true;
+        }
+        if (op2 instanceof CastExpression) {
+            op2 = ((CastExpression)op2).getOperand();
+            cast2 = true;
+        }
+        if (op3 instanceof CastExpression) {
+            op3 = ((CastExpression)op3).getOperand();
+            cast3 = true;
+        }
+        if (op4 instanceof CastExpression) {
+            op4 = ((CastExpression)op4).getOperand();
+            cast4 = true;
+        }
         if (col1.equals(op1) && col2.equals(op2) &&
-            constantOrBound(op3) && constantOrBound(op4))
+            constantOrBound(op3) && constantOrBound(op4)) {
+            if (cast1) op3 = castBack(op3, op1);
+            if (cast2) op4 = castBack(op4, op2);
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op3, op4, right),
                                           null, null);
+        }
         if (col1.equals(op3) && col2.equals(op4) &&
-            constantOrBound(op1) && constantOrBound(op2))
+            constantOrBound(op1) && constantOrBound(op2)) {
+            if (cast3) op1 = castBack(op1, op3);
+            if (cast4) op2 = castBack(op2, op4);
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op1, op2, right),
                                           null, null);
+        }
         return null;
+    }
+
+    private ExpressionNode castBack(ExpressionNode from, ExpressionNode to) {
+        return new CastExpression(from, 
+                                  to.getSQLtype(), to.getAkType(), to.getSQLsource());
     }
 
     private ExpressionNode matchZnear(List<ExpressionNode> indexExpressions, 
