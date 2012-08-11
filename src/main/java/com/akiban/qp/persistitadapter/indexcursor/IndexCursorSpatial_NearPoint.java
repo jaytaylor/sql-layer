@@ -26,6 +26,9 @@
 
 package com.akiban.qp.persistitadapter.indexcursor;
 
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -39,6 +42,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.geophile.Space;
 import com.akiban.server.types.ValueSource;
 
 import java.util.Collections;
@@ -136,7 +140,19 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             new RowBasedUnboundExpressions(physicalIndexRowType,
                                            Collections.singletonList(Expressions.literal(Long.MAX_VALUE)));
         IndexBound zMax = new IndexBound(zMaxRow, Z_SELECTOR);
-        IndexKeyRange geKeyRange = IndexKeyRange.bounded(physicalIndexRowType, keyRange.lo(), true, zMax, false);
+        IndexBound loBound = keyRange.lo();
+        BoundExpressions loExpressions = loBound.boundExpressions(context);
+        Index index = keyRange.indexRowType().index();
+        Space space = ((TableIndex)index).space();
+        assert (space.dimensions() == 2);
+        long xLo = loExpressions.eval(0).getLong();
+        long yLo = loExpressions.eval(1).getLong();
+        zStart = space.shuffle(xLo, yLo);        
+        UnboundExpressions zLoRow =
+            new RowBasedUnboundExpressions(physicalIndexRowType,
+                                           Collections.singletonList(Expressions.literal(zStart)));
+        IndexBound zLo = new IndexBound(zLoRow, Z_SELECTOR);
+        IndexKeyRange geKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zLo, true, zMax, false);
         IndexScanRowState geRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
         API.Ordering upOrdering = new API.Ordering();
         upOrdering.append(Expressions.field(physicalIndexRowType, 0), true);
@@ -150,7 +166,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             new RowBasedUnboundExpressions(physicalIndexRowType,
                                            Collections.singletonList(Expressions.literal(Long.MIN_VALUE)));
         IndexBound zMin = new IndexBound(zMinRow, Z_SELECTOR);
-        IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zMin, false, keyRange.lo(), false);
+        IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zMin, false, zLo, false);
         IndexScanRowState ltRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
         API.Ordering downOrdering = new API.Ordering();
         downOrdering.append(Expressions.field(physicalIndexRowType, 0), false);
@@ -159,8 +175,6 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
                                                               ltKeyRange,
                                                               downOrdering,
                                                               OldExpressionsSortKeyAdapter.INSTANCE);
-        // Remember where we start, so that we can compute distance from this point.
-        zStart = keyRange.lo().boundExpressions(context).eval(0).getLong();
     }
 
     // For use by this class

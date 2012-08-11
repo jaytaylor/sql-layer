@@ -1689,11 +1689,12 @@ public class OperatorAssembler extends BaseRule
             List<ExpressionNode> operands = func.getOperands();
             IndexRowType indexRowType = getIndexRowType(index);
             if ("_center".equals(func.getFunction())) {
-                return IndexKeyRange.around(indexRowType,
-                                            assembleSpatialIndexPoint(index,
-                                                                      operands.get(0),
-                                                                      operands.get(1),
-                                                                      fieldOffsets));
+                return IndexKeyRange.spatial(indexRowType,
+                                             assembleSpatialIndexPoint(index,
+                                                                       operands.get(0),
+                                                                       operands.get(1),
+                                                                       fieldOffsets),
+                                             null);
             }
             else if ("_center_radius".equals(func.getFunction())) {
                 ExpressionNode centerY = operands.get(0);
@@ -1722,16 +1723,14 @@ public class OperatorAssembler extends BaseRule
             }
         }
 
-        protected IndexBound assembleSpatialIndexPoint(SingleIndexScan indexScan, ExpressionNode y, ExpressionNode x, ColumnExpressionToIndex fieldOffsets) {
+        protected IndexBound assembleSpatialIndexPoint(SingleIndexScan index, ExpressionNode y, ExpressionNode x, ColumnExpressionToIndex fieldOffsets) {
             TPreparedExpression[] pkeys = usePValues ? new TPreparedExpression[2] : null;
             Expression[] keys = usePValues ? null : new Expression[2];
             newPartialAssembler.assembleExpressionInto(y, fieldOffsets, pkeys, 0);
             oldPartialAssembler.assembleExpressionInto(y, fieldOffsets, keys, 0);
             newPartialAssembler.assembleExpressionInto(x, fieldOffsets, pkeys, 1);
             oldPartialAssembler.assembleExpressionInto(x, fieldOffsets, keys, 1);
-            Index index = indexScan.getIndex();
-            return new IndexBound(getIndexExpressionRow(index, keys, pkeys),
-                                  getIndexColumnSelector(index, 1));
+            return getIndexBound(index.getIndex(), keys, pkeys, 2);
         }
 
         /** Return a column selector that enables the first <code>nkeys</code> fields
