@@ -392,6 +392,13 @@ public class ProtobufReader {
                 tableIndex.setTreeName(pbIndex.getTreeName());
             }
             loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
+            if (pbIndex.hasIndexMethod()) {
+                switch (pbIndex.getIndexMethod()) {
+                case Z_ORDER_LAT_LON:
+                    tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
+                    break;
+                }
+            }
         }
     }
 
@@ -559,7 +566,8 @@ public class ProtobufReader {
                 pbIndex,
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
-                AISProtobuf.Index.JOINTYPE_FIELD_NUMBER
+                AISProtobuf.Index.JOINTYPE_FIELD_NUMBER,
+                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER
         );
     }
 
@@ -567,7 +575,8 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbIndex,
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
-                AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER
+                AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
+                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER
         );
     }
 

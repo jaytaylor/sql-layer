@@ -9,7 +9,7 @@
 ---
 - Statement: CREATE TABLE IF NOT EXISTS t1 (ff double)
 - warnings_count: 1
-- warnings: [['50006', 'Table `test`.`t1` already exists']]
+- warnings: [['50006', 'WARN:  Table `test`.`t1` already exists']]
 ---
 - Statement: DROP TABLE t1;
 --- # so such table to drop
@@ -18,5 +18,5 @@
 ---
 - Statement: DROP TABLE if exists t1;
 - warnings_count: 1
-- warnings: [['42501', 'Cannot find the table `test`.`t1`']]
+- warnings: [['42501', 'WARN:  Cannot find the table `test`.`t1`']]
 ...

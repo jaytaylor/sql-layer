@@ -176,21 +176,26 @@ public class TableIndex extends Index
         return uniqueAndMayContainNulls;
     }
 
-    public synchronized void spatialIndexDimensions(long[] lo, long[] hi)
+    @Override
+    public IndexMethod getIndexMethod()
     {
-        assert lo != null;
-        assert hi != null;
-        space = new Space(lo, hi);
+        if (space != null)
+            return IndexMethod.Z_ORDER_LAT_LON;
+        else
+            return IndexMethod.NORMAL;
     }
 
-    public synchronized void markSpatialLatLon()
+    public void setIndexMethod(IndexMethod indexMethod)
     {
-        space = SpaceLatLon.create();
-    }
-
-    public boolean isSpatial()
-    {
-        return space != null;
+        checkMutability();
+        switch (indexMethod) {
+        case NORMAL:
+            space = null;
+            break;
+        case Z_ORDER_LAT_LON:
+            space = SpaceLatLon.create();
+            break;
+        }
     }
 
     public Space space()

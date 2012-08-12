@@ -54,12 +54,15 @@ import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.IndexColumn;
 import com.akiban.sql.parser.RenameNode;
+import com.akiban.sql.parser.SpecialIndexFuncNode;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
@@ -258,7 +261,18 @@ public class IndexDDL
         }
         builder.basicSchemaIsComplete();
         
-        return builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
+        TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
+
+        if (index.getColumnList() instanceof SpecialIndexFuncNode) {
+            switch (((SpecialIndexFuncNode)index.getColumnList()).getFunctionType()) {
+            case Z_ORDER_LAT_LON:
+                tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
+                assert tableIndex.isSpatial() : tableIndex;
+                break;
+            }
+        }
+
+        return tableIndex;
     }
     
     

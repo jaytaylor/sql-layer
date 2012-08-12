@@ -136,8 +136,7 @@ public class IndexKeyRange
      * @param indexRowType The row type of index keys.
      * @param lo           Lower bound of the range.
      * @param hi           Upper bound of the range.
-     * @return IndexKeyRange covering the keys lying between lo and hi, subject to the loInclusive and
-     * hiInclusive flags.
+     * @return IndexKeyRange covering the keys lying between lo and hi.
      */
     public static IndexKeyRange spatial(IndexRowType indexRowType,
                                         IndexBound lo,
@@ -147,6 +146,22 @@ public class IndexKeyRange
             throw new IllegalArgumentException("lo must not be null");
         }
         return new IndexKeyRange(indexRowType, lo, true, hi, true, IndexKind.SPATIAL);
+    }
+
+    /**
+     * Describes a range of keys starting at lo and expanding out,
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @return IndexKeyRange covering the keys lying starting at lo.
+     */
+    public static IndexKeyRange around(IndexRowType indexRowType,
+                                       IndexBound lo)
+    {
+        if (lo == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL);
     }
 
     /**

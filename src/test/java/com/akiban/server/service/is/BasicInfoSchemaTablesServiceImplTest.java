@@ -411,7 +411,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 87, skipped);
+        assertEquals("Skipped I_S columns", 88, skipped);
     }
 
     @Test
@@ -497,15 +497,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexesScan() {
         final Object[][] expected = {
-                { "gco", "a", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
-                { "gco", "b", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
-                { "gco", "m", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
-                { "gco", "r", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
-                { "test", "bar", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
-                { "test", "bar2", "foo_name", null, LONG, "foo_name_tree", "INDEX", false, "RIGHT", LONG },
-                { "zap", "pow", "name_value", "name_value", LONG, "name_value_tree", "UNIQUE", true, null, LONG },
-                { "zzz", "zzz1", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
-                { "zzz", "zzz2", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
+                { "gco", "a", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
+                { "gco", "b", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
+                { "gco", "m", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
+                { "gco", "r", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
+                { "test", "bar", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
+                { "test", "bar2", "foo_name", null, LONG, "foo_name_tree", "INDEX", false, "RIGHT", null, LONG },
+                { "zap", "pow", "name_value", "name_value", LONG, "name_value_tree", "UNIQUE", true, null, null, LONG },
+                { "zzz", "zzz1", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
+                { "zzz", "zzz2", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

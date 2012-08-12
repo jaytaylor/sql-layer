@@ -392,6 +392,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
             newIndex.freezeColumns();
             newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
+            if (index.getIndexMethod() != Index.IndexMethod.NORMAL)
+                ((TableIndex)newIndex).setIndexMethod(index.getIndexMethod());
             newIndexes.add(newIndex);
             builder.generateGroupTableIndexes(newGroup);
         }
