@@ -26,65 +26,72 @@
 
 package com.akiban.server.geophile;
 
-import com.akiban.server.geophile.Region;
-import com.akiban.server.geophile.RegionComparison;
-import com.akiban.server.geophile.SpatialObject;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
-public class Box2 implements SpatialObject
+public class BoxLatLon implements SpatialObject
 {
     // Object interface
 
     @Override
     public String toString()
     {
-        return String.format("(%s:%s, %s:%s)", xLo, xHi, yLo, yHi);
+        return String.format("(%s:%s, %s:%s)", latLo, latHi, lonLo, lonHi);
     }
 
     // SpatialObject interface
 
     public long[] arbitraryPoint()
     {
-        return new long[]{xLo, yLo};
+        return new long[]{latLo, lonLo};
     }
 
     public boolean containedBy(Region region)
     {
-        long rXLo = region.lo(0);
-        long rYLo = region.lo(1);
-        long rXHi = region.hi(0);
-        long rYHi = region.hi(1);
-        return rXLo <= xLo && xHi <= rXHi && rYLo <= yLo && yHi <= rYHi;
+        long rLatLo = region.lo(0);
+        long rLonLo = region.lo(1);
+        long rLatHi = region.hi(0);
+        long rLonHi = region.hi(1);
+        return rLatLo <= latLo && latHi <= rLatHi && rLonLo <= lonLo && lonHi <= rLonHi;
     }
 
     public RegionComparison compare(Region region)
     {
-        long rXLo = region.lo(0);
-        long rYLo = region.lo(1);
-        long rXHi = region.hi(0);
-        long rYHi = region.hi(1);
-        if (xLo <= rXLo && rXHi <= xHi && yLo <= rYLo && rYHi <= yHi) {
+        long rLatLo = region.lo(0);
+        long rLonLo = region.lo(1);
+        long rLatHi = region.hi(0);
+        long rLonHi = region.hi(1);
+        if (latLo <= rLatLo && rLatHi <= latHi && lonLo <= rLonLo && rLonHi <= lonHi) {
             return RegionComparison.INSIDE;
-        } else if (rXHi < xLo || rXLo > xHi || rYHi < yLo || rYLo > yHi) {
+        } else if (rLatHi < latLo || rLatLo > latHi || rLonHi < lonLo || rLonLo > lonHi) {
             return RegionComparison.OUTSIDE;
         } else {
             return RegionComparison.OVERLAP;
         }
     }
 
-    // Box2 interface
+    // BoxLatLon interface
 
-    public Box2(long xLo, long xHi, long yLo, long yHi)
+    public BoxLatLon(BigDecimal latLo, BigDecimal latHi, BigDecimal lonLo, BigDecimal lonHi)
     {
-        this.xLo = xLo;
-        this.xHi = xHi;
-        this.yLo = yLo;
-        this.yHi = yHi;
+        // SpaceLatLon.scale will truncate and fractional part. That's OK for latLo and lonLo. For latHi and lonHi,
+        // we want to round up, to represent the fact that the box represented by the coarser (scaled) space
+        // is not empty.
+        this.latLo = SpaceLatLon.scaleLat(latLo);
+        this.latHi = SpaceLatLon.scaleLat(latHi.round(ROUND_UP));
+        this.lonLo = SpaceLatLon.scaleLon(lonLo);
+        this.lonHi = SpaceLatLon.scaleLon(lonHi.round(ROUND_UP));
     }
+
+    // Class state
+
+    private static final MathContext ROUND_UP = new MathContext(0, RoundingMode.CEILING);
 
     // Object state
 
-    private final long xLo;
-    private final long xHi;
-    private final long yLo;
-    private final long yHi;
+    private final long latLo;
+    private final long latHi;
+    private final long lonLo;
+    private final long lonHi;
 }

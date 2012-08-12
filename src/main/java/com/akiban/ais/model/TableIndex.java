@@ -28,6 +28,7 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -175,14 +176,16 @@ public class TableIndex extends Index
         return uniqueAndMayContainNulls;
     }
 
-    // TODO: Set spatial index state from constructor?
-
     public synchronized void spatialIndexDimensions(long[] lo, long[] hi)
     {
         assert lo != null;
         assert hi != null;
         space = new Space(lo, hi);
-        // computeFieldAssociations(null);
+    }
+
+    public synchronized void markSpatialLatLon()
+    {
+        space = SpaceLatLon.create();
     }
 
     public boolean isSpatial()

@@ -33,7 +33,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.Row;
@@ -357,7 +356,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     private void initializeCursor(IndexKeyRange keyRange, API.Ordering ordering)
     {
         this.keyRange = keyRange;
-        this.startBoundColumns = keyRange.boundColumns();
         this.ordering = ordering;
         this.lo = keyRange.lo();
         this.hi = keyRange.hi();
@@ -383,13 +381,27 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             assert false : ordering;
         }
         this.startKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+        this.startBoundColumns = keyRange.boundColumns();
         this.types = sortKeyAdapter.createAkTypes(startBoundColumns);
         this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
         this.tInstances = sortKeyAdapter.createTInstances(startBoundColumns);
-        List<IndexColumn> indexColumns = index().getAllColumns();
-        for (int f = 0; f < startBoundColumns; f++) {
-            Column column = indexColumns.get(f).getColumn();
-            sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
+        if (keyRange.indexRowType().index().isSpatial()) {
+            // This is a cursor created on behalf of a spatial index. There should be only one key column,
+            // a z-value of type long.
+            // TODO: types3
+            if (startBoundColumns == 1) {
+                types[0] = AkType.LONG;
+                collators[0] = null;
+            } else {
+                // Unbounded scan of spatial index
+                assert startBoundColumns == 0;
+            }
+        } else {
+            List<IndexColumn> indexColumns = index().getAllColumns();
+            for (int f = 0; f < startBoundColumns; f++) {
+                Column column = indexColumns.get(f).getColumn();
+                sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
+            }
         }
     }
 
