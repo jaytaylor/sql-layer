@@ -35,6 +35,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Schema;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -44,6 +45,7 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.qp.memoryadapter.BasicFactoryBase;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
+import com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
@@ -60,8 +62,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-
 public class BasicInfoSchemaTablesServiceImpl
     extends SchemaTablesService
     implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
@@ -75,6 +75,7 @@ public class BasicInfoSchemaTablesServiceImpl
     static final TableName KEY_COLUMN_USAGE = new TableName(SCHEMA_NAME, "key_column_usage");
     static final TableName INDEXES = new TableName(SCHEMA_NAME, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(SCHEMA_NAME, "index_columns");
+    static final TableName SEQUENCES = new TableName(SCHEMA_NAME, "sequences");
     static final TableName VIEWS = new TableName(SCHEMA_NAME, "views");
     static final TableName VIEW_TABLE_USAGE = new TableName(SCHEMA_NAME, "view_table_usage");
     static final TableName VIEW_COLUMN_USAGE = new TableName(SCHEMA_NAME, "view_column_usage");
@@ -150,7 +151,6 @@ public class BasicInfoSchemaTablesServiceImpl
                                      null, // charset
                                      null, // collation
                                      ++rowCounter /*hidden pk*/);
-
             }
         }
     }
@@ -290,7 +290,15 @@ public class BasicInfoSchemaTablesServiceImpl
                         charAndColl = column.getCharsetAndCollation();
                     break;
                 }
-
+                
+                String sequenceSchema = null;
+                String sequenceName = null;
+                if (column.getIdentityGenerator() != null) {
+                    sequenceSchema = column.getIdentityGenerator().getSequenceName().getSchemaName();
+                    sequenceName   = column.getIdentityGenerator().getSequenceName().getTableName();
+                }
+                        
+                
                 return new ValuesRow(rowType,
                                      column.getColumnar().getName().getSchemaName(),
                                      column.getColumnar().getName().getTableName(),
@@ -307,6 +315,8 @@ public class BasicInfoSchemaTablesServiceImpl
                                      charAndColl != null ? charAndColl.charset() : null,
                                      charAndColl != null ? COLLATION_SCHEMA : null,
                                      charAndColl != null ? charAndColl.collation() : null,
+                                     sequenceSchema,
+                                     sequenceName,
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -725,6 +735,48 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
+    private class SequencesFactory extends BasicFactoryBase {
+        public SequencesFactory (TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return aisHolder.getAis().getSequences().size();
+        }
+        
+        private class Scan extends BaseScan {
+            final Iterator<Sequence> it = aisHolder.getAis().getSequences().values().iterator();
+            
+            public Scan (RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                if (it.hasNext()) {
+                    Sequence sequence  = it.next();
+                    return new ValuesRow (rowType,
+                            sequence.getSequenceName().getSchemaName(),
+                            sequence.getSequenceName().getTableName(),
+                            sequence.getTreeName(),
+                            sequence.getStartsWith(),
+                            sequence.getIncrement(),
+                            sequence.getMinValue(),
+                            sequence.getMaxValue(),
+                            boolResult(sequence.isCycle()),
+                            ++rowCounter);
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
     private class ViewsFactory extends BasicFactoryBase {
         public ViewsFactory(TableName sourceTable) {
             super(sourceTable);
@@ -1005,7 +1057,9 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
-                .colString("collation_name", IDENT_MAX, true);
+                .colString("collation_name", IDENT_MAX, true)
+                .colString("sequence_schema", IDENT_MAX, true)
+                .colString("sequence_name", IDENT_MAX, true);
         //primary key(schema_name, table_name, column_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
         //foreign key (type) references TYPES (type_name)
@@ -1081,7 +1135,16 @@ public class BasicInfoSchemaTablesServiceImpl
         //    references INDEXES (schema_name, table_name, index_name)
         //foreign key (schema_name, column_table_name, column_name)
         //    references COLUMNS (schema_name, table_name, column_name)
-
+        builder.userTable(SEQUENCES)
+                .colString("sequence_schema", IDENT_MAX, false)
+                .colString("sequence_name", IDENT_MAX, false)
+                .colString("tree_name", IDENT_MAX, false)
+                .colBigInt("start_value", false)
+                .colBigInt("increment", false)
+                .colBigInt("minimum_value", false)
+                .colBigInt("maximum_value", false)
+                .colString("cycle_option", YES_NO_MAX, false);
+                
         builder.userTable(VIEWS)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
@@ -1120,6 +1183,7 @@ public class BasicInfoSchemaTablesServiceImpl
         attach(ais, doRegister, KEY_COLUMN_USAGE, KeyColumnUsageFactory.class);
         attach(ais, doRegister, INDEXES, IndexesFactory.class);
         attach(ais, doRegister, INDEX_COLUMNS, IndexColumnsFactory.class);
+        attach(ais, doRegister, SEQUENCES, SequencesFactory.class);
         attach(ais, doRegister, VIEWS, ViewsFactory.class);
         attach(ais, doRegister, VIEW_TABLE_USAGE, ViewTableUsageFactory.class);
         attach(ais, doRegister, VIEW_COLUMN_USAGE, ViewColumnUsageFactory.class);
