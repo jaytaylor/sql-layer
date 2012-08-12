@@ -250,6 +250,7 @@ public final class SingleIndexScan extends IndexScan {
 
     @Override
     public boolean isRecoverableAt(int i) {
+        if (index.isSpatial()) return false;
         return index.getAllColumns().get(i).isRecoverable();
     }
 

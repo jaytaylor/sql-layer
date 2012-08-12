@@ -54,7 +54,7 @@ public class SpaceLatLon extends Space
      * @param x Coordinates of point to be shuffled.
      * @return A z-value.
      */
-    public long shuffle(BigDecimal[] x)
+    public long shuffle(BigDecimal ... x)
     {
         assert x.length == 2;
         assert x[0] != null;

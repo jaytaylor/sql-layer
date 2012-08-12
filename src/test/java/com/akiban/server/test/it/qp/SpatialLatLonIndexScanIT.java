@@ -223,14 +223,13 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
     {
         loadDB();
         final int N = 100;
-        BigDecimal[] startingPoint = new BigDecimal[2];
         for (int i = 0; i < N; i++) {
-            startingPoint[0] = randomLat();
-            startingPoint[1] = randomLon();
-            long zStart = space.shuffle(startingPoint);
-            IndexBound zStartBound = new IndexBound(row(latLonIndexRowType.physicalRowType(), space.shuffle(startingPoint)),
-                                                    new SetColumnSelector(0));
-            IndexKeyRange zStartRange = IndexKeyRange.spatial(latLonIndexRowType, zStartBound, null);
+            BigDecimal queryLat = randomLat();
+            BigDecimal queryLon = randomLon();
+            long zStart = space.shuffle(queryLat, queryLon);
+            IndexBound zStartBound = new IndexBound(row(latLonIndexRowType.physicalRowType(), queryLat, queryLon),
+                                                    new SetColumnSelector(0, 1));
+            IndexKeyRange zStartRange = IndexKeyRange.around(latLonIndexRowType, zStartBound);
             Operator plan = indexScan_Default(latLonIndexRowType, false, zStartRange);
             Cursor cursor = API.cursor(plan, queryContext);
             cursor.open();
@@ -242,7 +241,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                 int id = (int) row.eval(1).getInt();
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
-                long zExpected = space.shuffle(new BigDecimal[]{lat, lon});
+                long zExpected = space.shuffle(lat, lon);
                 assertEquals(zExpected, zActual);
                 long distance = abs(zExpected - zStart);
                 assertTrue(distance >= previousDistance);
@@ -261,7 +260,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                 BigDecimal lat = new BigDecimal(y);
                 BigDecimal lon = new BigDecimal(x);
                 dml().writeRow(session(), createNewRow(point, id, lat, lon));
-                long z = space.shuffle(new long[]{SpaceLatLon.scaleLat(lat), SpaceLatLon.scaleLon(lon)});
+                long z = space.shuffle(SpaceLatLon.scaleLat(lat), SpaceLatLon.scaleLon(lon));
                 zToId.put(z, id);
                 lats.add(lat);
                 lons.add(lon);

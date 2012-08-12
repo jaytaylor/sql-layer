@@ -138,7 +138,7 @@ public class Space
      * @param x Coordinates of point to be shuffled.
      * @return A z-value.
      */
-    public long shuffle(long[] x)
+    public long shuffle(long... x)
     {
         return shuffler.shuffle(x, zBits);
     }

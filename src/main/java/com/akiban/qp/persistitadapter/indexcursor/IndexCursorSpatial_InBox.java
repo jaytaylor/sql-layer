@@ -42,7 +42,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.geophile.BoxLatLon;
-import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
@@ -125,7 +125,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
         IndexBound hiBound = keyRange.hi();
         BoundExpressions loExpressions = loBound.boundExpressions(context);
         BoundExpressions hiExpressions = hiBound.boundExpressions(context);
-        Space space = ((TableIndex)index).space();
+        SpaceLatLon space = (SpaceLatLon) ((TableIndex)index).space();
         // Only 2d, lat/lon supported for now
         BigDecimal xLo = loExpressions.eval(0).getDecimal();
         BigDecimal xHi = hiExpressions.eval(0).getDecimal();
