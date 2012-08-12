@@ -95,6 +95,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
@@ -247,7 +248,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             for(Column newCol : newColumns) {
                 Integer oldPosition = helper.findOldPosition(origTable.getColumn(newCol.getName()), newCol);
                 if(oldPosition == null) {
-                    projections.add(new LiteralExpression(newCol.getType().akType(), null));
+                    String defaultValue = newCol.getDefaultValue();
+                    projections.add(new LiteralExpression(AkType.VARCHAR, defaultValue));
                 } else {
                     projections.add(new FieldExpression(oldSourceType, oldPosition));
                 }
@@ -255,8 +257,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         // PUTRT for constraint checking
-        final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections, !groupChange);
-
+        ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections, !groupChange);
 
         for(ChangedTableDescription desc : changedTables) {
             UserTable oldTable = origAIS.getUserTable(desc.getOldName());

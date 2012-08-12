@@ -254,24 +254,35 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
-    public void cannotAddNotNullColumn() throws StandardException {
+    public void cannotAddNotNullWithNoDefault() throws StandardException {
         createAndLoadSingleTableGroup();
 
-        // Needs updated after default values are supported
         try {
-            runAlter("ALTER TABLE c ADD COLUMN c2 INT NOT NULL DEFAULT 0");
+            runAlter("ALTER TABLE c ADD COLUMN c2 INT NOT NULL DEFAULT NULL");
             fail("Expected NotNullViolationException");
         } catch(NotNullViolationException e) {
             // Expected
         }
 
-        // For now, check that the ALTER schema change was rolled back correctly
+        // Check that schema change was rolled back correctly
         updateAISGeneration();
         expectFullRows(
                 cid,
                 createNewRow(cid, 1L, "10"),
                 createNewRow(cid, 2L, "20"),
                 createNewRow(cid, 3L, "30")
+        );
+    }
+
+    @Test
+    public void addNotNullColumnDefault() throws StandardException {
+        createAndLoadSingleTableGroup();
+        runAlter("ALTER TABLE c ADD COLUMN c2 INT NOT NULL DEFAULT 0");
+        expectFullRows(
+                cid,
+                createNewRow(cid, 1L, "10", 0L),
+                createNewRow(cid, 2L, "20", 0L),
+                createNewRow(cid, 3L, "30", 0L)
         );
     }
 
