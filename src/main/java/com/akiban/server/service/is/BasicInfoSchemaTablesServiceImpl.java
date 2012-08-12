@@ -293,9 +293,11 @@ public class BasicInfoSchemaTablesServiceImpl
                 
                 String sequenceSchema = null;
                 String sequenceName = null;
+                String identityGeneration = null;
                 if (column.getIdentityGenerator() != null) {
                     sequenceSchema = column.getIdentityGenerator().getSequenceName().getSchemaName();
                     sequenceName   = column.getIdentityGenerator().getSequenceName().getTableName();
+                    identityGeneration = column.getDefaultIdentity() ? "BY DEFAULT" : "ALWAYS";
                 }
                         
                 
@@ -317,6 +319,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      charAndColl != null ? charAndColl.collation() : null,
                                      sequenceSchema,
                                      sequenceName,
+                                     identityGeneration,
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -1059,7 +1062,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("collation_schema", IDENT_MAX, true)
                 .colString("collation_name", IDENT_MAX, true)
                 .colString("sequence_schema", IDENT_MAX, true)
-                .colString("sequence_name", IDENT_MAX, true);
+                .colString("sequence_name", IDENT_MAX, true)
+                .colString("identity_generation", IDENT_MAX, true);
         //primary key(schema_name, table_name, column_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
         //foreign key (type) references TYPES (type_name)
