@@ -741,9 +741,9 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
                   15, true,
                   new long [][]     // range: [15 - 13]
                   {
-                      {1015, 1014, 1013},
-                      {1014, 1013},
-                      {1013},
+                      {1015, 1014},
+                      {1014},
+                      {},
                       {},
                       {},
                       {}
@@ -839,9 +839,9 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
                   15, true,
                   new long [][]     // range is: [1015 - 1013]
                   {
-                     {1015, 1014, 1013}, 
-                     {1014, 1013},
-                     {1013},
+                     {1015, 1014}, 
+                     {1014},
+                     {},
                      {},
                      {},
                      {}
@@ -854,10 +854,10 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         testRange(getDDDD(),
                   getDDDDId(),
                   0,
-                  13, true,
+                  12, true,
                   21, true,
-                  new long [][]     // specified range: [21-13],
-                  {                 // but it should still only see  [15 - 13]
+                  new long [][]     // specified range: [21-12],
+                  {                 // but it should still only see  [1015 - 1013]
                      {1015, 1014, 1013}, 
                      {1014, 1013},
                      {1013},
@@ -876,7 +876,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
                   3, true,
                   14, true,
                   new long [][]     // specified range: [14-3],
-                  {                 // but it should still only see  [15 - 10]
+                  {                 // but it should still only see  [10`5 - 1010]
                      {1015, 1014, 1013, 1012, 1011, 1010}, 
                      {1014, 1013, 1012, 1011, 1010},
                      {1013, 1012, 1011, 1010},
