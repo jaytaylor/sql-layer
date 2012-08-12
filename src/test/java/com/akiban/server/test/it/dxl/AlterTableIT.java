@@ -30,6 +30,7 @@ import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -44,24 +45,24 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.error.NotNullViolationException;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.AlterTableDDL;
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -75,6 +76,28 @@ public class AlterTableIT extends ITBase {
     private int oid;
     private int iid;
 
+    // Note: Does not handle null index contents, check manually in that case
+    private static class SingleColumnComparator implements Comparator<NewRow> {
+        private final int colPos;
+
+        SingleColumnComparator(int colPos) {
+            this.colPos = colPos;
+        }
+
+        @Override
+        public int compare(NewRow o1, NewRow o2) {
+            Object col1 = o1.get(colPos);
+            Object col2 = o2.get(colPos);
+            if(col1 == null && col2 == null) {
+                return 0;
+            }
+            if(col1 == null) {
+                return -1;
+            }
+            return ((Comparable)col1).compareTo(col2);
+        }
+    }
+
     private void runAlter(String sql) throws StandardException {
         SQLParser parser = new SQLParser();
         StatementNode node = parser.parseStatement(sql);
@@ -85,6 +108,46 @@ public class AlterTableIT extends ITBase {
 
     private RowBase testRow(RowType type, Object... fields) {
         return new TestRow(type, fields);
+    }
+
+    private void checkIndexContents(int tableID) {
+        if(tableID == 0) {
+            return;
+        }
+
+        updateAISGeneration();
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        UserTable table = ais.getUserTable(tableID);
+        List<NewRow> tableRows = new ArrayList<NewRow>(scanAll(scanAllRequest(tableID, true)));
+
+        for(TableIndex index : table.getIndexesIncludingInternal()) {
+            if(index.getKeyColumns().size() == 1) {
+                int colPos = index.getKeyColumns().get(0).getColumn().getPosition();
+                Collections.sort(tableRows, new SingleColumnComparator(colPos));
+
+                List<NewRow> indexRows = scanAllIndex(index);
+
+                if(tableRows.size() != indexRows.size()) {
+                    assertEquals(index + " size does not match table size",
+                                 tableRows.toString(), indexRows.toString());
+                }
+
+                for(int i = 0; i < tableRows.size(); ++i) {
+                    Object tableObj = tableRows.get(i).get(colPos);
+                    Object indexObj = indexRows.get(i).get(colPos);
+                    assertEquals(index + " contents mismatch at row " + i,
+                                 tableObj, indexObj);
+                }
+            }
+        }
+    }
+
+    @After
+    public void checkAllIndexes() {
+        checkIndexContents(cid);
+        checkIndexContents(oid);
+        checkIndexContents(iid);
+        cid = oid = iid = 0;
     }
 
     private void createAndLoadSingleTableGroup() {
@@ -113,6 +176,8 @@ public class AlterTableIT extends ITBase {
                         createNewRow(iid, 300L, 30L, 330L)
         );
     }
+
+
 
     @Test(expected=InvalidAlterException.class)
     public void unspecifiedColumnChange() {
@@ -223,6 +288,46 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
+    public void addColumnIndexSingleTableNoPrimaryKey() throws StandardException {
+        TableName cName = tableName(SCHEMA, "c");
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true);
+
+        ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(cName));
+        updateAISGeneration();
+
+        // Note: Not using standard id due to null index contents
+        int tableId = tableId(cName);
+        writeRows(
+                createNewRow(tableId, 1, 2, 3),
+                createNewRow(tableId, 4, 5, 6),
+                createNewRow(tableId, 7, 8, 9)
+        );
+
+        builder = AISBBasedBuilder.create();
+        builder.userTable(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true).colLong("c4", true).key("c4", "c4");
+        List<TableChange> changes = new ArrayList<TableChange>();
+        changes.add(TableChange.createAdd("c4"));
+
+        ddl().alterTable(session(), cName, builder.unvalidatedAIS().getUserTable(cName), changes, changes);
+        updateAISGeneration();
+
+        expectFullRows(
+                tableId,
+                createNewRow(tableId, 1L, 2L, 3L, null),
+                createNewRow(tableId, 4L, 5L, 6L, null),
+                createNewRow(tableId, 7L, 8L, 9L, null)
+        );
+
+        expectRows(
+                scanAllIndexRequest(getUserTable(tableId).getIndex("c4")),
+                createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null),
+                createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null),
+                createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null)
+        );
+    }
+
+    @Test
     public void addSingleColumnRootOfGroup() throws StandardException {
         createAndLoadCOI();
         runAlter("ALTER TABLE c ADD COLUMN c2 INT NULL");
@@ -326,7 +431,7 @@ public class AlterTableIT extends ITBase {
 
     @Test
     public void dropSingleColumnOfMultiColumnIndex() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, c1 int, c2 int");
+        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 int, c2 int");
         createIndex(SCHEMA, "c", "c1_c2", "c1", "c2");
         writeRows(
                 createNewRow(cid,  1L,  11L,  12L),
@@ -389,7 +494,7 @@ public class AlterTableIT extends ITBase {
 
     @Test
     public void addDropAndAlterColumnSingleTableGroup() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "c1 int not null primary key, c2 char(5), c3 int, c4 char(1)");
+        cid = createTable(SCHEMA, "c", "c1 int not null primary key, c2 char(5), c3 int, c4 char(1)");
         writeRows(
                 createNewRow(cid, 1L, "one", 10, "A"),
                 createNewRow(cid, 2L, "two", 20, "B"),
@@ -558,9 +663,9 @@ public class AlterTableIT extends ITBase {
 
     @Test
     public void addGroupingForeignSingleToTwoTableGroup() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
-        int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
-        int iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1)");
+        cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
+        iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1)");
 
         writeRows(
                 createNewRow(cid, 1, "asdf"),
@@ -610,8 +715,8 @@ public class AlterTableIT extends ITBase {
 
     @Test
     public void simpleDropGroupingForeignKey() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
-        int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
+        cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
 
         writeRows(
                 createNewRow(cid, 1, "asdf"),
@@ -651,9 +756,9 @@ public class AlterTableIT extends ITBase {
 
     @Test
     public void addGroupingForeignKeyToExistingParent() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
-        int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1)");
-        int iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1), grouping foreign key(spare_id) references o(id)");
+        cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1)");
+        iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1), grouping foreign key(spare_id) references o(id)");
 
         writeRows(
                 createNewRow(cid, 1, "asdf"),
@@ -702,9 +807,9 @@ public class AlterTableIT extends ITBase {
 
     @Test
     public void dropGroupingForeignKeyMiddleOfGroup() throws StandardException {
-        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
-        int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
-        int iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1), grouping foreign key(spare_id) references o(id)");
+        cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
+        iid = createTable(SCHEMA, "i", "id int not null primary key, spare_id int, tag2 char(1), grouping foreign key(spare_id) references o(id)");
 
         writeRows(
                 createNewRow(cid, 1, "asdf"),
