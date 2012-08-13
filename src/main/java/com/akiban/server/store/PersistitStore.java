@@ -217,8 +217,7 @@ public class PersistitStore implements Store {
     }
 
     public Exchange getExchange(final Session session, final RowDef rowDef) {
-        final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef
-                                   : rowDefCache.getRowDef(rowDef.getGroupRowDefId());
+        final RowDef groupRowDef = rowDef.getGroupRowDef();
         return treeService.getExchange(session, groupRowDef);
     }
 
@@ -253,10 +252,9 @@ public class PersistitStore implements Store {
         UserTable table = rowDef.userTable();
         FieldDef[] fieldDefs = rowDef.getFieldDefs();
         // Metadata and other state for the parent table
-        RowDef parentRowDef = null;
+        RowDef parentRowDef = rowDef.getParentRowDef();
         TableIndex parentPK = null;
-        if (rowDef.getParentRowDefId() != 0) {
-            parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
+        if (parentRowDef != null) {
             parentPK = parentRowDef.getPKIndex();
         }
         IndexToHKey indexToHKey = null;
@@ -270,7 +268,7 @@ public class PersistitStore implements Store {
         while (s < hKeySegments.size()) {
             HKeySegment hKeySegment = hKeySegments.get(s++);
             // Write the ordinal for this segment
-            RowDef segmentRowDef = rowDefCache.getRowDef(hKeySegment.table().getTableId());
+            RowDef segmentRowDef = hKeySegment.table().rowDef();
             hKeyAppender.append(segmentRowDef.getOrdinal());
             // Iterate over the segment's columns
             List<HKeyColumn> hKeyColumns = hKeySegment.columns();
@@ -391,9 +389,9 @@ public class PersistitStore implements Store {
     }
     
     private void writeRow(Session session,
-                          RowData rowData, 
-                          BitSet tablesRequiringHKeyMaintenance, 
-                          boolean propagateHKeyChanges) throws PersistitException 
+                          RowData rowData,
+                          BitSet tablesRequiringHKeyMaintenance,
+                          boolean propagateHKeyChanges) throws PersistitException
     {
         final int rowDefId = rowData.getRowDefId();
 
@@ -404,7 +402,7 @@ public class PersistitStore implements Store {
             }
         }
 
-        final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        final RowDef rowDef = rowDefFromExplicitOrId(rowData);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx;
         hEx = getExchange(session, rowDef);
@@ -458,14 +456,14 @@ public class PersistitStore implements Store {
                 int s = 0;
                 while (s < hKeySegments.size()) {
                     HKeySegment segment = hKeySegments.get(s++);
-                    RowDef segmentRowDef = rowDefCache.getRowDef(segment.table().getTableId());
+                    RowDef segmentRowDef = segment.table().rowDef();
                     hKey.append(segmentRowDef.getOrdinal());
                     List<HKeyColumn> hKeyColumns = segment.columns();
                     int c = 0;
                     while (c < hKeyColumns.size()) {
                         HKeyColumn hKeyColumn = hKeyColumns.get(c++);
                         Column column = hKeyColumn.column();
-                        RowDef columnTableRowDef = rowDefCache.getRowDef(column.getTable().getTableId());
+                        RowDef columnTableRowDef = column.getTable().rowDef();
                         if (pkColumns.contains(column)) {
                             hKeyAppender.append(columnTableRowDef.getFieldDef(column.getPosition()), rowData);
                         } else {
@@ -521,16 +519,17 @@ public class PersistitStore implements Store {
     public void deleteRow(Session session, RowData rowData)
         throws PersistitException
     {
-        deleteRow(session, rowData, null);
+        deleteRow(session, rowData, null, true);
         // TODO: It should be possible to optimize propagateDownGroup for inserts too
         // deleteRow(session, rowData, hKeyDependentTableOrdinals(rowData.getRowDefId()));
     }
 
-    private void deleteRow(Session session, RowData rowData, BitSet tablesRequiringHKeyMaintenance)
+    private void deleteRow(Session session, RowData rowData, BitSet tablesRequiringHKeyMaintenance,
+                           boolean propagateHKeyChanges)
         throws PersistitException
     {
         int rowDefId = rowData.getRowDefId();
-        RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        RowDef rowDef = rowDefFromExplicitOrId(rowData);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         DELETE_ROW_TAP.in();
@@ -545,25 +544,6 @@ public class PersistitStore implements Store {
             if (!hEx.getValue().isDefined()) {
                 throw new NoSuchRowException(hEx.getKey());
             }
-            //
-            // Verify that the row hasn't changed. Note: at some point
-            // we may want to optimize the protocol to send only PK and
-            // FK fields in oldRowData, in which case this test will
-            // need to change.
-            //
-            // TODO - review. With covering indexes, that day has come.
-            // We can no longer do this comparison when the "old" row
-            // has only its PK fields.
-            //
-            // final int oldStart = rowData.getInnerStart();
-            // final int oldSize = rowData.getInnerSize();
-            // if (!bytesEqual(rowData.getBytes(), oldStart, oldSize,
-            // hEx
-            // .getValue().getEncodedBytes(), 0, hEx.getValue()
-            // .getEncodedSize())) {
-            // throw new StoreException(HA_ERR_RECORD_CHANGED,
-            // "Record changed at key " + hEx.getKey());
-            // }
 
             // Remove the h-row
             hEx.remove();
@@ -578,7 +558,9 @@ public class PersistitStore implements Store {
             // The row being deleted might be the parent of rows that
             // now become orphans. The hkeys
             // of these rows need to be maintained.
-            propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow);
+            if(propagateHKeyChanges) {
+                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow);
+            }
         } finally {
             DELETE_ROW_TAP.out();
             releaseExchange(session, hEx);
@@ -592,27 +574,28 @@ public class PersistitStore implements Store {
                           ColumnSelector columnSelector)
         throws PersistitException
     {
-        updateRow(session, oldRowData, newRowData, null);
+        updateRow(session, oldRowData, newRowData, columnSelector, null, false, true);
     }
 
-    @Override
-    public void updateRow(Session session,
-                          RowData oldRowData,
-                          RowData newRowData,
-                          ColumnSelector columnSelector,
-                          Index[] indexesToInsert)
-        throws PersistitException {
+    private void updateRow(Session session,
+                           RowData oldRowData,
+                           RowData newRowData,
+                           ColumnSelector columnSelector,
+                           Index[] indexesToMaintain,
+                           boolean indexesAsInsert,
+                           boolean propagateHKeyChanges)
+        throws PersistitException
+    {
         int rowDefId = oldRowData.getRowDefId();
-
         if (newRowData.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException("RowData values have different rowDefId values: ("
                                                        + rowDefId + "," + newRowData.getRowDefId() + ")");
         }
+
         // RowDefs may be different (e.g. during an ALTER)
         // Only non-pk or grouping columns could have change in this scenario
-        RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        RowDef rowDef = rowDefFromExplicitOrId(oldRowData);
         RowDef newRowDef = rowDefFromExplicitOrId(newRowData);
-        boolean insideAlter = (rowDef != newRowDef);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         UPDATE_ROW_TAP.in();
@@ -636,7 +619,10 @@ public class PersistitStore implements Store {
                 columnSelector == null 
                 ? newRowData
                 : mergeRows(rowDef, currentRow, newRowData, columnSelector);
-            BitSet tablesRequiringHKeyMaintenance = insideAlter ? null : analyzeFieldChanges(rowDef, oldRowData, mergedRowData);
+            BitSet tablesRequiringHKeyMaintenance =
+                    propagateHKeyChanges
+                    ? analyzeFieldChanges(rowDef, oldRowData, mergedRowData)
+                    : null;
             if (tablesRequiringHKeyMaintenance == null) {
                 // No PK or FK fields have changed. Just update the row.
                 packRowData(hEx, newRowDef, mergedRowData);
@@ -644,10 +630,10 @@ public class PersistitStore implements Store {
                 hEx.store();
                 // Update the indexes
                 PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
-                boolean asInsert = (indexesToInsert != null);
-                for (Index index : (asInsert ? indexesToInsert : newRowDef.getIndexes())) {
-                    if(asInsert) {
-                        insertIntoIndex(session, index, newRowData, hEx.getKey(), indexRow, deferIndexes);
+                Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
+                for (Index index : indexes) {
+                    if(indexesAsInsert) {
+                        insertIntoIndex(session, index, mergedRowData, hEx.getKey(), indexRow, deferIndexes);
                     } else {
                         updateIndex(session, index, rowDef, currentRow, mergedRowData, hEx.getKey(), indexRow);
                     }
@@ -656,7 +642,7 @@ public class PersistitStore implements Store {
                 // A PK or FK field has changed. The row has to be deleted and reinserted, and hkeys of descendent
                 // rows maintained. tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hkeys
                 // could possible be affected.
-                deleteRow(session, oldRowData, tablesRequiringHKeyMaintenance);
+                deleteRow(session, oldRowData, tablesRequiringHKeyMaintenance, true);
                 writeRow(session, mergedRowData, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
             }
         } finally {
@@ -664,7 +650,23 @@ public class PersistitStore implements Store {
             releaseExchange(session, hEx);
         }
     }
-    
+
+    @Override
+    public void alterRow(Session session, boolean hKeyChanged, RowData oldRowData, RowData newRowData, Index[] indexes)
+            throws PersistitException
+    {
+        final BitSet TABLES_TO_MAINTAIN = null;
+        final ColumnSelector SELECTOR = null;
+
+        if(hKeyChanged) {
+            assert indexes == null;
+            deleteRow(session, oldRowData, TABLES_TO_MAINTAIN, true);
+            writeRow(session, newRowData, TABLES_TO_MAINTAIN, true);
+        } else {
+            updateRow(session, oldRowData, newRowData, SELECTOR, indexes, true, false);
+        }
+    }
+
     private BitSet analyzeFieldChanges(RowDef rowDef, RowData oldRow, RowData newRow)
     {
         BitSet tablesRequiringHKeyMaintenance;

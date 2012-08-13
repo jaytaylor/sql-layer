@@ -68,7 +68,23 @@ public interface DDLFunctions {
     void dropTable(Session session, TableName tableName);
     
     /**
-     * Alter an existing table's definition.
+     * <p>
+     *     Alter an existing table's definition.
+     * </p>
+     * <p>
+     *     Contract for contents of the <code>newDefinition</code> table:
+     *     <ul>
+     *         <li>All column changes must be in the <code>columnChanges</code> list</li>
+     *         <li>All index changes must be in the <code>indexChanges</code> list</li>
+     *         <li>The <code>parentJoin</code> must be the final desired state</li>
+     *     </ul>
+     *     Contract for contents of <code>newDefinition</code>'s AIS:
+     *     <ul>
+     *         <li>The current group must be entirely represented</li>
+     *         <li>Existing <code>childJoin</code>s need not be accurate</li>
+     *         <li>Any Group-level change will be automatically propagated (e.g. group splits, index updates, etc)</li>
+     *     </ul>
+     * </p>
      * @param tableName the table to alter
      * @param newDefinition the new definition of the table
      * @param columnChanges list of all column changes

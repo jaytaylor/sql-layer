@@ -70,10 +70,7 @@ public interface Store extends Service<Store> {
                    RowData newRowData,
                    ColumnSelector columnSelector) throws PersistitException;
 
-    void updateRow(Session session, RowData oldRowData,
-                   RowData newRowData,
-                   ColumnSelector columnSelector,
-                   Index[] indexesToInsert) throws PersistitException;
+    void alterRow(Session session, boolean hKeyChanged, RowData oldRowData, RowData newRowData, Index[] indexes) throws PersistitException;
 
     /**
      * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector, ScanLimit)}
