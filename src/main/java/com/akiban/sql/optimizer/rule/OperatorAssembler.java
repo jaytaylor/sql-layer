@@ -921,7 +921,7 @@ public class OperatorAssembler extends BaseRule
                 Attributes atts = new Attributes();
                 for (IndexColumn column : index.getAllColumns()) {
                     OperationExplainer opEx = new OperationExplainer(Type.EXTRA_INFO, null);
-                    opEx.addAttribute(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
+                    opEx.addAttribute(Label.NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
                     atts.put(Label.COLUMN_NAME, opEx);
                 }
                 int i = 0;

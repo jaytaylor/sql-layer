@@ -240,6 +240,12 @@ public class Format {
                     else if (name.equals("IndexScan_Default"))
                     {
                         sb.append(atts.get(Label.INDEX).get(0).get());
+                        OperationExplainer col = null;
+                        for (Explainer column : atts.get(Label.COLUMN_NAME))
+                            col = (OperationExplainer)column;
+                            sb.append(", ").append(col.get().get(Label.NAME).get(0));
+                            if (col.get().containsKey(Label.EXPRESSIONS))
+                                sb.append(col.get().get(Label.EXPRESSIONS).get(0));
                     }
                     break;
                 case LOOKUP_OPERATOR:

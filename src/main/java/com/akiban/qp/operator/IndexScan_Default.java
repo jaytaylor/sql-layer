@@ -40,6 +40,7 @@ import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,6 +219,12 @@ class IndexScan_Default extends Operator
         atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.toString()));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
         atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.getIndexName().getName()));
+        if (extraInfo != null)
+        {
+            List<Explainer> columns = ((Attributes)extraInfo.get(this).get()).get(Label.COLUMN_NAME);
+            for (Explainer column : columns)
+                atts.put(Label.COLUMN_NAME, column);
+        }
         
         return new OperationExplainer(Type.SCAN_OPERATOR, atts);
     }
