@@ -193,8 +193,8 @@ public class PlanCostEstimator
                     (r instanceof ConstantExpression) &&
                     (r.getAkType() == AkType.DECIMAL)) {
                     BigDecimal n1 = (BigDecimal)((ConstantExpression)lat).getValue();
-                    BigDecimal n2 = (BigDecimal)((ConstantExpression)lat).getValue();
-                    BigDecimal n = (BigDecimal)((ConstantExpression)lat).getValue();
+                    BigDecimal n2 = (BigDecimal)((ConstantExpression)lon).getValue();
+                    BigDecimal n = (BigDecimal)((ConstantExpression)r).getValue();
                     long l1 = space.shuffle(n1.subtract(n), n2.subtract(n));
                     long l2 = space.shuffle(n1.add(n), n2.add(n));
                     lo = new ConstantExpression(l1, AkType.LONG);
