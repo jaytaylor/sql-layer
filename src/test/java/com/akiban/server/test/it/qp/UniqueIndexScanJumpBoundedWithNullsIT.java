@@ -49,7 +49,7 @@ import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.*;
 
-public class IndexScanJumpBoundedWithNullsIT extends OperatorITBase
+public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
 {
      // Positions of fields within the index row
     private static final int A = 0;
