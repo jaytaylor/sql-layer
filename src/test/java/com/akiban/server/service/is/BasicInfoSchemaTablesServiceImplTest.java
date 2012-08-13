@@ -214,6 +214,25 @@ public class BasicInfoSchemaTablesServiceImplTest {
         simpleTable(builder, group, schema, "a", "r", true);
         simpleTable(builder, group, schema, "w", "a", false);
         }
+        {
+        /* Sequence testing */
+        String schema = "test";
+        String sequence = "sequence";
+        builder.sequence(schema, sequence, 1, 1, 0, 1000, false);
+        sequence = sequence + "1";
+        builder.sequence(schema, sequence, 1000, -1, 0, 1000, false);
+        
+        String table = "seq-table";
+        sequence = "_col_sequence";
+        builder.userTable(schema, table);
+        builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
+        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
+        builder.sequence(schema, sequence, 1, 1, 0, 1000, false);
+        builder.columnAsIdentity(schema, table, "col", sequence, true);
+        builder.createGroup(table, schema, "_akiban_"+table);
+        builder.addTableToGroup(table, schema, table);
+        }
 
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
@@ -371,6 +390,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "test", "bar", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "bar2", "TABLE", LONG, "bar2_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "foo", "TABLE", LONG, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "seq-table", "TABLE", LONG, "seq-table_tree", I_S, VARCHAR, I_S, VARCHAR, LONG}, 
                 { "zap", "pow", "TABLE", LONG, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "zzz", "zzz1", "TABLE", LONG, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "zzz", "zzz2", "TABLE", LONG, "zzz2_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
@@ -378,40 +398,41 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S tables", 12, skipped);
+        assertEquals("Skip I_S tables", 13, skipped);
     }
 
     @Test
     public void columnsScan() {
         final Object[][] expected = {
-                { "gco", "a", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "a", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "b", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "b", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "m", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "m", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "r", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "w", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "w", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "x", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "gco", "x", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, LONG },
-                { "test", "bar", "name", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "test", "bar2", "foo", 0L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "test", "bar2", "pid", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, null, null, null, null, LONG },
-                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, null, null, null, null, LONG },
-                { "zzz", "zzz1", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "zzz", "zzz2", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "zzz", "zzz2", "one_id", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
-                { "test", "voo", "c1", 0L, "double", true, 8L, null, null, 0L, null, null, null, null, null, LONG },
-                { "test", "voo", "c2", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "a", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "a", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "b", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "b", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "m", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "m", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "r", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "w", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "w", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "x", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "x", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "bar", "name", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "bar2", "foo", 0L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "bar2", "pid", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "seq-table", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, "test", "_col_sequence", "BY DEFAULT", LONG}, 
+                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, I_S, VARCHAR, I_S, VARCHAR, null, null, null, LONG },
+                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "zzz", "zzz1", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "zzz", "zzz2", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "zzz", "zzz2", "one_id", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "voo", "c1", 0L, "double", true, 8L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "test", "voo", "c2", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 88, skipped);
+        assertEquals("Skipped I_S columns", 99, skipped);
     }
 
     @Test
@@ -428,6 +449,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "gco", "x", "x/b", "GROUPING", LONG },
                 { "test", "bar", "PRIMARY", "PRIMARY KEY", LONG },
                 { "test", "bar2", "bar2/bar", "GROUPING", LONG },
+                { "test", "seq-table", "PRIMARY", "PRIMARY KEY", LONG},
                 { "zap", "pow", "name_value", "UNIQUE", LONG },
                 { "zzz", "zzz1", "PRIMARY", "PRIMARY KEY", LONG },
                 { "zzz", "zzz2", "zzz2/zzz1", "GROUPING", LONG },
@@ -459,6 +481,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "test", "bar", "test", "bar", "test.bar", 0L, null, null, null, null, LONG },
                 { "test", "bar", "test", "bar2", "test.bar/test.bar2", 1L, "bar2/bar", "test", "bar", "PRIMARY", LONG },
                 { "test", "foo", "test", "foo", "test.foo", 0L, null, null, null, null, LONG },
+                { "test", "seq-table", "test", "seq-table", "test.seq-table", 0L, null, null, null, null, LONG},
                 { "zap", "pow", "zap", "pow", "zap.pow", 0L, null, null, null, null, LONG },
                 { "zzz", "zzz1", "zzz", "zzz1", "zzz.zzz1", 0L, null, null, null, null, LONG },
                 { "zzz", "zzz1", "zzz", "zzz2", "zzz.zzz1/zzz.zzz2", 1L, "zzz2/zzz1", "zzz", "zzz1", "PRIMARY", LONG },
@@ -466,7 +489,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S grouping_constraints", 12, skipped);
+        assertEquals("Skipped I_S grouping_constraints", 13, skipped);
     }
 
     @Test
@@ -483,6 +506,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 {"gco", "x", "x/b", "pid", 0L, 0L, LONG },
                 { "test", "bar", "PRIMARY", "col", 0L, null, LONG },
                 { "test", "bar2", "bar2/bar", "pid", 0L, 0L, LONG },
+                { "test", "seq-table", "PRIMARY", "col", 0L, null, LONG}, 
                 { "zap", "pow", "name_value", "name", 0L, null, LONG },
                 { "zap", "pow", "name_value", "value", 1L, null, LONG },
                 { "zzz", "zzz1", "PRIMARY", "id", 0L, null, LONG },
@@ -503,6 +527,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "gco", "r", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
                 { "test", "bar", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
                 { "test", "bar2", "foo_name", null, LONG, "foo_name_tree", "INDEX", false, "RIGHT", null, LONG },
+                { "test", "seq-table", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG},
                 { "zap", "pow", "name_value", "name_value", LONG, "name_value_tree", "UNIQUE", true, null, null, LONG },
                 { "zzz", "zzz1", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
                 { "zzz", "zzz2", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, null, LONG },
@@ -522,6 +547,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "test", "PRIMARY", "bar", "test", "bar", "col", 0L, true, null, LONG },
                 { "test", "foo_name", "bar2", "test", "bar2", "foo", 0L, true, null, LONG },
                 { "test", "foo_name", "bar2", "test", "bar", "name", 1L, true, null, LONG },
+                { "test", "PRIMARY", "seq-table", "test", "seq-table", "col", 0L, true, null, LONG}, 
                 { "zap", "name_value", "pow", "zap", "pow", "name", 0L, true, null, LONG },
                 { "zap", "name_value", "pow", "zap", "pow", "value", 1L, true, null, LONG },
                 { "zzz", "PRIMARY", "zzz1", "zzz", "zzz1", "id", 0L, true, null, LONG },
@@ -530,6 +556,18 @@ public class BasicInfoSchemaTablesServiceImplTest {
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S index_columns", 0, skipped);
+    }
+
+    @Test
+    public void sequencesScan() {
+        final Object[][] expected = {
+                {"test", "_col_sequence", "test._col_sequence", 1L, 1L, 0L, 1000L, false, LONG},
+                {"test", "sequence", "test.sequence", 1L, 1L, 0L, 1000L, false, LONG },
+                {"test", "sequence1", "test.sequence1", 1000L, -1L, 0L, 1000L, false, LONG},
+        };
+        GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S sequences", 0, skipped);
     }
 
     @Test
