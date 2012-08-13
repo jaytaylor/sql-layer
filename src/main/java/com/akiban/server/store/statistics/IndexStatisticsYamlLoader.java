@@ -177,7 +177,12 @@ public class IndexStatisticsYamlLoader
         key.clear();
         keyTarget.attach(key);
         for (int i = 0; i < columnCount; i++) {
-            keyTarget.expectingType(index.getKeyColumns().get(i).getColumn());
+            if (index.isSpatial()) {
+                keyTarget.expectingType(AkType.LONG, null);
+            }
+            else {
+                keyTarget.expectingType(index.getKeyColumns().get(i).getColumn());
+            }
             valueSource.setReflectively(values.get(i));
             Converters.convert(valueSource, keyTarget);
         }
