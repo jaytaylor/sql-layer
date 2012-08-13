@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.operator.Operator;
 import org.junit.Test;
 import com.akiban.server.expression.std.FieldExpression;
@@ -49,7 +48,7 @@ import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.*;
 
-public class IndexScanJumpUnboundedWithNullsIT extends OperatorITBase
+public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
 {
      // Positions of fields within the index row
     private static final int A = 0;
@@ -75,7 +74,7 @@ public class IndexScanJumpUnboundedWithNullsIT extends OperatorITBase
             "a int",
             "b int",
             "c int");
-        createIndex("schema", "t", "idx", "a", "b", "c", "id");
+        createUniqueIndex("schema", "t", "idx", "a", "b", "c", "id");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
@@ -170,7 +169,8 @@ public class IndexScanJumpUnboundedWithNullsIT extends OperatorITBase
                       getAAAD(),
                       new long[] {1014, 1015, 1017}); // skips 1016, which is a null
     }
-    //TODO: add more test****()
+    
+    //TODO: add more test****() if needed
 
     private void testSkipNulls(long targetId,                  // location to jump to
                                API.Ordering ordering,          
