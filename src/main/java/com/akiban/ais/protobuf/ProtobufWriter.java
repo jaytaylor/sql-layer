@@ -396,6 +396,9 @@ public class ProtobufWriter {
         if(prefix != null) {
             columnBuilder.setPrefixSize(prefix);
         }
+        if(column.getDefaultValue() != null) {
+            columnBuilder.setDefaultValue(column.getDefaultValue());
+        }
         return columnBuilder.build();
     }
 

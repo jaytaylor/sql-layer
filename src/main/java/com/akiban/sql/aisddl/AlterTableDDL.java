@@ -35,7 +35,6 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -192,7 +191,8 @@ public class AlterTableDDL {
                 int pos = column.getPosition();
                 TableDDL.addColumn(builder, table.getName().getSchemaName(), table.getName().getTableName(),
                                    column.getName(), pos, cdn.getType(), column.getNullable(),
-                                   column.getInitialAutoIncrementValue() != null);
+                                   column.getInitialAutoIncrementValue() != null,
+                                   column.getDefaultValue());
             } else {
                 int pos = table.getColumns().size();
                 TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos);

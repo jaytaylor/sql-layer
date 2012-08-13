@@ -441,6 +441,14 @@ public class Column implements ColumnContainer
         return columnName.equals(AKIBAN_PK_NAME);
     }
 
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
     /**
      * Compute the maximum character width.  This is used to determine how many bytes
      * will be reserved to encode the length in bytes of a VARCHAR or other text field.
@@ -728,4 +736,5 @@ public class Column implements ColumnContainer
     private FieldDef fieldDef;
     private Boolean defaultIdentity;
     private Sequence identityGenerator;
+    private String defaultValue;
 }
