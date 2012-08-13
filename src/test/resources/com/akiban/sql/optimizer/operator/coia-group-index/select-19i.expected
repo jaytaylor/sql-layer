@@ -1,6 +1,6 @@
 PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin]
   Project_Default(Field(0))
-    Aggregation(without GROUP BY: [maxVARCHAR])
+    Aggregate_Partial(maxVARCHAR)
       Map_NestedLoops
         ValuesScan_Default[ImmutableRow[Adams], ImmutableRow[Jones], ImmutableRow[Smith]]
         Project_Default(Field(1))

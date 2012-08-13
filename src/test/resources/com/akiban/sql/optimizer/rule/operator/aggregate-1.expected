@@ -1,6 +1,6 @@
 PhysicalSelect@381eb0c6[name, _SQL_COL_1, _SQL_COL_2]
   Project_Default(Field(0), Field(1), Field(2))
-    Aggregation(GROUP BY 1 field, then: [minDATE, maxDATE])
+    Aggregate_Partial(GROUP BY 1 field: minDATE, maxDATE)
       Project_Default(Field(1), Field(4), Field(4))
         Filter_Default(flatten(test.customers, test.orders))
           Flatten_HKeyOrdered(test.customers INNER test.orders)

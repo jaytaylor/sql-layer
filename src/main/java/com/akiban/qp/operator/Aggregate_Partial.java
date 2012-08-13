@@ -374,8 +374,10 @@ final class Aggregate_Partial extends Operator
                 sb.setLength(sb.length()-2);
                 atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(sb.toString()));
             }
+            else if (inputsIndex == 1)
+                atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY 1 field"));
             else
-                atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + " FIELD(s)"));
+                atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + " fields"));
         }
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputRowType.toString()));
