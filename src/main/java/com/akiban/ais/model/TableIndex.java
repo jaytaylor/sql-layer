@@ -28,6 +28,7 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -192,8 +193,7 @@ public class TableIndex extends Index
             space = null;
             break;
         case Z_ORDER_LAT_LON:
-            space = SpaceHelper.latLon(getKeyColumns().get(0).getColumn(),
-                                       getKeyColumns().get(1).getColumn());
+            space = SpaceLatLon.create();
             break;
         }
     }

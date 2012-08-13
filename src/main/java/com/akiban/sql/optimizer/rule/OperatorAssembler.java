@@ -1689,11 +1689,12 @@ public class OperatorAssembler extends BaseRule
             List<ExpressionNode> operands = func.getOperands();
             IndexRowType indexRowType = getIndexRowType(index);
             if ("_center".equals(func.getFunction())) {
-                return IndexKeyRange.around(indexRowType,
-                                            assembleSpatialIndexPoint(index,
-                                                                      operands.get(0),
-                                                                      operands.get(1),
-                                                                      fieldOffsets));
+                return IndexKeyRange.spatial(indexRowType,
+                                             assembleSpatialIndexPoint(index,
+                                                                       operands.get(0),
+                                                                       operands.get(1),
+                                                                       fieldOffsets),
+                                             null);
             }
             else if ("_center_radius".equals(func.getFunction())) {
                 ExpressionNode centerY = operands.get(0);

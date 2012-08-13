@@ -41,9 +41,6 @@ class Unshuffler extends Space
 {
     public void unshuffle(long z, long[] x)
     {
-        if (zLength(z) != zBits) {
-            throw new IllegalArgumentException(Long.toHexString(z));
-        }
         if (x.length != dimensions) {
             throw new IllegalArgumentException(Integer.toString(x.length));
         }
@@ -100,13 +97,6 @@ class Unshuffler extends Space
         unshuffle5 = unshuffles[5];
         unshuffle6 = unshuffles[6];
         unshuffle7 = unshuffles[7];
-    }
-
-    // For use by this class
-
-    private long scaleZX(long x, int d)
-    {
-        return (x >>> shift[d]) + lo[d];
     }
 
     // A z value is 8 bytes (z0 .. z7). x[d] is unshuffle0[d][z0] |

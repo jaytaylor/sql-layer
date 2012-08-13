@@ -32,7 +32,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.IndexScanRowState;
 import com.akiban.qp.row.Row;
@@ -42,11 +41,12 @@ import com.akiban.qp.util.MultiCursor;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.geophile.Box2;
-import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.BoxLatLon;
+import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,16 +125,16 @@ class IndexCursorSpatial_InBox extends IndexCursor
         IndexBound hiBound = keyRange.hi();
         BoundExpressions loExpressions = loBound.boundExpressions(context);
         BoundExpressions hiExpressions = hiBound.boundExpressions(context);
-        Space space = ((TableIndex)index).space();
-        // Only 2d supported for now
-        long xLo = loExpressions.eval(0).getLong();
-        long xHi = hiExpressions.eval(0).getLong();
-        long yLo = loExpressions.eval(1).getLong();
-        long yHi = hiExpressions.eval(1).getLong();
-        Box2 box = new Box2(xLo, xHi, yLo, yHi);
+        SpaceLatLon space = (SpaceLatLon) ((TableIndex)index).space();
+        // Only 2d, lat/lon supported for now
+        BigDecimal xLo = loExpressions.eval(0).getDecimal();
+        BigDecimal xHi = hiExpressions.eval(0).getDecimal();
+        BigDecimal yLo = loExpressions.eval(1).getDecimal();
+        BigDecimal yHi = hiExpressions.eval(1).getDecimal();
+        BoxLatLon box = new BoxLatLon(xLo, xHi, yLo, yHi);
         long[] zValues = new long[4];
         space.decompose(box, zValues);
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < zValues.length; i++) {
             long z = zValues[i];
             if (z != -1L) {
                 IndexRowType physicalRowType = keyRange.indexRowType().physicalRowType();
@@ -142,18 +142,22 @@ class IndexCursorSpatial_InBox extends IndexCursor
                 ValuesHolderRow zLoRow = new ValuesHolderRow(physicalRowType, false);
                 zLoRow.holderAt(0).expectType(AkType.LONG);
                 zLoRow.holderAt(0).putLong(space.zLo(z));
-                IndexBound zLo = new IndexBound(zLoRow, new SetColumnSelector(0));
+                IndexBound zLo = new IndexBound(zLoRow, Z_SELECTOR);
                 // hi bound of z
                 ValuesHolderRow zHiRow = new ValuesHolderRow(physicalRowType, false);
                 zHiRow.holderAt(0).expectType(AkType.LONG);
                 zHiRow.holderAt(0).putLong(space.zHi(z));
-                IndexBound zHi = new IndexBound(zHiRow, new SetColumnSelector(0));
+                IndexBound zHi = new IndexBound(zHiRow, Z_SELECTOR);
                 IndexKeyRange zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);
                 zKeyRanges.add(zKeyRange);
             }
         }
         return zKeyRanges;
     }
+
+    // Class state
+
+    private static final ColumnSelector Z_SELECTOR = new SetColumnSelector(0);
 
     // Object state
 

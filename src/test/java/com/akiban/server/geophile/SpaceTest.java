@@ -324,7 +324,7 @@ public class SpaceTest
         assertEquals(space.zHi(space.zEncode(0x0000000000000000L,  0)), space.zEncode(0xffffffffffffff80L,  0));
     }
 
-    // TODO: space.zLo, space.zHI
+    // TODO: Region testing, space with lo != 0.
 
     private static long[] longs(long ... longs)
     {
