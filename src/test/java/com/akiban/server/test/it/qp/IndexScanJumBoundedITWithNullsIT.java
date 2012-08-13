@@ -75,7 +75,7 @@ public class IndexScanJumBoundedITWithNullsIT extends OperatorITBase
             "a int",
             "b int",
             "c int");
-        createIndex("schema", "t", "idx", "a", "b", "c", "id");
+        createUniqueIndex("schema", "t", "idx", "a", "b", "c", "id");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
@@ -124,14 +124,14 @@ public class IndexScanJumBoundedITWithNullsIT extends OperatorITBase
     }
 
     @Test
-    public void testAAAAToNull()
+    public void testAAAAToMinNull()
     {
         testSkipNulls(1012, // jump to one of the nulls
                       b_of(1010), true,
                       b_of(1015), true,
                       getAAAA(),
-                      new long[] {1012, 1013}); // should see only the nulls, because null < everything
-    }
+                      new long[] {1012, 1013, 1016, 1010, 1011, 1014, 1015}); // should see everything
+    }                                                                         // with nulls appearing first
 
     @Test
     public void testDDDD()
@@ -146,23 +146,23 @@ public class IndexScanJumBoundedITWithNullsIT extends OperatorITBase
 
     
     @Test
-    public void testDDDDToNull()
+    public void testDDDDToMiddleNull()
     {
-        testSkipNulls(1012, // jump to one of the nulls
+        testSkipNulls(1013, // jump to one of the nulls
                       b_of(1010), true,
                       b_of(1015), true,
                       getDDDD(),
-                      new long[] {1015, 1014, 1011, 1010, 1013, 1012,}); // should see all the rows because null < everything
-    }                                                                    // thus in a DDDD scan, the null rows should appear last
+                      new long[] {1012}); //should see only the min null (1012)
+    }
 
     @Test
-    public void testDDDDWithRange()
+    public void testDDDDToMaxNull()
     {
         testSkipNulls(1016,
                       b_of(1015), false,
                       b_of(1017), true,
                       getDDDD(),
-                      new long[] {1016}); 
+                      new long[] {}); 
     }
     
     @Test
