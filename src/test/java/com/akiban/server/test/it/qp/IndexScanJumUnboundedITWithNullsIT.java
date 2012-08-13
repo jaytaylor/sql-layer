@@ -52,6 +52,20 @@ import static org.junit.Assert.*;
 
 public class IndexScanJumUnboundedITWithNullsIT extends OperatorITBase
 {
+     // Positions of fields within the index row
+    private static final int A = 0;
+    private static final int B = 1;
+    private static final int C = 2;
+    private static final int ID = 3;
+    private static final boolean ASC = true;
+    private static final boolean DESC = false;
+    private static final SetColumnSelector INDEX_ROW_SELECTOR = new SetColumnSelector(0, 1, 2, 3);
+
+    private int t;
+    private RowType tRowType;
+    private IndexRowType idxRowType;
+    private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
+
     @Before
     @Override
     public void before()
@@ -71,8 +85,10 @@ public class IndexScanJumUnboundedITWithNullsIT extends OperatorITBase
             createNewRow(t, 1011L, 1L, 11L, 111L),
             createNewRow(t, 1012L, 1L, (Long)null, 122L),
             createNewRow(t, 1013L, 1L, (Long)null, 122L),
-            createNewRow(t, 1014L, 1L, 13L, 122L),
-            createNewRow(t, 1015L, 1L, 13L, 123L),
+            createNewRow(t, 1014L, 1L, 13L, 132L),
+            createNewRow(t, 1015L, 1L, 13L, 133L),
+            createNewRow(t, 1016L, 1L, null, 122L),
+            createNewRow(t, 1017L, 1L, 14L, 142L)
         };
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
@@ -140,6 +156,15 @@ public class IndexScanJumUnboundedITWithNullsIT extends OperatorITBase
                       new long[] {1015, 1014, 1011, 1010, 1013, 1012,}); // should see all the rows because null < everything
     }                                                                    // thus in a DDDD scan, the null rows should appear last
 
+    @Test
+    public void testDDDDWithRange()
+    {
+        testSkipNulls(1016,
+                      b_of(1015), false,
+                      b_of(1017), true,
+                      getDDDD(),
+                      new long[] {1016}); 
+    }
     //TODO: add more test****()
 
     private void testSkipNulls(long targetId,                  // location to jump to
@@ -222,40 +247,6 @@ public class IndexScanJumUnboundedITWithNullsIT extends OperatorITBase
         return longs(1015, 1014, 1013, 1012, 1011, 1010);
     }
 
-//    private void testRange(API.Ordering ordering,
-//                           long idOrdering[],
-//                           int nudge,
-//                           int lo, boolean loInclusive,
-//                           int hi, boolean hiInclusive,
-//                           long expectedArs[][])
-//    {
-//        Operator plan = indexScan_Default(idxRowType, bounded(1, lo, loInclusive, hi, hiInclusive), ordering);
-//        Cursor cursor = cursor(plan, queryContext);
-//        cursor.open();
-//        testJump(cursor,
-//                 idOrdering,
-//                 nudge,
-//                 expectedArs);
-//        cursor.close();
-//    }
-
-    private void doTestJump(Cursor cursor, long idOrdering[], int nudge, List<List<Long>> expecteds)
-    {
-        for (int start = 0; start < idOrdering.length; ++start)
-        {
-            TestRow target = indexRow(idOrdering[start]);
-            OverlayingRow nudgedTarget = new OverlayingRow(target);
-            nudgedTarget.overlay(3, target.eval(3).getLong() + nudge);
-            cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
-            Row row;
-            List<Long> actualIds = new ArrayList<Long>();
-            while ((row = cursor.next()) != null)
-                actualIds.add(row.eval(3).getInt());
-            System.out.println(actualIds);
-            //assertEquals(expecteds.get(start), actualIds);
-        }
-    }
-
     private TestRow indexRow(long id)
     {
         return indexRowMap.get(id);
@@ -277,47 +268,12 @@ public class IndexScanJumUnboundedITWithNullsIT extends OperatorITBase
     {
         API.Ordering ordering = API.ordering();
         int i = 0;
-        while (i < ord.length) {
+        while (i < ord.length)
+        {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
             ordering.append(new FieldExpression(idxRowType, column), asc);
         }
         return ordering;
     }
-
-    private long[] first4(long ... x)
-    {
-        long[] y = new long[4];
-        System.arraycopy(x, 0, y, 0, 4);
-        return y;
-    }
-
-    private long[] last4(long ... x)
-    {
-        long[] y = new long[4];
-        System.arraycopy(x, 2, y, 0, 4);
-        return y;
-    }
-
-    private long[] middle2(long ... x)
-    {
-        long[] y = new long[2];
-        System.arraycopy(x, 2, y, 0, 2);
-        return y;
-    }
-
-    // Positions of fields within the index row
-    private static final int A = 0;
-    private static final int B = 1;
-    private static final int C = 2;
-    private static final int ID = 3;
-    private static final boolean ASC = true;
-    private static final boolean DESC = false;
-    private static final SetColumnSelector INDEX_ROW_SELECTOR = new SetColumnSelector(0, 1, 2, 3);
-
-    private int t;
-    private RowType tRowType;
-    private IndexRowType idxRowType;
-    private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
-
 }
