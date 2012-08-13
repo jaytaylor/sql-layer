@@ -908,20 +908,54 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
-            
-            if (planContext.hasInfo())
-            {
+   
+            if (planContext.hasInfo()) {
                 Attributes atts = new Attributes();
-                for (IndexColumn column : index.getAllColumns())
-                    atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
-                for ( : getEqualityComparands())
+                for (IndexColumn column : index.getAllColumns()) {
+                    OperationExplainer opEx = new OperationExplainer(Type.EXTRA_INFO, null);
+                    opEx.addAttribute(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
+                    atts.put(Label.COLUMN_NAME, opEx);
+                }
+                int i = 0;
+                while (i < indexScan.getEqualityComparands().size()) {
+                    ExpressionNode node = indexScan.getEqualityComparands().get(i);
+                    atts.get(Label.COLUMN_NAME).get(i++).addAttribute(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(" = " + node.toString()));
+                }
+                ExpressionNode hi = indexScan.getHighComparand();
+                ExpressionNode lo = indexScan.getLowComparand();
+                String text = "";
+                if (hi != null) {
+                    if (lo != null)
+                        if (indexScan.isHighInclusive())
+                            if (indexScan.isLowInclusive())
+                                text = " BETWEEN " + lo.toString() + " AND " + hi.toString();
+                            else
+                                text = " > " + lo.toString() + " AND  <= " + hi.toString();
+                        else
+                            if (indexScan.isLowInclusive())
+                                text = " >= " + lo.toString() + " AND  < " + hi.toString();
+                            else
+                                text = " > " + lo.toString() + " AND  < " + hi.toString();
+                    else if (indexScan.isHighInclusive())
+                        text = " <= " + hi.toString();
+                    else
+                        text = " < " + hi.toString();
+                    atts.get(Label.COLUMN_NAME).get(i).addAttribute(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(text));
+                }
+                else if (lo != null) {
+                    if (indexScan.isLowInclusive())
+                        text = " >= " + lo.toString();
+                    else
+                        text = " > " + lo.toString();
+                    atts.get(Label.COLUMN_NAME).get(i).addAttribute(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(text));
+                }
                 planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
-            
+
             return stream;
         }
-
-        /** If there are this many or more scans feeding into a tree
+        /**
+         * If there are this many or more scans feeding into a tree
          * of intersection / union, then skip scan is enabled for it.
          * (3 scans means 2 intersections or intersection with a two-value union.)
          */
@@ -1658,9 +1692,6 @@ public class OperatorAssembler extends BaseRule
                     if (comp != null) {
                         newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
                         oldPartialAssembler.assembleExpressionInto(comp, fieldOffsets, keys, kidx);
-                        if (planContext.hasInfo()) 
-                            
-                        
                     }
                     kidx++;
                 }
