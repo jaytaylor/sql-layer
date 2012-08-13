@@ -202,7 +202,9 @@ public class IndexStatisticsYamlLoader
         map.put(ROW_COUNT_KEY, indexStatistics.getRowCount());
         map.put(SAMPLED_COUNT_KEY, indexStatistics.getSampledCount());
         List<Object> stats = new ArrayList<Object>();
-        for (int i = 0; i < index.getKeyColumns().size(); i++) {
+        int nkeys = index.getKeyColumns().size();
+        if (index.isSpatial()) nkeys = 1;
+        for (int i = 0; i < nkeys; i++) {
             Histogram histogram = indexStatistics.getHistogram(i + 1);
             if (histogram == null) continue;
             stats.add(buildHistogram(index, histogram));
@@ -235,7 +237,12 @@ public class IndexStatisticsYamlLoader
         ToObjectValueTarget valueTarget = new ToObjectValueTarget();
         List<Object> result = new ArrayList<Object>(columnCount);
         for (int i = 0; i < columnCount; i++) {
-            keySource.attach(key, index.getKeyColumns().get(i));
+            if (index.isSpatial()) {
+                keySource.attach(key, i, AkType.LONG);
+            }
+            else {
+                keySource.attach(key, index.getKeyColumns().get(i));
+            }
             valueTarget.expectType(convertToType(keySource.getConversionType()));
             Converters.convert(keySource, valueTarget);
             result.add(valueTarget.lastConvertedValue());
