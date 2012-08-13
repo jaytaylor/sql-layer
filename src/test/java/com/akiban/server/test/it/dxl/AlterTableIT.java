@@ -71,6 +71,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AlterTableIT extends ITBase {
+    private static final boolean AUTO_INDEX_CHANGES = false;
+
     private final String SCHEMA = "test";
     private int cid;
     private int oid;
@@ -193,7 +195,8 @@ public class AlterTableIT extends ITBase {
         table = builder.ais().getUserTable(SCHEMA, "c");
 
         ddl().alterTable(session(), table.getName(), table,
-                         Arrays.asList(TableChange.createAdd("c2")), Collections.<TableChange>emptyList());
+                         Arrays.asList(TableChange.createAdd("c2")), Collections.<TableChange>emptyList(),
+                         AUTO_INDEX_CHANGES);
     }
 
     @Test
@@ -320,7 +323,7 @@ public class AlterTableIT extends ITBase {
         List<TableChange> changes = new ArrayList<TableChange>();
         changes.add(TableChange.createAdd("c4"));
 
-        ddl().alterTable(session(), cName, builder.unvalidatedAIS().getUserTable(cName), changes, changes);
+        ddl().alterTable(session(), cName, builder.unvalidatedAIS().getUserTable(cName), changes, changes, AUTO_INDEX_CHANGES);
         updateAISGeneration();
 
         expectFullRows(
@@ -533,7 +536,7 @@ public class AlterTableIT extends ITBase {
         changes.add(TableChange.createDrop("c2"));
         changes.add(TableChange.createModify("c3", "c3"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, Collections.<TableChange>emptyList());
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, Collections.<TableChange>emptyList(), AUTO_INDEX_CHANGES);
         updateAISGeneration();
 
         expectFullRows(
@@ -578,7 +581,7 @@ public class AlterTableIT extends ITBase {
         changes.add(TableChange.createDrop("foo"));
         changes.add(TableChange.createAdd("foo"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<TableChange>emptyList(), changes);
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<TableChange>emptyList(), changes, AUTO_INDEX_CHANGES);
         updateAISGeneration();
 
         expectIndexes(cid, "foo", "PRIMARY");
@@ -611,7 +614,7 @@ public class AlterTableIT extends ITBase {
         List<TableChange> changes = new ArrayList<TableChange>();
         changes.add(TableChange.createModify("foo", "foo"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<TableChange>emptyList(), changes);
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<TableChange>emptyList(), changes, AUTO_INDEX_CHANGES);
         updateAISGeneration();
 
         expectIndexes(cid, "foo", "PRIMARY");
@@ -645,7 +648,7 @@ public class AlterTableIT extends ITBase {
         indexChanges.add(TableChange.createAdd("x"));
         indexChanges.add(TableChange.createAdd("y"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "o"), table, columnChanges, indexChanges);
+        ddl().alterTable(session(), new TableName(SCHEMA, "o"), table, columnChanges, indexChanges, AUTO_INDEX_CHANGES);
         updateAISGeneration();
 
         expectFullRows(

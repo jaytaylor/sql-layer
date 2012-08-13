@@ -73,22 +73,25 @@ public class TableChangeValidator {
     private final List<RuntimeException> errors;
     private final Collection<ChangedTableDescription> changedTables;
     private final Collection<IndexName> autoAffectedGroupIndexes;
+    private final boolean automaticIndexChanges;
     private ChangeLevel finalChangeLevel;
     private ChangedTableDescription.ParentChange parentChange;
     private boolean primaryKeyChanged;
     private boolean didCompare;
 
     public TableChangeValidator(UserTable oldTable, UserTable newTable,
-                                List<TableChange> columnChanges, List<TableChange> indexChanges) {
+                                List<TableChange> columnChanges, List<TableChange> indexChanges,
+                                boolean automaticIndexChanges) {
         ArgumentValidation.notNull("oldTable", oldTable);
         ArgumentValidation.notNull("newTable", newTable);
         this.oldTable = oldTable;
         this.newTable = newTable;
-        this.columnChanges = (columnChanges == null) ? Collections.<TableChange>emptyList() : columnChanges;
-        this.indexChanges = (indexChanges == null) ? Collections.<TableChange>emptyList() : indexChanges;
+        this.columnChanges = new ArrayList<TableChange>((columnChanges == null) ? Collections.<TableChange>emptyList() : columnChanges);
+        this.indexChanges = new ArrayList<TableChange>((indexChanges == null) ? Collections.<TableChange>emptyList() : indexChanges);
         this.errors = new ArrayList<RuntimeException>();
         this.changedTables = new ArrayList<ChangedTableDescription>();
         this.autoAffectedGroupIndexes = new TreeSet<IndexName>();
+        this.automaticIndexChanges = automaticIndexChanges;
         this.finalChangeLevel = ChangeLevel.NONE;
         this.parentChange = ParentChange.NONE;
     }
@@ -117,7 +120,7 @@ public class TableChangeValidator {
         if(!didCompare) {
             compareTable();
             compareColumns();
-            compareIndexes();
+            compareIndexes(automaticIndexChanges);
             compareGrouping();
             updateFinalChangeLevel(ChangeLevel.NONE);
             didCompare = true;
@@ -167,10 +170,10 @@ public class TableChangeValidator {
         for(Column column : newTable.getColumns()) {
             newColumns.put(column.getName(), column);
         }
-        checkChanges(ChangeLevel.TABLE, columnChanges, oldColumns, newColumns);
+        checkChanges(ChangeLevel.TABLE, columnChanges, oldColumns, newColumns, false);
     }
 
-    private void compareIndexes() {
+    private void compareIndexes(boolean autoChanges) {
         Map<String,Index> oldIndexes = new HashMap<String,Index>();
         Map<String,Index> newIndexes = new HashMap<String,Index>();
         for(Index index : oldTable.getIndexes()) {
@@ -179,13 +182,15 @@ public class TableChangeValidator {
         for(Index index : newTable.getIndexes()) {
             newIndexes.put(index.getIndexName().getName(), index);
         }
-        checkChanges(ChangeLevel.INDEX, indexChanges, oldIndexes, newIndexes);
+        checkChanges(ChangeLevel.INDEX, indexChanges, oldIndexes, newIndexes, autoChanges);
     }
 
-    private <T> void checkChanges(ChangeLevel level, List<TableChange> changeList, Map<String,T> oldMap, Map<String,T> newMap) {
+    private <T> void checkChanges(ChangeLevel level, List<TableChange> changeList, Map<String,T> oldMap, Map<String,T> newMap, boolean doAutoChanges) {
         final boolean isIndex = (level == ChangeLevel.INDEX);
         Set<String> oldExcludes = new HashSet<String>();
         Set<String> newExcludes = new HashSet<String>();
+
+        List<TableChange> autoChanges = doAutoChanges ? new ArrayList<TableChange>() : null;
 
         // Check declared changes
         for(TableChange change : changeList) {
@@ -194,7 +199,11 @@ public class TableChangeValidator {
             switch(change.getChangeType()) {
                 case ADD: {
                     if(newMap.get(newName) == null) {
-                        addNotPresent(isIndex, change);
+                        if(doAutoChanges) {
+                            autoChanges.add(TableChange.createAdd(newName));
+                        } else {
+                            addNotPresent(isIndex, change);
+                        }
                     } else {
                         updateFinalChangeLevel(level);
                         newExcludes.add(newName);
@@ -204,7 +213,11 @@ public class TableChangeValidator {
 
                 case DROP: {
                     if(oldMap.get(oldName) == null) {
-                        dropNotPresent(isIndex, change);
+                        if(doAutoChanges) {
+                            autoChanges.add(TableChange.createDrop(oldName));
+                        } else {
+                            dropNotPresent(isIndex, change);
+                        }
                     } else {
                         updateFinalChangeLevel(level);
                         oldExcludes.add(oldName);
@@ -238,11 +251,19 @@ public class TableChangeValidator {
             if(!oldExcludes.contains(name)) {
                 T newVal = newMap.get(name);
                 if(newVal == null) {
-                    unchangedNotPresent(isIndex, name);
+                    if(doAutoChanges) {
+                        autoChanges.add(TableChange.createDrop(name));
+                    } else {
+                        unchangedNotPresent(isIndex, name);
+                    }
                 } else {
                     ChangeLevel change = compare(entry.getValue(), newVal);
                     if(change != ChangeLevel.NONE) {
-                        undeclaredChange(isIndex, name);
+                        if(doAutoChanges) {
+                            autoChanges.add(TableChange.createModify(name, name));
+                        } else {
+                            undeclaredChange(isIndex, name);
+                        }
                     }
                     newExcludes.add(name);
                 }
@@ -252,13 +273,21 @@ public class TableChangeValidator {
         // Check remaining elements in new table (should be none)
         for(String name : newMap.keySet()) {
             if(!newExcludes.contains(name)) {
-                undeclaredChange(isIndex, name);
+                if(doAutoChanges) {
+                    autoChanges.add(TableChange.createDrop(name));
+                } else {
+                    undeclaredChange(isIndex, name);
+                }
             }
+        }
+
+        if(doAutoChanges) {
+            changeList.addAll(autoChanges);
         }
     }
 
     private void compareGrouping() {
-        parentChange = joinChanged(oldTable.getParentJoin(), newTable.getParentJoin());
+        parentChange = compareParentJoin(oldTable.getParentJoin(), newTable.getParentJoin());
         primaryKeyChanged = containsOldOrNew(indexChanges, Index.PRIMARY_KEY_CONSTRAINT);
 
         Map<String,String> preserveIndexes = new TreeMap<String,String>();
@@ -425,7 +454,7 @@ public class TableChangeValidator {
                (oldSeq.isCycle() != newSeq.isCycle());
     }
 
-    private static ParentChange joinChanged(Join oldJoin, Join newJoin) {
+    private static ParentChange compareParentJoin(Join oldJoin, Join newJoin) {
         if(oldJoin == null && newJoin == null) {
             return ParentChange.NONE;
         }
@@ -448,9 +477,8 @@ public class TableChangeValidator {
         while(oldIt.hasNext()) {
             JoinColumn oldCol = oldIt.next();
             JoinColumn newCol = newIt.next();
-            if(!oldCol.getParent().getName().equals(newCol.getParent().getName()) ||
-               !oldCol.getChild().getName().equals(newCol.getChild().getName())) {
-                return ParentChange.UPDATE;
+            if(compare(oldCol.getChild(), newCol.getChild()) == ChangeLevel.TABLE) {
+                return ParentChange.DROP;
             }
         }
         return ParentChange.NONE;

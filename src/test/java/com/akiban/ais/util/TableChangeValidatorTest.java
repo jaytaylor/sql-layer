@@ -79,7 +79,7 @@ public class TableChangeValidatorTest {
                                                  ChangeLevel expectedChangeLevel) {
         return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel,
                         asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY")),
-                        false, false, NO_INDEX_CHANGE);
+                        false, false, NO_INDEX_CHANGE, false);
     }
 
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
@@ -88,7 +88,7 @@ public class TableChangeValidatorTest {
                                                  List<String> expectedChangedTables) {
         return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel,
                         expectedChangedTables,
-                        false, false, NO_INDEX_CHANGE);
+                        false, false, NO_INDEX_CHANGE, false);
     }
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
                                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
@@ -96,8 +96,9 @@ public class TableChangeValidatorTest {
                                                  List<String> expectedChangedTables,
                                                  boolean expectedParentChange,
                                                  boolean expectedPrimaryKeyChange,
-                                                 Collection<IndexName> expectedAutoGroupIndexChange) {
-        TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges);
+                                                 Collection<IndexName> expectedAutoGroupIndexChange,
+                                                 boolean autoIndexChanges) {
+        TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges, autoIndexChanges);
         validator.compareAndThrowIfNecessary();
         assertEquals("Final change level", expectedChangeLevel, validator.getFinalChangeLevel());
         assertEquals("Parent changed", expectedParentChange, validator.isParentChanged());
@@ -358,7 +359,7 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
-                 false, true, NO_INDEX_CHANGE);
+                 false, true, NO_INDEX_CHANGE, false);
     }
 
     @Test
@@ -370,7 +371,7 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
-                 false, true, NO_INDEX_CHANGE);
+                 false, true, NO_INDEX_CHANGE, false);
     }
 
     @Test
@@ -387,7 +388,7 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createDrop("__akiban_fk")),
                  ChangeLevel.GROUP,
                  asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP)),
-                 true, false, NO_INDEX_CHANGE);
+                 true, false, NO_INDEX_CHANGE, false);
     }
 
     @Test
@@ -416,7 +417,8 @@ public class TableChangeValidatorTest {
                 ),
                 false,
                 true,
-                NO_INDEX_CHANGE
+                NO_INDEX_CHANGE,
+                false
         );
     }
 
@@ -443,6 +445,27 @@ public class TableChangeValidatorTest {
                 asList(TableChange.createDrop("l"), TableChange.createAdd("v"), TableChange.createModify("k", "k")),
                 ChangeLevel.TABLE,
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY", "d", "d"))
+        );
+    }
+
+    //
+    // Auto index changes
+    //
+
+    @Test
+    public void addDropAndModifyIndexAutoChanges() {
+        UserTable t1 = table(builder(TABLE_NAME).colLong("c1").colLong("c2").colLong("c3").key("c1", "c1").key("c3", "c3"));
+        UserTable t2 = table(builder(TABLE_NAME).colLong("c1").colLong("c2").colString("c3", 32).key("c2", "c2").key("c3", "c3"));
+        validate(
+                t1, t2,
+                asList(TableChange.createModify("c3", "c3")),
+                NO_CHANGES,
+                ChangeLevel.TABLE,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
+                false,
+                false,
+                NO_INDEX_CHANGE,
+                true
         );
     }
 }

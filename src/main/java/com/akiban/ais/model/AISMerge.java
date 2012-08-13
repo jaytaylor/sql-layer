@@ -154,10 +154,14 @@ public class AISMerge {
                     joinsToFix.add(new JoinChange(null, desc.getNewName(), false));
                 break;
                 case DROP:
+                    final Join join;
                     if(newTable != null) {
+                        join = newTable.getParentJoin();
                         excludedGroups.add(newTable.getGroup());
+                    } else {
+                        join = oldTable.getParentJoin();
                     }
-                    joinsToFix.add(new JoinChange(oldTable.getParentJoin(), desc.getNewName(), true));
+                    joinsToFix.add(new JoinChange(join, desc.getNewName(), true));
                 break;
                 default:
                     throw new IllegalStateException("Unhandled GroupChange: " + desc.getParentChange());
