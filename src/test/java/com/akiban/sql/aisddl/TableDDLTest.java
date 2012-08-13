@@ -26,7 +26,6 @@
 
 package com.akiban.sql.aisddl;
 
-import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.sql.StandardException;
 import java.util.Collection;

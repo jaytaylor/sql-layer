@@ -33,6 +33,7 @@ import com.persistit.exception.PersistitException;
 public interface IterationHelper
 {
     Row row() throws PersistitException;
-    void close();
+    void openIteration();
+    void closeIteration();
     Exchange exchange();
 }

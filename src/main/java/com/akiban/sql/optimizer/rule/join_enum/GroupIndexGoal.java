@@ -194,6 +194,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(SingleIndexScan index) {
+        if (index.getIndex().isSpatial()) return spatialUsable(index);
         int nequals = insertLeadingEqualities(index, conditions);
         List<ExpressionNode> indexExpressions = index.getColumns();
         if (nequals < indexExpressions.size()) {
@@ -1408,4 +1409,180 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                      (subqueryDepth == 0)));
         }
     }
+
+    /* Spatial indexes */
+
+    /** For now, a spatial index is a special kind of table index on
+     * Z-order of two coordinates.
+     */
+    public boolean spatialUsable(SingleIndexScan index) {
+        setColumnsAndOrdering(index);
+
+        // There are two cases to recognize:
+        // ORDER BY znear(column_lat, column_lon, start_lat, start_lon), which
+        // means fan out from that center in Z-order.
+        // WHERE distance_lat_lon(column_lat, column_lon, start_lat, start_lon) <= radius
+
+        List<ExpressionNode> indexExpressions = index.getColumns();
+        assert (indexExpressions.size() > 2) : index; // lat, lon, hkey...
+
+        boolean matched = false;
+        for (ConditionExpression condition : conditions) {
+            if (condition instanceof ComparisonCondition) {
+                ComparisonCondition ccond = (ComparisonCondition)condition;
+                ExpressionNode centerRadius = null;
+                switch (ccond.getOperation()) {
+                case LE:
+                case LT:
+                    centerRadius = matchDistanceLatLon(indexExpressions,
+                                                       ccond.getLeft(), 
+                                                       ccond.getRight());
+                    break;
+                case GE:
+                case GT:
+                    centerRadius = matchDistanceLatLon(indexExpressions,
+                                                       ccond.getRight(), 
+                                                       ccond.getLeft());
+                    break;
+                }
+                if (centerRadius != null) {
+                    index.setLowComparand(centerRadius, true);
+                    index.setOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
+                    matched = true;
+                    break;
+                }
+            }
+        }
+        if (!matched) {
+            if (sortAllowed && (queryGoal.getOrdering() != null)) {
+                List<OrderByExpression> orderBy = queryGoal.getOrdering().getOrderBy();
+                if (orderBy.size() == 1) {
+                    ExpressionNode center = matchZnear(indexExpressions,
+                                                       orderBy.get(0));
+                    if (center != null) {
+                        index.setLowComparand(center, true);
+                        index.setOrderEffectiveness(IndexScan.OrderEffectiveness.SORTED);
+                        matched = true;
+                    }
+                }
+            }
+            if (!matched)
+                return false;
+        }
+
+        index.setCostEstimate(estimateCostSpatial(index));
+        return true;
+    }
+
+    private ExpressionNode matchDistanceLatLon(List<ExpressionNode> indexExpressions,
+                                               ExpressionNode left, ExpressionNode right) {
+        if (!((left instanceof FunctionExpression) &&
+              ((FunctionExpression)left).getFunction().equalsIgnoreCase("distance_lat_lon") &&
+              constantOrBound(right)))
+            return null;
+        ExpressionNode col1 = indexExpressions.get(0);
+        ExpressionNode col2 = indexExpressions.get(1);
+        List<ExpressionNode> operands = ((FunctionExpression)left).getOperands();
+        if (operands.size() != 4) return null; // TODO: Would error here be better?
+        ExpressionNode op1 = operands.get(0);
+        ExpressionNode op2 = operands.get(1);
+        ExpressionNode op3 = operands.get(2);
+        ExpressionNode op4 = operands.get(3);
+        // TODO: Do we want to keep this once DECIMAL is working?
+        // DISTANCE_LAT_LON is defined on DECIMAL. If we have an INT, it will be cast.
+        // At that time, the other operands will also be DECIMAL and
+        // need to be cast the other way.
+        boolean cast1 = false, cast2 = false, cast3 = false, cast4 = false;
+        if (op1 instanceof CastExpression) {
+            op1 = ((CastExpression)op1).getOperand();
+            cast1 = true;
+        }
+        if (op2 instanceof CastExpression) {
+            op2 = ((CastExpression)op2).getOperand();
+            cast2 = true;
+        }
+        if (op3 instanceof CastExpression) {
+            op3 = ((CastExpression)op3).getOperand();
+            cast3 = true;
+        }
+        if (op4 instanceof CastExpression) {
+            op4 = ((CastExpression)op4).getOperand();
+            cast4 = true;
+        }
+        if (col1.equals(op1) && col2.equals(op2) &&
+            constantOrBound(op3) && constantOrBound(op4)) {
+            if (cast1) op3 = castBack(op3, op1);
+            if (cast2) op4 = castBack(op4, op2);
+            return new FunctionExpression("_center_radius",
+                                          Arrays.asList(op3, op4, right),
+                                          null, null);
+        }
+        if (col1.equals(op3) && col2.equals(op4) &&
+            constantOrBound(op1) && constantOrBound(op2)) {
+            if (cast3) op1 = castBack(op1, op3);
+            if (cast4) op2 = castBack(op2, op4);
+            return new FunctionExpression("_center_radius",
+                                          Arrays.asList(op1, op2, right),
+                                          null, null);
+        }
+        return null;
+    }
+
+    private ExpressionNode castBack(ExpressionNode from, ExpressionNode to) {
+        return new CastExpression(from, 
+                                  to.getSQLtype(), to.getAkType(), to.getSQLsource());
+    }
+
+    private ExpressionNode matchZnear(List<ExpressionNode> indexExpressions, 
+                                      OrderByExpression orderBy) {
+        if (!orderBy.isAscending()) return null;
+        ExpressionNode orderExpr = orderBy.getExpression();
+        if (!((orderExpr instanceof FunctionExpression) &&
+              ((FunctionExpression)orderExpr).getFunction().equalsIgnoreCase("znear")))
+            return null;
+        ExpressionNode col1 = indexExpressions.get(0);
+        ExpressionNode col2 = indexExpressions.get(1);
+        List<ExpressionNode> operands = ((FunctionExpression)orderExpr).getOperands();
+        if (operands.size() != 4) return null; // TODO: Would error here be better?
+        ExpressionNode op1 = operands.get(0);
+        ExpressionNode op2 = operands.get(1);
+        ExpressionNode op3 = operands.get(2);
+        ExpressionNode op4 = operands.get(3);
+        if (col1.equals(op1) && col2.equals(op2) &&
+            constantOrBound(op3) && constantOrBound(op4))
+            return new FunctionExpression("_center",
+                                          Arrays.asList(op3, op4),
+                                          null, null);
+        if (col1.equals(op3) && col2.equals(op4) &&
+            constantOrBound(op1) && constantOrBound(op2))
+            return new FunctionExpression("_center",
+                                          Arrays.asList(op1, op2),
+                                          null, null);
+        return null;
+    }
+
+    public CostEstimate estimateCostSpatial(IndexScan index) {
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        Set<TableSource> requiredTables = requiredColumns.getTables();
+
+        estimator.indexScan(index); // TODO: spatial estimation.
+
+        estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
+
+        Collection<ConditionExpression> unhandledConditions = conditions;
+        if (!unhandledConditions.isEmpty()) {
+            estimator.select(unhandledConditions,
+                             selectivityConditions(unhandledConditions, requiredTables));
+        }
+
+        if (queryGoal.needSort(index.getOrderEffectiveness())) {
+            estimator.sort(queryGoal.sortFields());
+        }
+
+        estimator.setLimit(queryGoal.getLimit());
+
+        return estimator.getCostEstimate();
+    }
+
 }

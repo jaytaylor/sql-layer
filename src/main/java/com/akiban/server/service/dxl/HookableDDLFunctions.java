@@ -33,7 +33,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
-import com.akiban.server.api.AlterTableChange;
+import com.akiban.ais.util.TableChange;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
@@ -106,7 +106,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
+                           List<TableChange> columnChanges, List<TableChange> indexChanges) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.ALTER_TABLE);

@@ -120,14 +120,4 @@ public class Cast_From_Date
                                                        context));
         }
     };
-    
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(MDatetimes.dateToString(source.getInt32()), null);
-        }
-    };
 }

@@ -855,7 +855,15 @@ public class OperatorAssembler extends BaseRule
                                                       index);
                 }
             }
-            if (indexScan.getConditionRange() == null) {
+            if (index.isSpatial()) {
+                stream.operator = API.indexScan_Default(indexRowType,
+                                                        assembleSpatialIndexKeyRange(indexScan, null),
+                                                        API.ordering(), // TODO: what ordering?
+                                                        selector,
+                                                        usePValues);
+                stream.rowType = indexRowType;
+            }
+            else if (indexScan.getConditionRange() == null) {
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleIndexKeyRange(indexScan, null),
                                                         assembleIndexOrdering(indexScan, indexRowType),
@@ -1488,11 +1496,13 @@ public class OperatorAssembler extends BaseRule
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,
                                     API.SortOption sortOption) {
+            List<AkCollator> collators = findCollators(input);
             API.Ordering ordering = partialAssembler.createOrdering();
             for (int i = 0; i < nkeys; i++) {
                 Expression expr = oldPartialAssembler.field(stream.rowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(stream.rowType, i);
-                ordering.append(expr, tExpr, true);
+                ordering.append(expr, tExpr, true,
+                                (collators == null) ? null : collators.get(i));
             }
             assembleSort(stream, ordering, input, null, sortOption);
         }
@@ -1828,6 +1838,55 @@ public class OperatorAssembler extends BaseRule
             TPreparedExpression[] pKeys = newPartialAssembler.createNulls(index, nkeys);
             return new IndexBound(getIndexExpressionRow(index, keys, pKeys),
                                   getIndexColumnSelector(index, nkeys));
+        }
+
+        protected IndexKeyRange assembleSpatialIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets) {
+            FunctionExpression func = (FunctionExpression)index.getLowComparand();
+            List<ExpressionNode> operands = func.getOperands();
+            IndexRowType indexRowType = getIndexRowType(index);
+            if ("_center".equals(func.getFunction())) {
+                return IndexKeyRange.spatial(indexRowType,
+                                             assembleSpatialIndexPoint(index,
+                                                                       operands.get(0),
+                                                                       operands.get(1),
+                                                                       fieldOffsets),
+                                             null);
+            }
+            else if ("_center_radius".equals(func.getFunction())) {
+                ExpressionNode centerY = operands.get(0);
+                ExpressionNode centerX = operands.get(1);
+                ExpressionNode radius = operands.get(2);
+                // Make circle into box. Comparison still remains to eliminate corners.
+                // TODO: May need some casts.
+                ExpressionNode bottom = new FunctionExpression("minus",
+                                                               Arrays.asList(centerY, radius),
+                                                               null, null);
+                ExpressionNode left = new FunctionExpression("minus",
+                                                             Arrays.asList(centerX, radius),
+                                                             null, null);
+                ExpressionNode top = new FunctionExpression("plus",
+                                                            Arrays.asList(centerY, radius),
+                                                            null, null);
+                ExpressionNode right = new FunctionExpression("plus",
+                                                              Arrays.asList(centerX, radius),
+                                                              null, null);
+                return IndexKeyRange.spatial(indexRowType,
+                                             assembleSpatialIndexPoint(index, bottom, left, fieldOffsets),
+                                             assembleSpatialIndexPoint(index, top, right, fieldOffsets));
+            }
+            else {
+                throw new AkibanInternalException("Unrecognized spatial index " + index);
+            }
+        }
+
+        protected IndexBound assembleSpatialIndexPoint(SingleIndexScan index, ExpressionNode y, ExpressionNode x, ColumnExpressionToIndex fieldOffsets) {
+            TPreparedExpression[] pkeys = usePValues ? new TPreparedExpression[2] : null;
+            Expression[] keys = usePValues ? null : new Expression[2];
+            newPartialAssembler.assembleExpressionInto(y, fieldOffsets, pkeys, 0);
+            oldPartialAssembler.assembleExpressionInto(y, fieldOffsets, keys, 0);
+            newPartialAssembler.assembleExpressionInto(x, fieldOffsets, pkeys, 1);
+            oldPartialAssembler.assembleExpressionInto(x, fieldOffsets, keys, 1);
+            return getIndexBound(index.getIndex(), keys, pkeys, 2);
         }
 
         /** Return a column selector that enables the first <code>nkeys</code> fields

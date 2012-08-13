@@ -24,29 +24,32 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.akiban.server.expression.std;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import org.junit.Test;
 
-public final class Cast_From_Mediumint {
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.MEDIUMINT, MString.VARCHAR) {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            String asString = Double.toString(source.getInt32());
-            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-            if (asString.length() > maxLen) {
-                String truncated = asString.substring(0, maxLen);
-                context.reportTruncate(asString, truncated);
-                asString = truncated;
-            }
-            target.putString(asString, null);
-        }
-    };
+public class ZNearExpressionTest {
+
+    private static final Expression ZERO = new LiteralExpression(AkType.DOUBLE, 0.0);
+    
+    @Test (expected=UnsupportedOperationException.class)
+    public void testNOP() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(ZERO, ZERO, ZERO, ZERO));
+        Expression exp = new ZNearExpression(lst);
+        
+        ValueSource source = exp.evaluation().eval();
+    }
+    
+    @Test (expected=WrongExpressionArityException.class)
+    public void testArity() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(ZERO, ZERO));
+        Expression exp = new ZNearExpression(lst);
+    }
 }

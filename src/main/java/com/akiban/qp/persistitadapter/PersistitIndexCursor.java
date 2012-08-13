@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
@@ -34,8 +35,6 @@ import com.akiban.qp.persistitadapter.indexcursor.IterationHelper;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.util.ShareHolder;
-import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
 class PersistitIndexCursor implements Cursor
@@ -46,8 +45,8 @@ class PersistitIndexCursor implements Cursor
     public void open()
     {
         CursorLifecycle.checkIdle(this);
-        exchange = adapter.takeExchange(indexRowType.index());
-        indexCursor = IndexCursor.create(context, keyRange, ordering, new IndexScanIterationHelper(), usePValues);
+        rowState.openIteration();
+        indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues);
         indexCursor.open();
         idle = false;
     }
@@ -75,10 +74,10 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
-        if (exchange == null) {
-            exchange = adapter.takeExchange(indexRowType.index());
-            idle = false;
-        }
+        Index index = indexRowType.index();
+        assert !index.isSpatial(); // Jump not yet supported for spatial indexes
+        rowState.openIteration();
+        idle = false;
         indexCursor.jump(row, columnSelector);
     }
 
@@ -86,12 +85,8 @@ class PersistitIndexCursor implements Cursor
     public void close()
     {
         CursorLifecycle.checkIdleOrActive(this);
-        if (!idle) {
-            row.release();
-            adapter.returnExchange(exchange);
-            exchange = null;
-            idle = true;
-        }
+        rowState.closeIteration();
+        idle = true;
     }
 
     @Override
@@ -130,64 +125,29 @@ class PersistitIndexCursor implements Cursor
         throws PersistitException
     {
         this.keyRange = keyRange;
-        this.adapter = (PersistitAdapter)context.getStore();
         this.ordering = ordering;
         this.context = context;
         this.indexRowType = indexRowType;
-        this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
         this.isTableIndex = indexRowType.index().isTableIndex();
         this.usePValues = usePValues;
         this.selector = selector;
         this.idle = true;
+        this.rowState = new IndexScanRowState((PersistitAdapter)context.getStore(), indexRowType);
     }
 
     // For use by this class
 
-    private ShareHolder<PersistitIndexRow> unsharedRow() throws PersistitException
-    {
-        if (row.isEmpty() || row.isShared()) {
-            row.hold(adapter.newIndexRow(indexRowType));
-        }
-        return row;
-    }
-
     // Object state
 
     private final QueryContext context;
-    private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private final ShareHolder<PersistitIndexRow> row;
     private final IndexKeyRange keyRange;
     private final API.Ordering ordering;
     private final boolean isTableIndex;
     private final boolean usePValues;
+    private final IterationHelper rowState;
     private IndexScanSelector selector;
-    private Exchange exchange;
     private IndexCursor indexCursor;
     private boolean idle;
     private boolean destroyed = false;
-
-    // Inner classes
-
-    private class IndexScanIterationHelper implements IterationHelper
-    {
-        @Override
-        public Row row() throws PersistitException
-        {
-            unsharedRow().get().copyFromExchange(exchange);
-            return row.get();
-        }
-
-        @Override
-        public void close()
-        {
-            PersistitIndexCursor.this.close();
-        }
-
-        @Override
-        public Exchange exchange()
-        {
-            return PersistitIndexCursor.this.exchange;
-        }
     }
-}

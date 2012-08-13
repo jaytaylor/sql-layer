@@ -57,6 +57,7 @@ import com.akiban.util.Strings;
 import org.junit.After;
 import org.junit.Before;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -340,9 +341,11 @@ public class OperatorITBase extends ITBase
                 } else if (value instanceof Integer) {
                     valueHolder.putInt((Integer) value);
                 } else if (value instanceof Long) {
-                    valueHolder.putInt((Long) value);
+                    valueHolder.putLong((Long) value);
                 } else if (value instanceof String) {
                     valueHolder.putString((String) value);
+                } else if (value instanceof BigDecimal) {
+                    valueHolder.putDecimal((BigDecimal) value);
                 } else {
                     fail();
                 }

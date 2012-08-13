@@ -41,9 +41,9 @@ class Region
             if (d > 0) {
                 buffer.append(", ");
             }
-            buffer.append(lo[d]);
+            buffer.append(lo(d));
             buffer.append(':');
-            buffer.append(hi[d]);
+            buffer.append(hi(d));
         }
         buffer.append(')');
         return buffer.toString();
@@ -51,14 +51,14 @@ class Region
 
     // Region interface
 
-    public long[] lo()
+    public long lo(int d)
     {
-        return lo;
+        return lo[d] + spaceLo[d];
     }
 
-    public long[] hi()
+    public long hi(int d)
     {
-        return hi;
+        return hi[d] + spaceLo[d];
     }
 
     public boolean isPoint()
@@ -96,7 +96,14 @@ class Region
 
     public long z()
     {
-        return space.shuffle(lo, level);
+        for (int d = 0; d < space.dimensions; d++) {
+            lo[d] += spaceLo[d];
+        }
+        long z = space.shuffle(lo, level);
+        for (int d = 0; d < space.dimensions; d++) {
+            lo[d] -= spaceLo[d];
+        }
+        return z;
     }
 
     public Region copy()
@@ -104,15 +111,20 @@ class Region
         return new Region(this);
     }
 
-    public Region(Decomposer decomposer, long[] lo, long[] hi, int level)
+    public Region(Space space, long[] lo, long[] hi, int level)
     {
-        this.space = decomposer;
-        this.interleave = decomposer.interleave;
-        this.lo = Arrays.copyOf(lo, lo.length);
-        this.hi = Arrays.copyOf(hi, hi.length);
+        this.space = space;
+        this.interleave = space.interleave;
+        this.lo = new long[space.dimensions];
+        this.hi = new long[space.dimensions];
+        this.spaceLo = space.lo;
+        for (int d = 0; d < space.dimensions; d++) {
+            this.lo[d] = lo[d] - spaceLo[d];
+            this.hi[d] = hi[d] - spaceLo[d];
+        }
         this.level = level;
-        this.xBitPosition = new int[decomposer.dimensions];
-        for (int zBitPosition = decomposer.zBits - 1; zBitPosition >= level; zBitPosition--) {
+        this.xBitPosition = new int[space.dimensions];
+        for (int zBitPosition = space.zBits - 1; zBitPosition >= level; zBitPosition--) {
             int d = interleave[zBitPosition];
             xBitPosition[d]++;
         }
@@ -124,6 +136,7 @@ class Region
         this.interleave = region.interleave;
         this.lo = Arrays.copyOf(region.lo, region.lo.length);
         this.hi = Arrays.copyOf(region.hi, region.hi.length);
+        this.spaceLo = region.spaceLo;
         this.level = region.level;
         this.xBitPosition = Arrays.copyOf(region.xBitPosition, region.xBitPosition.length);
     }
@@ -132,9 +145,11 @@ class Region
     private final int[] interleave;
     private final long[] lo;
     private final long[] hi;
+    private final long[] spaceLo;
     private int level;
-    // xBitPositions are for right-justified coordinates the rightmost bit is at position 0.
-    // This is different from the convention in Space, because here we're dealing mostly with
-    // coordinates in the user space.
+    // Region coordinates are:
+    // - Zero-based: x[d] is shifted to x[d] -space.lo[d]
+    // - Right-justified:  This is different from the convention in Space, because Regions are most
+    //   concerned with coordinates in the user space.
     private int[] xBitPosition;
 }
