@@ -33,7 +33,6 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -165,6 +164,16 @@ public class IndexScanJumBoundedITWithNullsIT extends OperatorITBase
                       getDDDD(),
                       new long[] {1016}); 
     }
+    
+    @Test
+    public void testAAAD()
+    {
+        testSkipNulls(1014,
+                      b_of(1010), true,
+                      b_of(1017), true,
+                      getAAAD(),
+                      new long[] {1014, 1015, 1017}); // skips 1016, which is a null
+    }
     //TODO: add more test****()
 
     private void testSkipNulls(long targetId,                  // location to jump to
@@ -197,14 +206,15 @@ public class IndexScanJumBoundedITWithNullsIT extends OperatorITBase
         return ordering(A, ASC, B, ASC, C, ASC, ID, ASC);
     }
 
+    private API.Ordering getAAAD()
+    {
+        return ordering(A, ASC, B, ASC, C, ASC, ID, DESC);
+    }
+    
+    
     private API.Ordering getDADD()
     {
         return ordering(A, DESC, B, ASC, C, DESC, ID, DESC);
-    }
-
-    private long[] getDADDId()
-    {
-        return longs(1011, 1010, 1013, 1012, 1015, 1014);
     }
 
     private API.Ordering getDDAA()
@@ -212,19 +222,9 @@ public class IndexScanJumBoundedITWithNullsIT extends OperatorITBase
         return ordering(A, DESC, B, DESC, C, ASC, ID, ASC);
     }
 
-    private long[] getDDAAId()
-    {
-        return longs(1014, 1015, 1012, 1013, 1010, 1011);
-    }
-
     private API.Ordering getDDAD()
     {
         return ordering(A, DESC, B, DESC, C, ASC, ID, DESC);
-    }
-
-    private long[] getDDADId()
-    {
-        return longs(1014, 1015, 1012, 1013, 1010, 1011);
     }
 
     private API.Ordering getDDDA()
@@ -232,19 +232,9 @@ public class IndexScanJumBoundedITWithNullsIT extends OperatorITBase
          return ordering(A, DESC, B, DESC, C, DESC, ID, ASC);
     }
 
-    private long[] getDDDAId()
-    {
-        return longs(1015, 1014, 1013, 1012, 1011, 1010);
-    }
-
     private API.Ordering getDDDD()
     {
         return ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
-    }
-
-    private long[] getDDDDId()
-    {
-        return longs(1015, 1014, 1013, 1012, 1011, 1010);
     }
 
     private TestRow indexRow(long id)
