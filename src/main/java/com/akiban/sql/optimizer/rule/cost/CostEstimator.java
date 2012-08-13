@@ -39,7 +39,7 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.statistics.IndexStatistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
-
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
@@ -499,7 +499,12 @@ public abstract class CostEstimator implements TableRowCounts
         if (expr == null)
             return false;
         ValueSource valueSource = expr.evaluation().eval();
-        keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
+        if (index.isSpatial()) {
+            keyTarget.expectingType(AkType.LONG, null);
+        }
+        else {
+            keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
+        }
         Converters.convert(valueSource, keyTarget);
         return true;
     }

@@ -34,9 +34,13 @@ import static com.akiban.sql.optimizer.rule.cost.CostEstimator.simpleRound;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.geophile.SpaceLatLon;
+import com.akiban.server.types.AkType;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 public class PlanCostEstimator
@@ -60,6 +64,10 @@ public class PlanCostEstimator
 
     public void indexScan(IndexScan index) {
         planEstimator = new IndexScanEstimator(index);
+    }
+
+    public void spatialIndex(SingleIndexScan index) {
+        planEstimator = new SpatialIndexEstimator(index);
     }
 
     public void flatten(TableGroupJoinTree tableGroup,
@@ -153,6 +161,64 @@ public class PlanCostEstimator
                 costEstimate = new CostEstimate(limit,
                                                 setupCost + scanCost * limit / totalCount);
             }
+        }
+    }
+
+    protected class SpatialIndexEstimator extends PlanEstimator {
+        SingleIndexScan index;
+
+        protected SpatialIndexEstimator(SingleIndexScan index) {
+            super(null);
+            this.index = index;
+        }
+
+        @Override
+        protected void estimateCost() {
+            ExpressionNode lo = null, hi = null;
+            int nscans = 1;
+            FunctionExpression func = (FunctionExpression)index.getLowComparand();
+            List<ExpressionNode> operands = func.getOperands();
+            SpaceLatLon space = (SpaceLatLon)((TableIndex)index.getIndex()).space();
+            if ("_center".equals(func.getFunction())) {
+                nscans = 2;     // One in each direction.
+            }
+            else if ("_center_radius".equals(func.getFunction())) {
+                ExpressionNode lat = operands.get(0);
+                ExpressionNode lon = operands.get(1);
+                ExpressionNode r = operands.get(2);
+                if ((lat instanceof ConstantExpression) &&
+                    (lat.getAkType() == AkType.DECIMAL) &&
+                    (lon instanceof ConstantExpression) &&
+                    (lon.getAkType() == AkType.DECIMAL) &&
+                    (r instanceof ConstantExpression) &&
+                    (r.getAkType() == AkType.DECIMAL)) {
+                    BigDecimal n1 = (BigDecimal)((ConstantExpression)lat).getValue();
+                    BigDecimal n2 = (BigDecimal)((ConstantExpression)lat).getValue();
+                    BigDecimal n = (BigDecimal)((ConstantExpression)lat).getValue();
+                    long l1 = space.shuffle(n1.subtract(n), n2.subtract(n));
+                    long l2 = space.shuffle(n1.add(n), n2.add(n));
+                    lo = new ConstantExpression(l1, AkType.LONG);
+                    hi = new ConstantExpression(l2, AkType.LONG);
+                }
+            }
+            costEstimate = costEstimator.costIndexScan(index.getIndex(), null, 
+                                                       lo, true, hi, true);
+            index.setScanCostEstimate(costEstimate);
+            long totalRows = costEstimate.getRowCount();
+            long nrows = totalRows;
+            if (hasLimit() && (limit < totalRows)) {
+                nrows = limit;
+            }
+            if (nscans == 1) {
+                if (nrows != totalRows)
+                    costEstimate = costEstimator.costIndexScan(index.getIndex(), nrows);
+                return;
+            }
+            double setupCost = costEstimator.costIndexScan(index.getIndex(), 0).getCost();
+            double scanCost = costEstimate.getCost() - setupCost;
+            costEstimate = new CostEstimate(limit,
+                                            setupCost * nscans +
+                                            scanCost * nrows / totalRows);
         }
     }
 
