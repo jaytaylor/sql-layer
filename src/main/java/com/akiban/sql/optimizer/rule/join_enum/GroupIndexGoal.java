@@ -1561,12 +1561,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return null;
     }
 
-    public CostEstimate estimateCostSpatial(IndexScan index) {
+    public CostEstimate estimateCostSpatial(SingleIndexScan index) {
         PlanCostEstimator estimator = 
             new PlanCostEstimator(queryGoal.getCostEstimator());
         Set<TableSource> requiredTables = requiredColumns.getTables();
 
-        estimator.indexScan(index); // TODO: spatial estimation.
+        estimator.spatialIndex(index);
 
         estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
 
