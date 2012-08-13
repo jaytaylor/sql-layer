@@ -45,7 +45,8 @@ public class CountOperatorExplainer extends OperationExplainer
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputType));
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(rstType));
-        if (inputOp != null) atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        if (inputOp != null)
+            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         
         return atts;
     }

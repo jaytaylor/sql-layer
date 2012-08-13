@@ -1,10 +1,10 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT], state:char(2)[VARCHAR]]
-  project(Field(1), Field(8), Field(11), Field(12), Field(4))
+  Project_Default(Field(1), Field(8), Field(11), Field(12), Field(4))
     Product_NestedLoops(flatten(test.customers, test.addresses) x flatten(flatten(test.customers, test.orders), test.items))
-      Filter_Default([flatten(test.customers, test.addresses)])
+      Filter_Default(flatten(test.customers, test.addresses))
         Flatten_HKeyOrdered(test.customers INNER test.addresses)
           GroupScan_Default(full scan on _akiban_customers)
-      Filter_Default([flatten(flatten(test.customers, test.orders), test.items)])
+      Filter_Default(flatten(flatten(test.customers, test.orders), test.items))
         Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
           Flatten_HKeyOrdered(test.customers INNER test.orders)
             BranchLookup_Nested(_akiban_customers test.customers -> test.orders)

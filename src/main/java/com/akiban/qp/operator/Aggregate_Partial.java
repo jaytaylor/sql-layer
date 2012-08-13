@@ -349,7 +349,7 @@ final class Aggregate_Partial extends Operator
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate_Partial"));
         int aggs;
         
         if (pAggrs != null) {
@@ -362,18 +362,21 @@ final class Aggregate_Partial extends Operator
                 atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
             aggs = aggregatorFactories.size();
         }
-        if (extraInfo != null && extraInfo.containsKey(this))
+        if (inputsIndex > 0)
         {
-            StringBuilder sb = new StringBuilder("GROUP BY ");
-            for (Explainer ex : ((OperationExplainer)extraInfo.get(this)).get().get(Label.GROUPING_OPTION))
+            if (extraInfo != null && extraInfo.containsKey(this))
             {
-                sb.append(ex.get()).append(", ");
+                StringBuilder sb = new StringBuilder("GROUP BY ");
+                for (Explainer ex : ((OperationExplainer)extraInfo.get(this)).get().get(Label.GROUPING_OPTION))
+                {
+                    sb.append(ex.get()).append(", ");
+                }
+                sb.setLength(sb.length()-2);
+                atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(sb.toString()));
             }
-            sb.setLength(sb.length()-2);
-            atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(sb.toString()));
+            else
+                atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + " FIELD(s)"));
         }
-        else
-            atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputRowType.toString()));
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputType.toString()));

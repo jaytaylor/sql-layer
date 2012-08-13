@@ -1,5 +1,5 @@
 PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], aid:int[INT], cid:int[INT], state:char(2)[VARCHAR], city:varchar(100)[VARCHAR]]
-  project(Field(0), Field(1), Field(2), Field(3), Field(4), Field(5))
+  Project_Default(Field(0), Field(1), Field(2), Field(3), Field(4), Field(5))
     Flatten_HKeyOrdered(test.customers INNER test.addresses)
       AncestorLookup_Default(Index(test.addresses.state[IndexColumn(state)]) -> [test.customers, test.addresses])
         Intersect_Ordered(skip 1 from left, skip 1 from right, compare 1)

@@ -1,10 +1,10 @@
 PhysicalSelect@bd056de[name, order_date, state]
-  project(Field(1), Field(8), Field(4))
+  Project_Default(Field(1), Field(8), Field(4))
     Product_NestedLoops(flatten(test.customers, test.addresses) x flatten(test.customers, test.orders))
-      Filter_Default([flatten(test.customers, test.addresses)])
+      Filter_Default(flatten(test.customers, test.addresses))
         Flatten_HKeyOrdered(test.customers INNER test.addresses)
           BranchLookup_Default(_akiban_customers Index(test.customers.name[IndexColumn(name)]) -> test.customers limit NO LIMIT)
             IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(IBM)],<=UnboundExpressions[Literal(IBM)]))
-      Filter_Default([flatten(test.customers, test.orders)])
+      Filter_Default(flatten(test.customers, test.orders))
         Flatten_HKeyOrdered(test.customers INNER test.orders)
           BranchLookup_Nested(_akiban_customers test.customers -> test.orders)

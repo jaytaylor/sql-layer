@@ -1,6 +1,6 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  project(Field(1))
-    Filter_Default([flatten(test.customers, test.items)])
+  Project_Default(Field(1))
+    Filter_Default(flatten(test.customers, test.items))
       Flatten_HKeyOrdered(test.customers INNER test.items)
         AncestorLookup_Default(test.orders -> [test.customers])
           BranchLookup_Default(_akiban_customers Index(test.orders.order_date[IndexColumn(order_date)]) -> test.orders limit NO LIMIT)

@@ -27,8 +27,8 @@
 - Statement: INSERT INTO t VALUES(1, 'fred'), (2, 'barney')
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project(Field(0))'],
-           ['  Filter_Default([test.t])'],
+- output: [['Project_Default(Field(0))'],
+           ['  Filter_Default(test.t)'],
            ['    Select_HKeyOrdered(Field(1) == Variable(pos=0))'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
@@ -50,7 +50,7 @@
 - Statement: CREATE INDEX t_s ON t(s)
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project(Field(0))'],
+- output: [['Project_Default(Field(0))'],
            ['  AncestorLookup_Default(Index(test.t.t_s[IndexColumn(s)]) -> [test.t])'],
            ['    IndexScan_Default(Index(test.t.t_s[IndexColumn(s)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))']]
 ---
@@ -67,7 +67,7 @@
 - Statement: SET cbo TO 'true'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project(Field(0))'],
+- output: [['Project_Default(Field(0))'],
            ['  AncestorLookup_Default(Index(test.t.t_s[IndexColumn(s)]) -> [test.t])'],
            ['    IndexScan_Default(Index(test.t.t_s[IndexColumn(s)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))']]
 ---
@@ -83,16 +83,16 @@
 - Statement: DROP INDEX t_s
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project(Field(0))'],
-           ['  Filter_Default([test.t])'],
+- output: [['Project_Default(Field(0))'],
+           ['  Filter_Default(test.t)'],
            ['    Select_HKeyOrdered(Field(1) == Variable(pos=0))'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
 - Statement: SET cbo TO 'false'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project(Field(0))'],
-           ['  Filter_Default([test.t])'],
+- output: [['Project_Default(Field(0))'],
+           ['  Filter_Default(test.t)'],
            ['    Select_HKeyOrdered(Field(1) == Variable(pos=0))'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---

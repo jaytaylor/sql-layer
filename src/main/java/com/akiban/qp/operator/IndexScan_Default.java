@@ -218,8 +218,8 @@ class IndexScan_Default extends Operator
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("IndexScan_Default"));
         atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.toString()));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
-        atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.getIndexName().getName()));
-        if (extraInfo != null)
+        atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.toString()));
+        if (extraInfo != null && extraInfo.containsKey(this))
         {
             List<Explainer> columns = ((Attributes)extraInfo.get(this).get()).get(Label.COLUMN_NAME);
             for (Explainer column : columns)

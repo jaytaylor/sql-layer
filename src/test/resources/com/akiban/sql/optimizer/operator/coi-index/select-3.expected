@@ -1,5 +1,5 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  project(Field(1), Field(4), Field(7), Field(8))
+  Project_Default(Field(1), Field(4), Field(7), Field(8))
     Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
       Flatten_HKeyOrdered(test.customers INNER test.orders)
         Select_HKeyOrdered(Field(3) == 100)

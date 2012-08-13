@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Update_Default(Filter_Default([test.items]) -> ExpressionRowUpdateFunction([null, null, Literal(42), Field(3)]))
-    Filter_Default([test.items])
+  Update_Default(Filter_Default(test.items) -> ExpressionRowUpdateFunction([null, null, Literal(42), Field(3)]))
+    Filter_Default(test.items)
       GroupScan_Default(full scan on _akiban_customers)

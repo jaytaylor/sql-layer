@@ -1,11 +1,11 @@
 PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], oid:int[INT], cid:int[INT], order_date:date[DATE], id:int[INT], pid:int[INT], name:varchar(256)[VARCHAR], iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
   Map_NestedLoops
-    Filter_Default([test.child])
+    Filter_Default(test.child)
       GroupScan_Default(full scan on _akiban_parent)
     Map_NestedLoops
       Flatten_HKeyOrdered(test.customers INNER test.orders)
         AncestorLookup_Default(Index(test.orders.PRIMARY[IndexColumn(oid)]) -> [test.customers, test.orders])
           IndexScan_Default(Index(test.orders.PRIMARY[IndexColumn(oid)]) (>=UnboundExpressions[Bound(0,Field(1))],<=UnboundExpressions[Bound(0,Field(1))]))
-      project(Bound(1,Field(0)), Bound(1,Field(1)), Bound(1,Field(2)), Bound(1,Field(3)), Bound(1,Field(4)), Bound(0,Field(0)), Bound(0,Field(1)), Bound(0,Field(2)), Field(0), Field(1), Field(2), Field(3))
+      Project_Default(Bound(1,Field(0)), Bound(1,Field(1)), Bound(1,Field(2)), Bound(1,Field(3)), Bound(1,Field(4)), Bound(0,Field(0)), Bound(0,Field(1)), Bound(0,Field(2)), Field(0), Field(1), Field(2), Field(3))
         AncestorLookup_Default(Index(test.items.__akiban_fk_1[IndexColumn(oid)]) -> [test.items])
           IndexScan_Default(Index(test.items.__akiban_fk_1[IndexColumn(oid)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))

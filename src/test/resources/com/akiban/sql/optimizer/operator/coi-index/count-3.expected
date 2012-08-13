@@ -1,5 +1,5 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
-  project(Field(0))
+  Project_Default(Field(0))
     Count_Default(flatten(flatten(test.customers, test.orders), test.items))
       Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
         Flatten_HKeyOrdered(test.customers INNER test.orders)

@@ -302,6 +302,8 @@ public class BranchLookup_Nested extends Operator
             else
                 ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
         }
+        else
+            ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
         
         return ex;
     }

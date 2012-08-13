@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Insert_Default(project(Field(0), Field(1)))
-    project(Field(0), Field(1))
+  Insert_Default(Project_Default(Field(0), Field(1)))
+    Project_Default(Field(0), Field(1))
       ValuesScan_Default[ImmutableRow[4, Brown]]

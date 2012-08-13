@@ -1,6 +1,6 @@
 PhysicalSelect[cid:int[INT]]
-  project(Field(0))
-    Filter_Default([flatten(test.customers, test.addresses)])
+  Project_Default(Field(0))
+    Filter_Default(flatten(test.customers, test.addresses))
       Flatten_HKeyOrdered(test.customers INNER test.addresses)
         Select_HKeyOrdered(Field(2) == 'CA')
           BranchLookup_Default(_akiban_customers test.customers -> test.addresses limit NO LIMIT)

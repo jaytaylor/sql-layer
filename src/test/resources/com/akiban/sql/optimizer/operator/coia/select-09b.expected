@@ -1,3 +1,3 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  project(NULL)
+  Project_Default(NULL)
     ValuesScan_Default[]

@@ -1,9 +1,9 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[VARCHAR]]
-  project(Field(1), Field(4), Field(7))
+  Project_Default(Field(1), Field(4), Field(7))
     Product_NestedLoops(flatten(test.customers, test.orders) x flatten(test.customers, test.addresses))
       Flatten_HKeyOrdered(test.customers INNER test.orders)
         AncestorLookup_Default(Index(test.orders.order_date[IndexColumn(order_date)]) -> [test.customers, test.orders])
           IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[Literal(2011-01-01)],<UnboundExpressions[Literal(NULL)]))
-      Filter_Default([flatten(test.customers, test.addresses)])
+      Filter_Default(flatten(test.customers, test.addresses))
         Flatten_HKeyOrdered(test.customers INNER test.addresses)
           BranchLookup_Nested(_akiban_customers test.customers -> test.addresses)

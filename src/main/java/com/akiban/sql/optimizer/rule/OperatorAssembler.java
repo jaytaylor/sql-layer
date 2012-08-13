@@ -827,6 +827,7 @@ public class OperatorAssembler extends BaseRule
                     usePValues);
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
+
             return stream;
         }
 

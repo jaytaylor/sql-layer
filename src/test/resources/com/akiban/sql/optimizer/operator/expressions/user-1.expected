@@ -1,3 +1,3 @@
 PhysicalSelect[INTEGER][_SQL_COL_1:VARCHAR(128)]
-  project(CURRENT_USER())
+  Project_Default(CURRENT_USER())
     IndexScan_Default(Index(test.items.__akiban_fk_1[IndexColumn(oid)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))

@@ -1,9 +1,9 @@
 PhysicalSelect[order_date:date[DATE]]
   Map_NestedLoops
-    Filter_Default([test.orders])
+    Filter_Default(test.orders)
       BranchLookup_Default(_akiban_customers Index(test.customers.name[IndexColumn(name)]) -> test.customers limit NO LIMIT)
         IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Smith)],<=UnboundExpressions[Literal(Smith)]))
-    project(Bound(0,Field(2)))
+    Project_Default(Bound(0,Field(2)))
       IfEmpty_Default(Literal(NULL), Literal(NULL), Literal(NULL), Literal(NULL), DISCARD_INPUT)
         Limit_Default(limit=1: Select_HKeyOrdered(Field(2) == Bound(0,Field(0))))
           Select_HKeyOrdered(Field(2) == Bound(0,Field(0)))

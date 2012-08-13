@@ -1,7 +1,7 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], quan:int[INT]]
-  project(Field(1), Field(8))
+  Project_Default(Field(1), Field(8))
     Sort_Tree(flatten(flatten(test.customers, test.orders), test.items))
-      Filter_Default([flatten(flatten(test.customers, test.orders), test.items)])
+      Filter_Default(flatten(flatten(test.customers, test.orders), test.items))
         Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
           Flatten_HKeyOrdered(test.customers INNER test.orders)
             BranchLookup_Default(_akiban_customers test.customers -> test.orders limit NO LIMIT)
