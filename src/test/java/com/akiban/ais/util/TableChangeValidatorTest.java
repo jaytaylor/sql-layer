@@ -27,7 +27,6 @@
 package com.akiban.ais.util;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
@@ -37,20 +36,19 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static com.akiban.ais.util.ChangedTableDescription.ParentChange;
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.ais.util.TableChangeValidatorException.*;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class TableChangeValidatorTest {
     private static final String SCHEMA = "test";
@@ -80,7 +78,7 @@ public class TableChangeValidatorTest {
                                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
                                                  ChangeLevel expectedChangeLevel) {
         return validate(t1, t2, columnChanges, indexChanges, expectedChangeLevel,
-                        asList(changeDesc(TABLE_NAME, TABLE_NAME, false, "PRIMARY", "PRIMARY")),
+                        asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY")),
                         false, false, NO_INDEX_CHANGE);
     }
 
@@ -118,8 +116,8 @@ public class TableChangeValidatorTest {
         return map;
     }
 
-    private static String changeDesc(TableName oldName, TableName newName, boolean newGroup, String... indexPairs) {
-        return ChangedTableDescription.toString(oldName, newName, newGroup, map(indexPairs));
+    private static String changeDesc(TableName oldName, TableName newName, boolean newGroup, ParentChange parentChange, String... indexPairs) {
+        return ChangedTableDescription.toString(oldName, newName, newGroup, parentChange, map(indexPairs));
     }
 
 
@@ -146,7 +144,7 @@ public class TableChangeValidatorTest {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
         UserTable t2 = table(builder(name2).colBigInt("id").pk("id"));
         validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA,
-                 asList(changeDesc(TABLE_NAME, name2, false, "PRIMARY", "PRIMARY")));
+                 asList(changeDesc(TABLE_NAME, name2, false, ParentChange.NONE, "PRIMARY", "PRIMARY")));
     }
 
     //
@@ -359,7 +357,7 @@ public class TableChangeValidatorTest {
                  asList(TableChange.createModify("id", "id")),
                  asList(TableChange.createModify(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
-                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false)),
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE);
     }
 
@@ -371,7 +369,7 @@ public class TableChangeValidatorTest {
                  NO_CHANGES,
                  asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
                  ChangeLevel.GROUP,
-                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false)),
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
                  false, true, NO_INDEX_CHANGE);
     }
 
@@ -388,7 +386,7 @@ public class TableChangeValidatorTest {
                  NO_CHANGES,
                  asList(TableChange.createDrop("__akiban_fk")),
                  ChangeLevel.GROUP,
-                 asList(changeDesc(TABLE_NAME, TABLE_NAME, true)),
+                 asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP)),
                  true, false, NO_INDEX_CHANGE);
     }
 
@@ -413,8 +411,8 @@ public class TableChangeValidatorTest {
                 asList(TableChange.createDrop(Index.PRIMARY_KEY_CONSTRAINT)),
                 ChangeLevel.GROUP,
                 asList(
-                        changeDesc(oName, oName, false),
-                        changeDesc(iName, iName, true)
+                        changeDesc(oName, oName, false, ParentChange.NONE),
+                        changeDesc(iName, iName, true, ParentChange.DROP)
                 ),
                 false,
                 true,
@@ -444,7 +442,7 @@ public class TableChangeValidatorTest {
                 asList(TableChange.createDrop("l"), TableChange.createModify("s", "s"), TableChange.createAdd("v")),
                 asList(TableChange.createDrop("l"), TableChange.createAdd("v"), TableChange.createModify("k", "k")),
                 ChangeLevel.TABLE,
-                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, "PRIMARY", "PRIMARY", "d", "d"))
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY", "d", "d"))
         );
     }
 }

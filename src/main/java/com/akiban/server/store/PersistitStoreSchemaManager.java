@@ -419,20 +419,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
         final AkibanInformationSchema newAIS = AISCloner.clone(
                 getAis(),
-                new ProtobufWriter.WriteSelector() {
+                new ProtobufWriter.TableSelector() {
                     @Override
-                    public Columnar getSelected(Columnar columnar) {
-                        return columnar;
+                    public boolean isSelected(Columnar columnar) {
+                        return true;
                     }
 
                     @Override
                     public boolean isSelected(Index index) {
                         return !indexesToDrop.contains(index);
-                    }
-                    
-                    @Override 
-                    public boolean isSelected (Sequence sequence) {
-                        return true;
                     }
         });
 
@@ -461,7 +456,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             if(!oldName.equals(newName)) {
                 checkTableName(newName, false, false);
             }
-            checkJoinTo(desc.getNewDefinition().getParentJoin(), newName, false);
+            UserTable newTable = desc.getNewDefinition();
+            if(newTable != null) {
+                checkJoinTo(newTable.getParentJoin(), newName, false);
+            }
             schemas.add(oldName.getSchemaName());
             schemas.add(newName.getSchemaName());
         }
@@ -607,10 +605,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames, final Set<TableName> sequences) {
         return AISCloner.clone(
                 getAis(),
-                new ProtobufWriter.WriteSelector() {
+                new ProtobufWriter.TableSelector() {
                     @Override
-                    public Columnar getSelected(Columnar columnar) {
-                        return !tableNames.contains(columnar.getName()) ? columnar : null;
+                    public boolean isSelected(Columnar columnar) {
+                        return !tableNames.contains(columnar.getName());
                     }
 
                     @Override
@@ -626,7 +624,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                         }
                         return true;
                     }
-                    @Override 
+
+                    @Override
                     public boolean isSelected(Sequence sequence) {
                         return !sequences.contains(sequence.getSequenceName());
                     }
