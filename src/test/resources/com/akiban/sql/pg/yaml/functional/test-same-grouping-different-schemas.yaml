@@ -1,0 +1,28 @@
+# Same grouping, with GIs, in two different schemas
+# Inspired by bug 1034971
+---
+# First schema
+- Statement: CREATE SCHEMA s1
+---
+- Statement: CREATE TABLE schema_s1.table_p (pid INT NOT NULL PRIMARY KEY, pcol VARCHAR(32));
+---
+- Statement: CREATE TABLE schema_s1.table_c (
+                cid INT NOT NULL PRIMARY KEY,
+                pid INT NOT NULL,
+                ccol VARCHAR(32),
+                GROUPING FOREIGN KEY (pid) REFERENCES table_p (pid));
+---
+- Statement: CREATE SCHEMA s2
+---
+- Statement: CREATE TABLE schema_s2.table_p (pid INT NOT NULL PRIMARY KEY, pcol VARCHAR(32));
+---
+- Statement: CREATE TABLE schema_s2.table_c (
+                cid INT NOT NULL PRIMARY KEY,
+                pid INT NOT NULL,
+                ccol VARCHAR(32),
+                GROUPING FOREIGN KEY (pid) REFERENCES table_p (pid));
+---
+- Statement: CREATE INDEX thegi ON schema_s1.table_c(schema_NUM.table_p.pcol, schema_NUM.table_c.ccol) USING LEFT JOIN;
+---
+- Statement: CREATE INDEX thegi ON schema_s2.table_c(schema_NUM.table_p.pcol, schema_NUM.table_c.ccol) USING LEFT JOIN;
+...
