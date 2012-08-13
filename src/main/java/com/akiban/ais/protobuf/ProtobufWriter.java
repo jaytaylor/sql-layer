@@ -252,7 +252,8 @@ public class ProtobufWriter {
         for(UserTable table : schema.getUserTables().values()) {
             table = (UserTable)selector.getSelected(table);
             if(table != null) {
-                if((table.getParentJoin() == null) && selector.isSelected(table.getGroup())) {
+                Group group = table.getGroup();
+                if((table.getParentJoin() == null) && (group != null) && selector.isSelected(group)) {
                     writeGroup(schemaBuilder, table.getGroup(), selector);
                 }
                 writeTable(schemaBuilder, table, selector);
