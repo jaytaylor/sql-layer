@@ -102,8 +102,8 @@ public class SpaceLatLon extends Space
 
     private static final long SCALE = 1000L * 1000L; // 10^6 (see derivation above)
     private static final int LOG_SCALE = 6; // log10(scale)
-    private static final long MIN_LAT_SCALED = -90 * SCALE;
-    private static final long MAX_LAT_SCALED = 90 * SCALE;
-    private static final long MIN_LON_SCALED = -180 * SCALE;
-    private static final long MAX_LON_SCALED = 180 * SCALE;
+    static final long MIN_LAT_SCALED = -90 * SCALE;
+    static final long MAX_LAT_SCALED = 90 * SCALE;
+    static final long MIN_LON_SCALED = -180 * SCALE;
+    static final long MAX_LON_SCALED = 180 * SCALE;
 }

@@ -30,68 +30,25 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
-public class BoxLatLon implements SpatialObject
+public abstract class BoxLatLon implements SpatialObject
 {
-    // Object interface
-
-    @Override
-    public String toString()
+    public static BoxLatLon newBox(BigDecimal latLoDecimal,
+                                   BigDecimal latHiDecimal,
+                                   BigDecimal lonLoDecimal,
+                                   BigDecimal lonHiDecimal)
     {
-        return String.format("(%s:%s, %s:%s)", latLo, latHi, lonLo, lonHi);
-    }
-
-    // SpatialObject interface
-
-    public long[] arbitraryPoint()
-    {
-        return new long[]{latLo, lonLo};
-    }
-
-    public boolean containedBy(Region region)
-    {
-        long rLatLo = region.lo(0);
-        long rLonLo = region.lo(1);
-        long rLatHi = region.hi(0);
-        long rLonHi = region.hi(1);
-        return rLatLo <= latLo && latHi <= rLatHi && rLonLo <= lonLo && lonHi <= rLonHi;
-    }
-
-    public RegionComparison compare(Region region)
-    {
-        long rLatLo = region.lo(0);
-        long rLonLo = region.lo(1);
-        long rLatHi = region.hi(0);
-        long rLonHi = region.hi(1);
-        if (latLo <= rLatLo && rLatHi <= latHi && lonLo <= rLonLo && rLonHi <= lonHi) {
-            return RegionComparison.INSIDE;
-        } else if (rLatHi < latLo || rLatLo > latHi || rLonHi < lonLo || rLonLo > lonHi) {
-            return RegionComparison.OUTSIDE;
-        } else {
-            return RegionComparison.OVERLAP;
-        }
-    }
-
-    // BoxLatLon interface
-
-    public BoxLatLon(BigDecimal latLo, BigDecimal latHi, BigDecimal lonLo, BigDecimal lonHi)
-    {
-        // SpaceLatLon.scale will truncate and fractional part. That's OK for latLo and lonLo. For latHi and lonHi,
-        // we want to round up, to represent the fact that the box represented by the coarser (scaled) space
-        // is not empty.
-        this.latLo = SpaceLatLon.scaleLat(latLo);
-        this.latHi = SpaceLatLon.scaleLat(latHi.round(ROUND_UP));
-        this.lonLo = SpaceLatLon.scaleLon(lonLo);
-        this.lonHi = SpaceLatLon.scaleLon(lonHi.round(ROUND_UP));
+        long latLo = SpaceLatLon.scaleLat(latLoDecimal);
+        long latHi = SpaceLatLon.scaleLat(latHiDecimal.round(ROUND_UP));
+        long lonLo = SpaceLatLon.scaleLon(lonLoDecimal);
+        long lonHi = SpaceLatLon.scaleLon(lonHiDecimal.round(ROUND_UP));
+        return 
+            lonLo <= lonHi
+            ? new BoxLatLonWithoutWraparound(latLo, latHi, lonLo, lonHi)
+            : new BoxLatLonWithWraparound(latLo, latHi, lonLo, lonHi);
+            
     }
 
     // Class state
 
     private static final MathContext ROUND_UP = new MathContext(0, RoundingMode.CEILING);
-
-    // Object state
-
-    private final long latLo;
-    private final long latHi;
-    private final long lonLo;
-    private final long lonHi;
 }
