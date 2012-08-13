@@ -195,20 +195,21 @@ public class PlanCostEstimator
                     BigDecimal lat = (BigDecimal)((ConstantExpression)latExpression).getValue();
                     BigDecimal lon = (BigDecimal)((ConstantExpression)lonExpression).getValue();
                     BigDecimal r = (BigDecimal)((ConstantExpression)rExpression).getValue();
-                    BoxLatLon box = new BoxLatLon(lat.subtract(r), lat.add(r), lon.subtract(r), lon.add(r));
+                    BoxLatLon box = BoxLatLon.newBox(lat.subtract(r), lat.add(r), lon.subtract(r), lon.add(r));
                     long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
                     space.decompose(box, zValues);
-                    int i = 0;
-                    long z;
-                    while ((z = zValues[i++]) != -1L) {
-                        ExpressionNode lo = new ConstantExpression(space.zLo(z), AkType.LONG);
-                        ExpressionNode hi = new ConstantExpression(space.zHi(z), AkType.LONG);
-                        CostEstimate zScanCost =
-                            costEstimator.costIndexScan(index.getIndex(), null, lo, true, hi, true);
-                        costEstimate =
-                            costEstimate == null
-                            ? zScanCost
-                            : costEstimate.sequence(zScanCost);
+                    for (int i = 0; i < SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES; i++) {
+                        long z;
+                        if ((z = zValues[i++]) != -1L) {
+                            ExpressionNode lo = new ConstantExpression(space.zLo(z), AkType.LONG);
+                            ExpressionNode hi = new ConstantExpression(space.zHi(z), AkType.LONG);
+                            CostEstimate zScanCost =
+                                costEstimator.costIndexScan(index.getIndex(), null, lo, true, hi, true);
+                            costEstimate =
+                                costEstimate == null
+                                ? zScanCost
+                                : costEstimate.union(zScanCost);
+                        }
                     }
                 }
             }
