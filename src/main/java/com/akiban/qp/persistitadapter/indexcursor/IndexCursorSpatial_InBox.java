@@ -132,7 +132,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
         BigDecimal yLo = loExpressions.eval(1).getDecimal();
         BigDecimal yHi = hiExpressions.eval(1).getDecimal();
         BoxLatLon box = new BoxLatLon(xLo, xHi, yLo, yHi);
-        long[] zValues = new long[4];
+        long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
         space.decompose(box, zValues);
         for (int i = 0; i < zValues.length; i++) {
             long z = zValues[i];
