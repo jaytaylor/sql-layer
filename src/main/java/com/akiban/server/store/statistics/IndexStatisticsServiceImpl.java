@@ -390,6 +390,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 }
                 return file.getAbsolutePath();
             }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            }
             finally {
                 session.close();
             }
@@ -404,6 +408,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 writer.close();
                 return writer.toString();
             }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            }
             finally {
                 session.close();
             }
@@ -416,6 +424,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             try {
                 File file = new File(fromFile);
                 IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+            }
+            catch (RuntimeException ex) {
+                log.error("Error loading " + schema, ex);
+                throw ex;
             }
             finally {
                 session.close();
