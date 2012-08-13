@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule.cost;
 
+import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import static com.akiban.sql.optimizer.rule.OperatorAssembler.INSERTION_SORT_MAX_LIMIT;
@@ -174,35 +175,43 @@ public class PlanCostEstimator
 
         @Override
         protected void estimateCost() {
-            ExpressionNode lo = null, hi = null;
             int nscans = 1;
             FunctionExpression func = (FunctionExpression)index.getLowComparand();
             List<ExpressionNode> operands = func.getOperands();
             SpaceLatLon space = (SpaceLatLon)((TableIndex)index.getIndex()).space();
             if ("_center".equals(func.getFunction())) {
                 nscans = 2;     // One in each direction.
-            }
-            else if ("_center_radius".equals(func.getFunction())) {
-                ExpressionNode lat = operands.get(0);
-                ExpressionNode lon = operands.get(1);
-                ExpressionNode r = operands.get(2);
-                if ((lat instanceof ConstantExpression) &&
-                    (lat.getAkType() == AkType.DECIMAL) &&
-                    (lon instanceof ConstantExpression) &&
-                    (lon.getAkType() == AkType.DECIMAL) &&
-                    (r instanceof ConstantExpression) &&
-                    (r.getAkType() == AkType.DECIMAL)) {
-                    BigDecimal n1 = (BigDecimal)((ConstantExpression)lat).getValue();
-                    BigDecimal n2 = (BigDecimal)((ConstantExpression)lon).getValue();
-                    BigDecimal n = (BigDecimal)((ConstantExpression)r).getValue();
-                    long l1 = space.shuffle(n1.subtract(n), n2.subtract(n));
-                    long l2 = space.shuffle(n1.add(n), n2.add(n));
-                    lo = new ConstantExpression(l1, AkType.LONG);
-                    hi = new ConstantExpression(l2, AkType.LONG);
+                costEstimate = costEstimator.costIndexScan(index.getIndex(), null, null, true, null, true);
+            } else if ("_center_radius".equals(func.getFunction())) {
+                ExpressionNode latExpression = operands.get(0);
+                ExpressionNode lonExpression = operands.get(1);
+                ExpressionNode rExpression = operands.get(2);
+                if ((latExpression instanceof ConstantExpression) &&
+                    (latExpression.getAkType() == AkType.DECIMAL) &&
+                    (lonExpression instanceof ConstantExpression) &&
+                    (lonExpression.getAkType() == AkType.DECIMAL) &&
+                    (rExpression instanceof ConstantExpression) &&
+                    (rExpression.getAkType() == AkType.DECIMAL)) {
+                    BigDecimal lat = (BigDecimal)((ConstantExpression)latExpression).getValue();
+                    BigDecimal lon = (BigDecimal)((ConstantExpression)lonExpression).getValue();
+                    BigDecimal r = (BigDecimal)((ConstantExpression)rExpression).getValue();
+                    BoxLatLon box = new BoxLatLon(lat.subtract(r), lat.add(r), lon.subtract(r), lon.add(r));
+                    long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
+                    space.decompose(box, zValues);
+                    int i = 0;
+                    long z;
+                    while ((z = zValues[i++]) != -1L) {
+                        ExpressionNode lo = new ConstantExpression(space.zLo(z), AkType.LONG);
+                        ExpressionNode hi = new ConstantExpression(space.zHi(z), AkType.LONG);
+                        CostEstimate zScanCost =
+                            costEstimator.costIndexScan(index.getIndex(), null, lo, true, hi, true);
+                        costEstimate =
+                            costEstimate == null
+                            ? zScanCost
+                            : costEstimate.sequence(zScanCost);
+                    }
                 }
             }
-            costEstimate = costEstimator.costIndexScan(index.getIndex(), null, 
-                                                       lo, true, hi, true);
             index.setScanCostEstimate(costEstimate);
             long totalRows = costEstimate.getRowCount();
             long nrows = totalRows;
