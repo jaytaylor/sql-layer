@@ -28,7 +28,6 @@ package com.akiban.server.store;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -37,6 +36,7 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.service.session.Session;
 
@@ -130,11 +130,9 @@ public interface SchemaManager {
     /**
      * Change an existing table definition to be new value specified.
      * @param session Session to operate under.
-     * @param tableName Name of the table being changed.
-     * @param newDefinition New definition of the table.
-     * @param indexNameMap Mapping of new index names to old
+     * @param alteredTables Description of tables being altered.
      */
-    void alterTableDefinition(Session session, TableName tableName, UserTable newDefinition, Map<String,String> indexNameMap);
+    void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables);
 
     /**
      * Generate a TableDefinition, which includes a canonical 'create table' statement,

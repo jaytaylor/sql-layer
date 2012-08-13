@@ -73,6 +73,20 @@ public class UserTable extends Table
             primaryKey = new PrimaryKey(index);
         }
     }
+
+    @Override
+    public void dropColumns() {
+        columnsStale = true;
+        super.dropColumns();
+    }
+
+    @Override
+    public void removeIndexes(Collection<TableIndex> indexesToDrop) {
+        if((primaryKey != null) && indexesToDrop.contains(primaryKey.getIndex())) {
+            primaryKey = null;
+        }
+        super.removeIndexes(indexesToDrop);
+    }
     
     /**
     * Returns the columns in this table that are constrained to match the given column, e.g.
@@ -275,6 +289,24 @@ public class UserTable extends Table
         for (Index index : getIndexes()) {
             index.traversePostOrder(visitor);
             visitor.visitIndex(index);
+        }
+    }
+
+    public void traverseTableAndDescendents(Visitor visitor) {
+        List<UserTable> remainingTables = new ArrayList<UserTable>();
+        List<Join> remainingJoins = new ArrayList<Join>();
+        remainingTables.add(this);
+        remainingJoins.addAll(getChildJoins());
+        // Add before visit in-case visitor changes group or joins
+        while(!remainingJoins.isEmpty()) {
+            Join join = remainingJoins.remove(remainingJoins.size() - 1);
+            UserTable child = join.getChild();
+            remainingTables.add(child);
+            remainingJoins.addAll(child.getChildJoins());
+        }
+        while(!remainingTables.isEmpty()) {
+            UserTable table = remainingTables.remove(remainingTables.size() - 1);
+            visitor.visitUserTable(table);
         }
     }
 

@@ -26,66 +26,40 @@
 
 package com.akiban.ais.model;
 
-public class IndexName implements Comparable<IndexName>
-{
-    private final TableName tableName;
-    private final String indexName;
-
-    public IndexName(TableName tableName, String indexName)
-    {
-        this.tableName = tableName;
-        this.indexName = indexName;
+public class NopVisitor implements Visitor {
+    @Override
+    public void visitType(Type type) {
     }
 
     @Override
-    public String toString()
-    {
-        return tableName.toString() + "." + indexName;
-    }
-
-    public String getSchemaName()
-    {
-        return tableName.getSchemaName();
-    }
-
-    public String getTableName()
-    {
-        return tableName.getTableName();
-    }
-
-    public String getName()
-    {
-        return indexName;
+    public void visitGroup(Group group) {
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj)
-            return true;
-        if (! (obj instanceof IndexName))
-            return false;
-        IndexName o = (IndexName) obj;
-
-        return getSchemaName().equals(o.getSchemaName()) &&
-               getTableName().equals(o.getTableName()) &&
-               getName().equals(o.getName());
-    }
-    
-    @Override
-    public int hashCode()
-    {
-        return getSchemaName().hashCode() +
-               getTableName().hashCode() +
-               getName().hashCode();
+    public void visitUserTable(UserTable userTable) {
     }
 
     @Override
-    public int compareTo(IndexName o) {
-        int c = tableName.compareTo(o.tableName);
-        if(c == 0) {
-            c = indexName.compareTo(o.indexName);
-        }
-        return c;
+    public void visitGroupTable(GroupTable groupTable) {
+    }
+
+    @Override
+    public void visitColumn(Column column) {
+    }
+
+    @Override
+    public void visitJoin(Join join) {
+    }
+
+    @Override
+    public void visitJoinColumn(JoinColumn joinColumn) {
+    }
+
+    @Override
+    public void visitIndex(Index index) {
+    }
+
+    @Override
+    public void visitIndexColumn(IndexColumn indexColumn) {
     }
 }

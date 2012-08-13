@@ -37,6 +37,7 @@ import com.akiban.server.types3.pvalue.PValueTargets;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
+    private final RowType rowType;
     private final ValueHolder[] overlays;
     protected final PValue[] pOverlays;
 
@@ -45,7 +46,12 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     public OverlayingRow(Row underlying, boolean usePValues) {
+        this(underlying, underlying.rowType(), usePValues);
+    }
+
+    public OverlayingRow(Row underlying, RowType rowType, boolean usePValues) {
         this.underlying = underlying;
+        this.rowType = rowType;
         if (usePValues) {
             this.overlays = null;
             this.pOverlays = new PValue[underlying.rowType().nFields()];
@@ -86,7 +92,7 @@ public final class OverlayingRow extends AbstractRow {
 
     @Override
     public RowType rowType() {
-        return underlying.rowType();
+        return rowType;
     }
 
     @Override

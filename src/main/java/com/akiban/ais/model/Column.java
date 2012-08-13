@@ -78,9 +78,17 @@ public class Column implements ColumnContainer
      * */
     public static Column create(Columnar columnar, Column column, Integer position) {
         Integer finalPosition = (position != null) ? position : column.position;
-        return create(columnar, column.columnName, finalPosition, column.type, column.nullable, column.typeParameter1,
-                      column.typeParameter2, column.initialAutoIncrementValue, column.charsetAndCollation,
-                      column.maxStorageSize, column.prefixSize);
+        Column out = create(columnar, column.columnName, finalPosition, column.type, column.nullable, column.typeParameter1,
+                            column.typeParameter2, column.initialAutoIncrementValue, column.charsetAndCollation,
+                            column.maxStorageSize, column.prefixSize);
+        if(column.identityGenerator != null) {
+            Sequence newGenerator = columnar.getAIS().getSequence(column.identityGenerator.getSequenceName());
+            if(newGenerator != null) {
+                out.setDefaultIdentity(column.defaultIdentity);
+                out.setIdentityGenerator(newGenerator);
+            }
+        }
+        return out;
     }
 
     public TInstance tInstance() {
@@ -703,8 +711,8 @@ public class Column implements ColumnContainer
     private final String columnName;
     private final Type type;
     private final Columnar table;
+    private final Integer position;
     private Boolean nullable;
-    private Integer position;
     private Long typeParameter1;
     private Long typeParameter2;
     private Long initialAutoIncrementValue;

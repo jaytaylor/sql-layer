@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.PrimaryKey;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
 import com.akiban.server.service.session.Session;
@@ -42,6 +44,7 @@ import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.FKConstraintDefinitionNode;
 import com.akiban.sql.parser.RenameNode;
 import com.akiban.sql.parser.ResultColumn;
+import com.akiban.sql.parser.ResultColumnList;
 import com.akiban.sql.parser.TableElementNode;
 
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -186,7 +189,7 @@ public class TableDDL
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
                     addParentTable(builder, ddlFunctions.getAIS(session), fkdn, schemaName);
-                    addJoin (builder, fkdn, schemaName, tableName);
+                    addJoin (builder, fkdn, schemaName, schemaName, tableName);
                 } else {
                     throw new UnsupportedFKIndexException();
                 }
@@ -288,26 +291,24 @@ public class TableDDL
         }
         return indexName;
     }
-    
-    private static void addJoin(final AISBuilder builder, final FKConstraintDefinitionNode fkdn, 
-            final String schemaName, final String tableName)  {
 
- 
-        String parentSchemaName = fkdn.getRefTableName().hasSchema() ?
-                fkdn.getRefTableName().getSchemaName() : schemaName;
-        String parentTableName = fkdn.getRefTableName().getTableName();
-        String groupName = parentTableName;
-        
+    public static TableName getReferencedName(String schemaName, FKConstraintDefinitionNode fkdn) {
+        return convertName(schemaName, fkdn.getRefTableName());
+    }
+
+    public static void addJoin(final AISBuilder builder, final FKConstraintDefinitionNode fkdn,
+                               final String defaultSchemaName, final String schemaName, final String tableName)  {
+        TableName parentName = getReferencedName(defaultSchemaName, fkdn);
         String joinName = String.format("%s/%s/%s/%s",
-                parentSchemaName, parentTableName, 
-                schemaName, tableName);
+                                        parentName.getSchemaName(),
+                                        parentName.getTableName(),
+                                        schemaName, tableName);
 
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         // Check parent table exists
-        UserTable parentTable = ais.getUserTable(parentSchemaName, parentTableName);
+        UserTable parentTable = ais.getUserTable(parentName);
         if (parentTable == null) {
-            throw new JoinToUnknownTableException(new TableName(schemaName, tableName),
-                                                  new TableName(parentSchemaName, parentTableName));
+            throw new JoinToUnknownTableException(new TableName(schemaName, tableName), parentName);
         }
         // Check child table exists
         UserTable childTable = ais.getUserTable(schemaName, tableName);
@@ -315,70 +316,64 @@ public class TableDDL
             throw new NoSuchTableException(schemaName, tableName);
         }
         // Check that fk list and pk list are the same size
-        if (fkdn.getColumnList().size() != parentTable.getPrimaryKeyIncludingInternal().getColumns().size()) {
+        String[] fkColumns = columnNamesFromListOrPK(fkdn.getColumnList(), null); // No defaults for child table
+        String[] pkColumns = columnNamesFromListOrPK(fkdn.getRefResultColumnList(), parentTable.getPrimaryKey());
+
+        int actualPkColCount = parentTable.getPrimaryKeyIncludingInternal().getColumns().size();
+        if ((fkColumns.length != actualPkColCount) || (pkColumns.length != actualPkColCount)) {
             throw new JoinColumnMismatchException(fkdn.getColumnList().size(),
                                                   new TableName(schemaName, tableName),
-                                                  new TableName(parentSchemaName, parentTableName),
+                                                  parentName,
                                                   parentTable.getPrimaryKeyIncludingInternal().getColumns().size());
         }
-        // Check pk and fk columns exist
-        Iterator<ResultColumn> fkColumnScan = fkdn.getColumnList().iterator();
-        Iterator<ResultColumn> pkColumnScan = fkdn.getRefResultColumnList().iterator();
-        while (fkColumnScan.hasNext() && pkColumnScan.hasNext()) {
-            ResultColumn fkColumn = fkColumnScan.next();
-            ResultColumn pkColumn = pkColumnScan.next();
-            if (childTable.getColumn(fkColumn.getName()) == null) {
-                throw new NoSuchColumnException(String.format("%s.%s.%s", schemaName, tableName, fkColumn.getName()));
+
+        int colPos = 0;
+        while((colPos < fkColumns.length) && (colPos < pkColumns.length)) {
+            String fkColumn = fkColumns[colPos];
+            String pkColumn = pkColumns[colPos];
+            if (childTable.getColumn(fkColumn) == null) {
+                throw new NoSuchColumnException(String.format("%s.%s.%s", schemaName, tableName, fkColumn));
             }
-            if (parentTable.getColumn(pkColumn.getName()) == null) {
+            if (parentTable.getColumn(pkColumn) == null) {
                 throw new JoinToWrongColumnsException(new TableName(schemaName, tableName),
-                                                      fkColumn.getName(),
-                                                      new TableName(parentSchemaName, parentTableName),
-                                                      pkColumn.getName());
+                                                      fkColumn,
+                                                      parentName,
+                                                      pkColumn);
             }
+            ++colPos;
         }
 
-        builder.joinTables(joinName, parentSchemaName, parentTableName, schemaName, tableName);
-        
-        int colpos = 0;
-        for (ResultColumn column : fkdn.getColumnList()) {
-            String columnName = column.getName();
-            builder.joinColumns(joinName, 
-                    parentSchemaName, parentTableName, parentTable.getColumn(colpos).getName(),
-                    schemaName, tableName, columnName);
-            colpos++;
+        builder.joinTables(joinName, parentName.getSchemaName(), parentName.getTableName(), schemaName, tableName);
+
+        colPos = 0;
+        while(colPos < fkColumns.length) {
+            builder.joinColumns(joinName,
+                                parentName.getSchemaName(), parentName.getTableName(), pkColumns[colPos],
+                                schemaName, tableName, fkColumns[colPos]);
+            ++colPos;
         }
-        builder.addJoinToGroup(groupName, joinName, 0);
-        //builder.groupingIsComplete();
+        builder.addJoinToGroup(parentTable.getGroup().getName(), joinName, 0);
     }
     
     /**
-     * Add a minimal parent table (PK) with group to the builder based upon the AIS. 
-     * 
-     * @param builder
-     * @param ais
-     * @param fkdn
+     * Add a minimal parent table (PK) with group to the builder based upon the AIS.
      */
-    private static void addParentTable(final AISBuilder builder, 
-            final AkibanInformationSchema ais, final FKConstraintDefinitionNode fkdn, 
-            final String schemaName) {
+    public static void addParentTable(final AISBuilder builder, final AkibanInformationSchema ais,
+                                      final FKConstraintDefinitionNode fkdn, final String schemaName) {
 
-        String parentSchemaName = fkdn.getRefTableName().hasSchema() ?
-                fkdn.getRefTableName().getSchemaName() : schemaName;
-        String parentTableName = fkdn.getRefTableName().getTableName();
-        
-
-        UserTable parentTable = ais.getUserTable(parentSchemaName, parentTableName);
+        TableName parentName = getReferencedName(schemaName, fkdn);
+        UserTable parentTable = ais.getUserTable(parentName);
         if (parentTable == null) {
-            throw new NoSuchTableException (parentSchemaName, parentTableName);
+            throw new NoSuchTableException (parentName);
         }
 
-        builder.userTable(parentSchemaName, parentTableName);
+        builder.userTable(parentName.getSchemaName(), parentName.getTableName());
         
-        builder.index(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.index(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT, true,
+                      Index.PRIMARY_KEY_CONSTRAINT);
         int colpos = 0;
         for (Column column : parentTable.getPrimaryKeyIncludingInternal().getColumns()) {
-            builder.column(parentSchemaName, parentTableName,
+            builder.column(parentName.getSchemaName(), parentName.getTableName(),
                     column.getName(),
                     colpos,
                     column.getType().name(),
@@ -388,14 +383,42 @@ public class TableDDL
                     false, //column.getInitialAutoIncrementValue() != 0,
                     column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().charset() : null,
                     column.getCharsetAndCollation() != null ? column.getCharsetAndCollation().collation() : null);
-            builder.indexColumn(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, 
+            builder.indexColumn(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT,
                     column.getName(), colpos++, true, 0);
         }
-        builder.createGroup(parentTableName, parentSchemaName, "_akiban_" + parentTableName);
-        builder.addTableToGroup(parentTableName, parentSchemaName, parentTableName);
-        //builder.groupingIsComplete();
+        final String groupName;
+        final String groupSchema;
+        final String groupTableName;
+        if(parentTable.getGroup() == null) {
+            groupName = parentName.getTableName();
+            groupSchema = parentName.getSchemaName();
+            groupTableName = "_akiban_" + groupName;
+        } else {
+            TableName gtName = parentTable.getGroup().getGroupTable().getName();
+            groupName = parentTable.getGroup().getName();
+            groupSchema = gtName.getSchemaName();
+            groupTableName = gtName.getTableName();
+        }
+        builder.createGroup(groupName, groupSchema, groupTableName);
+        builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
     }
-    
+
+    private static String[] columnNamesFromListOrPK(ResultColumnList list, PrimaryKey pk) {
+        String[] names = (list == null) ? null: list.getColumnNames();
+        if(((names == null) || (names.length == 0)) && (pk != null)) {
+            Index index = pk.getIndex();
+            names = new String[index.getKeyColumns().size()];
+            int i = 0;
+            for(IndexColumn iCol : index.getKeyColumns()) {
+                names[i++] = iCol.getColumn().getName();
+            }
+        }
+        if(names == null) {
+            names = new String[0];
+        }
+        return names;
+    }
+
     private final static Map<TypeId, Type> typeMap  = typeMapping();
     
     private static Map<TypeId, Type> typeMapping() {

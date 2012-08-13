@@ -27,10 +27,18 @@
 package com.akiban.ais.util;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.DefaultNameGenerator;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.NopVisitor;
+import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.ArgumentValidation;
@@ -38,6 +46,7 @@ import com.akiban.util.MultipleCauseException;
 import com.google.common.base.Objects;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +54,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static com.akiban.ais.util.TableChangeValidatorException.*;
 
@@ -63,9 +74,11 @@ public class TableChangeValidator {
     private final List<TableChange> columnChanges;
     private final List<TableChange> indexChanges;
     private final List<RuntimeException> errors;
+    private final Collection<ChangedTableDescription> changedTables;
+    private final Collection<IndexName> autoAffectedGroupIndexes;
     private ChangeLevel finalChangeLevel;
-    private boolean parentChange;
-    private boolean childrenChange;
+    private boolean parentChanged;
+    private boolean primaryKeyChanged;
     private boolean didCompare;
 
     public TableChangeValidator(UserTable oldTable, UserTable newTable,
@@ -77,6 +90,8 @@ public class TableChangeValidator {
         this.columnChanges = (columnChanges == null) ? Collections.<TableChange>emptyList() : columnChanges;
         this.indexChanges = (indexChanges == null) ? Collections.<TableChange>emptyList() : indexChanges;
         this.errors = new ArrayList<RuntimeException>();
+        this.changedTables = new ArrayList<ChangedTableDescription>();
+        this.autoAffectedGroupIndexes = new TreeSet<IndexName>();
         this.finalChangeLevel = ChangeLevel.NONE;
     }
 
@@ -84,12 +99,20 @@ public class TableChangeValidator {
         return finalChangeLevel;
     }
 
-    public boolean didParentChange() {
-        return parentChange;
+    public Collection<ChangedTableDescription> getAllChangedTables() {
+        return changedTables;
     }
 
-    public boolean didChildrenChange() {
-        return childrenChange;
+    public Collection<IndexName> getAutoAffectedGroupIndexes() {
+        return autoAffectedGroupIndexes;
+    }
+
+    public boolean isParentChanged() {
+        return parentChanged;
+    }
+
+    public boolean isPrimaryKeyChanged() {
+        return primaryKeyChanged;
     }
 
     public void compare() {
@@ -130,7 +153,9 @@ public class TableChangeValidator {
     }
 
     private void compareTable() {
-        if(!oldTable.getName().equals(newTable.getName())) {
+        TableName oldName = oldTable.getName();
+        TableName newName = newTable.getName();
+        if(!oldName.equals(newName)) {
             updateFinalChangeLevel(ChangeLevel.METADATA);
         }
     }
@@ -138,10 +163,10 @@ public class TableChangeValidator {
     private void compareColumns() {
         Map<String,Column> oldColumns = new HashMap<String,Column>();
         Map<String,Column> newColumns = new HashMap<String,Column>();
-        for(Column column : oldTable.getColumnsIncludingInternal()) {
+        for(Column column : oldTable.getColumns()) {
             oldColumns.put(column.getName(), column);
         }
-        for(Column column : newTable.getColumnsIncludingInternal()) {
+        for(Column column : newTable.getColumns()) {
             newColumns.put(column.getName(), column);
         }
         checkChanges(ChangeLevel.TABLE, columnChanges, oldColumns, newColumns);
@@ -150,10 +175,10 @@ public class TableChangeValidator {
     private void compareIndexes() {
         Map<String,Index> oldIndexes = new HashMap<String,Index>();
         Map<String,Index> newIndexes = new HashMap<String,Index>();
-        for(Index index : oldTable.getIndexesIncludingInternal()) {
+        for(Index index : oldTable.getIndexes()) {
             oldIndexes.put(index.getIndexName().getName(), index);
         }
-        for(Index index : newTable.getIndexesIncludingInternal()) {
+        for(Index index : newTable.getIndexes()) {
             newIndexes.put(index.getIndexName().getName(), index);
         }
         checkChanges(ChangeLevel.INDEX, indexChanges, oldIndexes, newIndexes);
@@ -235,31 +260,101 @@ public class TableChangeValidator {
     }
 
     private void compareGrouping() {
-        // Note: PK (grouping) changes checked in compareColumns()
-        parentChange = joinChanged(oldTable.getParentJoin(), newTable.getParentJoin());
+        parentChanged = joinChanged(oldTable.getParentJoin(), newTable.getParentJoin());
+        primaryKeyChanged = containsOldOrNew(indexChanges, Index.PRIMARY_KEY_CONSTRAINT);
 
-        // PRIMARY was added or removed or column in PRIMARY was modified
-        // No need to inspect columnChanges as any affecting should is required (and checked) to be in indexChanges
-        childrenChange = false;
-        for(TableChange change : indexChanges) {
-            switch(change.getChangeType()) {
-                case DROP:
-                case MODIFY:
-                    if(Index.PRIMARY_KEY_CONSTRAINT.equals(change.getOldName()) ||
-                       Index.PRIMARY_KEY_CONSTRAINT.equals(change.getNewName())) {
-                        childrenChange = true;
-                    }
-                break;
+        Map<String,String> preserveIndexes = new TreeMap<String,String>();
+        changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, parentChanged, preserveIndexes));
+
+        if(!parentChanged && !primaryKeyChanged) {
+            for(Index index : newTable.getIndexes()) {
+                String oldName = index.getIndexName().getName();
+                String newName = findNewName(indexChanges, oldName);
+                if(!containsOldOrNew(indexChanges, oldName)) {
+                    preserveIndexes.put(oldName, newName);
+                }
             }
         }
 
-        if(parentChange || childrenChange) {
+        Collection<Join> childJoins = new ArrayList<Join>(newTable.getCandidateChildJoins());
+        for(Join join : childJoins) {
+            UserTable childTable = join.getChild();
+            childTable.removeCandidateParentJoin(join);
+
+            Join newJoin = Join.create(childTable.getAIS(), join.getName(), newTable, childTable);
+            newJoin.setGroup(newTable.getGroup());
+            for(JoinColumn joinCol : join.getJoinColumns()) {
+                String oldColName = joinCol.getParent().getColumn().getName();
+                String newName = findNewName(columnChanges, oldColName);
+                if(newName != null) {
+                    JoinColumn.create(newJoin, newTable.getColumn(newName), joinCol.getChild());
+                }
+            }
+
+            if(primaryKeyChanged || (newJoin.getJoinColumns().size() == 0)) {
+                childTable.removeCandidateParentJoin(newJoin);
+                propagateChange(childTable, true);
+            }
+            else if(parentChanged || (newJoin.getJoinColumns().size() != join.getJoinColumns().size())) {
+                propagateChange(childTable, false);
+            }
+        }
+
+        if(parentChanged || primaryKeyChanged || (changedTables.size() > 1)) {
             updateFinalChangeLevel(ChangeLevel.GROUP);
         }
     }
 
-    private String findNewColumnName(String oldName) {
-        for(TableChange change : columnChanges) {
+    private void propagateChange(final UserTable newRoot, final boolean withNewGroup) {
+        if(withNewGroup) {
+            NameGenerator generator = new DefaultNameGenerator();
+            String groupName = generator.generateGroupName(newRoot);
+            Group newGroup = Group.create(newRoot.getAIS(), groupName);
+            GroupTable groupTable = GroupTable.create(newRoot.getAIS(), newRoot.getName().getSchemaName(), generator.generateGroupTableName(groupName), 0);
+            groupTable.setGroup(newGroup);
+            newGroup.setGroupTable(groupTable);
+            newRoot.setGroup(newGroup);
+        }
+
+        newRoot.traverseTableAndDescendents(new NopVisitor() {
+            @Override
+            public void visitUserTable(UserTable curTable) {
+                trackChangedChild(newRoot);
+
+                if(withNewGroup && (curTable != newRoot)) {
+                    // Rebuild join
+                    curTable.setGroup(newRoot.getGroup());
+                    Join oldJoin = curTable.getParentJoin();
+                    curTable.removeCandidateParentJoin(oldJoin);
+
+                    Join newJoin = Join.create(curTable.getAIS(), oldJoin.getName(), oldJoin.getParent(),
+                                               oldJoin.getChild());
+                    newJoin.setGroup(newRoot.getGroup());
+                    for(JoinColumn joinColumn : oldJoin.getJoinColumns()) {
+                        JoinColumn.create(newJoin,
+                                          oldJoin.getParent().getColumn(joinColumn.getParent().getName()),
+                                          oldJoin.getChild().getColumn(joinColumn.getChild().getName()));
+                    }
+                }
+            }
+        });
+    }
+
+    private void trackChangedChild(UserTable table) {
+        changedTables.add(new ChangedTableDescription(table.getName(), table, true, new HashMap<String, String>()));
+    }
+
+    private static boolean containsOldOrNew(List<TableChange> changes, String name) {
+        for(TableChange change : changes) {
+            if(name.equals(change.getOldName()) || name.equals(change.getNewName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String findNewName(List<TableChange> changes, String oldName) {
+        for(TableChange change : changes) {
             if(oldName.equals(change.getOldName())) {
                 switch(change.getChangeType()) {
                     case DROP:
@@ -299,7 +394,7 @@ public class TableChangeValidator {
             return ChangeLevel.METADATA_NULL;
         }
         if(!oldCol.getName().equals(newCol.getName()) ||
-           !Objects.equal(oldCol.getIdentityGenerator(), newCol.getIdentityGenerator())) {
+           sequenceChanged(oldCol.getIdentityGenerator(), newCol.getIdentityGenerator())) {
           return ChangeLevel.METADATA;
         }
 
@@ -318,7 +413,7 @@ public class TableChangeValidator {
         while(oldIt.hasNext()) {
             IndexColumn oldICol = oldIt.next();
             IndexColumn newICol = newIt.next();
-            String newColName = findNewColumnName(oldICol.getColumn().getName());
+            String newColName = findNewName(columnChanges, oldICol.getColumn().getName());
             // Column the same?
             if((newColName == null) || !newICol.getColumn().getName().equals(newColName)) {
                 return ChangeLevel.INDEX;
@@ -338,6 +433,23 @@ public class TableChangeValidator {
             return ChangeLevel.METADATA;
         }
         return ChangeLevel.NONE;
+    }
+
+    private static boolean sequenceChanged(Sequence oldSeq, Sequence newSeq) {
+        if(oldSeq == null && newSeq == null) {
+            return false;
+        }
+        if(oldSeq != null && newSeq == null) {
+            return true;
+        }
+        if(oldSeq == null /*&& newSeq != null**/) {
+            return true;
+        }
+        return (oldSeq.getStartsWith() != newSeq.getStartsWith()) ||
+               (oldSeq.getIncrement() != newSeq.getIncrement()) ||
+               (oldSeq.getMinValue() != newSeq.getMinValue()) ||
+               (oldSeq.getMaxValue() != newSeq.getMaxValue()) ||
+               (oldSeq.isCycle() != newSeq.isCycle());
     }
 
     private static boolean joinChanged(Join oldJoin, Join newJoin) {
@@ -370,7 +482,6 @@ public class TableChangeValidator {
         }
         return false;
     }
-
 
     private void addNotPresent(boolean isIndex, TableChange change) {
         String detail = change.toString();
