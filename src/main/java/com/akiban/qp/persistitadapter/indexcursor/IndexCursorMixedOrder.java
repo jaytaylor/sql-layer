@@ -90,15 +90,17 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                 // row found by exchange.traverse may actually not qualify -- those values may be lower than
                 // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
                 // past the startKey.
-                if (!pastStart && beforeStart(next)) {
-                    next = null;
-                    advance(scanStates.size() - 1);
-                    if (more) {
-                        next = row();
-                        pastStart = true;
-                    } else {
-                        close();
+                if (!pastStart) {
+                    while (beforeStart(next)) {
+                        next = null;
+                        advance(scanStates.size() - 1);
+                        if (more) {
+                            next = row();
+                        } else {
+                            close();
+                        }
                     }
+                    pastStart = true;
                 }
                 if (next != null && pastEnd(next)) {
                     next = null;
@@ -218,15 +220,23 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                                                      hiInclusive,
                                                      singleValue,
                                                      f >= orderingColumns() || ordering.ascending(f),
-                                                      sortKeyAdapter);
+                                                     sortKeyAdapter);
             scanStates.add(scanState);
             f++;
         }
         while (f < min(orderingColumns(), maxSegments)) {
             MixedOrderScanStateSingleSegment<S, E> scanState =
-                new MixedOrderScanStateSingleSegment<S, E>(this, f, sortKeyAdapter);
+                new MixedOrderScanStateSingleSegment<S, E>(this, f, ordering.ascending(f), sortKeyAdapter);
             scanStates.add(scanState);
             f++;
+        }
+        if (keyRange != null && index().isUniqueAndMayContainNulls() && f == maxSegments) {
+            // Add a segment to deal with the null separator. The ordering is that of the next segment (or ascending
+            // if there is none).
+            boolean ascending = f >= orderingColumns() || ordering.ascending(f);
+            MixedOrderScanStateSingleSegment<S, E> scanState =
+                new MixedOrderScanStateSingleSegment<S, E>(this, f, ascending, sortKeyAdapter);
+            scanStates.add(scanState);
         }
         if (f < min(keyColumns(), maxSegments)) {
             MixedOrderScanStateRemainingSegments<S> scanState =
@@ -262,7 +272,6 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             Index index = keyRange.indexRowType().index();
             keyColumns = index.indexRowComposition().getLength();
             boundColumns = keyRange.boundColumns();
-
             collators = sortKeyAdapter.createAkCollators(boundColumns);
             akTypes = sortKeyAdapter.createAkTypes(boundColumns);
             tInstances = sortKeyAdapter.createTInstances(boundColumns + orderingColumns);
@@ -332,7 +341,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
 
     private void setBoundaries()
     {
-        if (keyRange != null && index().isUnique()) {
+        if (keyRange != null && !unbounded() && index().isUnique()) {
             assert startKey != null : index();
             assert endKey != null : index();
             IndexBound lo = keyRange.lo();
@@ -367,7 +376,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean beforeStart(Row row)
     {
         boolean beforeStart;
-        if (startKey == null) {
+        if (startKey == null || row == null || unbounded()) {
             beforeStart = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
@@ -380,7 +389,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean pastEnd(Row row)
     {
         boolean pastEnd;
-        if (endKey == null) {
+        if (endKey == null || unbounded()) {
             pastEnd = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
@@ -388,6 +397,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             pastEnd = c > 0 || c == 0 && !keyRange.hiInclusive();
         }
         return pastEnd;
+    }
+
+    private boolean unbounded()
+    {
+        return boundColumns == 0;
     }
 
     public AkCollator collatorAt(int field) {

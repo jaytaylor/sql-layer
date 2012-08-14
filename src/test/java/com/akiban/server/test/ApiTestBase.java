@@ -553,7 +553,11 @@ public class ApiTestBase {
                                                         String indexName,
                                                         boolean unique,
                                                         String... indexCols) {
-        String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
+        String ddl = String.format("CREATE %s INDEX \"%s\" ON \"%s\".\"%s\"(%s)",
+                                   unique ? "UNIQUE" : "",
+                                   indexName,
+                                   schema,
+                                   table,
                                    Strings.join(Arrays.asList(indexCols), ","));
         return createFromDDL(schema, ddl);
     }
@@ -725,9 +729,14 @@ public class ApiTestBase {
     }
 
     protected final ScanAllRequest scanAllRequest(int tableId) {
+        return scanAllRequest(tableId, false);
+    }
+
+    protected final ScanAllRequest scanAllRequest(int tableId, boolean includingInternal) {
         Table uTable = ddl().getTable(session(), tableId);
         Set<Integer> allCols = new HashSet<Integer>();
-        for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
+        int MAX = includingInternal ? uTable.getColumnsIncludingInternal().size() : uTable.getColumns().size();
+        for (int i=0; i < MAX; ++i) {
             allCols.add(i);
         }
         return new ScanAllRequest(tableId, allCols);

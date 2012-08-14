@@ -55,6 +55,9 @@ import java.util.Map;
 public class ProtobufWriter {
     public static interface WriteSelector {
         Columnar getSelected(Columnar columnar);
+        boolean isSelected(Group group);
+        /** Called for all parent joins where getSelected(UserTable) is not null **/
+        boolean isSelected(Join parentJoin);
         /** Called for all GroupIndexes and all table indexes where getSelected(UserTable) is not null **/
         boolean isSelected(Index index);
         boolean isSelected(Sequence sequence);
@@ -64,6 +67,16 @@ public class ProtobufWriter {
         @Override
         public Columnar getSelected(Columnar columnar) {
             return columnar;
+        }
+
+        @Override
+        public boolean isSelected(Group group) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(Join join) {
+            return true;
         }
 
         @Override
@@ -84,27 +97,27 @@ public class ProtobufWriter {
         }
 
         @Override
+        public boolean isSelected(Group group) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(Join join) {
+            return true;
+        }
+
+        @Override
         public boolean isSelected(Sequence sequence) {
             return true;
         }
     }
 
-    public static abstract class TableSelector implements WriteSelector {
+    public static abstract class TableSelector extends TableFilterSelector {
         public abstract boolean isSelected(Columnar columnar);
 
         @Override
         public Columnar getSelected(Columnar columnar) {
             return isSelected(columnar) ? columnar : null;
-        }
-
-        @Override
-        public boolean isSelected(Index index) {
-            return true;
-        }
-
-        @Override 
-        public boolean isSelected(Sequence sequence) {
-            return true;
         }
     }
 
@@ -122,6 +135,16 @@ public class ProtobufWriter {
         @Override
         public Columnar getSelected(Columnar columnar) {
             return schemaName.equals(columnar.getName().getSchemaName()) ? columnar : null;
+        }
+
+        @Override
+        public boolean isSelected(Group group) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(Join join) {
+            return true;
         }
 
         @Override
@@ -229,7 +252,8 @@ public class ProtobufWriter {
         for(UserTable table : schema.getUserTables().values()) {
             table = (UserTable)selector.getSelected(table);
             if(table != null) {
-                if(table.getParentJoin() == null && table.getGroup() != null) {
+                Group group = table.getGroup();
+                if((table.getParentJoin() == null) && (group != null) && selector.isSelected(group)) {
                     writeGroup(schemaBuilder, table.getGroup(), selector);
                 }
                 writeTable(schemaBuilder, table, selector);
@@ -295,7 +319,7 @@ public class ProtobufWriter {
         }
 
         Join join = table.getParentJoin();
-        if(join != null) {
+        if((join != null) && selector.isSelected(join)) {
             final UserTable parent = join.getParent();
             AISProtobuf.Join.Builder joinBuilder = AISProtobuf.Join.newBuilder();
             joinBuilder.setParentTable(AISProtobuf.TableName.newBuilder().
@@ -395,6 +419,9 @@ public class ProtobufWriter {
         Integer prefix = column.getPrefixSizeWithoutComputing();
         if(prefix != null) {
             columnBuilder.setPrefixSize(prefix);
+        }
+        if(column.getDefaultValue() != null) {
+            columnBuilder.setDefaultValue(column.getDefaultValue());
         }
         return columnBuilder.build();
     }
