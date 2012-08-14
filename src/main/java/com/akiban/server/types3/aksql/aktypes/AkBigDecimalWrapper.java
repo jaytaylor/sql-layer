@@ -186,4 +186,11 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     {
         return value.signum() > 0;
     }
+    
+    @Override
+    public BigDecimalWrapper mod(BigDecimalWrapper num)
+    {
+        value = value.remainder(((AkBigDecimalWrapper)num).value);
+        return this;
+    }
 }

@@ -43,7 +43,8 @@ public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
      BigDecimalWrapper round (int precision, int scale);
      BigDecimalWrapper negate();
      BigDecimalWrapper abs();
-     
+     BigDecimalWrapper mod(BigDecimalWrapper num);
+
      int compareTo (double val);
      int compareTo (BigDecimalWrapper o);
      int getScale();

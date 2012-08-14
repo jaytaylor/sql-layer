@@ -452,6 +452,109 @@ public abstract class MArithmetic extends TArithmetic {
        }
    };
 
+   public static final TOverload MOD_TINYTINT = new MArithmetic("mod", "mod", MNumeric.TINYINT, MNumeric.INT.instance(4))
+   {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            int right = inputs.get(1).getInt8();
+            if (right == 0)
+                output.putNull();
+            else
+                output.putInt32(inputs.get(0).getInt8() % right);
+        }
+   };
+   
+   public static final TOverload MOD_SMALLINT = new MArithmetic("mod", "mod", MNumeric.SMALLINT, MNumeric.INT.instance(6))
+   {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            int right = inputs.get(1).getInt16();
+            if (right == 0)
+                output.putNull();
+            else
+                output.putInt32(inputs.get(0).getInt16() % right);
+        }
+   };
+   
+   public static final TOverload MOD_MEDIUMINT = new MArithmetic("mod", "mod", MNumeric.MEDIUMINT, MNumeric.INT.instance(9))
+   {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            int right = inputs.get(1).getInt32();
+            if (right == 0)
+                output.putNull();
+            else
+                output.putInt32(inputs.get(0).getInt32() % right);
+        }
+   };
+   
+   public static final TOverload MOD_INT = new MArithmetic("mod", "mod", MNumeric.INT, MNumeric.INT.instance(11))
+   {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            int right = inputs.get(1).getInt32();
+            if (right == 0)
+                output.putNull();
+            else
+                output.putInt32(inputs.get(0).getInt32() % right);
+        }
+   };
+   
+   public static final TOverload MOD_BIGINT = new MArithmetic("mod", "mod", MNumeric.BIGINT, MNumeric.BIGINT.instance(20))
+   {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            long right = inputs.get(1).getInt64();
+            if (right == 0L)
+                output.putNull();
+            else
+                output.putInt64(inputs.get(0).getInt64() % right);
+        }
+   };
+   
+   
+   public static final TOverload MOD_DOUBLE = new MArithmetic("mod", "mod", MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE.instance())
+   {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            double right = inputs.get(1).getDouble();
+            if (Double.compare(right, 0) == 0)
+                output.putNull();
+            else
+                output.putDouble(inputs.get(0).getDouble() % right);
+        }
+   };
+   
+   public static final TOverload MOD_DECIMAL = new DecimalArithmetic("mod", "mod")
+   {
+        @Override
+        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale)
+        {
+            //TODO
+            // not sure yet how the precision and scale are computed
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {            
+             BigDecimalWrapper divisor = (BigDecimalWrapper) inputs.get(1).getObject();
+
+             if (divisor.isZero())
+                 output.putNull();
+             else
+                 output.putObject(getWrapper(context)
+                                     .add((BigDecimalWrapper)inputs.get(0).getObject())
+                                     .mod(divisor));
+        }
+   };
+   
    // TODO this should extend some base class that MArithmetic also extends, rather than extending MArithmetic
    // but ignoring its TInstance field
    private abstract static class DecimalArithmetic extends MArithmetic {

@@ -208,5 +208,12 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     {
         return value.signum() > 0;
     }
+
+    @Override
+    public BigDecimalWrapper mod(BigDecimalWrapper num)
+    {
+        value = value.remainder(((MBigDecimalWrapper)num).value);
+        return this;
+    }
 }
 
