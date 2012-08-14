@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.server.types.ValueSource;
 import com.akiban.qp.operator.Operator;
 import org.junit.Test;
 import com.akiban.server.expression.std.FieldExpression;
@@ -54,10 +55,13 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     private static final int A = 0;
     private static final int B = 1;
     private static final int C = 2;
-    private static final int ID = 3;
+
+    private static final int COLUMN_COUNT = 3;
+
     private static final boolean ASC = true;
     private static final boolean DESC = false;
-    private static final SetColumnSelector INDEX_ROW_SELECTOR = new SetColumnSelector(0, 1, 2, 3);
+
+    private static final SetColumnSelector INDEX_ROW_SELECTOR = new SetColumnSelector(0, 1, 2);
 
     private int t;
     private RowType tRowType;
@@ -74,10 +78,10 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
             "a int",
             "b int",
             "c int");
-        createUniqueIndex("schema", "t", "idx", "a", "b", "c", "id");
+        createUniqueIndex("schema", "t", "idx", "a", "b", "c");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
-        idxRowType = indexType(t, "a", "b", "c", "id");
+        idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
             createNewRow(t, 1010L, 1L, 11L, 110L),
             createNewRow(t, 1011L, 1L, 11L, 111L),
@@ -96,8 +100,8 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
                             new TestRow(tRowType,
                                         new Object[] {row.get(1),     // a
                                                       row.get(2),     // b
-                                                      row.get(3),     // c
-                                                      row.get(0)}));  // id
+                                                      row.get(3)      // c
+                                                      }));
         }
     }
     
@@ -115,6 +119,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Test
     public void testAAAA()
     {
+        // currently failing
+        // All the 5 rows returned are identical: [1, 14, 142] (corresponding to id = 1017)
+
         testSkipNulls(1010,
                       getAAAA(),
                       new long[]{1010, 1011, 1014, 1015, 1017}); // skip 1012, 1013 and 1016
@@ -123,6 +130,8 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Test
     public void testAAAAToNull()
     {
+        // same failure as testAAAA()
+
         testSkipNulls(1012, // jump to one of the nulls
                       getAAAA(),
                       new long[] {1012, 1013, 1016, 1010, 1011, 1014, 1015, 1017}); // should see the nulls first, because null < everything
@@ -131,6 +140,10 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Test
     public void testDDDD()
     {
+        // currently failing
+        // Doesn't even return the correct number of rows. (epxected: 7, actual: 6)
+        // All the 6 rows returned are idential: [1, null, 122]
+
         testSkipNulls(1015,
                       getDDDD(),
                       new long[] {1015, 1014, 1011, 1010, 1016, 1013, 1012}); // should see the nulls last because null < everything
@@ -141,6 +154,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Test
     public void testDDDDToMiddleNull()
     {
+        // currently failing
+        // doens't return any row
+
         testSkipNulls(1013, // jump to one of the nulls
                       getDDDD(),
                       new long[] {1013, 1012}); // should only see 1013 and 1012 (not 1016)
@@ -149,6 +165,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Test
     public void testDDDDToMaxNull()
     {
+        // currenlty failing
+        // doesn't return any row
+
         testSkipNulls(1016,
                       getDDDD(),
                       new long[] {1016, 1013, 1012}); 
@@ -157,6 +176,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Test
     public void testDDDDToMinNull()
     {
+        // currenlty failing
+        // doesn't return any row
+
         testSkipNulls(1012,
                        getDDDD(),
                        new long[] {1012});
@@ -165,6 +187,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Test
     public void testAAAD()
     {
+        // currently failing
+        // return 3 identical rows: [1, 14, 142]
+
         testSkipNulls(1014,
                       getAAAD(),
                       new long[] {1014, 1015, 1017}); // skips 1016, which is a null
@@ -182,53 +207,102 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
         cursor.jump(indexRow(targetId), INDEX_ROW_SELECTOR);
 
         Row row;
-        List<Long> actualIds = new ArrayList<Long>();
+        List<Row> actualRows = new ArrayList<Row>();
         while ((row = cursor.next()) != null)
-            actualIds.add(row.eval(3).getInt());
+            actualRows.add(row);
 
-        List<Long> expectedIds = new ArrayList<Long>(expected.length);
+        // find the row with given id
+        List<Row> expectedRows = new ArrayList<Row>(expected.length);
         for (long val : expected)
-            expectedIds.add(val);
+            expectedRows.add(indexRow(val));
 
-        assertEquals(expectedIds, actualIds);
+        // check the list of rows
+        checkRows(expectedRows, actualRows);
+
         cursor.close();
 
     }
 
+        private void checkRows(List<Row> expected, List<Row> actual)
+    {
+        List<List<Long>> expectedRows = toListOfLong(expected);
+        List<List<Long>> actualRows = toListOfLong(actual);
+        
+        assertEquals(expectedRows, actualRows);
+        
+    }
+
+    private List<List<Long>> toListOfLong(List<Row> rows)
+    {
+        List<List<Long>> ret = new ArrayList<List<Long>>();
+        
+        
+        for (Row row : rows)
+        {
+            // nulls are allowed
+            ArrayList<Long> toLong = new ArrayList<Long>();
+            
+            for (int n = 0; n < COLUMN_COUNT; ++n)
+                addColumn(toLong, row.eval(n));
+            
+            ret.add(toLong);
+        }
+        return ret;
+    }
+    
+    private static void addColumn(List<Long> row, ValueSource v)
+    {
+        if (v.isNull())
+        {
+            row.add(null);
+            return;
+        }
+
+        switch(v.getConversionType())
+        {
+            case LONG:      row.add(v.getLong());
+                            break;
+            case INT:       row.add(v.getInt());
+                            break;
+            default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
+        }
+    }
+
+
     private API.Ordering getAAAA()
     {
-        return ordering(A, ASC, B, ASC, C, ASC, ID, ASC);
+        return ordering(A, ASC, B, ASC, C, ASC);
     }
 
     private API.Ordering getAAAD()
     {
-        return ordering(A, ASC, B, ASC, C, ASC, ID, DESC);
+        return ordering(A, ASC, B, ASC, C, ASC);
     }
     
     
     private API.Ordering getDADD()
     {
-        return ordering(A, DESC, B, ASC, C, DESC, ID, DESC);
+        return ordering(A, DESC, B, ASC, C, DESC);
     }
 
     private API.Ordering getDDAA()
     {
-        return ordering(A, DESC, B, DESC, C, ASC, ID, ASC);
+        return ordering(A, DESC, B, DESC, C, ASC);
     }
 
     private API.Ordering getDDAD()
     {
-        return ordering(A, DESC, B, DESC, C, ASC, ID, DESC);
+        return ordering(A, DESC, B, DESC, C, ASC);
     }
 
     private API.Ordering getDDDA()
     {
-         return ordering(A, DESC, B, DESC, C, DESC, ID, ASC);
+         return ordering(A, DESC, B, DESC, C, ASC);
     }
 
     private API.Ordering getDDDD()
     {
-        return ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
+        return ordering(A, DESC, B, DESC, C, DESC);
     }
 
     private TestRow indexRow(long id)
