@@ -199,8 +199,8 @@ public class PlanCostEstimator
                     long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
                     space.decompose(box, zValues);
                     for (int i = 0; i < SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES; i++) {
-                        long z;
-                        if ((z = zValues[i++]) != -1L) {
+                        long z = zValues[i];
+                        if (z != -1L) {
                             ExpressionNode lo = new ConstantExpression(space.zLo(z), AkType.LONG);
                             ExpressionNode hi = new ConstantExpression(space.zHi(z), AkType.LONG);
                             CostEstimate zScanCost =
