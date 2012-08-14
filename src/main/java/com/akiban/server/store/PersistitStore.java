@@ -42,7 +42,10 @@ import java.util.TreeSet;
 
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.PersistitHKey;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.row.HKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -346,11 +349,12 @@ public class PersistitStore implements Store {
                                           RowData rowData,
                                           Index index,
                                           Key hKey,
-                                          PersistitIndexRowBuffer indexRow) throws PersistitException
+                                          PersistitIndexRowBuffer indexRow,
+                                          boolean forInsert) throws PersistitException
     {
         indexRow.resetForWrite(index, exchange.getKey(), exchange.getValue());
         indexRow.initialize(rowData, hKey);
-        indexRow.close();
+        indexRow.close(forInsert);
     }
 
     private PersistitIndexRowBuffer readPKIndexRow(PersistitAdapter adapter,
@@ -550,14 +554,16 @@ public class PersistitStore implements Store {
             tableStatusCache.rowDeleted(rowDefId);
 
             // Remove the indexes, including the PK index
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
+            PersistitAdapter adapter = adapter(session);
             for (Index index : rowDef.getIndexes()) {
+                PersistitIndexRow indexRow = PersistitIndexRow.newIndexRow(adapter, adapter.schema().indexRowType(index));
                 deleteIndex(session, index, rowData, hEx.getKey(), indexRow);
             }
 
             // The row being deleted might be the parent of rows that
             // now become orphans. The hkeys
             // of these rows need to be maintained.
+            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter);
             if(propagateHKeyChanges) {
                 propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow);
             }
@@ -629,13 +635,16 @@ public class PersistitStore implements Store {
                 // Store the h-row
                 hEx.store();
                 // Update the indexes
-                PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
+                PersistitAdapter adapter = adapter(session);
+                PersistitIndexRowBuffer newIndexRowBuffer = new PersistitIndexRowBuffer(adapter);
                 Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
                 for (Index index : indexes) {
                     if(indexesAsInsert) {
-                        insertIntoIndex(session, index, mergedRowData, hEx.getKey(), indexRow, deferIndexes);
+                        insertIntoIndex(session, index, mergedRowData, hEx.getKey(), newIndexRowBuffer, deferIndexes);
                     } else {
-                        updateIndex(session, index, rowDef, currentRow, mergedRowData, hEx.getKey(), indexRow);
+                        PersistitIndexRow oldIndexRow =
+                            PersistitIndexRow.newIndexRow(adapter, adapter.schema().indexRowType(index));
+                        updateIndex(session, index, rowDef, currentRow, mergedRowData, hEx.getKey(), oldIndexRow, newIndexRowBuffer);
                     }
                 }
             } else {
@@ -724,7 +733,7 @@ public class PersistitStore implements Store {
     private void propagateDownGroup(Session session,
                                     Exchange exchange,
                                     BitSet tablesRequiringHKeyMaintenance,
-                                    PersistitIndexRowBuffer indexRow)
+                                    PersistitIndexRowBuffer indexRowBuffer)
             throws PersistitException
     {
         // exchange is positioned at a row R that has just been replaced by R', (because we're processing an update
@@ -751,6 +760,8 @@ public class PersistitStore implements Store {
                 exchange.remove();
                 tableStatusCache.rowDeleted(descendentRowDefId);
                 for (Index index : descendentRowDef.getIndexes()) {
+                    PersistitAdapter adapter = adapter(session);
+                    PersistitIndexRow indexRow = PersistitIndexRow.newIndexRow(adapter, adapter.schema().indexRowType(index));
                     deleteIndex(session, index, descendentRowData, exchange.getKey(), indexRow);
                 }
                 // Reinsert it, recomputing the hkey and maintaining indexes
@@ -1096,7 +1107,7 @@ public class PersistitStore implements Store {
     {
         checkNotGroupIndex(index);
         Exchange iEx = getExchange(session, index);
-        constructIndexRow(iEx, rowData, index, hkey, indexRow);
+        constructIndexRow(iEx, rowData, index, hkey, indexRow, true);
         checkUniqueness(index, rowData, iEx);
         if (deferIndexes) {
             // TODO: bug767737, deferred indexing does not handle uniqueness
@@ -1148,10 +1159,7 @@ public class PersistitStore implements Store {
             // tree is empty. Peter says this is a bug (1023549)
             keyExistsInIndex = exchange.traverse(Key.Direction.EQ, true, -1);
         } else {
-            // Check for children by traversing forward from the current key. That can change the key, so
-            // we have to make a copy and then restore the original key later, as the caller depends on the
-            // exchange's state. Copying/restoring the value is not necessary, because passing 0 as the last
-            // argument of traverse causes the value not to be retrieved, leaving the current value in place.
+            // Check for children by traversing forward from the current key.
             keyExistsInIndex = exchange.traverse(Key.Direction.GTEQ, true, -1);
         }
         return keyExistsInIndex;
@@ -1173,13 +1181,14 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void updateIndex(Session session,
-                            Index index,
-                            RowDef rowDef,
-                            RowData oldRowData,
-                            RowData newRowData,
-                            Key hkey,
-                            PersistitIndexRowBuffer indexRow)
+    private void updateIndex(Session session,
+                             Index index,
+                             RowDef rowDef,
+                             RowData oldRowData,
+                             RowData newRowData,
+                             Key hKey,
+                             PersistitIndexRow oldIndexRow,
+                             PersistitIndexRowBuffer newIndexRowBuffer)
             throws PersistitException
     {
         checkNotGroupIndex(index);
@@ -1188,14 +1197,12 @@ public class PersistitStore implements Store {
             TABLE_INDEX_MAINTENANCE_TAP.in();
             try {
                 Exchange oldExchange = getExchange(session, index);
-                constructIndexRow(oldExchange, oldRowData, index, hkey, indexRow);
+                deleteIndexRow(index, oldExchange, oldRowData, hKey, oldIndexRow);
                 Exchange newExchange = getExchange(session, index);
-                constructIndexRow(newExchange, newRowData, index, hkey, indexRow);
-
+                constructIndexRow(newExchange, newRowData, index, hKey, newIndexRowBuffer, true);
                 checkUniqueness(index, newRowData, newExchange);
                 oldExchange.remove();
                 newExchange.store();
-
                 releaseExchange(session, newExchange);
                 releaseExchange(session, oldExchange);
             } finally {
@@ -1204,15 +1211,45 @@ public class PersistitStore implements Store {
         }
     }
 
-    void deleteIndex(Session session,
-                     Index index,
-                     RowData rowData,
-                     Key hkey,
-                     PersistitIndexRowBuffer indexRow)
+    private void deleteIndexRow(Index index, Exchange exchange, RowData rowData, Key hKey, PersistitIndexRow indexRow)
+        throws PersistitException
+    {
+        // Non-unique index: The exchange's key has all fields of the index row. If there is such a row it will be
+        //     deleted, if not, exchange.remove() does nothing.
+        // PK index: The exchange's key has the key fields of the index row, and a null separator of 0. If there is
+        //     such a row it will be deleted, if not, exchange.remove() does nothing. Because PK columns are NOT NULL,
+        //     the null separator's value must be 0.
+        // Unique index with no nulls: Like the PK case.
+        // Unique index with nulls: isUniqueAndMayContainNulls is true. The exchange's key is written with the
+        //     key of the index row. There may be duplicates due to nulls, and they will have different null separator
+        //     values and the hkeys will differ. Look through these until the desired hkey is found, and delete that
+        //     row. If the hkey is missing, then the row is already not present.
+        constructIndexRow(exchange, rowData, index, hKey, indexRow, false);
+        if (index.isUniqueAndMayContainNulls()) {
+            Key.Direction direction = Key.Direction.GTEQ;
+            while (exchange.traverse(direction, true)) {
+                indexRow.copyFromExchange(exchange); // Gets the current state of the exchange into oldIndexRow
+                PersistitHKey rowHKey = (PersistitHKey) indexRow.hKey();
+                if (rowHKey.key().compareTo(hKey) == 0) {
+                    exchange.remove();
+                    break;
+                }
+                direction = Key.Direction.GT;
+            }
+        } else {
+            exchange.remove();
+        }
+    }
+
+    private void deleteIndex(Session session,
+                             Index index,
+                             RowData rowData,
+                             Key hkey,
+                             PersistitIndexRow indexRow)
             throws PersistitException {
         checkNotGroupIndex(index);
-        final Exchange iEx = getExchange(session, index);
-        constructIndexRow(iEx, rowData, index, hkey, indexRow);
+        Exchange iEx = getExchange(session, index);
+        deleteIndexRow(index, iEx, rowData, hkey, indexRow);
         boolean removed = iEx.remove();
         releaseExchange(session, iEx);
     }

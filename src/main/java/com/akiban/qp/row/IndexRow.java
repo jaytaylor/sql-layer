@@ -78,6 +78,6 @@ public abstract class IndexRow extends AbstractRow
 
     public abstract <S> void append(S source, AkType type, TInstance tInstance, AkCollator collator);
 
-    public abstract void close();
+    public abstract void close(boolean forInsert);
 
 }
