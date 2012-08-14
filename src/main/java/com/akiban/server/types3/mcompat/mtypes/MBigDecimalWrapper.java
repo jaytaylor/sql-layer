@@ -177,5 +177,29 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     public BigDecimal asBigDecimal() {
         return value;
     }
+    
+     @Override
+    public int compareTo(double val)
+    {
+        return value.compareTo(BigDecimal.valueOf(val));
+    }
+
+    @Override
+    public boolean isZero()
+    {
+        return value.signum() == 0;
+    }
+
+    @Override
+    public boolean isNegative()
+    {
+        return value.signum() < 0;
+    }
+
+    @Override
+    public boolean isPositive()
+    {
+        return value.signum() > 0;
+    }
 }
 

@@ -43,10 +43,14 @@ public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
      BigDecimalWrapper negate();
      BigDecimalWrapper abs();
      
+     int compareTo (double val);
      int compareTo (BigDecimalWrapper o);
      int getScale();
      int getPrecision();
      int getSign();
+     boolean isZero();
+     boolean isNegative();
+     boolean isPositive();
      void reset();
 
     BigDecimal asBigDecimal();
