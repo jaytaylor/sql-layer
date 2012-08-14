@@ -1,7 +1,6 @@
 # Same grouping, with GIs, in two different schemas
 # Inspired by bug 1034971
 ---
-# First schema
 - Statement: CREATE SCHEMA s1
 ---
 - Statement: CREATE TABLE schema_s1.table_p (pid INT NOT NULL PRIMARY KEY, pcol VARCHAR(32));
