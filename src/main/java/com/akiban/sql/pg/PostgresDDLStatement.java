@@ -132,7 +132,7 @@ public class PostgresDDLStatement implements PostgresStatement
                 IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);
                 break;
             case NodeTypes.ALTER_TABLE_NODE:
-                AlterTableDDL.alterTable(ddlFunctions, server.getDXL().dmlFunctions(), session, schema, (AlterTableNode)ddl);
+                AlterTableDDL.alterTable(ddlFunctions, server.getDXL().dmlFunctions(), session, schema, (AlterTableNode)ddl, context);
                 break;
             case NodeTypes.RENAME_NODE:
                 if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {

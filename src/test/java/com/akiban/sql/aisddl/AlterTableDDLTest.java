@@ -39,6 +39,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.util.TableChange;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -1007,7 +1008,7 @@ public class AlterTableDDLTest {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.ais());
-        AlterTableDDL.alterTable(ddlFunctions, null, null, SCHEMA, (AlterTableNode)node);
+        AlterTableDDL.alterTable(ddlFunctions, null, null, SCHEMA, (AlterTableNode)node, null);
     }
 
     private void expectGroupIsSame(TableName t1, TableName t2, boolean equal) {
@@ -1097,7 +1098,7 @@ public class AlterTableDDLTest {
 
         @Override
         public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                               List<TableChange> columnChanges, List<TableChange> indexChanges, boolean autoIndexChanges) {
+                               List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context) {
             if(ais.getUserTable(tableName) == null) {
                 throw new NoSuchTableException(tableName);
             }

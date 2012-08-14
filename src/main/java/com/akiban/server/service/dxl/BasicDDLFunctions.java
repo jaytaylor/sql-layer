@@ -55,7 +55,9 @@ import com.akiban.ais.util.TableChangeValidatorException;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
@@ -68,6 +70,8 @@ import com.akiban.qp.rowtype.UserTableRowChecker;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
+import com.akiban.server.error.AlterMadeNoChangeException;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
@@ -117,14 +121,62 @@ import static com.akiban.qp.operator.API.insert_Default;
 import static com.akiban.util.Exceptions.throwAlways;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
-
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
+
     private final static boolean DEFER_INDEX_BUILDING = false;
+    private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
 
     private final IndexStatisticsService indexStatisticsService;
     private final ConfigurationService configService;
     private final T3RegistryService t3Registry;
     
+
+    private static class ShimContext extends QueryContextBase {
+        private final StoreAdapter adapter;
+        private final QueryContext delegate;
+
+        public ShimContext(StoreAdapter adapter, QueryContext delegate) {
+            this.adapter = adapter;
+            this.delegate = (delegate == null) ? new SimpleQueryContext(adapter) : delegate;
+        }
+
+        @Override
+        public StoreAdapter getStore() {
+            return adapter;
+        }
+
+        @Override
+        public StoreAdapter getStore(UserTable table) {
+            return adapter;
+        }
+
+        @Override
+        public Session getSession() {
+            return delegate.getSession();
+        }
+
+        @Override
+        public String getCurrentUser() {
+            return delegate.getCurrentUser();
+        }
+
+        @Override
+        public String getSessionUser() {
+            return delegate.getSessionUser();
+        }
+
+        @Override
+        public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
+            delegate.notifyClient(level, errorCode, message);
+        }
+
+        @Override
+        public long sequenceNextValue(TableName sequence) {
+            return delegate.sequenceNextValue(sequence);
+        }
+    }
+
+
     @Override
     public void createTable(Session session, UserTable table)
     {
@@ -175,7 +227,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, table);
     }
 
-    private void doMetadataChange(Session session, UserTable newDefinition,
+    private void doMetadataChange(Session session, QueryContext context, UserTable newDefinition,
                                   Collection<ChangedTableDescription> changedTables, boolean nullChange) {
         if(changedTables.size() != 1) {
             throw new IllegalStateException("Too many changed tables for METADATA ALTER: " + changedTables);
@@ -191,7 +243,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final Schema oldSchema = SchemaCache.globalSchema(origAIS);
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
             final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
-            final QueryContext queryContext = new SimpleQueryContext(adapter);
+            final QueryContext queryContext = new ShimContext(adapter, context);
 
             Operator plan = filter_Default(
                     groupScan_Default(origTable.getGroup().getGroupTable()),
@@ -222,7 +274,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         store().buildIndexes(session, indexes, DEFER_INDEX_BUILDING);
     }
 
-    private void doTableChange(Session session, TableName tableName, UserTable newDefinition,
+    private void doTableChange(Session session, QueryContext context, TableName tableName, UserTable newDefinition,
                                Collection<ChangedTableDescription> changedTables,
                                AlterTableHelper helper, List<Index> indexesToDrop, boolean groupChange) {
 
@@ -248,7 +300,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         // Build transformation
         final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
-        final QueryContext queryContext = new SimpleQueryContext(adapter);
+        final QueryContext queryContext = new ShimContext(adapter, context);
 
         final AkibanInformationSchema newAIS = getAIS(session);
         final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
@@ -377,12 +429,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<TableChange> columnChanges, List<TableChange> indexChanges, boolean autoIndexChanges)
+                           List<TableChange> columnChanges, List<TableChange> indexChanges,
+                           QueryContext context)
     {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
 
-        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges, autoIndexChanges);
+        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges, ALTER_AUTO_INDEX_CHANGES);
 
         try {
             validator.compareAndThrowIfNecessary();
@@ -402,24 +455,23 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             Collection<ChangedTableDescription> changedTables = validator.getAllChangedTables();
 
             switch(changeLevel) {
+                case NONE:
+                    context.warnClient(new AlterMadeNoChangeException(tableName));
+                break;
                 case METADATA:
-                    doMetadataChange(session, newDefinition, changedTables, false);
+                    doMetadataChange(session, context, newDefinition, changedTables, false);
                 break;
-
                 case METADATA_NOT_NULL:
-                    doMetadataChange(session, newDefinition, changedTables, true);
+                    doMetadataChange(session, context, newDefinition, changedTables, true);
                 break;
-
                 case INDEX:
                     store().truncateIndex(session, indexesToTruncate);
                     doIndexChange(session, newDefinition, changedTables, helper);
                 break;
-
                 case TABLE:
                     store().truncateIndex(session, indexesToTruncate);
-                    doTableChange(session, tableName, newDefinition, changedTables, helper, indexesToDrop, false);
+                    doTableChange(session, context, tableName, newDefinition, changedTables, helper, indexesToDrop, false);
                 break;
-
                 case GROUP:
                     // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
                     for(ChangedTableDescription desc : validator.getAllChangedTables()) {
@@ -429,9 +481,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         indexesToDrop.remove(index);
                     }
                     store().truncateIndex(session, indexesToTruncate);
-                    doTableChange(session, tableName, newDefinition, changedTables, helper, indexesToDrop, true);
+                    doTableChange(session, context, tableName, newDefinition, changedTables, helper, indexesToDrop, true);
                 break;
-
                 default:
                     throw new IllegalStateException("Unhandled ChangeLevel: " + validator.getFinalChangeLevel());
             }

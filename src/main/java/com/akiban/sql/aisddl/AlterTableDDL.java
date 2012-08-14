@@ -41,6 +41,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.TableChange;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.JoinToMultipleParentsException;
@@ -72,15 +73,14 @@ import static com.akiban.sql.parser.ConstraintDefinitionNode.ConstraintType;
 import static com.akiban.util.Exceptions.throwAlways;
 
 public class AlterTableDDL {
-    private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
-
     private AlterTableDDL() {}
 
     public static void alterTable(DDLFunctions ddlFunctions,
                                   DMLFunctions dmlFunctions,
                                   Session session,
                                   String defaultSchemaName,
-                                  AlterTableNode alterTable) {
+                                  AlterTableNode alterTable,
+                                  QueryContext context) {
         final AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
         final TableName tableName = convertName(defaultSchemaName, alterTable.getObjectName());
         final UserTable table = curAIS.getUserTable(tableName);
@@ -99,7 +99,7 @@ public class AlterTableDDL {
             return;
         }
 
-        if (processAlter(session, ddlFunctions, defaultSchemaName, table, alterTable.tableElementList)) {
+        if (processAlter(session, ddlFunctions, defaultSchemaName, table, alterTable.tableElementList, context)) {
             return;
         }
 
@@ -112,7 +112,8 @@ public class AlterTableDDL {
         }
     }
 
-    private static boolean processAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table, TableElementList elements) {
+    private static boolean processAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table,
+                                        TableElementList elements, QueryContext context) {
         // Should never come this way from the parser, but be defensive
         if((elements == null) || elements.isEmpty()) {
             return false;
@@ -252,7 +253,7 @@ public class AlterTableDDL {
 
         tableCopy.endTable();
 
-        ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, ALTER_AUTO_INDEX_CHANGES);
+        ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
         return true;
     }
 

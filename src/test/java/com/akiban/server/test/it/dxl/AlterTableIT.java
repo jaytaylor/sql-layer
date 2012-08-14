@@ -38,6 +38,7 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.util.TableChange;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -71,8 +72,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AlterTableIT extends ITBase {
-    private static final boolean AUTO_INDEX_CHANGES = false;
-
+    private static final List<TableChange> NO_CHANGES = Collections.emptyList();
     private final String SCHEMA = "test";
     private int cid;
     private int oid;
@@ -100,11 +100,15 @@ public class AlterTableIT extends ITBase {
         }
     }
 
+    private QueryContext queryContext() {
+        return null; // Not needed
+    }
+
     private void runAlter(String sql) throws StandardException {
         SQLParser parser = new SQLParser();
         StatementNode node = parser.parseStatement(sql);
         assertTrue("is alter node", node instanceof AlterTableNode);
-        AlterTableDDL.alterTable( ddl(), dml(), session(), SCHEMA, (AlterTableNode)node);
+        AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
         updateAISGeneration();
     }
 
@@ -195,8 +199,8 @@ public class AlterTableIT extends ITBase {
         table = builder.ais().getUserTable(SCHEMA, "c");
 
         ddl().alterTable(session(), table.getName(), table,
-                         Arrays.asList(TableChange.createAdd("c2")), Collections.<TableChange>emptyList(),
-                         AUTO_INDEX_CHANGES);
+                         Arrays.asList(TableChange.createAdd("c2")), NO_CHANGES,
+                         null);
     }
 
     @Test
@@ -323,7 +327,7 @@ public class AlterTableIT extends ITBase {
         List<TableChange> changes = new ArrayList<TableChange>();
         changes.add(TableChange.createAdd("c4"));
 
-        ddl().alterTable(session(), cName, builder.unvalidatedAIS().getUserTable(cName), changes, changes, AUTO_INDEX_CHANGES);
+        ddl().alterTable(session(), cName, builder.unvalidatedAIS().getUserTable(cName), changes, changes, queryContext());
         updateAISGeneration();
 
         expectFullRows(
@@ -555,7 +559,7 @@ public class AlterTableIT extends ITBase {
         changes.add(TableChange.createDrop("c2"));
         changes.add(TableChange.createModify("c3", "c3"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, Collections.<TableChange>emptyList(), AUTO_INDEX_CHANGES);
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, NO_CHANGES, queryContext());
         updateAISGeneration();
 
         expectFullRows(
@@ -630,7 +634,7 @@ public class AlterTableIT extends ITBase {
         changes.add(TableChange.createDrop("foo"));
         changes.add(TableChange.createAdd("foo"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<TableChange>emptyList(), changes, AUTO_INDEX_CHANGES);
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, NO_CHANGES, changes, queryContext());
         updateAISGeneration();
 
         expectIndexes(cid, "foo", "PRIMARY");
@@ -663,7 +667,7 @@ public class AlterTableIT extends ITBase {
         List<TableChange> changes = new ArrayList<TableChange>();
         changes.add(TableChange.createModify("foo", "foo"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, Collections.<TableChange>emptyList(), changes, AUTO_INDEX_CHANGES);
+        ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, NO_CHANGES, changes, queryContext());
         updateAISGeneration();
 
         expectIndexes(cid, "foo", "PRIMARY");
@@ -697,7 +701,7 @@ public class AlterTableIT extends ITBase {
         indexChanges.add(TableChange.createAdd("x"));
         indexChanges.add(TableChange.createAdd("y"));
 
-        ddl().alterTable(session(), new TableName(SCHEMA, "o"), table, columnChanges, indexChanges, AUTO_INDEX_CHANGES);
+        ddl().alterTable(session(), new TableName(SCHEMA, "o"), table, columnChanges, indexChanges, queryContext());
         updateAISGeneration();
 
         expectFullRows(
