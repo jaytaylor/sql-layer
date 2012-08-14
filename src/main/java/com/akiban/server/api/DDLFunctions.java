@@ -91,7 +91,7 @@ public interface DDLFunctions {
      * @param indexChanges list of all index changes
      */
     void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                    List<TableChange> columnChanges, List<TableChange> indexChanges);
+                    List<TableChange> columnChanges, List<TableChange> indexChanges, boolean autoIndexChanges);
 
     /**
      * Drops a table if it exists, and possibly its children.
