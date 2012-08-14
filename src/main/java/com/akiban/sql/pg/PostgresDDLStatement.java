@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
@@ -145,7 +144,7 @@ public class PostgresDDLStatement implements PostgresStatement
                 SequenceDDL.createSequence(ddlFunctions, session, schema, (CreateSequenceNode)ddl);
                 break;
             case NodeTypes.DROP_SEQUENCE_NODE:
-                SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl);
+                SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl, context);
                 break;
             case NodeTypes.REVOKE_NODE:
             default:
