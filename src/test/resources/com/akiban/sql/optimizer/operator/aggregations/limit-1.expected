@@ -1,7 +1,7 @@
 PhysicalSelect[cid:int[INT]]
   Project_Default(Field(0))
-    Limit_Default(limit=10: Sort_InsertionLimited(Project_Default([Field(0), Field(1)]), 10, SUPPRESS_DUPLICATES))
-      Sort_InsertionLimited(Project_Default([Field(0), Field(1)]), 10, SUPPRESS_DUPLICATES)
+    Limit_Default(10)
+      Sort_InsertionLimited(Field(1) ASC, Field(0) ASC, LIMIT 10, SUPPRESS_DUPLICATES)
         Project_Default(Field(0), Field(1))
           Filter_Default(flatten(test.customers, test.orders))
             Flatten_HKeyOrdered(test.customers INNER test.orders)

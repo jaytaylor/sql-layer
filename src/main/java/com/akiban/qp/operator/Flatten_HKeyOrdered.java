@@ -273,18 +273,28 @@ class Flatten_HKeyOrdered extends Operator
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
        
-        Attributes att = new Attributes();
+        Attributes atts = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("Flatten_HKeyOrdered"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Flatten_HKeyOrdered"));
         if (keepParent) 
-            att.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP PARENT"));
+            atts.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP PARENT"));
         if (keepChild) 
-            att.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP CHILD"));
-        att.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(leftJoin && rightJoin ? "FULL" : leftJoin ? "LEFT" : "RIGHT"));
-        att.put(Label.PARENT_TYPE, PrimitiveExplainer.getInstance(parentType));
-        att.put(Label.CHILD_TYPE, PrimitiveExplainer.getInstance(childType));
+            atts.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP CHILD"));
+        if (leftJoin)
+            if (rightJoin)
+                atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("FULL"));
+            else
+                atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("LEFT"));
+        else
+            if (rightJoin)
+                atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("RIGHT"));
+            else
+                atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("INNER"));
+        atts.put(Label.PARENT_TYPE, PrimitiveExplainer.getInstance(parentType));
+        atts.put(Label.CHILD_TYPE, PrimitiveExplainer.getInstance(childType));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         
-        return new OperationExplainer(Type.FLATTEN_OPERATOR, att);
+        return new OperationExplainer(Type.FLATTEN_OPERATOR, atts);
     }
 
     // Inner classes

@@ -227,8 +227,7 @@ public class Format {
                         {
                             for (Explainer row : atts.get(Label.ROWTYPE))
                             {
-                                describe(row);
-                                sb.append(", ");
+                                sb.append(row.get()).append(", ");
                             }
                                 sb.setLength(sb.length() - 2);
                         }
@@ -335,8 +334,8 @@ public class Format {
                         sb.setLength(sb.length()-3);
                     break;
                 case FLATTEN_OPERATOR:
-                    sb.append(atts.get(Label.PARENT_TYPE).get(0).get()).append(" ").append
-                            (atts.get(Label.JOIN_OPTION).get(0).get()).append(" ").append(atts.get(Label.CHILD_TYPE).get(0).get());
+                    sb.append(atts.get(Label.PARENT_TYPE).get(0).get()).append(" ").append(
+                            atts.get(Label.JOIN_OPTION).get(0).get()).append(" ").append(atts.get(Label.CHILD_TYPE).get(0).get());
                     break;
                 case ORDERED:
                     sb.append("skip ");
@@ -394,8 +393,7 @@ public class Format {
                     }
                     if (atts.containsKey(Label.LIMIT))
                     {
-                        sb.append("LIMIT ");
-                        describe(atts.get(Label.LIMIT).get(0));
+                        sb.append("LIMIT ").append(atts.get(Label.LIMIT).get(0).get()).append(", ");
                     }
                     sb.append(atts.get(Label.SORT_OPTION).get(0).get());
                     break;

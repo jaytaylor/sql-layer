@@ -1,6 +1,6 @@
 PhysicalSelect[order_date:date[DATE], quan:int[INT]]
   Map_NestedLoops
-    ValuesScan_Default[ImmutableRow[1234], ImmutableRow[9876]]
+    ValuesScan_Default(ImmutableRow[1234], ImmutableRow[9876])
     Project_Default([Field(2), Field(6)])
       Flatten_HKeyOrdered(test.orders INNER test.items)
         AncestorLookup_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]) -> [test.orders, test.items])

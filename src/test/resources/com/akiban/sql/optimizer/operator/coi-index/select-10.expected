@@ -5,4 +5,4 @@ PhysicalSelect[oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
     Project_Default(Bound(0,Field(1)), Bound(0,Field(2)), Bound(0,Field(3)))
       Limit_Default(limit=1: Select_HKeyOrdered(Bound(0,Field(3)) == Field(0)))
         Select_HKeyOrdered(Bound(0,Field(3)) == Field(0))
-          ValuesScan_Default[ImmutableRow[100], ImmutableRow[200], ImmutableRow[300]]
+          ValuesScan_Default(ImmutableRow[100], ImmutableRow[200], ImmutableRow[300])

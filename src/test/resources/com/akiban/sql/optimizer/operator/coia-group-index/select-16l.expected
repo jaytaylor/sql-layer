@@ -1,6 +1,6 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
-  Limit_Default(limit=2: Sort_InsertionLimited(Project_Default([Field(1), Field(4)]), 2, SUPPRESS_DUPLICATES))
-    Sort_InsertionLimited(Project_Default([Field(1), Field(4)]), 2, SUPPRESS_DUPLICATES)
+  Limit_Default(2)
+    Sort_InsertionLimited(Field(0) ASC, Field(1) ASC, LIMIT 2, SUPPRESS_DUPLICATES)
       Project_Default(Field(1), Field(4))
         Filter_Default(flatten(flatten(test.customers, test.orders), test.items))
           Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)

@@ -189,6 +189,7 @@ final class Limit_Default extends Operator
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Limit_Default"));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         
         return new OperationExplainer(Type.LIMIT_OPERATOR, atts);
     }
