@@ -119,11 +119,18 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
     
     @Override
-    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
+    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale, boolean roundUp)
     {
         value = value.divide(((MBigDecimalWrapper)augend).value,
                 scale,
-                RoundingMode.HALF_UP);
+                roundUp ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN);
+        return this;
+    }
+
+    @Override
+    public BigDecimalWrapper divideToIntegeralValue (BigDecimalWrapper augend)
+    {
+        value = value.divideToIntegralValue(((MBigDecimalWrapper)augend).value);
         return this;
     }
 

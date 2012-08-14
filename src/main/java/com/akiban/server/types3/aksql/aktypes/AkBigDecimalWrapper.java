@@ -67,13 +67,20 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         value = value.divide(o.value);
         return this;
     }
-
+ 
     @Override
-    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
+    public BigDecimalWrapper divideToIntegeralValue (BigDecimalWrapper augend)
+    {
+        value = value.divideToIntegralValue(((AkBigDecimalWrapper)augend).value);
+        return this;
+    }
+    
+    @Override
+    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale, boolean roundUp)
     {
         value = value.divide(((AkBigDecimalWrapper)augend).value,
                 scale,
-                RoundingMode.HALF_UP);
+                roundUp ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN);
         return this;
     }
 
