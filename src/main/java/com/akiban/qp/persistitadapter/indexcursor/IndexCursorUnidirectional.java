@@ -73,13 +73,17 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     // row found by exchange.traverse may actually not qualify -- those values may be lower than
                     // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
                     // past the startKey.
-                    if (!pastStart && beforeStart(next)) {
-                        next = null;
-                        if (exchange().traverse(subsequentKeyComparison, true)) {
-                            next = row();
-                            pastStart = true;
+                    if (!pastStart) {
+                        if (beforeStart(next)) {
+                            next = null;
+                            if (exchange().traverse(subsequentKeyComparison, true)) {
+                                next = row();
+                                pastStart = true;
+                            } else {
+                                close();
+                            }
                         } else {
-                            close();
+                            pastStart = true;
                         }
                     }
                     if (next != null && pastEnd(next)) {
