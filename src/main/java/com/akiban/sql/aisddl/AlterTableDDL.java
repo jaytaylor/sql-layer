@@ -137,6 +137,9 @@ public class AlterTableDDL {
                     columnChanges.add(TableChange.createDrop(columnName));
                 } break;
 
+                case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
+                case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE:
+                case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE:
                 case NodeTypes.MODIFY_COLUMN_TYPE_NODE: {
                     String columnName = ((ModifyColumnNode)node).getColumnName();
                     columnChanges.add(TableChange.createModify(columnName, columnName));
@@ -187,14 +190,31 @@ public class AlterTableDDL {
 
         for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
-                // TODO: Assumes SET DATA TYPE, expand as needed
-                assert cdn.getNodeType() == NodeTypes.MODIFY_COLUMN_TYPE_NODE;
-                Column column = tableCopy.dropColumn(cdn.getColumnName());
-                int pos = column.getPosition();
-                TableDDL.addColumn(builder, table.getName().getSchemaName(), table.getName().getTableName(),
-                                   column.getName(), pos, cdn.getType(), column.getNullable(),
-                                   column.getInitialAutoIncrementValue() != null,
-                                   column.getDefaultValue());
+                ModifyColumnNode modNode = (ModifyColumnNode) cdn;
+                Column column = tableCopy.getColumn(modNode.getColumnName());
+                if(column == null) {
+                    throw new NoSuchColumnException(modNode.getColumnName());
+                }
+                switch(modNode.getNodeType()) {
+                    case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
+                        column.setDefaultValue(TableDDL.getColumnDefault(modNode));
+                    break;
+                    case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL
+                        column.setNullable(true);
+                    break;
+                    case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE: // Type only comes from NOT NULL
+                        column.setNullable(false);
+                    break;
+                    case NodeTypes.MODIFY_COLUMN_TYPE_NODE:
+                        tableCopy.dropColumn(modNode.getColumnName());
+                        TableDDL.addColumn(builder, table.getName().getSchemaName(), table.getName().getTableName(),
+                                           column.getName(), column.getPosition(), cdn.getType(), column.getNullable(),
+                                           column.getInitialAutoIncrementValue() != null,
+                                           column.getDefaultValue());
+                    break;
+                    default:
+                        throw new IllegalStateException("Unexpected node type: " + modNode);
+                }
             } else {
                 int pos = table.getColumns().size();
                 TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos);

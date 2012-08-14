@@ -151,9 +151,9 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:x");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "x MCOMPAT_ INT(11) NOT NULL", "PRIMARY(aid)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "x MCOMPAT_ INT(11) NOT NULL DEFAULT 0", "PRIMARY(aid)");
         else
-            expectFinalTable(A_NAME, "aid bigint NOT NULL", "x int NOT NULL", "PRIMARY(aid)");
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "x int NOT NULL DEFAULT 0", "PRIMARY(aid)");
     }
 
     @Test
@@ -316,6 +316,60 @@ public class AlterTableDDLTest {
             expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "i_i MCOMPAT_ BIGINT(21) NULL", "PRIMARY(id)", "join(oid->id)");
         else
             expectFinalTable(I_NAME, "id bigint NOT NULL", "i_i bigint NULL", "PRIMARY(id)", "join(oid->id)");
+    }
+
+    //
+    // ALTER COLUMN <metadata>
+    //
+
+    @Test
+    public void alterColumnSetDefault() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", true);
+        builder.unvalidatedAIS().getUserTable(C_NAME).getColumn("c1").setDefaultValue(null);
+        parseAndRun("ALTER TABLE c ALTER COLUMN c1 SET DEFAULT 42");
+        expectColumnChanges("MODIFY:c1->c1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) DEFAULT 42");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NULL DEFAULT 42");
+    }
+
+    @Test
+    public void alterColumnDropDefault() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", true);
+        builder.unvalidatedAIS().getUserTable(C_NAME).getColumn("c1").setDefaultValue("42");
+        parseAndRun("ALTER TABLE c ALTER COLUMN c1 DROP DEFAULT");
+        expectColumnChanges("MODIFY:c1->c1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21)");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NULL");
+    }
+
+    @Test
+    public void alterColumnNull() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ALTER COLUMN c1 NULL");
+        expectColumnChanges("MODIFY:c1->c1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NULL");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NULL");
+    }
+
+    @Test
+    public void alterColumnNotNull() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false);
+        parseAndRun("ALTER TABLE c ALTER COLUMN c1 NOT NULL");
+        expectColumnChanges("MODIFY:c1->c1");
+        expectIndexChanges();
+        if(Types3Switch.ON)
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21)");
+        else
+            expectFinalTable(C_NAME, "c1 bigint NOT NULL");
     }
 
     //
@@ -1081,6 +1135,11 @@ public class AlterTableDDLTest {
             } else {
                 sb.append(col.getTypeDescription());
                 sb.append(col.getNullable() ? " NULL" : " NOT NULL");
+            }
+            String defaultVal = col.getDefaultValue();
+            if(defaultVal != null) {
+                sb.append(" DEFAULT ");
+                sb.append(defaultVal);
             }
         }
         for(Index index : table.getIndexes()) {
