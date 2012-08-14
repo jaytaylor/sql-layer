@@ -71,6 +71,7 @@ public class TableChangeValidator {
     private final List<TableChange> columnChanges;
     private final List<TableChange> indexChanges;
     private final List<RuntimeException> errors;
+    private final List<RuntimeException> unmodifiedChanges;
     private final Collection<ChangedTableDescription> changedTables;
     private final Collection<IndexName> autoAffectedGroupIndexes;
     private final boolean automaticIndexChanges;
@@ -88,6 +89,7 @@ public class TableChangeValidator {
         this.newTable = newTable;
         this.columnChanges = new ArrayList<TableChange>((columnChanges == null) ? Collections.<TableChange>emptyList() : columnChanges);
         this.indexChanges = new ArrayList<TableChange>((indexChanges == null) ? Collections.<TableChange>emptyList() : indexChanges);
+        this.unmodifiedChanges = new ArrayList<RuntimeException>();
         this.errors = new ArrayList<RuntimeException>();
         this.changedTables = new ArrayList<ChangedTableDescription>();
         this.autoAffectedGroupIndexes = new TreeSet<IndexName>();
@@ -114,6 +116,10 @@ public class TableChangeValidator {
 
     public boolean isPrimaryKeyChanged() {
         return primaryKeyChanged;
+    }
+
+    public List<RuntimeException> getUnmodifiedChanges() {
+        return unmodifiedChanges;
     }
 
     public void compare() {
@@ -156,7 +162,8 @@ public class TableChangeValidator {
     private void compareTable() {
         TableName oldName = oldTable.getName();
         TableName newName = newTable.getName();
-        if(!oldName.equals(newName)) {
+        if(!oldName.equals(newName) ||
+           !Objects.equal(oldTable.getCharsetAndCollation(), newTable.getCharsetAndCollation())) {
             updateFinalChangeLevel(ChangeLevel.METADATA);
         }
     }
@@ -233,9 +240,7 @@ public class TableChangeValidator {
                     } else {
                         ChangeLevel curChange = compare(oldVal, newVal);
                         if(curChange == ChangeLevel.NONE) {
-                            if(!doAutoChanges) {
-                                modifyNotChanged(isIndex, change);
-                            }
+                            unmodifiedChanges.add(modifyNotChanged(isIndex, change));
                         } else {
                             updateFinalChangeLevel(curChange);
                             oldExcludes.add(oldName);
@@ -497,9 +502,9 @@ public class TableChangeValidator {
         errors.add(isIndex ? new DropIndexNotPresentException(detail) : new DropColumnNotPresentException(detail));
     }
 
-    private void modifyNotChanged(boolean isIndex, TableChange change) {
+    private static RuntimeException modifyNotChanged(boolean isIndex, TableChange change) {
         String detail = change.toString();
-        errors.add(isIndex ? new ModifyIndexNotChangedException(detail) : new ModifyColumnNotChangedException(detail));
+        return isIndex ? new ModifyIndexNotChangedException(detail) : new ModifyColumnNotChangedException(detail);
     }
 
     private void modifyNotPresent(boolean isIndex, TableChange change) {

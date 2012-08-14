@@ -27,6 +27,7 @@
 package com.akiban.ais.util;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
@@ -106,6 +107,7 @@ public class TableChangeValidatorTest {
         assertEquals("Primary key changed", expectedPrimaryKeyChange, validator.isPrimaryKeyChanged());
         assertEquals("Changed tables", expectedChangedTables.toString(), validator.getAllChangedTables().toString());
         assertEquals("Auto group index changes", expectedAutoGroupIndexChange.toString(), validator.getAutoAffectedGroupIndexes().toString());
+        assertEquals("Unmodified changes", "[]", validator.getUnmodifiedChanges().toString());
         return validator;
     }
 
@@ -147,6 +149,24 @@ public class TableChangeValidatorTest {
         UserTable t2 = table(builder(name2).colBigInt("id").pk("id"));
         validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA,
                  asList(changeDesc(TABLE_NAME, name2, false, ParentChange.NONE, "PRIMARY", "PRIMARY")));
+    }
+
+    @Test
+    public void changeDefaultCharset() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        t1.setCharsetAndCollation(CharsetAndCollation.intern("utf8", "binary"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        t1.setCharsetAndCollation(CharsetAndCollation.intern("utf16", "binary"));
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
+    }
+
+    @Test
+    public void changeDefaultCollation() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        t1.setCharsetAndCollation(CharsetAndCollation.intern("utf8", "binary"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").pk("id"));
+        t1.setCharsetAndCollation(CharsetAndCollation.intern("utf8", "utf8_general_ci"));
+        validate(t1, t2, NO_CHANGES, NO_CHANGES, ChangeLevel.METADATA);
     }
 
     //
@@ -256,11 +276,14 @@ public class TableChangeValidatorTest {
         validate(t1, t2, asList(TableChange.createDrop("x")), NO_CHANGES, null);
     }
 
-    @Test(expected=ModifyColumnNotChangedException.class)
+    @Test
     public void modifyColumnNotChanged() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").pk("id"));
-        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, null);
+        TableChangeValidator tcv = new TableChangeValidator(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, false);
+        tcv.compareAndThrowIfNecessary();
+        assertEquals("Final change level", ChangeLevel.NONE, tcv.getFinalChangeLevel());
+        assertEquals("Unmodified change count", 1, tcv.getUnmodifiedChanges().size());
     }
 
     @Test(expected=ModifyColumnNotPresentException.class)
@@ -342,11 +365,14 @@ public class TableChangeValidatorTest {
         validate(t1, t2, NO_CHANGES, asList(TableChange.createDrop("x")), null);
     }
 
-    @Test(expected=ModifyIndexNotChangedException.class)
+    @Test
     public void modifyIndexNotChanged() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
-        validate(t1, t2, NO_CHANGES, asList(TableChange.createModify("x", "x")), null);
+        TableChangeValidator tcv = new TableChangeValidator(t1, t2, NO_CHANGES, asList(TableChange.createModify("x", "x")), false);
+        tcv.compareAndThrowIfNecessary();
+        assertEquals("Final change level", ChangeLevel.NONE, tcv.getFinalChangeLevel());
+        assertEquals("Unmodified change count", 1, tcv.getUnmodifiedChanges().size());
     }
 
     @Test(expected=ModifyIndexNotPresentException.class)
