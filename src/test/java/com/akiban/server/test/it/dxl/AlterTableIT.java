@@ -507,6 +507,25 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
+    public void changeDataTypeSingleColumnInIndex() throws StandardException {
+        createAndLoadSingleTableGroup();
+        createIndex(SCHEMA, "c", "c1", "c1");
+        runAlter("ALTER TABLE c ALTER COLUMN c1 SET DATA TYPE int");
+        expectFullRows(
+                cid,
+                createNewRow(cid, 1L, 10L),
+                createNewRow(cid, 2L, 20L),
+                createNewRow(cid, 3L, 30L)
+        );
+        expectRows(
+                scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1")),
+                createNewRow(store(), cid, UNDEF, 10L),
+                createNewRow(store(), cid, UNDEF, 20L),
+                createNewRow(store(), cid, UNDEF, 30L)
+        );
+    }
+
+    @Test
     public void addDropAndAlterColumnSingleTableGroup() throws StandardException {
         cid = createTable(SCHEMA, "c", "c1 int not null primary key, c2 char(5), c3 int, c4 char(1)");
         writeRows(
