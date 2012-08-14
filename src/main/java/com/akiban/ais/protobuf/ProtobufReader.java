@@ -372,6 +372,9 @@ public class ProtobufReader {
                 Sequence identityGenerator = getAIS().getSequence(sequenceName);
                 column.setIdentityGenerator(identityGenerator);
             }
+            if (pbColumn.hasDefaultValue()) {
+                column.setDefaultValue(pbColumn.getDefaultValue());
+            }
             // TODO: types3, pbColumn.getTypeBundleUUID()
             // TODO: types3, pbColumn.getTypeVersion()
         }
@@ -557,7 +560,8 @@ public class ProtobufReader {
                 AISProtobuf.Column.MAXSTORAGESIZE_FIELD_NUMBER,
                 AISProtobuf.Column.PREFIXSIZE_FIELD_NUMBER,
                 AISProtobuf.Column.TYPEBUNDLEUUID_FIELD_NUMBER,
-                AISProtobuf.Column.TYPEVERSION_FIELD_NUMBER
+                AISProtobuf.Column.TYPEVERSION_FIELD_NUMBER,
+                AISProtobuf.Column.DEFAULTVALUE_FIELD_NUMBER
         );
     }
 

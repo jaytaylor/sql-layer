@@ -144,7 +144,7 @@ public class PersistitAdapter extends StoreAdapter
             oldStep = enterUpdateStep();
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
-            store.updateRow(getSession(), oldRowData, newRowData, null, indexesToInsert);
+            store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -182,9 +182,37 @@ public class PersistitAdapter extends StoreAdapter
     public void deleteRow (Row oldRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = oldRowData(rowDef, oldRow, rowDataCreator(usePValues));
+        oldRowData.setExplicitRowDef(rowDef);
         int oldStep = enterUpdateStep();
         try {
             store.deleteRow(getSession(), oldRowData);
+        } catch (InvalidOperationException e) {
+            rollbackIfNeeded(e);
+            throw e;
+        } catch (PersistitException e) {
+            rollbackIfNeeded(e);
+            handlePersistitException(e);
+            assert false;
+        }
+        finally {
+            leaveUpdateStep(oldStep);
+        }
+    }
+
+    @Override
+    public void alterRow(Row oldRow, Row newRow, Index[] indexes, boolean hKeyChanged, boolean usePValues) {
+        RowDef rowDef = oldRow.rowType().userTable().rowDef();
+        RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
+        RowData oldRowData = oldRowData(rowDef, oldRow, rowDataCreator(usePValues));
+
+        int oldStep = 0;
+        try {
+            // Altered row does not need defaults from newRowData()
+            RowData newRowData = oldRowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
+            oldStep = enterUpdateStep();
+            oldRowData.setExplicitRowDef(rowDef);
+            newRowData.setExplicitRowDef(rowDefNewRow);
+            store.alterRow(getSession(), hKeyChanged, oldRowData, newRowData, indexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -360,9 +388,14 @@ public class PersistitAdapter extends StoreAdapter
 
     public int enterUpdateStep()
     {
+        return enterUpdateStep(false);
+    }
+
+    public int enterUpdateStep(boolean evenIfZero)
+    {
         Transaction transaction = transaction();
         int step = transaction.getStep();
-        if (step > 0 && withStepChanging)
+        if ((evenIfZero || step > 0) && withStepChanging)
             transaction.incrementStep();
         return step;
     }
@@ -372,11 +405,6 @@ public class PersistitAdapter extends StoreAdapter
         if(txn.isActive() && !txn.isRollbackPending()) {
             txn.setStep(step);
         }
-    }
-
-    public void setIndexesToInsert(Index[] indexesToInsert)
-    {
-        this.indexesToInsert = indexesToInsert;
     }
 
     public PersistitAdapter(Schema schema,
@@ -441,5 +469,4 @@ public class PersistitAdapter extends StoreAdapter
     private final PersistitStore persistit;
     private final boolean withStepChanging;
     private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
-    private Index[] indexesToInsert;
 }
