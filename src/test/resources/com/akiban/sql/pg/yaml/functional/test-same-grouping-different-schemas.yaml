@@ -22,7 +22,7 @@
                 ccol VARCHAR(32),
                 GROUPING FOREIGN KEY (pid) REFERENCES table_p (pid));
 ---
-- Statement: CREATE INDEX thegi ON schema_s1.table_c(schema_NUM.table_p.pcol, schema_NUM.table_c.ccol) USING LEFT JOIN;
+- Statement: CREATE INDEX thegi ON schema_s1.table_c(schema_s1.table_p.pcol, schema_s1.table_c.ccol) USING LEFT JOIN;
 ---
-- Statement: CREATE INDEX thegi ON schema_s2.table_c(schema_NUM.table_p.pcol, schema_NUM.table_c.ccol) USING LEFT JOIN;
+- Statement: CREATE INDEX thegi ON schema_s2.table_c(schema_s2.table_p.pcol, schema_s2.table_c.ccol) USING LEFT JOIN;
 ...
