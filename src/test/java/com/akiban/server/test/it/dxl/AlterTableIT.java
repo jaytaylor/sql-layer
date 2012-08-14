@@ -562,6 +562,36 @@ public class AlterTableIT extends ITBase {
     }
 
     @Test
+    public void alterColumnNotNullToNull() throws StandardException {
+        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5) not null");
+        writeRows(
+                createNewRow(cid, 1L, "10"),
+                createNewRow(cid, 2L, "20"),
+                createNewRow(cid, 3L, "30")
+        );
+        runAlter("ALTER TABLE c ALTER COLUMN c1 NULL");
+        // Just check metadata
+        // Insert needs more plumbing (e.g. Insert_Default), checked in test-alter-nullability.yaml
+        UserTable table = getUserTable(SCHEMA, "c");
+        assertEquals("c1 nullable", true, table.getColumn("c1").getNullable());
+    }
+
+    @Test
+    public void alterColumnNullToNotNull() throws StandardException {
+        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5) null");
+        writeRows(
+                createNewRow(cid, 1L, "10"),
+                createNewRow(cid, 2L, "20"),
+                createNewRow(cid, 3L, "30")
+        );
+        runAlter("ALTER TABLE c ALTER COLUMN c1 NOT NULL");
+        // Just check metadata
+        // Insert needs more plumbing (e.g. Insert_Default), checked in test-alter-nullability.yaml
+        UserTable table = getUserTable(SCHEMA, "c");
+        assertEquals("c1 nullable", false, table.getColumn("c1").getNullable());
+    }
+
+    @Test
     public void dropUniqueAddIndexSameName() {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(1), c2 char(1), constraint foo unique(c1)");
         writeRows(

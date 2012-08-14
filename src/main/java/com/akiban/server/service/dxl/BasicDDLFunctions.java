@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +42,6 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
-import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -54,19 +52,19 @@ import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.ais.util.TableChange;
 import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.ais.util.TableChangeValidatorException;
-import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.ConstraintChecker;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowChecker;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
@@ -104,7 +102,6 @@ import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
-import com.akiban.sql.optimizer.explain.Explainer;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
@@ -117,7 +114,6 @@ import org.slf4j.LoggerFactory;
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.insert_Default;
-import static com.akiban.qp.operator.API.update_Default;
 import static com.akiban.util.Exceptions.throwAlways;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
@@ -177,6 +173,44 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
+    }
+
+    private void doMetadataChange(Session session, UserTable newDefinition,
+                                  Collection<ChangedTableDescription> changedTables, boolean nullChange) {
+        if(changedTables.size() != 1) {
+            throw new IllegalStateException("Too many changed tables for METADATA ALTER: " + changedTables);
+        }
+
+        if(nullChange) {
+            // Check new definition
+            final ConstraintChecker checker = new UserTableRowChecker(newDefinition);
+
+            // But scan old
+            final AkibanInformationSchema origAIS = getAIS(session);
+            final UserTable origTable = origAIS.getUserTable(changedTables.iterator().next().getOldName());
+            final Schema oldSchema = SchemaCache.globalSchema(origAIS);
+            final RowType oldSourceType = oldSchema.userTableRowType(origTable);
+            final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
+            final QueryContext queryContext = new SimpleQueryContext(adapter);
+
+            Operator plan = filter_Default(
+                    groupScan_Default(origTable.getGroup().getGroupTable()),
+                    Collections.singleton(oldSourceType)
+            );
+            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+
+            cursor.open();
+            try {
+                Row oldRow;
+                while((oldRow = cursor.next()) != null) {
+                    checker.checkConstraints(oldRow, Types3Switch.ON);
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+
+        schemaManager().alterTableDefinitions(session, changedTables);
     }
 
     private void doIndexChange(Session session, UserTable newDefinition,
@@ -356,35 +390,37 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new InvalidAlterException(tableName, e.getMessage());
         }
 
-        switch(validator.getFinalChangeLevel()) {
-            case INDEX:
-            case TABLE:
-            case GROUP:
-                // Handled below
-            break;
-            default:
-                throw new UnsupportedOperationException("Unsupported ChangeLevel: " + validator.getFinalChangeLevel());
-        }
-
         boolean rollBackNeeded = false;
         List<Index> indexesToDrop = new ArrayList<Index>();
         try {
             AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges);
 
-            // TODO: Don't truncate, create new tree names
-            // Simple prep: truncate dropped or changed indexes (not drop tree as it is non-transactional)
             List<Index> indexesToTruncate = new ArrayList<Index>();
             helper.findAffectedOldIndexes(origTable, indexesToTruncate, indexesToDrop);
 
-            boolean groupChange = false;
-            switch(validator.getFinalChangeLevel()) {
+            TableChangeValidator.ChangeLevel changeLevel = validator.getFinalChangeLevel();
+            Collection<ChangedTableDescription> changedTables = validator.getAllChangedTables();
+
+            switch(changeLevel) {
+                case METADATA:
+                    doMetadataChange(session, newDefinition, changedTables, false);
+                break;
+
+                case METADATA_NOT_NULL:
+                    doMetadataChange(session, newDefinition, changedTables, true);
+                break;
+
                 case INDEX:
                     store().truncateIndex(session, indexesToTruncate);
-                    doIndexChange(session, newDefinition, validator.getAllChangedTables(), helper);
+                    doIndexChange(session, newDefinition, changedTables, helper);
                 break;
-                
+
+                case TABLE:
+                    store().truncateIndex(session, indexesToTruncate);
+                    doTableChange(session, tableName, newDefinition, changedTables, helper, indexesToDrop, false);
+                break;
+
                 case GROUP:
-                    groupChange = true;
                     // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
                     for(ChangedTableDescription desc : validator.getAllChangedTables()) {
                         desc.getPreserveIndexes().put(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT);
@@ -392,14 +428,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         indexesToTruncate.add(index);
                         indexesToDrop.remove(index);
                     }
-                // Fall
-                case TABLE:
                     store().truncateIndex(session, indexesToTruncate);
-                    doTableChange(session, tableName, newDefinition, validator.getAllChangedTables(), helper, indexesToDrop, groupChange);
+                    doTableChange(session, tableName, newDefinition, changedTables, helper, indexesToDrop, true);
                 break;
 
                 default:
-                    throw new IllegalStateException("Unsupported ChangeLevel: " + validator.getFinalChangeLevel());
+                    throw new IllegalStateException("Unhandled ChangeLevel: " + validator.getFinalChangeLevel());
             }
         } catch(Exception e) {
             rollBackNeeded = true;

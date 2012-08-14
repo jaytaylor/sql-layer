@@ -90,6 +90,7 @@ public class TableChangeValidatorTest {
                         expectedChangedTables,
                         false, false, NO_INDEX_CHANGE, false);
     }
+
     private static TableChangeValidator validate(UserTable t1, UserTable t2,
                                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
                                                  ChangeLevel expectedChangeLevel,
@@ -181,10 +182,17 @@ public class TableChangeValidatorTest {
     }
 
     @Test
-    public void modifyColumnNullability() {
+    public void modifyColumnNotNullToNull() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", true).pk("id"));
-        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA_NULL);
+        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA);
+    }
+
+    @Test
+    public void modifyColumnNullToNotNull() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", true).pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).pk("id"));
+        validate(t1, t2, asList(TableChange.createModify("x", "x")), NO_CHANGES, ChangeLevel.METADATA_NOT_NULL);
     }
 
     @Test
@@ -205,6 +213,22 @@ public class TableChangeValidatorTest {
         t1.getColumn("id").setDefaultIdentity(true);
         UserTable t2 = table(builder(TABLE_NAME).colLong("id", false).pk("id"));
         validate(t1, t2, asList(TableChange.createModify("id", "id")), NO_CHANGES, ChangeLevel.METADATA);
+    }
+
+    @Test
+    public void modifyColumnAddDefault() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).colLong("c1", true).pk("id"));
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).colLong("c1", true).pk("id"));
+        t2.getColumn("c1").setDefaultValue("42");
+        validate(t1, t2, asList(TableChange.createModify("c1", "c1")), NO_CHANGES, ChangeLevel.METADATA);
+    }
+
+    @Test
+    public void modifyColumnDropDefault() {
+        UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).colLong("c1", true).pk("id"));
+        t1.getColumn("c1").setDefaultValue("42");
+        UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x", false).colLong("c1", true).pk("id"));
+        validate(t1, t2, asList(TableChange.createModify("c1", "c1")), NO_CHANGES, ChangeLevel.METADATA);
     }
 
     //

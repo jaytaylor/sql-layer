@@ -60,7 +60,7 @@ public class TableChangeValidator {
     public static enum ChangeLevel {
         NONE,
         METADATA,
-        METADATA_NULL,
+        METADATA_NOT_NULL,
         INDEX,
         TABLE,
         GROUP
@@ -233,7 +233,9 @@ public class TableChangeValidator {
                     } else {
                         ChangeLevel curChange = compare(oldVal, newVal);
                         if(curChange == ChangeLevel.NONE) {
-                            modifyNotChanged(isIndex, change);
+                            if(!doAutoChanges) {
+                                modifyNotChanged(isIndex, change);
+                            }
                         } else {
                             updateFinalChangeLevel(curChange);
                             oldExcludes.add(oldName);
@@ -392,16 +394,17 @@ public class TableChangeValidator {
                 return ChangeLevel.TABLE;
             }
         }
-        if(!oldCol.getNullable().equals(newCol.getNullable())) {
-            return ChangeLevel.METADATA_NULL;
+        boolean oldNull = oldCol.getNullable();
+        boolean newNull = newCol.getNullable();
+        if((oldNull == true) && (newNull == false)) {
+            return ChangeLevel.METADATA_NOT_NULL;
         }
-        if(!oldCol.getName().equals(newCol.getName()) ||
+        if((oldNull != newNull) ||
+           !oldCol.getName().equals(newCol.getName()) ||
+           !Objects.equal(oldCol.getDefaultValue(), newCol.getDefaultValue()) ||
            sequenceChanged(oldCol.getIdentityGenerator(), newCol.getIdentityGenerator())) {
           return ChangeLevel.METADATA;
         }
-
-        // TODO: Check defaults
-
         return ChangeLevel.NONE;
     }
 
