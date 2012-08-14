@@ -106,11 +106,12 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<TableChange> columnChanges, List<TableChange> indexChanges) {
+                           List<TableChange> columnChanges, List<TableChange> indexChanges,
+                           boolean autoIndexChanges) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.ALTER_TABLE);
-            delegate.alterTable(session, tableName, newDefinition, columnChanges, indexChanges);
+            delegate.alterTable(session, tableName, newDefinition, columnChanges, indexChanges, autoIndexChanges);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.ALTER_TABLE, t);

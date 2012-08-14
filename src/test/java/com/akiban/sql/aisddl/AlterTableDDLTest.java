@@ -1043,7 +1043,7 @@ public class AlterTableDDLTest {
 
         @Override
         public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                               List<TableChange> columnChanges, List<TableChange> indexChanges) {
+                               List<TableChange> columnChanges, List<TableChange> indexChanges, boolean autoIndexChanges) {
             if(ais.getUserTable(tableName) == null) {
                 throw new NoSuchTableException(tableName);
             }
