@@ -460,7 +460,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             switch(changeLevel) {
                 case NONE:
-                    context.warnClient(new AlterMadeNoChangeException(tableName));
+                    AlterMadeNoChangeException error = new AlterMadeNoChangeException(tableName);
+                    if(context != null) {
+                        context.warnClient(error);
+                    } else {
+                        logger.warn("{}", error);
+                    }
                 break;
 
                 case METADATA:
