@@ -46,7 +46,9 @@ ECHO "Building Akiban Server for ##### %TARGET% #####"
 call mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=%BZR_REVNO%
 IF ERRORLEVEL 1 GOTO EOF
 
-SET TOOLS_BRANCH="lp:akiban-client-tools"
+IF NOT DEFINED TOOLS_BRANCH (
+   SET TOOLS_BRANCH="lp:akiban-client-tools"
+)
 CD target
 bzr branch %TOOLS_BRANCH% client-tools
 IF ERRORLEVEL 1 GOTO EOF
