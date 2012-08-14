@@ -94,14 +94,4 @@ public class Cast_From_Timestamp
             target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeTimestamp(source.getInt32(),context.getCurrentTimezone())));
         }
     };
-        
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIMESTAMP, MString.VARCHAR, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putString(MDatetimes.timestampToString(source.getInt32(), context.getCurrentTimezone()), null);
-        }
-    };
 }

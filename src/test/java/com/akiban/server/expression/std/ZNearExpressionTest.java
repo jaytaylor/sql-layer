@@ -23,22 +23,33 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+package com.akiban.server.expression.std;
 
-public final class Cast_From_AkBool {
-    public static final TCast TO_VARCHAR = new TCastBase(AkBool.INSTANCE, MString.VARCHAR) {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            String boolStr = Boolean.toString(source.getBoolean());
-            target.putString(boolStr, null);
-        }
-    };
+import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import org.junit.Test;
+
+public class ZNearExpressionTest {
+
+    private static final Expression ZERO = new LiteralExpression(AkType.DOUBLE, 0.0);
+    
+    @Test (expected=UnsupportedOperationException.class)
+    public void testNOP() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(ZERO, ZERO, ZERO, ZERO));
+        Expression exp = new ZNearExpression(lst);
+        
+        ValueSource source = exp.evaluation().eval();
+    }
+    
+    @Test (expected=WrongExpressionArityException.class)
+    public void testArity() {
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(ZERO, ZERO));
+        Expression exp = new ZNearExpression(lst);
+    }
 }

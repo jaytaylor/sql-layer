@@ -117,18 +117,4 @@ public final class Cast_From_Double {
             target.putDouble(orig);
         }
     };
-
-    public static final TCast TO_VARCHAR = new TCastBase(MApproximateNumber.DOUBLE, MString.VARCHAR) {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            String asString = Double.toString(source.getDouble());
-            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-            if (asString.length() > maxLen) {
-                String truncated = asString.substring(0, maxLen);
-                context.reportTruncate(asString, truncated);
-                asString = truncated;
-            }
-            target.putString(asString, null);
-        }
-    };
 }

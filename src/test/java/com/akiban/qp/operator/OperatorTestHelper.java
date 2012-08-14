@@ -219,6 +219,11 @@ public final class OperatorTestHelper {
         }
 
         @Override
+        public void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public Cursor sort(QueryContext context,
                            Cursor input,
                            RowType rowType,

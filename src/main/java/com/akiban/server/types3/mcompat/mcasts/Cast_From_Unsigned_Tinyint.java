@@ -77,6 +77,4 @@ public class Cast_From_Unsigned_Tinyint
     public static final TCast TO_DECIMAL = new FromInt16ToDecimal(MNumeric.TINYINT_UNSIGNED, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
     public static final TCast TO_DOUGLE = new FromInt16ToDouble(MNumeric.TINYINT_UNSIGNED, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
-    
-    public static final TCast TO_VARCHAR = new FromInt16ToString(MNumeric.TINYINT_UNSIGNED, MString.VARCHAR, false, Constantness.UNKNOWN);
 }

@@ -24,29 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.akiban.server.error;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.ais.model.TableName;
 
-public final class Cast_From_Smallint {
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.SMALLINT, MString.VARCHAR) {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            String asString = Double.toString(source.getInt16());
-            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-            if (asString.length() > maxLen) {
-                String truncated = asString.substring(0, maxLen);
-                context.reportTruncate(asString, truncated);
-                asString = truncated;
-            }
-            target.putString(asString, null);
-        }
-    };
+public class NoSuchGroupingFKException extends InvalidOperationException {
+    public NoSuchGroupingFKException(TableName tableName) {
+        super(ErrorCode.NO_SUCH_GROUPING_FK, tableName.getSchemaName(), tableName.getTableName());
+    }
 }

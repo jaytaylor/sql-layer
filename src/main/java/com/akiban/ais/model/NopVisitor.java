@@ -24,29 +24,42 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mcasts;
+package com.akiban.ais.model;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+public class NopVisitor implements Visitor {
+    @Override
+    public void visitType(Type type) {
+    }
 
-public final class Cast_From_Mediumint {
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.MEDIUMINT, MString.VARCHAR) {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            String asString = Double.toString(source.getInt32());
-            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-            if (asString.length() > maxLen) {
-                String truncated = asString.substring(0, maxLen);
-                context.reportTruncate(asString, truncated);
-                asString = truncated;
-            }
-            target.putString(asString, null);
-        }
-    };
+    @Override
+    public void visitGroup(Group group) {
+    }
+
+    @Override
+    public void visitUserTable(UserTable userTable) {
+    }
+
+    @Override
+    public void visitGroupTable(GroupTable groupTable) {
+    }
+
+    @Override
+    public void visitColumn(Column column) {
+    }
+
+    @Override
+    public void visitJoin(Join join) {
+    }
+
+    @Override
+    public void visitJoinColumn(JoinColumn joinColumn) {
+    }
+
+    @Override
+    public void visitIndex(Index index) {
+    }
+
+    @Override
+    public void visitIndexColumn(IndexColumn indexColumn) {
+    }
 }

@@ -297,7 +297,6 @@ class IndexScan_Default extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            
             UserTable table = (UserTable)index.rootMostTable();
             this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
         }

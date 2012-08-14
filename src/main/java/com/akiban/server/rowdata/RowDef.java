@@ -418,6 +418,10 @@ public class RowDef implements TreeLink {
                 .getGroup().getGroupTable().getTableId();
     }
 
+    public RowDef getGroupRowDef() {
+        return (table instanceof GroupTable) ? this : table.getGroup().getGroupTable().rowDef();
+    }
+
     public Index[] getIndexes() {
         return indexes;
     }
@@ -452,6 +456,12 @@ public class RowDef implements TreeLink {
         UserTable userTable = (UserTable) table;
         Join parentJoin = userTable.getParentJoin();
         return parentJoin == null ? 0 : parentJoin.getParent().getTableId();
+    }
+
+    public RowDef getParentRowDef() {
+        UserTable userTable = (UserTable) table;
+        Join parentJoin = userTable.getParentJoin();
+        return (parentJoin == null) ? null : parentJoin.getParent().rowDef();
     }
 
     public String getPkTreeName() {

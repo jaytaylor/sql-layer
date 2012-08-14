@@ -28,3 +28,6 @@ select-5: index one branch, join in another
 
 update-1: set to literal
 
+geospatial-1: compute max radius for N neighbors
+
+geospatial-2: get within that radius

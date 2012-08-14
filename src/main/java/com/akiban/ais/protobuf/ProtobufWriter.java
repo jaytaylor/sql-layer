@@ -396,6 +396,9 @@ public class ProtobufWriter {
         if(prefix != null) {
             columnBuilder.setPrefixSize(prefix);
         }
+        if(column.getDefaultValue() != null) {
+            columnBuilder.setDefaultValue(column.getDefaultValue());
+        }
         return columnBuilder.build();
     }
 
@@ -408,7 +411,8 @@ public class ProtobufWriter {
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
-                setJoinType(convertJoinType(index.getJoinType()));
+                setJoinType(convertJoinType(index.getJoinType())).
+                setIndexMethod(convertIndexMethod(index.getIndexMethod()));
                 // Not yet in AIS: description
 
         if(index.getTreeName() != null) {
@@ -472,6 +476,16 @@ public class ProtobufWriter {
                 build();
     }
     
+    private static AISProtobuf.IndexMethod convertIndexMethod(Index.IndexMethod indexMethod) {
+        switch (indexMethod) {
+        case NORMAL: 
+        default:
+            return AISProtobuf.IndexMethod.NORMAL;
+        case Z_ORDER_LAT_LON: 
+            return AISProtobuf.IndexMethod.Z_ORDER_LAT_LON;
+        }
+    }
+
     private static void writeSequence (AISProtobuf.Schema.Builder schemaBuilder, Sequence sequence) {
         AISProtobuf.Sequence.Builder sequenceBuilder = AISProtobuf.Sequence.newBuilder()
                 .setSequenceName(sequence.getSequenceName().getTableName())

@@ -132,18 +132,8 @@ public class PostgresDDLStatement implements PostgresStatement
                 IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);
                 break;
             case NodeTypes.ALTER_TABLE_NODE:
-            {
-                OperatorBasedTableCopier copier = new OperatorBasedTableCopier(
-                        server.getStore().getConfig(),
-                        server.getTreeService(),
-                        session,
-                        server.getStore().getUnderlyingStore(),
-                        usePVals
-                );
-                AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddlFunctions, server.getDXL().dmlFunctions(),
-                                         session, copier, schema, (AlterTableNode)ddl);
+                AlterTableDDL.alterTable(ddlFunctions, server.getDXL().dmlFunctions(), session, schema, (AlterTableNode)ddl);
                 break;
-            }
             case NodeTypes.RENAME_NODE:
                 if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
                     IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
