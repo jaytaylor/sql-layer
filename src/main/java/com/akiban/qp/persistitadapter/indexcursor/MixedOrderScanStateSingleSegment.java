@@ -126,10 +126,13 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         }
     }
 
-    public MixedOrderScanStateSingleSegment(IndexCursorMixedOrder cursor, int field, SortKeyAdapter<S, E> sortKeyAdapter)
+    public MixedOrderScanStateSingleSegment(IndexCursorMixedOrder cursor,
+                                            int field,
+                                            boolean ascending,
+                                            SortKeyAdapter<S, E> sortKeyAdapter)
         throws PersistitException
     {
-        super(cursor, field, cursor.ordering().ascending(field));
+        super(cursor, field, ascending);
         this.keyTarget = sortKeyAdapter.createTarget();
         this.keyTarget.attach(cursor.exchange().getKey());
         this.keySource = sortKeyAdapter.createSource(cursor.tInstanceAt(field));

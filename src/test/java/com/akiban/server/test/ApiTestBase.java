@@ -553,7 +553,11 @@ public class ApiTestBase {
                                                         String indexName,
                                                         boolean unique,
                                                         String... indexCols) {
-        String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
+        String ddl = String.format("CREATE %s INDEX \"%s\" ON \"%s\".\"%s\"(%s)",
+                                   unique ? "UNIQUE" : "",
+                                   indexName,
+                                   schema,
+                                   table,
                                    Strings.join(Arrays.asList(indexCols), ","));
         return createFromDDL(schema, ddl);
     }
