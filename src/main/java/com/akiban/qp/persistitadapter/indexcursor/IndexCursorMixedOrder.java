@@ -90,15 +90,17 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                 // row found by exchange.traverse may actually not qualify -- those values may be lower than
                 // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
                 // past the startKey.
-                if (!pastStart && beforeStart(next)) {
-                    next = null;
-                    advance(scanStates.size() - 1);
-                    if (more) {
-                        next = row();
-                        pastStart = true;
-                    } else {
-                        close();
+                if (!pastStart) {
+                    while (beforeStart(next)) {
+                        next = null;
+                        advance(scanStates.size() - 1);
+                        if (more) {
+                            next = row();
+                        } else {
+                            close();
+                        }
                     }
+                    pastStart = true;
                 }
                 if (next != null && pastEnd(next)) {
                     next = null;
@@ -374,7 +376,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean beforeStart(Row row)
     {
         boolean beforeStart;
-        if (startKey == null || unbounded()) {
+        if (startKey == null || row == null || unbounded()) {
             beforeStart = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
