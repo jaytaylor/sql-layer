@@ -205,9 +205,12 @@ public class DateTimeArithExpression extends ArithExpression
          * @return interval in day
          *
          */
-        public static long getDay (long interval)
+        public static long getDay (double interval)
         {
-            return interval / M_SECS_OF_DAY;
+            // due to leap seconds, interval might not be divisible by M_SECOS_OF_DAY
+            // thus we take the ceiling of the result.
+            // The idea is that even if it's more than 1.00000009 day ==> 2 days.
+            return (long) Math.ceil(interval / M_SECS_OF_DAY);
         }
 
         /**
