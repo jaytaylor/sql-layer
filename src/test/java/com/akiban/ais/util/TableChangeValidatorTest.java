@@ -56,7 +56,7 @@ public class TableChangeValidatorTest {
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
     private static final List<TableChange> NO_CHANGES = null;
-    private static final Collection<IndexName> NO_INDEX_CHANGE = Collections.emptySet();
+    private static final String NO_INDEX_CHANGE = "{}";
 
 
     private static NewUserTableBuilder builder(TableName name) {
@@ -98,7 +98,7 @@ public class TableChangeValidatorTest {
                                                  List<String> expectedChangedTables,
                                                  boolean expectedParentChange,
                                                  boolean expectedPrimaryKeyChange,
-                                                 Collection<IndexName> expectedAutoGroupIndexChange,
+                                                 String expectedAutoGroupIndexChange,
                                                  boolean autoIndexChanges) {
         TableChangeValidator validator = new TableChangeValidator(t1, t2, columnChanges, indexChanges, autoIndexChanges);
         validator.compareAndThrowIfNecessary();
@@ -106,7 +106,7 @@ public class TableChangeValidatorTest {
         assertEquals("Parent changed", expectedParentChange, validator.isParentChanged());
         assertEquals("Primary key changed", expectedPrimaryKeyChange, validator.isPrimaryKeyChanged());
         assertEquals("Changed tables", expectedChangedTables.toString(), validator.getAllChangedTables().toString());
-        assertEquals("Auto group index changes", expectedAutoGroupIndexChange.toString(), validator.getAutoAffectedGroupIndexes().toString());
+        assertEquals("Affected group index", expectedAutoGroupIndexChange, validator.getAffectedGroupIndexes().toString());
         assertEquals("Unmodified changes", "[]", validator.getUnmodifiedChanges().toString());
         return validator;
     }
@@ -369,7 +369,8 @@ public class TableChangeValidatorTest {
     public void modifyIndexNotChanged() {
         UserTable t1 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
         UserTable t2 = table(builder(TABLE_NAME).colBigInt("id").colBigInt("x").key("x", "x").pk("id"));
-        TableChangeValidator tcv = new TableChangeValidator(t1, t2, NO_CHANGES, asList(TableChange.createModify("x", "x")), false);
+        TableChangeValidator tcv = new TableChangeValidator(t1, t2, NO_CHANGES, asList(
+                TableChange.createModify("x", "x")), false);
         tcv.compareAndThrowIfNecessary();
         assertEquals("Final change level", ChangeLevel.NONE, tcv.getFinalChangeLevel());
         assertEquals("Unmodified change count", 1, tcv.getUnmodifiedChanges().size());
@@ -516,6 +517,63 @@ public class TableChangeValidatorTest {
                 false,
                 NO_INDEX_CHANGE,
                 true
+        );
+    }
+
+    //
+    // Group Index changes
+    //
+
+    @Test
+    public void dropColumnInGroupIndex() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable("p").colLong("id").colLong("x").pk("id")
+               .userTable(TABLE).colLong("id").colLong("pid").colLong("y").pk("id").joinTo(SCHEMA, "p", "fk").on("pid", "id")
+               .groupIndex("x_y", Index.JoinType.LEFT).on(TABLE, "y").and("p", "x");
+        UserTable t1 = builder.unvalidatedAIS().getUserTable(TABLE_NAME);
+        builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable("p").colLong("id").colLong("x").pk("id")
+               .userTable(TABLE).colLong("id").colLong("pid").pk("id").joinTo(SCHEMA, "p", "fk").on("pid", "id");
+        UserTable t2 = builder.unvalidatedAIS().getUserTable(TABLE_NAME);
+        final String KEY1 = Index.PRIMARY_KEY_CONSTRAINT;
+        final String KEY2 = "__akiban_fk";
+        validate(
+                t1, t2,
+                asList(TableChange.createDrop("y")),
+                NO_CHANGES,
+                ChangeLevel.TABLE,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, KEY1, KEY1, KEY2, KEY2)),
+                false,
+                false,
+                "{.p.x_y=[]}",
+                false
+        );
+    }
+
+    @Test
+    public void dropGFKFrommMiddleWithGroupIndexes() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable("p").colLong("id").colLong("x").pk("id")
+               .userTable(TABLE).colLong("id").colLong("pid").colLong("y").pk("id").joinTo(SCHEMA, "p", "fk1").on("pid", "id")
+               .userTable("i").colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id")
+               .groupIndex("x_y", Index.JoinType.LEFT).on(TABLE, "y").and("p", "x")                  // spans 2
+               .groupIndex("x_y_z", Index.JoinType.LEFT).on("i", "z").and(TABLE, "y").and("p", "x"); // spans 3
+        UserTable t1 = builder.unvalidatedAIS().getUserTable(TABLE_NAME);
+        builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable("p").colLong("id").colLong("x").pk("id")
+                .userTable(TABLE).colLong("id").colLong("pid").colLong("y").pk("id").key("__akiban_fk1", "pid")
+                .userTable("i").colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id");
+        UserTable t2 = builder.unvalidatedAIS().getUserTable(TABLE_NAME);
+        validate(
+                t1, t2,
+                NO_CHANGES,
+                NO_CHANGES,
+                ChangeLevel.GROUP,
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP)),
+                true,
+                false,
+                "{.p.x_y=[], .p.x_y_z=[i.z, t.y]}",
+                false
         );
     }
 }

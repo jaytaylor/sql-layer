@@ -51,6 +51,7 @@ import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
 import com.akiban.server.error.UnsupportedCheckConstraintException;
+import com.akiban.server.error.UnsupportedFKIndexException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.AlterTableNode;
@@ -151,6 +152,8 @@ public class AlterTableDDL {
                     FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode) node;
                     if(fkNode.isGrouping()) {
                         fkDefNodes.add(fkNode);
+                    } else {
+                        throw new UnsupportedFKIndexException();
                     }
                 } break;
 
