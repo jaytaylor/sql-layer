@@ -229,8 +229,12 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     public void append(Key.EdgeValue edgeValue)
     {
-        pKey().append(edgeValue);
-        pKeyAppends++;
+        // An edgeValue is only useful when attached to pKey, not to pValue. This should only happen when
+        // we've written the last part of the key. DON'T increment pKeyAppends since it isn't a real
+        // key segment being appended.
+        if (pKeyAppends <= pKeyFields) {
+            pKey.append(edgeValue);
+        }
     }
 
     public void tableBitmap(long bitmap)

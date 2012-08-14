@@ -74,17 +74,15 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
                     // past the startKey.
                     if (!pastStart) {
-                        if (beforeStart(next)) {
+                        while (beforeStart(next)) {
                             next = null;
                             if (exchange().traverse(subsequentKeyComparison, true)) {
                                 next = row();
-                                pastStart = true;
                             } else {
                                 close();
                             }
-                        } else {
-                            pastStart = true;
                         }
+                        pastStart = true;
                     }
                     if (next != null && pastEnd(next)) {
                         next = null;
@@ -310,10 +308,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     protected boolean beforeStart(Row row)
     {
-        boolean beforeStart;
-        if (startKey == null) {
-            beforeStart = false;
-        } else {
+        boolean beforeStart = false;
+        if (startKey != null && row != null) {
             PersistitIndexRow current = (PersistitIndexRow) row;
             int c = current.compareTo(startKey) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;
