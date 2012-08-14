@@ -97,7 +97,7 @@ public final class ColumnExpression implements Expression {
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        Explainer ex = new ExpressionExplainer(Type.FUNCTION, "FIELD", extraInfo, (List)null);
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, (List)null);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(position));
         return ex;
     }

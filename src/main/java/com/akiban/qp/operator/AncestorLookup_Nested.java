@@ -242,17 +242,19 @@ class AncestorLookup_Nested extends Operator
            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
        
-       if (extraInfo != null && extraInfo.containsKey(this))
+        if (extraInfo != null && extraInfo.containsKey(this))
         {
-            for (Explainer table : ((OperationExplainer)extraInfo.get(this)).get().get(Label.TABLE_CORRELATION))
+            for (Explainer table : ((OperationExplainer) extraInfo.get(this)).get().get(Label.TABLE_CORRELATION))
                 ex.addAttribute(Label.TABLE_CORRELATION, table);
-            Attributes atts = (Attributes)extraInfo.get(this).get();
+            Attributes atts = (Attributes) extraInfo.get(this).get();
             if (atts.containsKey(Label.BINDING_POSITION))
                 ex.addAttribute(Label.BINDING_POSITION, atts.get(Label.BINDING_POSITION).get(0));
             else
                 ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
         }
-       
+        else
+            ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
+
        return ex;
     }
 

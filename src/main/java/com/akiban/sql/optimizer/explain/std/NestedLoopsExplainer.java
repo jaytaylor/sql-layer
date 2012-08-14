@@ -43,8 +43,8 @@ public class NestedLoopsExplainer extends OperationExplainer
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        att.put(Label.INNER_OPERATOR, innerOp.getExplainer(extraInfo));
-        att.put(Label.OUTER_OPERATOR, outerOp.getExplainer(extraInfo));
+        att.put(Label.INPUT_OPERATOR, outerOp.getExplainer(extraInfo));
+        att.put(Label.INPUT_OPERATOR, innerOp.getExplainer(extraInfo));
         att.put(Label.INNER_TYPE, PrimitiveExplainer.getInstance(innerType));
         att.put(Label.OUTER_TYPE, PrimitiveExplainer.getInstance(outerType));
         

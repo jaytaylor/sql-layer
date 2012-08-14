@@ -921,18 +921,18 @@ public class OperatorAssembler extends BaseRule
             if (planContext.hasInfo()) {
                 Attributes atts = new Attributes();
                 for (IndexColumn column : index.getAllColumns()) {
-                    OperationExplainer opEx = new OperationExplainer(Type.EXTRA_INFO, null);
-                    opEx.addAttribute(Label.NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
-                    atts.put(Label.COLUMN_NAME, opEx);
+                    Attributes columnAtts = new Attributes();
+                    columnAtts.put(Label.NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
+                    atts.put(Label.COLUMN_NAME, new OperationExplainer(Type.EXTRA_INFO, columnAtts));
                 }
                 int i = 0;
-                while (i < indexScan.getEqualityComparands().size()) {
-                    ExpressionNode node = indexScan.getEqualityComparands().get(i);
-                    atts.get(Label.COLUMN_NAME).get(i++).addAttribute(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(" = " + node.toString()));
+                if (indexScan.getEqualityComparands() != null)
+                for (ExpressionNode node : indexScan.getEqualityComparands()) {
+                    ((Attributes)atts.get(Label.COLUMN_NAME).get(i++).get()).put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(" = " + node.toString()));
                 }
                 ExpressionNode hi = indexScan.getHighComparand();
                 ExpressionNode lo = indexScan.getLowComparand();
-                String text = "";
+                String text;
                 if (hi != null) {
                     if (lo != null)
                         if (indexScan.isHighInclusive())

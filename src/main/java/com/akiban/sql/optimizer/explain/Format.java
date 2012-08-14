@@ -253,8 +253,7 @@ public class Format {
                 case LOOKUP_OPERATOR:
                     if (name.equals("AncestorLookup_Default"))
                     {
-                        describe(atts.get(Label.GROUP_TABLE).get(0));
-                        sb.append(" -> ");
+                        sb.append(atts.get(Label.GROUP_TABLE).get(0).get()).append(" -> ");
                         if (atts.containsKey(Label.TABLE_CORRELATION))
                         {
                             for (Explainer table : atts.get(Label.TABLE_CORRELATION))
@@ -292,8 +291,7 @@ public class Format {
                     }
                     else if (name.equals("BranchLookup_Default"))
                     {
-                        describe(atts.get(Label.GROUP_TABLE).get(0));
-                        sb.append(" -> ");
+                        sb.append(atts.get(Label.GROUP_TABLE).get(0).get()).append(" -> ");
                         if (atts.containsKey(Label.TABLE_CORRELATION))
                         {
                             for (Explainer table : atts.get(Label.TABLE_CORRELATION))
@@ -301,10 +299,8 @@ public class Format {
                             sb.setLength(sb.length()-2);
                         }
                         else
-                            describe(atts.get(Label.OUTPUT_TYPE).get(0));
-                        sb.append(" (via ");
-                        describe(atts.get(Label.ANCESTOR_TYPE).get(0));
-                        sb.append(")");
+                            sb.append(atts.get(Label.OUTPUT_TYPE).get(0).get());
+                        sb.append(" (via ").append(atts.get(Label.ANCESTOR_TYPE).get(0).get()).append(')');
                     }
                     else if (name.equals("BranchLookup_Nested"))
                     {
@@ -316,10 +312,8 @@ public class Format {
                             sb.setLength(sb.length()-2);
                         }
                         else
-                            describe(atts.get(Label.OUTPUT_TYPE).get(0));
-                        sb.append(" (via ");
-                        describe(atts.get(Label.ANCESTOR_TYPE).get(0));
-                        sb.append(")");
+                            sb.append(atts.get(Label.OUTPUT_TYPE).get(0).get());
+                        sb.append(" (via ").append(atts.get(Label.ANCESTOR_TYPE).get(0).get()).append(")");
                     }
                     break;
                 case COUNT_OPERATOR:
@@ -465,30 +459,6 @@ public class Format {
         if (atts.containsKey(Label.INPUT_OPERATOR))
         {
             for (Explainer input : atts.get(Label.INPUT_OPERATOR))
-            {
-                newRow();
-                for (int i = 0; i <= depth; i++)
-                {
-                    sb.append("  ");
-                }
-                describeOperator((OperationExplainer) input, depth + 1);
-            }
-        }
-        if (atts.containsKey(Label.INNER_OPERATOR))
-        {
-            for (Explainer input : atts.get(Label.INNER_OPERATOR))
-            {
-                newRow();
-                for (int i = 0; i <= depth; i++)
-                {
-                    sb.append("  ");
-                }
-                describeOperator((OperationExplainer) input, depth + 1);
-            }
-        }
-        if (atts.containsKey(Label.OUTER_OPERATOR))
-        {
-            for (Explainer input : atts.get(Label.OUTER_OPERATOR))
             {
                 newRow();
                 for (int i = 0; i <= depth; i++)

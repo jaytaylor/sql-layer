@@ -163,9 +163,6 @@ class Sort_Tree extends Operator
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator, ordering, extraInfo);
-        
-        // TODO implement for real
-        //return PrimitiveExplainer.getInstance(toString()); // Dummy explainer
     }
 
     // Inner classes

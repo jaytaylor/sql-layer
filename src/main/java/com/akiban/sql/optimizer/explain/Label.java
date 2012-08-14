@@ -35,8 +35,6 @@ public enum Label
    //--------------------------------------------------------------------------
     AGGREGATORS(Category.CHILD),
     INPUT_OPERATOR(Category.CHILD),
-    INNER_OPERATOR(Category.CHILD),
-    OUTER_OPERATOR(Category.CHILD),
     OPERAND(Category.CHILD), // function operand, operands in general
     PROJECTION(Category.CHILD), // list of a expressions
     PREDICATE(Category.CHILD),

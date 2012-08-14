@@ -52,6 +52,8 @@ import org.junit.runner.RunWith;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.plan.PlanContext;
 
 import org.junit.Before;
 
@@ -62,6 +64,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class OperatorCompilerTest extends NamedParamsTestBase 
@@ -200,8 +203,11 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
+        PlanContext plan = new PlanContext(compiler);
+        Map<Object, Explainer> extraInfo = new HashMap<Object, Explainer>();
+        plan.makeInfo(extraInfo);
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
-                                                parser.getParameterList());
+                                                parser.getParameterList(), plan);
         return result.toString();
     }
 
