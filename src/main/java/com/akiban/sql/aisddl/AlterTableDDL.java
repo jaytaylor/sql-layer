@@ -72,6 +72,8 @@ import static com.akiban.sql.parser.ConstraintDefinitionNode.ConstraintType;
 import static com.akiban.util.Exceptions.throwAlways;
 
 public class AlterTableDDL {
+    private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
+
     private AlterTableDDL() {}
 
     public static void alterTable(DDLFunctions ddlFunctions,
@@ -230,7 +232,7 @@ public class AlterTableDDL {
 
         tableCopy.endTable();
 
-        ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges);
+        ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, ALTER_AUTO_INDEX_CHANGES);
         return true;
     }
 

@@ -59,13 +59,15 @@ import java.util.TreeSet;
 public class AISMerge {
     public enum MergeType { ADD_TABLE, MODIFY_TABLE }
 
-    private static class TableNameAndJoin {
-        public final TableName tableName;
+    private static class JoinChange {
         public final Join join;
+        public final TableName newTableName;
+        public final boolean isNewGroup;
 
-        private TableNameAndJoin(TableName tableName, Join join) {
-            this.tableName = tableName;
+        private JoinChange(Join join, TableName newTableName, boolean isNewGroup) {
+            this.newTableName = newTableName;
             this.join = join;
+            this.isNewGroup = isNewGroup;
         }
     }
 
@@ -81,7 +83,7 @@ public class AISMerge {
     private final MergeType mergeType;
     private final SortedSet<Integer> userTableIDSet = new TreeSet<Integer>();
     private final SortedSet<Integer> isTableIDSet = new TreeSet<Integer>();
-    private final List<TableNameAndJoin> joinsToFix;
+    private final List<JoinChange> changedJoins;
     private final Set<IndexName> indexesToFix;
 
     /**
@@ -96,7 +98,7 @@ public class AISMerge {
         this.targetAIS = copyAISForAdd(primaryAIS);
         this.sourceTable = newTable;
         this.mergeType = MergeType.ADD_TABLE;
-        this.joinsToFix = null;
+        this.changedJoins = null;
         this.indexesToFix = null;
     }
 
@@ -106,9 +108,9 @@ public class AISMerge {
         this.targetAIS = new AkibanInformationSchema();
         this.sourceTable = null;
         this.mergeType = MergeType.MODIFY_TABLE;
-        this.joinsToFix = new ArrayList<TableNameAndJoin>();
+        this.changedJoins = new ArrayList<JoinChange>();
         this.indexesToFix = new HashSet<IndexName>();
-        copyAISForModify(primaryAIS, targetAIS, joinsToFix, indexesToFix, alteredTables);
+        copyAISForModify(primaryAIS, targetAIS, indexesToFix, changedJoins, alteredTables);
     }
 
     private static NameGenerator makeGenerator(AkibanInformationSchema ais) {
@@ -123,30 +125,52 @@ public class AISMerge {
         return AISCloner.clone(oldAIS);
     }
 
-    private static void copyAISForModify(AkibanInformationSchema oldAIS, AkibanInformationSchema targetAIS, List<TableNameAndJoin> joinsToFix,
-                                         Set<IndexName> indexesToFix, Collection<ChangedTableDescription> changedTables)
+    private static void copyAISForModify(AkibanInformationSchema oldAIS, AkibanInformationSchema targetAIS,
+                                         Set<IndexName> indexesToFix, final List<JoinChange> joinsToFix,
+                                         Collection<ChangedTableDescription> changedTables)
     {
+        final Set<Group> excludedGroups = new HashSet<Group>();
         final Map<TableName,UserTable> filteredTables = new HashMap<TableName,UserTable>();
         for(ChangedTableDescription desc : changedTables) {
             // Copy tree names and IDs for pre-existing table and it's indexes
             UserTable oldTable = oldAIS.getUserTable(desc.getOldName());
             UserTable newTable = desc.getNewDefinition();
-            newTable.setTableId(oldTable.getTableId());
-            if(!desc.isNewGroup()) {
+
+            // These don't affect final outcome and may be reset later. Needed by clone process.
+            if(newTable != null) {
+                newTable.setTableId(oldTable.getTableId());
                 newTable.setTreeName(oldTable.getTreeName());
-            } else {
-                final Join join;
-                List<Join> parentJoins = newTable.getCandidateParentJoins();
-                switch(parentJoins.size()) {
-                    case 0: join = null; break;
-                    case 1: join = parentJoins.get(0); break;
-                    default:
-                        throw new IllegalStateException("More than 1 join: " + parentJoins);
-                }
-                joinsToFix.add(new TableNameAndJoin(newTable.getName(), join));
-                newTable.setGroup(null);
-                newTable.removeCandidateParentJoin(join);
             }
+
+            switch(desc.getParentChange()) {
+                case NONE:
+                case UPDATE:
+                    // None: Handled by cloning process
+                break;
+                case ADD:
+                    if(newTable == null) {
+                        throw new IllegalArgumentException("Invalid change description: " + desc);
+                    }
+                    joinsToFix.add(new JoinChange(null, desc.getNewName(), false));
+                break;
+                case DROP:
+                    final Join join;
+                    if(newTable != null) {
+                        join = newTable.getParentJoin();
+                        excludedGroups.add(newTable.getGroup());
+                    } else {
+                        join = oldTable.getParentJoin();
+                    }
+                    joinsToFix.add(new JoinChange(join, desc.getNewName(), true));
+                break;
+                default:
+                    throw new IllegalStateException("Unhandled GroupChange: " + desc.getParentChange());
+            }
+
+            if(newTable == null) {
+                continue;
+            }
+
             filteredTables.put(desc.getOldName(), newTable);
 
             for(Index newIndex : newTable.getIndexesIncludingInternal()) {
@@ -179,6 +203,21 @@ public class AISMerge {
                             }
                         }
                         return columnar;
+                    }
+
+                    @Override
+                    public boolean isSelected(Group group) {
+                        return !excludedGroups.contains(group);
+                    }
+
+                    @Override
+                    public boolean isSelected(Join join) {
+                        for(JoinChange tnj : joinsToFix) {
+                            if(tnj.join == join) {
+                                return false;
+                            }
+                        }
+                        return true;
                     }
                 }
         );
@@ -256,12 +295,20 @@ public class AISMerge {
         AISBuilder builder = new AISBuilder(targetAIS);
 
         // Fix up groups
-        for(TableNameAndJoin tnj : joinsToFix) {
-            UserTable table = targetAIS.getUserTable(tnj.tableName);
-            if(tnj.join == null) {
+        for(JoinChange tnj : changedJoins) {
+            final UserTable table = targetAIS.getUserTable(tnj.newTableName);
+            if(tnj.isNewGroup) {
                 addNewGroup(builder, table, false);
-            } else {
-                addJoin(builder, tnj.join, table);
+                table.traverseTableAndDescendants(new NopVisitor() {
+                    @Override
+                    public void visitUserTable(UserTable child) {
+                        if(child != table) {
+                            child.getCandidateParentJoins().get(0).setGroup(table.getGroup());
+                            child.setGroup(table.getGroup());
+                            child.setTreeName(table.getTreeName());
+                        }
+                    }
+                });
             }
         }
 
