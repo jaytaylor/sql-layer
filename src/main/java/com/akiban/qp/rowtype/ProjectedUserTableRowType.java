@@ -37,7 +37,13 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 public class ProjectedUserTableRowType extends ProjectedRowType {
 
     public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TPreparedExpression> tExprs) {
+        this(schema, table, projections, tExprs, false);
+    }
+
+    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TPreparedExpression> tExprs,
+                                     boolean includeInternalColumn) {
         super(schema, table.getTableId(), projections, tExprs);
+        this.nFields = includeInternalColumn ? table.getColumnsIncludingInternal().size() : table.getColumns().size();
         this.table = table;
         this.constraintChecker = new UserTableRowChecker(this);
     }
@@ -55,7 +61,7 @@ public class ProjectedUserTableRowType extends ProjectedRowType {
     @Override
     public int nFields()
     {
-        return table.getColumns().size();
+        return nFields;
     }
 
     @Override
@@ -76,6 +82,7 @@ public class ProjectedUserTableRowType extends ProjectedRowType {
         return String.format("%s: %s", super.toString(), table);
     }
 
+    private final int nFields;
     private final UserTable table;
     private final ConstraintChecker constraintChecker;
 }

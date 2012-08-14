@@ -30,16 +30,17 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.util.ArgumentValidation;
 
-import java.util.Arrays;
 import java.util.Map;
 
 /**
  * Information describing the state of an altered table
  */
 public class ChangedTableDescription {
+    public static enum ParentChange { NONE, UPDATE, ADD, DROP}
+
     private final TableName tableName;
     private final UserTable newDefinition;
-    private final boolean newGroup;
+    private final ParentChange parentChange;
     private final Map<String,String> preserveIndexes;
 
     /**
@@ -47,13 +48,12 @@ public class ChangedTableDescription {
      * @param newDefinition New definition of the table.
      * @param preserveIndexes Mapping of new index names to old.
      */
-    public ChangedTableDescription(TableName tableName, UserTable newDefinition, boolean newGroup, Map<String, String> preserveIndexes) {
+    public ChangedTableDescription(TableName tableName, UserTable newDefinition, ParentChange parentChange, Map<String, String> preserveIndexes) {
         ArgumentValidation.notNull("tableName", tableName);
-        ArgumentValidation.notNull("newDefinition", newDefinition);
         ArgumentValidation.notNull("preserveIndexes", preserveIndexes);
         this.tableName = tableName;
         this.newDefinition = newDefinition;
-        this.newGroup = newGroup;
+        this.parentChange = parentChange;
         this.preserveIndexes = preserveIndexes;
     }
 
@@ -62,15 +62,19 @@ public class ChangedTableDescription {
     }
 
     public TableName getNewName() {
-        return newDefinition.getName();
+        return (newDefinition != null) ? newDefinition.getName() : tableName;
     }
 
     public UserTable getNewDefinition() {
         return newDefinition;
     }
 
+    public ParentChange getParentChange() {
+        return parentChange;
+    }
+
     public boolean isNewGroup() {
-        return newGroup;
+        return (parentChange != ParentChange.NONE);
     }
 
     public Map<String,String> getPreserveIndexes() {
@@ -79,10 +83,10 @@ public class ChangedTableDescription {
 
     @Override
     public String toString() {
-        return toString(tableName, newDefinition.getName(), newGroup, preserveIndexes);
+        return toString(getOldName(), getNewName(), isNewGroup(), getParentChange(), getPreserveIndexes());
     }
 
-    public static String toString(TableName oldName, TableName newName, boolean newGroup, Map<String,String> indexMap) {
-        return oldName + "=" + newName + "[newGroup=" + newGroup + "]" + indexMap.toString();
+    public static String toString(TableName oldName, TableName newName, boolean newGroup, ParentChange groupChange, Map<String,String> indexMap) {
+        return oldName + "=" + newName + "[newGroup=" + newGroup + "][parentChange=" + groupChange + "]" + indexMap.toString();
     }
 }
