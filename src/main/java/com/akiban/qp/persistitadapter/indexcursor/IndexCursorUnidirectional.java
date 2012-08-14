@@ -308,10 +308,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     protected boolean beforeStart(Row row)
     {
-        boolean beforeStart;
-        if (startKey == null) {
-            beforeStart = false;
-        } else {
+        boolean beforeStart = false;
+        if (startKey != null && row != null) {
             PersistitIndexRow current = (PersistitIndexRow) row;
             int c = current.compareTo(startKey) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;

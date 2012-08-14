@@ -228,7 +228,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             scanStates.add(scanState);
             f++;
         }
-        if (index().isUniqueAndMayContainNulls() && f == maxSegments) {
+        if (keyRange != null && index().isUniqueAndMayContainNulls() && f == maxSegments) {
             // Add a segment to deal with the null separator. The ordering is that of the next segment (or ascending
             // if there is none).
             boolean ascending = f >= orderingColumns() || ordering.ascending(f);
