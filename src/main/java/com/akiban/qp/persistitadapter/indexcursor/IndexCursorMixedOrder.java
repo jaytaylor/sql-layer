@@ -332,7 +332,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
 
     private void setBoundaries()
     {
-        if (keyRange != null && index().isUnique()) {
+        // boundColumns == 0 means unbounded
+        if (keyRange != null && boundColumns > 0 && index().isUnique()) {
             assert startKey != null : index();
             assert endKey != null : index();
             IndexBound lo = keyRange.lo();
