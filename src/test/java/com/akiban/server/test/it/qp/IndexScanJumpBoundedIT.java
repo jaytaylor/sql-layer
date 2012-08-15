@@ -850,22 +850,18 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
 
     @Test
     public void testDDDDOutOfRangeUpperBound()
-    {
-        // currently failing
-        // For the first 'jump' (1015), it returns [1015, 1014, 1013, 1012]
-        // but should be [1015, 1014, 1013] because the lower bound is b = 12 (1013)
-        
+    {   
         testRange(getDDDD(),
                   getDDDDId(),
                   0,
                   12, true,
                   21, true,
-                  new long [][]     // specified range: [21-12],
-                  {                 // but it should still only see  [1015 - 1013]
-                     {1015, 1014, 1013}, 
-                     {1014, 1013},
-                     {1013},
-                     {},
+                  new long [][]
+                  {
+                     {1015, 1014, 1013, 1012}, 
+                     {1014, 1013, 1012},
+                     {1013, 1012},
+                     {1012},
                      {},
                      {}
                   });
