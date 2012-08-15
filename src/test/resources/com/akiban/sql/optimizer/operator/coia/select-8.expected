@@ -1,5 +1,5 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT], state:char(2)[VARCHAR]]
-  Project_Default(Field(1), Field(8), Field(11), Field(12), Field(4))
+  Project_Default(customers.name, orders.order_date, items.sku, items.quan, addresses.state)
     Product_NestedLoops(flatten(test.customers, test.addresses) x flatten(flatten(test.customers, test.orders), test.items))
       Filter_Default(flatten(test.customers, test.addresses))
         Flatten_HKeyOrdered(test.customers INNER test.addresses)

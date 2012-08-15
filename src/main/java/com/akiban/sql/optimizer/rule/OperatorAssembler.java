@@ -717,7 +717,8 @@ public class OperatorAssembler extends BaseRule
                         atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(expression.toString()));
                 else
                     for (Expression expression : updates)
-                        atts.put(Label.EXPRESSIONS, expression.getExplainer(planContext.getInfo()));
+                        if (expression != null)
+                            atts.put(Label.EXPRESSIONS, expression.getExplainer(planContext.getInfo()));
                 planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
             return new PhysicalUpdate(plan, getParameterTypes());

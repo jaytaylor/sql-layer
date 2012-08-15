@@ -48,7 +48,7 @@ public class FilterExplainer extends OperationExplainer
         atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         
         for (RowType type : keepType)
-            atts.put(Label.KEEP_TYPE, PrimitiveExplainer.getInstance(type));
+            atts.put(Label.KEEP_TYPE, type.getExplainer(extraInfo));
         return atts;
     }
     

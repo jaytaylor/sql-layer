@@ -102,7 +102,7 @@ public enum Type
         EXPRESSION,
         OPERATOR,
         SCALAR_VALUE,
-        ROWTYPE, // may not be needed?
+        ROWTYPE,
         EXTRA_INFO
     }
 }

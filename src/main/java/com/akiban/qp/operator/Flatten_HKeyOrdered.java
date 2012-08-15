@@ -290,8 +290,8 @@ class Flatten_HKeyOrdered extends Operator
                 atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("RIGHT"));
             else
                 atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("INNER"));
-        atts.put(Label.PARENT_TYPE, PrimitiveExplainer.getInstance(parentType));
-        atts.put(Label.CHILD_TYPE, PrimitiveExplainer.getInstance(childType));
+        atts.put(Label.PARENT_TYPE, parentType.getExplainer(extraInfo));
+        atts.put(Label.CHILD_TYPE, childType.getExplainer(extraInfo));
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         
         return new OperationExplainer(Type.FLATTEN_OPERATOR, atts);

@@ -64,10 +64,17 @@ public class Format {
         if (explainer.hasAttributes())
         {
             OperationExplainer opEx = (OperationExplainer) explainer;
-            if (explainer.getType().generalType() == GeneralType.OPERATOR)
+            switch (explainer.getType().generalType())
+            {
+            case OPERATOR:
                 describeOperator(opEx, 0);
-            else
+                break;
+            case ROWTYPE:
+                describeRowType(opEx);
+                break;
+            default:
                 describeExpression(opEx, needsParens, parentName);
+            }
         }
         else
         {
@@ -120,9 +127,9 @@ public class Format {
             sb.append(")");
         }
         else if (name.equals("Variable"))
-        {
             sb.append(name).append("(pos=").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
-        }
+        else if (name.equals("Field"))
+            sb.append(atts.get(Label.OPERAND).get(0).get());
         else
         {
             sb.append(name).append("(");
@@ -159,8 +166,10 @@ public class Format {
     protected void describeOperator(OperationExplainer explainer, int depth) {
         
         Attributes atts = explainer.get();
-        String name = atts.get(Label.NAME).get(0).get().toString();
         Type type = explainer.getType();
+        
+        String name = atts.get(Label.NAME).get(0).get().toString();
+        
         
         if (!verbose)
         {
@@ -226,16 +235,12 @@ public class Format {
                         if (atts.containsKey(Label.ROWTYPE))
                         {
                             for (Explainer row : atts.get(Label.ROWTYPE))
-                            {
                                 sb.append(row.get()).append(", ");
-                            }
-                                sb.setLength(sb.length() - 2);
+                            sb.setLength(sb.length() - 2);
                         }
                     }
                     else if (name.equals("GroupScan_Default"))
-                    {
                         sb.append(atts.get(Label.SCAN_OPTION).get(0).get()).append(" on ").append(atts.get(Label.GROUP_TABLE).get(0).get());
-                    }
                     else if (name.equals("IndexScan_Default"))
                     {
                         sb.append(atts.get(Label.INDEX).get(0).get());
@@ -321,15 +326,18 @@ public class Format {
                     if (name.equals("Count_TableStatus"));
                         sb.append(" FROM ").append(atts.get(Label.INPUT_TYPE).get(0).get());
                     break;
-                case FILTER:
+                case FILTER: // Doesn't seem to be in any of the tests
                     for (Explainer rowtype : atts.get(Label.KEEP_TYPE))
-                        sb.append(rowtype.get()).append(" - ");
-                    if (!atts.get(Label.KEEP_TYPE).isEmpty())
-                        sb.setLength(sb.length()-3);
+                    {
+                        describe(rowtype);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length()-2);
                     break;
                 case FLATTEN_OPERATOR:
-                    sb.append(atts.get(Label.PARENT_TYPE).get(0).get()).append(" ").append(
-                            atts.get(Label.JOIN_OPTION).get(0).get()).append(" ").append(atts.get(Label.CHILD_TYPE).get(0).get());
+                    describe(atts.get(Label.PARENT_TYPE).get(0));
+                    sb.append(" ").append(atts.get(Label.JOIN_OPTION).get(0).get()).append(" ");
+                    describe(atts.get(Label.CHILD_TYPE).get(0));
                     break;
                 case ORDERED:
                     sb.append("skip ");
@@ -373,9 +381,9 @@ public class Format {
                     }
                     else if (name.equals("Product_NestedLoops"))
                     {
-                        describe(atts.get(Label.INNER_TYPE).get(0));
-                        sb.append(" x ");
                         describe(atts.get(Label.OUTER_TYPE).get(0));
+                        sb.append(" x ");
+                        describe(atts.get(Label.INNER_TYPE).get(0));
                     }
                     break;
                 case SORT:
@@ -474,5 +482,17 @@ public class Format {
     {
         rows.add(sb.toString());
         sb.delete(0, sb.length());
+    }
+
+    private void describeRowType(OperationExplainer opEx) {
+        Attributes atts = opEx.get();
+        if (atts.containsKey(Label.PARENT_TYPE) && atts.containsKey((Label.CHILD_TYPE)))
+        {
+            describe(atts.get(Label.PARENT_TYPE).get(0));
+            sb.append(" - ");
+            describe(atts.get(Label.CHILD_TYPE).get(0));
+        }
+        else
+            sb.append(atts.get(Label.NAME).get(0).get());
     }
 }

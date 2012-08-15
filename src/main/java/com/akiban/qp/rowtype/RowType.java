@@ -33,6 +33,8 @@ import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.sql.optimizer.explain.*;
+import java.util.Map;
 
 public abstract class RowType
 {
@@ -150,6 +152,13 @@ public abstract class RowType
 
     public boolean hasUserTable() {
         return false;
+    }
+    
+    // Will want to override in most cases.
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(toString()));
+        return new OperationExplainer(Type.ROWTYPE, atts);
     }
 
     // For use by subclasses

@@ -26,6 +26,7 @@
 package com.akiban.sql.optimizer.explain.std;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.optimizer.explain.*;
 import java.util.Map;
@@ -40,14 +41,16 @@ public class NestedLoopsExplainer extends OperationExplainer
     
     private static Attributes buildMap (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map<Object, Explainer> extraInfo)
     {
-        Attributes att = new Attributes();
+        Attributes atts = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        att.put(Label.INPUT_OPERATOR, outerOp.getExplainer(extraInfo));
-        att.put(Label.INPUT_OPERATOR, innerOp.getExplainer(extraInfo));
-        att.put(Label.INNER_TYPE, PrimitiveExplainer.getInstance(innerType));
-        att.put(Label.OUTER_TYPE, PrimitiveExplainer.getInstance(outerType));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
+        atts.put(Label.INPUT_OPERATOR, outerOp.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, innerOp.getExplainer(extraInfo));
+        if (innerType != null)
+            atts.put(Label.INNER_TYPE, innerType.getExplainer(extraInfo));
+        if (outerType != null)
+            atts.put(Label.OUTER_TYPE, outerType.getExplainer(extraInfo));
         
-        return att;
+        return atts;
     }
 }

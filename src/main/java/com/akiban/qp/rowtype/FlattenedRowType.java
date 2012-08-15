@@ -30,9 +30,12 @@ import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.sql.optimizer.explain.*;
+import java.math.BigDecimal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class FlattenedRowType extends DerivedRowType
 {
@@ -117,6 +120,18 @@ public class FlattenedRowType extends DerivedRowType
         List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
         parentAndChildTables.addAll(child.typeComposition().tables());
         typeComposition(new SingleBranchTypeComposition(this, parentAndChildTables));
+    }
+    
+    @Override
+    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    {
+        Attributes atts = new Attributes();
+        
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(toString()));
+        atts.put(Label.PARENT_TYPE, parent.getExplainer(extraInfo));
+        atts.put(Label.CHILD_TYPE, child.getExplainer(extraInfo));
+        
+        return new OperationExplainer(Type.ROWTYPE, atts);
     }
 
     // Object state
