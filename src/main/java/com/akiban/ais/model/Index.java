@@ -334,14 +334,16 @@ public abstract class Index implements Traversable
         if (akTypes == null) {
             synchronized (this) {
                 if (akTypes == null) {
-                    akTypes = new AkType[allColumns.size()];
-                    akCollators = new AkCollator[allColumns.size()];
+                    AkType[] localAkTypes = new AkType[allColumns.size()];
+                    AkCollator[] localAkCollators = new AkCollator[allColumns.size()];
                     for (IndexColumn indexColumn : allColumns) {
                         int position = indexColumn.getPosition();
                         Column column = indexColumn.getColumn();
-                        this.akTypes[position] = column.getType().akType();
-                        this.akCollators[position] = column.getCollator();
+                        localAkTypes[position] = column.getType().akType();
+                        localAkCollators[position] = column.getCollator();
                     }
+                    akTypes = localAkTypes;
+                    akCollators = localAkCollators;
                 }
             }
         }
