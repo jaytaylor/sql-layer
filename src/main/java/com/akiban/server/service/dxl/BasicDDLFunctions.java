@@ -464,7 +464,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if(context != null) {
                         context.warnClient(error);
                     } else {
-                        logger.warn("{}", error);
+                        logger.warn(error.getMessage());
                     }
                 break;
 
