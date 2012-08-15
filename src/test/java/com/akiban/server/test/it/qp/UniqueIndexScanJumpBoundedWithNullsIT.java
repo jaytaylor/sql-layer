@@ -90,7 +90,13 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
             createNewRow(t, 1014L, 1L, 13L, 132L),
             createNewRow(t, 1015L, 1L, 13L, 133L),
             createNewRow(t, 1016L, 1L, null, 122L),
-            createNewRow(t, 1017L, 1L, 14L, 142L)
+            createNewRow(t, 1017L, 1L, 14L, 142L),
+            createNewRow(t, 1018L, 1L, 20L, 201L),
+            createNewRow(t, 1019L, 1L, 30L, null),
+            createNewRow(t, 1020L, 1L, 30L, null),
+            createNewRow(t, 1021L, 1L, 30L, null),
+            createNewRow(t, 1022L, 1L, 30L, 300L),
+            createNewRow(t, 1023L, 1L, 40L, 401L)
         };
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
@@ -149,16 +155,33 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
 
     
     @Test
-    public void testDDDToMiddleNull()
+    public void testAAAToFirstNull()
     {
-        // currently failing
-        // doens't return any row
-
-        testSkipNulls(1013, // jump to one of the nulls
-                      b_of(1010), true,
-                      b_of(1015), true,
+        testSkipNulls(1019, // jump to the first null
+                      b_of(1018), true,
+                      b_of(1021), true,
                       getDDDD(),
-                      new long[] {1012}); //should see only the min null (1012)
+                      new long[] {1019, 1020, 1021, 1018}); // all the nulls should be seen first
+    }
+    
+    @Test
+    public void testAAAToMiddleNull()
+    {
+        testSkipNulls(1020, // jump to the middle null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDDDD(),
+                      new long[] {1019, 1020, 1021, 1018});
+    }
+
+    @Test
+    public void testAAAToLastNull()
+    {
+        testSkipNulls(1021, // jump to the first null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDDDD(),
+                      new long[] {1019, 1020, 1021, 1018});
     }
 
     @Test
