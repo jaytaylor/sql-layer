@@ -200,8 +200,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
                       getDDD(),
                       new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
     }
-    
-    @Ignore
+
     @Test
     public void testAAD()
     {
