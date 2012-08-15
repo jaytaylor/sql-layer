@@ -453,6 +453,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
+        List<Sequence> sequencesToDrop = new ArrayList<Sequence>();
+        for (Sequence sequence : ais.getSequences().values()) {
+            // Drop the sequences in this schema, but not the 
+            // generator sequences, which will be dropped with the table. 
+            if (sequence.getSchemaName().equals(schemaName) &&
+                 !(sequence.getSequenceName().getTableName().startsWith("_sequence-"))) {
+                sequencesToDrop.add(sequence);
+            }
+        }
         // Remove groups that contain tables in multiple schemas
         for(UserTable table : tablesToDrop) {
             groupsToDrop.remove(table.getGroup());
@@ -471,6 +480,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         for(Group group : groupsToDrop) {
             dropGroup(session, group.getName());
+        }
+        for (Sequence sequence : sequencesToDrop) {
+            dropSequence(session, sequence.getSequenceName());
         }
     }
 
