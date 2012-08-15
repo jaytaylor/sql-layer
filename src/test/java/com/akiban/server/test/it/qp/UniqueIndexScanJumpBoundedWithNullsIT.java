@@ -187,46 +187,37 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       new long[] {1021, 1020, 1019, 1018});
     }
     
-    //@Ignore
+    @Ignore
     @Test
     public void testAAAToFirstNull()
     {
-        // currently failing
-        // This returns [1, 30, 300] (id == 1022, which is outside of the specified range)
-
         testSkipNulls(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAA(),
-                      new long[] {1019, 1020, 1021, 1018});
+                      new long[] {1019, 1020, 1021, 1018, 1022});
     }
  
     @Ignore
     @Test
     public void testAAAToMiddleNull()
     {
-        // currently failing
-        // This returns [1, 30, 300] (id == 1022, which is outside of the specified range)
-
         testSkipNulls(1020, // jump to the middle null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAA(),
-                      new long[] {1021, 1020, 1019, 1018});
+                      new long[] {1021, 1020, 1019, 1018, 1022});
     }
 
     @Ignore
     @Test
     public void testAAAToLastNull()
     {
-        // currently failing
-        // This returns [1, 30, 300] (id == 1022, which is outside of the specified range)
-
         testSkipNulls(1021, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAA(),
-                      new long[] {1021, 1020, 1019, 1018});
+                      new long[] {1021, 1020, 1019, 1018, 1022});
     }
 
     @Test
