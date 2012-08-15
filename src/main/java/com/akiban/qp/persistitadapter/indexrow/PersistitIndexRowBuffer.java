@@ -416,23 +416,33 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         assert !index.isUnique() || index.isTableIndex() : index;
         this.index = index;
         this.pKey = key;
-        this.pValue = adapter.newKey();
+        if (this.pValue == null) {
+            this.pValue = adapter.newKey();
+        } else {
+            this.pValue.clear();
+        }
         this.value = value;
         if (index.isSpatial()) {
             this.nIndexFields = index.getAllColumns().size() - index.getKeyColumns().size() + 1;
             this.pKeyFields = this.nIndexFields;
-            this.spatialHandler = new SpatialHandler();
+            if (this.spatialHandler == null) {
+                this.spatialHandler = new SpatialHandler();
+            }
         } else {
             this.nIndexFields = index.getAllColumns().size();
             this.pKeyFields = index.isUnique() ? index.getKeyColumns().size() : index.getAllColumns().size();
             this.spatialHandler = null;
         }
         if (writable) {
-            this.pKeyTarget = SORT_KEY_ADAPTER.createTarget();
+            if (this.pKeyTarget == null) {
+                this.pKeyTarget = SORT_KEY_ADAPTER.createTarget();
+            }
             this.pKeyTarget.attach(key);
             this.pKeyAppends = 0;
             if (index.isUnique()) {
-                this.pValueTarget = SORT_KEY_ADAPTER.createTarget();
+                if (this.pValueTarget == null) {
+                    this.pValueTarget = SORT_KEY_ADAPTER.createTarget();
+                }
                 this.pValueTarget.attach(this.pValue);
             } else {
                 this.pValueTarget = null;
