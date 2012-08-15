@@ -98,7 +98,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
             createNewRow(t, 1020L, 1L, 30L, null),
             createNewRow(t, 1021L, 1L, 30L, null),
             createNewRow(t, 1022L, 1L, 30L, 300L),
-            createNewRow(t, 1023L, 1L, 40L, 401L)
+            createNewRow(t, 1023L, 1L, 40L, 401L),
+            createNewRow(t, 1024L, 1L, null, 121L),
+            createNewRow(t, 1025L, 1L, null, 123L)
         };
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
@@ -129,7 +131,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     {
         testSkipNulls(1010,
                       getAAA(),
-                      new long[]{1010, 1011, 1014, 1015, 1017, 1018, 1019, 1020, 1021, 1022, 1023}); // skip 1012, 1013 and 1016
+                      new long[]{1010, 1011, 1014, 1015, 1017, 1018, 1019, 1020, 1021, 1022, 1023}); // skip all rows with b = null
     }
 
     @Test
@@ -137,7 +139,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     {
         testSkipNulls(1012, // jump to one of the nulls
                       getAAA(),
-                      new long[] {1012, 1013, 1016, 1010, 1011, 1014, 1015, 1017, 1018, 1019, 1020, 1021, 1022, 1023}); // should see the nulls first, because null < everything
+                      new long[] {1012, 1013, 1016, 1025, 1010, 1011, 1014, 1015, 1017, 1018, 1019, 1020, 1021, 1022, 1023}); // should see the nulls first, because null < everything
     }
 
     @Test
@@ -145,44 +147,42 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     {
         testSkipNulls(1015,
                       getDDD(),
-                      new long[] {1015, 1014, 1011, 1010, 1016, 1013, 1012}); // should see the nulls last because null < everything
+                      new long[] {1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024}); // should see the nulls last because null < everything
         
     }
 
     @Test
     public void testDDDToMinNull()
     {
-        testSkipNulls(1012,
+        testSkipNulls(1024,
                        getDDD(),
-                       new long[] {1012, 1013, 1016});
+                       new long[] {1024});
     }
 
     @Test
     public void testDDDToMediumNull()
     {
-        // currently failing
-        // doens't return any row
-
-        testSkipNulls(1013, // jump to one of the nulls
+        testSkipNulls(1013,
                       getDDD(),
-                      new long[] {1013, 1012, 1016}); // should only see all three [1, null, 122]
-    }                                                 // (The use of (1013, 1012, 1016) is for demonstartive purpose
-                                                      // (Any id could've been used as long as their index row is [1, null, 122]
+                      new long[] {1013, 1012, 1016, 1024});
+    }
+
     @Test
     public void testDDDToMaxNull()
     {
-        testSkipNulls(1016,
+        testSkipNulls(1025,
                       getDDD(),
-                      new long[] {1016, 1013, 1012}); 
+                      new long[] {1025, 1016, 1013, 1012, 1024}); 
     }
- 
-    
+
+    // all the next three tests should return the same thing
+    // because 109, 1020 and 1021 all 'mapped' to the identical index row (with null)
     @Test
     public void testDDDToFirstNull()
     {
         testSkipNulls(1019, // jump to the first null
                       getDDD(),
-                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1016, 1013, 1012});
+                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
     }
 
     @Test
@@ -190,15 +190,15 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     {
         testSkipNulls(1020, // jump to the middle null
                       getDDD(),
-                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1016, 1013, 1012});
+                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
     }
 
     @Test
     public void testDDDToLastNull()
     {
-        testSkipNulls(1021, // jump to the first null
+        testSkipNulls(1021, // jump to the last null
                       getDDD(),
-                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1016, 1013, 1012});
+                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
     }
     
     @Ignore
@@ -213,6 +213,14 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
                       new long[] {1014, 1015, 1017}); // skips 1016, which is a null
     }
     
+    @Test
+    public void testAAAToFirstNull()
+    {
+        testSkipNulls(1019, // jump to the first null
+                      getAAA(),
+                      new long[] {1019, 1020, 1021, 1022, 1023});
+    }
+
     //TODO: add more test****() if needed
 
     private void testSkipNulls(long targetId,                  // location to jump to
