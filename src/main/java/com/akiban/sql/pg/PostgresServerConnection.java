@@ -705,8 +705,8 @@ public class PostgresServerConnection extends ServerSessionBase
         return server.getStatementCache(Arrays.asList(parser.getFeatures(),
                                                       defaultSchemaName,
                                                       getProperty("OutputFormat", "table"),
-                                                      Boolean.valueOf(getProperty("cbo")),
-                                                      Boolean.valueOf(getProperty("newtypes"))),
+                                                      getBooleanProperty("cbo", true),
+                                                      getBooleanProperty("newtypes", false)),
                                         aisTimestamp);
     }
 
