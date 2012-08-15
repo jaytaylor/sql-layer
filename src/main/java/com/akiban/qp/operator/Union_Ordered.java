@@ -188,9 +188,11 @@ class Union_Ordered extends Operator
 
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
-        OperationExplainer ex = new OperationExplainer(Type.UNION, null);
-        ex.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("Union_Ordered"));
-        return ex;
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Union_Ordered"));
+        atts.put(Label.INPUT_OPERATOR, left.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, right.getExplainer(extraInfo));
+        return new OperationExplainer(Type.UNION, atts);
     }
 
     // Inner classes

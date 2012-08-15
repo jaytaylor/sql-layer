@@ -100,10 +100,8 @@ public final class FieldExpression implements Expression {
         Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, (List)null);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(fieldIndex));
         ex.addAttribute(Label.ROWTYPE, PrimitiveExplainer.getInstance(rowType.toString())); // TODO: Explainer for RowType?
-        if (null == extraInfo || !extraInfo.containsKey(this))
-            ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(fieldIndex));
-        else
-            ex.addAttribute(Label.OPERAND, extraInfo.get(this));
+        if (null != extraInfo && extraInfo.containsKey(this))
+            ex.addAttribute(Label.COLUMN_NAME, extraInfo.get(this));
         return ex;
     }
     

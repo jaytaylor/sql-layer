@@ -129,10 +129,15 @@ public class Format {
         else if (name.equals("Variable"))
             sb.append(name).append("(pos=").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
         else if (name.equals("Field"))
-            sb.append(atts.get(Label.OPERAND).get(0).get());
+        {
+            if (atts.containsKey(Label.COLUMN_NAME))
+                sb.append(atts.get(Label.COLUMN_NAME).get(0).get());
+            else
+                sb.append(name).append('(').append(atts.get(Label.BINDING_POSITION).get(0).get()).append(')');
+        }
         else
         {
-            sb.append(name).append("(");
+            sb.append(name).append('(');
             if (atts.containsKey(Label.OPERAND))
             {
                 for (Explainer entry : atts.get(Label.OPERAND))
@@ -142,7 +147,7 @@ public class Format {
                 }
                 sb.setLength(sb.length()-2);
             }
-            sb.append(")");
+            sb.append(')');
         }
     }
 
