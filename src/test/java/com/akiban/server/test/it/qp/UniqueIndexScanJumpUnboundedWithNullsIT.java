@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.util.ShareHolder;
 import com.akiban.server.types.ValueSource;
 import com.akiban.qp.operator.Operator;
 import org.junit.Test;
@@ -117,81 +118,66 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     }
 
     @Test
-    public void testAAAA()
+    public void testAAA()
     {
-        // currently failing
-        // All the 5 rows returned are identical: [1, 14, 142] (corresponding to id = 1017)
-
         testSkipNulls(1010,
-                      getAAAA(),
+                      getAAA(),
                       new long[]{1010, 1011, 1014, 1015, 1017}); // skip 1012, 1013 and 1016
     }
 
     @Test
-    public void testAAAAToNull()
+    public void testAAAToNull()
     {
-        // same failure as testAAAA()
-
         testSkipNulls(1012, // jump to one of the nulls
-                      getAAAA(),
+                      getAAA(),
                       new long[] {1012, 1013, 1016, 1010, 1011, 1014, 1015, 1017}); // should see the nulls first, because null < everything
     }
 
     @Test
-    public void testDDDD()
+    public void testDDD()
     {
-        // currently failing
-        // Doesn't even return the correct number of rows. (epxected: 7, actual: 6)
-        // All the 6 rows returned are idential: [1, null, 122]
-
         testSkipNulls(1015,
-                      getDDDD(),
+                      getDDD(),
                       new long[] {1015, 1014, 1011, 1010, 1016, 1013, 1012}); // should see the nulls last because null < everything
         
     }
 
     
     @Test
-    public void testDDDDToMiddleNull()
+    public void testDDDToMiddleNull()
     {
         // currently failing
         // doens't return any row
 
         testSkipNulls(1013, // jump to one of the nulls
-                      getDDDD(),
+                      getDDD(),
                       new long[] {1013, 1012}); // should only see 1013 and 1012 (not 1016)
     }
 
     @Test
-    public void testDDDDToMaxNull()
+    public void testDDDToMaxNull()
     {
-        // currenlty failing
-        // doesn't return any row
-
         testSkipNulls(1016,
-                      getDDDD(),
+                      getDDD(),
                       new long[] {1016, 1013, 1012}); 
     }
     
     @Test
-    public void testDDDDToMinNull()
+    public void testDDDToMinNull()
     {
-        // currenlty failing
-        // doesn't return any row
-
         testSkipNulls(1012,
-                       getDDDD(),
+                       getDDD(),
                        new long[] {1012});
     }
     
     @Test
-    public void testAAAD()
+    public void testAAD()
     {
         // currently failing
-        // return 3 identical rows: [1, 14, 142]
+        // throw IndexOutOfBoundException
 
         testSkipNulls(1014,
-                      getAAAD(),
+                      getAAD(),
                       new long[] {1014, 1015, 1017}); // skips 1016, which is a null
     }
     
@@ -208,8 +194,14 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
 
         Row row;
         List<Row> actualRows = new ArrayList<Row>();
+        List<ShareHolder<Row>> rowHolders = new ArrayList<ShareHolder<Row>>();
         while ((row = cursor.next()) != null)
+        {
+            // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
+            rowHolders.add(new ShareHolder<Row>(row));
+        }
+        cursor.close();
 
         // find the row with given id
         List<Row> expectedRows = new ArrayList<Row>(expected.length);
@@ -218,12 +210,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
 
         // check the list of rows
         checkRows(expectedRows, actualRows);
-
-        cursor.close();
-
     }
-
-        private void checkRows(List<Row> expected, List<Row> actual)
+   
+    private void checkRows(List<Row> expected, List<Row> actual)
     {
         List<List<Long>> expectedRows = toListOfLong(expected);
         List<List<Long>> actualRows = toListOfLong(actual);
@@ -269,38 +258,43 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     }
 
 
-    private API.Ordering getAAAA()
+    private API.Ordering getAAA()
     {
         return ordering(A, ASC, B, ASC, C, ASC);
     }
 
-    private API.Ordering getAAAD()
+    private API.Ordering getAAD()
     {
-        return ordering(A, ASC, B, ASC, C, ASC);
+        return ordering(A, ASC, B, ASC, C, DESC);
     }
     
-    
-    private API.Ordering getDADD()
+    private API.Ordering getADA()
+    {
+        return ordering(A, ASC, B, DESC, C, ASC);
+    }
+
+    private API.Ordering getDAA()
+    {
+        return ordering(A, DESC, B, ASC, C, ASC);
+    }
+
+    private API.Ordering getDAD()
     {
         return ordering(A, DESC, B, ASC, C, DESC);
     }
 
-    private API.Ordering getDDAA()
+    private API.Ordering getDDA()
     {
         return ordering(A, DESC, B, DESC, C, ASC);
     }
 
-    private API.Ordering getDDAD()
+
+    private API.Ordering getADD()
     {
-        return ordering(A, DESC, B, DESC, C, ASC);
+         return ordering(A, ASC, B, ASC, C, DESC);
     }
 
-    private API.Ordering getDDDA()
-    {
-         return ordering(A, DESC, B, DESC, C, ASC);
-    }
-
-    private API.Ordering getDDDD()
+    private API.Ordering getDDD()
     {
         return ordering(A, DESC, B, DESC, C, DESC);
     }
