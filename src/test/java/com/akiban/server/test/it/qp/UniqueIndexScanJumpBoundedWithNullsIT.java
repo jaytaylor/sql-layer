@@ -94,7 +94,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
             createNewRow(t, 1015L, 1L, 13L, 133L),
             createNewRow(t, 1016L, 1L, null, 122L),
             createNewRow(t, 1017L, 1L, 14L, 142L),
-            createNewRow(t, 1018L, 1L, 20L, 201L),
+            createNewRow(t, 1018L, 1L, 30L, 201L),
             createNewRow(t, 1019L, 1L, 30L, null),
             createNewRow(t, 1020L, 1L, 30L, null),
             createNewRow(t, 1021L, 1L, 30L, null),
@@ -187,7 +187,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       new long[] {1021, 1020, 1019, 1018});
     }
     
-    @Ignore
+    //@Ignore
     @Test
     public void testAAAToFirstNull()
     {
