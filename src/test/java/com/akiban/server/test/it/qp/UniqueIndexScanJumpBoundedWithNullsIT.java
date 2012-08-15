@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.util.ShareHolder;
 import com.akiban.server.types.ValueSource;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.operator.Operator;
@@ -116,7 +117,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     }
 
     @Test
-    public void testAAAA()
+    public void testAAA()
     {
         // currently failing
         // for some reason, the rows returned by this jump is 
@@ -125,24 +126,24 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         testSkipNulls(1010,
                       b_of(1010), true,
                       b_of(1015), true,
-                      getAAAA(),
+                      getAAA(),
                       new long[]{1010, 1011, 1014, 1015}); // skip 1012 and 1013
     }
 
     @Test
-    public void testAAAAToMinNull()
+    public void testAAAToMinNull()
     {
         // same failures as testAAAA()
 
         testSkipNulls(1012, // jump to one of the nulls
                       b_of(1010), true,
                       b_of(1015), true,
-                      getAAAA(),
+                      getAAA(),
                       new long[] {1012, 1013, 1016, 1010, 1011, 1014, 1015}); // should see everything
     }                                                                         // with nulls appearing first
 
     @Test
-    public void testDDDD()
+    public void testDDD()
     {
         // currently failing
         // This doesn't even return the correct number of rows
@@ -159,7 +160,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
 
     
     @Test
-    public void testDDDDToMiddleNull()
+    public void testDDDToMiddleNull()
     {
         // currently failing
         // Doesn't return any row
@@ -172,7 +173,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     }
 
     @Test
-    public void testDDDDToMaxNull()
+    public void testDDDToMaxNull()
     {
         testSkipNulls(1016,
                       b_of(1015), false,
@@ -182,14 +183,14 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     }
     
     @Test
-    public void testAAAD()
+    public void testAAD()
     {
         // same failures as testAAAA()
 
         testSkipNulls(1014,
                       b_of(1010), true,
                       b_of(1017), true,
-                      getAAAD(),
+                      getAAD(),
                       new long[] {1014, 1015, 1017}); // skips 1016, which is a null
     }
 
@@ -208,8 +209,15 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
 
         Row row;
         List<Row> actualRows = new ArrayList<Row>();
+        List<ShareHolder<Row>> rowHolders = new ArrayList<ShareHolder<Row>>();
+        
         while ((row = cursor.next()) != null)
+        {
+            // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
+            rowHolders.add(new ShareHolder<Row>(row));
+        }
+        cursor.close();
 
         // find the row with given id
         List<Row> expectedRows = new ArrayList<Row>(expected.length);
@@ -218,9 +226,6 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
 
         // check the list of rows
         checkRows(expectedRows, actualRows);
-        
-        cursor.close();
-
     }
 
     private void checkRows(List<Row> expected, List<Row> actual)
@@ -268,21 +273,16 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         }
     }
 
-    private API.Ordering getAAAA()
+    private API.Ordering getAAA()
     {
         return ordering(A, ASC, B, ASC, C, ASC);
     }
 
-    private API.Ordering getAAAD()
+    private API.Ordering getAAD()
     {
-        return ordering(A, ASC, B, ASC, C, ASC);
+        return ordering(A, ASC, B, ASC, C, DESC);
     }
     
-    
-    private API.Ordering getDADD()
-    {
-        return ordering(A, DESC, B, ASC, C, DESC);
-    }
 
     private API.Ordering getDDAA()
     {
