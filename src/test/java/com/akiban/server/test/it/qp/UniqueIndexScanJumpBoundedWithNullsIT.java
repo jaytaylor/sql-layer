@@ -164,17 +164,17 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       b_of(1018), true,
                       b_of(1021), true,
                       getDDD(),
-                      new long[] {1021, 1020, 1019, 1018}); // 3 rows of [1L, 30L, null] followed by [1L, 20L, 201L]
-    }                                                       // (The use of (1021, 1020, 1019) is just for demonstrative purpose.
-                                                            //  The first 3 items could be anything as long as their mapping
-    @Test                                                   // index row is [1L, 30L, null] )
+                      new long[] {1021, 1020, 1019});   // 3 rows of [1L, 30L, null]
+    }                                                   // (The use of (1021, 1020, 1019) is just for demonstrative purpose.
+                                                        //  They could be anything as long as their mapping
+    @Test                                               // index row is [1L, 30L, null] )
     public void testDDDToMiddleNull()
     {
         testSkipNulls(1020, // jump to the middle null
                       b_of(1018), true,
                       b_of(1021), true,
                       getDDD(),
-                      new long[] {1021, 1020, 1019, 1018});
+                      new long[] {1021, 1020, 1019});
     }
 
     @Test
@@ -184,7 +184,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       b_of(1018), true,
                       b_of(1021), true,
                       getDDD(),
-                      new long[] {1021, 1020, 1019, 1018});
+                      new long[] {1021, 1020, 1019});
     }
     
     @Ignore
