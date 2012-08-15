@@ -101,13 +101,6 @@ class Shuffler extends Space
         shuffle7 = shuffles[7];
     }
 
-    // For use by this class
-
-    private long scaleXZ(long x, int d)
-    {
-        return (x - lo[d]) << shift[d];
-    }
-
     // A point's coordinates are x[0] .. x[dimensions - 1]. Each x[d] is 8 bytes, (bd0 .. bd7).
     // The mask of x[d]'s contributions to the shuffled value is shuffle0[d][bd0] |
     // shuffle1[d][bd1] | ... | shuffle7[d][bd7].

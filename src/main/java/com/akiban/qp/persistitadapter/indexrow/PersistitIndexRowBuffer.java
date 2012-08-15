@@ -39,6 +39,7 @@ import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
@@ -228,8 +229,12 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     public void append(Key.EdgeValue edgeValue)
     {
-        pKey().append(edgeValue);
-        pKeyAppends++;
+        // An edgeValue is only useful when attached to pKey, not to pValue. This should only happen when
+        // we've written the last part of the key. DON'T increment pKeyAppends since it isn't a real
+        // key segment being appended.
+        if (pKeyAppends <= pKeyFields) {
+            pKey.append(edgeValue);
+        }
     }
 
     public void tableBitmap(long bitmap)
@@ -502,7 +507,12 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     case LONG:
                         coords[d] = rowDataValueSource.getLong();
                         break;
-                    // TODO: DECIMAL
+                    case DECIMAL:
+                        coords[d] =
+                            d == 0
+                            ? SpaceLatLon.scaleLat(rowDataValueSource.getDecimal())
+                            : SpaceLatLon.scaleLon(rowDataValueSource.getDecimal());
+                        break;
                     default:
                         assert false : fieldDefs[d].column();
                         break;

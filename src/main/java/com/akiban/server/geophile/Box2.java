@@ -49,22 +49,22 @@ public class Box2 implements SpatialObject
 
     public boolean containedBy(Region region)
     {
-        long[] rLo = region.lo();
-        long[] rHi = region.hi();
-        return rLo[0] <= xLo && xHi <= rHi[0] && rLo[1] <= yLo && yHi <= rHi[1];
+        long rXLo = region.lo(0);
+        long rYLo = region.lo(1);
+        long rXHi = region.hi(0);
+        long rYHi = region.hi(1);
+        return rXLo <= xLo && xHi <= rXHi && rYLo <= yLo && yHi <= rYHi;
     }
 
     public RegionComparison compare(Region region)
     {
-        long[] rLo = region.lo();
-        long[] rHi = region.hi();
-        long rxLo = rLo[0];
-        long ryLo = rLo[1];
-        long rxHi = rHi[0];
-        long ryHi = rHi[1];
-        if (xLo <= rxLo && rxHi <= xHi && yLo <= ryLo && ryHi <= yHi) {
+        long rXLo = region.lo(0);
+        long rYLo = region.lo(1);
+        long rXHi = region.hi(0);
+        long rYHi = region.hi(1);
+        if (xLo <= rXLo && rXHi <= xHi && yLo <= rYLo && rYHi <= yHi) {
             return RegionComparison.INSIDE;
-        } else if (rxHi < xLo || rxLo > xHi || ryHi < yLo || ryLo > yHi) {
+        } else if (rXHi < xLo || rXLo > xHi || rYHi < yLo || rYLo > yHi) {
             return RegionComparison.OUTSIDE;
         } else {
             return RegionComparison.OVERLAP;

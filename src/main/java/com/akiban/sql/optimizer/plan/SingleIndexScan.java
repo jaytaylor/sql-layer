@@ -186,6 +186,16 @@ public final class SingleIndexScan extends IndexScan {
         return highInclusive;
     }
 
+    public void setLowComparand(ExpressionNode comparand, boolean inclusive) {
+        lowComparand = comparand;
+        lowInclusive = inclusive;
+    }
+
+    public void setHighComparand(ExpressionNode comparand, boolean inclusive) {
+        highComparand = comparand;
+        highInclusive = inclusive;
+    }
+
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
@@ -240,6 +250,7 @@ public final class SingleIndexScan extends IndexScan {
 
     @Override
     public boolean isRecoverableAt(int i) {
+        if (index.isSpatial()) return false;
         return index.getAllColumns().get(i).isRecoverable();
     }
 

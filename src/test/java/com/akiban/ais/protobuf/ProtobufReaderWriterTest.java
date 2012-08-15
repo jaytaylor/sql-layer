@@ -463,6 +463,25 @@ public class ProtobufReaderWriterTest {
         assertEquals("storedPrefixSize", Integer.valueOf(0), outCol.getPrefixSizeWithoutComputing());
     }
 
+    @Test
+    public void columnDefaultValue() {
+        final String TABLE = "t";
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(TABLE).colBigInt("id");
+
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Column inCol = inAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        Column outCol = outAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+        assertEquals("default defaultValue null", inCol.getDefaultValue(), outCol.getDefaultValue());
+
+        inCol.setDefaultValue("100");
+        outAIS = writeAndRead(inAIS);
+        outCol = outAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+        assertEquals("defaultValue", inCol.getDefaultValue(), outCol.getDefaultValue());
+    }
+
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }

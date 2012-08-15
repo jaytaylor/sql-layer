@@ -26,7 +26,7 @@
 
 package com.akiban.ais.model;
 
-public class IndexName
+public class IndexName implements Comparable<IndexName>
 {
     private final TableName tableName;
     private final String indexName;
@@ -78,5 +78,14 @@ public class IndexName
         return getSchemaName().hashCode() +
                getTableName().hashCode() +
                getName().hashCode();
+    }
+
+    @Override
+    public int compareTo(IndexName o) {
+        int c = tableName.compareTo(o.tableName);
+        if(c == 0) {
+            c = indexName.compareTo(o.indexName);
+        }
+        return c;
     }
 }

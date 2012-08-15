@@ -138,20 +138,9 @@ public class Space
      * @param x Coordinates of point to be shuffled.
      * @return A z-value.
      */
-    public long shuffle(long[] x)
+    public long shuffle(long... x)
     {
         return shuffler.shuffle(x, zBits);
-    }
-
-    /**
-     * Compute the z-value for the given coordinates. length indicates the number of bits in the z-value.
-     * @param x Coordinates of point to be shuffled.
-     * @param length Number of bits in the z-value.
-     * @return A z-value.
-     */
-    public long shuffle(long[] x, int length)
-    {
-        return shuffler.shuffle(x, length);
     }
 
     /**
@@ -165,7 +154,7 @@ public class Space
     }
 
     /**
-     * Decompose a spatial object, depositing the z-values in zs. The maximum number of z-values is z.length. (So
+     * Decompose a spatial object, depositing the z-values in zs. The maximum number of z-values is zs.length. (So
      * if more precision is needed, pass in a larger array.)
      * @param spatialObject The spatial object to be decomposed.
      * @param zs Z-values will be written into this array. If zs.length z-values are not required, unused slots will
@@ -196,7 +185,7 @@ public class Space
     {
         // Fill the unused bits of the z-value with 1s (but leave the length intact).
         int length = zLength(z);
-        long mask = ((1L << (MAX_LENGTH - length)) - 1) << LENGTH_BITS;
+        long mask = ((1L << (MAX_Z_BITS - length)) - 1) << LENGTH_BITS;
         return z | mask;
     }
 
@@ -230,6 +219,11 @@ public class Space
 
     // For use by this package
 
+    long shuffle(long[] x, int length)
+    {
+        return shuffler.shuffle(x, length);
+    }
+
     boolean siblings(long a, long b)
     {
         boolean neighbors = false;
@@ -260,7 +254,7 @@ public class Space
     long zEncode(long z, long length)
     {
         assert (z & LENGTH_MASK) == 0 : z;
-        assert length <= MAX_LENGTH : length;
+        assert length <= MAX_Z_BITS : length;
         return (z >>> 1) | length;
     }
 
@@ -288,6 +282,16 @@ public class Space
     }
 
     // For use by subclasses
+
+    protected long scaleXZ(long x, int d)
+    {
+        return (x - lo[d]) << shift[d];
+    }
+
+    protected long scaleZX(long x, int d)
+    {
+        return (x >>> shift[d]) + lo[d];
+    }
 
     protected Space(Space space)
     {
@@ -383,7 +387,7 @@ public class Space
     // MSB  0: 0
     //   1-57: left-justified bits
     //  58-63: length
-    private static final int MAX_LENGTH = 57;
+    static final int MAX_Z_BITS = 57;
     private static final long LENGTH_MASK = 0x3f;
     private static final int LENGTH_BITS = 6;
 

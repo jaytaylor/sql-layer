@@ -84,7 +84,10 @@ public abstract class IndexRowType extends AisRowType
         return index;
     }
 
-    public abstract IndexRowType physicalRowType();
+    public IndexRowType physicalRowType()
+    {
+        return this;
+    }
 
     public static IndexRowType createIndexRowType(Schema schema, UserTableRowType tableType, Index index)
     {

@@ -64,6 +64,7 @@ import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
@@ -690,6 +691,16 @@ public final class SchemaManagerIT extends ITBase {
         safeRestart();
         assertTablesInSchema(SCHEMA1, T1_NAME);
         assertTablesInSchema(SCHEMA2, T1_NAME);
+    }
+
+    @Test(expected=JoinToProtectedTableException.class)
+    public void joinToISTable() throws Exception {
+        TableName name = new TableName(TableName.INFORMATION_SCHEMA, "p");
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(name).colLong("id", false).pk("id");
+        builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
+        registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
+        schemaManager.createTableDefinition(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
     }
 
     /**
