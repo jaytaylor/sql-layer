@@ -353,7 +353,8 @@ public class AISMerge {
                     column.getNullable(), 
                     column.getInitialAutoIncrementValue() != null, 
                     column.getCharsetAndCollation().charset(), 
-                    column.getCharsetAndCollation().collation());
+                    column.getCharsetAndCollation().collation(),
+                    column.getDefaultValue());
             Column newColumn = targetTable.getColumn(column.getPosition());
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {

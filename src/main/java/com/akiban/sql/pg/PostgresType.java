@@ -383,7 +383,7 @@ public class PostgresType extends ServerType
             }
             else {
                 akType = AkType.LONG;
-                tInstance = MNumeric.BIGINT.instance();
+                tInstance = MNumeric.INT.instance();
             }
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:

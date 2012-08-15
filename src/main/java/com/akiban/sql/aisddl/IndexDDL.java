@@ -32,7 +32,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.Columnar;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +60,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -245,7 +243,7 @@ public class IndexDDL
         }
 
         AISBuilder builder = new AISBuilder();
-        addGroup (builder, ais, table.getGroup().getName());
+        clone(builder, ais);
         
         builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.getUniqueness(),
                       index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
@@ -318,7 +316,7 @@ public class IndexDDL
         }
 
         AISBuilder builder = new AISBuilder();
-        addGroup(builder, ais, groupName);
+        clone(builder, ais);
         builder.groupIndex(groupName, indexName, index.getUniqueness(), joinType);
         
         int i = 0;
@@ -354,20 +352,7 @@ public class IndexDDL
         return builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
     }
 
-    private static void addGroup (AISBuilder builder, AkibanInformationSchema ais, final String groupName) {
-        AISCloner.clone(
-                builder.akibanInformationSchema(),
-                ais,
-                new ProtobufWriter.TableSelector() {
-                    @Override
-                    public boolean isSelected(Columnar columnar) {
-                        if(!columnar.isTable()) {
-                            return false;
-                        }
-                        UserTable table = (UserTable)columnar;
-                        return table.getGroup().getName().equalsIgnoreCase(groupName);
-                    }
-                }
-        );
+    private static void clone(AISBuilder builder, AkibanInformationSchema ais) {
+        AISCloner.clone(builder.akibanInformationSchema(), ais, ProtobufWriter.ALL_SELECTOR);
     }
 }

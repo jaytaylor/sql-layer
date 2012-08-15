@@ -23,38 +23,19 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+package com.akiban.server.error;
 
-public abstract class Abs extends TOverloadBase {
+import com.akiban.ais.model.TableName;
 
-    protected final TClass inputType;
+import com.akiban.sql.parser.QueryTreeNode;
 
-    public Abs(TClass returnType) {
-        this.inputType = returnType;
+public final class AlterMadeNoChangeException extends InvalidOperationException {
+    public AlterMadeNoChangeException(TableName tableName) {
+        this(tableName.getSchemaName(), tableName.getTableName());
     }
 
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(inputType, 0);
-    }
-
-    @Override
-    public String displayName() {
-        return "ABS";
-    }
-
-    @Override
-    public String[] registeredNames() {
-        return new String[] {"absolute"};
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(inputType.instance());
+    public AlterMadeNoChangeException(String schemaName, String tableName) {
+        super(ErrorCode.ALTER_MADE_NO_CHANGE, schemaName, tableName);
     }
 }

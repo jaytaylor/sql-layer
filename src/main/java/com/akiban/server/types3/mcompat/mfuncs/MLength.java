@@ -55,6 +55,11 @@ public abstract class MLength extends TOverloadBase
         {
             output.putInt32((inputs.get(0).getString()).length());
         }
+
+        @Override
+        public String[] registeredNames() {
+            return new String[] { "char_length", "charLength" };
+        }
     };
 
     public static final TOverload OCTET_LENGTH = new MLength("OCTET_LENGTH")
@@ -75,6 +80,10 @@ public abstract class MLength extends TOverloadBase
             }
         }
 
+        @Override
+        public String[] registeredNames() {
+            return new String[] { "octet_length", "getOctetLength" };
+        }
     };
 
     private final String name;

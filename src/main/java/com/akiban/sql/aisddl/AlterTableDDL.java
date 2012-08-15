@@ -41,6 +41,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.TableChange;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.JoinToMultipleParentsException;
@@ -50,6 +51,7 @@ import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
 import com.akiban.server.error.UnsupportedCheckConstraintException;
+import com.akiban.server.error.UnsupportedFKIndexException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.AlterTableNode;
@@ -72,15 +74,14 @@ import static com.akiban.sql.parser.ConstraintDefinitionNode.ConstraintType;
 import static com.akiban.util.Exceptions.throwAlways;
 
 public class AlterTableDDL {
-    private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
-
     private AlterTableDDL() {}
 
     public static void alterTable(DDLFunctions ddlFunctions,
                                   DMLFunctions dmlFunctions,
                                   Session session,
                                   String defaultSchemaName,
-                                  AlterTableNode alterTable) {
+                                  AlterTableNode alterTable,
+                                  QueryContext context) {
         final AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
         final TableName tableName = convertName(defaultSchemaName, alterTable.getObjectName());
         final UserTable table = curAIS.getUserTable(tableName);
@@ -99,7 +100,7 @@ public class AlterTableDDL {
             return;
         }
 
-        if (processAlter(session, ddlFunctions, defaultSchemaName, table, alterTable.tableElementList)) {
+        if (processAlter(session, ddlFunctions, defaultSchemaName, table, alterTable.tableElementList, context)) {
             return;
         }
 
@@ -112,7 +113,8 @@ public class AlterTableDDL {
         }
     }
 
-    private static boolean processAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table, TableElementList elements) {
+    private static boolean processAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table,
+                                        TableElementList elements, QueryContext context) {
         // Should never come this way from the parser, but be defensive
         if((elements == null) || elements.isEmpty()) {
             return false;
@@ -137,6 +139,9 @@ public class AlterTableDDL {
                     columnChanges.add(TableChange.createDrop(columnName));
                 } break;
 
+                case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
+                case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE:
+                case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE:
                 case NodeTypes.MODIFY_COLUMN_TYPE_NODE: {
                     String columnName = ((ModifyColumnNode)node).getColumnName();
                     columnChanges.add(TableChange.createModify(columnName, columnName));
@@ -147,6 +152,8 @@ public class AlterTableDDL {
                     FKConstraintDefinitionNode fkNode = (FKConstraintDefinitionNode) node;
                     if(fkNode.isGrouping()) {
                         fkDefNodes.add(fkNode);
+                    } else {
+                        throw new UnsupportedFKIndexException();
                     }
                 } break;
 
@@ -187,14 +194,31 @@ public class AlterTableDDL {
 
         for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
-                // TODO: Assumes SET DATA TYPE, expand as needed
-                assert cdn.getNodeType() == NodeTypes.MODIFY_COLUMN_TYPE_NODE;
-                Column column = tableCopy.dropColumn(cdn.getColumnName());
-                int pos = column.getPosition();
-                TableDDL.addColumn(builder, table.getName().getSchemaName(), table.getName().getTableName(),
-                                   column.getName(), pos, cdn.getType(), column.getNullable(),
-                                   column.getInitialAutoIncrementValue() != null,
-                                   column.getDefaultValue());
+                ModifyColumnNode modNode = (ModifyColumnNode) cdn;
+                Column column = tableCopy.getColumn(modNode.getColumnName());
+                if(column == null) {
+                    throw new NoSuchColumnException(modNode.getColumnName());
+                }
+                switch(modNode.getNodeType()) {
+                    case NodeTypes.MODIFY_COLUMN_DEFAULT_NODE:
+                        column.setDefaultValue(TableDDL.getColumnDefault(modNode));
+                    break;
+                    case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NODE: // Type only comes from NULL
+                        column.setNullable(true);
+                    break;
+                    case NodeTypes.MODIFY_COLUMN_CONSTRAINT_NOT_NULL_NODE: // Type only comes from NOT NULL
+                        column.setNullable(false);
+                    break;
+                    case NodeTypes.MODIFY_COLUMN_TYPE_NODE:
+                        tableCopy.dropColumn(modNode.getColumnName());
+                        TableDDL.addColumn(builder, table.getName().getSchemaName(), table.getName().getTableName(),
+                                           column.getName(), column.getPosition(), cdn.getType(), column.getNullable(),
+                                           column.getInitialAutoIncrementValue() != null,
+                                           column.getDefaultValue());
+                    break;
+                    default:
+                        throw new IllegalStateException("Unexpected node type: " + modNode);
+                }
             } else {
                 int pos = table.getColumns().size();
                 TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos);
@@ -232,7 +256,7 @@ public class AlterTableDDL {
 
         tableCopy.endTable();
 
-        ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, ALTER_AUTO_INDEX_CHANGES);
+        ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
         return true;
     }
 
