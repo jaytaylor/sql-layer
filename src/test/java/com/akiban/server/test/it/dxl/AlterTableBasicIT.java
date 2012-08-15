@@ -72,90 +72,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class AlterTableIT extends ITBase {
-    private static final List<TableChange> NO_CHANGES = Collections.emptyList();
-    private final String SCHEMA = "test";
+public class AlterTableBasicIT extends AlterTableITBase {
     private int cid;
     private int oid;
     private int iid;
 
-    // Note: Does not handle null index contents, check manually in that case
-    private static class SingleColumnComparator implements Comparator<NewRow> {
-        private final int colPos;
-
-        SingleColumnComparator(int colPos) {
-            this.colPos = colPos;
-        }
-
-        @Override
-        public int compare(NewRow o1, NewRow o2) {
-            Object col1 = o1.get(colPos);
-            Object col2 = o2.get(colPos);
-            if(col1 == null && col2 == null) {
-                return 0;
-            }
-            if(col1 == null) {
-                return -1;
-            }
-            return ((Comparable)col1).compareTo(col2);
-        }
-    }
-
-    private QueryContext queryContext() {
-        return null; // Not needed
-    }
-
-    private void runAlter(String sql) throws StandardException {
-        SQLParser parser = new SQLParser();
-        StatementNode node = parser.parseStatement(sql);
-        assertTrue("is alter node", node instanceof AlterTableNode);
-        AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
-        updateAISGeneration();
-    }
-
-    private RowBase testRow(RowType type, Object... fields) {
-        return new TestRow(type, fields);
-    }
-
-    private void checkIndexContents(int tableID) {
-        if(tableID == 0) {
-            return;
-        }
-
-        updateAISGeneration();
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        UserTable table = ais.getUserTable(tableID);
-        List<NewRow> tableRows = new ArrayList<NewRow>(scanAll(scanAllRequest(tableID, true)));
-
-        for(TableIndex index : table.getIndexesIncludingInternal()) {
-            if(index.getKeyColumns().size() == 1) {
-                int colPos = index.getKeyColumns().get(0).getColumn().getPosition();
-                Collections.sort(tableRows, new SingleColumnComparator(colPos));
-
-                List<NewRow> indexRows = scanAllIndex(index);
-
-                if(tableRows.size() != indexRows.size()) {
-                    assertEquals(index + " size does not match table size",
-                                 tableRows.toString(), indexRows.toString());
-                }
-
-                for(int i = 0; i < tableRows.size(); ++i) {
-                    Object tableObj = tableRows.get(i).get(colPos);
-                    Object indexObj = indexRows.get(i).get(colPos);
-                    assertEquals(index + " contents mismatch at row " + i,
-                                 tableObj, indexObj);
-                }
-            }
-        }
-    }
-
-    @After
-    public void checkAllIndexes() {
-        checkIndexContents(cid);
-        checkIndexContents(oid);
-        checkIndexContents(iid);
-        cid = oid = iid = 0;
-    }
 
     private void createAndLoadSingleTableGroup() {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5)");
@@ -344,6 +265,8 @@ public class AlterTableIT extends ITBase {
                 createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null),
                 createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null)
         );
+
+        ddl().dropTable(session(), cName);
     }
 
     @Test
