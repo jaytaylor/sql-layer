@@ -370,8 +370,8 @@ public abstract class Index implements Traversable
     protected IndexRowComposition indexRowComposition;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
-    private AkType[] akTypes;
-    private AkCollator[] akCollators;
+    private volatile AkType[] akTypes;
+    private volatile AkCollator[] akCollators;
 
     public enum JoinType {
         LEFT, RIGHT
