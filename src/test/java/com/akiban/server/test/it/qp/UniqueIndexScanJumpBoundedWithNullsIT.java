@@ -119,10 +119,6 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     @Test
     public void testAAA()
     {
-        // currently failing
-        // for some reason, the rows returned by this jump is 
-        // a bunch of [1, 14, 142] (corresponding to id = 1017)
-        
         testSkipNulls(1010,
                       b_of(1010), true,
                       b_of(1015), true,
@@ -133,8 +129,6 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     @Test
     public void testAAAToMinNull()
     {
-        // same failures as testAAAA()
-
         testSkipNulls(1012, // jump to one of the nulls
                       b_of(1010), true,
                       b_of(1015), true,
@@ -145,11 +139,6 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     @Test
     public void testDDD()
     {
-        // currently failing
-        // This doesn't even return the correct number of rows
-        // Only 3 rows are returned, while the expected is 4
-        // And the 3 rows returned are identical: [1, null, 122]
-
         testSkipNulls(1015,
                       b_of(1010), true,
                       b_of(1015), true,
@@ -163,7 +152,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     public void testDDDToMiddleNull()
     {
         // currently failing
-        // Doesn't return any row
+        // doens't return any row
 
         testSkipNulls(1013, // jump to one of the nulls
                       b_of(1010), true,
@@ -185,7 +174,8 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     @Test
     public void testAAD()
     {
-        // same failures as testAAAA()
+        // currently failing
+        // throw IndexOutOfBoundException
 
         testSkipNulls(1014,
                       b_of(1010), true,
