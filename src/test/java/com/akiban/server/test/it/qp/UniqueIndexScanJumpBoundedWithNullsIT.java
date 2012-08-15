@@ -238,7 +238,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       b_of(1010), true,
                       b_of(1017), true,
                       getAAD(),
-                      new long[] {1014, 1015, 1017}); // skips 1016, which is a null
+                      new long[] {1014, 1017});
     }
 
     //TODO: add more test****()
