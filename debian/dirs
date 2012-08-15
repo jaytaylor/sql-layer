@@ -3,4 +3,3 @@ etc/akiban
 etc/akiban/config
 var/lib/akiban
 var/log/akiban
-var/run/akiban
