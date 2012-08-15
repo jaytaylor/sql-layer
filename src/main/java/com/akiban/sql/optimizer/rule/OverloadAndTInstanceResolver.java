@@ -222,7 +222,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleCastExpression(CastExpression expression) {
             DataTypeDescriptor dtd = expression.getSQLtype();
-            TInstance instance = TypesTranslation.toTInstance(dtd, null);
+            TInstance instance = TypesTranslation.toTInstance(dtd);
             expression.setPreptimeValue(new TPreptimeValue(instance));
             return expression;
         }
@@ -406,7 +406,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     List<ExpressionNode> fields = project.getFields();
                     if (fields == null || fields.size() != 1) {
                         logger.warn("subquery should have only had one field: {} in {}", fields, columnSource);
-                        tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype(), null));
+                        tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
                     }
                     else {
                         tpv = fields.get(0).getPreptimeValue();
@@ -414,7 +414,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
                 else {
                     logger.warn("no Project found for subquery: {}", columnSource);
-                    tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype(), null));
+                    tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
                 }
                 expression.setPreptimeValue(tpv);
                 return expression;
@@ -452,7 +452,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             if (sqlType != null) {
                 // TODO eventually we'll probably want to ignore this completely, and do all the type inference
                 // from within the types3 framework. For now, use what we have.
-                TInstance tinst = TypesTranslation.toTInstance(sqlType, null);
+                TInstance tinst = TypesTranslation.toTInstance(sqlType);
                 expression.setPreptimeValue(new TPreptimeValue(tinst));
             }
             return expression;

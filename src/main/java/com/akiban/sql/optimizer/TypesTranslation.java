@@ -322,8 +322,8 @@ public final class TypesTranslation {
         }
     }
 
-    public static TInstance toTInstance(DataTypeDescriptor descriptor, TInstance tInstance) {
-        TInstance result = PostgresType.fromDerby(descriptor, tInstance).getInstance();
+    public static TInstance toTInstance(DataTypeDescriptor descriptor) {
+        TInstance result = PostgresType.fromDerby(descriptor, null).getInstance();
         assert result != null : "no TInstance created for " + descriptor;
         return result;
     }
