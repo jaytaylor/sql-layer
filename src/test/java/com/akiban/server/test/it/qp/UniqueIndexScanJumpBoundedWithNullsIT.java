@@ -209,7 +209,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         testSkipNulls(1020, // jump to the middle null
                       b_of(1018), true,
                       b_of(1021), true,
-                      getDDD(),
+                      getAAA(),
                       new long[] {1021, 1020, 1019, 1018});
     }
 
@@ -222,7 +222,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         testSkipNulls(1021, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
-                      getDDD(),
+                      getAAA(),
                       new long[] {1021, 1020, 1019, 1018});
     }
 
