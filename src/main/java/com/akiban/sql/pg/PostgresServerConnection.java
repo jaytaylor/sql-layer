@@ -685,7 +685,8 @@ public class PostgresServerConnection extends ServerSessionBase
                                 session,
                                 reqs.config()));
         // Statement cache depends on some connection settings.
-        statementCache = server.getStatementCache(Arrays.asList(format,
+        statementCache = server.getStatementCache(Arrays.asList(getProperty("database"),
+                                                                format,
                                                                 parserKeys,
                                                                 Boolean.valueOf(getProperty("cbo")),
                                                                 Boolean.valueOf(getProperty("newtypes"))),
