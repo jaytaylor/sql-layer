@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
+import org.junit.Ignore;
 import com.akiban.util.ShareHolder;
 import com.akiban.server.types.ValueSource;
 import com.akiban.qp.expression.IndexBound;
@@ -57,10 +58,12 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     private static final int A = 0;
     private static final int B = 1;
     private static final int C = 2;
+
     private static final int COLUMN_COUNT = 3;
 
     private static final boolean ASC = true;
     private static final boolean DESC = false;
+
     private static final SetColumnSelector INDEX_ROW_SELECTOR = new SetColumnSelector(0, 1, 2);
 
     private int t;
@@ -148,40 +151,79 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         testSkipNulls(1015,
                       b_of(1010), true,
                       b_of(1015), true,
-                      getDDDD(),
+                      getDDD(),
                       new long[] {1015, 1014, 1011, 1010}); // skip 1012 and 1013
         
     }
 
     
     @Test
-    public void testAAAToFirstNull()
+    public void testDDDToFirstNull()
     {
         testSkipNulls(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
-                      getDDDD(),
-                      new long[] {1019, 1020, 1021, 1018}); // all the nulls should be seen first
-    }
-    
-    @Test
-    public void testAAAToMiddleNull()
+                      getDDD(),
+                      new long[] {1021, 1020, 1019, 1018}); // 3 rows of [1L, 30L, null] followed by [1L, 20L, 201L]
+    }                                                       // (The use of (1021, 1020, 1019) is just for demonstrative purpose.
+                                                            //  The first 3 items could be anything as long as their mapping
+    @Test                                                   // index row is [1L, 30L, null] )
+    public void testDDDToMiddleNull()
     {
         testSkipNulls(1020, // jump to the middle null
                       b_of(1018), true,
                       b_of(1021), true,
-                      getDDDD(),
+                      getDDD(),
+                      new long[] {1021, 1020, 1019, 1018});
+    }
+
+    @Test
+    public void testDDDToLastNull()
+    {
+        testSkipNulls(1021, // jump to the first null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDDD(),
+                      new long[] {1021, 1020, 1019, 1018});
+    }
+    
+    @Test
+    public void testAAAToFirstNull()
+    {
+        // currently failing
+        // This returns [1, 30, 300] (id == 1022, which is outside of the specified range)
+
+        testSkipNulls(1019, // jump to the first null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getAAA(),
                       new long[] {1019, 1020, 1021, 1018});
+    }
+                                                  
+    @Test
+    public void testAAAToMiddleNull()
+    {
+        // currently failing
+        // This returns [1, 30, 300] (id == 1022, which is outside of the specified range)
+
+        testSkipNulls(1020, // jump to the middle null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDDD(),
+                      new long[] {1021, 1020, 1019, 1018});
     }
 
     @Test
     public void testAAAToLastNull()
     {
+        // currently failing
+        // This returns [1, 30, 300] (id == 1022, which is outside of the specified range)
+
         testSkipNulls(1021, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
-                      getDDDD(),
-                      new long[] {1019, 1020, 1021, 1018});
+                      getDDD(),
+                      new long[] {1021, 1020, 1019, 1018});
     }
 
     @Test
@@ -190,10 +232,11 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         testSkipNulls(1016,
                       b_of(1015), false,
                       b_of(1017), true,
-                      getDDDD(),
+                      getDDD(),
                       new long[] {}); 
     }
     
+    @Ignore
     @Test
     public void testAAD()
     {
@@ -285,7 +328,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
             default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
         }
     }
-
+    
     private API.Ordering getAAA()
     {
         return ordering(A, ASC, B, ASC, C, ASC);
@@ -296,23 +339,33 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         return ordering(A, ASC, B, ASC, C, DESC);
     }
     
+    private API.Ordering getADA()
+    {
+        return ordering(A, ASC, B, DESC, C, ASC);
+    }
 
-    private API.Ordering getDDAA()
+    private API.Ordering getDAA()
+    {
+        return ordering(A, DESC, B, ASC, C, ASC);
+    }
+
+    private API.Ordering getDAD()
+    {
+        return ordering(A, DESC, B, ASC, C, DESC);
+    }
+
+    private API.Ordering getDDA()
     {
         return ordering(A, DESC, B, DESC, C, ASC);
     }
 
-    private API.Ordering getDDAD()
+
+    private API.Ordering getADD()
     {
-        return ordering(A, DESC, B, DESC, C, ASC);
+         return ordering(A, ASC, B, ASC, C, DESC);
     }
 
-    private API.Ordering getDDDA()
-    {
-         return ordering(A, DESC, B, DESC, C, DESC);
-    }
-
-    private API.Ordering getDDDD()
+    private API.Ordering getDDD()
     {
         return ordering(A, DESC, B, DESC, C, DESC);
     }
