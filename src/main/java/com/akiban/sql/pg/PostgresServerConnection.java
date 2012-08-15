@@ -684,13 +684,6 @@ public class PostgresServerConnection extends ServerSessionBase
                 new MemoryAdapter(compiler.getSchema(),
                                 session,
                                 reqs.config()));
-        // Statement cache depends on some connection settings.
-        statementCache = server.getStatementCache(Arrays.asList(getProperty("database"),
-                                                                format,
-                                                                parserKeys,
-                                                                Boolean.valueOf(getProperty("cbo")),
-                                                                Boolean.valueOf(getProperty("newtypes"))),
-                                                  aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
@@ -703,6 +696,18 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresExplainStatementGenerator(this),
             new PostgresServerStatementGenerator(this)
         };
+
+        statementCache = getStatementCache();
+    }
+
+    protected ServerStatementCache<PostgresStatement>  getStatementCache() {
+        // Statement cache depends on some connection settings.
+        return server.getStatementCache(Arrays.asList(parser.getFeatures(),
+                                                      defaultSchemaName,
+                                                      getProperty("OutputFormat", "table"),
+                                                      Boolean.valueOf(getProperty("cbo")),
+                                                      Boolean.valueOf(getProperty("newtypes"))),
+                                        aisTimestamp);
     }
 
     @Override
@@ -721,6 +726,7 @@ public class PostgresServerConnection extends ServerSessionBase
         for (PostgresStatementGenerator generator : parsedGenerators) {
             generator.sessionChanged(this);
         }
+        statementCache = getStatementCache();
     }
 
     protected PostgresStatement generateStatement(StatementNode stmt, 
