@@ -44,7 +44,7 @@ public class SortOperatorExplainer extends OperationExplainer
         
         map.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         map.put(Label.SORT_OPTION, PrimitiveExplainer.getInstance(sortOption.name()));
-        map.put(Label.ROWTYPE, PrimitiveExplainer.getInstance(sortType));
+        map.put(Label.ROWTYPE, sortType.getExplainer(extraInfo));
         map.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         for (int i = 0; i < ordering.sortColumns(); i++)
         {

@@ -1,3 +1,8 @@
 PhysicalSelect[cid:int[INT], _SQL_COL_1:INTEGER]
-  Project_Default(Field(0), VALUE(Sort_Tree(Field(0) ASC, SUPPRESS_DUPLICATES)))
+  Project_Default(customers.cid, SUBQUERY 1)
     IndexScan_Default(Index(test.customers.PRIMARY[IndexColumn(cid)]), cid)
+  SUBQUERY 1:
+  Sort_Tree(Field(0) ASC, SUPPRESS_DUPLICATES)
+    Project_Default(orders.oid + 1)
+      Filter_Default(test.orders)
+        BranchLookup_Nested(null -> test.orders (via test.customers))

@@ -99,12 +99,13 @@ public final class FieldExpression implements Expression {
     {
         Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, (List)null);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(fieldIndex));
-        ex.addAttribute(Label.ROWTYPE, PrimitiveExplainer.getInstance(rowType.toString())); // TODO: Explainer for RowType?
+        ex.addAttribute(Label.ROWTYPE, rowType.getExplainer(extraInfo));
         if (null != extraInfo && extraInfo.containsKey(this))
             ex.addAttribute(Label.COLUMN_NAME, extraInfo.get(this));
         return ex;
     }
     
+    @Override
     public boolean nullIsContaminating()
     {
         return true;

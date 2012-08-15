@@ -34,7 +34,7 @@ public class Format {
     
     private boolean verbose = true;
     private int numSubqueries = 0;
-    private List<Explainer> subqueries = new ArrayList<Explainer>();
+    private List<OperationExplainer> subqueries = new ArrayList<OperationExplainer>();
     private StringBuilder sb = new StringBuilder("");
     private List<String> rows = new ArrayList<String>();
     
@@ -50,7 +50,8 @@ public class Format {
         {
             newRow();
             sb.append("SUBQUERY ").append(i).append(':');
-            describe(subqueries.get(i-1));
+            newRow();
+            describeOperator(subqueries.get(i-1), 0);
         }
         newRow();
         return rows;
@@ -112,7 +113,7 @@ public class Format {
         else if (explainer.getType().equals(Type.SUBQUERY))
         {
             sb.append("SUBQUERY ").append(++numSubqueries);
-            subqueries.add(atts.get(Label.OPERAND).get(0));
+            subqueries.add((OperationExplainer)atts.get(Label.OPERAND).get(0));
         }
         else if (name.startsWith("CAST"))
         {
@@ -237,9 +238,9 @@ public class Format {
                 case SCAN_OPERATOR:
                     if (name.equals("ValuesScan_Default"))
                     {
-                        if (atts.containsKey(Label.ROWTYPE))
+                        if (atts.containsKey(Label.EXPRESSIONS))
                         {
-                            for (Explainer row : atts.get(Label.ROWTYPE))
+                            for (Explainer row : atts.get(Label.EXPRESSIONS))
                                 sb.append(row.get()).append(", ");
                             sb.setLength(sb.length() - 2);
                         }
@@ -396,7 +397,7 @@ public class Format {
                     for (Explainer ex : atts.get(Label.EXPRESSIONS))
                     {
                         describe(ex);
-                        sb.append(" ").append(atts.get(Label.ORDERING).get(i++).get()).append(", ");
+                        sb.append(' ').append(atts.get(Label.ORDERING).get(i++).get()).append(", ");
                     }
                     if (atts.containsKey(Label.LIMIT))
                     {
