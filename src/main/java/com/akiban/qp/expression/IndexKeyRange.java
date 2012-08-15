@@ -130,29 +130,38 @@ public class IndexKeyRange
     }
 
     /**
-     * Describes a range of keys between lo and hi. The bounds are inclusive or not depending on
-     * loInclusive and hiInclusive. lo and hi must both be non-null. The ColumnSelectors for
+     * Describes a range of keys between lo and hi. lo and hi must both be non-null. The ColumnSelectors for
      * lo and hi must select for the same columns.
-     * - The selected columns must be leading columns of the index.
      *
      * @param indexRowType The row type of index keys.
      * @param lo           Lower bound of the range.
-     * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
      * @param hi           Upper bound of the range.
-     * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
-     * @return IndexKeyRange covering the keys lying between lo and hi, subject to the loInclusive and
-     * hiInclusive flags.
+     * @return IndexKeyRange covering the keys lying between lo and hi.
      */
     public static IndexKeyRange spatial(IndexRowType indexRowType,
                                         IndexBound lo,
-                                        boolean loInclusive,
-                                        IndexBound hi,
-                                        boolean hiInclusive)
+                                        IndexBound hi)
     {
-        if (lo == null || hi == null) {
-            throw new IllegalArgumentException("IndexBound arguments must not be null");
+        if (lo == null) {
+            throw new IllegalArgumentException("lo must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, IndexKind.SPATIAL);
+        return new IndexKeyRange(indexRowType, lo, true, hi, true, IndexKind.SPATIAL);
+    }
+
+    /**
+     * Describes a range of keys starting at lo and expanding out,
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @return IndexKeyRange covering the keys lying starting at lo.
+     */
+    public static IndexKeyRange around(IndexRowType indexRowType,
+                                       IndexBound lo)
+    {
+        if (lo == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL);
     }
 
     /**

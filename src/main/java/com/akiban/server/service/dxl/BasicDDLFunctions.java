@@ -41,6 +41,8 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
@@ -48,20 +50,31 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
-import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.ais.util.ChangedTableDescription;
+import com.akiban.ais.util.TableChange;
+import com.akiban.ais.util.TableChangeValidator;
+import com.akiban.ais.util.TableChangeValidatorException;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.UpdateFunction;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.ConstraintChecker;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowChecker;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
-import com.akiban.server.api.AlterTableChange;
+import com.akiban.server.error.AlterMadeNoChangeException;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -86,6 +99,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
@@ -105,18 +119,66 @@ import org.slf4j.LoggerFactory;
 
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
-import static com.akiban.qp.operator.API.update_Default;
+import static com.akiban.qp.operator.API.insert_Default;
 import static com.akiban.util.Exceptions.throwAlways;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
-
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
+
     private final static boolean DEFER_INDEX_BUILDING = false;
+    private static final boolean ALTER_AUTO_INDEX_CHANGES = true;
 
     private final IndexStatisticsService indexStatisticsService;
     private final ConfigurationService configService;
     private final T3RegistryService t3Registry;
     
+
+    private static class ShimContext extends QueryContextBase {
+        private final StoreAdapter adapter;
+        private final QueryContext delegate;
+
+        public ShimContext(StoreAdapter adapter, QueryContext delegate) {
+            this.adapter = adapter;
+            this.delegate = (delegate == null) ? new SimpleQueryContext(adapter) : delegate;
+        }
+
+        @Override
+        public StoreAdapter getStore() {
+            return adapter;
+        }
+
+        @Override
+        public StoreAdapter getStore(UserTable table) {
+            return adapter;
+        }
+
+        @Override
+        public Session getSession() {
+            return delegate.getSession();
+        }
+
+        @Override
+        public String getCurrentUser() {
+            return delegate.getCurrentUser();
+        }
+
+        @Override
+        public String getSessionUser() {
+            return delegate.getSessionUser();
+        }
+
+        @Override
+        public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
+            delegate.notifyClient(level, errorCode, message);
+        }
+
+        @Override
+        public long sequenceNextValue(TableName sequence) {
+            return delegate.sequenceNextValue(sequence);
+        }
+    }
+
+
     @Override
     public void createTable(Session session, UserTable table)
     {
@@ -166,26 +228,71 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
     }
-    
-    private void doIndexChange(Session session, TableName tableName, UserTable newDefinition, AlterTableHelper helper) {
-        schemaManager().alterTableDefinition(session, tableName, newDefinition, helper.buildIndexMapping(newDefinition));
+
+    private void doMetadataChange(Session session, QueryContext context, UserTable newDefinition,
+                                  Collection<ChangedTableDescription> changedTables, boolean nullChange) {
+        if(changedTables.size() != 1) {
+            throw new IllegalStateException("Too many changed tables for METADATA ALTER: " + changedTables);
+        }
+
+        if(nullChange) {
+            // Check new definition
+            final ConstraintChecker checker = new UserTableRowChecker(newDefinition);
+
+            // But scan old
+            final AkibanInformationSchema origAIS = getAIS(session);
+            final UserTable origTable = origAIS.getUserTable(changedTables.iterator().next().getOldName());
+            final Schema oldSchema = SchemaCache.globalSchema(origAIS);
+            final RowType oldSourceType = oldSchema.userTableRowType(origTable);
+            final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
+            final QueryContext queryContext = new ShimContext(adapter, context);
+
+            Operator plan = filter_Default(
+                    groupScan_Default(origTable.getGroup().getGroupTable()),
+                    Collections.singleton(oldSourceType)
+            );
+            com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+
+            cursor.open();
+            try {
+                Row oldRow;
+                while((oldRow = cursor.next()) != null) {
+                    checker.checkConstraints(oldRow, Types3Switch.ON);
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+
+        schemaManager().alterTableDefinitions(session, changedTables);
+    }
+
+    private void doIndexChange(Session session, UserTable newDefinition,
+                               Collection<ChangedTableDescription> changedTables, AlterTableHelper helper) {
+        schemaManager().alterTableDefinitions(session, changedTables);
         AkibanInformationSchema newAIS = getAIS(session);
         UserTable newTable = newAIS.getUserTable(newDefinition.getName());
         List<Index> indexes = helper.findAffectedNewIndexes(newTable);
         store().buildIndexes(session, indexes, DEFER_INDEX_BUILDING);
     }
 
-    private void doTableChange(Session session, TableName tableName, UserTable newDefinition,
-                               AlterTableHelper helper, List<Index> indexesToDrop) {
+    private void doTableChange(Session session, QueryContext context, TableName tableName, UserTable newDefinition,
+                               Collection<ChangedTableDescription> changedTables, Map<IndexName, List<Column>> affectedGroupIndexes,
+                               AlterTableHelper helper, List<Index> indexesToDrop, boolean groupChange) {
+
+        final boolean usePValues = Types3Switch.ON;
+
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = origAIS.getUserTable(tableName);
 
-        List<GroupIndex> affectedGroupIndexes = helper.findAffectedGroupIndexes(origTable);
-
         // Drop definition and rebuild later, probably better than doing each entry individually
         if(!affectedGroupIndexes.isEmpty()) {
-            store().truncateIndex(session, affectedGroupIndexes);
-            schemaManager().dropIndexes(session, affectedGroupIndexes);
+            List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
+            for(IndexName name : affectedGroupIndexes.keySet()) {
+                groupIndexes.add(origTable.getGroup().getIndex(name.getName()));
+            }
+            store().truncateIndex(session, groupIndexes);
+            schemaManager().dropIndexes(session, groupIndexes);
         }
 
         // Save previous state so it can be scanned
@@ -193,11 +300,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final RowType oldSourceType = oldSchema.userTableRowType(origTable);
 
         // Alter through schemaManager to get new definitions and RowDefs
-        schemaManager().alterTableDefinition(session, tableName, newDefinition, helper.buildIndexMapping(newDefinition));
+        schemaManager().alterTableDefinitions(session, changedTables);
 
         // Build transformation
-        PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
-        QueryContext queryContext = new SimpleQueryContext(adapter);
+        final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
+        final QueryContext queryContext = new ShimContext(adapter, context);
 
         final AkibanInformationSchema newAIS = getAIS(session);
         final UserTable newTable = newAIS.getUserTable(newDefinition.getName());
@@ -231,7 +338,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             for(Column newCol : newColumns) {
                 Integer oldPosition = helper.findOldPosition(origTable.getColumn(newCol.getName()), newCol);
                 if(oldPosition == null) {
-                    projections.add(new LiteralExpression(newCol.getType().akType(), null));
+                    String defaultValue = newCol.getDefaultValue();
+                    projections.add(new LiteralExpression(AkType.VARCHAR, defaultValue));
                 } else {
                     projections.add(new FieldExpression(oldSourceType, oldPosition));
                 }
@@ -239,75 +347,164 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         // PUTRT for constraint checking
-        final ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections);
+        ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections, !groupChange);
 
-        UpdatePlannable plan = update_Default(
-                filter_Default(
-                        groupScan_Default(origTable.getGroup().getGroupTable()),
-                        Collections.singleton(oldSourceType)
-                ),
-                new UpdateFunction() {
-                    @Override
-                    public Row evaluate(Row original, QueryContext context) {
-                        return new ProjectedRow(newType, original, context, projections, pProjections);
-                    }
-
-                    @Override
-                    public boolean usePValues() {
-                        return Types3Switch.ON;
-                    }
-
-                    @Override
-                    public boolean rowIsSelected(Row row) {
-                        return true;
-                    }
+        for(ChangedTableDescription desc : changedTables) {
+            UserTable oldTable = origAIS.getUserTable(desc.getOldName());
+            for(Index index : oldTable.getIndexesIncludingInternal()) {
+                if(desc.getPreserveIndexes().get(index.getIndexName().getName()) == null) {
+                    indexesToDrop.add(index);
                 }
-        );
-
-        List<Index> indexesToBuild = helper.findAffectedNewIndexes(newTable);
-        if(!indexesToBuild.isEmpty()) {
-            adapter.setIndexesToInsert(indexesToBuild.toArray(new Index[indexesToBuild.size()]));
+            }
         }
 
-        // Perform transformation
-        plan.run(queryContext);
+        Index[] oldTypeIndexes = null;
+        if(!groupChange) {
+            List<Index> indexesToBuild = helper.findAffectedNewIndexes(newTable);
+            oldTypeIndexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
+        }
 
-        // Now rebuild any group indexes, leaving out empty ones
-        if(!affectedGroupIndexes.isEmpty()) {
+        // NB: Delicate:
+        // We only need to scan the table being changed because
+        // - It is the only row contents needing transformed
+        // - For a non-group change we don't need to look at others anyway
+        // - For a group change, this table is the "pivot" so only it's descendants need updated
+        // -- A group change is performed by alterRow() as a delete and then a write
+        // -- Delete will remove current *and* its descendants. When the descendants are re-inserted,
+        //    they automatically get their new hkey (as the RowDef is gotten from the cache == newest)
+        // -- When the row is re-written, only it is touched and no descendants are updated
+        Set<RowType> filteredTypes = Collections.singleton(oldSourceType);
+
+        Operator plan = filter_Default(
+                groupScan_Default(origTable.getGroup().getGroupTable()),
+                filteredTypes
+        );
+        com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
+
+        Operator orphanPlan = null;
+        if(groupChange && !origTable.getChildJoins().isEmpty()) {
+            // Only direct children needed, propagation during delete/write will fix the rest
+            final Set<RowType> childTypes = new HashSet<RowType>();
+            for(Join join : origTable.getChildJoins()) {
+                childTypes.add(oldSchema.userTableRowType(join.getChild()));
+            }
+            orphanPlan = filter_Default(
+                    groupScan_Default(origTable.getGroup().getGroupTable()),
+                    childTypes
+            );
+        }
+
+        cursor.open();
+        int step = adapter.enterUpdateStep(true);
+        try {
+            Row oldRow;
+            while((oldRow = cursor.next()) != null) {
+                Row newRow = new ProjectedRow(newType, oldRow, queryContext, projections, pProjections);
+                queryContext.checkConstraints(newRow, usePValues);
+                adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
+            }
+
+            if(orphanPlan != null) {
+                // Now, fix any orphans
+                cursor.close();
+                cursor = API.cursor(orphanPlan, queryContext);
+                cursor.open();
+                adapter.enterUpdateStep();
+                while((oldRow = cursor.next()) != null) {
+                    RowType newRowType = newSchema.userTableRowType(oldRow.rowType().userTable());
+                    Row newRow = new OverlayingRow(oldRow, newRowType, usePValues);
+                    adapter.alterRow(oldRow, newRow, null, groupChange, usePValues);
+                }
+            }
+
+            // Now rebuild any group indexes, leaving out empty ones
             List<Index> gisToBuild = new ArrayList<Index>();
-            helper.recreateAffectedGroupIndexes(origTable, newTable, affectedGroupIndexes, gisToBuild, indexesToDrop);
+            helper.recreateAffectedGroupIndexes(origTable, newTable, gisToBuild, indexesToDrop, affectedGroupIndexes);
             if(!gisToBuild.isEmpty()) {
+                adapter.enterUpdateStep();
                 createIndexes(session, gisToBuild);
             }
+        } finally {
+            cursor.close();
+            adapter.leaveUpdateStep(step);
         }
     }
 
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges)
+                           List<TableChange> columnChanges, List<TableChange> indexChanges,
+                           QueryContext context)
     {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
 
-        // TODO: Run TableComparer
+        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges, ALTER_AUTO_INDEX_CHANGES);
+
+        try {
+            validator.compareAndThrowIfNecessary();
+        } catch(TableChangeValidatorException e) {
+            throw new InvalidAlterException(tableName, e.getMessage());
+        }
 
         boolean rollBackNeeded = false;
         List<Index> indexesToDrop = new ArrayList<Index>();
         try {
             AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges);
 
-            // Simple prep: truncate dropped or changed indexes (not drop tree as it is non-transactional)
             List<Index> indexesToTruncate = new ArrayList<Index>();
             helper.findAffectedOldIndexes(origTable, indexesToTruncate, indexesToDrop);
+            Map<IndexName, List<Column>> affectedGroupIndexes = validator.getAffectedGroupIndexes();
 
-            if(!indexesToTruncate.isEmpty()) {
-                store().truncateIndex(session, indexesToTruncate);
-            }
+            TableChangeValidator.ChangeLevel changeLevel = validator.getFinalChangeLevel();
+            Collection<ChangedTableDescription> changedTables = validator.getAllChangedTables();
 
-            if(columnChanges.isEmpty()) {
-                doIndexChange(session, tableName, newDefinition, helper);
-            } else {
-                doTableChange(session, tableName, newDefinition, helper, indexesToDrop);
+            switch(changeLevel) {
+                case NONE:
+                    AlterMadeNoChangeException error = new AlterMadeNoChangeException(tableName);
+                    if(context != null) {
+                        context.warnClient(error);
+                    } else {
+                        logger.warn(error.getMessage());
+                    }
+                break;
+
+                case METADATA:
+                    assert affectedGroupIndexes.isEmpty() : affectedGroupIndexes;
+                    doMetadataChange(session, context, newDefinition, changedTables, false);
+                break;
+
+                case METADATA_NOT_NULL:
+                    assert affectedGroupIndexes.isEmpty() : affectedGroupIndexes;
+                    doMetadataChange(session, context, newDefinition, changedTables, true);
+                break;
+
+                case INDEX:
+                    assert affectedGroupIndexes.isEmpty() : affectedGroupIndexes;
+                    store().truncateIndex(session, indexesToTruncate);
+                    doIndexChange(session, newDefinition, changedTables, helper);
+                break;
+
+                case TABLE:
+                    store().truncateIndex(session, indexesToTruncate);
+                    doTableChange(session, context, tableName, newDefinition, changedTables, affectedGroupIndexes,
+                                  helper, indexesToDrop, false);
+                break;
+
+                case GROUP:
+                    // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
+                    for(ChangedTableDescription desc : validator.getAllChangedTables()) {
+                        desc.getPreserveIndexes().put(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT);
+                        Index index = origAIS.getUserTable(desc.getOldName()).getPrimaryKeyIncludingInternal().getIndex();
+                        indexesToTruncate.add(index);
+                        indexesToDrop.remove(index);
+                    }
+                    store().truncateIndex(session, indexesToTruncate);
+                    doTableChange(session, context, tableName, newDefinition, changedTables, affectedGroupIndexes,
+                                  helper, indexesToDrop, true);
+                break;
+
+                default:
+                    throw new IllegalStateException("Unhandled ChangeLevel: " + validator.getFinalChangeLevel());
             }
         } catch(Exception e) {
             rollBackNeeded = true;
@@ -361,6 +558,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
+        List<Sequence> sequencesToDrop = new ArrayList<Sequence>();
+        for (Sequence sequence : ais.getSequences().values()) {
+            // Drop the sequences in this schema, but not the 
+            // generator sequences, which will be dropped with the table. 
+            if (sequence.getSchemaName().equals(schemaName) &&
+                 !(sequence.getSequenceName().getTableName().startsWith("_sequence-"))) {
+                sequencesToDrop.add(sequence);
+            }
+        }
         // Remove groups that contain tables in multiple schemas
         for(UserTable table : tablesToDrop) {
             groupsToDrop.remove(table.getGroup());
@@ -379,6 +585,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         for(Group group : groupsToDrop) {
             dropGroup(session, group.getName());
+        }
+        for (Sequence sequence : sequencesToDrop) {
+            dropSequence(session, sequence.getSequenceName());
         }
     }
 

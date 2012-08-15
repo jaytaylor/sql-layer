@@ -68,6 +68,7 @@ public class Sorter
                 ? new PValueSorterAdapter()
                 : new OldSorterAdapter();
         sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, sortOption);
+        iterationHelper = new SorterIterationHelper(sorterAdapter.createValueAdapter());
         this.loadTap = loadTap;
         this.usePValues = usePValues;
     }
@@ -127,9 +128,7 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        return IndexCursor.create(context, null, ordering,
-                                  new SorterIterationHelper(sorterAdapter.createValueAdapter()),
-                                  usePValues);
+        return IndexCursor.create(context, null, ordering, iterationHelper, usePValues);
     }
 
     private void createKey(Row row)
@@ -154,23 +153,30 @@ public class Sorter
         }
     }
 
-    private static Exchange exchange(PersistitAdapter adapter, String treeName) throws PersistitException
+    private static Exchange exchange(PersistitAdapter adapter, String treeName)
     {
-        Session session = adapter.getSession();
-        Persistit persistit = adapter.persistit().getDb();
-        TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
-        if (tempVolumeState == null) {
-            // Persistit creates a temp volume per "Persistit session", and these are currently one-to-one with threads.
-            // Conveniently, server sessions and threads are also one-to-one. If either of these relationships ever
-            // change, then the use of session resources and temp volumes will need to be revisited. But for now,
-            // persistit.createTemporaryVolume creates a temp volume that is private to the persistit session and
-            // therefore to the server session.
-            Volume volume = persistit.createTemporaryVolume();
-            tempVolumeState = new TempVolumeState(volume);
-            session.put(TEMP_VOLUME_STATE, tempVolumeState);
+        try {
+            Session session = adapter.getSession();
+            Persistit persistit = adapter.persistit().getDb();
+            TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
+            if (tempVolumeState == null) {
+                // Persistit creates a temp volume per "Persistit session", and these are currently one-to-one with threads.
+                // Conveniently, server sessions and threads are also one-to-one. If either of these relationships ever
+                // change, then the use of session resources and temp volumes will need to be revisited. But for now,
+                // persistit.createTemporaryVolume creates a temp volume that is private to the persistit session and
+                // therefore to the server session.
+                Volume volume = persistit.createTemporaryVolume();
+                tempVolumeState = new TempVolumeState(volume);
+                session.put(TEMP_VOLUME_STATE, tempVolumeState);
+            }
+            tempVolumeState.startSort();
+            return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
+        } catch (PersistitException e) {
+            LOG.error("Caught exception while getting exchange for sort", e);
+            adapter.handlePersistitException(e);
+            assert false; // handlePersistitException should throw something
+            return null;
         }
-        tempVolumeState.startSort();
-        return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
     }
 
     // Class state
@@ -195,6 +201,7 @@ public class Sorter
     long rowCount = 0;
     private final InOutTap loadTap;
     private final SorterAdapter<?,?,?> sorterAdapter;
+    private final IterationHelper iterationHelper;
 
     // Inner classes
 
@@ -212,9 +219,14 @@ public class Sorter
         }
 
         @Override
-        public void close()
+        public void closeIteration()
         {
             Sorter.this.close();
+        }
+
+        @Override
+        public void openIteration()
+        {
         }
 
         @Override

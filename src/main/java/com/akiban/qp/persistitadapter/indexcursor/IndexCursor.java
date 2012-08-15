@@ -47,6 +47,7 @@ public abstract class IndexCursor implements Cursor
     public void open()
     {
         CursorLifecycle.checkIdle(this);
+        iterationHelper.openIteration();
         idle = false;
     }
 
@@ -64,10 +65,10 @@ public abstract class IndexCursor implements Cursor
     }
 
     @Override
-    public final void close()
+    public void close()
     {
         CursorLifecycle.checkIdleOrActive(this);
-        iterationHelper.close();
+        iterationHelper.closeIteration();
         idle = true;
     }
 
@@ -95,6 +96,13 @@ public abstract class IndexCursor implements Cursor
         return destroyed;
     }
 
+    // For use by subclasses
+
+    protected Exchange exchange()
+    {
+        return iterationHelper.exchange();
+    }
+
     // IndexCursor interface
 
     public static IndexCursor create(QueryContext context,
@@ -103,15 +111,20 @@ public abstract class IndexCursor implements Cursor
                                     IterationHelper iterationHelper,
                                     boolean usePValues)
     {
-        SortKeyAdapter<?, ?> adapter = usePValues
-                ? PValueSortKeyAdapter.INSTANCE
-                : OldExpressionsSortKeyAdapter.INSTANCE;
+        SortKeyAdapter<?, ?> adapter =
+            usePValues
+            ? PValueSortKeyAdapter.INSTANCE
+            : OldExpressionsSortKeyAdapter.INSTANCE;
         return
-            ordering.allAscending() || ordering.allDescending()
-            ? (keyRange != null && keyRange.lexicographic()
-               ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
-               : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
-            : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
+            keyRange != null && keyRange.spatial()
+            ? keyRange.hi() == null
+                ? IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange)
+                : IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange)
+            : ordering.allAscending() || ordering.allDescending()
+                ? (keyRange != null && keyRange.lexicographic()
+                    ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
+                    : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
+                : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
     }
 
     // For use by subclasses
@@ -121,7 +134,6 @@ public abstract class IndexCursor implements Cursor
         this.context = context;
         this.adapter = (PersistitAdapter)context.getStore();
         this.iterationHelper = iterationHelper;
-        this.exchange = iterationHelper.exchange();
     }
 
     protected Row row() throws PersistitException
@@ -133,7 +145,6 @@ public abstract class IndexCursor implements Cursor
 
     protected final QueryContext context;
     protected final PersistitAdapter adapter;
-    protected final Exchange exchange;
     protected final IterationHelper iterationHelper;
     private boolean idle = true;
     private boolean destroyed = false;

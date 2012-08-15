@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
@@ -132,18 +131,8 @@ public class PostgresDDLStatement implements PostgresStatement
                 IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);
                 break;
             case NodeTypes.ALTER_TABLE_NODE:
-            {
-                OperatorBasedTableCopier copier = new OperatorBasedTableCopier(
-                        server.getStore().getConfig(),
-                        server.getTreeService(),
-                        session,
-                        server.getStore().getUnderlyingStore(),
-                        usePVals
-                );
-                AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddlFunctions, server.getDXL().dmlFunctions(),
-                                         session, copier, schema, (AlterTableNode)ddl);
+                AlterTableDDL.alterTable(ddlFunctions, server.getDXL().dmlFunctions(), session, schema, (AlterTableNode)ddl, context);
                 break;
-            }
             case NodeTypes.RENAME_NODE:
                 if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
                     IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
@@ -155,7 +144,7 @@ public class PostgresDDLStatement implements PostgresStatement
                 SequenceDDL.createSequence(ddlFunctions, session, schema, (CreateSequenceNode)ddl);
                 break;
             case NodeTypes.DROP_SEQUENCE_NODE:
-                SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl);
+                SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl, context);
                 break;
             case NodeTypes.REVOKE_NODE:
             default:

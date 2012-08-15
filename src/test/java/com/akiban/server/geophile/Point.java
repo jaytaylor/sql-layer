@@ -26,10 +26,6 @@
 
 package com.akiban.server.geophile;
 
-import com.akiban.server.geophile.Region;
-import com.akiban.server.geophile.RegionComparison;
-import com.akiban.server.geophile.SpatialObject;
-
 import java.util.Arrays;
 
 public class Point implements SpatialObject
@@ -64,12 +60,9 @@ public class Point implements SpatialObject
     public boolean containedBy(Region region)
     {
         int dimensions = x.length;
-        long[] rLo = region.lo();
-        long[] rHi = region.hi();
-        assert rLo.length == dimensions;
         for (int d = 0; d < dimensions; d++) {
             long xd = x[d];
-            if (xd < rLo[d] || xd > rHi[d]) {
+            if (xd < region.lo(d) || xd > region.hi(d)) {
                 return false;
             }
         }

@@ -55,7 +55,8 @@ class Decomposer extends Space
                 region.up();
                 region.downRight();
                 RegionComparison rightComparison = spatialObject.compare(region);
-                switch (leftComparison.concat(rightComparison)) {
+                RegionComparison comparison = leftComparison.concat(rightComparison);
+                switch (comparison) {
                     case OUTSIDE_OUTSIDE:
                         assert false;
                         break;

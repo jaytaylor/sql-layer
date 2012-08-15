@@ -305,6 +305,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void loadIndexStatistics(Session session, 
                                     String schema, File file) throws IOException {
+        ensureAdapter(session);
         AkibanInformationSchema ais = schemaManager.getAis(session);
         Map<Index,IndexStatistics> stats = 
             new IndexStatisticsYamlLoader(ais, schema, treeService).load(file);
@@ -389,6 +390,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 }
                 return file.getAbsolutePath();
             }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            }
             finally {
                 session.close();
             }
@@ -403,6 +408,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 writer.close();
                 return writer.toString();
             }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            }
             finally {
                 session.close();
             }
@@ -415,6 +424,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             try {
                 File file = new File(fromFile);
                 IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+            }
+            catch (RuntimeException ex) {
+                log.error("Error loading " + schema, ex);
+                throw ex;
             }
             finally {
                 session.close();

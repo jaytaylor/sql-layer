@@ -24,51 +24,42 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.api;
+package com.akiban.ais.model;
 
-public class AlterTableChange {
-    public static enum ChangeType { ADD, DROP, MODIFY }
-
-    private final String oldName;
-    private final String newName;
-    private final ChangeType changeType;
-
-    private AlterTableChange(String oldName, String newName, ChangeType changeType) {
-        this.oldName = oldName;
-        this.newName = newName;
-        this.changeType = changeType;
-    }
-
-    public String getOldName() {
-        return oldName;
-    }
-
-    public String getNewName() {
-        return newName;
-    }
-
-    public ChangeType getChangeType() {
-        return changeType;
+public class NopVisitor implements Visitor {
+    @Override
+    public void visitType(Type type) {
     }
 
     @Override
-    public String toString() {
-        if(oldName != null && newName == null)
-            return changeType + ":" + oldName;
-        if(oldName == null && newName != null)
-            return changeType + ":" + newName;
-        return changeType + ":" + oldName + "->" + newName;
+    public void visitGroup(Group group) {
     }
 
-    public static AlterTableChange createAdd(String name) {
-        return new AlterTableChange(null, name, ChangeType.ADD);
+    @Override
+    public void visitUserTable(UserTable userTable) {
     }
 
-    public static AlterTableChange createDrop(String name) {
-        return new AlterTableChange(name, null, ChangeType.DROP);
+    @Override
+    public void visitGroupTable(GroupTable groupTable) {
     }
 
-    public static AlterTableChange createModify(String oldName, String newName) {
-        return new AlterTableChange(oldName, newName, ChangeType.MODIFY);
+    @Override
+    public void visitColumn(Column column) {
+    }
+
+    @Override
+    public void visitJoin(Join join) {
+    }
+
+    @Override
+    public void visitJoinColumn(JoinColumn joinColumn) {
+    }
+
+    @Override
+    public void visitIndex(Index index) {
+    }
+
+    @Override
+    public void visitIndexColumn(IndexColumn indexColumn) {
     }
 }

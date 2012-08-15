@@ -33,7 +33,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.Row;
@@ -61,12 +60,12 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     @Override
     public Row next()
     {
-        CursorLifecycle.checkIdleOrActive(this);
+        super.next();
         Row next = null;
-        if (exchange != null) {
+        if (exchange() != null) {
             try {
                 SORT_TRAVERSE.hit();
-                if (exchange.traverse(keyComparison, true)) {
+                if (exchange().traverse(keyComparison, true)) {
                     next = row();
                     // If we're scanning a unique key index, then the row format has the declared key in the
                     // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
@@ -74,14 +73,16 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     // row found by exchange.traverse may actually not qualify -- those values may be lower than
                     // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
                     // past the startKey.
-                    if (!pastStart && beforeStart(next)) {
-                        next = null;
-                        if (exchange.traverse(subsequentKeyComparison, true)) {
-                            next = row();
-                            pastStart = true;
-                        } else {
-                            close();
+                    if (!pastStart) {
+                        while (beforeStart(next)) {
+                            next = null;
+                            if (exchange().traverse(subsequentKeyComparison, true)) {
+                                next = row();
+                            } else {
+                                close();
+                            }
                         }
+                        pastStart = true;
                     }
                     if (next != null && pastEnd(next)) {
                         next = null;
@@ -307,10 +308,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     protected boolean beforeStart(Row row)
     {
-        boolean beforeStart;
-        if (startKey == null) {
-            beforeStart = false;
-        } else {
+        boolean beforeStart = false;
+        if (startKey != null && row != null) {
             PersistitIndexRow current = (PersistitIndexRow) row;
             int c = current.compareTo(startKey) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;
@@ -357,7 +356,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     private void initializeCursor(IndexKeyRange keyRange, API.Ordering ordering)
     {
         this.keyRange = keyRange;
-        this.startBoundColumns = keyRange.boundColumns();
         this.ordering = ordering;
         this.lo = keyRange.lo();
         this.hi = keyRange.hi();
@@ -383,19 +381,33 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             assert false : ordering;
         }
         this.startKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+        this.startBoundColumns = keyRange.boundColumns();
         this.types = sortKeyAdapter.createAkTypes(startBoundColumns);
         this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
         this.tInstances = sortKeyAdapter.createTInstances(startBoundColumns);
-        List<IndexColumn> indexColumns = index().getAllColumns();
-        for (int f = 0; f < startBoundColumns; f++) {
-            Column column = indexColumns.get(f).getColumn();
-            sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
+        if (keyRange.indexRowType().index().isSpatial()) {
+            // This is a cursor created on behalf of a spatial index. There should be only one key column,
+            // a z-value of type long.
+            // TODO: types3
+            if (startBoundColumns == 1) {
+                types[0] = AkType.LONG;
+                collators[0] = null;
+            } else {
+                // Unbounded scan of spatial index
+                assert startBoundColumns == 0;
+            }
+        } else {
+            List<IndexColumn> indexColumns = index().getAllColumns();
+            for (int f = 0; f < startBoundColumns; f++) {
+                Column column = indexColumns.get(f).getColumn();
+                sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
+            }
         }
     }
 
     private void initializeForOpen()
     {
-        exchange.clear();
+        exchange().clear();
         if (startKey != null) {
             // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
             // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
@@ -413,7 +425,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // E.g., if we have a PK index for a non-root table, the index row is [childPK, parentPK], and an index
             // scan may specify a value for both. But the persistit search can only deal with the [childPK] part of
             // the traversal.
-            startKey.copyPersistitKeyTo(exchange.getKey());
+            startKey.copyPersistitKeyTo(exchange().getKey());
             pastStart = false;
         }
     }
