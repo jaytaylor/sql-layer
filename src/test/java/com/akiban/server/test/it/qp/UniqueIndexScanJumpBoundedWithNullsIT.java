@@ -186,8 +186,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       getDDD(),
                       new long[] {1021, 1020, 1019});
     }
-    
-    @Ignore
+
     @Test
     public void testAAAToFirstNull()
     {
@@ -198,7 +197,6 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       new long[] {1019, 1020, 1021, 1018, 1022});
     }
  
-    @Ignore
     @Test
     public void testAAAToMiddleNull()
     {
@@ -209,7 +207,6 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       new long[] {1021, 1020, 1019, 1018, 1022});
     }
 
-    @Ignore
     @Test
     public void testAAAToLastNull()
     {
