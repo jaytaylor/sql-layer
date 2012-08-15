@@ -107,4 +107,5 @@ public class SpaceLatLon extends Space
     static final long MAX_LAT_SCALED = 90 * SCALE;
     static final long MIN_LON_SCALED = -180 * SCALE;
     static final long MAX_LON_SCALED = 180 * SCALE;
+    static final long CIRCLE = 360 * SCALE;
 }

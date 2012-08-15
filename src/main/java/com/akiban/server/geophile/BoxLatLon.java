@@ -30,6 +30,8 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
+import static com.akiban.server.geophile.SpaceLatLon.*;
+
 public abstract class BoxLatLon implements SpatialObject
 {
     public static BoxLatLon newBox(BigDecimal latLoDecimal,
@@ -37,15 +39,31 @@ public abstract class BoxLatLon implements SpatialObject
                                    BigDecimal lonLoDecimal,
                                    BigDecimal lonHiDecimal)
     {
-        long latLo = SpaceLatLon.scaleLat(latLoDecimal);
-        long latHi = SpaceLatLon.scaleLat(latHiDecimal.round(ROUND_UP));
-        long lonLo = SpaceLatLon.scaleLon(lonLoDecimal);
-        long lonHi = SpaceLatLon.scaleLon(lonHiDecimal.round(ROUND_UP));
-        return 
+        long latLo = scaleLat(latLoDecimal);
+        long latHi = scaleLat(latHiDecimal.round(ROUND_UP));
+        long lonLo = fixLon(scaleLon(lonLoDecimal));
+        long lonHi = fixLon(scaleLon(lonHiDecimal.round(ROUND_UP)));
+        return
             lonLo <= lonHi
             ? new BoxLatLonWithoutWraparound(latLo, latHi, lonLo, lonHi)
             : new BoxLatLonWithWraparound(latLo, latHi, lonLo, lonHi);
             
+    }
+
+    // For use by this class
+
+    // Query boxes are specified as center point += delta. This calculation can put us past min/max lon.
+    // The delta is measured in degrees, so we should be off by no more than 180`. If more than that, then
+    // later checking will detect the problem.
+    private static long fixLon(long lon)
+    {
+        // Allows for query boxes
+        if (lon < MIN_LON_SCALED) {
+            lon += CIRCLE;
+        } else if (lon > MAX_LON_SCALED) {
+            lon -= CIRCLE;
+        }
+        return lon;
     }
 
     // Class state

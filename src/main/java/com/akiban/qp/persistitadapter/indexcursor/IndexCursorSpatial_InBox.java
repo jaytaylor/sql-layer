@@ -88,8 +88,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
     // IndexCursorSpatial_InBox interface
 
     public static IndexCursorSpatial_InBox create(QueryContext context,
-                                            IterationHelper iterationHelper,
-                                            IndexKeyRange keyRange)
+                                                  IterationHelper iterationHelper,
+                                                  IndexKeyRange keyRange)
     {
         return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange);
     }
@@ -119,7 +119,6 @@ class IndexCursorSpatial_InBox extends IndexCursor
     private static List<IndexKeyRange> zKeyRanges(QueryContext context, IndexKeyRange keyRange)
     {
         List<IndexKeyRange> zKeyRanges = new ArrayList<IndexKeyRange>();
-        // TODO: Wraparound
         Index index = keyRange.indexRowType().index();
         IndexBound loBound = keyRange.lo();
         IndexBound hiBound = keyRange.hi();

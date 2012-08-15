@@ -26,6 +26,9 @@
 
 package com.akiban.server.geophile;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 class BoxLatLonWithoutWraparound extends BoxLatLon
 {
     // Object interface
@@ -70,10 +73,28 @@ class BoxLatLonWithoutWraparound extends BoxLatLon
 
     public BoxLatLonWithoutWraparound(long latLo, long latHi, long lonLo, long lonHi)
     {
-        this.latLo = latLo;
-        this.latHi = latHi;
+        this.latLo = max(latLo, SpaceLatLon.MIN_LAT_SCALED);
+        this.latHi = min(latHi, SpaceLatLon.MAX_LAT_SCALED);
         this.lonLo = lonLo;
         this.lonHi = lonHi;
+        checkLon(lonLo);
+        checkLon(lonHi);
+    }
+
+    // For use by this class
+
+    private void checkLat(long lat)
+    {
+        if (lat < SpaceLatLon.MIN_LAT_SCALED || lat > SpaceLatLon.MAX_LAT_SCALED) {
+            throw new IllegalArgumentException(toString());
+        }
+    }
+
+    private void checkLon(long lon)
+    {
+        if (lon < SpaceLatLon.MIN_LON_SCALED || lon > SpaceLatLon.MAX_LON_SCALED) {
+            throw new IllegalArgumentException(toString());
+        }
     }
 
     // Object state
