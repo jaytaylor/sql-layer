@@ -356,8 +356,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleSubqueryValueExpression(SubqueryValueExpression expression) {
-            TInstance instance = TypesTranslation.toTInstance(expression.getSQLtype());
-            expression.setPreptimeValue(new TPreptimeValue(instance));
+            Project project = findProject(expression.getSubquery().getInput());
+            List<ExpressionNode> projectFields = project.getFields();
+            assert projectFields.size() == 1 : projectFields;
+            expression.setPreptimeValue(projectFields.get(0).getPreptimeValue());
             return expression;
         }
 

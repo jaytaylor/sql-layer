@@ -23,38 +23,34 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+package com.akiban.util;
 
-public abstract class Abs extends TOverloadBase {
+import java.util.AbstractList;
 
-    protected final TClass inputType;
+/**
+ * Utility class for seeing stack traces. Basically a thin shim around <tt>Thread.currentThread().getStackTrace()</tt>
+ * that looks like a {@code List&lt;StackTraceElement&gt;}. Put one of these as a field in a class, and you'll be able
+ * to see where its instances come from.
+ */
+public final class StackTracer extends AbstractList<StackTraceElement> {
 
-    public Abs(TClass returnType) {
-        this.inputType = returnType;
+    public StackTracer() {
+        this.trace = Thread.currentThread().getStackTrace();
+    }
+
+    // AbstractList methods
+
+    @Override
+    public StackTraceElement get(int index) {
+        return trace[index + TRIM];
     }
 
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(inputType, 0);
+    public int size() {
+        return trace.length - TRIM;
     }
 
-    @Override
-    public String displayName() {
-        return "ABS";
-    }
-
-    @Override
-    public String[] registeredNames() {
-        return new String[] {"absolute"};
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(inputType.instance());
-    }
+    private final StackTraceElement[] trace;
+    private static final int TRIM = 2; // trim off the top two of the stack, which are getStackTrace and constructor
 }
