@@ -91,6 +91,11 @@ public abstract class Rand extends TOverloadBase {
     }
 
     @Override
+    public String[] registeredNames() {
+        return new String[] { "rand", "random" };
+    }
+
+    @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(resultType.instance());
     }

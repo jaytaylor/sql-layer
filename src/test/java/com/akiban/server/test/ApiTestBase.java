@@ -529,6 +529,14 @@ public class ApiTestBase {
         unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
     }
+    
+    protected final void createSequence (String schema, String name, String definition) {
+        String ddl = String.format("CREATE SEQUENCE %s %s", name, definition);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
+        Sequence sequence = tempAIS.getSequence(new TableName(schema, name));
+        ddl().createSequence(session(), sequence);
+        updateAISGeneration();
+    }
 
     protected final int createTable(TableName tableName, String... definitions) throws InvalidOperationException {
         return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
