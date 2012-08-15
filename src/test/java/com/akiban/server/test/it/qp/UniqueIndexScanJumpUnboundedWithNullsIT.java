@@ -205,12 +205,9 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     @Test
     public void testAAD()
     {
-        // currently failing
-        // throw IndexOutOfBoundException
-
         testSkipNulls(1014,
                       getAAD(),
-                      new long[] {1014, 1015, 1017}); // skips 1016, which is a null
+                      new long[] {1014, 1017, 1018, 1022, 1019, 1020, 1021, 1023}); // skips 1016, which is a null
     }
     
     @Test
