@@ -148,19 +148,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     @Test
     public void testAAAA()
     {
-        testSkipNulls(1019, // jump to the first null
+        test(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
                       new long[] {1019, 1020, 1021, 1018, 1022});
         
-        testSkipNulls(1020, // jump to the second null
+        test(1020, // jump to the second null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
                       new long[] {1020, 1021, 1018, 1022});
         
-        testSkipNulls(1021, // jump to the last null
+        test(1021, // jump to the last null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
@@ -173,33 +173,45 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // currently failing
         // 3 cases all doesn't return any row
 
-        testSkipNulls(1019,
-                      b_of(1018), true,
-                      b_of(1021), true,
-                      getDDDD(),
-                      new long[] {1019});
+        test(1019,
+             b_of(1018), true,
+             b_of(1021), true,
+             getDDDD(),
+             new long[] {1019});
 
-        testSkipNulls(1020,
-                      b_of(1018), true,
-                      b_of(1021), true,
-                      getDDDD(),
-                      new long[] {1020, 1019});
-        
-        testSkipNulls(1021,
-                      b_of(1018), true,
-                      b_of(1021), true,
-                      getDDDD(),
-                      new long[] {1021, 1020, 1019});
+        test(1020,
+             b_of(1018), true,
+             b_of(1021), true,
+             getDDDD(),
+             new long[] {1020, 1019});
+
+        test(1021,
+             b_of(1018), true,
+             b_of(1021), true,
+             getDDDD(),
+             new long[] {1021, 1020, 1019});
     }
 
+    @Test
+    public void testAAAD()
+    {
+        // currently failing
+        // the ordering on ID doesn't seem right
+        
+        test(1019,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAAAD(),
+             new long[] {1021, 1020, 1019, 1022, 1018}); // all rows have the same a, and c value.
+    }                                                    // thus whichever has larger id should appear first
     
     //TODO: add more test****()
-
-    private void testSkipNulls(long targetId,                  // location to jump to
-                               int bLo, boolean lowInclusive,  // lower bound
-                               int bHi, boolean hiInclusive,   // upper bound
-                               API.Ordering ordering,          
-                               long expected[])
+    
+    private void test(long targetId,                  // location to jump to
+                       int bLo, boolean lowInclusive,  // lower bound
+                       int bHi, boolean hiInclusive,   // upper bound
+                       API.Ordering ordering,          
+                       long expected[])
     {
         Operator plan = indexScan_Default(idxRowType, bounded(1, bLo, lowInclusive, bHi, hiInclusive), ordering);
         Cursor cursor = cursor(plan, queryContext);
