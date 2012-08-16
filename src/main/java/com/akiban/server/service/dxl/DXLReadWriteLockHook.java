@@ -91,11 +91,11 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     /** Try to acquire locks within the given timeout or <code>0</code> for no timeout. */
     public boolean lock(Session session, DXLFunction function, long timeout) throws InterruptedException {
-        boolean locked = lockSchema(session, function, -1);
+        boolean locked = lockSchema(session, function, timeout);
         if (locked) {
             locked = false;
             try {
-                locked = lockDataIfNecessary(session, function, -1);
+                locked = lockDataIfNecessary(session, function, timeout);
             }
             finally {
                 if (!locked) {
