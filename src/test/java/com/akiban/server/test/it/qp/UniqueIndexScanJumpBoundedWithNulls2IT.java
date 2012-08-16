@@ -144,9 +144,13 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         return (int)indexRow(id).eval(1).getLong();
     }
 
+    // test with rows whose c == null
     @Test
     public void testAAAA()
     {
+        // 'correct ordering':
+        // 1019, 1020, 1021, 1018, 1022
+        
         test(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
@@ -171,6 +175,10 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     {
         // currently failing
         // 3 cases all doesn't return any row
+
+        // 'correct odering':
+        // 1022, 1018, 1021, 1020, 1019
+        // --->
 
         test(1019,
              b_of(1018), true,
@@ -219,7 +227,69 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
              new long[] {1021, 1020, 1019, 1018, 1022});
     }
 
+    @Test
+    public void testAADA()
+    {
+        // currently failing
+
+        // 'correct odering':
+        // 1022, 1018, 1019, 1020, 1021
+        // --->
+        
+        test(1019,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAADA(),
+             new long[] {1019, 1020, 1021});
+        
+        test(1020,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAADA(),
+             new long[] {1020, 1021});
+        
+        test(1021,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAADA(),
+             new long[] {1021});
+    }
+
+    @Test
+    public void testADAA() // same as testAAAA() because a and b are the same within this range
+    {
+        // currently failing 
+
+        // 'correct ordering':
+        // 1019, 1020, 1021, 1018, 1022
+        // --->
+        
+        test(1019, // jump to the first null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getADAA(),
+                      new long[] {1019, 1020, 1021, 1018, 1022});
+        
+        test(1020, // jump to the second null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getADAA(),
+                      new long[] {1020, 1021, 1018, 1022});
+        
+        test(1021, // jump to the last null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getADAA(),
+                      new long[] {1021, 1018, 1022});
+        
+    }
+    
     //TODO: add more test****()
+    
+    
+    // test with rows whose b == null
+    // TODO: add these tests here
+    
     
     private void test(long targetId,                  // location to jump to
                        int bLo, boolean lowInclusive,  // lower bound
