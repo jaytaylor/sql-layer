@@ -42,6 +42,8 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataPValueSource;
+import com.akiban.server.rowdata.RowDataSource;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
@@ -166,7 +168,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
         IndexRowComposition indexRowComp = index.indexRowComposition();
         FieldDef[] fieldDefs = index.indexDef().getRowDef().getFieldDefs();
-        RowDataValueSource rowDataValueSource = new RowDataValueSource();
+        RowDataSource rowDataValueSource = Types3Switch.ON ? new RowDataPValueSource() : new RowDataValueSource();
         while (indexField < indexRowComp.getLength()) {
             if (indexRowComp.isInRowData(indexField)) {
                 FieldDef fieldDef = fieldDefs[indexRowComp.getFieldPosition(indexField)];
@@ -439,14 +441,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
-    // Class state
-
-    private static final SortKeyAdapter SORT_KEY_ADAPTER =
-        Types3Switch.ON
-        ? PValueSortKeyAdapter.INSTANCE
-        : OldExpressionsSortKeyAdapter.INSTANCE;
-
-
     // Object state
 
     // The notation involving "keys" and "values" is tricky because this code deals with both the index view and
@@ -485,6 +479,10 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     private Value value;
     private int pKeyAppends = 0;
     private SpatialHandler spatialHandler;
+    private final SortKeyAdapter SORT_KEY_ADAPTER =
+            Types3Switch.ON
+                    ? PValueSortKeyAdapter.INSTANCE
+                    : OldExpressionsSortKeyAdapter.INSTANCE;
 
     // Inner classes
 
