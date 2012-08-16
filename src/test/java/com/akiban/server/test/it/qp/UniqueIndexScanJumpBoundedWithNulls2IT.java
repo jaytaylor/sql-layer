@@ -97,11 +97,11 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
             createNewRow(t, 1010L, 1L, 11L, 110L),
-            createNewRow(t, 1011L, 1L, 11L, 111L),
-            createNewRow(t, 1012L, 1L, (Long)null, 122L),
-            createNewRow(t, 1013L, 1L, (Long)null, 122L),
-            createNewRow(t, 1014L, 1L, 13L, 132L),
-            createNewRow(t, 1015L, 1L, 13L, 133L),
+            createNewRow(t, 1011L, 1L, 13L, 130L),
+            createNewRow(t, 1012L, 1L, (Long)null, 132L),
+            createNewRow(t, 1013L, 1L, (Long)null, 132L),
+            createNewRow(t, 1014L, 1L, 13L, 133L),
+            createNewRow(t, 1015L, 1L, 13L, 134L),
             createNewRow(t, 1016L, 1L, null, 122L),
             createNewRow(t, 1017L, 1L, 14L, 142L),
             createNewRow(t, 1018L, 1L, 30L, 201L),
@@ -139,8 +139,12 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
      * @return the b column of this id (used to make the lower and upper bound.
      *         This is to avoid confusion as to what 'b' values correspond to what id
      */
-    private int b_of(long id)
+    private Integer b_of(long id)
     {
+        ValueSource val = indexRow(id).eval(1);
+        if(val.isNull())
+            return null;
+
         return (int)indexRow(id).eval(1).getLong();
     }
 
@@ -283,13 +287,103 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
                       new long[] {1021, 1018, 1022});
         
     }
+
+    @Test
+    public void testDAAA() // same as testAAAA() because a is the same 
+    {
+        // curerntly failing
+
+        // 'correct ordering':
+         // 1019, 1020, 1021, 1018, 1022
+        // --->
+        
+        test(1019, // jump to the first null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDAAA(),
+                      new long[] {1019, 1020, 1021, 1018, 1022});
+        
+        test(1020, // jump to the second null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDAAA(),
+                      new long[] {1020, 1021, 1018, 1022});
+        
+        test(1021, // jump to the last null
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDAAA(),
+                      new long[] {1021, 1018, 1022});
+    }
     
+    @Test
+    public void testAADD() // smae as testDDDD() because a and b are the same
+    {
+        // curerntly failing
+
+        // 'correct ordering':
+        // 1022, 1018, 1021, 1020, 1019
+        // --->
+        
+         test(1019,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAADD(),
+             new long[] {1019});
+
+        test(1020,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAADD(),
+             new long[] {1020, 1019});
+
+        test(1021,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAADD(),
+             new long[] {1021, 1020, 1019});
+    }
+    
+    @Test
+    public void testADDA() // same as testAADA() because a and b are the same
+    {
+        // 'correct ordering':
+        // 1022, 1018, 1019, 1020, 1021
+        // --->
+
+        test(1019,
+             b_of(1018), true,
+             b_of(1021), true,
+             getADDA(),
+             new long[] {1019, 1020, 1021});
+        
+        test(1020,
+             b_of(1018), true,
+             b_of(1021), true,
+             getADDA(),
+             new long[] {1020, 1021});
+        
+        test(1021,
+             b_of(1018), true,
+             b_of(1021), true,
+             getADDA(),
+             new long[] {1021});
+    }
+
     //TODO: add more test****()
     
     
     // test with rows whose b == null
     // TODO: add these tests here
-    
+    @Test
+    public void testAAAA_b()
+    {
+        test(1012,
+             b_of(1012), true,
+             b_of(1014), true,
+             getAAAA(),
+             new long[]{1012, 1013, 1010, 1011, 1014});
+    }
     
     private void test(long targetId,                  // location to jump to
                        int bLo, boolean lowInclusive,  // lower bound
@@ -360,6 +454,8 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
             case LONG:      row.add(v.getLong());
                             break;
             case INT:       row.add(v.getInt());
+                            break;
+            case NULL:      row.add(null);
                             break;
             default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
         }
