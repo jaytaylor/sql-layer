@@ -178,12 +178,11 @@ public class AISMerge {
                 String oldName = desc.getPreserveIndexes().get(newIndex.getIndexName().getName());
                 Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
                 if(oldIndex != null) {
-                    if(oldIndex.isPrimaryKey() && desc.isNewGroup()) {
-                        // Must keep tree but generate new ID
+                    if(oldIndex.isPrimaryKey()) {
+                        // Must also generate a new ID, as we can't rely on the hidden one
                         indexesToFix.add(newIndex.getIndexName());
-                    } else {
-                        newIndex.setIndexId(oldIndex.getIndexId());
                     }
+                    newIndex.setIndexId(oldIndex.getIndexId());
                     newIndex.setTreeName(oldIndex.getTreeName());
                 } else {
                     indexesToFix.add(newIndex.getIndexName());
