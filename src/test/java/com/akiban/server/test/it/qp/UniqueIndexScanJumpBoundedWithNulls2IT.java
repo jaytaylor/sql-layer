@@ -155,19 +155,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // 'correct ordering':
         // 1019, 1020, 1021, 1018, 1022
         
-        test(1019, // jump to the first null
+        testBounded(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
                       new long[] {1019, 1020, 1021, 1018, 1022});
         
-        test(1020, // jump to the second null
+        testBounded(1020, // jump to the second null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
                       new long[] {1020, 1021, 1018, 1022});
         
-        test(1021, // jump to the last null
+        testBounded(1021, // jump to the last null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
@@ -184,19 +184,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // 1022, 1018, 1021, 1020, 1019
         // --->
 
-        test(1019,
+        testBounded(1019,
              b_of(1018), true,
              b_of(1021), true,
              getDDDD(),
              new long[] {1019});
 
-        test(1020,
+        testBounded(1020,
              b_of(1018), true,
              b_of(1021), true,
              getDDDD(),
              new long[] {1020, 1019});
 
-        test(1021,
+        testBounded(1021,
              b_of(1018), true,
              b_of(1021), true,
              getDDDD(),
@@ -212,19 +212,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // 1021, 1020, 1019, 1018, 1022
         // --->
 
-        test(1019,
+        testBounded(1019,
              b_of(1018), true,
              b_of(1021), true,
              getAAAD(),
              new long[] {1019, 1018, 1022});
      
-        test(1020,
+        testBounded(1020,
              b_of(1018), true,
              b_of(1021), true,
              getAAAD(),
              new long[] {1020, 1019, 1018, 1022});
         
-        test(1021,
+        testBounded(1021,
              b_of(1018), true,
              b_of(1021), true,
              getAAAD(),
@@ -240,19 +240,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // 1022, 1018, 1019, 1020, 1021
         // --->
         
-        test(1019,
+        testBounded(1019,
              b_of(1018), true,
              b_of(1021), true,
              getAADA(),
              new long[] {1019, 1020, 1021});
         
-        test(1020,
+        testBounded(1020,
              b_of(1018), true,
              b_of(1021), true,
              getAADA(),
              new long[] {1020, 1021});
         
-        test(1021,
+        testBounded(1021,
              b_of(1018), true,
              b_of(1021), true,
              getAADA(),
@@ -268,19 +268,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // 1019, 1020, 1021, 1018, 1022
         // --->
         
-        test(1019, // jump to the first null
+        testBounded(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
                       getADAA(),
                       new long[] {1019, 1020, 1021, 1018, 1022});
         
-        test(1020, // jump to the second null
+        testBounded(1020, // jump to the second null
                       b_of(1018), true,
                       b_of(1021), true,
                       getADAA(),
                       new long[] {1020, 1021, 1018, 1022});
         
-        test(1021, // jump to the last null
+        testBounded(1021, // jump to the last null
                       b_of(1018), true,
                       b_of(1021), true,
                       getADAA(),
@@ -297,19 +297,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
          // 1019, 1020, 1021, 1018, 1022
         // --->
         
-        test(1019, // jump to the first null
+        testBounded(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
                       getDAAA(),
                       new long[] {1019, 1020, 1021, 1018, 1022});
         
-        test(1020, // jump to the second null
+        testBounded(1020, // jump to the second null
                       b_of(1018), true,
                       b_of(1021), true,
                       getDAAA(),
                       new long[] {1020, 1021, 1018, 1022});
         
-        test(1021, // jump to the last null
+        testBounded(1021, // jump to the last null
                       b_of(1018), true,
                       b_of(1021), true,
                       getDAAA(),
@@ -325,19 +325,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // 1022, 1018, 1021, 1020, 1019
         // --->
         
-         test(1019,
+         testBounded(1019,
              b_of(1018), true,
              b_of(1021), true,
              getAADD(),
              new long[] {1019});
 
-        test(1020,
+        testBounded(1020,
              b_of(1018), true,
              b_of(1021), true,
              getAADD(),
              new long[] {1020, 1019});
 
-        test(1021,
+        testBounded(1021,
              b_of(1018), true,
              b_of(1021), true,
              getAADD(),
@@ -351,19 +351,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // 1022, 1018, 1019, 1020, 1021
         // --->
 
-        test(1019,
+        testBounded(1019,
              b_of(1018), true,
              b_of(1021), true,
              getADDA(),
              new long[] {1019, 1020, 1021});
         
-        test(1020,
+        testBounded(1020,
              b_of(1018), true,
              b_of(1021), true,
              getADDA(),
              new long[] {1020, 1021});
         
-        test(1021,
+        testBounded(1021,
              b_of(1018), true,
              b_of(1021), true,
              getADDA(),
@@ -376,22 +376,46 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     // test with rows whose b == null
     // TODO: add these tests here
     @Test
-    public void testAAAA_b()
+    public void testDDDD_b()
     {
-        test(1012,
-             b_of(1012), true,
-             b_of(1014), true,
-             getAAAA(),
-             new long[]{1012, 1013, 1010, 1011, 1014});
+        // 'correct ordering':
+        // 1023, 1022, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016
+
+        testUnbounded(1013,
+                     getDDDD(),
+                     new long[]{1013, 1012, 1016});
+        
+        testUnbounded(1012,
+                      getDDDD(),
+                      new long[] {1012, 1016});
+        
+        testUnbounded(1016,
+                      getDDDD(),
+                      new long[] {1016});
     }
-    
-    private void test(long targetId,                  // location to jump to
-                       int bLo, boolean lowInclusive,  // lower bound
-                       int bHi, boolean hiInclusive,   // upper bound
+
+    private void testUnbounded(long targetId,                  // location to jump to
+                               API.Ordering ordering,          
+                               long expected[])
+    {
+        doTest(targetId, unbounded(), ordering, expected);
+    }
+
+     private void testBounded(long targetId,                  // location to jump to
+                               int bLo, boolean lowInclusive,  // lower bound
+                               int bHi, boolean hiInclusive,   // upper bound
+                               API.Ordering ordering,          
+                               long expected[])
+    {
+        doTest(targetId, bounded(1, bLo, lowInclusive, bHi, hiInclusive), ordering, expected);
+    }
+
+    private void doTest(long targetId,                  // location to jump to
+                       IndexKeyRange range,
                        API.Ordering ordering,          
                        long expected[])
     {
-        Operator plan = indexScan_Default(idxRowType, bounded(1, bLo, lowInclusive, bHi, hiInclusive), ordering);
+        Operator plan = indexScan_Default(idxRowType, range, ordering);
         Cursor cursor = cursor(plan, queryContext);
         cursor.open();
 
@@ -580,6 +604,11 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo}), new SetColumnSelector(0, 1));
         IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi}), new SetColumnSelector(0, 1));
         return IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
+    }
+
+    private IndexKeyRange unbounded()
+    {
+        return IndexKeyRange.unbounded(idxRowType);
     }
 
     private API.Ordering ordering(Object... ord) // alternating column positions and asc/desc
