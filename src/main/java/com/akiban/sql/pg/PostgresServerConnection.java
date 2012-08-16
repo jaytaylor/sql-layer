@@ -218,8 +218,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     }
                 } catch (QueryCanceledException ex) {
                     logError(ErrorLogLevel.INFO, "Query canceled", ex);
-                    String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
-                    sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
+                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (ConnectionTerminatedException ex) {
                     logError(ErrorLogLevel.DEBUG, "Query terminated self", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
