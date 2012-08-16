@@ -28,6 +28,7 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.AkibanInternalException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,7 +92,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
                     createNewRow(aid, 50L, 5L, "55")            // Level 1 orphan
         );
     }
-
+/*
+    private void checkDefaultIndexes(TableName... names) {
+        UserTable table = ddl
+        for(TableName name : names) {
+            UserTable table =
+        }
+    }
+  */
     private void groupsMatch(TableName name1, TableName... names) {
         UserTable t1 = getUserTable(name1);
         for(TableName name : names) {

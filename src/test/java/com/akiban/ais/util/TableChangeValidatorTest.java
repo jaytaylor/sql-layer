@@ -552,24 +552,25 @@ public class TableChangeValidatorTest {
 
     @Test
     public void dropGFKFrommMiddleWithGroupIndexes() {
+        TableName iName = new TableName(SCHEMA, "i");
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.userTable("p").colLong("id").colLong("x").pk("id")
                .userTable(TABLE).colLong("id").colLong("pid").colLong("y").pk("id").joinTo(SCHEMA, "p", "fk1").on("pid", "id")
-               .userTable("i").colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id")
+               .userTable(iName).colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id")
                .groupIndex("x_y", Index.JoinType.LEFT).on(TABLE, "y").and("p", "x")                  // spans 2
                .groupIndex("x_y_z", Index.JoinType.LEFT).on("i", "z").and(TABLE, "y").and("p", "x"); // spans 3
         UserTable t1 = builder.unvalidatedAIS().getUserTable(TABLE_NAME);
         builder = AISBBasedBuilder.create(SCHEMA);
         builder.userTable("p").colLong("id").colLong("x").pk("id")
                 .userTable(TABLE).colLong("id").colLong("pid").colLong("y").pk("id").key("__akiban_fk1", "pid")
-                .userTable("i").colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id");
+                .userTable(iName).colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id");
         UserTable t2 = builder.unvalidatedAIS().getUserTable(TABLE_NAME);
         validate(
                 t1, t2,
                 NO_CHANGES,
                 NO_CHANGES,
                 ChangeLevel.GROUP,
-                asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP)),
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP), changeDesc(iName, iName, true, ParentChange.UPDATE)),
                 true,
                 false,
                 "{.p.x_y=[], .p.x_y_z=[i.z, t.y]}",
