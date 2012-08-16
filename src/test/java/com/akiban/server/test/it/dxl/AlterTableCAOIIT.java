@@ -106,7 +106,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
 
     //
-    // SET DATA TYPE
+    // SET DATA TYPE, parent column
     //
 
     @Test
@@ -138,5 +138,34 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI(true, true, true);
         runAlter("ALTER TABLE "+I_TABLE+" ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    //
+    // SET DATA TYPE, child column
+    //
+
+    @Test
+    public void setDataType_A_cid() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+A_TABLE+" ALTER COLUMN cid SET DATA TYPE varchar(32)");
+        groupsDiffer(C_NAME, A_NAME);
+        groupsMatch(C_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setDataType_O_cid() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+O_TABLE+" ALTER COLUMN cid SET DATA TYPE varchar(32)");
+        groupsDiffer(C_NAME, O_NAME);
+        groupsMatch(C_NAME, A_NAME);
+        groupsMatch(O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setDataType_I_oid() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+I_TABLE+" ALTER COLUMN oid SET DATA TYPE varchar(32)");
+        groupsDiffer(O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME,  O_NAME);
     }
 }

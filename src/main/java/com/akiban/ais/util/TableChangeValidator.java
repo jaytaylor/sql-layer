@@ -534,9 +534,9 @@ public class TableChangeValidator {
         Iterator<JoinColumn> oldIt = oldJoin.getJoinColumns().iterator();
         Iterator<JoinColumn> newIt = newJoin.getJoinColumns().iterator();
         while(oldIt.hasNext()) {
-            JoinColumn oldCol = oldIt.next();
-            JoinColumn newCol = newIt.next();
-            if(compare(oldCol.getChild(), newCol.getChild()) == ChangeLevel.TABLE) {
+            Column oldCol = oldIt.next().getChild();
+            Column newCol = newJoin.getChild().getColumn(newIt.next().getChild().getName());
+            if((newCol == null) || (compare(oldCol, newCol) == ChangeLevel.TABLE)) {
                 return ParentChange.DROP;
             }
         }
