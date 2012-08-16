@@ -71,7 +71,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     private static final boolean ASC = true;
     private static final boolean DESC = false;
 
-    private static final SetColumnSelector INDEX_ROW_SELECTOR = new SetColumnSelector(0, 1, 2);
+    private static final SetColumnSelector INDEX_ROW_SELECTOR = new SetColumnSelector(0, 1, 2, 3);
 
     private int t;
     private RowType tRowType;
