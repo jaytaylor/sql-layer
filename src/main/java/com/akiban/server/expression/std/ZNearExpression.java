@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
 import com.akiban.server.service.functions.Scalar;
@@ -44,7 +45,10 @@ public class ZNearExpression extends AbstractCompositeExpression {
             int size = argumentTypes.size();
             if (size != 4) throw new WrongExpressionArityException(4, size);
             
-            return ExpressionTypes.UNSUPPORTED;
+            for (int i = 0; i < size; ++i) {
+                argumentTypes.setType(i, AkType.DECIMAL);
+            }
+            return ExpressionTypes.LONG;
         }
 
         @Override
@@ -67,8 +71,8 @@ public class ZNearExpression extends AbstractCompositeExpression {
         
         @Override
         public ValueSource eval() {
-            // No operation necessary
-            throw new UnsupportedOperationException();
+            throw new UnsupportedSQLException("This query is not supported by Akiban, it's definition "
+                    + "is used solely for optimization purposes.");
         }
     }
     
@@ -99,7 +103,7 @@ public class ZNearExpression extends AbstractCompositeExpression {
     }
     
     protected ZNearExpression(List<? extends Expression> children) {
-        super(AkType.UNSUPPORTED, checkArity(children));
+        super(AkType.LONG, checkArity(children));
     }
 
 }

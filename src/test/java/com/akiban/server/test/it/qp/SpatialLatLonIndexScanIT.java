@@ -219,6 +219,63 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
     }
 
     @Test
+    public void testSpatialQueryWithWraparound()
+    {
+        loadDB();
+        final int N = 100;
+        BigDecimal latLo;
+        BigDecimal latHi;
+        BigDecimal lonLo;
+        BigDecimal lonHi;
+        for (int i = 0; i < N; i++) {
+            latLo = randomLat();
+            latHi = randomLat();
+            if (latLo.compareTo(latHi) > 0) {
+                BigDecimal swap = latLo;
+                latLo = latHi;
+                latHi = swap;
+            }
+            lonLo = randomLon();
+            lonHi = randomLon();
+            if (lonLo.compareTo(lonHi) < 0) {
+                // Guarantee wraparound
+                BigDecimal swap = lonLo;
+                lonLo = lonHi;
+                lonHi = swap;
+            }
+            // Get the right answer
+            Set<Integer> expected = new HashSet<Integer>();
+            for (int id = 0; id < lats.size(); id++) {
+                BigDecimal lat = lats.get(id);
+                BigDecimal lon = lons.get(id);
+                if (latLo.compareTo(lat) <= 0 &&
+                    lat.compareTo(latHi) <= 0 &&
+                    lonLo.compareTo(lon) <= 0 &&
+                    lon.compareTo(lonHi) <= 0) {
+                    expected.add(id);
+                }
+            }
+            // Get the query result
+            Set<Integer> actual = new HashSet<Integer>();
+            IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
+                                                  new SetColumnSelector(0, 1));
+            IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
+                                                   new SetColumnSelector(0, 1));
+            IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
+            Operator plan = indexScan_Default(latLonIndexRowType, false, box);
+            Cursor cursor = API.cursor(plan, queryContext);
+            cursor.open();
+            Row row;
+            while ((row = cursor.next()) != null) {
+                int id = (int) row.eval(1).getInt();
+                actual.add(id);
+            }
+            // There should be no false negatives
+            assertTrue(actual.containsAll(expected));
+        }
+    }
+
+    @Test
     public void testNearPoint()
     {
         loadDB();
