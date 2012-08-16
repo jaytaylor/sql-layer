@@ -94,6 +94,7 @@ public class DDLLockTimeoutIT extends PostgresServerITBase
                     }
                 }
                 setState(DDLLockTimeoutIT.State.TIMEOUT);
+                forgetConnection();
             }
             catch (Exception ex) {
                 fail(ex.getMessage());
