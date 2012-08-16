@@ -212,7 +212,7 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     @Override
     public BigDecimalWrapper mod(BigDecimalWrapper num)
     {
-        value = value.remainder(((MBigDecimalWrapper)num).value);
+        value = value.remainder(num.asBigDecimal());
         return this;
     }
 }

@@ -190,7 +190,7 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     @Override
     public BigDecimalWrapper mod(BigDecimalWrapper num)
     {
-        value = value.remainder(((AkBigDecimalWrapper)num).value);
+        value = value.remainder(num.asBigDecimal());
         return this;
     }
 }

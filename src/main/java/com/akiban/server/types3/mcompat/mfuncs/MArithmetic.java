@@ -536,9 +536,8 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale)
         {
-            //TODO
-            // not sure yet how the precision and scale are computed
-            throw new UnsupportedOperationException("Not supported yet.");
+            return packPrecisionAndScale(Math.max(arg0Precision, arg1Precision),
+                                         Math.max(arg0Scale, arg1Scale));
         }
 
         @Override
