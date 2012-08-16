@@ -106,6 +106,11 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
         return locked;
     }
 
+    public void unlock(Session session, DXLFunction function) {
+        unlockSchema(session, null);
+        unlockDataIfNecessary(session, function, null);
+    }
+
     private boolean lockSchema(Session session, DXLFunction function, long timeout) throws InterruptedException {
         Lock lock;
         if (DXLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
