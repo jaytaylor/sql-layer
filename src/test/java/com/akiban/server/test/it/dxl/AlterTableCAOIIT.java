@@ -358,28 +358,85 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void renameTable_C_X() {
         createAndLoadCAOI();
-        runRenameAlter(C_NAME, X_NAME);
+        runRenameTable(C_NAME, X_NAME);
         groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void renameTable_A_X() {
         createAndLoadCAOI();
-        runRenameAlter(A_NAME, X_NAME);
+        runRenameTable(A_NAME, X_NAME);
         groupsMatch(C_NAME, X_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void renameTable_O_X() {
         createAndLoadCAOI();
-        runRenameAlter(O_NAME, X_NAME);
+        runRenameTable(O_NAME, X_NAME);
         groupsMatch(C_NAME, A_NAME, X_NAME, I_NAME);
     }
 
     @Test
     public void renameTable_I_X() {
         createAndLoadCAOI();
-        runRenameAlter(I_NAME, X_NAME);
+        runRenameTable(I_NAME, X_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME, X_NAME);
+    }
+
+    //
+    // RENAME COLUMN <parent pk>
+    //
+
+    @Test
+    public void renameColumn_C_id() {
+        createAndLoadCAOI();
+        runRenameColumn(C_NAME, "id", "di");
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameColumn_A_id() {
+        createAndLoadCAOI();
+        runRenameColumn(A_NAME, "id", "di");
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameColumn_O_id() {
+        createAndLoadCAOI();
+        runRenameColumn(O_NAME, "id", "di");
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameColumn_I_id() {
+        createAndLoadCAOI();
+        runRenameColumn(I_NAME, "id", "di");
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    //
+    // RENAME COLUMN <child fk>
+    //
+
+    @Test
+    public void renameColumn_A_cid() {
+        createAndLoadCAOI();
+        runRenameColumn(A_NAME, "cid", "dic");
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameColumn_O_cid() {
+        createAndLoadCAOI();
+        runRenameColumn(O_NAME, "cid", "dic");
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameColumn_I_oid() {
+        createAndLoadCAOI();
+        runRenameColumn(I_NAME, "oid", "dio");
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
     }
 }

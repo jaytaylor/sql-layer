@@ -29,6 +29,9 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -37,6 +40,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.IndexColNotInGroupException;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.sql.StandardException;
@@ -86,7 +90,7 @@ public class AlterTableITBase extends ITBase {
         updateAISGeneration();
     }
 
-    protected void runRenameAlter(TableName oldName, TableName newName) {
+    protected void runRenameTable(TableName oldName, TableName newName) {
         AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
         UserTable oldTable = aisCopy.getUserTable(oldName);
         assertNotNull("Found old table " + oldName, oldTable);
@@ -95,6 +99,39 @@ public class AlterTableITBase extends ITBase {
         UserTable newTable = aisCopy.getUserTable(newName);
         assertNotNull("Found new table " + newName, oldTable);
         ddl().alterTable(session(), oldName, newTable, NO_CHANGES, NO_CHANGES, queryContext());
+        updateAISGeneration();
+    }
+
+    protected void runRenameColumn(TableName tableName, String oldColName, String newColName) {
+        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
+        UserTable tableCopy = aisCopy.getUserTable(tableName);
+        assertNotNull("Found table " + tableName, tableCopy);
+        Column oldColumn = tableCopy.getColumn(oldColName);
+        assertNotNull("Found old column " + oldColName, oldColumn);
+
+        // Have to do this manually as parser doesn't support it, duplicates much of the work in AlterTableDDL
+        List<Column> columns = new ArrayList<Column>(tableCopy.getColumns());
+        tableCopy.dropColumns();
+        for(Column column : columns) {
+            Column.create(tableCopy, column, (column == oldColumn) ? newColName : null, null);
+        }
+
+        Column newColumn = tableCopy.getColumn(newColName);
+        assertNotNull("Found new column " + newColName, newColumn);
+
+        List<TableIndex> indexes = new ArrayList<TableIndex>(tableCopy.getIndexes());
+        for(TableIndex index : indexes) {
+            if(index.containsTableColumn(tableName, oldColName)) {
+                tableCopy.removeIndexes(Collections.singleton(index));
+                TableIndex indexCopy = TableIndex.create(tableCopy, index);
+                for(IndexColumn iCol : index.getKeyColumns()) {
+                    IndexColumn.create(indexCopy, (iCol.getColumn() == oldColumn) ? newColumn : iCol.getColumn(), iCol, iCol.getPosition());
+                }
+            }
+        }
+
+        ddl().alterTable(session(), tableName, tableCopy,
+                         Arrays.asList(TableChange.createModify(oldColName, newColName)), NO_CHANGES, queryContext());
         updateAISGeneration();
     }
 
