@@ -291,4 +291,68 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
     }
+
+    //
+    // RENAME TABLE
+    //
+
+    @Test
+    public void renameTable_C_X() {
+        createAndLoadCAOI();
+        runRenameTable(C_NAME, X_NAME);
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameTable_A_X() {
+        createAndLoadCAOI();
+        runRenameTable(A_NAME, X_NAME);
+        groupsMatch(C_NAME, X_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameTable_O_X() {
+        createAndLoadCAOI();
+        runRenameTable(O_NAME, X_NAME);
+        groupsMatch(C_NAME, A_NAME, X_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameTable_I_X() {
+        createAndLoadCAOI();
+        runRenameTable(I_NAME, X_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, X_NAME);
+    }
+
+    //
+    // RENAME COLUMN <parent pk and fk>
+    //
+
+    @Test
+    public void renameColumn_C_id() {
+        createAndLoadCAOI();
+        runRenameColumn(C_NAME, "id", "di");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameColumn_A_id() {
+        createAndLoadCAOI();
+        runRenameColumn(A_NAME, "id", "di");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameColumn_O_id() {
+        createAndLoadCAOI();
+        runRenameColumn(O_NAME, "id", "di");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameColumn_I_id() {
+        createAndLoadCAOI();
+        runRenameColumn(I_NAME, "id", "di");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
 }

@@ -113,7 +113,7 @@ public class TableChangeValidator {
     }
 
     public boolean isParentChanged() {
-        return (parentChange != ChangedTableDescription.ParentChange.NONE);
+        return (parentChange == ParentChange.ADD) || (parentChange == ParentChange.DROP);
     }
 
     public boolean isPrimaryKeyChanged() {
