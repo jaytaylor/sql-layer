@@ -34,6 +34,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLTransactionHook;
@@ -208,6 +209,9 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         try {
             result = storeStats.loadIndexStatistics(session, index);
         }
+        catch (PersistitInterruptedException ex) {
+            throw new QueryCanceledException(session);
+        }
         catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
@@ -255,6 +259,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                     updates.put(index, indexStatistics);
                 }
             }
+            catch (PersistitInterruptedException ex) {
+                log.info("interrupt while analyzing " + index, ex);
+                throw new QueryCanceledException(session);
+            }
             catch (PersistitException ex) {
                 log.error("error while analyzing " + index, ex);
                 throw new PersistitAdapterException(ex);
@@ -295,6 +303,9 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             try {
                 storeStats.deleteIndexStatistics(session, index);
             }
+            catch (PersistitInterruptedException ex) {
+                throw new QueryCanceledException(session);
+            }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
             }
@@ -314,6 +325,9 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             IndexStatistics indexStatistics = entry.getValue();
             try {
                 storeStats.storeIndexStatistics(session, index, indexStatistics);
+            }
+            catch (PersistitInterruptedException ex) {
+                throw new QueryCanceledException(session);
             }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
