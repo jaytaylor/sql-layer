@@ -881,4 +881,67 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 adapter.newGroupCursor(oType.userTable().getGroup().getGroupTable())
         );
     }
+
+    // bug1037308, part 1
+    @Test
+    public void dropColumnConflatedPKFKOnLeaf() {
+        createTable(
+                SCHEMA, "customers",
+                "cid INT NOT NULL PRIMARY KEY",
+                "name VARCHAR(32) NOT NULL"
+        );
+        createTable(
+                SCHEMA, "orders",
+                "oid INT NOT NULL PRIMARY KEY",
+                "cid INT NOT NULL",
+                "GROUPING FOREIGN KEY(cid) REFERENCES customers(cid)",
+                "order_date DATE NOT NULL"
+        );
+        createTable(
+                SCHEMA, "items",
+                "iid INT NOT NULL PRIMARY KEY",
+                "oid INT NOT NULL",
+                "GROUPING FOREIGN KEY(oid) REFERENCES orders(oid)",
+                "sku VARCHAR(32) NOT NULL",
+                "quan INT NOT NULL"
+        );
+        createTable(
+                SCHEMA, "item_details",
+                "iid INT NOT NULL PRIMARY KEY",
+                "GROUPING FOREIGN KEY(iid) REFERENCES items(iid)",
+                "details VARCHAR(1024)"
+        );
+        // Hit assert in sort index size validation
+        runAlter("ALTER TABLE item_details DROP COLUMN iid");
+    }
+
+    // bug1037308, part 2
+    @Test
+    public void dropColumnCascadingKeyFromMiddleOfGroup() {
+        createTable(
+                SCHEMA, "customers",
+                "cid INT NOT NULL PRIMARY KEY",
+                "name VARCHAR(32) NOT NULL"
+        );
+        createTable(
+                SCHEMA, "orders",
+                "oid INT NOT NULL",
+                "cid INT NOT NULL",
+                "PRIMARY KEY(cid, oid)",
+                "GROUPING FOREIGN KEY(cid) REFERENCES customers(cid)",
+                "order_date DATE NOT NULL"
+        );
+        createTable(
+                SCHEMA, "items",
+                "iid INT NOT NULL",
+                "oid INT NOT NULL",
+                "cid INT NOT NULL",
+                "PRIMARY KEY(cid, oid, iid)",
+                "GROUPING FOREIGN KEY(cid,oid) REFERENCES orders(cid,oid)",
+                "sku VARCHAR(32) NOT NULL",
+                "quan INT NOT NULL"
+        );
+        // Hit assert in index size validation
+        runAlter("ALTER TABLE orders DROP COLUMN cid");
+    }
 }
