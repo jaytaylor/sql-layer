@@ -88,9 +88,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // Store interface
 
     @Override
-    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes)
         throws PersistitException
     {
+        if(indexes != null) {
+            throw new IllegalStateException("Unexpected indexes: " + Arrays.toString(indexes));
+        }
         UPDATE_TOTAL.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();

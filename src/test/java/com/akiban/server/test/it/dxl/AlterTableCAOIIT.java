@@ -113,26 +113,21 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     public void setDataType_A_aid() {
         createAndLoadCAOI(true, true, true);
         runAlter("ALTER TABLE "+A_TABLE+" ALTER COLUMN id SET DATA TYPE varchar(32)");
-        groupsDiffer(C_NAME, A_NAME);
-        groupsDiffer(A_NAME, O_NAME, I_NAME);
-        groupsMatch(C_NAME, O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void setDataType_O_oid() {
         createAndLoadCAOI(true, true, true);
         runAlter("ALTER TABLE "+O_TABLE+" ALTER COLUMN id SET DATA TYPE varchar(32)");
-        groupsDiffer(C_NAME, O_NAME, I_NAME);
-        groupsDiffer(A_NAME, O_NAME, I_NAME);
-        groupsMatch(O_NAME, I_NAME);
+        groupsDiffer(I_NAME, C_NAME, A_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME);
     }
 
     @Test
     public void setDataType_I_oid() {
         createAndLoadCAOI(true, true, true);
         runAlter("ALTER TABLE "+I_TABLE+" ALTER COLUMN id SET DATA TYPE varchar(32)");
-        groupsDiffer(C_NAME, I_NAME);
-        groupsDiffer(A_NAME, I_NAME);
-        groupsMatch(C_NAME, A_NAME, O_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 }

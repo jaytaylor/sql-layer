@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -296,14 +298,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         // Save previous state so it can be scanned
-        final Schema oldSchema = SchemaCache.globalSchema(origAIS);
-        final RowType oldSourceType = oldSchema.userTableRowType(origTable);
+        final Schema origSchema = SchemaCache.globalSchema(origAIS);
+        final RowType origTableType = origSchema.userTableRowType(origTable);
 
         // Alter through schemaManager to get new definitions and RowDefs
         schemaManager().alterTableDefinitions(session, changedTables);
 
         // Build transformation
-        final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
+        final PersistitAdapter adapter = new PersistitAdapter(origSchema, store().getPersistitStore(), treeService(), session, configService);
         final QueryContext queryContext = new ShimContext(adapter, context);
 
         final AkibanInformationSchema newAIS = getAIS(session);
@@ -341,13 +343,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     String defaultValue = newCol.getDefaultValue();
                     projections.add(new LiteralExpression(AkType.VARCHAR, defaultValue));
                 } else {
-                    projections.add(new FieldExpression(oldSourceType, oldPosition));
+                    projections.add(new FieldExpression(origTableType, oldPosition));
                 }
             }
         }
 
         // PUTRT for constraint checking
-        ProjectedUserTableRowType newType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections, !groupChange);
+        final ProjectedUserTableRowType newTableType = new ProjectedUserTableRowType(newSchema, newTable, projections, pProjections, !groupChange);
 
         for(ChangedTableDescription desc : changedTables) {
             UserTable oldTable = origAIS.getUserTable(desc.getOldName());
@@ -373,7 +375,27 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // -- Delete will remove current *and* its descendants. When the descendants are re-inserted,
         //    they automatically get their new hkey (as the RowDef is gotten from the cache == newest)
         // -- When the row is re-written, only it is touched and no descendants are updated
-        Set<RowType> filteredTypes = Collections.singleton(oldSourceType);
+
+        final Set<RowType> filteredTypes;
+        final Map<RowType,RowType> typeMap;
+        if(groupChange) {
+            filteredTypes = new HashSet<RowType>();
+            typeMap = new HashMap<RowType,RowType>();
+            origTable.traverseTableAndDescendants(new NopVisitor() {
+                @Override
+                public void visitUserTable(UserTable table) {
+                    RowType oldType = origSchema.userTableRowType(table);
+                    RowType newType = (table == origTable)
+                            ? newTableType
+                            : newSchema.userTableRowType(newAIS.getUserTable(table.getName()));
+                    filteredTypes.add(oldType);
+                    typeMap.put(oldType, newType);
+                }
+            });
+        } else {
+            filteredTypes = Collections.singleton(origTableType);
+            typeMap = Collections.<RowType,RowType>singletonMap(origTableType, newTableType);
+        }
 
         Operator plan = filter_Default(
                 groupScan_Default(origTable.getGroup().getGroupTable()),
@@ -381,52 +403,35 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         );
         com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
 
-        Operator orphanPlan = null;
-        if(groupChange && !origTable.getChildJoins().isEmpty()) {
-            // Only direct children needed, propagation during delete/write will fix the rest
-            final Set<RowType> childTypes = new HashSet<RowType>();
-            for(Join join : origTable.getChildJoins()) {
-                childTypes.add(oldSchema.userTableRowType(join.getChild()));
-            }
-            orphanPlan = filter_Default(
-                    groupScan_Default(origTable.getGroup().getGroupTable()),
-                    childTypes
-            );
-        }
 
-        cursor.open();
         int step = adapter.enterUpdateStep(true);
+        cursor.open();
         try {
             Row oldRow;
             while((oldRow = cursor.next()) != null) {
-                Row newRow = new ProjectedRow(newType, oldRow, queryContext, projections, pProjections);
-                queryContext.checkConstraints(newRow, usePValues);
-                adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
-            }
-
-            if(orphanPlan != null) {
-                // Now, fix any orphans
-                cursor.close();
-                cursor = API.cursor(orphanPlan, queryContext);
-                cursor.open();
-                adapter.enterUpdateStep();
-                while((oldRow = cursor.next()) != null) {
-                    RowType newRowType = newSchema.userTableRowType(oldRow.rowType().userTable());
-                    Row newRow = new OverlayingRow(oldRow, newRowType, usePValues);
+                RowType oldType = oldRow.rowType();
+                if(oldType == origTableType) {
+                    Row newRow = new ProjectedRow(newTableType, oldRow, queryContext, projections, pProjections);
+                    queryContext.checkConstraints(newRow, usePValues);
+                    adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
+                } else {
+                    RowType newType = typeMap.get(oldType);
+                    Row newRow = new OverlayingRow(oldRow, newType, usePValues);
                     adapter.alterRow(oldRow, newRow, null, groupChange, usePValues);
                 }
             }
 
             // Now rebuild any group indexes, leaving out empty ones
             List<Index> gisToBuild = new ArrayList<Index>();
+            adapter.enterUpdateStep();
             helper.recreateAffectedGroupIndexes(origTable, newTable, gisToBuild, indexesToDrop, affectedGroupIndexes);
             if(!gisToBuild.isEmpty()) {
                 adapter.enterUpdateStep();
                 createIndexes(session, gisToBuild);
             }
         } finally {
-            cursor.close();
             adapter.leaveUpdateStep(step);
+            cursor.close();
         }
     }
 
@@ -507,6 +512,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     throw new IllegalStateException("Unhandled ChangeLevel: " + validator.getFinalChangeLevel());
             }
         } catch(Exception e) {
+            if(!(e instanceof InvalidOperationException)) {
+                logger.error("Rethrowing exception from failed ALTER", e);
+            }
             rollBackNeeded = true;
             throw throwAlways(e);
         } finally {
