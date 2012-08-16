@@ -89,6 +89,7 @@ public class Column implements ColumnContainer
                 out.setIdentityGenerator(newGenerator);
             }
         }
+        out.setDefaultValue(column.getDefaultValue());
         return out;
     }
 
