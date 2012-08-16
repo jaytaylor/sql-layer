@@ -81,6 +81,10 @@ public class ChangedTableDescription {
         return preserveIndexes;
     }
 
+    public boolean isRenamed() {
+        return (newDefinition != null) && !tableName.equals(newDefinition.getName());
+    }
+
     @Override
     public String toString() {
         return toString(getOldName(), getNewName(), isNewGroup(), getParentChange(), getPreserveIndexes());
