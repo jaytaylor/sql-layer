@@ -168,4 +168,68 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME,  O_NAME);
     }
+
+    //
+    // DROP COLUMN <parent pk>
+    //
+
+    @Test
+    public void dropColumn_C_id() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+C_TABLE+" DROP COLUMN id");
+        groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
+        groupsDiffer(A_NAME, O_NAME, I_NAME);
+        groupsMatch(O_NAME, I_NAME);
+    }
+
+    @Test
+    public void dropColumn_A_id() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+A_TABLE+" DROP COLUMN id");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void dropColumn_O_id() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+O_TABLE+" DROP COLUMN id");
+        groupsDiffer(I_NAME, C_NAME, A_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME);
+    }
+
+    @Test
+    public void dropColumn_I_id() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+I_TABLE+" DROP COLUMN id");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    //
+    // DROP COLUMN <child fk>
+    //
+
+    @Test
+    public void dropColumn_A_cid() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+A_TABLE+" DROP COLUMN cid");
+        groupsDiffer(C_NAME, A_NAME);
+        groupsMatch(C_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void dropColumn_O_cid() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+O_TABLE+" DROP COLUMN cid");
+        groupsDiffer(C_NAME, O_NAME);
+        groupsMatch(C_NAME, A_NAME);
+        groupsMatch(O_NAME, I_NAME);
+    }
+
+    @Test
+    public void dropColumn_I_oid() {
+        createAndLoadCAOI(true, true, true);
+        runAlter("ALTER TABLE "+I_TABLE+" DROP COLUMN oid");
+        groupsDiffer(O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME,  O_NAME);
+    }
 }
