@@ -41,6 +41,7 @@ public class ChangedTableDescription {
     private final TableName tableName;
     private final UserTable newDefinition;
     private final ParentChange parentChange;
+    private final TableName parentName;
     private final Map<String,String> preserveIndexes;
 
     /**
@@ -48,12 +49,15 @@ public class ChangedTableDescription {
      * @param newDefinition New definition of the table.
      * @param preserveIndexes Mapping of new index names to old.
      */
-    public ChangedTableDescription(TableName tableName, UserTable newDefinition, ParentChange parentChange, Map<String, String> preserveIndexes) {
+    public ChangedTableDescription(TableName tableName, UserTable newDefinition,
+                                   ParentChange parentChange, TableName parentName,
+                                   Map<String, String> preserveIndexes) {
         ArgumentValidation.notNull("tableName", tableName);
         ArgumentValidation.notNull("preserveIndexes", preserveIndexes);
         this.tableName = tableName;
         this.newDefinition = newDefinition;
         this.parentChange = parentChange;
+        this.parentName = parentName;
         this.preserveIndexes = preserveIndexes;
     }
 
@@ -81,8 +85,8 @@ public class ChangedTableDescription {
         return preserveIndexes;
     }
 
-    public boolean isRenamed() {
-        return (newDefinition != null) && !tableName.equals(newDefinition.getName());
+    public TableName getParentName() {
+        return parentName;
     }
 
     @Override

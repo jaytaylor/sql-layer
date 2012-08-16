@@ -347,9 +347,11 @@ public class TableChangeValidator {
     private void compareGrouping() {
         parentChange = compareParentJoin(oldTable.getParentJoin(), newTable.getParentJoin());
         primaryKeyChanged = containsOldOrNew(indexChanges, Index.PRIMARY_KEY_CONSTRAINT);
+        boolean renamed = !oldTable.getName().equals(newTable.getName());
 
         Map<String,String> preserveIndexes = new TreeMap<String,String>();
-        changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, parentChange, preserveIndexes));
+        TableName parentName = (newTable.getParentJoin() != null) ? newTable.getParentJoin().getParent().getName() : null;
+        changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, parentChange, parentName, preserveIndexes));
 
         if(!isParentChanged() && !primaryKeyChanged) {
             for(Index index : newTable.getIndexes()) {
@@ -376,34 +378,60 @@ public class TableChangeValidator {
                     Column newColumn = newTable.getColumn(newName);
                     if(compare(oldColumn, newColumn) == ChangeLevel.TABLE) {
                         dropParent = true;
+                    } else if(!oldColumn.getName().equals(newColumn.getName())) {
+                        renamed = true;
                     }
                 }
             }
 
+            boolean preserve = false;
+            ParentChange change = null;
+
             // If PK changed and table had children, PK was dropped
             if(primaryKeyChanged || dropParent) {
-                propagateChildChange(oldChildTable, ParentChange.DROP);
-            } else if(parentChange == ParentChange.ADD) {
-                propagateChildChange(oldChildTable, ParentChange.UPDATE);
+                updateFinalChangeLevel(ChangeLevel.GROUP);
+                change = ParentChange.DROP;
+            } else if(isParentChanged() || (parentChange == ParentChange.ADD)) {
+                updateFinalChangeLevel(ChangeLevel.GROUP);
+                change = ParentChange.UPDATE;
+            } else if(renamed) {
+                updateFinalChangeLevel(ChangeLevel.METADATA);
+                change = ParentChange.UPDATE;
+                preserve = true;
+            }
+
+            if(change != null) {
+                TableName newParent = (change == ParentChange.DROP) ? null : newTable.getName();
+                trackChangedChild(oldChildTable, change, newParent, preserve);
+                propagateChildChange(oldChildTable, ParentChange.UPDATE, preserve);
             }
         }
 
-        if(isParentChanged() || primaryKeyChanged || (changedTables.size() > 1)) {
+        if(isParentChanged() || primaryKeyChanged) {
             updateFinalChangeLevel(ChangeLevel.GROUP);
         }
     }
 
-    private void propagateChildChange(final UserTable oldRoot, final ParentChange initialChange) {
-        oldRoot.traverseTableAndDescendants(new NopVisitor() {
+    private void propagateChildChange(final UserTable table, final ParentChange change, final boolean allIndexes) {
+        table.traverseTableAndDescendants(new NopVisitor() {
             @Override
             public void visitUserTable(UserTable curTable) {
-                trackChangedChild(curTable.getName(), (oldRoot == curTable) ? initialChange : ParentChange.UPDATE);
+                if(table != curTable) {
+                    TableName parentName = curTable.getParentJoin().getParent().getName();
+                    trackChangedChild(curTable, change, parentName, allIndexes);
+                }
             }
         });
     }
 
-    private void trackChangedChild(TableName tableName, ChangedTableDescription.ParentChange groupChange) {
-        changedTables.add(new ChangedTableDescription(tableName, null, groupChange, new HashMap<String, String>()));
+    private void trackChangedChild(UserTable table, ChangedTableDescription.ParentChange parentChange, TableName parentName, boolean doPreserve) {
+        Map<String,String> preserved = new HashMap<String, String>();
+        if(doPreserve) {
+            for(Index index : table.getIndexesIncludingInternal()) {
+                preserved.put(index.getIndexName().getName(), index.getIndexName().getName());
+            }
+        }
+        changedTables.add(new ChangedTableDescription(table.getName(), null, parentChange, parentName, preserved));
     }
 
     private static boolean containsOldOrNew(List<TableChange> changes, String name) {

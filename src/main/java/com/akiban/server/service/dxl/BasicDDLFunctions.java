@@ -233,10 +233,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private void doMetadataChange(Session session, QueryContext context, UserTable newDefinition,
                                   Collection<ChangedTableDescription> changedTables, boolean nullChange) {
-        if(changedTables.size() != 1) {
-            throw new IllegalStateException("Too many changed tables for METADATA ALTER: " + changedTables);
-        }
-
         if(nullChange) {
             // Check new definition
             final ConstraintChecker checker = new UserTableRowChecker(newDefinition);
