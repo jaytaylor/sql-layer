@@ -366,15 +366,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             oldTypeIndexes = indexesToBuild.toArray(new Index[indexesToBuild.size()]);
         }
 
-        // NB: Delicate:
-        // We only need to scan the table being changed because
-        // - It is the only row contents needing transformed
-        // - For a non-group change we don't need to look at others anyway
-        // - For a group change, this table is the "pivot" so only it's descendants need updated
-        // -- A group change is performed by alterRow() as a delete and then a write
-        // -- Delete will remove current *and* its descendants. When the descendants are re-inserted,
-        //    they automatically get their new hkey (as the RowDef is gotten from the cache == newest)
-        // -- When the row is re-written, only it is touched and no descendants are updated
+        // - For non-group change, only need to scan the table being modified.
+        // - For a group change, we need to scan entire group (catch all orphans).
+        //   The process of deleting a parent will update its children, and updating
+        //   orphans directly covers all rows. PersistitAdapter#alterRow() does the
+        //   step handling so this scan is safe (deletes at current step, writes at +1)
 
         final Set<RowType> filteredTypes;
         final Map<RowType,RowType> typeMap;
