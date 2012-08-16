@@ -43,7 +43,7 @@ import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
  * An SQL modifying DML statement transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresModifyOperatorStatement extends PostgresBaseStatement
+public class PostgresModifyOperatorStatement extends PostgresDMLStatement
 {
     private String statementType;
     private UpdatePlannable resultOperator;
@@ -76,11 +76,14 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();
         final UpdateResult updateResult;
+        boolean lockSuccess = false;
         try {
-            lock(session, UNSPECIFIED_DML_WRITE);
+            lock(context, UNSPECIFIED_DML_WRITE);
+            lockSuccess = true;
             updateResult = resultOperator.run(context);
-        } finally {
-            unlock(session, UNSPECIFIED_DML_WRITE);
+        } 
+        finally {
+            unlock(context, UNSPECIFIED_DML_WRITE, lockSuccess);
         }
 
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);

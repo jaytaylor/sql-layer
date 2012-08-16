@@ -31,7 +31,9 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.io.IOException;
 
@@ -92,6 +94,14 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     @Override
     public long sequenceNextValue(TableName sequenceName) {
         return server.getStore().sequenceNextValue(sequenceName);
+    }
+
+    public void lock(DXLFunction operationType) {
+        DXLReadWriteLockHook.only().hookFunctionIn(getSession(), operationType);
+    }
+
+    public void unlock(DXLFunction operationType) {
+        DXLReadWriteLockHook.only().hookFunctionFinally(getSession(), operationType, null);
     }
 
 }

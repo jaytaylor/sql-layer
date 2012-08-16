@@ -46,7 +46,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         if (parameters != null) {
             boolean usePValues = false;
             if (statement instanceof PostgresBaseStatement)
-                usePValues = ((PostgresBaseStatement)statement).usesPValues();
+                usePValues = ((PostgresDMLStatement)statement).usesPValues();
             decodeParameters(parameters, usePValues);
         }
     }

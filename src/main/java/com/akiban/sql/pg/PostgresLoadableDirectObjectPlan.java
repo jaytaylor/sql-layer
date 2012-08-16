@@ -36,7 +36,7 @@ import com.akiban.util.tap.Tap;
 import java.util.List;
 import java.io.IOException;
 
-public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
+public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
