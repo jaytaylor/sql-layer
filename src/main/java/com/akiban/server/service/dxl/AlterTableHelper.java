@@ -86,11 +86,11 @@ public class AlterTableHelper {
                 }
             }
         }
-        if(newColumn.isAkibanPKColumn()) {
+        Column oldColumn = oldTable.getColumn(newName);
+        if((oldColumn == null) && newColumn.isAkibanPKColumn()) {
             return null;
         }
         // Not in change list, must be an original column
-        Column oldColumn = oldTable.getColumn(newName);
         assert oldColumn != null : newColumn;
         return oldColumn.getPosition();
     }
