@@ -227,7 +227,6 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       new long[] {}); 
     }
     
-    @Ignore
     @Test
     public void testAAD()
     {
