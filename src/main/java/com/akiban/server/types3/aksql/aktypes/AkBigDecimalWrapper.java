@@ -42,43 +42,39 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
             
     @Override
     public BigDecimalWrapper add(BigDecimalWrapper other) {
-        AkBigDecimalWrapper o = (AkBigDecimalWrapper) other;
-        value = value.add(o.value);
+        value = value.add(other.asBigDecimal());
         return this;
     }
 
     @Override
     public BigDecimalWrapper subtract(BigDecimalWrapper other) {
-        AkBigDecimalWrapper o = (AkBigDecimalWrapper) other;
-        value = value.subtract(o.value);
+        value = value.subtract(other.asBigDecimal());
         return this;
     }
 
     @Override
     public BigDecimalWrapper multiply(BigDecimalWrapper other) {
-        AkBigDecimalWrapper o = (AkBigDecimalWrapper) other;
-        value = value.multiply(o.value);
+        value = value.multiply(other.asBigDecimal());
         return this;
     }
 
     @Override
     public BigDecimalWrapper divide(BigDecimalWrapper other) {
-        AkBigDecimalWrapper o = (AkBigDecimalWrapper) other;
-        value = value.divide(o.value);
+        value = value.divide(other.asBigDecimal());
         return this;
     }
  
     @Override
     public BigDecimalWrapper divideToIntegeralValue (BigDecimalWrapper augend)
     {
-        value = value.divideToIntegralValue(((AkBigDecimalWrapper)augend).value);
+        value = value.divideToIntegralValue(augend.asBigDecimal());
         return this;
     }
     
     @Override
     public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale, boolean roundUp)
     {
-        value = value.divide(((AkBigDecimalWrapper)augend).value,
+        value = value.divide(augend.asBigDecimal(),
                 scale,
                 roundUp ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN);
         return this;
