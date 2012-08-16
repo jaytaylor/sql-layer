@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.it.dxl;
 
+import com.akiban.ais.AISCloner;
+import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -45,19 +47,23 @@ import com.akiban.sql.parser.StatementNode;
 import org.junit.After;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class AlterTableITBase extends ITBase {
     protected static final String SCHEMA = "test";
+    protected static final String X_TABLE = "x";
     protected static final String C_TABLE = "c";
     protected static final String O_TABLE = "o";
     protected static final String I_TABLE = "i";
+    protected static final TableName X_NAME = new TableName(SCHEMA, X_TABLE);
     protected static final TableName C_NAME = new TableName(SCHEMA, C_TABLE);
     protected static final TableName O_NAME = new TableName(SCHEMA, O_TABLE);
     protected static final TableName I_NAME = new TableName(SCHEMA, I_TABLE);
@@ -77,6 +83,18 @@ public class AlterTableITBase extends ITBase {
         }
         assertTrue("is alter node", node instanceof AlterTableNode);
         AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
+        updateAISGeneration();
+    }
+
+    protected void runRenameAlter(TableName oldName, TableName newName) {
+        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
+        UserTable oldTable = aisCopy.getUserTable(oldName);
+        assertNotNull("Found old table " + oldName, oldTable);
+        AISTableNameChanger changer = new AISTableNameChanger(aisCopy.getUserTable(oldName), newName);
+        changer.doChange();
+        UserTable newTable = aisCopy.getUserTable(newName);
+        assertNotNull("Found new table " + newName, oldTable);
+        ddl().alterTable(session(), oldName, newTable, NO_CHANGES, NO_CHANGES, queryContext());
         updateAISGeneration();
     }
 

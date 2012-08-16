@@ -289,9 +289,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void addGroupingForeignKey_C() {
-        String xTable = "x";
-        TableName xName = new TableName(SCHEMA, xTable);
-        int xid = createTable(xName, "id varchar(5) not null primary key");
+        int xid = createTable(X_NAME, "id varchar(5) not null primary key");
         writeRows(
                 createNewRow(xid, "1"), // Adopts 1 (well formed group)
                                         // Leave 2 orphan
@@ -300,7 +298,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         );
         createAndLoadCAOI_FK(true, true, true);
         runAlter("ALTER TABLE " + C_TABLE + " ADD GROUPING FOREIGN KEY(cc) REFERENCES x(id)");
-        groupsMatch(xName, C_NAME, A_NAME, O_NAME, I_NAME);
+        groupsMatch(X_NAME, C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
@@ -351,5 +349,37 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE " + I_TABLE + " DROP GROUPING FOREIGN KEY");
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
+    }
+
+    //
+    // RENAME TABLE
+    //
+
+    @Test
+    public void renameTable_C_X() {
+        createAndLoadCAOI();
+        runRenameAlter(C_NAME, X_NAME);
+        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameTable_A_X() {
+        createAndLoadCAOI();
+        runRenameAlter(A_NAME, X_NAME);
+        groupsMatch(C_NAME, X_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameTable_O_X() {
+        createAndLoadCAOI();
+        runRenameAlter(O_NAME, X_NAME);
+        groupsMatch(C_NAME, A_NAME, X_NAME, I_NAME);
+    }
+
+    @Test
+    public void renameTable_I_X() {
+        createAndLoadCAOI();
+        runRenameAlter(I_NAME, X_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, X_NAME);
     }
 }
