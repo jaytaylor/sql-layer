@@ -167,13 +167,14 @@ public class AISMerge {
                     throw new IllegalStateException("Unhandled GroupChange: " + desc.getParentChange());
             }
 
+            UserTable indexSearchTable = newTable;
             if(newTable == null) {
-                continue;
+                indexSearchTable = oldTable;
+            } else {
+                filteredTables.put(desc.getOldName(), newTable);
             }
 
-            filteredTables.put(desc.getOldName(), newTable);
-
-            for(Index newIndex : newTable.getIndexesIncludingInternal()) {
+            for(Index newIndex : indexSearchTable.getIndexesIncludingInternal()) {
                 String oldName = desc.getPreserveIndexes().get(newIndex.getIndexName().getName());
                 Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
                 if(oldIndex != null) {

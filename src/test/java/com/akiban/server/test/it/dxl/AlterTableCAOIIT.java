@@ -56,6 +56,15 @@ public class AlterTableCAOIIT extends AlterTableITBase {
                 (oGrouped ? "," + akibanFK("cid", C_TABLE, "id") : ""));
         iid = createTable(I_NAME, "id int not null primary key, oid int, ii varchar(5)"+
                 (iGrouped ? "," + akibanFK("oid", O_TABLE, "id") : ""));
+        // Index fk column
+        createIndex(SCHEMA, A_TABLE, "cid", "cid");
+        createIndex(SCHEMA, O_TABLE, "cid", "cid");
+        createIndex(SCHEMA, I_TABLE, "oid", "oid");
+        // Index on non-pk, non-fk column
+        createIndex(SCHEMA, C_TABLE, "cc", "cc");
+        createIndex(SCHEMA, A_TABLE, "aa", "aa");
+        createIndex(SCHEMA, O_TABLE, "oo", "oo");
+        createIndex(SCHEMA, I_TABLE, "ii", "ii");
         writeRows(
                 createNewRow(cid, 1L, "1"),
                     createNewRow(aid, 10L, 1L, "11"),
@@ -101,7 +110,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     //
 
     @Test
-    public void setDataType_C_cid() {
+    public void setDataType_C_id() {
         createAndLoadCAOI(true, true, true);
         runAlter("ALTER TABLE "+C_TABLE+" ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
@@ -110,14 +119,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     }
 
     @Test
-    public void setDataType_A_aid() {
+    public void setDataType_A_id() {
         createAndLoadCAOI(true, true, true);
         runAlter("ALTER TABLE "+A_TABLE+" ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
-    public void setDataType_O_oid() {
+    public void setDataType_O_id() {
         createAndLoadCAOI(true, true, true);
         runAlter("ALTER TABLE "+O_TABLE+" ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsDiffer(I_NAME, C_NAME, A_NAME);
@@ -125,7 +134,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     }
 
     @Test
-    public void setDataType_I_oid() {
+    public void setDataType_I_id() {
         createAndLoadCAOI(true, true, true);
         runAlter("ALTER TABLE "+I_TABLE+" ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
