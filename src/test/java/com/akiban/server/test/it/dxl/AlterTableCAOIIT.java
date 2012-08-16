@@ -332,4 +332,32 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
+    //
+    // DROP GROUPING FOREIGN KEY
+    //
+
+    @Test
+    public void dropGroupingForeignKey_A() {
+        createAndLoadCAOI();
+        runAlter("ALTER TABLE "+A_TABLE+" DROP GROUPING FOREIGN KEY");
+        groupsDiffer(C_NAME, A_NAME);
+        groupsMatch(C_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void dropGroupingForeignKey_O() {
+        createAndLoadCAOI();
+        runAlter("ALTER TABLE "+O_TABLE+" DROP GROUPING FOREIGN KEY");
+        groupsDiffer(C_NAME, O_NAME);
+        groupsMatch(O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME);
+    }
+
+    @Test
+    public void dropGroupingForeignKey_I() {
+        createAndLoadCAOI();
+        runAlter("ALTER TABLE "+I_TABLE+" DROP GROUPING FOREIGN KEY");
+        groupsDiffer(O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME);
+    }
 }
