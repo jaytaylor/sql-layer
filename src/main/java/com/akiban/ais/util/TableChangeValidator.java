@@ -383,6 +383,8 @@ public class TableChangeValidator {
             // If PK changed and table had children, PK was dropped
             if(primaryKeyChanged || dropParent) {
                 propagateChildChange(oldChildTable, ParentChange.DROP);
+            } else if(parentChange == ParentChange.ADD) {
+                propagateChildChange(oldChildTable, ParentChange.UPDATE);
             }
         }
 

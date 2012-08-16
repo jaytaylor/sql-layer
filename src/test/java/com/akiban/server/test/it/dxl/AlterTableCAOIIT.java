@@ -49,14 +49,18 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     }
 
     private void createAndLoadCAOI() {
-        createAndLoadCAOI(true, true, true, true, true, true, true);
+        createAndLoadCAOI_PK_FK(true, true, true, true, true, true, true);
     }
 
-    private void createAndLoadCAOI(boolean cPK, boolean aPK, boolean oPK, boolean iPK) {
-        createAndLoadCAOI(cPK, aPK, true, oPK, true, iPK, true);
+    private void createAndLoadCAOI_PK(boolean cPK, boolean aPK, boolean oPK, boolean iPK) {
+        createAndLoadCAOI_PK_FK(cPK, aPK, true, oPK, true, iPK, true);
     }
 
-    private void createAndLoadCAOI(boolean cPK, boolean aPK, boolean aFK, boolean oPK, boolean oFK, boolean iPK, boolean iFK) {
+    private void createAndLoadCAOI_FK(boolean aFK, boolean oFK, boolean iFK) {
+        createAndLoadCAOI_PK_FK(true, true, aFK, true, oFK, true, iFK);
+    }
+
+    private void createAndLoadCAOI_PK_FK(boolean cPK, boolean aPK, boolean aFK, boolean oPK, boolean oFK, boolean iPK, boolean iFK) {
         cid = createTable(C_NAME, "id int not null "+(cPK ? "primary key" : "")+", cc varchar(5)" );
         aid = createTable(A_NAME, "id int not null "+(aPK ? "primary key" : "")+", cid int, aa varchar(5)"+
                 (aFK ? "," + akibanFK("cid", C_TABLE, "id") : ""));
@@ -247,7 +251,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void addPrimaryKey_I() {
-        createAndLoadCAOI(true, true, true, false);
+        createAndLoadCAOI_PK(true, true, true, false);
         runAlter("ALTER TABLE " + I_TABLE + " ADD PRIMARY KEY(id)");
         groupsMatch(C_NAME, A_NAME,  O_NAME, I_NAME);
     }
@@ -286,4 +290,46 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+I_TABLE+" DROP PRIMARY KEY");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
+
+    //
+    // ADD GROUPING FOREIGN KEY
+    //
+
+    @Test
+    public void addGroupingForeignKey_C() {
+        String xTable = "x";
+        TableName xName = new TableName(SCHEMA, xTable);
+        int xid = createTable(xName, "id varchar(5) not null primary key");
+        writeRows(
+                createNewRow(xid, "1"), // Adopts 1 (well formed group)
+                                        // Leave 2 orphan
+                createNewRow(xid, "4"), // Adopts 2 (c has no children)
+                createNewRow(xid, "5")  // No Children
+        );
+        createAndLoadCAOI_FK(true, true, true);
+        runAlter("ALTER TABLE " + C_TABLE + " ADD GROUPING FOREIGN KEY(cc) REFERENCES x(id)");
+        groupsMatch(xName, C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void addGroupingForeignKey_A() {
+        createAndLoadCAOI_FK(false, true, true);
+        runAlter("ALTER TABLE " + A_TABLE + " ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void addGroupingForeignKey_O() {
+        createAndLoadCAOI_FK(true, false, true);
+        runAlter("ALTER TABLE " + O_TABLE + " ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void addGroupingForeignKey_I() {
+        createAndLoadCAOI_FK(true, true, false);
+        runAlter("ALTER TABLE "+I_TABLE+" ADD GROUPING FOREIGN KEY(oid) REFERENCES o(id)");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
 }
