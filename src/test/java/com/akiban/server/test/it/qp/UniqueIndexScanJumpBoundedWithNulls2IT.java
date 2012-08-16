@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import org.junit.runner.RunWith;
+import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.util.ShareHolder;
 import com.akiban.server.types.ValueSource;
 import com.akiban.qp.expression.IndexBound;
@@ -66,7 +68,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     private static final int C = 2;
     private static final int ID = 3;
     
-    private static final int COLUMN_COUNT = 4;
+    private static final int INDEX_COLUMN_COUNT = 3;
 
     private static final boolean ASC = true;
     private static final boolean DESC = false;
@@ -77,6 +79,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     private RowType tRowType;
     private IndexRowType idxRowType;
     private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
+    private Map<Long, TestRow> indexRowWithIdMap = new HashMap<Long, TestRow>(); // use for jumping
 
     @Before
     @Override
@@ -88,10 +91,10 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
             "a int",
             "b int",
             "c int");
-        createUniqueIndex("schema", "t", "idx", "a", "b", "c", "id");
+        createUniqueIndex("schema", "t", "idx", "a", "b", "c");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
-        idxRowType = indexType(t, "a", "b", "c", "id");
+        idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
             createNewRow(t, 1010L, 1L, 11L, 110L),
             createNewRow(t, 1011L, 1L, 11L, 111L),
@@ -111,17 +114,26 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         use(db);
-        for (NewRow row : db) {
+        for (NewRow row : db)
+        {
             indexRowMap.put((Long) row.get(0),
                             new TestRow(tRowType,
                                         new Object[] {row.get(1),     // a
                                                       row.get(2),     // b
                                                       row.get(3),     // c
-                                                      row.get(0)      // id
                                                       }));
+            
+            indexRowWithIdMap.put((Long) row.get(0),
+                                  new TestRow(tRowType,
+                                              new Object[]{row.get(1),  // a
+                                                           row.get(2),  // b
+                                                           row.get(3),  // c
+                                                           row.get(0)   // id
+                                              }));
+            
         }
     }
-    
+
     /**
      * 
      * @param id
@@ -134,39 +146,50 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     }
 
     @Test
-    public void testAAAAToFirstNull()
+    public void testAAAA()
     {
         testSkipNulls(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
                       new long[] {1019, 1020, 1021, 1018, 1022});
-    }
-
-    @Test
-    public void testAAAAToMiddleNull()
-    {
-        // currently failing
-        // It all jumps to the first row with null
-        // (even if the id is specified)
-
+        
         testSkipNulls(1020, // jump to the second null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
                       new long[] {1020, 1021, 1018, 1022});
-    }
-
-    @Test
-    public void testAAAAToLastNull()
-    {
-        // same failure as testAAAAToMiddleNull()
-
-        testSkipNulls(1021, // jump to the first null
+        
+        testSkipNulls(1021, // jump to the last null
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAAA(),
                       new long[] {1021, 1018, 1022});
+    }
+
+    @Test
+    public void testDDDD()
+    {
+        // currently failing
+        // 3 cases all doesn't return any row
+
+        testSkipNulls(1019,
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDDDD(),
+                      new long[] {1019});
+
+        testSkipNulls(1020,
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDDDD(),
+                      new long[] {1020, 1019});
+        
+        testSkipNulls(1021,
+                      b_of(1018), true,
+                      b_of(1021), true,
+                      getDDDD(),
+                      new long[] {1021, 1020, 1019});
     }
 
     
@@ -181,7 +204,8 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         Operator plan = indexScan_Default(idxRowType, bounded(1, bLo, lowInclusive, bHi, hiInclusive), ordering);
         Cursor cursor = cursor(plan, queryContext);
         cursor.open();
-        cursor.jump(indexRow(targetId), INDEX_ROW_SELECTOR);
+
+        cursor.jump(indexRowWithId(targetId), INDEX_ROW_SELECTOR);
 
         Row row;
         List<Row> actualRows = new ArrayList<Row>();
@@ -219,7 +243,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         {
             // nulls are allowed
             ArrayList<Long> toLong = new ArrayList<Long>();
-            for (int n = 0; n < COLUMN_COUNT; ++n)
+            for (int n = 0; n < INDEX_COLUMN_COUNT; ++n)
                 addColumn(toLong, row.eval(n));
             
             ret.add(toLong);
@@ -245,15 +269,87 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
     }
     
+
     private API.Ordering getAAAA()
     {
         return ordering(A, ASC, B, ASC, C, ASC, ID, ASC);
+    }
+
+    private API.Ordering getAAAD()
+    {
+        return ordering(A, ASC, B, ASC, C, ASC, ID, DESC);
+    }
+
+    private API.Ordering getAADA()
+    {
+        return ordering(A, ASC, B, ASC, C, DESC, ID, ASC);
+    }
+
+    private API.Ordering getAADD()
+    {
+        return ordering(A, ASC, B, ASC, C, DESC, ID, DESC);
+    }
+
+    private API.Ordering getADAA()
+    {
+        return ordering(A, ASC, B, DESC, C, ASC, ID, ASC);
+    }
+
+    private API.Ordering getADAD()
+    {
+        return ordering(A, ASC, B, DESC, C, ASC, ID, DESC);
+    }
+
+    private API.Ordering getADDA()
+    {
+        return ordering(A, ASC, B, DESC, C, DESC, ID, ASC);
+    }
+
+    private API.Ordering getADDD()
+    {
+        return ordering(A, ASC, B, DESC, C, DESC, ID, DESC);
+    }
+
+    private API.Ordering getDAAA()
+    {
+        return ordering(A, DESC, B, ASC, C, ASC, ID, ASC);
+    }
+
+    private API.Ordering getDAAD()
+    {
+        return ordering(A, DESC, B, ASC, C, ASC, ID, DESC);
+    }
+
+    private API.Ordering getDADA()
+    {
+        return ordering(A, DESC, B, ASC, C, DESC, ID, ASC);
+    }
+
+    private API.Ordering getDADD()
+    {
+        return ordering(A, DESC, B, ASC, C, DESC, ID, DESC);
+    }
+
+    private API.Ordering getDDAA()
+    {
+        return ordering(A, DESC, B, DESC, C, ASC, ID, ASC);
+    }
+
+    private API.Ordering getDDAD()
+    {
+        return ordering(A, DESC, B, DESC, C, ASC, ID, DESC);
+    }
+
+    private API.Ordering getDDDA()
+    {
+        return ordering(A, DESC, B, DESC, C, DESC, ID, ASC);
     }
 
     private API.Ordering getDDDD()
     {
         return ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
     }
+        
 
     // TODO: add more get****()
     
@@ -261,6 +357,11 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     private TestRow indexRow(long id)
     {
         return indexRowMap.get(id);
+    }
+
+    private TestRow indexRowWithId(long id)
+    {
+        return indexRowWithIdMap.get(id);
     }
 
     private long[] longs(long... longs)
