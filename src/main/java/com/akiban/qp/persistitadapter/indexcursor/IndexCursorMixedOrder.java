@@ -348,7 +348,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             IndexBound hi = keyRange.hi();
             BoundExpressions loExpressions = lo.boundExpressions(context);
             BoundExpressions hiExpressions = hi.boundExpressions(context);
-            int nColumns = index().getAllColumns().size();
+            int nColumns = keyRange.boundColumns();
             clear(startKey);
             clear(endKey);
             for (int f = 0; f < nColumns; f++) {
