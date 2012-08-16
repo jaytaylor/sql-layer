@@ -26,8 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import org.junit.runner.RunWith;
-import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.util.ShareHolder;
 import com.akiban.server.types.ValueSource;
 import com.akiban.qp.expression.IndexBound;
@@ -374,12 +372,13 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     
     
     // test with rows whose b == null
-    // TODO: add these tests here
     @Test
     public void testDDDD_b()
     {
+        // currently failing
+
         // 'correct ordering':
-        // 1023, 1022, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016
+        // 1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016
 
         testUnbounded(1013,
                      getDDDD(),
@@ -393,6 +392,19 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
                       getDDDD(),
                       new long[] {1016});
     }
+
+    @Test
+    public void testAAAA_b()
+    {
+        // 'correct ordering':
+        // 1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023
+        
+        testUnbounded(1012,
+                      getAAAA(),
+                      new long[] {1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
+    }
+
+    // TODO: add more tests
 
     private void testUnbounded(long targetId,                  // location to jump to
                                API.Ordering ordering,          
