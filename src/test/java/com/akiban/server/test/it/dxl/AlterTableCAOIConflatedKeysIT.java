@@ -32,6 +32,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
@@ -47,7 +49,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
     private int oid;
     private int iid;
 
-    @After @Before
+    @After
     public void clearTableIDs() {
         cid = aid = oid = iid = -1;
     }
@@ -66,6 +68,12 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         createIndex(SCHEMA, A_TABLE, "aa", "aa");
         createIndex(SCHEMA, O_TABLE, "oo", "oo");
         createIndex(SCHEMA, I_TABLE, "ii", "ii");
+        // Default post indexes presence checking
+        checkedIndexes.put(cid, Arrays.asList("PRIMARY", "cc"));
+        checkedIndexes.put(aid, Arrays.asList("PRIMARY", "aa"));
+        checkedIndexes.put(oid, Arrays.asList("PRIMARY", "oo"));
+        checkedIndexes.put(iid, Arrays.asList("PRIMARY", "ii"));
+        // Data
         writeRows(
                 createNewRow(cid, 1L, "1"),
                     createNewRow(aid, 1L, "11"),
@@ -149,6 +157,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
         groupsDiffer(A_NAME, O_NAME, I_NAME);
         groupsMatch(O_NAME, I_NAME);
+        checkIndexesInstead(C_NAME, "cc");
     }
 
     @Test
@@ -157,6 +166,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+A_TABLE+" DROP COLUMN id");
         groupsDiffer(C_NAME, A_NAME);
         groupsMatch(C_NAME, O_NAME, I_NAME);
+        checkIndexesInstead(A_NAME, "aa");
     }
 
     @Test
@@ -166,6 +176,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         groupsDiffer(C_NAME, O_NAME);
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME);
+        checkIndexesInstead(O_NAME, "oo");
     }
 
     @Test
@@ -174,6 +185,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+I_TABLE+" DROP COLUMN id");
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
+        checkIndexesInstead(I_NAME, "ii");
     }
 
     //
@@ -198,6 +210,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
         groupsDiffer(A_NAME, O_NAME, I_NAME);
         groupsMatch(O_NAME, I_NAME);
+        checkIndexesInstead(C_NAME, "cc");
     }
 
     @Test
@@ -205,6 +218,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+A_TABLE+" DROP PRIMARY KEY");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        checkIndexesInstead(A_NAME, "aa");
     }
 
     @Test
@@ -213,6 +227,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+O_TABLE+" DROP PRIMARY KEY");
         groupsDiffer(I_NAME, C_NAME, A_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
+        checkIndexesInstead(O_NAME, "oo");
     }
 
     @Test
@@ -220,6 +235,7 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+I_TABLE+" DROP PRIMARY KEY");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        checkIndexesInstead(I_NAME, "ii");
     }
 
     //

@@ -54,7 +54,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -72,6 +74,21 @@ public class AlterTableITBase extends ITBase {
     protected static final TableName O_NAME = new TableName(SCHEMA, O_TABLE);
     protected static final TableName I_NAME = new TableName(SCHEMA, I_TABLE);
     protected static final List<TableChange> NO_CHANGES = Collections.emptyList();
+
+    protected Map<Integer,List<String>> checkedIndexes = new HashMap<Integer, List<String>>();
+
+    @After
+    public void lookForCheckedIndexes() {
+        for(Map.Entry<Integer, List<String>> entry : checkedIndexes.entrySet()) {
+            List<String> value = entry.getValue();
+            expectIndexes(entry.getKey(), value.toArray(new String[value.size()]));
+        }
+        checkedIndexes.clear();
+    }
+
+    protected void checkIndexesInstead(TableName name, String... indexNames) {
+        checkedIndexes.put(tableId(name), Arrays.asList(indexNames));
+    }
 
     protected QueryContext queryContext() {
         return null; // Not needed

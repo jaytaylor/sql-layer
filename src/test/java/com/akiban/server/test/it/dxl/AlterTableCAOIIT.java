@@ -28,13 +28,19 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.AkibanInternalException;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 /**
  * Group altering actions on standard CAOI schema.
@@ -42,12 +48,13 @@ import static org.junit.Assert.assertSame;
 public class AlterTableCAOIIT extends AlterTableITBase {
     private static final String A_TABLE = "a";
     private static final TableName A_NAME = new TableName(SCHEMA, A_TABLE);
+
     private int cid;
     private int aid;
     private int oid;
     private int iid;
 
-    @After @Before
+    @After
     public void clearTableIDs() {
         cid = aid = oid = iid = -1;
     }
@@ -70,6 +77,12 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createIndex(SCHEMA, A_TABLE, "aa", "aa");
         createIndex(SCHEMA, O_TABLE, "oo", "oo");
         createIndex(SCHEMA, I_TABLE, "ii", "ii");
+        // Default post indexes presence checking
+        checkedIndexes.put(cid, Arrays.asList("PRIMARY", "cc"));
+        checkedIndexes.put(aid, Arrays.asList("PRIMARY", "cid", "aa"));
+        checkedIndexes.put(oid, Arrays.asList("PRIMARY", "cid", "oo"));
+        checkedIndexes.put(iid, Arrays.asList("PRIMARY", "oid", "ii"));
+        // Data
         writeRows(
                 createNewRow(cid, 1L, "1"),
                     createNewRow(aid, 10L, 1L, "11"),
@@ -92,14 +105,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
                     createNewRow(aid, 50L, 5L, "55")            // Level 1 orphan
         );
     }
-/*
-    private void checkDefaultIndexes(TableName... names) {
-        UserTable table = ddl
-        for(TableName name : names) {
-            UserTable table =
-        }
-    }
-  */
+
     private void groupsMatch(TableName name1, TableName... names) {
         UserTable t1 = getUserTable(name1);
         for(TableName name : names) {
@@ -192,6 +198,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
         groupsDiffer(A_NAME, O_NAME, I_NAME);
         groupsMatch(O_NAME, I_NAME);
+        checkIndexesInstead(C_NAME, "cc");
     }
 
     @Test
@@ -199,6 +206,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+A_TABLE+" DROP COLUMN id");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        checkIndexesInstead(A_NAME, "cid", "aa");
     }
 
     @Test
@@ -207,6 +215,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+O_TABLE+" DROP COLUMN id");
         groupsDiffer(I_NAME, C_NAME, A_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
+        checkIndexesInstead(O_NAME, "cid", "oo");
     }
 
     @Test
@@ -214,6 +223,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+I_TABLE+" DROP COLUMN id");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        checkIndexesInstead(I_NAME, "oid", "ii");
     }
 
     //
@@ -226,6 +236,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE " + A_TABLE + " DROP COLUMN cid");
         groupsDiffer(C_NAME, A_NAME);
         groupsMatch(C_NAME, O_NAME, I_NAME);
+        checkIndexesInstead(A_NAME, "PRIMARY", "aa");
     }
 
     @Test
@@ -235,6 +246,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsDiffer(C_NAME, O_NAME);
         groupsMatch(C_NAME, A_NAME);
         groupsMatch(O_NAME, I_NAME);
+        checkIndexesInstead(O_NAME, "PRIMARY", "oo");
     }
 
     @Test
@@ -243,6 +255,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE " + I_TABLE + " DROP COLUMN oid");
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME,  O_NAME);
+        checkIndexesInstead(I_NAME, "PRIMARY", "ii");
     }
 
     //
@@ -267,6 +280,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
         groupsDiffer(A_NAME, O_NAME, I_NAME);
         groupsMatch(O_NAME, I_NAME);
+        checkIndexesInstead(C_NAME, "cc");
     }
 
     @Test
@@ -274,6 +288,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+A_TABLE+" DROP PRIMARY KEY");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        checkIndexesInstead(A_NAME, "cid", "aa");
     }
 
     @Test
@@ -282,6 +297,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+O_TABLE+" DROP PRIMARY KEY");
         groupsDiffer(I_NAME, C_NAME, A_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
+        checkIndexesInstead(O_NAME, "cid", "oo");
     }
 
     @Test
@@ -289,6 +305,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+I_TABLE+" DROP PRIMARY KEY");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        checkIndexesInstead(I_NAME, "oid", "ii");
     }
 
     //
