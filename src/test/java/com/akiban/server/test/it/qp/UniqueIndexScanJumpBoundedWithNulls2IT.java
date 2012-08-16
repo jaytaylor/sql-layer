@@ -402,6 +402,10 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         testUnbounded(1012,
                       getAAAA(),
                       new long[] {1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
+        
+        testUnbounded(1013,
+                      getAAAA(),
+                      new long[] {1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
     }
 
     // TODO: add more tests
