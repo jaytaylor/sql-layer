@@ -48,8 +48,12 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         cid = aid = oid = iid = -1;
     }
 
-    private void createAndLoadCAOI(boolean aPK, boolean oFK, boolean iFK) {
-        createAndLoadCAOI(true, true, aPK, true, oFK, true, iFK);
+    private void createAndLoadCAOI() {
+        createAndLoadCAOI(true, true, true, true, true, true, true);
+    }
+
+    private void createAndLoadCAOI(boolean cPK, boolean aPK, boolean oPK, boolean iPK) {
+        createAndLoadCAOI(cPK, aPK, true, oPK, true, iPK, true);
     }
 
     private void createAndLoadCAOI(boolean cPK, boolean aPK, boolean aFK, boolean oPK, boolean oFK, boolean iPK, boolean iFK) {
@@ -115,7 +119,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void setDataType_C_id() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + C_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
         groupsDiffer(A_NAME, O_NAME, I_NAME);
@@ -124,14 +128,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void setDataType_A_id() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void setDataType_O_id() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + O_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsDiffer(I_NAME, C_NAME, A_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
@@ -139,7 +143,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void setDataType_I_id() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
@@ -150,7 +154,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void setDataType_A_cid() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE "+A_TABLE+" ALTER COLUMN cid SET DATA TYPE varchar(32)");
         groupsDiffer(C_NAME, A_NAME);
         groupsMatch(C_NAME, O_NAME, I_NAME);
@@ -158,7 +162,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void setDataType_O_cid() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + O_TABLE + " ALTER COLUMN cid SET DATA TYPE varchar(32)");
         groupsDiffer(C_NAME, O_NAME);
         groupsMatch(C_NAME, A_NAME);
@@ -167,7 +171,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void setDataType_I_oid() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN oid SET DATA TYPE varchar(32)");
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
@@ -179,7 +183,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void dropColumn_C_id() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE "+C_TABLE+" DROP COLUMN id");
         groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
         groupsDiffer(A_NAME, O_NAME, I_NAME);
@@ -188,14 +192,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void dropColumn_A_id() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE "+A_TABLE+" DROP COLUMN id");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void dropColumn_O_id() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE "+O_TABLE+" DROP COLUMN id");
         groupsDiffer(I_NAME, C_NAME, A_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
@@ -203,7 +207,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void dropColumn_I_id() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE "+I_TABLE+" DROP COLUMN id");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
@@ -214,7 +218,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void dropColumn_A_cid() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + A_TABLE + " DROP COLUMN cid");
         groupsDiffer(C_NAME, A_NAME);
         groupsMatch(C_NAME, O_NAME, I_NAME);
@@ -222,7 +226,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void dropColumn_O_cid() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + O_TABLE + " DROP COLUMN cid");
         groupsDiffer(C_NAME, O_NAME);
         groupsMatch(C_NAME, A_NAME);
@@ -231,7 +235,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
     @Test
     public void dropColumn_I_oid() {
-        createAndLoadCAOI(true, true, true);
+        createAndLoadCAOI();
         runAlter("ALTER TABLE " + I_TABLE + " DROP COLUMN oid");
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME,  O_NAME);
@@ -242,9 +246,44 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     //
 
     @Test
-    public void addPrimaryKey_I_iid() {
-        createAndLoadCAOI(true, true, true, true, true, false, true);
+    public void addPrimaryKey_I() {
+        createAndLoadCAOI(true, true, true, false);
         runAlter("ALTER TABLE " + I_TABLE + " ADD PRIMARY KEY(id)");
         groupsMatch(C_NAME, A_NAME,  O_NAME, I_NAME);
+    }
+
+    //
+    // DROP PRIMARY KEY
+    //
+
+    @Test
+    public void dropPrimaryKey_C() {
+        createAndLoadCAOI();
+        runAlter("ALTER TABLE "+C_TABLE+" DROP PRIMARY KEY");
+        groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
+        groupsDiffer(A_NAME, O_NAME, I_NAME);
+        groupsMatch(O_NAME, I_NAME);
+    }
+
+    @Test
+    public void dropPrimaryKey_A() {
+        createAndLoadCAOI();
+        runAlter("ALTER TABLE "+A_TABLE+" DROP PRIMARY KEY");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void dropPrimaryKey_O() {
+        createAndLoadCAOI();
+        runAlter("ALTER TABLE "+O_TABLE+" DROP PRIMARY KEY");
+        groupsDiffer(I_NAME, C_NAME, A_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME);
+    }
+
+    @Test
+    public void dropPrimaryKey_I() {
+        createAndLoadCAOI();
+        runAlter("ALTER TABLE "+I_TABLE+" DROP PRIMARY KEY");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 }
