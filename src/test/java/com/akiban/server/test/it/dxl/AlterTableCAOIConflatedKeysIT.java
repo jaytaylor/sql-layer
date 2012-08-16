@@ -36,9 +36,10 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 /**
- * Group altering actions on standard CAOI schema.
+ * Group altering actions on CAOI schema with conflated pk/fk all the way down.
+ * Highly unlikely, but good test none-the-less.
  */
-public class AlterTableCAOIIT extends AlterTableITBase {
+public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
     private static final String A_TABLE = "a";
     private static final TableName A_NAME = new TableName(SCHEMA, A_TABLE);
     private int cid;
@@ -54,16 +55,12 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Override
     protected void createAndLoadCAOI_PK_FK(boolean cPK, boolean aPK, boolean aFK, boolean oPK, boolean oFK, boolean iPK, boolean iFK) {
         cid = createTable(C_NAME, "id int not null "+(cPK ? "primary key" : "")+", cc varchar(5)" );
-        aid = createTable(A_NAME, "id int not null "+(aPK ? "primary key" : "")+", cid int, aa varchar(5)"+
-                (aFK ? "," + akibanFK("cid", C_TABLE, "id") : ""));
-        oid = createTable(O_NAME, "id int not null "+(oPK ? "primary key" : "")+", cid int, oo varchar(5)"+
-                (oFK ? "," + akibanFK("cid", C_TABLE, "id") : ""));
-        iid = createTable(I_NAME, "id int not null "+(iPK ? "primary key" : "")+", oid int, ii varchar(5)"+
-                (iFK ? "," + akibanFK("oid", O_TABLE, "id") : ""));
-        // Index fk column
-        createIndex(SCHEMA, A_TABLE, "cid", "cid");
-        createIndex(SCHEMA, O_TABLE, "cid", "cid");
-        createIndex(SCHEMA, I_TABLE, "oid", "oid");
+        aid = createTable(A_NAME, "id int not null "+(aPK ? "primary key" : "")+", aa varchar(5)"+
+                (aFK ? "," + akibanFK("id", C_TABLE, "id") : ""));
+        oid = createTable(O_NAME, "id int not null "+(oPK ? "primary key" : "")+", oo varchar(5)"+
+                (oFK ? "," + akibanFK("id", C_TABLE, "id") : ""));
+        iid = createTable(I_NAME, "id int not null "+(iPK ? "primary key" : "")+", ii varchar(5)"+
+                (iFK ? "," + akibanFK("id", O_TABLE, "id") : ""));
         // Index on non-pk, non-fk column
         createIndex(SCHEMA, C_TABLE, "cc", "cc");
         createIndex(SCHEMA, A_TABLE, "aa", "aa");
@@ -71,24 +68,18 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createIndex(SCHEMA, I_TABLE, "ii", "ii");
         writeRows(
                 createNewRow(cid, 1L, "1"),
-                    createNewRow(aid, 10L, 1L, "11"),
-                    createNewRow(oid, 10L, 1L, "11"),
-                        createNewRow(iid, 100L, 10L, "110"),
-                        createNewRow(iid, 101L, 10L, "111"),
-                    createNewRow(oid, 11L, 1L, "12"),
-                        createNewRow(iid, 111L, 11L, "122"),
+                    createNewRow(aid, 1L, "11"),
+                        createNewRow(iid, 10L, "110"),
                 createNewRow(cid, 2L, "2"),                     // No children
                 // No cust(3L)
-                    createNewRow(oid, 30L, 3L, "33"),           // Level 1 orphan
-                        createNewRow(iid, 300L, 30L, "330"),
+                    createNewRow(oid, 3L, "33"),           // Level 1 orphan
+                        createNewRow(iid, 3L, "330"),
                 createNewRow(cid, 4L, "4"),
-                    createNewRow(aid, 40L, 4L, "44"),
-                    createNewRow(aid, 41L, 4L, "45"),
+                    createNewRow(aid, 4L, "44"),
                     // No 40 order
-                        createNewRow(iid, 400L, 40L, "440"),    // Level 2 orphan
-                        createNewRow(iid, 401L, 40L, "441"),    // Level 2 orphan
+                        createNewRow(iid, 40L, "440"),    // Level 2 orphan
                 // No cust(5L)
-                    createNewRow(aid, 50L, 5L, "55")            // Level 1 orphan
+                    createNewRow(aid, 5L, "55")            // Level 1 orphan
         );
     }
 
@@ -110,7 +101,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
 
 
     //
-    // SET DATA TYPE, parent column
+    // SET DATA TYPE, parent/child column
     //
 
     @Test
@@ -126,55 +117,29 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     public void setDataType_A_id() {
         createAndLoadCAOI();
         runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
-        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        groupsDiffer(C_NAME, A_NAME);
+        groupsMatch(C_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void setDataType_O_id() {
         createAndLoadCAOI();
         runAlter("ALTER TABLE " + O_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
-        groupsDiffer(I_NAME, C_NAME, A_NAME);
-        groupsMatch(C_NAME, A_NAME, O_NAME);
+        groupsDiffer(C_NAME, O_NAME);
+        groupsDiffer(O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME);
     }
 
     @Test
     public void setDataType_I_id() {
         createAndLoadCAOI();
         runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
-        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
-    }
-
-    //
-    // SET DATA TYPE, child column
-    //
-
-    @Test
-    public void setDataType_A_cid() {
-        createAndLoadCAOI();
-        runAlter("ALTER TABLE "+A_TABLE+" ALTER COLUMN cid SET DATA TYPE varchar(32)");
-        groupsDiffer(C_NAME, A_NAME);
-        groupsMatch(C_NAME, O_NAME, I_NAME);
-    }
-
-    @Test
-    public void setDataType_O_cid() {
-        createAndLoadCAOI();
-        runAlter("ALTER TABLE " + O_TABLE + " ALTER COLUMN cid SET DATA TYPE varchar(32)");
-        groupsDiffer(C_NAME, O_NAME);
-        groupsMatch(C_NAME, A_NAME);
-        groupsMatch(O_NAME, I_NAME);
-    }
-
-    @Test
-    public void setDataType_I_oid() {
-        createAndLoadCAOI();
-        runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN oid SET DATA TYPE varchar(32)");
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
     }
 
     //
-    // DROP COLUMN <parent pk>
+    // DROP COLUMN <pk and fk column>
     //
 
     @Test
@@ -190,51 +155,25 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     public void dropColumn_A_id() {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+A_TABLE+" DROP COLUMN id");
-        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        groupsDiffer(C_NAME, A_NAME);
+        groupsMatch(C_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void dropColumn_O_id() {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+O_TABLE+" DROP COLUMN id");
-        groupsDiffer(I_NAME, C_NAME, A_NAME);
-        groupsMatch(C_NAME, A_NAME, O_NAME);
+        groupsDiffer(C_NAME, O_NAME);
+        groupsDiffer(O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME);
     }
 
     @Test
     public void dropColumn_I_id() {
         createAndLoadCAOI();
         runAlter("ALTER TABLE "+I_TABLE+" DROP COLUMN id");
-        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
-    }
-
-    //
-    // DROP COLUMN <child fk>
-    //
-
-    @Test
-    public void dropColumn_A_cid() {
-        createAndLoadCAOI();
-        runAlter("ALTER TABLE " + A_TABLE + " DROP COLUMN cid");
-        groupsDiffer(C_NAME, A_NAME);
-        groupsMatch(C_NAME, O_NAME, I_NAME);
-    }
-
-    @Test
-    public void dropColumn_O_cid() {
-        createAndLoadCAOI();
-        runAlter("ALTER TABLE " + O_TABLE + " DROP COLUMN cid");
-        groupsDiffer(C_NAME, O_NAME);
-        groupsMatch(C_NAME, A_NAME);
-        groupsMatch(O_NAME, I_NAME);
-    }
-
-    @Test
-    public void dropColumn_I_oid() {
-        createAndLoadCAOI();
-        runAlter("ALTER TABLE " + I_TABLE + " DROP COLUMN oid");
         groupsDiffer(O_NAME, I_NAME);
-        groupsMatch(C_NAME, A_NAME,  O_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME);
     }
 
     //
@@ -306,21 +245,21 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void addGroupingForeignKey_A() {
         createAndLoadCAOI_FK(false, true, true);
-        runAlter("ALTER TABLE " + A_TABLE + " ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
+        runAlter("ALTER TABLE " + A_TABLE + " ADD GROUPING FOREIGN KEY(id) REFERENCES c(id)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void addGroupingForeignKey_O() {
         createAndLoadCAOI_FK(true, false, true);
-        runAlter("ALTER TABLE " + O_TABLE + " ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
+        runAlter("ALTER TABLE " + O_TABLE + " ADD GROUPING FOREIGN KEY(id) REFERENCES c(id)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void addGroupingForeignKey_I() {
         createAndLoadCAOI_FK(true, true, false);
-        runAlter("ALTER TABLE "+I_TABLE+" ADD GROUPING FOREIGN KEY(oid) REFERENCES o(id)");
+        runAlter("ALTER TABLE "+I_TABLE+" ADD GROUPING FOREIGN KEY(id) REFERENCES o(id)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 

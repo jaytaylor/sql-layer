@@ -84,6 +84,22 @@ public class AlterTableITBase extends ITBase {
         return new TestRow(type, fields);
     }
 
+    protected void createAndLoadCAOI_PK_FK(boolean cPK, boolean aPK, boolean aFK, boolean oPK, boolean oFK, boolean iPK, boolean iFK) {
+        throw new UnsupportedOperationException();
+    }
+
+    protected final void createAndLoadCAOI() {
+        createAndLoadCAOI_PK_FK(true, true, true, true, true, true, true);
+    }
+
+    protected final void createAndLoadCAOI_PK(boolean cPK, boolean aPK, boolean oPK, boolean iPK) {
+        createAndLoadCAOI_PK_FK(cPK, aPK, true, oPK, true, iPK, true);
+    }
+
+    protected final void createAndLoadCAOI_FK(boolean aFK, boolean oFK, boolean iFK) {
+        createAndLoadCAOI_PK_FK(true, true, aFK, true, oFK, true, iFK);
+    }
+
 
     // Note: Does not handle null index contents, check manually in that case
     private static class SingleColumnComparator implements Comparator<NewRow> {

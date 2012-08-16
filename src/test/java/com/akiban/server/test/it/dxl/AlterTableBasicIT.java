@@ -77,7 +77,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
     private int oid;
     private int iid;
 
-
     private void createAndLoadSingleTableGroup() {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5)");
         writeRows(
