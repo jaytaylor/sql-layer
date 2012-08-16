@@ -130,7 +130,6 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
                                                            row.get(3),  // c
                                                            row.get(0)   // id
                                               }));
-            
         }
     }
 
@@ -196,15 +195,30 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     public void testAAAD()
     {
         // currently failing
-        // the ordering on ID doesn't seem right
-        
+
+        // 'correct odering': 
+        // 1021, 1020, 1019, 1018, 1022
+        // --->
+
         test(1019,
              b_of(1018), true,
              b_of(1021), true,
              getAAAD(),
-             new long[] {1021, 1020, 1019, 1022, 1018}); // all rows have the same a, and c value.
-    }                                                    // thus whichever has larger id should appear first
-    
+             new long[] {1019, 1018, 1022});
+     
+        test(1020,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAAAD(),
+             new long[] {1020, 1019, 1018, 1022});
+        
+        test(1021,
+             b_of(1018), true,
+             b_of(1021), true,
+             getAAAD(),
+             new long[] {1021, 1020, 1019, 1018, 1022});
+    }
+
     //TODO: add more test****()
     
     private void test(long targetId,                  // location to jump to
@@ -280,91 +294,105 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
             default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
         }
     }
-    
 
+     // --- start generated
+     // 1
     private API.Ordering getAAAA()
     {
         return ordering(A, ASC, B, ASC, C, ASC, ID, ASC);
     }
 
+    // 2
     private API.Ordering getAAAD()
     {
         return ordering(A, ASC, B, ASC, C, ASC, ID, DESC);
     }
 
+    // 3
     private API.Ordering getAADA()
     {
         return ordering(A, ASC, B, ASC, C, DESC, ID, ASC);
     }
 
+    // 4
     private API.Ordering getAADD()
     {
         return ordering(A, ASC, B, ASC, C, DESC, ID, DESC);
     }
 
+    // 5
     private API.Ordering getADAA()
     {
         return ordering(A, ASC, B, DESC, C, ASC, ID, ASC);
     }
 
+    // 6
     private API.Ordering getADAD()
     {
         return ordering(A, ASC, B, DESC, C, ASC, ID, DESC);
     }
 
+    // 7
     private API.Ordering getADDA()
     {
         return ordering(A, ASC, B, DESC, C, DESC, ID, ASC);
     }
 
+    // 8
     private API.Ordering getADDD()
     {
         return ordering(A, ASC, B, DESC, C, DESC, ID, DESC);
     }
 
+    // 9
     private API.Ordering getDAAA()
     {
         return ordering(A, DESC, B, ASC, C, ASC, ID, ASC);
     }
 
+    // 10
     private API.Ordering getDAAD()
     {
         return ordering(A, DESC, B, ASC, C, ASC, ID, DESC);
     }
 
+    // 11
     private API.Ordering getDADA()
     {
         return ordering(A, DESC, B, ASC, C, DESC, ID, ASC);
     }
 
+    // 12
     private API.Ordering getDADD()
     {
         return ordering(A, DESC, B, ASC, C, DESC, ID, DESC);
     }
 
+    // 13
     private API.Ordering getDDAA()
     {
         return ordering(A, DESC, B, DESC, C, ASC, ID, ASC);
     }
 
+    // 14
     private API.Ordering getDDAD()
     {
         return ordering(A, DESC, B, DESC, C, ASC, ID, DESC);
     }
 
+    // 15
     private API.Ordering getDDDA()
     {
         return ordering(A, DESC, B, DESC, C, DESC, ID, ASC);
     }
 
+    // 16
     private API.Ordering getDDDD()
     {
         return ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
     }
-        
 
-    // TODO: add more get****()
-    
+     // --- done generated
 
     private TestRow indexRow(long id)
     {
