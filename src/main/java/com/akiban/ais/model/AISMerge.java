@@ -39,6 +39,7 @@ import com.akiban.server.error.JoinToWrongColumnsException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,13 +63,18 @@ public class AISMerge {
     private static class JoinChange {
         public final Join join;
         public final TableName newParentName;
+        public final Map<String,String> parentCols;
         public final TableName newChildName;
+        public final Map<String,String> childCols;
         public final boolean isNewGroup;
 
-        private JoinChange(Join join, TableName newParentName, TableName newChildName, boolean isNewGroup) {
+        private JoinChange(Join join, TableName newParentName, Map<String, String> parentCols,
+                           TableName newChildName, Map<String, String> childCols, boolean isNewGroup) {
             this.join = join;
             this.newParentName = newParentName;
+            this.parentCols = parentCols;
             this.newChildName = newChildName;
+            this.childCols = childCols;
             this.isNewGroup = isNewGroup;
         }
     }
@@ -149,13 +155,15 @@ public class AISMerge {
                 break;
                 case UPDATE: {
                     Join join = (newTable != null) ? newTable.getParentJoin() : oldTable.getParentJoin();
-                    joinsToFix.add(new JoinChange(join, desc.getParentName(), desc.getNewName(), false));
+                    joinsToFix.add(new JoinChange(join, desc.getParentName(), desc.getParentColNames(),
+                                                  desc.getNewName(), desc.getColNames(), false));
                 } break;
                 case ADD:
                     if(newTable == null) {
                         throw new IllegalArgumentException("Invalid change description: " + desc);
                     }
-                    joinsToFix.add(new JoinChange(null, null, desc.getNewName(), false));
+                    joinsToFix.add(new JoinChange(null, null, desc.getParentColNames(),
+                                                  desc.getNewName(), desc.getColNames(), false));
                 break;
                 case DROP: {
                     final Join join;
@@ -165,7 +173,8 @@ public class AISMerge {
                     } else {
                         join = oldTable.getParentJoin();
                     }
-                    joinsToFix.add(new JoinChange(join, null, desc.getNewName(), true));
+                    joinsToFix.add(new JoinChange(join, null, desc.getParentColNames(),
+                                                  desc.getNewName(), desc.getColNames(), true));
                 } break;
                 default:
                     throw new IllegalStateException("Unhandled GroupChange: " + desc.getParentChange());
@@ -304,7 +313,7 @@ public class AISMerge {
             if(tnj.isNewGroup) {
                 addNewGroup(builder, table, false);
             } else if(tnj.newParentName != null) {
-                addJoin(builder, tnj.newParentName, tnj.join, table);
+                addJoin(builder, tnj.newParentName, tnj.parentCols, tnj.join, tnj.childCols, table);
             }
         }
 
@@ -405,10 +414,17 @@ public class AISMerge {
     }
 
     private void addJoin (AISBuilder builder, Join join, UserTable childTable) {
-        addJoin(builder, join.getParent().getName(), join, childTable);
+        Map<String,String> emptyMap = Collections.emptyMap();
+        addJoin(builder, join.getParent().getName(), emptyMap, join, emptyMap, childTable);
     }
 
-    private void addJoin (AISBuilder builder, TableName parentName, Join join, UserTable childTable) {
+    private static String getOrDefault(Map<String, String> map, String key) {
+        String val = map.get(key);
+        return (val != null) ? val : key;
+    }
+
+    private void addJoin (AISBuilder builder, TableName parentName, Map<String,String> parentCols,
+                          Join join, Map<String,String> childCols, UserTable childTable) {
         String parentSchemaName = parentName.getSchemaName();
         String parentTableName = parentName.getTableName();
         UserTable parentTable = targetAIS.getUserTable(parentSchemaName, parentTableName);
@@ -430,10 +446,10 @@ public class AISMerge {
             builder.joinColumns(joinName,
                     parentSchemaName,
                     parentTableName,
-                    joinColumn.getParent().getName(),
+                    getOrDefault(parentCols, joinColumn.getParent().getName()),
                     childTable.getName().getSchemaName(),
                     childTable.getName().getTableName(),
-                    joinColumn.getChild().getName());
+                    getOrDefault(childCols, joinColumn.getChild().getName()));
             } catch (AISBuilder.NoSuchObjectException ex) {
                 throw new JoinToWrongColumnsException (
                         childTable.getName(), joinColumn.getChild().getName(),

@@ -316,7 +316,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             pProjections = new ArrayList<TPreparedExpression>(newColumns.size());
             for(Column newCol : newColumns) {
                 Column oldCol = origTable.getColumn(newCol.getName());
-                Integer oldPosition = helper.findOldPosition(oldCol, newCol);
+                Integer oldPosition = helper.findOldPosition(origTable, newCol);
                 TInstance newInst = newCol.tInstance();
                 if(oldPosition == null) {
                     pProjections.add(new TPreparedLiteral(newInst, PValueSources.getNullSource(newInst.typeClass().underlyingType())));
@@ -334,7 +334,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             projections = new ArrayList<Expression>(newColumns.size());
             pProjections = null;
             for(Column newCol : newColumns) {
-                Integer oldPosition = helper.findOldPosition(origTable.getColumn(newCol.getName()), newCol);
+                Integer oldPosition = helper.findOldPosition(origTable, newCol);
                 if(oldPosition == null) {
                     String defaultValue = newCol.getDefaultValue();
                     projections.add(new LiteralExpression(AkType.VARCHAR, defaultValue));

@@ -391,28 +391,28 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     public void renameColumn_C_id() {
         createAndLoadCAOI();
         runRenameColumn(C_NAME, "id", "di");
-        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void renameColumn_A_id() {
         createAndLoadCAOI();
         runRenameColumn(A_NAME, "id", "di");
-        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void renameColumn_O_id() {
         createAndLoadCAOI();
         runRenameColumn(O_NAME, "id", "di");
-        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void renameColumn_I_id() {
         createAndLoadCAOI();
         runRenameColumn(I_NAME, "id", "di");
-        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     //
@@ -423,20 +423,20 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     public void renameColumn_A_cid() {
         createAndLoadCAOI();
         runRenameColumn(A_NAME, "cid", "dic");
-        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void renameColumn_O_cid() {
         createAndLoadCAOI();
         runRenameColumn(O_NAME, "cid", "dic");
-        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     @Test
     public void renameColumn_I_oid() {
         createAndLoadCAOI();
         runRenameColumn(I_NAME, "oid", "dio");
-        groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 }

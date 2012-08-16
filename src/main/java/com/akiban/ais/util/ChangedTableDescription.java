@@ -40,8 +40,10 @@ public class ChangedTableDescription {
 
     private final TableName tableName;
     private final UserTable newDefinition;
+    private final Map<String,String> colNames;
     private final ParentChange parentChange;
     private final TableName parentName;
+    private final Map<String,String> parentColNames;
     private final Map<String,String> preserveIndexes;
 
     /**
@@ -49,15 +51,17 @@ public class ChangedTableDescription {
      * @param newDefinition New definition of the table.
      * @param preserveIndexes Mapping of new index names to old.
      */
-    public ChangedTableDescription(TableName tableName, UserTable newDefinition,
-                                   ParentChange parentChange, TableName parentName,
+    public ChangedTableDescription(TableName tableName, UserTable newDefinition, Map<String,String> colNames,
+                                   ParentChange parentChange, TableName parentName, Map<String,String> parentColNames,
                                    Map<String, String> preserveIndexes) {
         ArgumentValidation.notNull("tableName", tableName);
         ArgumentValidation.notNull("preserveIndexes", preserveIndexes);
         this.tableName = tableName;
         this.newDefinition = newDefinition;
+        this.colNames = colNames;
         this.parentChange = parentChange;
         this.parentName = parentName;
+        this.parentColNames = parentColNames;
         this.preserveIndexes = preserveIndexes;
     }
 
@@ -73,20 +77,28 @@ public class ChangedTableDescription {
         return newDefinition;
     }
 
+    public Map<String,String> getColNames() {
+        return colNames;
+    }
+
     public ParentChange getParentChange() {
         return parentChange;
     }
 
-    public boolean isNewGroup() {
-        return (parentChange != ParentChange.NONE);
+    public TableName getParentName() {
+        return parentName;
+    }
+
+    public Map<String,String> getParentColNames() {
+        return parentColNames;
     }
 
     public Map<String,String> getPreserveIndexes() {
         return preserveIndexes;
     }
 
-    public TableName getParentName() {
-        return parentName;
+    public boolean isNewGroup() {
+        return (parentChange != ParentChange.NONE);
     }
 
     @Override

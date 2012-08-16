@@ -70,25 +70,27 @@ public class AlterTableHelper {
         }
     }
 
-    public Integer findOldPosition(Column oldColumn, Column newColumn) {
+    public Integer findOldPosition(UserTable oldTable, Column newColumn) {
+        String newName = newColumn.getName();
         for(TableChange change : columnChanges) {
-            String newName = newColumn.getName();
             if(newName.equals(change.getNewName())) {
                 switch(change.getChangeType()) {
                     case ADD:
                         return null;
                     case MODIFY:
+                        Column oldColumn = oldTable.getColumn(change.getOldName());
                         assert oldColumn != null : newColumn;
                         return oldColumn.getPosition();
                     case DROP:
-                        throw new IllegalStateException("Column should not exist in new table: " + newName);
+                        throw new IllegalStateException("Dropped new column? " + newName);
                 }
             }
         }
-        if(oldColumn == null && newColumn.isAkibanPKColumn()) {
+        if(newColumn.isAkibanPKColumn()) {
             return null;
         }
         // Not in change list, must be an original column
+        Column oldColumn = oldTable.getColumn(newName);
         assert oldColumn != null : newColumn;
         return oldColumn.getPosition();
     }
