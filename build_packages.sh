@@ -62,9 +62,10 @@ cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 cp ${common_dir}/* packages-common/
 
 # Add akiban-client tools via `bzr root`/target/akiban-client-tools
-tools_branch="lp:akiban-client-tools"
+[ ! -z "$TOOLS_BRANCH" ] || TOOLS_BRANCH="lp:akiban-client-tools"
+echo "Using akiban-client-tools bazaar branch: ${TOOLS_BRANCH}"
 pushd target && rm -rf akiban-client-tools && \
-    bzr branch ${tools_branch} && pushd akiban-client-tools
+    bzr branch ${TOOLS_BRANCH} akiban-client-tools && pushd akiban-client-tools
 mvn  -Dmaven.test.skip.exec clean install
 
 # Linux and Mac
@@ -72,9 +73,10 @@ cp bin/akdump ../../packages-common/
 cp target/akiban-client-*-SNAPSHOT.jar ../../packages-common/
 cp target/dependency/postgresql.jar ../../packages-common/
 
+popd && popd
+
 # Windows
 # Handled already by Maven / .iss
-popd && popd
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`

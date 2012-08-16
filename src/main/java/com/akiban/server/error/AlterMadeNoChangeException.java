@@ -26,14 +26,16 @@
 
 package com.akiban.server.error;
 
+import com.akiban.ais.model.TableName;
+
 import com.akiban.sql.parser.QueryTreeNode;
 
-public class UnsupportedSQLException extends BaseSQLException {
-    public UnsupportedSQLException(String msg, QueryTreeNode sql) {
-        super(ErrorCode.UNSUPPORTED_SQL, msg, sql);
+public final class AlterMadeNoChangeException extends InvalidOperationException {
+    public AlterMadeNoChangeException(TableName tableName) {
+        this(tableName.getSchemaName(), tableName.getTableName());
     }
-    
-    public UnsupportedSQLException(String msg) {
-        super(ErrorCode.UNSUPPORTED_SQL, msg, -1);
+
+    public AlterMadeNoChangeException(String schemaName, String tableName) {
+        super(ErrorCode.ALTER_MADE_NO_CHANGE, schemaName, tableName);
     }
 }

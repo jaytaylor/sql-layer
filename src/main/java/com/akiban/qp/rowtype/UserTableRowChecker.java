@@ -52,7 +52,6 @@ public class UserTableRowChecker implements ConstraintChecker
                                                     table.getColumnsIncludingInternal().get(f).getName());
             }
         }
-
     }
 
     private boolean isNull(Row row, int f, boolean usePValues) {
@@ -68,7 +67,14 @@ public class UserTableRowChecker implements ConstraintChecker
         table = rowType.userTable();
         notNull = table.notNull();
         identityColumn = table.getIdentityColumn() != null ? table.getIdentityColumn().getPosition().intValue() : -1;
-        
+    }
+
+    public UserTableRowChecker(UserTable userTable)
+    {
+        fields = userTable.getColumnsIncludingInternal().size();
+        table = userTable;
+        notNull = table.notNull();
+        identityColumn = table.getIdentityColumn() != null ? table.getIdentityColumn().getPosition().intValue() : -1;
     }
 
     private final int identityColumn;
