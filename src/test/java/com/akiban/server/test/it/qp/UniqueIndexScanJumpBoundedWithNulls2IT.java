@@ -53,7 +53,7 @@ import static org.junit.Assert.*;
 
 /**
  * 
- * This differs UniqueIndexScanJumpBoundedWithNullsIT in that each index row in this
+ * This differs from UniqueIndexScanJumpBoundedWithNullsIT in that each index row in this
  * test contains a unique id
  * 
  * (Open to suggestion on a better name)
