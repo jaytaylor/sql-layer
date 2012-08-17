@@ -46,6 +46,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.error.NotNullViolationException;
 import com.akiban.sql.StandardException;
@@ -999,5 +1000,22 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         // Let base class check index contents
         checkIndexesInstead(C_NAME, "PRIMARY", "c2");
+    }
+
+    // bug1038212
+    @Test
+    public void extendVarcharColumnWithIndex() {
+        cid = createTable(SCHEMA, C_TABLE, "id int not null primary key, state varchar(2)");
+        createIndex(SCHEMA, C_TABLE, "state", "state");
+        NewRow[] rows = {
+                createNewRow(cid, 1L, "AZ"),
+                createNewRow(cid, 2L, "NY"),
+                createNewRow(cid, 3L, "MA"),
+                createNewRow(cid, 4L, "WA")
+        };
+        writeRows(rows);
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE c ALTER COLUMN state SET DATA TYPE varchar(3)");
+        expectFullRows(cid, rows);
+        checkIndexesInstead(C_NAME, "PRIMARY", "state");
     }
 }

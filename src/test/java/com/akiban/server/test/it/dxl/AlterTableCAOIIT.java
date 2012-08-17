@@ -145,7 +145,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void setDataType_A_id() {
         createAndLoadCAOI();
-        runAlter(ChangeLevel.TABLE, "ALTER TABLE " + A_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
+        runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
@@ -160,7 +160,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void setDataType_I_id() {
         createAndLoadCAOI();
-        runAlter(ChangeLevel.TABLE, "ALTER TABLE " + I_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
+        runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 

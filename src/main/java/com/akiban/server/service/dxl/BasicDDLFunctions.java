@@ -433,13 +433,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     @Override
     public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
-                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
+                                  List<TableChange> origColChanges, List<TableChange> origIndexChanges,
                                   QueryContext context)
     {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
+        List<TableChange> columnChanges = new ArrayList<TableChange>(origColChanges);
+        List<TableChange> indexChanges = new ArrayList<TableChange>(origIndexChanges);
 
-        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges, ALTER_AUTO_INDEX_CHANGES);
+        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges,
+                                                                  ALTER_AUTO_INDEX_CHANGES);
 
         try {
             validator.compareAndThrowIfNecessary();

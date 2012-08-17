@@ -87,10 +87,12 @@ public class TableChangeValidator {
                                 boolean automaticIndexChanges) {
         ArgumentValidation.notNull("oldTable", oldTable);
         ArgumentValidation.notNull("newTable", newTable);
+        ArgumentValidation.notNull("columnChanges", columnChanges);
+        ArgumentValidation.notNull("indexChanges", indexChanges);
         this.oldTable = oldTable;
         this.newTable = newTable;
-        this.columnChanges = new ArrayList<TableChange>((columnChanges == null) ? Collections.<TableChange>emptyList() : columnChanges);
-        this.indexChanges = new ArrayList<TableChange>((indexChanges == null) ? Collections.<TableChange>emptyList() : indexChanges);
+        this.columnChanges = columnChanges;
+        this.indexChanges = indexChanges;
         this.unmodifiedChanges = new ArrayList<RuntimeException>();
         this.errors = new ArrayList<RuntimeException>();
         this.changedTables = new ArrayList<ChangedTableDescription>();
