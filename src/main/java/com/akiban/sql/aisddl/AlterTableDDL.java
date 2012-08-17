@@ -309,7 +309,7 @@ public class AlterTableDDL {
         for(Column origColumn : origTable.getColumns()) {
             String columnName = origColumn.getName();
             if(findOldName(columnChanges, columnName) != ChangeType.DROP) {
-                Column.create(tableCopy, origColumn, colPos++);
+                Column.create(tableCopy, origColumn, columnName, colPos++);
             }
         }
 

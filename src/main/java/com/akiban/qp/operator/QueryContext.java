@@ -200,4 +200,9 @@ public interface QueryContext
      * @throws NoSuchSequenceException if the name does not exist in the system.  
      */
     public long sequenceNextValue(TableName sequence); 
+    /**
+     * Get the current value for the named Sequence. 
+     * @throws NoSuchSequenceException if the name does not exist in the system.  
+     */
+    public long sequenceCurrentValue(TableName sequence); 
 }

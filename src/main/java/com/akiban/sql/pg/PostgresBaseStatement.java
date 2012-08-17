@@ -26,102 +26,33 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.service.dxl.DXLFunctionsHook;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
-import com.akiban.server.service.session.Session;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.util.tap.InOutTap;
 
-import java.io.IOException;
-import java.util.List;
-
 /**
- * An ordinary SQL statement.
+ * Common lock and tap handling for executable statements.
  */
 public abstract class PostgresBaseStatement implements PostgresStatement
 {
-    private List<String> columnNames;
-    private List<PostgresType> columnTypes;
-    private PostgresType[] parameterTypes;
-    private boolean usesPValues;
-
-    protected PostgresBaseStatement(PostgresType[] parameterTypes, boolean usesPValues) {
-        this.parameterTypes = parameterTypes;
-        this.usesPValues = usesPValues;
-    }
-
-    protected PostgresBaseStatement(List<String> columnNames, 
-                                    List<PostgresType> columnTypes,
-                                    PostgresType[] parameterTypes,
-                                    boolean usesPValues) {
-        this.columnNames = columnNames;
-        this.columnTypes = columnTypes;
-        this.parameterTypes = parameterTypes;
-        this.usesPValues = usesPValues;
-    }
-
-    public boolean usesPValues() {
-        return usesPValues;
-    }
-
-    public List<String> getColumnNames() {
-        return columnNames;
-    }
-
-    public List<PostgresType> getColumnTypes() {
-        return columnTypes;
-    }
-
-    @Override
-    public PostgresType[] getParameterTypes() {
-        return parameterTypes;
-    }
-
-    @Override
-    public void sendDescription(PostgresQueryContext context, boolean always) 
-            throws IOException {
-        PostgresServerSession server = context.getServer();
-        PostgresMessenger messenger = server.getMessenger();
-        List<PostgresType> columnTypes = getColumnTypes();
-        if (columnTypes == null) {
-            if (!always) return;
-            messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
-        }
-        else {
-            messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
-            List<String> columnNames = getColumnNames();
-            int ncols = columnTypes.size();
-            messenger.writeShort(ncols);
-            for (int i = 0; i < ncols; i++) {
-                PostgresType type = columnTypes.get(i);
-                messenger.writeString(columnNames.get(i)); // attname
-                messenger.writeInt(0);    // attrelid
-                messenger.writeShort(0);  // attnum
-                messenger.writeInt(type.getOid()); // atttypid
-                messenger.writeShort(type.getLength()); // attlen
-                messenger.writeInt(type.getModifier()); // atttypmod
-                messenger.writeShort(context.isColumnBinary(i) ? 1 : 0);
-            }
-        }
-        messenger.sendMessage();
-    }
-
     protected abstract InOutTap executeTap();
     protected abstract InOutTap acquireLockTap();
 
-    protected void lock(Session session, DXLFunctionsHook.DXLFunction operationType)
+    protected void lock(PostgresQueryContext context, DXLFunction operationType)
     {
         acquireLockTap().in();
         executeTap().in();
         try {
-            DXLReadWriteLockHook.only().hookFunctionIn(session, operationType);
-        } finally {
+            context.lock(operationType);
+        } 
+        finally {
             acquireLockTap().out();
         }
     }
 
-    protected void unlock(Session session, DXLFunctionsHook.DXLFunction operationType)
+    protected void unlock(PostgresQueryContext context, DXLFunction operationType, boolean lockSuccess)
     {
-        DXLReadWriteLockHook.only().hookFunctionFinally(session, operationType, null);
+        if (lockSuccess)
+            context.unlock(operationType);
         executeTap().out();
     }
 }

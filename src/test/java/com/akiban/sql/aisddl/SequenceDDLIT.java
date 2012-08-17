@@ -32,6 +32,7 @@ import static org.junit.Assert.fail;
 
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.sql.ResultSet;
 
 import org.junit.Test;
 import org.postgresql.util.PSQLException;
@@ -111,6 +112,29 @@ public class SequenceDDLIT extends PostgresServerITBase {
         SQLWarning warn = stmt.getWarnings();
         assertNotNull(warn);
         assertEquals(warn.getMessage(), MessageFormat.format(ErrorCode.NO_SUCH_SEQUENCE.getMessage(), "test", "not_exists"));
+    }
+
+    @Test
+    public void testSequenceValues() throws Exception {
+        String sql = "DROP SEQUENCE IF EXISTS test.new_sequence RESTRICT";
+        Statement stmt = getConnection().createStatement();
+        stmt.execute(sql);
+        sql = "CREATE SEQUENCE test.new_sequence START WITH 5 INCREMENT BY 5";
+        getConnection().createStatement().execute(sql);
+        sql = "SELECT NEXT VALUE FOR test.new_sequence";
+        stmt = getConnection().createStatement();
+        stmt.execute(sql);
+        ResultSet rs = stmt.getResultSet();
+        long nextValue = rs.next() ? rs.getLong(1) : 0;
+        assertEquals(nextValue, 5);
+        sql = "SELECT CURRENT VALUE FOR test.new_sequence";
+        stmt = getConnection().createStatement();
+        stmt.execute(sql);
+        rs = stmt.getResultSet();
+        long currentValue = rs.next() ? rs.getLong(1) : 0;
+        assertEquals(currentValue, nextValue);
+        sql = "DROP SEQUENCE test.new_sequence RESTRICT";
+        getConnection().createStatement().execute(sql);
     }
     
     protected DDLFunctions ddlServer() {
