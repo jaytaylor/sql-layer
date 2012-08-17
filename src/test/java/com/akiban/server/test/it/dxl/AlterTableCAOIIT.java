@@ -28,6 +28,8 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.NotNullViolationException;
+import com.akiban.server.error.PrimaryKeyNullColumnException;
 import org.junit.After;
 import org.junit.Test;
 
@@ -36,6 +38,7 @@ import java.util.Arrays;
 import com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 /**
  * Group altering actions on standard CAOI schema.
@@ -185,6 +188,119 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN oid SET DATA TYPE varchar(32)");
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
+    }
+
+    //
+    // NULL <parent pk>
+    //
+
+    @Test
+    public void setNull_C_id() {
+        createAndLoadCAOI();
+        try {
+            runAlter("ALTER TABLE " + C_TABLE + " ALTER COLUMN id NULL");
+            fail("Expected: PrimaryKeyNullColumnException");
+        } catch(PrimaryKeyNullColumnException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNull_A_id() {
+        createAndLoadCAOI();
+        try {
+            runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN id NULL");
+            fail("Expected: PrimaryKeyNullColumnException");
+        } catch(PrimaryKeyNullColumnException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNull_O_id() {
+        createAndLoadCAOI();
+        try {
+            runAlter("ALTER TABLE " + O_TABLE + " ALTER COLUMN id NULL");
+            fail("Expected: PrimaryKeyNullColumnException");
+        } catch(PrimaryKeyNullColumnException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNull_I_id() {
+        createAndLoadCAOI();
+        try {
+            runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN id NULL");
+            fail("Expected: PrimaryKeyNullColumnException");
+        } catch(PrimaryKeyNullColumnException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    //
+    // NOT NULL <child fk>
+    //
+
+    @Test
+    public void setNotNull_A_cid() {
+        createAndLoadCAOI();
+        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + A_TABLE + " ALTER COLUMN cid NOT NULL");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNotNull_O_cid() {
+        createAndLoadCAOI();
+        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + O_TABLE + " ALTER COLUMN cid NOT NULL");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNotNull_I_oid() {
+        createAndLoadCAOI();
+        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + I_TABLE + " ALTER COLUMN oid NOT NULL");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    //
+    // NOT NULL <child fk> (with failure)
+    //
+
+    @Test
+    public void setNotNull_A_cid_failing() {
+        createAndLoadCAOI();
+        writeRow(aid, 1000L, null, "1000");
+        try {
+            runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN cid NOT NULL");
+            fail("Expected NotNullViolationException");
+        } catch(NotNullViolationException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNotNull_O_cid_failing() {
+        createAndLoadCAOI();
+        writeRow(oid, 1000L, null, "1000");
+        try {
+            runAlter("ALTER TABLE " + O_TABLE + " ALTER COLUMN cid NOT NULL");
+            fail("Expected NotNullViolationException");
+        } catch(NotNullViolationException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNotNull_I_oid_failing() {
+        createAndLoadCAOI();
+        writeRow(iid, 1000L, null, "1000");
+        try {
+            runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN oid NOT NULL");
+            fail("Expected NotNullViolationException");
+        } catch(NotNullViolationException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     //
