@@ -36,7 +36,7 @@ import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 /**
  * An SQL modifying DML statement transformed into an operator tree
@@ -76,12 +76,12 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
         final UpdateResult updateResult;
         boolean lockSuccess = false;
         try {
-            lock(context, UNSPECIFIED_DML_WRITE);
+            lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
             lockSuccess = true;
             updateResult = resultOperator.run(context);
         } 
         finally {
-            unlock(context, UNSPECIFIED_DML_WRITE, lockSuccess);
+            unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
         }
 
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);

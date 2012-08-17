@@ -34,7 +34,7 @@ import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.util.*;
 import java.io.IOException;
@@ -82,7 +82,7 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
         IOException exceptionDuringExecution = null;
         boolean lockSuccess = false;
         try {
-            lock(context, UNSPECIFIED_DML_READ);
+            lock(context, DXLFunction.UNSPECIFIED_DML_READ);
             lockSuccess = true;
             cursor = API.cursor(resultOperator, context);
             cursor.open();
@@ -112,7 +112,7 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
                 logger.error("Exception stack", e);
             }
             finally {
-                unlock(context, UNSPECIFIED_DML_READ, lockSuccess);
+                unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
             }
             if (exceptionDuringExecution != null) {
                 throw exceptionDuringExecution;
