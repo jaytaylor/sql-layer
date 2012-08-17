@@ -968,4 +968,51 @@ public class AlterTableBasicIT extends AlterTableITBase {
         assertEquals("c4 default", "N", table.getColumn("c4").getDefaultValue());
         assertEquals("family_size default", null, table.getColumn("family_size").getDefaultValue());
     }
+
+    // bug1037387
+    @Test
+    public void modifyColumnPosition() {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, C_TABLE);
+        builder.column(SCHEMA, C_TABLE, "c1", 0, "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, C_TABLE, "c2", 1, "int", null, null, true, false, null, null);
+        builder.index(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        builder.index(SCHEMA, C_TABLE, "c2", true, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
+        ddl().createTable(session(),  builder.akibanInformationSchema().getUserTable(C_NAME));
+
+        updateAISGeneration();
+
+        int cid = tableId(C_NAME);
+        writeRows(
+                createNewRow(cid, 1, 10),
+                createNewRow(cid, 2, 20),
+                createNewRow(cid, 3, 30)
+        );
+
+        builder = new AISBuilder();
+        builder.userTable(SCHEMA, C_TABLE);
+        builder.column(SCHEMA, C_TABLE, "c2", 0, "int", null, null, true, false, null, null);
+        builder.column(SCHEMA, C_TABLE, "c1", 1, "int", null, null, false, false, null, null);
+        builder.index(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        builder.index(SCHEMA, C_TABLE, "c2", true, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
+
+        ddl().alterTable(session(), C_NAME, builder.akibanInformationSchema().getUserTable(C_NAME),
+                         Arrays.asList(TableChange.createModify("c1", "c1"), TableChange.createModify("c2", "c2")),
+                         NO_CHANGES, queryContext());
+        updateAISGeneration();
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, 10L, 1L),
+                createNewRow(cid, 20L, 2L),
+                createNewRow(cid, 30L, 3L)
+        );
+
+        // Let base class check index contents
+        checkIndexesInstead(C_NAME, "PRIMARY", "c2");
+    }
 }
