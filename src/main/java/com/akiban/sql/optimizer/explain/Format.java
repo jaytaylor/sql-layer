@@ -447,10 +447,12 @@ public class Format {
                     break;
                 case DUI:
                     if (name.equals("Delete_Default"))
+                    {
                         if (atts.containsKey(Label.TABLE_CORRELATION))
                             sb.append("FROM ").append(atts.get(Label.TABLE_CORRELATION).get(0).get());
                         else if (atts.containsKey(Label.TABLE_TYPE))
                             sb.append("FROM ").append(atts.get(Label.TABLE_TYPE).get(0).get());
+                    }
                     else if (name.equals("Insert_Default"))
                     {
                         if (atts.containsKey(Label.TABLE_CORRELATION))
@@ -483,7 +485,6 @@ public class Format {
                             }
                             sb.setLength(sb.length()-2);
                         }
-                        sb.append("poo");
                     }
                     break;
                 case PHYSICAL_OPERATOR:
