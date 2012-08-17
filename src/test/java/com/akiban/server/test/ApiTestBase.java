@@ -69,6 +69,11 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.aisddl.AlterTableDDL;
+import com.akiban.sql.parser.AlterTableNode;
+import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
@@ -472,6 +477,19 @@ public class ApiTestBase {
             this.param1 = param1;
             this.param2 = param2;
         }
+    }
+
+    protected void runAlter(String schema, QueryContext queryContext, String sql) {
+        SQLParser parser = new SQLParser();
+        StatementNode node;
+        try {
+            node = parser.parseStatement(sql);
+        } catch(StandardException e) {
+            throw new RuntimeException(e);
+        }
+        org.junit.Assert.assertTrue("is alter node", node instanceof AlterTableNode);
+        AlterTableDDL.alterTable(ddl(), dml(), session(), schema, (AlterTableNode) node, queryContext);
+        updateAISGeneration();
     }
 
     protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
