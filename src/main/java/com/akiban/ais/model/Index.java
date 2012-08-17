@@ -305,6 +305,16 @@ public abstract class Index implements Traversable
         return idAndFlags;
     }
 
+    public boolean containsTableColumn(TableName tableName, String columnName) {
+        for(IndexColumn iCol : keyColumns) {
+            Column column = iCol.getColumn();
+            if(column.getTable().getName().equals(tableName) && column.getName().equals(columnName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Unique, non-PK indexes store a "null separator value", making index rows unique that would otherwise
     // be considered duplicates due to nulls.
     public long nextNullSeparatorValue(TreeService treeService)

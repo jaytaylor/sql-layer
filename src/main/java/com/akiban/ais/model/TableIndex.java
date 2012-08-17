@@ -67,8 +67,11 @@ public class TableIndex extends Index
      */
     public static TableIndex create(Table table, TableIndex index)
     {
-        return create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(), index.isUnique(),
-                      index.getConstraint());
+        TableIndex copy = create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(),
+                                  index.isUnique(),
+                                  index.getConstraint());
+        copy.setIndexMethod(index.getIndexMethod());
+        return copy;
     }
 
     public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint)
