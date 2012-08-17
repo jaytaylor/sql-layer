@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Update_Default(AncestorLookup_Default(Index(test.customers.name[IndexColumn(name)]) -> [test.customers]) -> ExpressionRowUpdateFunction([null, Literal(Smyth)]))
-    AncestorLookup_Default(Index(test.customers.name[IndexColumn(name)]) -> [test.customers])
-      IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Smith)],<=UnboundExpressions[Literal(Smith)]))
+  Update_Default(test.customers SET name = 'Smyth')
+    AncestorLookup_Default(test._akiban_customers -> test.customers)
+      IndexScan_Default(Index(test.customers.name[IndexColumn(name)]), name = Smith, cid)

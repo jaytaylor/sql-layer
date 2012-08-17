@@ -1,5 +1,5 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  Sort_Tree(Project_Default([Field(1)]), SUPPRESS_DUPLICATES)
-    Project_Default(Field(1))
+  Sort_Tree(Field(0) ASC, SUPPRESS_DUPLICATES)
+    Project_Default(customers.name)
       Filter_Default(test.customers)
         GroupScan_Default(full scan on _akiban_customers)

@@ -207,9 +207,15 @@ public class Format {
                     break;
                 case DUI:
                     if (name.equals("Delete_Default"))
-                        sb.append(" FROM ").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0).get());
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
+                            sb.append("FROM ").append(atts.get(Label.TABLE_CORRELATION).get(0).get());
+                        else if (atts.containsKey(Label.TABLE_TYPE))
+                            sb.append("FROM ").append(atts.get(Label.TABLE_TYPE).get(0).get());
                     else if (name.equals("Insert_Default"))
-                        sb.append("INTO").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0).get());
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
+                            sb.append("INTO ").append(atts.get(Label.TABLE_CORRELATION).get(0).get());
+                        else if (atts.containsKey(Label.TABLE_TYPE))
+                            sb.append("INTO ").append(atts.get(Label.TABLE_TYPE).get(0).get());
                     break;
                 case SCAN_OPERATOR:
                     if (name.equals("IndexScan_Default"))
@@ -441,12 +447,16 @@ public class Format {
                     break;
                 case DUI:
                     if (name.equals("Delete_Default"))
-                    {
-                        sb.append(" FROM ").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0).get());
-                    }
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
+                            sb.append("FROM ").append(atts.get(Label.TABLE_CORRELATION).get(0).get());
+                        else if (atts.containsKey(Label.TABLE_TYPE))
+                            sb.append("FROM ").append(atts.get(Label.TABLE_TYPE).get(0).get());
                     else if (name.equals("Insert_Default"))
                     {
-                        sb.append(" INTO ").append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0).get());
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
+                            sb.append("INTO ").append(atts.get(Label.TABLE_CORRELATION).get(0).get());
+                        else if (atts.containsKey(Label.TABLE_TYPE))
+                            sb.append("INTO ").append(atts.get(Label.TABLE_TYPE).get(0).get());
                         if (atts.containsKey(Label.COLUMN_NAME))
                         {
                             sb.append('(');
@@ -458,7 +468,10 @@ public class Format {
                     }
                     else if (name.equals("Update_Default"))
                     {
-                        sb.append(atts.get(atts.containsKey(Label.TABLE_CORRELATION) ? Label.TABLE_CORRELATION : Label.TABLE_TYPE).get(0).get());
+                        if (atts.containsKey(Label.TABLE_CORRELATION))
+                            sb.append(atts.get(Label.TABLE_CORRELATION).get(0).get());
+                        else if (atts.containsKey(Label.TABLE_TYPE))
+                            sb.append(atts.get(Label.TABLE_TYPE).get(0).get());
                         if (atts.containsKey(Label.COLUMN_NAME))
                         {
                             sb.append(" SET ");
@@ -470,6 +483,7 @@ public class Format {
                             }
                             sb.setLength(sb.length()-2);
                         }
+                        sb.append("poo");
                     }
                     break;
                 case PHYSICAL_OPERATOR:

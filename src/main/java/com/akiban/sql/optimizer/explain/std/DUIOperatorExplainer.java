@@ -45,10 +45,8 @@ public class DUIOperatorExplainer extends OperationExplainer
         {
             atts.put(Label.TABLE_TYPE, PrimitiveExplainer.getInstance(inputOp.rowType().userTable().getName().toString()));
         }
-        catch(UnsupportedOperationException exception)
-        {
-            atts.put(Label.TABLE_TYPE, PrimitiveExplainer.getInstance("unknown"));
-        }
+        catch(UnsupportedOperationException exception){}
+        
         return atts;
     }
 }

@@ -1,13 +1,13 @@
 PhysicalSelect@3961aadb[name, order_date, name]
-  Map_NestedLoops
+  Map_NestedLoops(loop_0)
     Filter_Default(test.child)
       GroupScan_Default(full scan on _akiban_parent)
-    Map_NestedLoops
-      IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (>=UnboundExpressions[Bound(0,Field(2))],<=UnboundExpressions[Bound(0,Field(2))]))
+    Map_NestedLoops(loop_1)
+      IndexScan_Default(Index(test.parent.name[IndexColumn(name)]))
       Project_Default(Field(1), Field(4), Bound(0,Field(2)))
         Select_HKeyOrdered(Bound(0,Field(2)) != 'Smith')
           Select_HKeyOrdered(Field(4) > CAST('2011-01-01' AS DATE))
-            Filter_Default(flatten(test.customers, test.orders))
+            Filter_Default(test.customers - test.orders)
               Flatten_HKeyOrdered(test.customers INNER test.orders)
-                BranchLookup_Default(_akiban_customers Index(test.customers.name[IndexColumn(name)]) -> test.customers limit NO LIMIT)
-                  IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Bound(1,Field(0))],<=UnboundExpressions[Bound(1,Field(0))]))
+                BranchLookup_Default(test._akiban_customers -> test.customers (via test.customers))
+                  IndexScan_Default(Index(test.customers.name[IndexColumn(name])))

@@ -1,4 +1,4 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  Project_Default(Field(1))
-    AncestorLookup_Default(Index(test.customers.PRIMARY[IndexColumn(cid)]) -> [test.customers])
-      IndexScan_Default(Index(test.customers.PRIMARY[IndexColumn(cid)]) (>=UnboundExpressions[Literal(1)],<=UnboundExpressions[Literal(1)]))
+  Project_Default(customers.name)
+    AncestorLookup_Default(test._akiban_customers -> test.customers)
+      IndexScan_Default(Index(test.customers.PRIMARY[IndexColumn(cid)]), cid = 1)

@@ -1,5 +1,5 @@
 PhysicalSelect[order_date:date[DATE]]
-  Project_Default(Field(4))
+  Project_Default(orders.order_date)
     Flatten_HKeyOrdered(test.customers INNER test.orders)
-      AncestorLookup_Default(Index(test.orders.order_date[IndexColumn(order_date)]) -> [test.customers, test.orders])
-        IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[Literal(2011-01-01)],<UnboundExpressions[Literal(NULL)]))
+      AncestorLookup_Default(test._akiban_customers -> test.customers, test.orders)
+        IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]), order_date > 2011-01-01, cid, oid)

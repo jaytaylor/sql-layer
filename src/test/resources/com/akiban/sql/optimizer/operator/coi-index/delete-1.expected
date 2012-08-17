@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Delete_Default(AncestorLookup_Default(Index(test.items.PRIMARY[IndexColumn(iid)]) -> [test.items]))
-    AncestorLookup_Default(Index(test.items.PRIMARY[IndexColumn(iid)]) -> [test.items])
-      IndexScan_Default(Index(test.items.PRIMARY[IndexColumn(iid)]) (>=UnboundExpressions[Literal(1012)],<=UnboundExpressions[Literal(1012)]))
+  Delete_Default(FROM test.items)
+    AncestorLookup_Default(test._akiban_customers -> test.items)
+      IndexScan_Default(Index(test.items.PRIMARY[IndexColumn(iid)]), iid = 1012, cid, oid)

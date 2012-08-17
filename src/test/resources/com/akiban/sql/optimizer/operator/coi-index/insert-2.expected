@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Insert_Default(Project_Default(Field(0), Field(1)))
+  Insert_Default(INTO test.customers(cid, name))
     Project_Default(Field(0), Field(1))
       ValuesScan_Default(ImmutableRow[1, Smith], ImmutableRow[2, Jones], ImmutableRow[3, Brown])

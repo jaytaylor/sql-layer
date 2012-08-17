@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Update_Default(Filter_Default(test.items) -> ExpressionRowUpdateFunction([null, null, Literal(42), Field(3)]))
+  Update_Default(test.items SET quan = 42, sku = items.quan)
     Filter_Default(test.items)
       GroupScan_Default(full scan on _akiban_customers)

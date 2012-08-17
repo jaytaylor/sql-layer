@@ -32,7 +32,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
@@ -92,7 +91,6 @@ import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
-import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -682,13 +680,16 @@ public class OperatorAssembler extends BaseRule
                                                 targetRowType, inserts, insertsP);
             UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
             
-            Attributes atts = new Attributes();
-            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(insertStatement.getTargetTable().getTable().getName().toString()));
-            for (Column column : insertStatement.getTargetColumns())
+            if (planContext.hasInfo())
             {
-                atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
+                Attributes atts = new Attributes();
+                atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(insertStatement.getTargetTable().getTable().getName().toString()));
+                for (Column column : insertStatement.getTargetColumns())
+                {
+                    atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
+                }
+                planContext.giveInfoOperator(plan, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
-            planContext.giveInfoOperator(plan, new OperationExplainer(Type.EXTRA_INFO, atts));
             
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -1363,7 +1364,7 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
-            if (planContext.hasInfo() && aggregateSource.hasGroupBy())
+            if (planContext.hasInfo() && aggregateSource.hasGroupBy() && !aggregateSource.isProjectSplitOff())
             {
                 Attributes atts = new Attributes();
                 for (ExpressionNode node : aggregateSource.getGroupBy())

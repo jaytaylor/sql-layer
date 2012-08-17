@@ -12,4 +12,4 @@ PhysicalSelect[cid:int[INT]]
           Filter_Default(test.customers - test.addresses)
             Flatten_HKeyOrdered(test.customers INNER test.addresses)
               Select_HKeyOrdered(Bound(0,Field(2)) == addresses.state)
-                BranchLookup_Nested(Binding at 1 -> test.addresses (via test.customers))
+                BranchLookup_Nested(test._akiban_customers -> test.addresses (via test.customers))

@@ -1,7 +1,7 @@
 PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin]
-  Project_Default(Field(0))
+  Project_Default(GROUP[0])
     Aggregate_Partial(maxVARCHAR)
-      Map_NestedLoops
+      Map_NestedLoops(loop_0)
         ValuesScan_Default(ImmutableRow[Adams], ImmutableRow[Jones], ImmutableRow[Smith])
-        Project_Default(Field(1))
-          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
+        Project_Default(items.sku)
+          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), name = VALUES[0], sku, cid, oid, iid)

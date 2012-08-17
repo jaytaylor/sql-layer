@@ -1,4 +1,4 @@
 PhysicalUpdate@377f4fbb
-  Insert_Default(Project_Default(Field(1), Field(0), Field(2)))
+  Insert_Default()
     Project_Default(Field(1), Field(0), Field(2))
       ValuesScan_Default(ImmutableRow[1, 1, Judy], ImmutableRow[1, 2, Elroy])

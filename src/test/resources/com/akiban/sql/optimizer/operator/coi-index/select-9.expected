@@ -1,7 +1,7 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  Project_Default(Field(1))
-    Filter_Default(flatten(test.customers, test.items))
+  Project_Default(customers.name)
+    Filter_Default(test.customers - test.items)
       Flatten_HKeyOrdered(test.customers INNER test.items)
-        AncestorLookup_Default(test.orders -> [test.customers])
-          BranchLookup_Default(_akiban_customers Index(test.orders.order_date[IndexColumn(order_date)]) -> test.orders limit NO LIMIT)
-            IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]) (>=UnboundExpressions[Literal(2011-03-01)],<=UnboundExpressions[Literal(2011-03-01)]))
+        AncestorLookup_Default(test._akiban_customers -> test.customers)
+          BranchLookup_Default(test._akiban_customers -> test.items (via test.orders))
+            IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]), order_date = 2011-03-01, cid, oid)

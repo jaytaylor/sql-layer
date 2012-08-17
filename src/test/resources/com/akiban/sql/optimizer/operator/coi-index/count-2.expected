@@ -1,4 +1,4 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
-  Project_Default(Field(0))
-    Count_Default(Index(test.items.sku[IndexColumn(sku)]))
-      IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(8888)]))
+  Project_Default(GROUP[0])
+    Count_Default(* FROM Index(test.items.sku[IndexColumn(sku)]))
+      IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]), sku < 8888, cid, oid, iid)

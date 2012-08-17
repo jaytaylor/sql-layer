@@ -1,5 +1,5 @@
 PhysicalUpdate
-  Update_Default(Filter_Default(test.customers) -> ExpressionRowUpdateFunction([null, Literal(Smyth)]))
+  Update_Default(test.customers SET name = 'Smyth')
     Filter_Default(test.customers)
-      Select_HKeyOrdered(Field(1) == 'Smith')
+      Select_HKeyOrdered(customers.name == 'Smith')
         GroupScan_Default(full scan on _akiban_customers)
