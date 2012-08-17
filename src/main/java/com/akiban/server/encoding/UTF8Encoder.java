@@ -43,9 +43,8 @@ public class UTF8Encoder extends VariableWidthEncoding {
             String str = value.toString();
             for (int i = 0; i < str.length(); i++) {
                 int ch = str.charAt(i);
-                if (ch == '\u0000')
-                    size += 2;
-                else if (ch <= '\u007F')
+                // Assumes consumers want standard UTF8 (e.g. String, nio.charset), not modified
+                if (ch <= '\u007F')
                     size += 1;
                 else if (ch <= '\u07FF')
                     size += 2;

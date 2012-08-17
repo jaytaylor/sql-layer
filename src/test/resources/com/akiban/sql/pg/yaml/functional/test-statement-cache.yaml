@@ -96,6 +96,24 @@
            ['    Select_HKeyOrdered(Field(1) == Variable(pos=0))'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
+- CreateTable: test1.t (n INT)
+---
+- Statement: INSERT INTO test1.t VALUES(1)
+---
+- CreateTable: test2.t (n INT)
+---
+- Statement: INSERT INTO test2.t VALUES(0)
+---
+- Statement: SET SCHEMA test1
+---
+- Statement: SELECT * FROM t
+- output: [[1]]
+---
+- Statement: SET SCHEMA test2
+---
+- Statement: SELECT * FROM t
+- output: [[0]]
+---
 # Turn it back off
 - JMX: com.akiban:type=PostgresServer
 - set: StatementCacheCapacity

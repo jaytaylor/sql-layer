@@ -28,7 +28,6 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;
 
@@ -50,13 +49,22 @@ import com.akiban.sql.parser.RenameNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 /** SQL DDL statements. */
-public class PostgresDDLStatement implements PostgresStatement
+public class PostgresDDLStatement extends PostgresBaseStatement
 {
+    private static final Logger logger = LoggerFactory.getLogger(PostgresDDLStatement.class);
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresDDLStatement: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresDDLStatement: acquire shared lock");
+
     private DDLStatementNode ddl;
     private boolean usePVals;
 
@@ -98,8 +106,10 @@ public class PostgresDDLStatement implements PostgresStatement
         String schema = server.getDefaultSchemaName();
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
         Session session = server.getSession();
-        lock(session);
+        boolean lockSuccess = false;
         try {
+            lock(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
+            lockSuccess = true;
             switch (ddl.getNodeType()) {
             case NodeTypes.CREATE_SCHEMA_NODE:
                 SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl, context);
@@ -150,8 +160,9 @@ public class PostgresDDLStatement implements PostgresStatement
             default:
                 throw new UnsupportedSQLException (ddl.statementToString(), ddl);
             }
-        } finally {
-            unlock(session);
+        }
+        finally {
+            unlock(context, DXLFunction.UNSPECIFIED_DDL_WRITE, lockSuccess);
         }
         {        
             PostgresMessenger messenger = server.getMessenger();
@@ -162,13 +173,16 @@ public class PostgresDDLStatement implements PostgresStatement
         return 0;
     }
 
-    private void lock(Session session)
+    @Override
+    protected InOutTap executeTap()
     {
-        DXLReadWriteLockHook.only().hookFunctionIn(session, UNSPECIFIED_DDL_WRITE);
+        return EXECUTE_TAP;
     }
 
-    private void unlock(Session session)
+    @Override
+    protected InOutTap acquireLockTap()
     {
-        DXLReadWriteLockHook.only().hookFunctionFinally(session, UNSPECIFIED_DDL_WRITE, null);
+        return ACQUIRE_LOCK_TAP;
     }
+
 }

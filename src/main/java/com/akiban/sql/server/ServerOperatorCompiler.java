@@ -46,14 +46,20 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
+        boolean usePValues;
         if (server.getBooleanProperty("cbo", true)) {
-            boolean usePValues = Types3Switch.ON || server.getBooleanProperty("newtypes", false);
+            usePValues = server.getBooleanProperty("newtypes", Types3Switch.ON);
             initCostEstimator(server.costEstimator(this, server.getTreeService()), usePValues);
             if (usePValues)
                 initOverloadResolver(server.overloadResolver());
         }
-        else
+        else {
             initCostEstimator(null, false);
+            usePValues = false;
+        }
+        // the following is racy, but everything about the Types3Switch is
+        if (usePValues != Types3Switch.ON)
+            Types3Switch.ON = usePValues;
         
         server.getBinderContext().setBinderAndTypeComputer(binder, typeComputer);
 

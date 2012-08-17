@@ -46,7 +46,7 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
     private PostgresType valueType;
     
     public PostgresJsonOutputter(PostgresQueryContext context, 
-                                 PostgresBaseStatement statement,
+                                 PostgresDMLStatement statement,
                                  List<JsonResultColumn> resultColumns,
                                  PostgresType valueType) {
         super(context, statement);

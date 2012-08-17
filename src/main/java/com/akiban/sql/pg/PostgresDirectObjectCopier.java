@@ -38,7 +38,7 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
     private boolean withNewline;
 
     public PostgresDirectObjectCopier(PostgresQueryContext context,
-                                      PostgresBaseStatement statement,
+                                      PostgresDMLStatement statement,
                                       boolean withNewline) {
         super(context, statement);
         this.withNewline = withNewline;

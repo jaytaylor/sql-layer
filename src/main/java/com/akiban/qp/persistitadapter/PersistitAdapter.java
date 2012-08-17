@@ -319,13 +319,13 @@ public class PersistitAdapter extends StoreAdapter
             // row
             if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
                     rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
-                long value = sequenceValue (rowDef.table().getColumn(i).getIdentityGenerator()); 
+                long value = sequenceValue (rowDef.table().getColumn(i).getIdentityGenerator(), false); 
                 source = creator.createId(value);
             }
 
             if (creator.isNull(source)) {
                 if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
-                    long value = sequenceValue(rowDef.table().getColumn(i).getIdentityGenerator());
+                    long value = sequenceValue(rowDef.table().getColumn(i).getIdentityGenerator(), false);
                     source = creator.createId(value);
                 }
                 // TODO: If not an identityGenerator, insert the column default value.
@@ -454,12 +454,25 @@ public class PersistitAdapter extends StoreAdapter
         if (sequence == null) {
             throw new NoSuchSequenceException (sequenceName);
         }
-        return sequenceValue (sequence);
+        return sequenceValue (sequence, false);
+    }
+
+    @Override
+    public long sequenceCurrentValue(TableName sequenceName) {
+        Sequence sequence = schema().ais().getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return sequenceValue (sequence, true);
     }
     
-    private long sequenceValue (Sequence sequence) {
+    private long sequenceValue (Sequence sequence, boolean getCurrentValue) {
         try {
-            return sequence.nextValue(treeService);
+            if (getCurrentValue) {
+                return sequence.currentValue(treeService);
+            } else {
+                return sequence.nextValue(treeService);
+            }
         } catch (PersistitException e) {
             rollbackIfNeeded(e);
             handlePersistitException(e);

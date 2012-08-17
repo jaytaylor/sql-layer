@@ -35,13 +35,13 @@ public abstract class PostgresOutputter<T>
 {
     protected PostgresMessenger messenger;
     protected PostgresQueryContext context;
-    protected PostgresBaseStatement statement;
+    protected PostgresDMLStatement statement;
     protected List<PostgresType> columnTypes;
     protected int ncols;
     protected ServerValueEncoder encoder;
 
     public PostgresOutputter(PostgresQueryContext context,
-                             PostgresBaseStatement statement) {
+                             PostgresDMLStatement statement) {
         this.context = context;
         this.statement = statement;
         PostgresServerSession server = context.getServer();
