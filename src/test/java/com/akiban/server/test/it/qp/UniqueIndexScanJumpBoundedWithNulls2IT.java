@@ -174,7 +174,6 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
                       new long[] {1021, 1018, 1022});
     }
 
-    @Ignore
     @Test
     public void testDDDD()
     {
@@ -204,12 +203,9 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
              new long[] {1021, 1020, 1019});
     }
 
-    @Ignore
     @Test
     public void testAAAD()
     {
-        // currently failing
-
         // 'correct odering': 
         // 1021, 1020, 1019, 1018, 1022
         // --->
@@ -233,12 +229,9 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
              new long[] {1021, 1020, 1019, 1018, 1022});
     }
 
-    @Ignore
     @Test
     public void testAADA()
     {
-        // currently failing
-
         // 'correct odering':
         // 1022, 1018, 1019, 1020, 1021
         // --->
@@ -262,12 +255,9 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
              new long[] {1021});
     }
 
-    @Ignore
     @Test
     public void testADAA() // same as testAAAA() because a and b are the same within this range
     {
-        // currently failing 
-
         // 'correct ordering':
         // 1019, 1020, 1021, 1018, 1022
         // --->
@@ -292,12 +282,9 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         
     }
 
-    @Ignore
     @Test
     public void testDAAA() // same as testAAAA() because a is the same 
     {
-        // curerntly failing
-
         // 'correct ordering':
          // 1019, 1020, 1021, 1018, 1022
         // --->
@@ -320,13 +307,10 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
                       getDAAA(),
                       new long[] {1021, 1018, 1022});
     }
-    
-    @Ignore
+
     @Test
     public void testAADD() // smae as testDDDD() because a and b are the same
     {
-        // curerntly failing
-
         // 'correct ordering':
         // 1022, 1018, 1021, 1020, 1019
         // --->
@@ -349,8 +333,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
              getAADD(),
              new long[] {1021, 1020, 1019});
     }
-    
-    @Ignore
+
     @Test
     public void testADDA() // same as testAADA() because a and b are the same
     {
@@ -381,12 +364,10 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
     
     
     // test with rows whose b == null
-    @Ignore
+
     @Test
     public void testDDDD_b()
     {
-        // currently failing
-
         // 'correct ordering':
         // 1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016
 
@@ -403,7 +384,6 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
                       new long[] {1016});
     }
 
-    @Ignore
     @Test
     public void testAAAA_b()
     {
