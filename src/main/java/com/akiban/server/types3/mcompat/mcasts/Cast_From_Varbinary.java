@@ -45,18 +45,6 @@ public final class Cast_From_Varbinary {
 
     private Cast_From_Varbinary() {}
 
-    public static final TCast VARBINARY_TO_VARCHAR = new BinaryToVarchar(MBinary.VARBINARY);
-    public static final TCast BLOB_TO_VARCHAR = new BinaryToVarchar(MBinary.BLOB);
-    public static final TCast LONGBLOB_TO_VARCHAR = new BinaryToVarchar(MBinary.LONGBLOB);
-    public static final TCast MEDIUMBLOB_TO_VARCHAR = new BinaryToVarchar(MBinary.MEDIUMBLOB);
-    public static final TCast TINYBLOB_TO_VARCHAR = new BinaryToVarchar(MBinary.TINYBLOB);
-
-    public static final TCast VARCHAR_TO_VARBINARY = new VarcharToBinary(MBinary.VARBINARY);
-    public static final TCast VARCHAR_TO_BLOB = new VarcharToBinary(MBinary.BLOB);
-    public static final TCast VARCHAR_TO_LONGBLOB = new VarcharToBinary(MBinary.LONGBLOB);
-    public static final TCast VARCHAR_TO_MEDIUMBLOB = new VarcharToBinary(MBinary.MEDIUMBLOB);
-    public static final TCast VARCHAR_TO_TINYBLOB = new VarcharToBinary(MBinary.TINYBLOB);
-
     public static final TCast VARBINARY_TO_BLOB = new BinaryToBinary(MBinary.VARBINARY, MBinary.BLOB);
     public static final TCast VARBINARY_TO_LONGBLOB = new BinaryToBinary(MBinary.VARBINARY, MBinary.LONGBLOB);
     public static final TCast VARBINARY_TO_MEDIUMBLOB = new BinaryToBinary(MBinary.VARBINARY, MBinary.MEDIUMBLOB);
@@ -82,49 +70,6 @@ public final class Cast_From_Varbinary {
     public static final TCast TINYBLOB_TO_LONGBLOB = new BinaryToBinary(MBinary.TINYBLOB, MBinary.LONGBLOB);
     public static final TCast TINYBLOB_TO_MEDIUMBLOB = new BinaryToBinary(MBinary.TINYBLOB, MBinary.MEDIUMBLOB);
 
-    private static class BinaryToVarchar extends TCastBase {
-        BinaryToVarchar(TClass binaryClass) {
-            super(binaryClass, MString.VARCHAR);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            byte[] asBytes = source.getBytes();
-            String asString;
-            try {
-                asString = new String(asBytes, DEFAULT_CHARSET);
-            } catch (UnsupportedEncodingException e) {
-                throw new AkibanInternalException("while decoding bytes to " + DEFAULT_CHARSET, e);
-            }
-            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-            if (asString.length() > maxLen) {
-                context.reportTruncate("string of length " + asString.length(), "string of length " + maxLen);
-                asString = asString.substring(0, maxLen);
-            }
-            target.putString(asString, null);
-        }
-    }
-
-    private static class VarcharToBinary extends TCastBase {
-        VarcharToBinary(TClass binaryClass) {
-            super(MString.VARCHAR, binaryClass);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            String in = source.getString();
-            int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
-            String charsetName = StringFactory.Charset.values()[charsetId].name();
-            byte[] bytes;
-            try {
-                bytes = in.getBytes(charsetName);
-            } catch (UnsupportedEncodingException e) {
-                throw new AkibanInternalException("while decoding string using " + charsetName, e);
-            }
-            putBytes(context, target, bytes);
-        }
-    }
-
     private static class BinaryToBinary extends TCastBase {
         private BinaryToBinary(TClass sourceClass, TClass targetClass) {
             super(sourceClass, targetClass);
@@ -132,17 +77,8 @@ public final class Cast_From_Varbinary {
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            putBytes(context, target, source.getBytes());
+            MBinary.putBytes(context, target, source.getBytes());
         }
-    }
-
-    private static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {
-        int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-        if (bytes.length > maxLen) {
-            context.reportTruncate("bytes of length " + bytes.length,  "bytes of length " + maxLen);
-            bytes = Arrays.copyOf(bytes, maxLen);
-        }
-        target.putBytes(bytes);
     }
 
     private static final String DEFAULT_CHARSET = Charset.defaultCharset().name();

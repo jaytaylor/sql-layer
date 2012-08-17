@@ -121,30 +121,37 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     protected TPreparedExpression assembleCastExpression(CastExpression castExpression,
                                                          ColumnExpressionContext columnContext,
                                                          SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
-        ExpressionNode operand = castExpression.getOperand();
-        TPreparedExpression expr = assembleExpression(operand, columnContext, subqueryAssembler);
         TInstance toType = castExpression.getPreptimeValue().instance();
-        if (toType == null) return expr;
-        if (!toType.equals(operand.getPreptimeValue().instance()))
+        TPreparedExpression expr = assembleExpression(castExpression.getOperand(), columnContext, subqueryAssembler);
+        if (toType == null)
+            return expr;
+        TInstance sourceInstance = expr.resultType();
+        if (!toType.equals(sourceInstance))
         {
             // Do type conversion.
-            TypeId id = castExpression.getSQLtype().getTypeId();
-            if (id.isIntervalTypeId()) {
-                throw new UnsupportedOperationException(); // TODO
-//                expr = new IntervalCastExpression(expr, id);
+            TCast tcast = overloadResolver.getTCast(sourceInstance, toType);
+            if (tcast == null) {
+                String castName = "CAST("
+                        + sourceInstance.typeClass()
+                        + " to " + toType.typeClass() + ')';
+                throw new NoSuchMethodError(castName); // TODO should be a NoSuchCastError
             }
-            else {
-                TCast tcast = overloadResolver.getTCast(operand.getPreptimeValue().instance(), toType);
-                if (tcast == null) {
-                    String castName = "CAST("
-                            + operand.getPreptimeValue().instance().typeClass()
-                            + " to " + toType.typeClass() + ')';
-                    throw new NoSuchMethodError(castName); // TODO should be a NoSuchCastError
-                }
-                expr = new TCastExpression(expr, tcast, toType, queryContext);
-            }
+            expr = new TCastExpression(expr, tcast, toType, queryContext);
         }
         return expr;
+    }
+
+    @Override
+    protected TPreparedExpression tryLiteral(ExpressionNode node) {
+        TPreparedExpression result = null;
+        TPreptimeValue tpv = node.getPreptimeValue();
+        if (tpv != null) {
+            TInstance instance = tpv.instance();
+            PValueSource value = tpv.value();
+            if (instance != null && value != null)
+                result = new TPreparedLiteral(instance, value);
+        }
+        return result;
     }
 
     @Override

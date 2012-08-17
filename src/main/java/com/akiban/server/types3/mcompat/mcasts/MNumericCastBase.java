@@ -41,7 +41,7 @@ public class MNumericCastBase
         public FromDoubleToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_8), auto, c);
+                  checkType(target, PUnderlying.INT_8), c);
         }
 
         @Override
@@ -58,7 +58,7 @@ public class MNumericCastBase
         public FromDoubleToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_8), auto, c);
+                  checkType(target, PUnderlying.INT_8), c);
         }
 
         @Override
@@ -74,7 +74,7 @@ public class MNumericCastBase
         public FromDoubleToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -90,7 +90,7 @@ public class MNumericCastBase
         public FromDoubleToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(source, PUnderlying.INT_32), auto, c);
+                  checkType(source, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -106,7 +106,7 @@ public class MNumericCastBase
         public FromDoubleToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(source, PUnderlying.INT_32), auto, c);
+                  checkType(source, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -122,7 +122,7 @@ public class MNumericCastBase
         public FromDoubleToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -138,7 +138,7 @@ public class MNumericCastBase
         public FromDoubleToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -154,7 +154,7 @@ public class MNumericCastBase
         public FromDoubleToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(source, PUnderlying.BYTES), auto, c);
+                  checkType(source, PUnderlying.BYTES), c);
         }
 
         @Override
@@ -166,42 +166,12 @@ public class MNumericCastBase
         }
     }
 
-    static class FromDoubleToString extends TCastBase
-    {
-        public FromDoubleToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.STRING), auto, c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putObject(Double.toString(source.getDouble()));
-        }
-    }
-
-    static class FromInt8ToString extends TCastBase
-    {
-        public FromInt8ToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.STRING), auto, c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putObject(Byte.toString(source.getInt8()));
-        }
-    }
-
     static class FromInt8ToUnsignedInt8 extends TCastBase
     {
         public FromInt8ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -216,7 +186,7 @@ public class MNumericCastBase
         public FromInt8ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -231,7 +201,7 @@ public class MNumericCastBase
         public FromInt8ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_32), auto, c);
+                  checkType(target, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -246,7 +216,7 @@ public class MNumericCastBase
         public FromInt8ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_32), auto, c);
+                  checkType(target, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -261,7 +231,7 @@ public class MNumericCastBase
         public FromInt8ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -276,7 +246,7 @@ public class MNumericCastBase
         public FromInt8ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -291,7 +261,7 @@ public class MNumericCastBase
         public FromInt8ToDouble(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.DOUBLE), auto, c);
+                  checkType(target, PUnderlying.DOUBLE), c);
         }
 
         @Override
@@ -306,7 +276,7 @@ public class MNumericCastBase
         public FromInt8ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.BYTES), c);
         }
 
         @Override
@@ -316,27 +286,12 @@ public class MNumericCastBase
         }
     }
     
-    static class FromInt16ToString extends TCastBase
-    {
-        public FromInt16ToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.STRING), auto, c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putObject(Short.toString(source.getInt16()));
-        }
-    }
-    
     static class FromInt16ToInt8 extends TCastBase
     {
         public FromInt16ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_8), auto, c);
+                  checkType(target, PUnderlying.INT_8), c);
         }
 
         @Override
@@ -351,7 +306,7 @@ public class MNumericCastBase
         public FromInt16ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -366,7 +321,7 @@ public class MNumericCastBase
         public FromInt16ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -381,7 +336,7 @@ public class MNumericCastBase
         public FromInt16ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_32), auto, c);
+                  checkType(target, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -396,7 +351,7 @@ public class MNumericCastBase
         public FromInt16ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_32), auto, c);
+                  checkType(target, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -411,7 +366,7 @@ public class MNumericCastBase
         public FromInt16ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -426,7 +381,7 @@ public class MNumericCastBase
         public FromInt16ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -441,7 +396,7 @@ public class MNumericCastBase
         public FromInt16ToDouble(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.DOUBLE), auto, c);
+                  checkType(target, PUnderlying.DOUBLE), c);
         }
 
         @Override
@@ -456,7 +411,7 @@ public class MNumericCastBase
         public FromInt16ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.BYTES), c);
         }
 
         @Override
@@ -465,28 +420,13 @@ public class MNumericCastBase
             target.putObject(new MBigDecimalWrapper(source.getInt16()));
         }
     }
-    
-    static class FromInt32ToString extends TCastBase
-    {
-        public FromInt32ToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.STRING), auto, c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putObject(Integer.toString(source.getInt32()));
-        }
-    }
 
     static class FromInt32ToInt8 extends TCastBase
     {
         public FromInt32ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_8), auto, c);
+                  checkType(target, PUnderlying.INT_8), c);
         }
 
         @Override
@@ -501,7 +441,7 @@ public class MNumericCastBase
         public FromInt32ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -516,7 +456,7 @@ public class MNumericCastBase
         public FromInt32ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -531,7 +471,7 @@ public class MNumericCastBase
         public FromInt32ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_32), auto, c);
+                  checkType(target, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -546,7 +486,7 @@ public class MNumericCastBase
         public FromInt32ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_32), auto, c);
+                  checkType(target, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -561,7 +501,7 @@ public class MNumericCastBase
         public FromInt32ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -576,7 +516,7 @@ public class MNumericCastBase
         public FromInt32ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -591,7 +531,7 @@ public class MNumericCastBase
         public FromInt32ToDouble(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.DOUBLE), auto, c);
+                  checkType(target, PUnderlying.DOUBLE), c);
         }
 
         @Override
@@ -606,7 +546,7 @@ public class MNumericCastBase
         public FromInt32ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.BYTES), c);
         }
 
         @Override
@@ -616,27 +556,12 @@ public class MNumericCastBase
         }
     }
     
-    static class FromInt64ToString extends TCastBase
-    {
-        public FromInt64ToString(TClass source, TClass target, boolean auto, Constantness c)
-        {
-            super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.STRING), auto, c);
-        }
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putObject(Long.toString(source.getInt64()));
-        }
-    }
-    
     static class FromInt64ToInt8 extends TCastBase
     {
         public FromInt64ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_8), auto, c);
+                  checkType(target, PUnderlying.INT_8), c);
         }
 
         @Override
@@ -651,7 +576,7 @@ public class MNumericCastBase
         public FromInt64ToUnsignedInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -666,7 +591,7 @@ public class MNumericCastBase
         public FromInt64ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_16), auto, c);
+                  checkType(target, PUnderlying.INT_16), c);
         }
 
         @Override
@@ -681,7 +606,7 @@ public class MNumericCastBase
         public FromInt64ToUnsignedInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_32), auto, c);
+                  checkType(target, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -696,7 +621,7 @@ public class MNumericCastBase
         public FromInt64ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_32), auto, c);
+                  checkType(target, PUnderlying.INT_32), c);
         }
 
         @Override
@@ -711,7 +636,7 @@ public class MNumericCastBase
         public FromInt64ToUnsignedInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -726,7 +651,7 @@ public class MNumericCastBase
         public FromInt64ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.INT_64), auto, c);
+                  checkType(target, PUnderlying.INT_64), c);
         }
 
         @Override
@@ -741,7 +666,7 @@ public class MNumericCastBase
         public FromInt64ToDouble(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.DOUBLE), auto, c);
+                  checkType(target, PUnderlying.DOUBLE), c);
         }
 
         @Override
@@ -756,7 +681,7 @@ public class MNumericCastBase
         public FromInt64ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.BYTES), c);
         }
 
         @Override

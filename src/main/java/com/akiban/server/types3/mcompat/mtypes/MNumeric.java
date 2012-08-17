@@ -148,7 +148,7 @@ public class MNumeric extends SimpleDtdTClass {
     public static final MNumeric BIGINT_UNSIGNED
             = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT);
 
-    public static final TClass DECIMAL = new MBigDecimal();
+    public static final TClass DECIMAL = new MBigDecimal("decimal");
 
-    public static final TClass DECIMAL_UNSIGNED = new MBigDecimal();
+    public static final TClass DECIMAL_UNSIGNED = new MBigDecimal("decimal unsigned");
 }

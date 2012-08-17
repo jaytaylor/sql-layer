@@ -32,7 +32,7 @@ import com.akiban.server.types3.TInstance;
 
 import java.util.*;
 
-public class IndexRowType extends AisRowType
+public abstract class IndexRowType extends AisRowType
 {
     // Object interface
 
@@ -84,7 +84,19 @@ public class IndexRowType extends AisRowType
         return index;
     }
 
-    public IndexRowType(Schema schema, UserTableRowType tableType, Index index)
+    public IndexRowType physicalRowType()
+    {
+        return this;
+    }
+
+    public static IndexRowType createIndexRowType(Schema schema, UserTableRowType tableType, Index index)
+    {
+        return new Conventional(schema, tableType, index);
+    }
+
+    // For use by subclasses
+
+    protected IndexRowType(Schema schema, UserTableRowType tableType, Index index, int nFields)
     {
         super(schema, schema.nextTypeId());
         if (index.isGroupIndex()) {
@@ -93,12 +105,7 @@ public class IndexRowType extends AisRowType
         }
         this.tableType = tableType;
         this.index = index;
-        List<IndexColumn> indexColumns = index.getAllColumns();
-        akTypes = new AkType[indexColumns.size()];
-        for (int i = 0; i < indexColumns.size(); i++) {
-            Column column = indexColumns.get(i).getColumn();
-            akTypes[i] = column.getType().akType();
-        }
+        this.akTypes = new AkType[nFields];
     }
 
     // Object state
@@ -106,5 +113,53 @@ public class IndexRowType extends AisRowType
     // If index is a GroupIndex, then tableType.userTable() is the leafmost table of the GroupIndex.
     private final UserTableRowType tableType;
     private final Index index;
-    private final AkType[] akTypes;
+    protected final AkType[] akTypes;
+
+    // Inner classes
+
+    private static class Conventional extends IndexRowType
+    {
+        @Override
+        public IndexRowType physicalRowType()
+        {
+            return spatialIndexRowType;
+        }
+
+        public Conventional(Schema schema, UserTableRowType tableType, Index index)
+        {
+            super(schema, tableType, index, index.getAllColumns().size());
+            List<IndexColumn> indexColumns = index.getAllColumns();
+            for (int i = 0; i < indexColumns.size(); i++) {
+                Column column = indexColumns.get(i).getColumn();
+                akTypes[i] = column.getType().akType();
+            }
+            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, index) : null;
+        }
+
+        // For a spatial index, the IndexRowType reflects the declared columns. physicalRowType reflects the
+        // stored index, which replaces the declared columns by a z-value column.
+        private final IndexRowType spatialIndexRowType;
+    }
+
+    private static class Spatial extends IndexRowType
+    {
+        @Override
+        public IndexRowType physicalRowType()
+        {
+            assert false;
+            return null;
+        }
+
+        public Spatial(Schema schema, UserTableRowType tableType, Index index)
+        {
+            super(schema, tableType, index, index.getAllColumns().size() - index.getKeyColumns().size() + 1);
+            int t = 0;
+            akTypes[t++] = AkType.LONG;
+            List<IndexColumn> indexColumns = index.getAllColumns();
+            for (int i = index.getKeyColumns().size(); i < indexColumns.size(); i++) {
+                Column column = indexColumns.get(i).getColumn();
+                akTypes[t++] = column.getType().akType();
+            }
+        }
+    }
 }

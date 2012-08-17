@@ -53,7 +53,12 @@ public abstract class MLength extends TOverloadBase
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
-            output.putInt32(((String)inputs.get(0).getObject()).length());
+            output.putInt32((inputs.get(0).getString()).length());
+        }
+
+        @Override
+        public String[] registeredNames() {
+            return new String[] { "char_length", "charLength" };
         }
     };
 
@@ -66,7 +71,7 @@ public abstract class MLength extends TOverloadBase
             String charset = (StringFactory.Charset.values())[charsetId].name();
             try
             {
-                output.putInt32(((String)inputs.get(0).getObject()).getBytes(charset).length);
+                output.putInt32((inputs.get(0).getString()).getBytes(charset).length);
             }
             catch (UnsupportedEncodingException ex) // impossible to happen
             {
@@ -75,6 +80,10 @@ public abstract class MLength extends TOverloadBase
             }
         }
 
+        @Override
+        public String[] registeredNames() {
+            return new String[] { "octet_length", "getOctetLength" };
+        }
     };
 
     private final String name;

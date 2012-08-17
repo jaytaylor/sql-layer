@@ -58,7 +58,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     {
         ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
         buffer.putString("(");
-        for (int i = 0; i < indexRowType.nFields(); i++) {
+        for (int i = 0; i < nIndexFields; i++) {
             if (i > 0) {
                 buffer.putString(", ");
             }
@@ -74,7 +74,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     // TODO: This is not a correct implementation of hKey, because it returns an empty hKey to be filled in
     // TODO: by the caller. Normally, hKey returns the HKey of the row.
     @Override
-    public HKey hKey()
+    public final HKey hKey()
     {
         return hKeyCache.hKey(leafmostTable);
     }
@@ -94,7 +94,11 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     }
 
     @Override
-    public PValueSource pvalue(int i) {
+    public final PValueSource pvalue(int i)
+    {
+        if (index.isSpatial()) {
+            throw new UnsupportedOperationException("Spatial indexes don't implement types3 yet");
+        }
         PUnderlying underlying = rowType().typeInstanceAt(i).typeClass().underlyingType();
         PersistitKeyPValueSource keySource = keyPSource(i, underlying);
         attach(keySource, i, underlying);
@@ -116,34 +120,50 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
     }
 
-    public static PersistitTableIndexRow tableIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    public static PersistitIndexRow newIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        return new PersistitTableIndexRow(adapter, indexRowType);
-    }
-
-    public static PersistitGroupIndexRow groupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
-    {
-        return new PersistitGroupIndexRow(adapter, indexRowType);
+        return
+            indexRowType.index().isTableIndex()
+            ? new PersistitTableIndexRow(adapter, indexRowType)
+            : new PersistitGroupIndexRow(adapter, indexRowType);
     }
 
     // For use by subclasses
 
     protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        reset(indexRowType.index(), adapter.persistit().getKey());
-        this.adapter = adapter;
+        super(adapter);
+        resetForWrite(indexRowType.index(), adapter.persistit().getKey());
         this.indexRowType = indexRowType;
-        int nfields = indexRowType.nFields();
-        this.akTypes = new AkType[nfields];
-        this.akCollators = new AkCollator[nfields];
-        for (IndexColumn indexColumn : indexRowType.index().getAllColumns()) {
-            int position = indexColumn.getPosition();
-            Column column = indexColumn.getColumn();
-            this.akTypes[position] = column.getType().akType();
-            this.akCollators[position] = column.getCollator();
-        }
-        this.leafmostTable = (UserTable) indexRowType.index().leafMostTable();
+        this.leafmostTable = (UserTable) index.leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
+        this.akTypes = new AkType[nIndexFields];
+        this.akCollators = new AkCollator[nIndexFields];
+        if (index.isSpatial()) {
+            // TODO: Getting the AIS and Schema to know about spatial indexes is a lot of work, and will probably
+            // TODO: be done when we support function indexes. Until then, just deal with the differences using
+            // TODO: brute force.
+            // nPhysicalFields counts the z-value field plus the number of undeclared (hkey) columns.
+            this.akTypes[0] = AkType.LONG;
+            this.akCollators[0] = null;
+            int physicalPosition = 1;
+            int logicalPosition = index.getKeyColumns().size();
+            while (physicalPosition < nIndexFields) {
+                IndexColumn indexColumn = index.getAllColumns().get(logicalPosition);
+                Column column = indexColumn.getColumn();
+                this.akTypes[physicalPosition] = column.getType().akType();
+                this.akCollators[physicalPosition] = column.getCollator();
+                logicalPosition++;
+                physicalPosition++;
+            }
+        } else {
+            for (IndexColumn indexColumn : index.getAllColumns()) {
+                int position = indexColumn.getPosition();
+                Column column = indexColumn.getColumn();
+                this.akTypes[position] = column.getType().akType();
+                this.akCollators[position] = column.getCollator();
+            }
+        }
     }
 
     // For use by this class
@@ -151,7 +171,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     private PersistitKeyValueSource keySource(int i)
     {
         if (keySources == null)
-            keySources = new PersistitKeyValueSource[indexRowType.nFields()];
+            keySources = new PersistitKeyValueSource[nIndexFields];
         if (keySources[i] == null) {
             keySources[i] = new PersistitKeyValueSource();
         }
@@ -161,7 +181,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     private PersistitKeyPValueSource keyPSource(int i, PUnderlying underlying)
     {
         if (keyPSources == null)
-            keyPSources = new PersistitKeyPValueSource[indexRowType.nFields()];
+            keyPSources = new PersistitKeyPValueSource[nIndexFields];
         if (keyPSources[i] == null) {
             keyPSources[i] = new PersistitKeyPValueSource(underlying);
         }
@@ -172,13 +192,11 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     // Object state
 
-    protected final PersistitAdapter adapter;
-    protected final IndexRowType indexRowType;
-    protected AkType[] akTypes;
-    protected AkCollator[] akCollators;
-    protected PersistitKeyValueSource[] keySources;
-    protected PersistitKeyPValueSource[] keyPSources;
     protected final HKeyCache<PersistitHKey> hKeyCache;
     protected final UserTable leafmostTable;
-
+    private final IndexRowType indexRowType;
+    private final AkType[] akTypes;
+    private final AkCollator[] akCollators;
+    private PersistitKeyValueSource[] keySources;
+    private PersistitKeyPValueSource[] keyPSources;
 }

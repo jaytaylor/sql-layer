@@ -60,7 +60,7 @@ class OperatorStoreGIHandler {
 
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
-            indexRow.reset(groupIndex, exchange.getKey(), exchange.getValue());
+            indexRow.resetForWrite(groupIndex, exchange.getKey(), exchange.getValue());
             if (Types3Switch.ON)
                 pTarget.attach(exchange.getKey());
             IndexRowComposition irc = groupIndex.indexRowComposition();
@@ -79,6 +79,7 @@ class OperatorStoreGIHandler {
                     indexRow.append(column, source);
                 }
             }
+            indexRow.close();
             indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {
             case STORE:
@@ -179,6 +180,7 @@ class OperatorStoreGIHandler {
 
     private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
         this.adapter = adapter;
+        this.indexRow = new PersistitIndexRowBuffer(adapter);
         this.sourceTable = sourceTable;
     }
 
@@ -188,7 +190,7 @@ class OperatorStoreGIHandler {
     private final UserTable sourceTable;
     private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
     private final PersistitKeyPValueTarget pTarget = new PersistitKeyPValueTarget();
-    private final PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer();
+    private final PersistitIndexRowBuffer indexRow;
     
     // class state
     private static volatile GIHandlerHook giHandlerHook;

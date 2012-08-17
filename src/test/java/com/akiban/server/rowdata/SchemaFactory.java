@@ -36,7 +36,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
-import com.akiban.server.api.AlterTableChange;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.NoSuchTableException;

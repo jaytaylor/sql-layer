@@ -29,8 +29,9 @@ package com.akiban.server.types3;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.util.HasId;
 
-public interface TAggregator {
+public interface TAggregator extends HasId {
     void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst);
     void emptyValue(PValueTarget state);
     TInstance resultType(TPreptimeValue value);

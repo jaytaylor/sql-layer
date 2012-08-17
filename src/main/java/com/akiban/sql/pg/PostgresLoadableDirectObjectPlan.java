@@ -29,14 +29,13 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.server.service.session.Session;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.List;
 import java.io.IOException;
 
-public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
+public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
@@ -92,7 +91,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        Session session = server.getSession();
         int nrows = 0;
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;

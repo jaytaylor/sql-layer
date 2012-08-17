@@ -28,6 +28,7 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,14 @@ public class TableIndex extends Index
         return index;
     }
 
+    public String toString()
+    {
+        return
+            isSpatial()
+            ? super.toString() + space.toString()
+            : super.toString();
+    }
+
     /**
      * Create an independent copy of an existing TableIndex.
      * @param table Destination Table.
@@ -58,8 +67,11 @@ public class TableIndex extends Index
      */
     public static TableIndex create(Table table, TableIndex index)
     {
-        return create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(), index.isUnique(),
-                      index.getConstraint());
+        TableIndex copy = create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(),
+                                  index.isUnique(),
+                                  index.getConstraint());
+        copy.setIndexMethod(index.getIndexMethod());
+        return copy;
     }
 
     public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint)
@@ -126,6 +138,14 @@ public class TableIndex extends Index
         allColumns.addAll(hKeyColumns);
         indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
         indexToHKey = toHKeyBuilder.createIndexToHKey();
+        uniqueAndMayContainNulls = false;
+        if (!isPrimaryKey() && isUnique()) {
+            for (IndexColumn indexColumn : getKeyColumns()) {
+                if (indexColumn.getColumn().getNullable()) {
+                    uniqueAndMayContainNulls = true;
+                }
+            }
+        }
     }
 
     @Override
@@ -153,19 +173,32 @@ public class TableIndex extends Index
         return indexToHKey;
     }
 
-    // TODO: Set spatial index state from constructor?
-
-    public synchronized void spatialIndexDimensions(long[] lo, long[] hi)
+    @Override
+    public boolean isUniqueAndMayContainNulls()
     {
-        assert lo != null;
-        assert hi != null;
-        space = new Space(lo, hi);
-        // computeFieldAssociations(null);
+        return uniqueAndMayContainNulls;
     }
 
-    public boolean isSpatial()
+    @Override
+    public IndexMethod getIndexMethod()
     {
-        return space != null;
+        if (space != null)
+            return IndexMethod.Z_ORDER_LAT_LON;
+        else
+            return IndexMethod.NORMAL;
+    }
+
+    public void setIndexMethod(IndexMethod indexMethod)
+    {
+        checkMutability();
+        switch (indexMethod) {
+        case NORMAL:
+            space = null;
+            break;
+        case Z_ORDER_LAT_LON:
+            space = SpaceLatLon.create();
+            break;
+        }
     }
 
     public Space space()
@@ -206,6 +239,7 @@ public class TableIndex extends Index
     private HKey hKey;
     private List<IndexColumn> hKeyColumns;
     private IndexToHKey indexToHKey;
+    private boolean uniqueAndMayContainNulls;
     // For a spatial index
     private Space space;
 }

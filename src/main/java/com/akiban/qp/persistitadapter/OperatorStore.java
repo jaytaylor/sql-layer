@@ -74,22 +74,26 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final boolean WITH_STEPS = false;
 
     private PersistitAdapter createAdapter(AkibanInformationSchema ais, Session session) {
-        return new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session, config, WITH_STEPS);
+        PersistitAdapter adapter =
+            new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                 getPersistitStore(),
+                                 treeService,
+                                 session,
+                                 config,
+                                 WITH_STEPS);
+        session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
+        return adapter;
     }
 
     // Store interface
 
     @Override
-    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes)
         throws PersistitException
     {
-        updateRow(session, oldRowData, newRowData, columnSelector, null);
-    }
-
-    @Override
-    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexesToInsert)
-        throws PersistitException
-    {
+        if(indexes != null) {
+            throw new IllegalStateException("Unexpected indexes: " + Arrays.toString(indexes));
+        }
         UPDATE_TOTAL.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();
@@ -100,7 +104,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
             PersistitAdapter adapter = createAdapter(ais, session);
-            adapter.setIndexesToInsert(indexesToInsert);
             Schema schema = adapter.schema();
 
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
@@ -223,12 +226,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
 
+        AkibanInformationSchema ais = aisHolder.getAis();
+        PersistitAdapter adapter = createAdapter(ais, session);
+
         if(!tableIndexes.isEmpty()) {
             super.buildIndexes(session, tableIndexes, defer);
         }
 
-        AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter = createAdapter(ais, session);
         QueryContext context = new SimpleQueryContext(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
@@ -315,8 +319,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             GroupIndex groupIndex,
             Operator rootOperator,
             OperatorStoreGIHandler handler,
-            OperatorStoreGIHandler.Action action
-    )
+            OperatorStoreGIHandler.Action action)
     {
         Cursor cursor = API.cursor(rootOperator, context);
         cursor.open();
@@ -380,15 +383,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
         return true;
-    }
-
-    private PersistitAdapter newAdapter(Session session)
-    {
-        return new PersistitAdapter(SchemaCache.globalSchema(aisHolder.getAis()),
-                                                             getPersistitStore(),
-                                                             treeService,
-                                                             session,
-                                                             config);
     }
 
     // object state

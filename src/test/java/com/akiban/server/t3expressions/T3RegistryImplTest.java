@@ -32,6 +32,7 @@ import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
@@ -40,8 +41,11 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -150,6 +154,7 @@ public final class T3RegistryImplTest {
         }
 
         Finder() {
+            put(TClass.class, MString.VARCHAR);
             put(TClass.class, CLASS_A);
             put(TClass.class, CLASS_B);
             put(TClass.class, CLASS_C);
@@ -162,8 +167,21 @@ public final class T3RegistryImplTest {
 
     private void checkAll(Map<TClass, Map<TClass, TCast>> actual, CastCheck... expected) {
         // translate the SelfCastCheck[] to a Map
+
+        // create the full expected list, which includes VARCHAR -> VARCHAR and VARCHAR <-> T for each type
+        // in the actuals keys
+        List<CastCheck> allExpected = new ArrayList<CastCheck>();
+        Collections.addAll(allExpected, expected);
+        for (TClass src : actual.keySet()) {
+            if (src != MString.VARCHAR) {
+                allExpected.add(new CastCheck(src, MString.VARCHAR));
+                allExpected.add(new CastCheck(MString.VARCHAR, src));
+            }
+        }
+        allExpected.add(new CastCheck(MString.VARCHAR, MString.VARCHAR));
+
         Map<TClass,Map<TClass,CastCheck>> expectedMap = tClassMap();
-        for (CastCheck check : expected) {
+        for (CastCheck check : allExpected) {
             Map<TClass, CastCheck> map = expectedMap.get(check.source);
             if (map == null) {
                 map = tClassMap();
@@ -245,7 +263,7 @@ public final class T3RegistryImplTest {
 
     private static class BogusCast extends TCastBase {
         private BogusCast(TClass sourceClass, TClass targetClass) {
-            super(sourceClass, targetClass, false, Constantness.UNKNOWN);
+            super(sourceClass, targetClass, Constantness.UNKNOWN);
         }
 
         @Override

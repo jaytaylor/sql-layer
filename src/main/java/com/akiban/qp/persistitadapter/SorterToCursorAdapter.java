@@ -30,7 +30,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.sort.Sorter;
+import com.akiban.qp.persistitadapter.indexcursor.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;

@@ -84,6 +84,8 @@ public final class TCastExpression implements TPreparedExpression {
         this.targetInstance = targetInstance;
         this.sourceInstance = input.resultType();
         this.preptimeContext = queryContext;
+        assert sourceInstance.typeClass() == cast.sourceClass()
+                : sourceInstance + " not an acceptable source for cast " + cast;
     }
 
 

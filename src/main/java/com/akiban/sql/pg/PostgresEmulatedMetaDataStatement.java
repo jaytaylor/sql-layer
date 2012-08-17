@@ -742,6 +742,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // Only issue is that for PRIMARY KEY, it prints a comma in
         // anticipation of some method word before the column.
         str.append(" USING ");
+        if (index.getIndexMethod() != Index.IndexMethod.NORMAL)
+            str.append(index.getIndexMethod());
         str.append("(");
         boolean first = true;
         for (IndexColumn icolumn : index.getKeyColumns()) {

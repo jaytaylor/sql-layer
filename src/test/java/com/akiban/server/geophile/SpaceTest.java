@@ -229,6 +229,103 @@ public class SpaceTest
         assertFalse(space.contains(space.zEncode(0xfedca00000000000L, 20), z));
     }
 
+    @Test
+    public void testZLoZHi()
+    {
+        Space space = new Space(new long[]{0x000, 0x000},
+                                new long[]{0x3ff, 0x3ff},
+                                ints(0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+                                     0, 1, 0, 1, 0, 1, 0, 1, 0, 1));
+        // 0101...
+        assertEquals(space.zLo(space.zEncode(0x5555500000000000L, 20)), space.zEncode(0x5555500000000000L, 20));
+        assertEquals(space.zHi(space.zEncode(0x5555500000000000L, 20)), space.zEncode(0x55555fffffffff80L, 20));
+        assertEquals(space.zLo(space.zEncode(0x5555400000000000L, 19)), space.zEncode(0x5555400000000000L, 19));
+        assertEquals(space.zHi(space.zEncode(0x5555400000000000L, 19)), space.zEncode(0x55555fffffffff80L, 19));
+        assertEquals(space.zLo(space.zEncode(0x5555400000000000L, 18)), space.zEncode(0x5555400000000000L, 18));
+        assertEquals(space.zHi(space.zEncode(0x5555400000000000L, 18)), space.zEncode(0x55557fffffffff80L, 18));
+        assertEquals(space.zLo(space.zEncode(0x5555000000000000L, 17)), space.zEncode(0x5555000000000000L, 17));
+        assertEquals(space.zHi(space.zEncode(0x5555000000000000L, 17)), space.zEncode(0x55557fffffffff80L, 17));
+        assertEquals(space.zLo(space.zEncode(0x5555000000000000L, 16)), space.zEncode(0x5555000000000000L, 16));
+        assertEquals(space.zHi(space.zEncode(0x5555000000000000L, 16)), space.zEncode(0x5555ffffffffff80L, 16));
+        assertEquals(space.zLo(space.zEncode(0x5554000000000000L, 15)), space.zEncode(0x5554000000000000L, 15));
+        assertEquals(space.zHi(space.zEncode(0x5554000000000000L, 15)), space.zEncode(0x5555ffffffffff80L, 15));
+        assertEquals(space.zLo(space.zEncode(0x5554000000000000L, 14)), space.zEncode(0x5554000000000000L, 14));
+        assertEquals(space.zHi(space.zEncode(0x5554000000000000L, 14)), space.zEncode(0x5557ffffffffff80L, 14));
+        assertEquals(space.zLo(space.zEncode(0x5550000000000000L, 13)), space.zEncode(0x5550000000000000L, 13));
+        assertEquals(space.zHi(space.zEncode(0x5550000000000000L, 13)), space.zEncode(0x5557ffffffffff80L, 13));
+        assertEquals(space.zLo(space.zEncode(0x5550000000000000L, 12)), space.zEncode(0x5550000000000000L, 12));
+        assertEquals(space.zHi(space.zEncode(0x5550000000000000L, 12)), space.zEncode(0x555fffffffffff80L, 12));
+        assertEquals(space.zLo(space.zEncode(0x5540000000000000L, 11)), space.zEncode(0x5540000000000000L, 11));
+        assertEquals(space.zHi(space.zEncode(0x5540000000000000L, 11)), space.zEncode(0x555fffffffffff80L, 11));
+        assertEquals(space.zLo(space.zEncode(0x5540000000000000L, 10)), space.zEncode(0x5540000000000000L, 10));
+        assertEquals(space.zHi(space.zEncode(0x5540000000000000L, 10)), space.zEncode(0x557fffffffffff80L, 10));
+        assertEquals(space.zLo(space.zEncode(0x5500000000000000L,  9)), space.zEncode(0x5500000000000000L,  9));
+        assertEquals(space.zHi(space.zEncode(0x5500000000000000L,  9)), space.zEncode(0x557fffffffffff80L,  9));
+        assertEquals(space.zLo(space.zEncode(0x5500000000000000L,  8)), space.zEncode(0x5500000000000000L,  8));
+        assertEquals(space.zHi(space.zEncode(0x5500000000000000L,  8)), space.zEncode(0x55ffffffffffff80L,  8));
+        assertEquals(space.zLo(space.zEncode(0x5400000000000000L,  7)), space.zEncode(0x5400000000000000L,  7));
+        assertEquals(space.zHi(space.zEncode(0x5400000000000000L,  7)), space.zEncode(0x55ffffffffffff80L,  7));
+        assertEquals(space.zLo(space.zEncode(0x5400000000000000L,  6)), space.zEncode(0x5400000000000000L,  6));
+        assertEquals(space.zHi(space.zEncode(0x5400000000000000L,  6)), space.zEncode(0x57ffffffffffff80L,  6));
+        assertEquals(space.zLo(space.zEncode(0x5000000000000000L,  5)), space.zEncode(0x5000000000000000L,  5));
+        assertEquals(space.zHi(space.zEncode(0x5000000000000000L,  5)), space.zEncode(0x57ffffffffffff80L,  5));
+        assertEquals(space.zLo(space.zEncode(0x5000000000000000L,  4)), space.zEncode(0x5000000000000000L,  4));
+        assertEquals(space.zHi(space.zEncode(0x5000000000000000L,  4)), space.zEncode(0x5fffffffffffff80L,  4));
+        assertEquals(space.zLo(space.zEncode(0x4000000000000000L,  3)), space.zEncode(0x4000000000000000L,  3));
+        assertEquals(space.zHi(space.zEncode(0x4000000000000000L,  3)), space.zEncode(0x5fffffffffffff80L,  3));
+        assertEquals(space.zLo(space.zEncode(0x4000000000000000L,  2)), space.zEncode(0x4000000000000000L,  2));
+        assertEquals(space.zHi(space.zEncode(0x4000000000000000L,  2)), space.zEncode(0x7fffffffffffff80L,  2));
+        assertEquals(space.zLo(space.zEncode(0x0000000000000000L,  1)), space.zEncode(0x0000000000000000L,  1));
+        assertEquals(space.zHi(space.zEncode(0x0000000000000000L,  1)), space.zEncode(0x7fffffffffffff80L,  1));
+        assertEquals(space.zLo(space.zEncode(0x0000000000000000L,  0)), space.zEncode(0x0000000000000000L,  0));
+        assertEquals(space.zHi(space.zEncode(0x0000000000000000L,  0)), space.zEncode(0xffffffffffffff80L,  0));
+        // 1010...
+        assertEquals(space.zLo(space.zEncode(0xaaaaa00000000000L, 20)), space.zEncode(0xaaaaa00000000000L, 20));
+        assertEquals(space.zHi(space.zEncode(0xaaaaa00000000000L, 20)), space.zEncode(0xaaaaafffffffff80L, 20));
+        assertEquals(space.zLo(space.zEncode(0xaaaaa00000000000L, 19)), space.zEncode(0xaaaaa00000000000L, 19));
+        assertEquals(space.zHi(space.zEncode(0xaaaaa00000000000L, 19)), space.zEncode(0xaaaabfffffffff80L, 19));
+        assertEquals(space.zLo(space.zEncode(0xaaaa800000000000L, 18)), space.zEncode(0xaaaa800000000000L, 18));
+        assertEquals(space.zHi(space.zEncode(0xaaaa800000000000L, 18)), space.zEncode(0xaaaabfffffffff80L, 18));
+        assertEquals(space.zLo(space.zEncode(0xaaaa800000000000L, 17)), space.zEncode(0xaaaa800000000000L, 17));
+        assertEquals(space.zHi(space.zEncode(0xaaaa800000000000L, 17)), space.zEncode(0xaaaaffffffffff80L, 17));
+        assertEquals(space.zLo(space.zEncode(0xaaaa000000000000L, 16)), space.zEncode(0xaaaa000000000000L, 16));
+        assertEquals(space.zHi(space.zEncode(0xaaaa000000000000L, 16)), space.zEncode(0xaaaaffffffffff80L, 16));
+        assertEquals(space.zLo(space.zEncode(0xaaaa000000000000L, 15)), space.zEncode(0xaaaa000000000000L, 15));
+        assertEquals(space.zHi(space.zEncode(0xaaaa000000000000L, 15)), space.zEncode(0xaaabffffffffff80L, 15));
+        assertEquals(space.zLo(space.zEncode(0xaaa8000000000000L, 14)), space.zEncode(0xaaa8000000000000L, 14));
+        assertEquals(space.zHi(space.zEncode(0xaaa8000000000000L, 14)), space.zEncode(0xaaabffffffffff80L, 14));
+        assertEquals(space.zLo(space.zEncode(0xaaa8000000000000L, 13)), space.zEncode(0xaaa8000000000000L, 13));
+        assertEquals(space.zHi(space.zEncode(0xaaa8000000000000L, 13)), space.zEncode(0xaaafffffffffff80L, 13));
+        assertEquals(space.zLo(space.zEncode(0xaaa0000000000000L, 12)), space.zEncode(0xaaa0000000000000L, 12));
+        assertEquals(space.zHi(space.zEncode(0xaaa0000000000000L, 12)), space.zEncode(0xaaafffffffffff80L, 12));
+        assertEquals(space.zLo(space.zEncode(0xaaa0000000000000L, 11)), space.zEncode(0xaaa0000000000000L, 11));
+        assertEquals(space.zHi(space.zEncode(0xaaa0000000000000L, 11)), space.zEncode(0xaabfffffffffff80L, 11));
+        assertEquals(space.zLo(space.zEncode(0xaa80000000000000L, 10)), space.zEncode(0xaa80000000000000L, 10));
+        assertEquals(space.zHi(space.zEncode(0xaa80000000000000L, 10)), space.zEncode(0xaabfffffffffff80L, 10));
+        assertEquals(space.zLo(space.zEncode(0xaa80000000000000L,  9)), space.zEncode(0xaa80000000000000L,  9));
+        assertEquals(space.zHi(space.zEncode(0xaa80000000000000L,  9)), space.zEncode(0xaaffffffffffff80L,  9));
+        assertEquals(space.zLo(space.zEncode(0xaa00000000000000L,  8)), space.zEncode(0xaa00000000000000L,  8));
+        assertEquals(space.zHi(space.zEncode(0xaa00000000000000L,  8)), space.zEncode(0xaaffffffffffff80L,  8));
+        assertEquals(space.zLo(space.zEncode(0xaa00000000000000L,  7)), space.zEncode(0xaa00000000000000L,  7));
+        assertEquals(space.zHi(space.zEncode(0xaa00000000000000L,  7)), space.zEncode(0xabffffffffffff80L,  7));
+        assertEquals(space.zLo(space.zEncode(0xa800000000000000L,  6)), space.zEncode(0xa800000000000000L,  6));
+        assertEquals(space.zHi(space.zEncode(0xa800000000000000L,  6)), space.zEncode(0xabffffffffffff80L,  6));
+        assertEquals(space.zLo(space.zEncode(0xa800000000000000L,  5)), space.zEncode(0xa800000000000000L,  5));
+        assertEquals(space.zHi(space.zEncode(0xa800000000000000L,  5)), space.zEncode(0xafffffffffffff80L,  5));
+        assertEquals(space.zLo(space.zEncode(0xa000000000000000L,  4)), space.zEncode(0xa000000000000000L,  4));
+        assertEquals(space.zHi(space.zEncode(0xa000000000000000L,  4)), space.zEncode(0xafffffffffffff80L,  4));
+        assertEquals(space.zLo(space.zEncode(0xa000000000000000L,  3)), space.zEncode(0xa000000000000000L,  3));
+        assertEquals(space.zHi(space.zEncode(0xa000000000000000L,  3)), space.zEncode(0xbfffffffffffff80L,  3));
+        assertEquals(space.zLo(space.zEncode(0x8000000000000000L,  2)), space.zEncode(0x8000000000000000L,  2));
+        assertEquals(space.zHi(space.zEncode(0x8000000000000000L,  2)), space.zEncode(0xbfffffffffffff80L,  2));
+        assertEquals(space.zLo(space.zEncode(0x8000000000000000L,  1)), space.zEncode(0x8000000000000000L,  1));
+        assertEquals(space.zHi(space.zEncode(0x8000000000000000L,  1)), space.zEncode(0xffffffffffffff80L,  1));
+        assertEquals(space.zLo(space.zEncode(0x0000000000000000L,  0)), space.zEncode(0x0000000000000000L,  0));
+        assertEquals(space.zHi(space.zEncode(0x0000000000000000L,  0)), space.zEncode(0xffffffffffffff80L,  0));
+    }
+
+    // TODO: Region testing, space with lo != 0.
+
     private static long[] longs(long ... longs)
     {
         return longs;

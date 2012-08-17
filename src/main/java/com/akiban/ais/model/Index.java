@@ -26,14 +26,13 @@
 
 package com.akiban.ais.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.service.tree.TreeService;
+import com.persistit.Tree;
+
+import java.util.*;
 
 public abstract class Index implements Traversable
 {
@@ -160,9 +159,18 @@ public abstract class Index implements Traversable
         return allColumns;
     }
 
-    public boolean isSpatial()
+    public IndexMethod getIndexMethod() {
+        return IndexMethod.NORMAL;
+    }
+
+    public final boolean isSpatial()
     {
-        return false;
+        switch (getIndexMethod()) {
+        case Z_ORDER_LAT_LON:
+            return true;
+        default:
+            return false;
+        }
     }
 
     private void sortColumnsIfNeeded() {
@@ -221,6 +229,11 @@ public abstract class Index implements Traversable
     public IndexRowComposition indexRowComposition()
     {
         return indexRowComposition;
+    }
+
+    public boolean isUniqueAndMayContainNulls()
+    {
+        return false;
     }
 
     protected static class AssociationBuilder {
@@ -291,7 +304,27 @@ public abstract class Index implements Traversable
         }
         return idAndFlags;
     }
-    
+
+    public boolean containsTableColumn(TableName tableName, String columnName) {
+        for(IndexColumn iCol : keyColumns) {
+            Column column = iCol.getColumn();
+            if(column.getTable().getName().equals(tableName) && column.getName().equals(columnName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Unique, non-PK indexes store a "null separator value", making index rows unique that would otherwise
+    // be considered duplicates due to nulls.
+    public long nextNullSeparatorValue(TreeService treeService)
+    {
+        Tree tree = indexDef.getTreeCache().getTree();
+        AccumulatorAdapter accumulator =
+            new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
+        return accumulator.updateAndGet(1);
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
     public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
     public static final String KEY_CONSTRAINT = "KEY";
@@ -335,6 +368,10 @@ public abstract class Index implements Traversable
         }
 
         private final String asString;
+    }
+
+    public enum IndexMethod {
+        NORMAL, Z_ORDER_LAT_LON
     }
 
     public String getTreeName() {

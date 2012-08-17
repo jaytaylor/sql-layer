@@ -67,6 +67,8 @@ public abstract class StoreAdapter
     
     public abstract void deleteRow (Row oldRow, boolean usePValues);
 
+    public abstract void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues);
+
     public abstract Cursor sort(QueryContext context,
                                 Cursor input,
                                 RowType rowType,
@@ -82,6 +84,8 @@ public abstract class StoreAdapter
     public abstract long rowCount(RowType tableType);
     
     public abstract long sequenceNextValue(TableName sequenceName);
+
+    public abstract long sequenceCurrentValue(TableName sequenceName);
 
     public abstract long hash(ValueSource valueSource, AkCollator collator);
 
@@ -106,6 +110,10 @@ public abstract class StoreAdapter
         this.session = session;
         this.config = config;
     }
+
+    // Class state
+
+    public static final Session.Key<StoreAdapter> STORE_ADAPTER_KEY = Session.Key.named("STORE_ADAPTER");
 
     // Object state
 

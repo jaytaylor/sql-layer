@@ -26,12 +26,14 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.row.PValuesRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.std.CountOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -184,7 +186,9 @@ class Count_Default extends Operator
                     row = input.next();
                     if (row == null) {
                         close();
-                        row = new ValuesRow(resultType, new Object[] { count });
+                        row = usePValues
+                                ? new PValuesRow(resultType, new PValue(count))
+                                : new ValuesRow(resultType, new Object[] { count });
                     } else if (row.rowType() == countType) {
                         row = null;
                         count++;

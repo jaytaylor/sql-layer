@@ -32,6 +32,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -149,7 +150,7 @@ public abstract class TString extends TClass
                     && getClass().isAssignableFrom(targetInstance.typeClass().getClass())
                 : "expected instances of TString";
         
-        String raw = (String) sourceValue.getObject();
+        String raw = sourceValue.getString();
         int maxLen = targetInstance.attribute(StringAttribute.LENGTH);
         
         if (raw.length() > maxLen)
@@ -157,10 +158,10 @@ public abstract class TString extends TClass
             String truncated = raw.substring(0, maxLen);
             // TODO: check charset and collation, too
             context.warnClient(new StringTruncationException(raw, truncated));
-            targetValue.putObject(truncated);
+            targetValue.putString(truncated, null);
         }
         else
-            targetValue.putObject(raw);
+            targetValue.putString(raw, null);
     }
      
     @Override
@@ -198,7 +199,17 @@ public abstract class TString extends TClass
         int collaitonid = instance.attribute(StringAttribute.COLLATION);
         // TODO
     }
-    
+
+    @Override
+    public TCast castToVarchar() {
+        return null;
+    }
+
+    @Override
+    public TCast castFromVarchar() {
+        return null;
+    }
+
     private final int fixedLength;
     private final TypeId typeId;
     private static final Logger logger = LoggerFactory.getLogger(TString.class);

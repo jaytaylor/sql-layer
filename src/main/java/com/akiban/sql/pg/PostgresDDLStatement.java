@@ -26,10 +26,8 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;
 
@@ -39,6 +37,7 @@ import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.CreateViewNode;
+import com.akiban.sql.parser.DropGroupNode;
 import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.DropSequenceNode;
 import com.akiban.sql.parser.DropTableNode;
@@ -50,13 +49,22 @@ import com.akiban.sql.parser.RenameNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 /** SQL DDL statements. */
-public class PostgresDDLStatement implements PostgresStatement
+public class PostgresDDLStatement extends PostgresBaseStatement
 {
+    private static final Logger logger = LoggerFactory.getLogger(PostgresDDLStatement.class);
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresDDLStatement: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresDDLStatement: acquire shared lock");
+
     private DDLStatementNode ddl;
     private boolean usePVals;
 
@@ -98,8 +106,10 @@ public class PostgresDDLStatement implements PostgresStatement
         String schema = server.getDefaultSchemaName();
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
         Session session = server.getSession();
-        lock(session);
+        boolean lockSuccess = false;
         try {
+            lock(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
+            lockSuccess = true;
             switch (ddl.getNodeType()) {
             case NodeTypes.CREATE_SCHEMA_NODE:
                 SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl, context);
@@ -112,6 +122,9 @@ public class PostgresDDLStatement implements PostgresStatement
                 break;
             case NodeTypes.DROP_TABLE_NODE:
                 TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl, context);
+                break;
+            case NodeTypes.DROP_GROUP_NODE:
+                TableDDL.dropGroup(ddlFunctions, session, schema, (DropGroupNode)ddl, context);
                 break;
             case NodeTypes.CREATE_VIEW_NODE:
                 ViewDDL.createView(ddlFunctions, session, schema, (CreateViewNode)ddl,
@@ -128,18 +141,8 @@ public class PostgresDDLStatement implements PostgresStatement
                 IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);
                 break;
             case NodeTypes.ALTER_TABLE_NODE:
-            {
-                OperatorBasedTableCopier copier = new OperatorBasedTableCopier(
-                        server.getStore().getConfig(),
-                        server.getTreeService(),
-                        session,
-                        server.getStore().getUnderlyingStore(),
-                        usePVals
-                );
-                AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddlFunctions, server.getDXL().dmlFunctions(),
-                                         session, copier, schema, (AlterTableNode)ddl);
+                AlterTableDDL.alterTable(ddlFunctions, server.getDXL().dmlFunctions(), session, schema, (AlterTableNode)ddl, context);
                 break;
-            }
             case NodeTypes.RENAME_NODE:
                 if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
                     IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
@@ -151,14 +154,15 @@ public class PostgresDDLStatement implements PostgresStatement
                 SequenceDDL.createSequence(ddlFunctions, session, schema, (CreateSequenceNode)ddl);
                 break;
             case NodeTypes.DROP_SEQUENCE_NODE:
-                SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl);
+                SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl, context);
                 break;
             case NodeTypes.REVOKE_NODE:
             default:
                 throw new UnsupportedSQLException (ddl.statementToString(), ddl);
             }
-        } finally {
-            unlock(session);
+        }
+        finally {
+            unlock(context, DXLFunction.UNSPECIFIED_DDL_WRITE, lockSuccess);
         }
         {        
             PostgresMessenger messenger = server.getMessenger();
@@ -169,13 +173,16 @@ public class PostgresDDLStatement implements PostgresStatement
         return 0;
     }
 
-    private void lock(Session session)
+    @Override
+    protected InOutTap executeTap()
     {
-        DXLReadWriteLockHook.only().hookFunctionIn(session, UNSPECIFIED_DDL_WRITE);
+        return EXECUTE_TAP;
     }
 
-    private void unlock(Session session)
+    @Override
+    protected InOutTap acquireLockTap()
     {
-        DXLReadWriteLockHook.only().hookFunctionFinally(session, UNSPECIFIED_DDL_WRITE, null);
+        return ACQUIRE_LOCK_TAP;
     }
+
 }

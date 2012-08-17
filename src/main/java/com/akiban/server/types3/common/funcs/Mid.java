@@ -60,10 +60,10 @@ public class Mid extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String st = (String) inputs.get(0).getObject();
+        String st = inputs.get(0).getString();
         if (st.isEmpty())
         {
-            output.putObject("");
+            output.putString("", null);
             return;
         }
 
@@ -71,7 +71,7 @@ public class Mid extends TOverloadBase
         int from = inputs.get(1).getInt32();
         if (from == 0)
         {
-            output.putObject("");
+            output.putString("", null);
             return;
         }
 
@@ -82,7 +82,7 @@ public class Mid extends TOverloadBase
         // if from is still neg, return empty string
         if (from < 0)
         {
-            output.putObject("");
+            output.putString("", null);
             return;
         } 
 
@@ -93,12 +93,12 @@ public class Mid extends TOverloadBase
         // if to <= from => return empty
         if (to < from || from >= st.length())
         {
-            output.putObject("");
+            output.putString("", null);
             return;
         }            
         to = (to > st.length() -1 ? st.length() -1 : to);
 
-        output.putObject(st.subSequence(from, to + 1));
+        output.putString(st.substring(from, to + 1), null);
     }
 
     @Override

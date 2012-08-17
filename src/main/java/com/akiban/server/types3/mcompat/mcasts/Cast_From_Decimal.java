@@ -33,6 +33,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -44,13 +45,30 @@ public final class Cast_From_Decimal {
 
     public static final TCastPath APPROX = TCastPath.create(
             MNumeric.DECIMAL,
+            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.FLOAT,
             MApproximateNumber.FLOAT_UNSIGNED,
             MApproximateNumber.DOUBLE,
             MApproximateNumber.DOUBLE_UNSIGNED
     );
 
+    public static final TCast TO_DECIMAL_UNSIGNED = new TCastBase(MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            MBigDecimal.adjustAttrsAsNeeded(context, source, context.outputTInstance(), target);
+        }
+    };
+
     public static final TCast TO_FLOAT = new TCastBase(MNumeric.DECIMAL, MApproximateNumber.FLOAT) {
+        @Override
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            BigDecimalWrapper decimal = (BigDecimalWrapper) source.getObject();
+            float asFloat = decimal.asBigDecimal().floatValue();
+            target.putFloat(asFloat);
+        }
+    };
+
+    public static final TCast UNSIGNED_TO_FLOAT = new TCastBase(MNumeric.DECIMAL_UNSIGNED, MApproximateNumber.FLOAT) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             BigDecimalWrapper decimal = (BigDecimalWrapper) source.getObject();
@@ -90,21 +108,6 @@ public final class Cast_From_Decimal {
             target.putInt64(longVal);
         }
 
-    };
-
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.DECIMAL, MString.VARCHAR) {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            BigDecimalWrapper wrapper = (BigDecimalWrapper) source.getObject();
-            String asString = wrapper.asBigDecimal().toString();
-            int maxLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-            if (asString.length() > maxLen) {
-                String truncated = asString.substring(0, maxLen);
-                context.reportTruncate(asString, truncated);
-                asString = truncated;
-            }
-            target.putString(asString, null);
-        }
     };
 
     private Cast_From_Decimal() {}

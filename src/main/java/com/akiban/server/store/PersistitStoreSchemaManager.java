@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -63,6 +62,7 @@ import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
@@ -73,6 +73,7 @@ import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
+import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchSequenceException;
@@ -87,10 +88,12 @@ import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.util.ArgumentValidation;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
 import com.persistit.Key;
+import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,7 +172,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     private static final String METAMODEL_PARENT_KEY = "byAIS";
     private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
-    private static final int PROTOBUF_PSSM_VERSION = 1;
+    // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
+    private static final int PROTOBUF_PSSM_VERSION = 2;
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
@@ -391,6 +395,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
             newIndex.freezeColumns();
             newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
+            if (index.getIndexMethod() != Index.IndexMethod.NORMAL)
+                ((TableIndex)newIndex).setIndexMethod(index.getIndexMethod());
             newIndexes.add(newIndex);
             builder.generateGroupTableIndexes(newGroup);
         }
@@ -415,20 +421,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
         final AkibanInformationSchema newAIS = AISCloner.clone(
                 getAis(),
-                new ProtobufWriter.WriteSelector() {
+                new ProtobufWriter.TableSelector() {
                     @Override
-                    public Columnar getSelected(Columnar columnar) {
-                        return columnar;
+                    public boolean isSelected(Columnar columnar) {
+                        return true;
                     }
 
                     @Override
                     public boolean isSelected(Index index) {
                         return !indexesToDrop.contains(index);
-                    }
-                    
-                    @Override 
-                    public boolean isSelected (Sequence sequence) {
-                        return true;
                     }
         });
 
@@ -446,16 +447,41 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public void alterTableDefinition(Session session, TableName tableName, final UserTable newDefinition, Map<String,String> indexNameMap) {
-        checkTableName(tableName, true, false);
-
-        AISMerge merge = new AISMerge(aish.getAis(), newDefinition, indexNameMap);
-        merge.merge();
+    public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
+        ArgumentValidation.isTrue("Altered list is not empty", !alteredTables.isEmpty());
 
         Set<String> schemas = new HashSet<String>();
-        schemas.add(tableName.getSchemaName());
-        schemas.add(newDefinition.getName().getSchemaName());
-        saveAISChangeWithRowDefs(session, merge.getAIS(), schemas);
+        for(ChangedTableDescription desc : alteredTables) {
+            TableName oldName = desc.getOldName();
+            TableName newName = desc.getNewName();
+            checkTableName(oldName, true, false);
+            if(!oldName.equals(newName)) {
+                checkTableName(newName, false, false);
+            }
+            UserTable newTable = desc.getNewDefinition();
+            if(newTable != null) {
+                checkJoinTo(newTable.getParentJoin(), newName, false);
+            }
+            schemas.add(oldName.getSchemaName());
+            schemas.add(newName.getSchemaName());
+        }
+
+        AISMerge merge = new AISMerge(aish.getAis(), alteredTables);
+        merge.merge();
+        AkibanInformationSchema newAIS = merge.getAIS();
+
+        for(ChangedTableDescription desc : alteredTables) {
+            if(desc.isNewGroup()) {
+                UserTable table = newAIS.getUserTable(desc.getNewName());
+                try {
+                    treeService.getTableStatusCache().setOrdinal(table.getTableId(), 0);
+                } catch(PersistitInterruptedException e) {
+                    throw new PersistitAdapterException(e);
+                }
+            }
+        }
+
+        saveAISChangeWithRowDefs(session, newAIS, schemas);
     }
 
     private void deleteTableCommon(Session session, TableName tableName, boolean isInternal, boolean mustBeMemory) {
@@ -581,10 +607,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames, final Set<TableName> sequences) {
         return AISCloner.clone(
                 getAis(),
-                new ProtobufWriter.WriteSelector() {
+                new ProtobufWriter.TableSelector() {
                     @Override
-                    public Columnar getSelected(Columnar columnar) {
-                        return !tableNames.contains(columnar.getName()) ? columnar : null;
+                    public boolean isSelected(Columnar columnar) {
+                        return !tableNames.contains(columnar.getName());
                     }
 
                     @Override
@@ -600,7 +626,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                         }
                         return true;
                     }
-                    @Override 
+
+                    @Override
                     public boolean isSelected(Sequence sequence) {
                         return !sequences.contains(sequence.getSequenceName());
                     }
@@ -1203,6 +1230,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                                         Integer version, MemoryTableFactory factory) {
         final TableName newName = newTable.getName();
         checkTableName(newName, false, isInternal);
+        checkJoinTo(newTable.getParentJoin(), newName, isInternal);
         AISMerge merge = new AISMerge(getAis(), newTable);
         merge.merge();
         UserTable mergedTable = merge.getAIS().getUserTable(newName);
@@ -1237,6 +1265,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
         if(!shouldBeIS && inIS) {
             throw new ProtectedTableDDLException(tableName);
+        }
+    }
+
+    private static void checkJoinTo(Join join, TableName childName, boolean isInternal) {
+        TableName parentName = (join != null) ? join.getParent().getName() : null;
+        if(parentName != null) {
+            boolean inAIS = TableName.INFORMATION_SCHEMA.equals(parentName.getSchemaName());
+            if(inAIS && !isInternal) {
+                throw new JoinToProtectedTableException(parentName, childName);
+            } else if(!inAIS && isInternal) {
+                throw new IllegalArgumentException("Internal table join to non-IS table: " + childName);
+            }
         }
     }
 

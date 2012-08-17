@@ -33,7 +33,8 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
-import com.akiban.server.api.AlterTableChange;
+import com.akiban.ais.util.TableChange;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
@@ -63,10 +64,10 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     public void dropTable(Session session, TableName tableName) {
         throw new UnsupportedOperationException();
     }
-
+    
     @Override
     public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<AlterTableChange> columnChanges, List<AlterTableChange> indexChanges) {
+                           List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context) {
         throw new UnsupportedOperationException();
     }
 

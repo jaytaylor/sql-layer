@@ -41,19 +41,33 @@ public abstract class IndexRecordVisitor extends IndexVisitor {
 
     @Override
     protected final void visit(Key key, Value value) throws PersistitException, InvalidOperationException {
-        List<?> keyList = key(key);
+        List<?> keyList = key(key, value);
         Object valueObj = value.isDefined() ? value.get() : Undef.only();
         visit(keyList, valueObj);
     }
 
-    private List<?> key(Key key)
+    private List<?> key(Key key, Value value)
     {
         // Key traversal
-        int keySize = key.getDepth();
-        List<Object> keyList = new ArrayList<Object>(keySize);
-        for (int k = 0; k < keySize; k++) {
-            keyList.add(key.decode());
+        List<Object> keyList = new ArrayList<Object>();
+        extractKeySegments(key, keyList);
+        // Value traversal. If the value is defined, then it contains more fields encoded like a key.
+        // TODO: What about group indexes?
+        if (!groupIndex() && value.isDefined()) {
+            Key buffer = new Key(key);
+            buffer.clear();
+            value.getByteArray(buffer.getEncodedBytes(), 0, 0, value.getArrayLength());
+            buffer.setEncodedSize(value.getArrayLength());
+            extractKeySegments(buffer, keyList);
         }
         return keyList;
+    }
+
+    private void extractKeySegments(Key key, List<Object> list)
+    {
+        int segments = key.getDepth();
+        for (int s = 0; s < segments; s++) {
+            list.add(key.decode());
+        }
     }
 }

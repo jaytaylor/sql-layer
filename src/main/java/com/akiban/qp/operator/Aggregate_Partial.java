@@ -550,8 +550,10 @@ final class Aggregate_Partial extends Operator
         }
 
         private boolean outputNeeded(Row givenInput) {
-            if (noGroupBy())
+            if (noGroupBy()) {
+                cursorState = CursorState.RUNNING;
                 return false;   // no GROUP BYs, so aggregate until givenInput is null
+            }
 
             // check for any changes to keys
             // Coming into this code, we're either RUNNING (within a GROUP BY run) or OPENING (about to start

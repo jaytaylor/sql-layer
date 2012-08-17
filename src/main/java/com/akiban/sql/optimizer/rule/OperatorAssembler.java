@@ -824,7 +824,15 @@ public class OperatorAssembler extends BaseRule
                                                       index);
                 }
             }
-            if (indexScan.getConditionRange() == null) {
+            if (index.isSpatial()) {
+                stream.operator = API.indexScan_Default(indexRowType,
+                                                        assembleSpatialIndexKeyRange(indexScan, null),
+                                                        API.ordering(), // TODO: what ordering?
+                                                        selector,
+                                                        usePValues);
+                stream.rowType = indexRowType;
+            }
+            else if (indexScan.getConditionRange() == null) {
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleIndexKeyRange(indexScan, null),
                                                         assembleIndexOrdering(indexScan, indexRowType),
@@ -1043,25 +1051,37 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
-            RowStream stream = assembleStream(ancestorLookup.getInput());
+            RowStream stream;
             GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
-            RowType inputRowType = stream.rowType; // The index row type.
-            API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-            if (!(inputRowType instanceof IndexRowType)) {
-                // Getting from branch lookup.
-                inputRowType = tableRowType(ancestorLookup.getDescendant());
-                flag = API.InputPreservationOption.KEEP_INPUT;
-            }
             List<UserTableRowType> ancestorTypes =
                 new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }
-            stream.operator = API.ancestorLookup_Default(stream.operator,
-                                                         groupTable,
-                                                         inputRowType,
-                                                         ancestorTypes,
-                                                         flag);
+            if (ancestorLookup.getInput() instanceof GroupLoopScan) {
+                stream = new RowStream();
+                int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)ancestorLookup.getInput()));
+                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                stream.operator = API.ancestorLookup_Nested(groupTable, 
+                                                            boundRow.getRowType(),
+                                                            ancestorTypes,
+                                                            rowIndex + loopBindingsOffset);
+            }
+            else {
+                stream = assembleStream(ancestorLookup.getInput());
+                RowType inputRowType = stream.rowType; // The index row type.
+                API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
+                if (!(inputRowType instanceof IndexRowType)) {
+                    // Getting from branch lookup.
+                    inputRowType = tableRowType(ancestorLookup.getDescendant());
+                    flag = API.InputPreservationOption.KEEP_INPUT;
+                }
+                stream.operator = API.ancestorLookup_Default(stream.operator,
+                                                             groupTable,
+                                                             inputRowType,
+                                                             ancestorTypes,
+                                                             flag);
+            }
             stream.rowType = null;
             stream.fieldOffsets = null;
             return stream;
@@ -1070,7 +1090,33 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
             RowStream stream;
             GroupTable groupTable = branchLookup.getSource().getGroup().getGroupTable();
-            if (branchLookup.getInput() != null) {
+            if (branchLookup.getInput() == null) {
+                // Simple version for Product_NestedLoops.
+                stream = new RowStream();
+                API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
+                stream.operator = API.branchLookup_Nested(groupTable, 
+                                                          tableRowType(branchLookup.getSource()),
+                                                          tableRowType(branchLookup.getAncestor()),
+                                                          tableRowType(branchLookup.getBranch()), 
+                                                          flag,
+                                                          currentBindingPosition());
+                
+            }
+            else if (branchLookup.getInput() instanceof GroupLoopScan) {
+                // Fuller version for group join across subquery boundary.
+                stream = new RowStream();
+                API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
+                int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)branchLookup.getInput()));
+                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                stream.operator = API.branchLookup_Nested(groupTable, 
+                                                          boundRow.getRowType(),
+                                                          tableRowType(branchLookup.getAncestor()),
+                                                          tableRowType(branchLookup.getBranch()), 
+                                                          flag,
+                                                          rowIndex + loopBindingsOffset);
+            }
+            else {
+                // Ordinary inline version.
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
@@ -1084,17 +1130,6 @@ public class OperatorAssembler extends BaseRule
                                                            inputRowType,
                                                            tableRowType(branchLookup.getBranch()), 
                                                            flag);
-            }
-            else {
-                stream = new RowStream();
-                API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
-                stream.operator = API.branchLookup_Nested(groupTable, 
-                                                          tableRowType(branchLookup.getSource()),
-                                                          tableRowType(branchLookup.getAncestor()),
-                                                          tableRowType(branchLookup.getBranch()), 
-                                                          flag,
-                                                          currentBindingPosition());
-                
             }
             stream.rowType = null;
             stream.unknownTypesPresent = true;
@@ -1328,11 +1363,13 @@ public class OperatorAssembler extends BaseRule
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,
                                     API.SortOption sortOption) {
+            List<AkCollator> collators = findCollators(input);
             API.Ordering ordering = partialAssembler.createOrdering();
             for (int i = 0; i < nkeys; i++) {
                 Expression expr = oldPartialAssembler.field(stream.rowType, i);
                 TPreparedExpression tExpr = newPartialAssembler.field(stream.rowType, i);
-                ordering.append(expr, tExpr, true);
+                ordering.append(expr, tExpr, true,
+                                (collators == null) ? null : collators.get(i));
             }
             assembleSort(stream, ordering, input, null, sortOption);
         }
@@ -1647,6 +1684,55 @@ public class OperatorAssembler extends BaseRule
                                   getIndexColumnSelector(index, nkeys));
         }
 
+        protected IndexKeyRange assembleSpatialIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets) {
+            FunctionExpression func = (FunctionExpression)index.getLowComparand();
+            List<ExpressionNode> operands = func.getOperands();
+            IndexRowType indexRowType = getIndexRowType(index);
+            if ("_center".equals(func.getFunction())) {
+                return IndexKeyRange.spatial(indexRowType,
+                                             assembleSpatialIndexPoint(index,
+                                                                       operands.get(0),
+                                                                       operands.get(1),
+                                                                       fieldOffsets),
+                                             null);
+            }
+            else if ("_center_radius".equals(func.getFunction())) {
+                ExpressionNode centerY = operands.get(0);
+                ExpressionNode centerX = operands.get(1);
+                ExpressionNode radius = operands.get(2);
+                // Make circle into box. Comparison still remains to eliminate corners.
+                // TODO: May need some casts.
+                ExpressionNode bottom = new FunctionExpression("minus",
+                                                               Arrays.asList(centerY, radius),
+                                                               null, null);
+                ExpressionNode left = new FunctionExpression("minus",
+                                                             Arrays.asList(centerX, radius),
+                                                             null, null);
+                ExpressionNode top = new FunctionExpression("plus",
+                                                            Arrays.asList(centerY, radius),
+                                                            null, null);
+                ExpressionNode right = new FunctionExpression("plus",
+                                                              Arrays.asList(centerX, radius),
+                                                              null, null);
+                return IndexKeyRange.spatial(indexRowType,
+                                             assembleSpatialIndexPoint(index, bottom, left, fieldOffsets),
+                                             assembleSpatialIndexPoint(index, top, right, fieldOffsets));
+            }
+            else {
+                throw new AkibanInternalException("Unrecognized spatial index " + index);
+            }
+        }
+
+        protected IndexBound assembleSpatialIndexPoint(SingleIndexScan index, ExpressionNode y, ExpressionNode x, ColumnExpressionToIndex fieldOffsets) {
+            TPreparedExpression[] pkeys = usePValues ? new TPreparedExpression[2] : null;
+            Expression[] keys = usePValues ? null : new Expression[2];
+            newPartialAssembler.assembleExpressionInto(y, fieldOffsets, pkeys, 0);
+            oldPartialAssembler.assembleExpressionInto(y, fieldOffsets, keys, 0);
+            newPartialAssembler.assembleExpressionInto(x, fieldOffsets, pkeys, 1);
+            oldPartialAssembler.assembleExpressionInto(x, fieldOffsets, keys, 1);
+            return getIndexBound(index.getIndex(), keys, pkeys, 2);
+        }
+
         /** Return a column selector that enables the first <code>nkeys</code> fields
          * of a row of the index's user table. */
         protected ColumnSelector getIndexColumnSelector(final Index index, 
@@ -1770,6 +1856,18 @@ public class OperatorAssembler extends BaseRule
         protected ColumnExpressionContext getColumnExpressionContext(ColumnExpressionToIndex current) {
             columnBoundRows.current = current;
             return columnBoundRows;
+        }
+
+        protected int lookupNestedBoundRowIndex(GroupLoopScan scan) {
+            // Find the outside key's binding position.
+            ColumnExpression joinColumn = scan.getOutsideJoinColumn();
+            for (int rowIndex = boundRows.size() - 1; rowIndex >= 0; rowIndex--) {
+                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                if (boundRow == null) continue;
+                int fieldIndex = boundRow.getIndex(joinColumn);
+                if (fieldIndex >= 0) return rowIndex;
+            }
+            throw new AkibanInternalException("Outer loop not found " + scan);
         }
     }
 

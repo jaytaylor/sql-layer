@@ -269,6 +269,7 @@ public enum ErrorCode {
     SQL_PARSER_INTERNAL_EXCEPTION ("42", "515", Importance.DEBUG, SQLParserInternalException.class),
     NO_SUCH_SEQUENCE        ("42", "516", Importance.DEBUG, NoSuchSequenceException.class),
     NO_SUCH_UNIQUE          ("42", "517", Importance.DEBUG, NoSuchUniqueException.class),
+    NO_SUCH_GROUPING_FK     ("42", "518", Importance.DEBUG, NoSuchGroupingFKException.class),
 
     // Class 44 - with check option violation
     
@@ -302,6 +303,7 @@ public enum ErrorCode {
     INDEX_COL_NOT_IN_GROUP  ("50", "00R", Importance.DEBUG, IndexColNotInGroupException.class),
     INDEX_TABLE_NOT_IN_GROUP("50", "00S", Importance.DEBUG, IndexTableNotInGroupException.class),
     INDISTINGUISHABLE_INDEX ("50", "00T", Importance.DEBUG, IndistinguishableIndexException.class),
+    DROP_GROUP_NOT_ROOT     ("50", "00U", Importance.DEBUG, DropGroupNotRootException.class),
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
     GROUP_MULTIPLE_ROOTS    ("50", "010", Importance.DEBUG, GroupHasMultipleRootsException.class),
@@ -342,6 +344,7 @@ public enum ErrorCode {
     SEQUENCE_MIN_GE_MAX     ("50", "020", Importance.DEBUG, SequenceMinGEMaxException.class),
     SEQUENCE_START_IN_RANGE ("50", "021", Importance.DEBUG, SequenceStartInRangeException.class),
     SEQUENCE_TREE_NAME_NULL ("50", "022", Importance.DEBUG, SequenceTreeNameIsNullException.class),
+    ALTER_MADE_NO_CHANGE    ("50", "023", Importance.DEBUG, AlterMadeNoChangeException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
@@ -383,6 +386,7 @@ public enum ErrorCode {
     TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class), 
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
+    INVALID_ALTER           ("53", "00C", Importance.ERROR, InvalidAlterException.class),
     
     // Class 55 - Type conversion errors
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    

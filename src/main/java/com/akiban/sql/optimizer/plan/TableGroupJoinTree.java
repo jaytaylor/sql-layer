@@ -41,7 +41,7 @@ import java.util.Set;
  * once an access path has been chosen.
  */
 public class TableGroupJoinTree extends BaseJoinable 
-                                implements Iterable<TableGroupJoinTree.TableGroupJoinNode>
+    implements Iterable<TableGroupJoinTree.TableGroupJoinNode>, PlanWithInput
 {
     public static class TableGroupJoinNode implements Iterable<TableGroupJoinNode> {
         TableSource table;
@@ -203,6 +203,10 @@ public class TableGroupJoinTree extends BaseJoinable
         this.scan = scan;
     }
     
+    public boolean containsTable(TableSource table) {
+        return (root.findTable(table) != null);
+    }
+
     public <V> Map<TableGroupJoinNode,V> findLeaves(LeafFinderPredicate<V> predicate) {
         Map<TableGroupJoinNode,V> results = new HashMap<TableGroupJoinNode, V>();
         if (predicate.includeAndContinue(root, this))
@@ -316,6 +320,11 @@ public class TableGroupJoinTree extends BaseJoinable
             V value = predicate.mapToValue(root);
             out.put(root, value);
         }
+    }
+
+    @Override
+    public void replaceInput(PlanNode oldInput, PlanNode newInput) {
+        throw new UnsupportedOperationException();
     }
 
 }

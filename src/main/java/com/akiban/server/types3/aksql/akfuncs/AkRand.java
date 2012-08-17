@@ -32,5 +32,5 @@ import com.akiban.server.types3.common.funcs.Rand;
 
 
 public class AkRand {
-    public static final TOverload[] INSTANCES = Rand.create(AkNumeric.INT, AkNumeric.DOUBLE);
+    public static final TOverload[] INSTANCES = Rand.create(AkNumeric.BIGINT, AkNumeric.DOUBLE);
 }

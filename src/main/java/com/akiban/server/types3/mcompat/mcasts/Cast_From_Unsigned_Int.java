@@ -78,7 +78,4 @@ public class Cast_From_Unsigned_Int
     public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.INT_UNSIGNED, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
     
     public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.INT_UNSIGNED, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
-    
-    public static final TCast TO_VARCHAR = new FromInt64ToString(MNumeric.INT_UNSIGNED, MString.VARCHAR, false, Constantness.UNKNOWN);
-
 }

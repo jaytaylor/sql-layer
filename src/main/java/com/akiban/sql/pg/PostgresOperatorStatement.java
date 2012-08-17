@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -35,7 +34,7 @@ import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.util.*;
 import java.io.IOException;
@@ -44,7 +43,7 @@ import java.io.IOException;
  * An SQL SELECT transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresOperatorStatement extends PostgresBaseStatement
+public class PostgresOperatorStatement extends PostgresDMLStatement
 {
 
     private Operator resultOperator;
@@ -78,12 +77,13 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        Session session = server.getSession();
         int nrows = 0;
         Cursor cursor = null;
         IOException exceptionDuringExecution = null;
+        boolean lockSuccess = false;
         try {
-            lock(session, UNSPECIFIED_DML_READ);
+            lock(context, DXLFunction.UNSPECIFIED_DML_READ);
+            lockSuccess = true;
             cursor = API.cursor(resultOperator, context);
             cursor.open();
             PostgresOutputter<Row> outputter = getRowOutputter(context);
@@ -112,7 +112,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                 logger.error("Exception stack", e);
             }
             finally {
-                unlock(session, UNSPECIFIED_DML_READ);
+                unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
             }
             if (exceptionDuringExecution != null) {
                 throw exceptionDuringExecution;

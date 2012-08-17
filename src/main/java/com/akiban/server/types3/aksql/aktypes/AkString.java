@@ -27,6 +27,7 @@
 package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.StringAttribute;
@@ -49,8 +50,11 @@ public class AkString extends TString
     @Override
     public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
     {
+        if (in.isNull()) {
+            out.putNull();
+            return;
+        }
         int expectedLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-        int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
         int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
         
         String inStr = in.getString();

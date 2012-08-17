@@ -275,7 +275,7 @@ public class ASTStatementLoader extends BaseRule
                     if ((column != null) && nameDefaulted)
                         name = column.getName();
                 }
-                results.add(new ResultField(name, type, column, expr));
+                results.add(new ResultField(name, type, column));
             }
 
             List<OrderByExpression> sorts = new ArrayList<OrderByExpression>();
@@ -1400,6 +1400,24 @@ public class ASTStatementLoader extends BaseRule
                         new TPreptimeValue(MString.VARCHAR.instance(sequence.length()), new PValue(sequence))));
                 
                 return new FunctionExpression ("nextval", params,
+                                                valueNode.getType(), valueNode);
+            }
+            else if (valueNode instanceof CurrentSequenceNode) {
+                CurrentSequenceNode seqNode = (CurrentSequenceNode)valueNode;
+                List<ExpressionNode> params = new ArrayList<ExpressionNode>(2);
+
+                String schema = seqNode.getSequenceName().hasSchema() ? 
+                        seqNode.getSequenceName().getSchemaName() :
+                            rulesContext.getDefaultSchemaName();
+                // Extract the (potential) schema name as the first parameter
+                params.add(new ConstantExpression(
+                        new TPreptimeValue(MString.VARCHAR.instance(schema.length()), new PValue(schema))));
+                // Extract the schema name as the second parameter
+                String sequence = seqNode.getSequenceName().getTableName();
+                params.add(new ConstantExpression(
+                        new TPreptimeValue(MString.VARCHAR.instance(sequence.length()), new PValue(sequence))));
+                
+                return new FunctionExpression ("currval", params,
                                                 valueNode.getType(), valueNode);
             }
             else

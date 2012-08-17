@@ -32,7 +32,6 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,13 +47,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.View;
+import com.akiban.ais.model.*;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -86,18 +79,12 @@ import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.util.ListUtils;
 
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -542,19 +529,57 @@ public class ApiTestBase {
         unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
     }
+    
+    protected final void createSequence (String schema, String name, String definition) {
+        String ddl = String.format("CREATE SEQUENCE %s %s", name, definition);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
+        Sequence sequence = tempAIS.getSequence(new TableName(schema, name));
+        ddl().createSequence(session(), sequence);
+        updateAISGeneration();
+    }
 
     protected final int createTable(TableName tableName, String... definitions) throws InvalidOperationException {
         return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
     }
 
-    private AkibanInformationSchema createIndexInternal(String schema, String table, String indexName, String... indexCols) {
-        String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
+    private AkibanInformationSchema createUniqueIndexInternal(String schema,
+                                                              String table,
+                                                              String indexName,
+                                                              String... indexCols) {
+        return createIndexInternal(schema, table, indexName, true, indexCols);
+    }
+
+    private AkibanInformationSchema createIndexInternal(String schema,
+                                                        String table,
+                                                        String indexName,
+                                                        String... indexCols) {
+        return createIndexInternal(schema, table, indexName, false, indexCols);
+    }
+
+    private AkibanInformationSchema createIndexInternal(String schema,
+                                                        String table,
+                                                        String indexName,
+                                                        boolean unique,
+                                                        String... indexCols) {
+        String ddl = String.format("CREATE %s INDEX \"%s\" ON \"%s\".\"%s\"(%s)",
+                                   unique ? "UNIQUE" : "",
+                                   indexName,
+                                   schema,
+                                   table,
                                    Strings.join(Arrays.asList(indexCols), ","));
         return createFromDDL(schema, ddl);
     }
 
     protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
         AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
+        Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
+    }
+
+    protected final TableIndex createUniqueIndex(String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createUniqueIndexInternal(schema, table, indexName, indexCols);
         Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
@@ -712,9 +737,14 @@ public class ApiTestBase {
     }
 
     protected final ScanAllRequest scanAllRequest(int tableId) {
+        return scanAllRequest(tableId, false);
+    }
+
+    protected final ScanAllRequest scanAllRequest(int tableId, boolean includingInternal) {
         Table uTable = ddl().getTable(session(), tableId);
         Set<Integer> allCols = new HashSet<Integer>();
-        for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
+        int MAX = includingInternal ? uTable.getColumnsIncludingInternal().size() : uTable.getColumns().size();
+        for (int i=0; i < MAX; ++i) {
             allCols.add(i);
         }
         return new ScanAllRequest(tableId, allCols);
@@ -738,9 +768,9 @@ public class ApiTestBase {
             throw new RuntimeException("no such index: " + index);
         }
         return openFullScan(
-                userTable.getTableId(),
-                aisIndex.getIndexId()
-        );
+            userTable.getTableId(),
+            aisIndex.getIndexId()
+                           );
     }
 
     protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
@@ -816,29 +846,32 @@ public class ApiTestBase {
         }
         return row;
     }
-
     protected final void dropAllTables() throws InvalidOperationException {
-        for(View view : ddl().getAIS(session()).getViews().values()) {
+        dropAllTables(session());
+    }
+
+    protected final void dropAllTables(Session session) throws InvalidOperationException {
+        for(View view : ddl().getAIS(session).getViews().values()) {
             // In case one view references another, avoid having to delete in proper order.
             view.getTableColumnReferences().clear();
         }
-        for(View view : ddl().getAIS(session()).getViews().values()) {
-            ddl().dropView(session(), view.getName());
+        for(View view : ddl().getAIS(session).getViews().values()) {
+            ddl().dropView(session, view.getName());
         }
 
         // Note: Group names, being derived, can change across DDL. Save root names instead.
         Set<TableName> groupRoots = new HashSet<TableName>();
-        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+        for(UserTable table : ddl().getAIS(session).getUserTables().values()) {
             if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
                 groupRoots.add(table.getName());
             }
         }
         for(TableName rootName : groupRoots) {
-            ddl().dropGroup(session(), getUserTable(rootName).getGroup().getName());
+            ddl().dropGroup(session, getUserTable(rootName).getGroup().getName());
         }
 
         // Now sanity check
-        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
+        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
             if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
@@ -846,7 +879,7 @@ public class ApiTestBase {
         }
         Assert.assertEquals("user table count", Collections.<TableName>emptySet(), uTables);
 
-        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session()).getViews().keySet());
+        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session).getViews().keySet());
         Assert.assertEquals("user table count", Collections.<TableName>emptySet(), views);
     }
 
@@ -1024,7 +1057,7 @@ public class ApiTestBase {
             }
         });
     }
-    
+
     protected boolean usingPValues() {
         return Types3Switch.ON && testSupportsPValues();
     }

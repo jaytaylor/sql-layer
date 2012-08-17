@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule.cost;
 
+import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import static com.akiban.sql.optimizer.rule.OperatorAssembler.INSERTION_SORT_MAX_LIMIT;
@@ -34,9 +35,13 @@ import static com.akiban.sql.optimizer.rule.cost.CostEstimator.simpleRound;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.geophile.SpaceLatLon;
+import com.akiban.server.types.AkType;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 public class PlanCostEstimator
@@ -62,6 +67,10 @@ public class PlanCostEstimator
         planEstimator = new IndexScanEstimator(index);
     }
 
+    public void spatialIndex(SingleIndexScan index) {
+        planEstimator = new SpatialIndexEstimator(index);
+    }
+
     public void flatten(TableGroupJoinTree tableGroup,
                         TableSource indexTable,
                         Set<TableSource> requiredTables) {
@@ -73,6 +82,12 @@ public class PlanCostEstimator
                           TableGroupJoinTree tableGroup,
                           Set<TableSource> requiredTables) {
         planEstimator = new GroupScanEstimator(scan, tableGroup, requiredTables);
+    }
+
+    public void groupLoop(GroupLoopScan scan,
+                          TableGroupJoinTree tableGroup,
+                          Set<TableSource> requiredTables) {
+        planEstimator = new GroupLoopEstimator(scan, tableGroup, requiredTables);
     }
 
     public void select(Collection<ConditionExpression> conditions,
@@ -150,6 +165,73 @@ public class PlanCostEstimator
         }
     }
 
+    protected class SpatialIndexEstimator extends PlanEstimator {
+        SingleIndexScan index;
+
+        protected SpatialIndexEstimator(SingleIndexScan index) {
+            super(null);
+            this.index = index;
+        }
+
+        @Override
+        protected void estimateCost() {
+            int nscans = 1;
+            FunctionExpression func = (FunctionExpression)index.getLowComparand();
+            List<ExpressionNode> operands = func.getOperands();
+            SpaceLatLon space = (SpaceLatLon)((TableIndex)index.getIndex()).space();
+            if ("_center".equals(func.getFunction())) {
+                nscans = 2;     // One in each direction.
+                costEstimate = costEstimator.costIndexScan(index.getIndex(), null, null, true, null, true);
+            } else if ("_center_radius".equals(func.getFunction())) {
+                ExpressionNode latExpression = operands.get(0);
+                ExpressionNode lonExpression = operands.get(1);
+                ExpressionNode rExpression = operands.get(2);
+                if ((latExpression instanceof ConstantExpression) &&
+                    (latExpression.getAkType() == AkType.DECIMAL) &&
+                    (lonExpression instanceof ConstantExpression) &&
+                    (lonExpression.getAkType() == AkType.DECIMAL) &&
+                    (rExpression instanceof ConstantExpression) &&
+                    (rExpression.getAkType() == AkType.DECIMAL)) {
+                    BigDecimal lat = (BigDecimal)((ConstantExpression)latExpression).getValue();
+                    BigDecimal lon = (BigDecimal)((ConstantExpression)lonExpression).getValue();
+                    BigDecimal r = (BigDecimal)((ConstantExpression)rExpression).getValue();
+                    BoxLatLon box = BoxLatLon.newBox(lat.subtract(r), lat.add(r), lon.subtract(r), lon.add(r));
+                    long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
+                    space.decompose(box, zValues);
+                    for (int i = 0; i < SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES; i++) {
+                        long z = zValues[i];
+                        if (z != -1L) {
+                            ExpressionNode lo = new ConstantExpression(space.zLo(z), AkType.LONG);
+                            ExpressionNode hi = new ConstantExpression(space.zHi(z), AkType.LONG);
+                            CostEstimate zScanCost =
+                                costEstimator.costIndexScan(index.getIndex(), null, lo, true, hi, true);
+                            costEstimate =
+                                costEstimate == null
+                                ? zScanCost
+                                : costEstimate.union(zScanCost);
+                        }
+                    }
+                }
+            }
+            index.setScanCostEstimate(costEstimate);
+            long totalRows = costEstimate.getRowCount();
+            long nrows = totalRows;
+            if (hasLimit() && (limit < totalRows)) {
+                nrows = limit;
+            }
+            if (nscans == 1) {
+                if (nrows != totalRows)
+                    costEstimate = costEstimator.costIndexScan(index.getIndex(), nrows);
+                return;
+            }
+            double setupCost = costEstimator.costIndexScan(index.getIndex(), 0).getCost();
+            double scanCost = costEstimate.getCost() - setupCost;
+            costEstimate = new CostEstimate(limit,
+                                            setupCost * nscans +
+                                            scanCost * nrows / totalRows);
+        }
+    }
+
     protected class FlattenEstimator extends PlanEstimator {
         private TableGroupJoinTree tableGroup;
         private TableSource indexTable;
@@ -203,6 +285,26 @@ public class PlanCostEstimator
             CostEstimate scanCost = costEstimator.costGroupScan(scan.getGroup().getGroup());
             CostEstimate flattenCost = costEstimator.costFlattenGroup(tableGroup, requiredTables);
             costEstimate = scanCost.sequence(flattenCost);
+        }
+    }
+
+    protected class GroupLoopEstimator extends PlanEstimator {
+        private GroupLoopScan scan;
+        private TableGroupJoinTree tableGroup;
+        private Set<TableSource> requiredTables;
+
+        protected GroupLoopEstimator(GroupLoopScan scan,
+                                     TableGroupJoinTree tableGroup,
+                                     Set<TableSource> requiredTables) {
+            super(null);
+            this.scan = scan;
+            this.tableGroup = tableGroup;
+            this.requiredTables = requiredTables;
+        }
+
+        @Override
+        protected void estimateCost() {
+            costEstimate = costEstimator.costFlattenNested(tableGroup, scan.getOutsideTable(), scan.getInsideTable(), scan.isInsideParent(), requiredTables);
         }
     }
 

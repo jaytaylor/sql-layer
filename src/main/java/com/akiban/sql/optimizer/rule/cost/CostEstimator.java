@@ -39,7 +39,7 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.statistics.IndexStatistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
-
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
@@ -499,7 +499,12 @@ public abstract class CostEstimator implements TableRowCounts
         if (expr == null)
             return false;
         ValueSource valueSource = expr.evaluation().eval();
-        keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
+        if (index.isSpatial()) {
+            keyTarget.expectingType(AkType.LONG, null);
+        }
+        else {
+            keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
+        }
         Converters.convert(valueSource, keyTarget);
         return true;
     }
@@ -637,6 +642,41 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(rowCount, cost);
     }
 
+    /** Estimate the cost of starting from outside the loop in the same group. */
+    public CostEstimate costFlattenNested(TableGroupJoinTree tableGroup,
+                                          TableSource outsideTable,
+                                          TableSource insideTable,
+                                          boolean insideIsParent,
+                                          Set<TableSource> requiredTables) {
+        TableGroupJoinNode startNode = tableGroup.getRoot().findTable(insideTable);
+        coverBranches(tableGroup, startNode, requiredTables);
+        int branchCount = 0;
+        long rowCount = 1;
+        double cost = 0.0;
+        if (insideIsParent) {
+            cost += model.ancestorLookup(Collections.singletonList(schema.userTableRowType(insideTable.getTable().getTable())));
+        }
+        else {
+            rowCount *= descendantCardinality(insideTable, outsideTable);
+            cost += model.branchLookup(schema.userTableRowType(insideTable.getTable().getTable()));
+        }
+        for (TableGroupJoinNode node : tableGroup) {
+            if (isFlattenable(node)) {
+                long nrows = tableCardinality(node);
+                // Cost of flattening these children with their ancestor.
+                cost += model.flatten((int)nrows);
+                if (isSideBranchLeaf(node)) {
+                    // Leaf of a new branch.
+                    branchCount++;
+                    rowCount *= nrows;
+                }
+            }
+        }
+        if (branchCount > 1)
+            cost += model.product((int)rowCount);
+        return new CostEstimate(rowCount, cost);
+    }
+
     /** This table needs to be included in flattens. */
     protected static final long REQUIRED = 1;
     /** This table is on the main branch. */
@@ -753,8 +793,13 @@ public abstract class CostEstimator implements TableRowCounts
      */
     protected long descendantCardinality(TableGroupJoinNode childNode, 
                                          TableGroupJoinNode ancestorNode) {
-        long childCount = getTableRowCount(childNode.getTable().getTable().getTable());
-        long ancestorCount = getTableRowCount(ancestorNode.getTable().getTable().getTable());
+        return descendantCardinality(childNode.getTable(), ancestorNode.getTable());
+    }
+
+    protected long descendantCardinality(TableSource childTable, 
+                                         TableSource ancestorTable) {
+        long childCount = getTableRowCount(childTable.getTable().getTable());
+        long ancestorCount = getTableRowCount(ancestorTable.getTable().getTable());
         if (ancestorCount == 0) return 1;
         return Math.max(simpleRound(childCount, ancestorCount), 1);
     }

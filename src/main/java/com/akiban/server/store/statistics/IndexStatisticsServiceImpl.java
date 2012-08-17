@@ -29,9 +29,14 @@ package com.akiban.server.store.statistics;
 import com.akiban.ais.model.*;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLTransactionHook;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
@@ -67,17 +72,22 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
+    private final ConfigurationService configurationService;
 
     private PersistitStoreIndexStatistics storeStats;
     private Map<Index,IndexStatistics> cache;
 
     @Inject
-    public IndexStatisticsServiceImpl(Store store, TreeService treeService,
-                                      SchemaManager schemaManager, SessionService sessionService) {
+    public IndexStatisticsServiceImpl(Store store,
+                                      TreeService treeService,
+                                      SchemaManager schemaManager,
+                                      SessionService sessionService,
+                                      ConfigurationService configurationService) {
         this.store = store.getPersistitStore();
         this.treeService = treeService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
+        this.configurationService = configurationService;
     }
     
     /* Service */
@@ -199,6 +209,9 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         try {
             result = storeStats.loadIndexStatistics(session, index);
         }
+        catch (PersistitInterruptedException ex) {
+            throw new QueryCanceledException(session);
+        }
         catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
@@ -215,6 +228,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
+        ensureAdapter(session);
         final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics> (indexes.size());
 
         if (indexes.size() > 0) {
@@ -233,7 +247,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
         });
     }
-    
+
     private Map<Index,IndexStatistics> updatePersistitTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
         Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
@@ -244,6 +258,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                     storeStats.storeIndexStatistics(session, index, indexStatistics);
                     updates.put(index, indexStatistics);
                 }
+            }
+            catch (PersistitInterruptedException ex) {
+                log.info("interrupt while analyzing " + index, ex);
+                throw new QueryCanceledException(session);
             }
             catch (PersistitException ex) {
                 log.error("error while analyzing " + index, ex);
@@ -280,9 +298,13 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void deleteIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
+        ensureAdapter(session);
         for (Index index : indexes) {
             try {
                 storeStats.deleteIndexStatistics(session, index);
+            }
+            catch (PersistitInterruptedException ex) {
+                throw new QueryCanceledException(session);
             }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
@@ -294,6 +316,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void loadIndexStatistics(Session session, 
                                     String schema, File file) throws IOException {
+        ensureAdapter(session);
         AkibanInformationSchema ais = schemaManager.getAis(session);
         Map<Index,IndexStatistics> stats = 
             new IndexStatisticsYamlLoader(ais, schema, treeService).load(file);
@@ -302,6 +325,9 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             IndexStatistics indexStatistics = entry.getValue();
             try {
                 storeStats.storeIndexStatistics(session, index, indexStatistics);
+            }
+            catch (PersistitInterruptedException ex) {
+                throw new QueryCanceledException(session);
             }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
@@ -348,6 +374,20 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                                  IndexStatisticsMXBean.class);
     }
 
+    private void ensureAdapter(Session session)
+    {
+        PersistitAdapter adapter = (PersistitAdapter) session.get(StoreAdapter.STORE_ADAPTER_KEY);
+        if (adapter == null) {
+            adapter = new PersistitAdapter(SchemaCache.globalSchema(schemaManager.getAis(session)),
+                                           store,
+                                           treeService,
+                                           session,
+                                           configurationService,
+                                           true);
+            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
+        }
+    }
+
     class JmxBean implements IndexStatisticsMXBean {
         @Override
         public String dumpIndexStatistics(String schema, String toFile) 
@@ -364,6 +404,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 }
                 return file.getAbsolutePath();
             }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            }
             finally {
                 session.close();
             }
@@ -378,6 +422,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 writer.close();
                 return writer.toString();
             }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            }
             finally {
                 session.close();
             }
@@ -390,6 +438,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             try {
                 File file = new File(fromFile);
                 IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+            }
+            catch (RuntimeException ex) {
+                log.error("Error loading " + schema, ex);
+                throw ex;
             }
             finally {
                 session.close();
