@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;

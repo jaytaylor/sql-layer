@@ -31,6 +31,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.sql.optimizer.explain.*;

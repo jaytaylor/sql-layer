@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;

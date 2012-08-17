@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.optimizer.explain.*;
@@ -33,7 +34,6 @@ import com.akiban.sql.optimizer.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,6 +150,7 @@ class Map_NestedLoops extends Operator
     private final int inputBindingPosition;
 
     @Override
+
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
         Explainer ex = new NestedLoopsExplainer("Map_NestedLoops", innerInputOperator, outerInputOperator, null, null, extraInfo);

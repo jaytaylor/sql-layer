@@ -1,11 +1,11 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], _SQL_COL_1:VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin]
-   Project_Default(customers.name, SUBQUERY 1)
-    IndexScan_Default(Index(test.customers.name[IndexColumn(name)]), cid)
+  Project_Default(customers.name, SUBQUERY 1)
+    IndexScan_Default(Index(test.customers.name[IndexColumn(name)]), name, cid)
   SUBQUERY 1:
   Map_NestedLoops(test.items)
     Filter_Default(test.items)
       GroupScan_Default(full scan on _akiban_customers)
     Project_Default(Bound(1,Field(2)))
       Select_HKeyOrdered(i1.quan == (Bound(1,Field(3)) * 10))
-        AncestorLookup_Default(_akiban_customers -> test.items)
-          IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]), iid)
+        AncestorLookup_Default(test._akiban_customers -> test.items)
+          IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]), sku = customers.name, cid, oid, iid)

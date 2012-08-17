@@ -28,16 +28,14 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -254,17 +252,13 @@ class AncestorLookup_Default extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        OperationExplainer ex = new LookUpOperatorExplainer("AncestorLookup_Default", groupTable, rowType, keepInput, inputOperator, extraInfo);
-        for (UserTable table : ancestors)
-            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
-        
+        Attributes atts = new Attributes();
         if (extraInfo != null && extraInfo.containsKey(this))
-        {
-            for (Explainer table : ((OperationExplainer)extraInfo.get(this)).get().get(Label.TABLE_CORRELATION))
-                ex.addAttribute(Label.TABLE_CORRELATION, table);
-        }
+            atts = ((OperationExplainer)extraInfo.get(this)).get();
+        for (UserTable table : ancestors)
+            atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
         
-        return ex;
+        return new LookUpOperatorExplainer("AncestorLookup_Default", atts, groupTable, rowType, keepInput, inputOperator, extraInfo);
     }
 
     // Inner classes

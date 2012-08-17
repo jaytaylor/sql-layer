@@ -28,6 +28,7 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -213,18 +214,16 @@ class IndexScan_Default extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        Attributes atts = new Attributes();
+        Attributes atts;
+        if (extraInfo != null && extraInfo.containsKey(this))
+            atts = (Attributes)extraInfo.get(this).get();
+        else
+            atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("IndexScan_Default"));
         atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.toString()));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
         atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.toString()));
-        if (extraInfo != null && extraInfo.containsKey(this))
-        {
-            List<Explainer> columns = ((Attributes)extraInfo.get(this).get()).get(Label.COLUMN_NAME);
-            for (Explainer column : columns)
-                atts.put(Label.COLUMN_NAME, column);
-        }
         
         return new OperationExplainer(Type.SCAN_OPERATOR, atts);
     }

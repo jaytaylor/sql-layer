@@ -28,6 +28,7 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.HKeyRowType;
@@ -237,25 +238,13 @@ class AncestorLookup_Nested extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-       OperationExplainer ex = new LookUpOperatorExplainer("AncestorLookup_Nested", groupTable, rowType, false, null, extraInfo); // NOTE: keepInput is N/A here
+       Attributes atts = new Attributes();
+       if (extraInfo != null && extraInfo.containsKey(this))
+            atts = ((OperationExplainer) extraInfo.get(this)).get();
        for (UserTable table : ancestors)
-           ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
-       ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
-       
-        if (extraInfo != null && extraInfo.containsKey(this))
-        {
-            for (Explainer table : ((OperationExplainer) extraInfo.get(this)).get().get(Label.TABLE_CORRELATION))
-                ex.addAttribute(Label.TABLE_CORRELATION, table);
-            Attributes atts = (Attributes) extraInfo.get(this).get();
-            if (atts.containsKey(Label.BINDING_POSITION))
-                ex.addAttribute(Label.BINDING_POSITION, atts.get(Label.BINDING_POSITION).get(0));
-            else
-                ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
-        }
-        else
-            ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
+           atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
 
-       return ex;
+       return new LookUpOperatorExplainer("AncestorLookup_Nested", atts, groupTable, rowType, false, null, extraInfo); // NOTE: keepInput is N/A here
     }
 
     // Inner classes

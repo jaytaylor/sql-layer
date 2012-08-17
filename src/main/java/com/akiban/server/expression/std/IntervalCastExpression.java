@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.types.conversion.Converters;

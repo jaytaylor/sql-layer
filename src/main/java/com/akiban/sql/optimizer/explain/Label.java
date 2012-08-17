@@ -43,6 +43,9 @@ public enum Label
     NUM_COMPARE(Category.CHILD),
     EXPRESSIONS(Category.CHILD),
     BLOOM_FILTER(Category.CHILD),
+    HIGH_COMPARAND(Category.CHILD),
+    LOW_COMPARAND(Category.CHILD),
+    EQUAL_COMPARAND(Category.CHILD),
     
     
     // COST

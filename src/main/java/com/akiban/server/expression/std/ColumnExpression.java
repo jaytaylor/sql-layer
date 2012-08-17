@@ -27,6 +27,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.ais.model.Column;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;

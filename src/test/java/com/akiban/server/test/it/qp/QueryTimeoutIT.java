@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AkServer;

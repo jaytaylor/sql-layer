@@ -688,7 +688,7 @@ public class OperatorAssembler extends BaseRule
             {
                 atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
             }
-            planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+            planContext.giveInfoOperator(plan, new OperationExplainer(Type.EXTRA_INFO, atts));
             
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -719,7 +719,7 @@ public class OperatorAssembler extends BaseRule
                     for (Expression expression : updates)
                         if (expression != null)
                             atts.put(Label.EXPRESSIONS, expression.getExplainer(planContext.getInfo()));
-                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(plan, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -732,7 +732,7 @@ public class OperatorAssembler extends BaseRule
             {
                 Attributes atts = new Attributes();
                 atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName().toString()));
-                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(plan, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -921,43 +921,21 @@ public class OperatorAssembler extends BaseRule
    
             if (planContext.hasInfo()) {
                 Attributes atts = new Attributes();
-                for (IndexColumn column : index.getAllColumns()) {
-                    Attributes columnAtts = new Attributes();
-                    columnAtts.put(Label.NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
-                    atts.put(Label.COLUMN_NAME, new OperationExplainer(Type.EXTRA_INFO, columnAtts));
-                }
-                int i = 0;
+                for (IndexColumn column : index.getAllColumns())
+                    atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
                 if (indexScan.getEqualityComparands() != null)
-                for (ExpressionNode node : indexScan.getEqualityComparands()) {
-                    ((Attributes)atts.get(Label.COLUMN_NAME).get(i++).get()).put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(" = " + node.toString()));
-                }
+                    for (ExpressionNode node : indexScan.getEqualityComparands())
+                        if (node != null)
+                            atts.put(Label.EQUAL_COMPARAND, PrimitiveExplainer.getInstance(node.toString()));
                 ExpressionNode hi = indexScan.getHighComparand();
                 ExpressionNode lo = indexScan.getLowComparand();
-                String text;
                 if (hi != null) {
-                    if (lo != null)
-                        if (indexScan.isHighInclusive())
-                            if (indexScan.isLowInclusive())
-                                text = " BETWEEN " + lo.toString() + " AND " + hi.toString();
-                            else
-                                text = " > " + lo.toString() + " AND  <= " + hi.toString();
-                        else
-                            if (indexScan.isLowInclusive())
-                                text = " >= " + lo.toString() + " AND  < " + hi.toString();
-                            else
-                                text = " > " + lo.toString() + " AND  < " + hi.toString();
-                    else if (indexScan.isHighInclusive())
-                        text = " <= " + hi.toString();
-                    else
-                        text = " < " + hi.toString();
-                    atts.get(Label.COLUMN_NAME).get(i).addAttribute(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(text));
+                    atts.put(Label.HIGH_COMPARAND, PrimitiveExplainer.getInstance(hi.toString()));
+                    atts.put(Label.HIGH_COMPARAND, PrimitiveExplainer.getInstance((indexScan.isHighInclusive() ? "" : "NOT") + "INCLUSIVE"));
                 }
-                else if (lo != null) {
-                    if (indexScan.isLowInclusive())
-                        text = " >= " + lo.toString();
-                    else
-                        text = " > " + lo.toString();
-                    atts.get(Label.COLUMN_NAME).get(i).addAttribute(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(text));
+                if (lo != null) {
+                    atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance(lo.toString()));
+                    atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance((indexScan.isLowInclusive() ? "" : "NOT") + "INCLUSIVE"));
                 }
                 planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
@@ -1170,10 +1148,12 @@ public class OperatorAssembler extends BaseRule
                     atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(tableSource.getTable().getTable().getName().toString()));
                 }
                 int binding = currentBindingPosition();
-                if (lookupBindings.containsKey(binding));
+                if (lookupBindings.containsKey(binding) && lookupBindings.get(binding) != null)
                 {
                     atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(lookupBindings.get(binding)));
                 }
+                else if (ancestorLookup.getInput() instanceof GroupLoopScan)
+                    atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(((GroupLoopScan)ancestorLookup.getInput()).getOutsideTable().getTable().getTable().getName().toString()));
                 planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
             
@@ -1236,10 +1216,12 @@ public class OperatorAssembler extends BaseRule
                     atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(tableSource.getTable().getTable().getName().toString()));
                 }
                 int binding = currentBindingPosition();
-                if (lookupBindings.containsKey(binding));
+                if (lookupBindings.containsKey(binding) && lookupBindings.get(binding) != null)
                 {
                     atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(lookupBindings.get(binding)));
                 }
+                else if (branchLookup.getInput() instanceof GroupLoopScan)
+                    atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(((GroupLoopScan)branchLookup.getInput()).getOutsideTable().getTable().getTable().getName().toString()));
                 planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
             }
             
@@ -1381,7 +1363,7 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
-            if (planContext.hasInfo())
+            if (planContext.hasInfo() && aggregateSource.hasGroupBy())
             {
                 Attributes atts = new Attributes();
                 for (ExpressionNode node : aggregateSource.getGroupBy())

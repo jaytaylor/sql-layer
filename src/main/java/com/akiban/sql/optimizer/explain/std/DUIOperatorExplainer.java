@@ -25,6 +25,7 @@
  */
 package com.akiban.sql.optimizer.explain.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.sql.optimizer.explain.*;
 import java.util.Map;

@@ -288,24 +288,13 @@ public class BranchLookup_Nested extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        OperationExplainer ex =  new LookUpOperatorExplainer("BranchLookup_Nested", groupTable, inputRowType, keepInput, null, extraInfo);
-        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
-        ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
-        
+        Attributes atts = new Attributes();
         if (extraInfo != null && extraInfo.containsKey(this))
-        {
-            for (Explainer table : ((OperationExplainer)extraInfo.get(this)).get().get(Label.TABLE_CORRELATION))
-                ex.addAttribute(Label.TABLE_CORRELATION, table);
-            Attributes atts = (Attributes)extraInfo.get(this).get();
-            if (atts.containsKey(Label.BINDING_POSITION))
-                ex.addAttribute(Label.BINDING_POSITION, atts.get(Label.BINDING_POSITION).get(0));
-            else
-                ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
-        }
-        else
-            ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance("Binding at " + inputBindingPosition));
+            atts = ((OperationExplainer)extraInfo.get(this)).get();
+        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
+        atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         
-        return ex;
+        return new LookUpOperatorExplainer("BranchLookup_Nested", atts, groupTable, inputRowType, keepInput, null, extraInfo);
     }
 
     // Inner classes

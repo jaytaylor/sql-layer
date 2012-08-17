@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidCharToNumException;

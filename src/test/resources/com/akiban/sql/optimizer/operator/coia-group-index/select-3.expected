@@ -1,6 +1,6 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Project_Default(Field(1), Field(4), Field(7), Field(8))
-    Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
+  Project_Default(customers.name, orders.order_date, items.sku, items.quan)
+    Flatten_HKeyOrdered(test.customers - test.orders INNER test.items)
       Flatten_HKeyOrdered(test.customers INNER test.orders)
-        AncestorLookup_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]) -> [test.customers, test.orders, test.items])
-          IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]))
+        AncestorLookup_Default(test._akiban_customers -> test.customers, test.orders, test.items)
+          IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), sku, order_date, cid, oid, iid)

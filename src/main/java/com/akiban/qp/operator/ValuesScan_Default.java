@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.sql.optimizer.explain.Explainer;
 import java.util.ArrayList;
 import java.util.Collection;

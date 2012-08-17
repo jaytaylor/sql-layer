@@ -28,6 +28,7 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -39,6 +40,7 @@ import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.qp.rowtype.*;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -306,18 +308,14 @@ public class BranchLookup_Default extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        OperationExplainer ex = new LookUpOperatorExplainer("BranchLookup_Default", groupTable, inputRowType, keepInput, inputOperator, extraInfo);        
-        ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
-        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
-        ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
-        
+        Attributes atts = new Attributes();
         if (extraInfo != null && extraInfo.containsKey(this))
-        {
-            for (Explainer table : ((OperationExplainer)extraInfo.get(this)).get().get(Label.TABLE_CORRELATION))
-                ex.addAttribute(Label.TABLE_CORRELATION, table);
-        }
+            atts = ((OperationExplainer)extraInfo.get(this)).get();
+        atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
+        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
+        atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         
-        return ex;
+        return new LookUpOperatorExplainer("BranchLookup_Default", atts, groupTable, inputRowType, keepInput, inputOperator, extraInfo);
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor

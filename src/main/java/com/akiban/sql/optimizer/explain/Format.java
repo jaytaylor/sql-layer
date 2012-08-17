@@ -216,7 +216,7 @@ public class Format {
                         sb.append(atts.get(Label.INDEX).get(0).get());
                     break;
                 default:
-                    // Nothing needed, as there are many operators which display nothing in brief mode
+                    // Nothing needed, as most operators display nothing in brief mode
             }
         }
         else
@@ -252,12 +252,38 @@ public class Format {
                         sb.append(atts.get(Label.INDEX).get(0).get());
                         if (atts.containsKey(Label.COLUMN_NAME))
                         {
-                            OperationExplainer col = null;
-                            for (Explainer column : atts.get(Label.COLUMN_NAME))
-                                col = (OperationExplainer)column;
-                                sb.append(", ").append(col.get().get(Label.NAME).get(0).get());
-                                if (col.get().containsKey(Label.EXPRESSIONS))
-                                    sb.append(col.get().get(Label.EXPRESSIONS).get(0).get());
+                            int i = 0;
+                            if (atts.containsKey(Label.EQUAL_COMPARAND))
+                                for (Explainer comparand : atts.get(Label.EQUAL_COMPARAND))
+                                    sb.append(", ").append(atts.get(Label.COLUMN_NAME).get(i++).get()).append(" = ").append(comparand.get());
+                            for (boolean first = true; i < atts.get(Label.COLUMN_NAME).size(); i++)
+                            {
+                                sb.append(", ").append(atts.get(Label.COLUMN_NAME).get(i).get());
+                                if (first)
+                                {
+                                    Object hi, lo;
+                                    if (atts.containsKey(Label.HIGH_COMPARAND))
+                                    {
+                                        hi = atts.get(Label.HIGH_COMPARAND).get(0).get();
+                                        if (atts.containsKey(Label.LOW_COMPARAND))
+                                        {
+                                            lo = atts.get(Label.LOW_COMPARAND).get(0).get();
+                                            if (atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE"))
+                                                if (atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE"))
+                                                    sb.append(" BETWEEN ").append(lo).append(" AND ").append(hi);
+                                                else
+                                                    sb.append(" <= ").append(hi).append(" AND ").append(" > ").append(lo);
+                                            else
+                                                sb.append(" < ").append(hi).append(" AND ").append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(lo);
+                                        }
+                                        else
+                                            sb.append(atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE") ? " <= " : " < ").append(hi);
+                                    }
+                                    else if (atts.containsKey(Label.LOW_COMPARAND))
+                                        sb.append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(atts.get(Label.LOW_COMPARAND).get(0).get());
+                                    first = false;
+                                }
+                            }
                         }
                     }
                     break;
@@ -283,7 +309,11 @@ public class Format {
                     }
                     else if (name.equals("AncestorLookup_Nested"))
                     {
-                        sb.append(atts.get(Label.BINDING_POSITION).get(0).get()).append(" -> ");
+                        if (atts.containsKey(Label.BINDING_POSITION))
+                            sb.append(atts.get(Label.BINDING_POSITION).get(0).get());
+                        else
+                            sb.append(atts.get(Label.GROUP_TABLE).get(0).get());
+                        sb.append(" -> ");
                         if (atts.containsKey(Label.TABLE_CORRELATION))
                         {
                             for (Explainer table : atts.get(Label.TABLE_CORRELATION))
@@ -315,7 +345,11 @@ public class Format {
                     }
                     else if (name.equals("BranchLookup_Nested"))
                     {
-                        sb.append(atts.get(Label.BINDING_POSITION).get(0).get()).append(" -> ");
+                        if (atts.containsKey(Label.BINDING_POSITION))
+                            sb.append(atts.get(Label.BINDING_POSITION).get(0).get());
+                        else
+                            sb.append(atts.get(Label.GROUP_TABLE).get(0).get());
+                        sb.append(" -> ");
                         if (atts.containsKey(Label.TABLE_CORRELATION))
                         {
                             for (Explainer table : atts.get(Label.TABLE_CORRELATION))

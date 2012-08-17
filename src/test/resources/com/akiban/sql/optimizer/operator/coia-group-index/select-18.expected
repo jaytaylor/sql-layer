@@ -1,9 +1,9 @@
 PhysicalSelect[sku:varchar(32)[VARCHAR], name:varchar(32)[VARCHAR]]
-  Project_Default(Field(1), Field(0))
-    UnionAll_Default
-      UnionAll_Default
-        UnionAll_Default
-          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>UnboundExpressions[Literal(Smith), Literal(NULL)],<UnboundExpressions[Literal(Smith), Literal(1111)]))
-          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>UnboundExpressions[Literal(Smith), Literal(1111)],<UnboundExpressions[Literal(Smith), Literal(2222)]))
-        IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>UnboundExpressions[Literal(Smith), Literal(2222)],<UnboundExpressions[Literal(Smith), Literal(3333)]))
-      IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>UnboundExpressions[Literal(Smith), Literal(3333)],<UnboundExpressions[Literal(Smith), Literal(NULL)]))
+  Project_Default(items.sku, customers.name)
+    UnionAll_Default()
+      UnionAll_Default()
+        UnionAll_Default()
+          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]))
+          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]))
+        IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]))
+      IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]))

@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
@@ -200,18 +201,19 @@ class IfEmpty_Default extends Operator
     @Override
     public Explainer getExplainer(Map<Object, Explainer> extraInfo)
     {
-        Attributes att = new Attributes();
+        Attributes atts = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("IfEmpty_Default"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("IfEmpty_Default"));
         if (pExpressions != null) {
             for (TPreparedExpression ex : pExpressions)
                 throw new UnsupportedOperationException(); // TODO
         }
         else {
             for (Expression ex : oExpressions)
-                att.put(Label.OPERAND, ex.getExplainer(extraInfo));
+                atts.put(Label.OPERAND, ex.getExplainer(extraInfo));
         }
-        return new OperationExplainer(Type.IF_EMPTY, att);
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
+        return new OperationExplainer(Type.IF_EMPTY, atts);
     }
 
     // Inner classes

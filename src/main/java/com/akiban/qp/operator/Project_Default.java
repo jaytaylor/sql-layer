@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
@@ -198,14 +199,12 @@ class Project_Default extends Operator
         if (projectType.hasUserTable())
             att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
-        if (projections != null) {
+        if (projections != null)
             for (Expression ex : projections)
                 att.put(Label.PROJECTION, ex.getExplainer(extraInfo));
-        }
-        else {
+        else
             for (TPreparedExpression ex : pExpressions)
                 att.put(Label.PROJECTION, TPreparedExpressions.getExplainer(ex));
-        }
         return new OperationExplainer(Type.PROJECT, att);
     }
 

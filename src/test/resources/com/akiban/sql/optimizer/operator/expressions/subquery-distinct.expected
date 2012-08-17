@@ -5,4 +5,4 @@ PhysicalSelect[cid:int[INT], _SQL_COL_1:INTEGER]
   Sort_Tree(Field(0) ASC, SUPPRESS_DUPLICATES)
     Project_Default(orders.oid + 1)
       Filter_Default(test.orders)
-        BranchLookup_Nested(null -> test.orders (via test.customers))
+        BranchLookup_Nested(test.customers -> test.orders (via test.customers))

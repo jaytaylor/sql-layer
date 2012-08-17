@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.explain.Explainer;

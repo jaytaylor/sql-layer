@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
@@ -153,8 +154,8 @@ class Update_Default implements UpdatePlannable {
         {
             atts = ((OperationExplainer)extraInfo.get(this)).get();
         }
+        atts.put(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
         OperationExplainer ex = new DUIOperatorExplainer("Update_Default", atts, inputOperator, extraInfo);
-        ex.addAttribute(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
         return ex;
     }
 

@@ -25,6 +25,7 @@
  */
 package com.akiban.sql.optimizer.explain.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.expression.Expression;
 import com.akiban.sql.optimizer.explain.*;
 import java.util.Arrays;

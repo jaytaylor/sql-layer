@@ -27,6 +27,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.HKeySegment;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;

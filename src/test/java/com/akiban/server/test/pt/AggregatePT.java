@@ -29,6 +29,7 @@ package com.akiban.server.test.pt;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;

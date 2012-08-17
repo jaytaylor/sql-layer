@@ -26,7 +26,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.operator.Operator;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.sql.optimizer.rule.RulesContext;
 
 import com.akiban.qp.operator.QueryContext;
@@ -86,7 +86,7 @@ public class PlanContext
         return true;
     }
     
-    public boolean giveInfoOperator(Operator key, Explainer value) {
+    public boolean giveInfoOperator(Plannable key, Explainer value) {
         if (hasInfo())
             extraInfo.put(key, value);
         else
