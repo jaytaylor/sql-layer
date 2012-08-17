@@ -133,6 +133,8 @@ public class SequenceDDLIT extends PostgresServerITBase {
         rs = stmt.getResultSet();
         long currentValue = rs.next() ? rs.getLong(1) : 0;
         assertEquals(currentValue, nextValue);
+        sql = "DROP SEQUENCE test.new_sequence RESTRICT";
+        getConnection().createStatement().execute(sql);
     }
     
     protected DDLFunctions ddlServer() {
