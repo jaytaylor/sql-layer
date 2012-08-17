@@ -397,6 +397,16 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
+    // TODO: For pooling experiment
+    public void reset()
+    {
+        pKey.clear();
+        if (pValue != null) {
+            pValue.clear();
+        }
+    }
+    // TODO: End of pooling experiment
+
     // For use by this class
 
     private <S> SortKeyTarget<S> pKeyTarget()

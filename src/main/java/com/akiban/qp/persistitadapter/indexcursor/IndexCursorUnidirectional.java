@@ -101,6 +101,18 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     }
 
     @Override
+    public void destroy()
+    {
+        super.destroy();
+        if (startKey != null) {
+            adapter.returnIndexRow(startKey);
+        }
+        if (endKey != null) {
+            adapter.returnIndexRow(endKey);
+        }
+    }
+
+    @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
         assert keyRange != null;
@@ -138,7 +150,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
-        this.endKey = endBoundColumns == 0 ? null : PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+        this.endKey = endBoundColumns == 0 ? null : adapter.takeIndexRow(keyRange.indexRowType());
         this.sortKeyAdapter = sortKeyAdapter;
         initializeCursor(keyRange, ordering);
     }
@@ -386,7 +398,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         } else {
             assert false : ordering;
         }
-        this.startKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+        this.startKey = adapter.takeIndexRow(keyRange.indexRowType());
         this.startKeyKey = adapter.newKey();
         this.endKeyKey = adapter.newKey();
         this.startBoundColumns = keyRange.boundColumns();
