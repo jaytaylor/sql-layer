@@ -40,7 +40,10 @@ public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
         clear();
         ArgumentValidation.notNull("fieldDef", fieldDef);
-        ArgumentValidation.withinArray("backing bytes", backingBytes, "offset", offset);
+        if (offset < 0)
+            throw new IllegalArgumentException("offset may not be zero");
+        if (offset >= backingBytes.length)
+            throw new ArrayIndexOutOfBoundsException(offset);
         this.fieldDef = fieldDef;
         this.bytes = backingBytes;
         this.offset = offset;
