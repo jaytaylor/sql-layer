@@ -49,6 +49,11 @@ public abstract class Abs extends TOverloadBase {
     }
 
     @Override
+    public String[] registeredNames() {
+        return new String[] {"absolute"};
+    }
+
+    @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(inputType.instance());
     }

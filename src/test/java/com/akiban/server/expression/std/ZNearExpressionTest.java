@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
@@ -39,7 +40,7 @@ public class ZNearExpressionTest {
 
     private static final Expression ZERO = new LiteralExpression(AkType.DOUBLE, 0.0);
     
-    @Test (expected=UnsupportedOperationException.class)
+    @Test (expected=UnsupportedSQLException.class)
     public void testNOP() {
         List<Expression> lst = new LinkedList<Expression>(Arrays.asList(ZERO, ZERO, ZERO, ZERO));
         Expression exp = new ZNearExpression(lst);

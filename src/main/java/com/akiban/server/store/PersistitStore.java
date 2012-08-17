@@ -531,10 +531,11 @@ public class PersistitStore implements Store {
     public void updateRow(Session session,
                           RowData oldRowData,
                           RowData newRowData,
-                          ColumnSelector columnSelector)
+                          ColumnSelector columnSelector,
+                          Index[] indexes)
         throws PersistitException
     {
-        updateRow(session, oldRowData, newRowData, columnSelector, null, false, true);
+        updateRow(session, oldRowData, newRowData, columnSelector, indexes, (indexes != null), true);
     }
 
     private void updateRow(Session session,
@@ -609,22 +610,6 @@ public class PersistitStore implements Store {
         } finally {
             UPDATE_ROW_TAP.out();
             releaseExchange(session, hEx);
-        }
-    }
-
-    @Override
-    public void alterRow(Session session, boolean hKeyChanged, RowData oldRowData, RowData newRowData, Index[] indexes)
-            throws PersistitException
-    {
-        final BitSet TABLES_TO_MAINTAIN = null;
-        final ColumnSelector SELECTOR = null;
-
-        if(hKeyChanged) {
-            assert indexes == null;
-            deleteRow(session, oldRowData, TABLES_TO_MAINTAIN, true);
-            writeRow(session, newRowData, TABLES_TO_MAINTAIN, true);
-        } else {
-            updateRow(session, oldRowData, newRowData, SELECTOR, indexes, true, false);
         }
     }
 

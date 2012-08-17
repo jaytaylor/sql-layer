@@ -262,5 +262,10 @@ public final class OperatorTestHelper {
         public long sequenceNextValue(TableName sequenceName) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public long sequenceCurrentValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

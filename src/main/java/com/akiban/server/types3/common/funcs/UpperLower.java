@@ -54,11 +54,11 @@ public abstract class UpperLower extends TOverloadBase
                 {
                     output.putString((inputs.get(0).getString()).toUpperCase(), null);
                 }
-                
+
                 @Override
                 public String[] registeredNames()
                 {
-                    return new String[]{"lcase", "lower"};
+                    return new String[]{"ucase", "upper"};
                 }
             },
             new UpperLower(stringType, "LOWER")
@@ -68,11 +68,11 @@ public abstract class UpperLower extends TOverloadBase
                 {
                     output.putString((inputs.get(0).getString()).toLowerCase(), null);
                 }
-                
+
                 @Override
                 public String[] registeredNames()
                 {
-                    return new String[]{"ucase", "upper"};
+                    return new String[]{"lcase", "lower"};
                 }
             }
         };

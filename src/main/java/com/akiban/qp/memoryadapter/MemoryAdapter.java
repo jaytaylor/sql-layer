@@ -127,6 +127,11 @@ public class MemoryAdapter extends StoreAdapter {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public long sequenceCurrentValue(TableName sequenceName) {
+        throw new UnsupportedOperationException();
+    }
+
         @Override
     public long hash(ValueSource valueSource, AkCollator collator) {
         return

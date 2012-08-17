@@ -34,6 +34,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -69,55 +70,29 @@ public class AlterTableHelper {
         }
     }
 
-    public Column findNewColumn(UserTable newTable, String oldName) {
+    public Integer findOldPosition(UserTable oldTable, Column newColumn) {
+        String newName = newColumn.getName();
         for(TableChange change : columnChanges) {
-            switch(change.getChangeType()) {
-                case DROP:
-                    if(oldName.equals(change.getOldName())) {
-                        return null;
-                    }
-                break;
-                case MODIFY:
-                    if(oldName.equals(change.getOldName())) {
-                        return newTable.getColumn(change.getNewName());
-                    }
-                break;
-            }
-        }
-        return newTable.getColumn(oldName);
-    }
-
-    public Integer findOldPosition(Column oldColumn, Column newColumn) {
-        for(TableChange change : columnChanges) {
-            String newName = newColumn.getName();
             if(newName.equals(change.getNewName())) {
                 switch(change.getChangeType()) {
                     case ADD:
                         return null;
                     case MODIFY:
+                        Column oldColumn = oldTable.getColumn(change.getOldName());
                         assert oldColumn != null : newColumn;
                         return oldColumn.getPosition();
                     case DROP:
-                        throw new IllegalStateException("Column should not exist in new table: " + newName);
+                        throw new IllegalStateException("Dropped new column? " + newName);
                 }
             }
         }
-        if(oldColumn == null && newColumn.isAkibanPKColumn()) {
+        Column oldColumn = oldTable.getColumn(newName);
+        if((oldColumn == null) && newColumn.isAkibanPKColumn()) {
             return null;
         }
         // Not in change list, must be an original column
         assert oldColumn != null : newColumn;
         return oldColumn.getPosition();
-    }
-
-    public boolean indexContainsColumn(Index index, TableName tableName, String columnName) {
-        for(IndexColumn indexColumn : index.getKeyColumns()) {
-            Column fromIndex = indexColumn.getColumn();
-            if(fromIndex.getTable().getName().equals(tableName) && fromIndex.getName().equals(columnName)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void findAffectedOldIndexes(UserTable table, List<Index> toTruncate, List<Index> toDrop) {
@@ -146,23 +121,9 @@ public class AlterTableHelper {
         return indexes;
     }
 
-    public List<GroupIndex> findAffectedGroupIndexes(UserTable table) {
-        List<GroupIndex> affected = new ArrayList<GroupIndex>();
-        for(TableChange change : columnChanges) {
-            if(change.getChangeType() == TableChange.ChangeType.ADD) {
-                continue;
-            }
-            for(GroupIndex index : table.getGroupIndexes()) {
-                if(indexContainsColumn(index, table.getName(), change.getOldName())) {
-                    affected.add(index);
-                }
-            }
-        }
-        return affected;
-    }
-
-    public void recreateAffectedGroupIndexes(UserTable origTable, final UserTable newTable, List<GroupIndex> affected,
-                                             List<Index> indexesToBuild, List<Index> indexesToDrop) {
+    public void recreateAffectedGroupIndexes(UserTable origTable, final UserTable newTable,
+                                             List<Index> indexesToBuild, List<Index> indexesToDrop,
+                                             Map<IndexName, List<Column>> affectedGroupIndexes) {
         AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS(), new ProtobufWriter.TableSelector() {
             @Override
             public boolean isSelected(Columnar columnar) {
@@ -170,23 +131,22 @@ public class AlterTableHelper {
             }
         });
 
-        final Group origGroup = origTable.getGroup();
+        Group origGroup = origTable.getGroup();
         Group tempGroup = tempAIS.getGroup(newTable.getGroup().getName());
-        for(GroupIndex index : affected) {
-            GroupIndex origIndex = origGroup.getIndex(index.getIndexName().getName());
-            GroupIndex indexCopy = GroupIndex.create(tempAIS, tempGroup, origIndex);
-            int pos = 0;
-            for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
-                UserTable tempTable = tempAIS.getUserTable(indexColumn.getColumn().getTable().getName());
-                Column column = findNewColumn(tempTable, indexColumn.getColumn().getName());
-                if(column != null) {
-                    IndexColumn.create(indexCopy, column, indexColumn, pos++);
-                }
-            }
-            if(pos != 0) {
-                indexesToBuild.add(indexCopy);
-            } else {
+        for(Map.Entry<IndexName, List<Column>> entry : affectedGroupIndexes.entrySet()) {
+            GroupIndex origIndex = origGroup.getIndex(entry.getKey().getName());
+            List<Column> columns = entry.getValue();
+            if(columns.isEmpty()) {
                 indexesToDrop.add(origIndex);
+            } else {
+                GroupIndex tempIndex = GroupIndex.create(tempAIS, tempGroup, origIndex);
+                for(int i = 0; i < columns.size(); ++i) {
+                    Column column = columns.get(i);
+                    UserTable tempTable = tempAIS.getUserTable(column.getTable().getName());
+                    Column tempColumn = tempTable.getColumn(column.getName());
+                    IndexColumn.create(tempIndex,  tempColumn, i, true, null);
+                }
+                indexesToBuild.add(tempIndex);
             }
         }
     }

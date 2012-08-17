@@ -85,6 +85,8 @@ public abstract class StoreAdapter
     
     public abstract long sequenceNextValue(TableName sequenceName);
 
+    public abstract long sequenceCurrentValue(TableName sequenceName);
+
     public abstract long hash(ValueSource valueSource, AkCollator collator);
 
     public final Session getSession() {

@@ -18,10 +18,18 @@ SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
 NAME="akiban"
 DESC="Akiban"
 log_file=/var/log/akiban/server_stdout.log
-pidfile=/var/run/akiban/server.pid
+PIDFILE_DIR=/var/run/$NAME
+pidfile=$PIDFILE_DIR/server.pid
 timeout=60
 AKIBAN_PROG=/usr/sbin/akserver
 DAEMON=/usr/sbin/akserver
+
+# /var/run is a tmpfs filesystem on ubuntu
+# on reboot and during upgrades, its contents can be wiped
+if [ ! -d $PIDFILE_DIR ]; then
+    mkdir $PIDFILE_DIR
+    chown akiban $PIDFILE_DIR
+fi
 
 [ -e /usr/share/akiban/akiban-server.jar ] || exit 0
 [ -e /etc/akiban/config/jvm.options ] || exit 0

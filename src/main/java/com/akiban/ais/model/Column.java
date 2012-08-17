@@ -76,9 +76,10 @@ public class Column implements ColumnContainer
      * @param position Position of the new column, or <code>null</code> to copy from the given column.
      * @return Copy of the Column.
      * */
-    public static Column create(Columnar columnar, Column column, Integer position) {
+    public static Column create(Columnar columnar, Column column, String name, Integer position) {
         Integer finalPosition = (position != null) ? position : column.position;
-        Column out = create(columnar, column.columnName, finalPosition, column.type, column.nullable, column.typeParameter1,
+        String finalName = (name != null) ? name :  column.getName();
+        Column out = create(columnar, finalName, finalPosition, column.type, column.nullable, column.typeParameter1,
                             column.typeParameter2, column.initialAutoIncrementValue, column.charsetAndCollation,
                             column.maxStorageSize, column.prefixSize);
         if(column.identityGenerator != null) {
@@ -88,6 +89,7 @@ public class Column implements ColumnContainer
                 out.setIdentityGenerator(newGenerator);
             }
         }
+        out.setDefaultValue(column.getDefaultValue());
         return out;
     }
 

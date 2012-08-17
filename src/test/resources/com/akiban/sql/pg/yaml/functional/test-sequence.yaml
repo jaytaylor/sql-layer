@@ -7,6 +7,9 @@
 - Statement: select next value for sequence1 
 - output: [[1]]
 ---
+- Statement: select current value for sequence1 
+- output: [[1]]
+---
 - Statement: insert into t (c1, c2) values (next value for sequence1, 'FRED')
 ---
 - Statement: select c1, c2 from t
@@ -32,6 +35,9 @@
 - Statement: Select next value for sequence2
 - output: [[4]]
 ---
+- Statement: Select current value for sequence2
+- output: [[4]]
+---
 - Statement: Select next value for sequence2
 - output: [[5]]
 ---
@@ -46,6 +52,9 @@
 - output: [[3]] 
 ---
 - Statement: select next value for sequence3;
+- output: [[2]]
+---
+- Statement: select current value for sequence3;
 - output: [[2]]
 ---
 - Statement: select next value for test.sequence3

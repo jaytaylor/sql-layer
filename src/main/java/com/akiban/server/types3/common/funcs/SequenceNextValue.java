@@ -44,12 +44,12 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class SequenceNextValue extends TOverloadBase {
 
-    public static TOverload[] INSTANCES = SequenceNextValue.create ();
+    public static final TOverload[] INSTANCES = SequenceNextValue.create();
     
-    public static TOverload[] create () {
-        return new TOverload[]{
+    public static TOverload[] create() {
+        return new TOverload[] {
             new SequenceNextValue(MNumeric.BIGINT)
-            }; 
+        };
     }
     protected final TClass inputType;
     
