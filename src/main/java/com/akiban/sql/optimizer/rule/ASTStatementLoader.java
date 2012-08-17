@@ -615,7 +615,7 @@ public class ASTStatementLoader extends BaseRule
                         ExpressionNode right = toExpression(rightOperand, projects);
                         ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left, right, 
                                                                            in.getType(), in);
-                        
+
                         if (conds == null)
                         {
                             conds = cond;
@@ -717,7 +717,7 @@ public class ASTStatementLoader extends BaseRule
         {
             RowConstructorNode leftRow = in.getLeftOperand();
             RowConstructorNode rightRow = in.getRightOperandList();
-           
+            
             ConditionExpression result = null;
 
             for (ValueNode rightNode : rightRow.getNodeList())
