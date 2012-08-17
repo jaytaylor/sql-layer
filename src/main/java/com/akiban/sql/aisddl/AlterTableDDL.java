@@ -189,7 +189,7 @@ public class AlterTableDDL {
         }
 
         final AkibanInformationSchema origAIS = table.getAIS();
-        final UserTable tableCopy = copyTable(table, columnChanges, indexChanges);
+        final UserTable tableCopy = copyTable(table, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
         final AISBuilder builder = new AISBuilder(aisCopy);
 
@@ -225,6 +225,7 @@ public class AlterTableDDL {
                 TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos);
             }
         }
+        copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
 
         TableName newName = tableCopy.getName();
         for(ConstraintDefinitionNode cdn : conDefNodes) {
@@ -287,15 +288,11 @@ public class AlterTableDDL {
         return null;
     }
 
-    private static UserTable copyTable(UserTable origTable, List<TableChange> columnChanges, List<TableChange> indexChanges) {
+    private static UserTable copyTable(UserTable origTable, List<TableChange> columnChanges) {
         for(TableChange change : columnChanges) {
             if(change.getChangeType() != ChangeType.ADD) {
                 checkColumnChange(origTable, change.getOldName());
             }
-        }
-
-        for(TableChange change : indexChanges) {
-            checkIndexChange(origTable, change.getOldName(), change.getChangeType() == ChangeType.ADD);
         }
 
         AkibanInformationSchema aisCopy = AISCloner.clone(origTable.getAIS(), new GroupSelector(origTable.getGroup()));
@@ -311,6 +308,15 @@ public class AlterTableDDL {
             if(findOldName(columnChanges, columnName) != ChangeType.DROP) {
                 Column.create(tableCopy, origColumn, columnName, colPos++);
             }
+        }
+
+        return tableCopy;
+    }
+
+    private static void copyTableIndexes(UserTable origTable, UserTable tableCopy,
+                                         List<TableChange> columnChanges, List<TableChange> indexChanges) {
+        for(TableChange change : indexChanges) {
+            checkIndexChange(origTable, change.getOldName(), change.getChangeType() == ChangeType.ADD);
         }
 
         Collection<TableIndex> indexesToDrop = new ArrayList<TableIndex>();
@@ -342,7 +348,6 @@ public class AlterTableDDL {
         }
 
         tableCopy.removeIndexes(indexesToDrop);
-        return tableCopy;
     }
 
     private static class GroupSelector extends ProtobufWriter.TableSelector {
