@@ -53,11 +53,8 @@ import static org.junit.Assert.*;
 
 /**
  * 
- * This differs from UniqueIndexScanJumpBoundedWithNullsIT in that each index row
- * in this test looks like this:  [ a, b, c | id ]
- * , while in the other one, it's [ a, b, c]
- * 
- * (Open to suggestion on a better name)
+ * This differs from UniqueIndexScanJumpBoundedWithNullsIT in that this test creates jump targets specifying
+ * a, b, c and id.
  */
 public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
 {
