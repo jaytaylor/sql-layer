@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -688,9 +689,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     // TODO: Method is a complete hack, failed DDL should be handled more gracefully
     @Override
-    public void rollbackAIS(Session session, AkibanInformationSchema replaceAIS, Collection<String> schemaNames) {
-        AkibanInformationSchema newAIS = AISCloner.clone(replaceAIS);
-        saveAISChangeWithRowDefs(session, newAIS, schemaNames);
+    public void rollbackAIS(Session session, AkibanInformationSchema replaceAIS,
+                            Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames) {
+        Transaction txn = treeService.getTransaction(session);
+        txn.end();
+        try {
+            txn.begin();
+            for(Map.Entry<TableName, Integer> entry : savedOrdinals.entrySet()) {
+                UserTable table = replaceAIS.getUserTable(entry.getKey());
+                treeService.getTableStatusCache().setOrdinal(table.getTableId(), entry.getValue());
+            }
+            AkibanInformationSchema newAIS = AISCloner.clone(replaceAIS);
+            saveAISChangeWithRowDefs(session, newAIS, schemaNames);
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
     }
 
     @Override

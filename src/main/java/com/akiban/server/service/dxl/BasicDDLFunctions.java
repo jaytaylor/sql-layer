@@ -444,7 +444,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         ChangeLevel changeLevel;
         boolean rollBackNeeded = false;
+        Set<String> savedSchemas = new HashSet<String>();
+        Map<TableName,Integer> savedOrdinals = new HashMap<TableName,Integer>();
         List<Index> indexesToDrop = new ArrayList<Index>();
+
+        savedSchemas.add(tableName.getSchemaName());
+        savedSchemas.add(newDefinition.getName().getSchemaName());
         try {
             AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges);
 
@@ -491,9 +496,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
                     for(ChangedTableDescription desc : validator.getAllChangedTables()) {
                         desc.getPreserveIndexes().put(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT);
-                        Index index = origAIS.getUserTable(desc.getOldName()).getPrimaryKeyIncludingInternal().getIndex();
+                        UserTable oldTable = origAIS.getUserTable(desc.getOldName());
+                        Index index = oldTable.getPrimaryKeyIncludingInternal().getIndex();
                         indexesToTruncate.add(index);
                         indexesToDrop.remove(index);
+                        savedSchemas.add(desc.getOldName().getSchemaName());
+                        savedOrdinals.put(desc.getOldName(), oldTable.rowDef().getOrdinal());
                     }
                     store().truncateIndex(session, indexesToTruncate);
                     doTableChange(session, context, tableName, newDefinition, changedTables, affectedGroupIndexes,
@@ -514,10 +522,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 // All of the data changed was transactional but PSSM changes aren't like that
                 AkibanInformationSchema curAIS = getAIS(session);
                 if(origAIS != curAIS) {
-                    Set<String> schemas = new HashSet<String>();
-                    schemas.add(tableName.getSchemaName());
-                    schemas.add(newDefinition.getName().getSchemaName());
-                    schemaManager().rollbackAIS(session, origAIS, schemas);
+                    schemaManager().rollbackAIS(session, origAIS, savedOrdinals, savedSchemas);
                 }
                 // TODO: rollback new index trees?
             }
