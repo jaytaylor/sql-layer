@@ -88,8 +88,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
     // IndexCursorSpatial_InBox interface
 
     public static IndexCursorSpatial_InBox create(QueryContext context,
-                                            IterationHelper iterationHelper,
-                                            IndexKeyRange keyRange)
+                                                  IterationHelper iterationHelper,
+                                                  IndexKeyRange keyRange)
     {
         return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange);
     }
@@ -119,7 +119,6 @@ class IndexCursorSpatial_InBox extends IndexCursor
     private static List<IndexKeyRange> zKeyRanges(QueryContext context, IndexKeyRange keyRange)
     {
         List<IndexKeyRange> zKeyRanges = new ArrayList<IndexKeyRange>();
-        // TODO: Wraparound
         Index index = keyRange.indexRowType().index();
         IndexBound loBound = keyRange.lo();
         IndexBound hiBound = keyRange.hi();
@@ -131,8 +130,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         BigDecimal xHi = hiExpressions.eval(0).getDecimal();
         BigDecimal yLo = loExpressions.eval(1).getDecimal();
         BigDecimal yHi = hiExpressions.eval(1).getDecimal();
-        BoxLatLon box = new BoxLatLon(xLo, xHi, yLo, yHi);
-        long[] zValues = new long[4];
+        BoxLatLon box = BoxLatLon.newBox(xLo, xHi, yLo, yHi);
+        long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
         space.decompose(box, zValues);
         for (int i = 0; i < zValues.length; i++) {
             long z = zValues[i];

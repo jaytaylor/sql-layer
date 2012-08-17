@@ -98,6 +98,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
         return server.getStore().sequenceNextValue(sequenceName);
     }
 
+    @Override
+    public long sequenceCurrentValue(TableName sequenceName) {
+        return server.getStore().sequenceCurrentValue(sequenceName);
+    }
+
     public void lock(DXLFunction operationType) {
         long timeout = 0;       // No timeout.
         long queryTimeoutSec = getQueryTimeoutSec();

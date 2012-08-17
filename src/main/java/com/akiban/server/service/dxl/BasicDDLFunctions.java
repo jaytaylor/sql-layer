@@ -176,6 +176,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         public long sequenceNextValue(TableName sequence) {
             return delegate.sequenceNextValue(sequence);
         }
+
+        @Override
+        public long sequenceCurrentValue(TableName sequence) {
+            return delegate.sequenceCurrentValue(sequence);
+        }
     }
 
 
