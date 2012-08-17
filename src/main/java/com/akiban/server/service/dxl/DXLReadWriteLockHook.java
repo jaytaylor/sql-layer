@@ -141,14 +141,10 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
                     break;
             }
             if (lock != null) {
-                session.push(DATA_LOCK_KEY, lock);
-                lock.lock();
+                return lockLock(session, DATA_LOCK_KEY, lock, timeout);
             }
-            return lockLock(session, SCHEMA_LOCK_KEY, lock, timeout);
         }
-        else {
-            return true;
-        }
+        return true;            // Successfully didn't lock anything.
     }
 
     private void unlockSchema(Session session, Throwable t)
