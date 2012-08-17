@@ -148,7 +148,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         return (int)indexRow(id).eval(1).getLong();
     }
 
-    // test with rows whose c == null
+    // test jumping to rows whose c == null
     @Test
     public void testAAAA()
     {
@@ -261,7 +261,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         // 'correct ordering':
         // 1019, 1020, 1021, 1018, 1022
         // --->
-        
+
         testBounded(1019, // jump to the first null
                       b_of(1018), true,
                       b_of(1021), true,
@@ -359,46 +359,691 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
              getADDA(),
              new long[] {1021});
     }
+    
+    // test jumpting to rows  whose b == null
+    // There 3 rows with b == null, and 16 cases (2 ^4)
+    // Thus there should be 3 * 16 = 48 cases here
+    //
+    // (The number at the end of the test method's name is the id of the target row)
+    
+        //--- Start generated
+        // 1
+        @Test
+        public void testAAAA_b_1012()
+        {
+            // 'correct ordering':
+            // [1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023]
 
-    //TODO: add more test****()
+
+            testUnbounded(1012,
+                getAAAA(),
+                new long[]{1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
+
+        }
+
+        // 2
+        @Test
+        public void testAAAA_b_1013()
+        {
+            // 'correct ordering':
+            // [1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023]
+
+
+            testUnbounded(1013,
+                getAAAA(),
+                new long[]{1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
+
+        }
+
+        // 3
+        @Test
+        public void testAAAA_b_1016()
+        {
+            // 'correct ordering':
+            // [1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023]
+
+
+            testUnbounded(1016,
+                getAAAA(),
+                new long[]{1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
+
+        }
+
+        // 4
+        @Test
+        public void testDAAA_b_1012()
+        {
+            // 'correct ordering':
+            // [1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023]
+
+
+            testUnbounded(1012,
+                getDAAA(),
+                new long[]{1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
+
+        }
+
+        // 5
+        @Test
+        public void testDAAA_b_1013()
+        {
+            // 'correct ordering':
+            // [1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023]
+
+
+            testUnbounded(1013,
+                getDAAA(),
+                new long[]{1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
+
+        }
+
+        // 6
+        @Test
+        public void testDAAA_b_1016()
+        {
+            // 'correct ordering':
+            // [1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023]
+
+
+            testUnbounded(1016,
+                getDAAA(),
+                new long[]{1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
+
+        }
+
+        // 7
+        @Test
+        public void testAAAD_b_1012()
+        {
+            // 'correct ordering':
+            // [1016, 1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023]
+
+
+            testUnbounded(1012,
+                getAAAD(),
+                new long[]{1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023});
+
+        }
+
+        // 8
+        @Test
+        public void testAAAD_b_1013()
+        {
+            // 'correct ordering':
+            // [1016, 1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023]
+
+
+            testUnbounded(1013,
+                getAAAD(),
+                new long[]{1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023});
+
+        }
+
+        // 9
+        @Test
+        public void testAAAD_b_1016()
+        {
+            // 'correct ordering':
+            // [1016, 1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023]
+
+
+            testUnbounded(1016,
+                getAAAD(),
+                new long[]{1016, 1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023});
+
+        }
+
+        // 10
+        @Test
+        public void testADAA_b_1012()
+        {
+            // 'correct ordering':
+            // [1023, 1019, 1020, 1021, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1012, 1013]
+
+
+            testUnbounded(1012,
+                getADAA(),
+                new long[]{1012, 1013});
+
+        }
+
+        // 11
+        @Test
+        public void testADAA_b_1013()
+        {
+            // 'correct ordering':
+            // [1023, 1019, 1020, 1021, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1012, 1013]
+
+
+            testUnbounded(1013,
+                getADAA(),
+                new long[]{1013});
+
+        }
+
+        // 12
+        @Test
+        public void testADAA_b_1016()
+        {
+            // 'correct ordering':
+            // [1023, 1019, 1020, 1021, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1012, 1013]
+
+
+            testUnbounded(1016,
+                getADAA(),
+                new long[]{1016, 1012, 1013});
+
+        }
+
+        // 13
+        @Test
+        public void testDADA_b_1012()
+        {
+            // 'correct ordering':
+            // [1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023]
+
+
+            testUnbounded(1012,
+                getDADA(),
+                new long[]{1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023});
+
+        }
+
+        // 14
+        @Test
+        public void testDADA_b_1013()
+        {
+            // 'correct ordering':
+            // [1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023]
+
+
+            testUnbounded(1013,
+                getDADA(),
+                new long[]{1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023});
+
+        }
+
+        // 15
+        @Test
+        public void testDADA_b_1016()
+        {
+            // 'correct ordering':
+            // [1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023]
+
+
+            testUnbounded(1016,
+                getDADA(),
+                new long[]{1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023});
+
+        }
+
+        // 16
+        @Test
+        public void testDDAA_b_1012()
+        {
+            // 'correct ordering':
+            // [1023, 1019, 1020, 1021, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1012, 1013]
+
+
+            testUnbounded(1012,
+                getDDAA(),
+                new long[]{1012, 1013});
+
+        }
+
+        // 17
+        @Test
+        public void testDDAA_b_1013()
+        {
+            // 'correct ordering':
+            // [1023, 1019, 1020, 1021, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1012, 1013]
+
+
+            testUnbounded(1013,
+                getDDAA(),
+                new long[]{1013});
+
+        }
+
+        // 18
+        @Test
+        public void testDDAA_b_1016()
+        {
+            // 'correct ordering':
+            // [1023, 1019, 1020, 1021, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1012, 1013]
+
+
+            testUnbounded(1016,
+                getDDAA(),
+                new long[]{1016, 1012, 1013});
+
+        }
+
+        // 19
+        @Test
+        public void testDDAD_b_1012()
+        {
+            // 'correct ordering':
+            // [1023, 1021, 1020, 1019, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1013, 1012]
+
+
+            testUnbounded(1012,
+                getDDAD(),
+                new long[]{1012});
+
+        }
+
+        // 20
+        @Test
+        public void testDDAD_b_1013()
+        {
+            // 'correct ordering':
+            // [1023, 1021, 1020, 1019, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1013, 1012]
+
+
+            testUnbounded(1013,
+                getDDAD(),
+                new long[]{1013, 1012});
+
+        }
+
+        // 21
+        @Test
+        public void testDDAD_b_1016()
+        {
+            // 'correct ordering':
+            // [1023, 1021, 1020, 1019, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1013, 1012]
+
+
+            testUnbounded(1016,
+                getDDAD(),
+                new long[]{1016, 1013, 1012});
+
+        }
+
+        // 22
+        @Test
+        public void testADAD_b_1012()
+        {
+            // 'correct ordering':
+            // [1023, 1021, 1020, 1019, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1013, 1012]
+
+
+            testUnbounded(1012,
+                getADAD(),
+                new long[]{1012});
+
+        }
+
+        // 23
+        @Test
+        public void testADAD_b_1013()
+        {
+            // 'correct ordering':
+            // [1023, 1021, 1020, 1019, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1013, 1012]
+
+
+            testUnbounded(1013,
+                getADAD(),
+                new long[]{1013, 1012});
+
+        }
+
+        // 24
+        @Test
+        public void testADAD_b_1016()
+        {
+            // 'correct ordering':
+            // [1023, 1021, 1020, 1019, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1013, 1012]
+
+
+            testUnbounded(1016,
+                getADAD(),
+                new long[]{1016, 1013, 1012});
+
+        }
+
+        // 25
+        @Test
+        public void testADDA_b_1012()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1019, 1020, 1021, 1017, 1015, 1014, 1011, 1010, 1012, 1013, 1016]
+
+
+            testUnbounded(1012,
+                getADDA(),
+                new long[]{1012, 1013, 1016});
+
+        }
+
+        // 26
+        @Test
+        public void testADDA_b_1013()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1019, 1020, 1021, 1017, 1015, 1014, 1011, 1010, 1012, 1013, 1016]
+
+
+            testUnbounded(1013,
+                getADDA(),
+                new long[]{1013, 1016});
+
+        }
+
+        // 27
+        @Test
+        public void testADDA_b_1016()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1019, 1020, 1021, 1017, 1015, 1014, 1011, 1010, 1012, 1013, 1016]
+
+
+            testUnbounded(1016,
+                getADDA(),
+                new long[]{1016});
+
+        }
+
+        // 28
+        @Test
+        public void testDADD_b_1012()
+        {
+            // 'correct ordering':
+            // [1013, 1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023]
+
+
+            testUnbounded(1012,
+                getDADD(),
+                new long[]{1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023});
+
+        }
+
+        // 29
+        @Test
+        public void testDADD_b_1013()
+        {
+            // 'correct ordering':
+            // [1013, 1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023]
+
+
+            testUnbounded(1013,
+                getDADD(),
+                new long[]{1013, 1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023});
+
+        }
+
+        // 30
+        @Test
+        public void testDADD_b_1016()
+        {
+            // 'correct ordering':
+            // [1013, 1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023]
+
+
+            testUnbounded(1016,
+                getDADD(),
+                new long[]{1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023});
+
+        }
+
+        // 31
+        @Test
+        public void testAADD_b_1012()
+        {
+            // 'correct ordering':
+            // [1013, 1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023]
+
+
+            testUnbounded(1012,
+                getAADD(),
+                new long[]{1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023});
+
+        }
+
+        // 32
+        @Test
+        public void testAADD_b_1013()
+        {
+            // 'correct ordering':
+            // [1013, 1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023]
+
+
+            testUnbounded(1013,
+                getAADD(),
+                new long[]{1013, 1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023});
+
+        }
+
+        // 33
+        @Test
+        public void testAADD_b_1016()
+        {
+            // 'correct ordering':
+            // [1013, 1012, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023]
+
+
+            testUnbounded(1016,
+                getAADD(),
+                new long[]{1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1021, 1020, 1019, 1023});
+
+        }
+
+        // 34
+        @Test
+        public void testADDD_b_1012()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016]
+
+
+            testUnbounded(1012,
+                getADDD(),
+                new long[]{1012, 1016});
+
+        }
+
+        // 35
+        @Test
+        public void testADDD_b_1013()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016]
+
+
+            testUnbounded(1013,
+                getADDD(),
+                new long[]{1013, 1012, 1016});
+
+        }
+
+        // 36
+        @Test
+        public void testADDD_b_1016()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016]
+
+
+            testUnbounded(1016,
+                getADDD(),
+                new long[]{1016});
+
+        }
+
+        // 37
+        @Test
+        public void testDDDD_b_1012()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016]
+
+
+            testUnbounded(1012,
+                getDDDD(),
+                new long[]{1012, 1016});
+
+        }
+
+        // 38
+        @Test
+        public void testDDDD_b_1013()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016]
+
+
+            testUnbounded(1013,
+                getDDDD(),
+                new long[]{1013, 1012, 1016});
+
+        }
+
+        // 39
+        @Test
+        public void testDDDD_b_1016()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016]
+
+
+            testUnbounded(1016,
+                getDDDD(),
+                new long[]{1016});
+
+        }
+
+        // 40
+        @Test
+        public void testDDDA_b_1012()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1019, 1020, 1021, 1017, 1015, 1014, 1011, 1010, 1012, 1013, 1016]
+
+
+            testUnbounded(1012,
+                getDDDA(),
+                new long[]{1012, 1013, 1016});
+
+        }
+
+        // 41
+        @Test
+        public void testDDDA_b_1013()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1019, 1020, 1021, 1017, 1015, 1014, 1011, 1010, 1012, 1013, 1016]
+
+
+            testUnbounded(1013,
+                getDDDA(),
+                new long[]{1013, 1016});
+
+        }
+
+        // 42
+        @Test
+        public void testDDDA_b_1016()
+        {
+            // 'correct ordering':
+            // [1023, 1022, 1018, 1019, 1020, 1021, 1017, 1015, 1014, 1011, 1010, 1012, 1013, 1016]
+
+
+            testUnbounded(1016,
+                getDDDA(),
+                new long[]{1016});
+
+        }
+
+        // 43
+        @Test
+        public void testAADA_b_1012()
+        {
+            // 'correct ordering':
+            // [1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023]
+
+
+            testUnbounded(1012,
+                getAADA(),
+                new long[]{1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023});
+
+        }
+
+        // 44
+        @Test
+        public void testAADA_b_1013()
+        {
+            // 'correct ordering':
+            // [1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023]
+
+
+            testUnbounded(1013,
+                getAADA(),
+                new long[]{1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023});
+
+        }
+
+        // 45
+        @Test
+        public void testAADA_b_1016()
+        {
+            // 'correct ordering':
+            // [1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023]
+
+
+            testUnbounded(1016,
+                getAADA(),
+                new long[]{1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023});
+
+        }
+
+        // 46
+        @Test
+        public void testDAAD_b_1012()
+        {
+            // 'correct ordering':
+            // [1016, 1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023]
+
+
+            testUnbounded(1012,
+                getDAAD(),
+                new long[]{1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023});
+
+        }
+
+        // 47
+        @Test
+        public void testDAAD_b_1013()
+        {
+            // 'correct ordering':
+            // [1016, 1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023]
+
+
+            testUnbounded(1013,
+                getDAAD(),
+                new long[]{1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023});
+
+        }
+
+        // 48
+        @Test
+        public void testDAAD_b_1016()
+        {
+            // 'correct ordering':
+            // [1016, 1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023]
+
+
+            testUnbounded(1016,
+                getDAAD(),
+                new long[]{1016, 1013, 1012, 1010, 1011, 1014, 1015, 1017, 1021, 1020, 1019, 1018, 1022, 1023});
+
+        }
+
+
+        //---- DONE generated
     
     
-    // test with rows whose b == null
-
-    @Test
-    public void testDDDD_b()
-    {
-        // 'correct ordering':
-        // 1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016
-
-        testUnbounded(1013,
-                     getDDDD(),
-                     new long[]{1013, 1012, 1016});
-        
-        testUnbounded(1012,
-                      getDDDD(),
-                      new long[] {1012, 1016});
-        
-        testUnbounded(1016,
-                      getDDDD(),
-                      new long[] {1016});
-    }
-
-    @Test
-    public void testAAAA_b()
-    {
-        // 'correct ordering':
-        // 1016, 1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023
-        
-        testUnbounded(1012,
-                      getAAAA(),
-                      new long[] {1012, 1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
-        
-        testUnbounded(1013,
-                      getAAAA(),
-                      new long[] {1013, 1010, 1011, 1014, 1015, 1017, 1019, 1020, 1021, 1018, 1022, 1023});
-    }
-
+    
     // TODO: add more tests
 
     private void testUnbounded(long targetId,                  // location to jump to
