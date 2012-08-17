@@ -27,9 +27,11 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.server.service.session.Session;
+import com.akiban.server.error.AkibanInternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -67,8 +69,13 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     @Override
     public void hookFunctionIn(Session session, DXLFunction function) {
-        lockSchema(session, function);
-        lockDataIfNecessary(session, function);
+        try {
+            lockSchema(session, function, -1);
+            lockDataIfNecessary(session, function, -1);
+        }
+        catch (InterruptedException ex) {
+            throw new AkibanInternalException("Interrupted when not allowed", ex);
+        }
     }
 
     @Override
@@ -82,8 +89,29 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
         unlockDataIfNecessary(session, function, t);
     }
 
-    private void lockSchema(Session session, DXLFunction function)
-    {
+    /** Try to acquire locks within the given timeout or <code>0</code> for no timeout. */
+    public boolean lock(Session session, DXLFunction function, long timeout) throws InterruptedException {
+        boolean locked = lockSchema(session, function, timeout);
+        if (locked) {
+            locked = false;
+            try {
+                locked = lockDataIfNecessary(session, function, timeout);
+            }
+            finally {
+                if (!locked) {
+                    unlockDataIfNecessary(session, function, null);
+                }
+            }
+        }
+        return locked;
+    }
+
+    public void unlock(Session session, DXLFunction function) {
+        unlockSchema(session, null);
+        unlockDataIfNecessary(session, function, null);
+    }
+
+    private boolean lockSchema(Session session, DXLFunction function, long timeout) throws InterruptedException {
         Lock lock;
         if (DXLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
             if (schemaLock.isWriteLocked() && (!schemaLock.isWriteLockedByCurrentThread())) {
@@ -95,11 +123,10 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
         else {
             lock = schemaLock.readLock();
         }
-        session.push(SCHEMA_LOCK_KEY, lock);
-        lock.lock();
+        return lockLock(session, SCHEMA_LOCK_KEY, lock, timeout);
     }
 
-    private void lockDataIfNecessary(Session session, DXLFunction function)
+    private boolean lockDataIfNecessary(Session session, DXLFunction function, long timeout) throws InterruptedException
     {
         if (DML_LOCK) {
             Lock lock = null;
@@ -114,10 +141,10 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
                     break;
             }
             if (lock != null) {
-                session.push(DATA_LOCK_KEY, lock);
-                lock.lock();
+                return lockLock(session, DATA_LOCK_KEY, lock, timeout);
             }
         }
+        return true;            // Successfully didn't lock anything.
     }
 
     private void unlockSchema(Session session, Throwable t)
@@ -159,4 +186,34 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
             LOGGER.error(ERR_STRING);
         }
     }
+
+    private boolean lockLock(Session session, Session.StackKey<Lock> key, Lock lock, long timeout)
+            throws InterruptedException {
+        boolean locked = false;
+        session.push(key, lock);
+        if (timeout < 0) {
+            // Ordinary hooked call case: no timeouts or interrupts.
+            lock.lock();
+            locked = true;
+        }
+        else {
+            try {
+                if (timeout == 0) {
+                    // Interrupts, but no timeout.
+                    lock.lockInterruptibly();
+                    locked = true;
+                }
+                else {
+                    locked = lock.tryLock(timeout, TimeUnit.MILLISECONDS);
+                }
+            }
+            finally {
+                if (!locked) {
+                    session.pop(key);
+                }
+            }
+        }
+        return locked;
+    }
+
 }

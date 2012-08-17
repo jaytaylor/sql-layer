@@ -136,6 +136,11 @@ public final class TExecutionContext {
     {
         return queryContext.sequenceNextValue(sequenceName);
     }
+
+    public long sequenceCurrentValue (TableName sequenceName) 
+    {
+        return queryContext.sequenceCurrentValue(sequenceName);
+    }
     
     public void reportOverflow(String msg)
     {

@@ -304,8 +304,7 @@ public class UserTable extends Table
             remainingTables.add(child);
             remainingJoins.addAll(child.getCandidateChildJoins());
         }
-        while(!remainingTables.isEmpty()) {
-            UserTable table = remainingTables.remove(remainingTables.size() - 1);
+        for(UserTable table : remainingTables) {
             visitor.visitUserTable(table);
         }
     }

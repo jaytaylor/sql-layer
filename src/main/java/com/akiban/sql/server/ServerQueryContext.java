@@ -31,7 +31,11 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.error.QueryTimedOutException;
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.io.IOException;
 
@@ -92,6 +96,37 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     @Override
     public long sequenceNextValue(TableName sequenceName) {
         return server.getStore().sequenceNextValue(sequenceName);
+    }
+
+    @Override
+    public long sequenceCurrentValue(TableName sequenceName) {
+        return server.getStore().sequenceCurrentValue(sequenceName);
+    }
+
+    public void lock(DXLFunction operationType) {
+        long timeout = 0;       // No timeout.
+        long queryTimeoutSec = getQueryTimeoutSec();
+        if (queryTimeoutSec >= 0) {
+            long runningTimeMsec = System.currentTimeMillis() - getStartTime();
+            timeout = queryTimeoutSec * 1000 - runningTimeMsec;
+            if (timeout <= 0) {
+                // Already past time.
+                throw new QueryTimedOutException(runningTimeMsec);
+            }
+        }
+        try {
+            boolean locked = DXLReadWriteLockHook.only().lock(getSession(), operationType, timeout);
+            if (!locked) {
+                throw new QueryTimedOutException(System.currentTimeMillis() - getStartTime());
+            }
+        }
+        catch (InterruptedException ex) {
+            throw new QueryCanceledException(getSession());
+        }
+    }
+
+    public void unlock(DXLFunction operationType) {
+        DXLReadWriteLockHook.only().unlock(getSession(), operationType);
     }
 
 }

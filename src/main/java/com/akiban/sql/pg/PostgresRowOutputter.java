@@ -34,7 +34,7 @@ import java.io.IOException;
 public class PostgresRowOutputter extends PostgresOutputter<Row>
 {
     public PostgresRowOutputter(PostgresQueryContext context,
-                                PostgresBaseStatement statement) {
+                                PostgresDMLStatement statement) {
         super(context, statement);
     }
 

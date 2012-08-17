@@ -46,6 +46,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
 import com.akiban.server.service.EventTypes;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
@@ -217,8 +218,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     }
                 } catch (QueryCanceledException ex) {
                     logError(ErrorLogLevel.INFO, "Query canceled", ex);
-                    String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
-                    sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
+                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (ConnectionTerminatedException ex) {
                     logError(ErrorLogLevel.DEBUG, "Query terminated self", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
@@ -339,7 +339,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
         // Get initial version of AIS.
         session = reqs.sessionService().createSession();
-        updateAIS();
+        updateAIS(null);
 
         if (Boolean.parseBoolean(properties.getProperty("require_password", "false"))) {
             messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
@@ -429,9 +429,9 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionTracer.setCurrentStatement(sql);
         logger.info("Query: {}", sql);
 
-        updateAIS();
-
         PostgresQueryContext context = new PostgresQueryContext(this);
+        updateAIS(context);
+
         PostgresStatement pstmt = null;
         if (statementCache != null)
             pstmt = statementCache.get(sql);
@@ -489,7 +489,8 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionTracer.setCurrentStatement(sql);
         logger.info("Parse: {}", sql);
         
-        updateAIS();
+        PostgresQueryContext context = new PostgresQueryContext(this);
+        updateAIS(context);
 
         PostgresStatement pstmt = null;
         if (statementCache != null)
@@ -646,17 +647,30 @@ public class PostgresServerConnection extends ServerSessionBase
 
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
-    protected void updateAIS() {
-        DDLFunctions ddl = reqs.dxl().ddlFunctions();
-        // TODO: This could be more reliable if the AIS object itself
-        // also knew its generation. Right now, can get new generation
-        // # and old AIS and not notice until next change.
-        long currentTimestamp = ddl.getTimestamp();
-        if (aisTimestamp == currentTimestamp) 
-            return;             // Unchanged.
-        aisTimestamp = currentTimestamp;
-        ais = ddl.getAIS(session);
-
+    protected void updateAIS(PostgresQueryContext context) {
+        boolean locked = false;
+        try {
+            if (context != null) {
+                // If there is long-running DDL like creating an index, this is almost
+                // always where other queries will lock.
+                context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
+                locked = true;
+            }
+            DDLFunctions ddl = reqs.dxl().ddlFunctions();
+            // TODO: This could be more reliable if the AIS object itself
+            // also knew its generation. Right now, can get new generation
+            // # and old AIS and not notice until next change.
+            long currentTimestamp = ddl.getTimestamp();
+            if (aisTimestamp == currentTimestamp) 
+                return;             // Unchanged.
+            aisTimestamp = currentTimestamp;
+            ais = ddl.getAIS(session);
+        }
+        finally {
+            if (locked) {
+                context.unlock(DXLFunction.UNSPECIFIED_DDL_READ);
+            }
+        }
         rebuildCompiler();
     }
 
@@ -684,12 +698,6 @@ public class PostgresServerConnection extends ServerSessionBase
                 new MemoryAdapter(compiler.getSchema(),
                                 session,
                                 reqs.config()));
-        // Statement cache depends on some connection settings.
-        statementCache = server.getStatementCache(Arrays.asList(format,
-                                                                parserKeys,
-                                                                Boolean.valueOf(getProperty("cbo")),
-                                                                Boolean.valueOf(getProperty("newtypes"))),
-                                                  aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
@@ -702,6 +710,18 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresExplainStatementGenerator(this),
             new PostgresServerStatementGenerator(this)
         };
+
+        statementCache = getStatementCache();
+    }
+
+    protected ServerStatementCache<PostgresStatement>  getStatementCache() {
+        // Statement cache depends on some connection settings.
+        return server.getStatementCache(Arrays.asList(parser.getFeatures(),
+                                                      defaultSchemaName,
+                                                      getProperty("OutputFormat", "table"),
+                                                      getBooleanProperty("cbo", true),
+                                                      getBooleanProperty("newtypes", false)),
+                                        aisTimestamp);
     }
 
     @Override
@@ -720,6 +740,7 @@ public class PostgresServerConnection extends ServerSessionBase
         for (PostgresStatementGenerator generator : parsedGenerators) {
             generator.sessionChanged(this);
         }
+        statementCache = getStatementCache();
     }
 
     protected PostgresStatement generateStatement(StatementNode stmt, 

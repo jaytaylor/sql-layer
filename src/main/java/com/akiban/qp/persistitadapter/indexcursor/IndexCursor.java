@@ -106,10 +106,10 @@ public abstract class IndexCursor implements Cursor
     // IndexCursor interface
 
     public static IndexCursor create(QueryContext context,
-                                    IndexKeyRange keyRange,
-                                    API.Ordering ordering,
-                                    IterationHelper iterationHelper,
-                                    boolean usePValues)
+                                     IndexKeyRange keyRange,
+                                     API.Ordering ordering,
+                                     IterationHelper iterationHelper,
+                                     boolean usePValues)
     {
         SortKeyAdapter<?, ?> adapter =
             usePValues
