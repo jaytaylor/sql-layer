@@ -181,6 +181,15 @@ public class TableChangeValidator {
             newColumns.put(column.getName(), column);
         }
         checkChanges(ChangeLevel.TABLE, columnChanges, oldColumns, newColumns, false);
+
+        // Look for position changes, not required to be declared
+        for(Map.Entry<String, Column> oldEntry : oldColumns.entrySet()) {
+            Column newColumn = newColumns.get(findNewName(columnChanges, oldEntry.getKey()));
+            if((newColumn != null) && !oldEntry.getValue().getPosition().equals(newColumn.getPosition())) {
+                updateFinalChangeLevel(ChangeLevel.TABLE);
+                break;
+            }
+        }
     }
 
     private void compareIndexes(boolean autoChanges) {
@@ -488,7 +497,6 @@ public class TableChangeValidator {
             if(!oldCol.getType().equals(newCol.getType()) ||
                !Objects.equal(oldCol.getTypeParameter1(), newCol.getTypeParameter1()) ||
                !Objects.equal(oldCol.getTypeParameter2(), newCol.getTypeParameter2()) ||
-               !Objects.equal(oldCol.getPosition(), newCol.getPosition()) ||
                (oldCol.getType().usesCollator() && !Objects.equal(oldCol.getCharsetAndCollation(), newCol.getCharsetAndCollation()))) {
                 return ChangeLevel.TABLE;
             }

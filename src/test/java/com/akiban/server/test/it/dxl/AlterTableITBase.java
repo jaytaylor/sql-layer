@@ -30,17 +30,16 @@ import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
+import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.IndexColNotInGroupException;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.sql.StandardException;
@@ -58,9 +57,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class AlterTableITBase extends ITBase {
@@ -94,7 +93,15 @@ public class AlterTableITBase extends ITBase {
         return null; // Not needed
     }
 
+    protected ChangeLevel getDefaultChangeLevel() {
+        return ChangeLevel.TABLE;
+    }
+
     protected void runAlter(String sql) {
+        runAlter(getDefaultChangeLevel(), sql);
+    }
+
+    protected void runAlter(ChangeLevel expectedChangeLevel, String sql) {
         SQLParser parser = new SQLParser();
         StatementNode node;
         try {
@@ -103,7 +110,15 @@ public class AlterTableITBase extends ITBase {
             throw new RuntimeException(e);
         }
         assertTrue("is alter node", node instanceof AlterTableNode);
-        AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
+        ChangeLevel level = AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
+        assertEquals("ChangeLevel", expectedChangeLevel, level);
+        updateAISGeneration();
+    }
+
+    protected void runAlter(ChangeLevel expectedChangeLevel, TableName name, UserTable newDefinition,
+                            List<TableChange> columnChanges, List<TableChange> indexChanges) {
+        ChangeLevel actual = ddl().alterTable(session(), name, newDefinition, columnChanges, indexChanges, queryContext());
+        assertEquals("ChangeLevel", expectedChangeLevel, actual);
         updateAISGeneration();
     }
 
@@ -115,8 +130,8 @@ public class AlterTableITBase extends ITBase {
         changer.doChange();
         UserTable newTable = aisCopy.getUserTable(newName);
         assertNotNull("Found new table " + newName, oldTable);
-        ddl().alterTable(session(), oldName, newTable, NO_CHANGES, NO_CHANGES, queryContext());
-        updateAISGeneration();
+        runAlter(ChangeLevel.METADATA,
+                 oldName, newTable, NO_CHANGES, NO_CHANGES);
     }
 
     protected void runRenameColumn(TableName tableName, String oldColName, String newColName) {
@@ -147,9 +162,8 @@ public class AlterTableITBase extends ITBase {
             }
         }
 
-        ddl().alterTable(session(), tableName, tableCopy,
-                         Arrays.asList(TableChange.createModify(oldColName, newColName)), NO_CHANGES, queryContext());
-        updateAISGeneration();
+        runAlter(ChangeLevel.METADATA,
+                 tableName, tableCopy, Arrays.asList(TableChange.createModify(oldColName, newColName)), NO_CHANGES);
     }
 
     protected RowBase testRow(RowType type, Object... fields) {

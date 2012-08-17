@@ -42,7 +42,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
@@ -119,9 +118,9 @@ import com.akiban.server.store.statistics.IndexStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
-import static com.akiban.qp.operator.API.insert_Default;
 import static com.akiban.util.Exceptions.throwAlways;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
@@ -428,9 +427,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<TableChange> columnChanges, List<TableChange> indexChanges,
-                           QueryContext context)
+    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
+                                  QueryContext context)
     {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
@@ -443,6 +442,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new InvalidAlterException(tableName, e.getMessage());
         }
 
+        ChangeLevel changeLevel;
         boolean rollBackNeeded = false;
         List<Index> indexesToDrop = new ArrayList<Index>();
         try {
@@ -452,7 +452,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             helper.findAffectedOldIndexes(origTable, indexesToTruncate, indexesToDrop);
             Map<IndexName, List<Column>> affectedGroupIndexes = validator.getAffectedGroupIndexes();
 
-            TableChangeValidator.ChangeLevel changeLevel = validator.getFinalChangeLevel();
+            changeLevel = validator.getFinalChangeLevel();
             Collection<ChangedTableDescription> changedTables = validator.getAllChangedTables();
 
             switch(changeLevel) {
@@ -525,6 +525,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         // Complete: we can now get rid of any index trees that shouldn't be here
         store().deleteIndexes(session, indexesToDrop);
+        return changeLevel;
     }
 
     @Override

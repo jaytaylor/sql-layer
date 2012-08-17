@@ -31,16 +31,11 @@ import com.akiban.ais.model.UserTable;
 import org.junit.After;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
+import com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
 
 /**
  * Group altering actions on standard CAOI schema.
@@ -57,6 +52,11 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @After
     public void clearTableIDs() {
         cid = aid = oid = iid = -1;
+    }
+
+    @Override
+    protected ChangeLevel getDefaultChangeLevel() {
+        return ChangeLevel.GROUP;
     }
 
     @Override
@@ -139,7 +139,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void setDataType_A_id() {
         createAndLoadCAOI();
-        runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE " + A_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
@@ -154,7 +154,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void setDataType_I_id() {
         createAndLoadCAOI();
-        runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE " + I_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 

@@ -68,20 +68,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.ais.util.TableChange.ChangeType;
 import static com.akiban.sql.aisddl.DDLHelper.convertName;
 import static com.akiban.sql.parser.ConstraintDefinitionNode.ConstraintType;
-import static com.akiban.util.Exceptions.throwAlways;
 
 public class AlterTableDDL {
     private AlterTableDDL() {}
 
-    public static void alterTable(DDLFunctions ddlFunctions,
-                                  DMLFunctions dmlFunctions,
-                                  Session session,
-                                  String defaultSchemaName,
-                                  AlterTableNode alterTable,
-                                  QueryContext context) {
+    public static ChangeLevel alterTable(DDLFunctions ddlFunctions,
+                                         DMLFunctions dmlFunctions,
+                                         Session session,
+                                         String defaultSchemaName,
+                                         AlterTableNode alterTable,
+                                         QueryContext context) {
         final AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
         final TableName tableName = convertName(defaultSchemaName, alterTable.getObjectName());
         final UserTable table = curAIS.getUserTable(tableName);
@@ -92,16 +92,17 @@ public class AlterTableDDL {
             if (!alterTable.isUpdateStatisticsAll())
                 indexes = Collections.singletonList(alterTable.getIndexNameForUpdateStatistics());
             ddlFunctions.updateTableStatistics(session, tableName, indexes);
-            return;
+            return null;
         }
 
         if (alterTable.isTruncateTable()) {
             dmlFunctions.truncateTable(session, table.getTableId());
-            return;
+            return null;
         }
 
-        if (processAlter(session, ddlFunctions, defaultSchemaName, table, alterTable.tableElementList, context)) {
-            return;
+        ChangeLevel level = processAlter(session, ddlFunctions, defaultSchemaName, table, alterTable.tableElementList, context);
+        if (level != null) {
+            return level;
         }
 
         throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
@@ -113,11 +114,11 @@ public class AlterTableDDL {
         }
     }
 
-    private static boolean processAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table,
-                                        TableElementList elements, QueryContext context) {
+    private static ChangeLevel processAlter(Session session, DDLFunctions ddl, String defaultSchema, UserTable table,
+                                            TableElementList elements, QueryContext context) {
         // Should never come this way from the parser, but be defensive
         if((elements == null) || elements.isEmpty()) {
-            return false;
+            return null;
         }
 
         List<TableChange> columnChanges = new ArrayList<TableChange>();
@@ -183,7 +184,7 @@ public class AlterTableDDL {
                 } break;
 
                 default:
-                    return false; // Something unsupported
+                    return null; // Something unsupported
             }
         }
 
@@ -256,8 +257,7 @@ public class AlterTableDDL {
 
         tableCopy.endTable();
 
-        ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
-        return true;
+        return ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
     }
 
     private static void checkColumnChange(UserTable table, String columnName) {
@@ -325,7 +325,6 @@ public class AlterTableDDL {
             for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
                 ChangeType change = findOldName(columnChanges, indexColumn.getColumn().getName());
                 if(change != ChangeType.DROP) {
-                    didModify |= (change == ChangeType.MODIFY);
                     IndexColumn.create(indexCopy, tableCopy.getColumn(indexColumn.getColumn().getName()), indexColumn, pos++);
                 } else {
                     didModify = true;

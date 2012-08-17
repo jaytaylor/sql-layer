@@ -45,6 +45,7 @@ import com.akiban.server.service.session.SessionService;
 import java.util.Collection;
 import java.util.List;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.util.Exceptions.throwAlways;
 import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
@@ -106,13 +107,13 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<TableChange> columnChanges, List<TableChange> indexChanges,
-                           QueryContext context) {
+    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+                                  List<TableChange> columnChanges, List<TableChange> indexChanges,
+                                  QueryContext context) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.ALTER_TABLE);
-            delegate.alterTable(session, tableName, newDefinition, columnChanges, indexChanges, context);
+            return delegate.alterTable(session, tableName, newDefinition, columnChanges, indexChanges, context);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.ALTER_TABLE, t);
