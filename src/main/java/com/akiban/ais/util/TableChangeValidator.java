@@ -488,6 +488,7 @@ public class TableChangeValidator {
             if(!oldCol.getType().equals(newCol.getType()) ||
                !Objects.equal(oldCol.getTypeParameter1(), newCol.getTypeParameter1()) ||
                !Objects.equal(oldCol.getTypeParameter2(), newCol.getTypeParameter2()) ||
+               !Objects.equal(oldCol.getPosition(), newCol.getPosition()) ||
                (oldCol.getType().usesCollator() && !Objects.equal(oldCol.getCharsetAndCollation(), newCol.getCharsetAndCollation()))) {
                 return ChangeLevel.TABLE;
             }

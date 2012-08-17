@@ -972,17 +972,8 @@ public class AlterTableBasicIT extends AlterTableITBase {
     // bug1037387
     @Test
     public void modifyColumnPosition() {
-        AISBuilder builder = new AISBuilder();
-        builder.userTable(SCHEMA, C_TABLE);
-        builder.column(SCHEMA, C_TABLE, "c1", 0, "int", null, null, false, false, null, null);
-        builder.column(SCHEMA, C_TABLE, "c2", 1, "int", null, null, true, false, null, null);
-        builder.index(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
-        builder.index(SCHEMA, C_TABLE, "c2", true, Index.KEY_CONSTRAINT);
-        builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
-        ddl().createTable(session(),  builder.akibanInformationSchema().getUserTable(C_NAME));
-
-        updateAISGeneration();
+        createTable(SCHEMA, C_TABLE, "c1 int not null primary key, c2 int");
+        createIndex(SCHEMA, C_TABLE, "c2", "c2");
 
         int cid = tableId(C_NAME);
         writeRows(
@@ -991,7 +982,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(cid, 3, 30)
         );
 
-        builder = new AISBuilder();
+        AISBuilder builder = new AISBuilder();
         builder.userTable(SCHEMA, C_TABLE);
         builder.column(SCHEMA, C_TABLE, "c2", 0, "int", null, null, true, false, null, null);
         builder.column(SCHEMA, C_TABLE, "c1", 1, "int", null, null, false, false, null, null);
@@ -999,6 +990,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.indexColumn(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         builder.index(SCHEMA, C_TABLE, "c2", true, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup(C_TABLE, SCHEMA, "__akiban_c");
+        builder.addTableToGroup(C_TABLE, SCHEMA, C_TABLE);
+        builder.groupingIsComplete();
 
         ddl().alterTable(session(), C_NAME, builder.akibanInformationSchema().getUserTable(C_NAME),
                          Arrays.asList(TableChange.createModify("c1", "c1"), TableChange.createModify("c2", "c2")),
