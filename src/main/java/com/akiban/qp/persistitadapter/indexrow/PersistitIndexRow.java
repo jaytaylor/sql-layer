@@ -137,13 +137,13 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
-        this.akTypes = new AkType[nIndexFields];
-        this.akCollators = new AkCollator[nIndexFields];
         if (index.isSpatial()) {
             // TODO: Getting the AIS and Schema to know about spatial indexes is a lot of work, and will probably
             // TODO: be done when we support function indexes. Until then, just deal with the differences using
             // TODO: brute force.
             // nPhysicalFields counts the z-value field plus the number of undeclared (hkey) columns.
+            this.akTypes = new AkType[nIndexFields];
+            this.akCollators = new AkCollator[nIndexFields];
             this.akTypes[0] = AkType.LONG;
             this.akCollators[0] = null;
             int physicalPosition = 1;
@@ -157,12 +157,8 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
                 physicalPosition++;
             }
         } else {
-            for (IndexColumn indexColumn : index.getAllColumns()) {
-                int position = indexColumn.getPosition();
-                Column column = indexColumn.getColumn();
-                this.akTypes[position] = column.getType().akType();
-                this.akCollators[position] = column.getCollator();
-            }
+            this.akTypes = index.akTypes();
+            this.akCollators = index.akCollators();
         }
     }
 
