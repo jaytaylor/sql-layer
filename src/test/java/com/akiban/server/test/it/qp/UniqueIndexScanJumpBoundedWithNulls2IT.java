@@ -424,6 +424,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 5
+        @Ignore
         @Test
         public void testDAAA_b_1013()
         {
@@ -452,6 +453,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 7
+        @Ignore
         @Test
         public void testAAAD_b_1012()
         {
@@ -508,6 +510,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 11
+        @Ignore
         @Test
         public void testADAA_b_1013()
         {
@@ -550,6 +553,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 14
+        @Ignore
         @Test
         public void testDADA_b_1013()
         {
@@ -592,6 +596,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 17
+        @Ignore
         @Test
         public void testDDAA_b_1013()
         {
@@ -620,6 +625,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 19
+        @Ignore
         @Test
         public void testDDAD_b_1012()
         {
@@ -662,6 +668,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 22
+        @Ignore
         @Test
         public void testADAD_b_1012()
         {
@@ -718,6 +725,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 26
+        @Ignore
         @Test
         public void testADDA_b_1013()
         {
@@ -746,6 +754,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 28
+        @Ignore
         @Test
         public void testDADD_b_1012()
         {
@@ -788,6 +797,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 31
+        @Ignore
         @Test
         public void testAADD_b_1012()
         {
@@ -830,6 +840,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 34
+        @Ignore
         @Test
         public void testADDD_b_1012()
         {
@@ -928,6 +939,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 41
+        @Ignore
         @Test
         public void testDDDA_b_1013()
         {
@@ -970,6 +982,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 44
+        @Ignore
         @Test
         public void testAADA_b_1013()
         {
@@ -998,6 +1011,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 46
+        @Ignore
         @Test
         public void testDAAD_b_1012()
         {
