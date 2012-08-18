@@ -424,6 +424,7 @@ public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
         }
 
         // 5
+        // TODO: Don't forget to unignore - Vy will be adding @Ignore tags
         @Test
         public void testDAAA_b_1013()
         {
