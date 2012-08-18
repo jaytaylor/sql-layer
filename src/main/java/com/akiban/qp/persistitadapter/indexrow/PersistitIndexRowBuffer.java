@@ -193,20 +193,23 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     @Override
-    public void close()
+    public void close(boolean forInsert)
     {
         // Write null-separating value if necessary
         if (index.isUniqueAndMayContainNulls()) {
             long nullSeparator = 0;
-            boolean hasNull = false;
-            int keyFields = index.getKeyColumns().size();
-            for (int f = 0; !hasNull && f < keyFields; f++) {
-                pKey.indexTo(f);
-                hasNull = pKey.isNull();
+            if (forInsert) {
+                boolean hasNull = false;
+                int keyFields = index.getKeyColumns().size();
+                for (int f = 0; !hasNull && f < keyFields; f++) {
+                    pKey.indexTo(f);
+                    hasNull = pKey.isNull();
+                }
+                if (hasNull) {
+                    nullSeparator = index.nextNullSeparatorValue(adapter.persistit().treeService());
+                }
             }
-            if (hasNull) {
-                nullSeparator = index.nextNullSeparatorValue(adapter.persistit().treeService());
-            }
+            // else: We're creating an index row to update or delete. Don't need a new null separator value.
             pKey.append(nullSeparator);
         }
         // If necessary, copy pValue state into value. (Check pValueAppender, because that is non-null only in
@@ -324,6 +327,14 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             }
         }
         return 0;
+    }
+
+    // For testing only. It does an allocation per call, and is not appropriate for product use.
+    public long nullSeparator()
+    {
+        PersistitKeyValueSource valueSource = new PersistitKeyValueSource();
+        valueSource.attach(pKey, pKeyFields, AkType.LONG, null);
+        return valueSource.getLong();
     }
 
     // For use by subclasses
