@@ -60,7 +60,7 @@ import static org.junit.Assert.*;
  * 
  * (Open to suggestion on a better name)
  */
-public class UniqueIndexScanJumpBoundedWithNulls2IT extends OperatorITBase
+public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITBase
 {
      // Positions of fields within the index row
     private static final int A = 0;
