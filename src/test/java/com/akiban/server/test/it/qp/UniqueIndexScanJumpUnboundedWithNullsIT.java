@@ -58,7 +58,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     private static final int B = 1;
     private static final int C = 2;
 
-    private static final int COLUMN_COUNT = 3;
+    private static final int COLUMN_COUNT = 4;
 
     private static final boolean ASC = true;
     private static final boolean DESC = false;
@@ -247,7 +247,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
         // check the list of rows
         checkRows(expectedRows, actualRows);
     }
-   
+
     private void checkRows(List<Row> expected, List<Row> actual)
     {
         List<List<Long>> expectedRows = toListOfLong(expected);
