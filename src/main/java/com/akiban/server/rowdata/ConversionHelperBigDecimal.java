@@ -221,7 +221,7 @@ public final class ConversionHelperBigDecimal {
             }
             from = sb.toString();
         }
-        else if (valueScale > declScale) {
+        else if (valueScale != declScale) {
             // just truncate
             BigDecimal rounded = value.setScale(declScale, RoundingMode.HALF_UP);
             from = rounded.toPlainString();
