@@ -237,7 +237,41 @@ AAAAD:
 {7, 1017}, 
 
 */
+    @Test
+    public void testAAAAD_6_1016()
+    {
+        testUnbounded(6, 1016,
+                      getAAAAD(),
+                      new long [][]{
+                                    {6, 1016}, 
+                                    {2, 1013}, 
+                                    {2, 1012}, 
+                                    {3, 1013}, 
+                                    {0, 1010}, 
+                                    {1, 1011}, 
+                                    {4, 1014}, 
+                                    {5, 1015}, 
+                                    {7, 1017},
+                      });
+    }
 
+    @Test
+    public void testAAAAD_2_1013()
+    {
+        testUnbounded(2, 1013,
+                      getAAAAD(),
+                      new long [][]{
+                                    {2, 1013}, 
+                                    {2, 1012}, 
+                                    {3, 1013}, 
+                                    {0, 1010}, 
+                                    {1, 1011}, 
+                                    {4, 1014}, 
+                                    {5, 1015}, 
+                                    {7, 1017},
+                      });
+    }
+        
     @Test
     public void testAAAAD_2_1012()
     {
