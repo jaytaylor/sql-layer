@@ -37,6 +37,7 @@ import com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
@@ -60,12 +61,16 @@ public class ServerSchemaTablesServiceImpl
     
     private final PostgresService manager;
     private final ConfigurationService configService;
+    private final AkServerInterface serverInterface;
     
     @Inject
-    public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, PostgresService manager, ConfigurationService configService) {
+    public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, PostgresService manager, 
+            ConfigurationService configService,
+            AkServerInterface serverInterface) {
         super(schemaManager);
         this.manager = manager;
         this.configService = configService;
+        this.serverInterface = serverInterface;
     }
     
     @Override
@@ -131,10 +136,13 @@ public class ServerSchemaTablesServiceImpl
                 long startTime = System.currentTimeMillis() -  
                         (manager.getServer().getUptime() / 1000000);
                 ValuesRow row = new ValuesRow (rowType,
+                        serverInterface.getServerName(),
+                        serverInterface.getServerVersion(),
                         manager.getServer().isListening() ? "RUNNING" : "CLOSED",
                         startTime,
                         ++rowCounter);
-                ((FromObjectValueSource)row.eval(1)).setExplicitly(startTime/1000, AkType.TIMESTAMP);
+                ((FromObjectValueSource)row.eval(3)).setExplicitly(startTime/1000, AkType.TIMESTAMP);
+
                 return row;
             }
         }
@@ -270,6 +278,8 @@ public class ServerSchemaTablesServiceImpl
         NewAISBuilder builder = AISBBasedBuilder.create();
         
         builder.userTable(SERVER_INSTANCE_SUMMARY)
+            .colString("server_name", DESCRIPTOR_MAX, false)
+            .colString("server_version", DESCRIPTOR_MAX, false)
             .colString("instance_status", DESCRIPTOR_MAX, false)
             .colTimestamp("start_time");
         

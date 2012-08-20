@@ -254,8 +254,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public Long getQueryTimeoutSec() {
-        return queryTimeoutSec;
+    public long getQueryTimeoutSec() {
+        if (queryTimeoutSec != null)
+            return queryTimeoutSec;
+        else
+            return reqs.config().queryTimeoutSec();
     }
 
     @Override

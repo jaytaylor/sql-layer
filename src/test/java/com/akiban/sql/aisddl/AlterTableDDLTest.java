@@ -27,7 +27,6 @@
 package com.akiban.sql.aisddl;
 
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -43,7 +42,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
@@ -52,10 +50,7 @@ import com.akiban.server.error.NoSuchGroupingFKException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchUniqueException;
-import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.UnsupportedCheckConstraintException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.StandardException;
@@ -73,8 +68,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AlterTableDDLTest {
@@ -196,7 +189,33 @@ public class AlterTableDDLTest {
             expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "i_i bigint NULL", "d1 double NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
     }
-
+    
+    @Test
+    public void addColumnSerialNoPk() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false);
+        parseAndRun("ALTER TABLE a ADD COLUMN new SERIAL");
+        expectColumnChanges("ADD:new");
+        expectIndexChanges();
+        if (Types3Switch.ON) {
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "new MCOMPAT_ BIGINT(21)", "UNIQUE new(new)");
+        } else {
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)");
+        }
+    }
+    
+    @Test
+    public void addColumnSerialPk() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false);
+        parseAndRun("ALTER TABLE a ADD COLUMN new SERIAL PRIMARY KEY");
+        expectColumnChanges("ADD:new");
+        expectIndexChanges("ADD:PRIMARY");
+        if (Types3Switch.ON) {
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "new MCOMPAT_ BIGINT(21)", "UNIQUE new(new)", "PRIMARY(new)");
+        } else {
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)", "PRIMARY(new)");
+        }
+    }
+    
     //
     // DROP COLUMN
     //

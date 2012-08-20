@@ -53,9 +53,10 @@ public class IndexScanPT extends QPProfilePTBase
     {
         t = createTable(
             "schema", "t",
-            "id int not null key",
+            "id int not null",
             "x int",
-            "index(x)");
+            "primary key(id)");
+        createIndex("schema", "t", "idx_x", "x");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "x");
@@ -65,16 +66,19 @@ public class IndexScanPT extends QPProfilePTBase
     }
 
     @Test
-    public void profileGroupScan()
+    public void profileIndexScan()
     {
         Tap.setEnabled(".*", false);
         populateDB(ROWS);
+/*
         run(null, WARMUP_RUNS, 1);
         run("0", MEASURED_RUNS, 1);
         run("1", MEASURED_RUNS, 2);
         run("2", MEASURED_RUNS, 3);
         run("3", MEASURED_RUNS, 4);
+*/
         run("4", MEASURED_RUNS, 5);
+/*
         run("5", MEASURED_RUNS, 6);
         run("6", MEASURED_RUNS, 7);
         run("7", MEASURED_RUNS, 8);
@@ -87,6 +91,7 @@ public class IndexScanPT extends QPProfilePTBase
         run("250", MEASURED_RUNS, 251);
         run("500", MEASURED_RUNS, 501);
         run("1000", MEASURED_RUNS, 1001);
+*/
     }
 
     private void run(String label, int runs, int sequentialAccessesPerRandom)
@@ -124,7 +129,7 @@ public class IndexScanPT extends QPProfilePTBase
 
     private static final int ROWS = 50000;
     private static final int WARMUP_RUNS = 20000;
-    private static final int MEASURED_RUNS = 10000;
+    private static final int MEASURED_RUNS = 1000000000;
 
     private final Random random = new Random();
     private int t;

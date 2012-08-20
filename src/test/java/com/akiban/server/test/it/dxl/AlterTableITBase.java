@@ -95,16 +95,7 @@ public class AlterTableITBase extends ITBase {
     }
 
     protected void runAlter(String sql) {
-        SQLParser parser = new SQLParser();
-        StatementNode node;
-        try {
-            node = parser.parseStatement(sql);
-        } catch(StandardException e) {
-            throw new RuntimeException(e);
-        }
-        assertTrue("is alter node", node instanceof AlterTableNode);
-        AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
-        updateAISGeneration();
+        runAlter(SCHEMA, queryContext(), sql);
     }
 
     protected void runRenameTable(TableName oldName, TableName newName) {
