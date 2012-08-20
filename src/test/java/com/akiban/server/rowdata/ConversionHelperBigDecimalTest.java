@@ -43,29 +43,39 @@ public final class ConversionHelperBigDecimalTest {
 
     @Test
     public void truncateIntComponentPositive() {
-        check(5, 3, "12345.133", "99.999");
+        checkWrite(5, 3, "12345.133", "99.999");
     }
 
     @Test
     public void truncateIntComponentNegative() {
-        check(5, 3, "-12345.133", "-99.999");
+        checkWrite(5, 3, "-12345.133", "-99.999");
     }
 
     @Test
     public void truncateFractComponentPositive() {
-        check(5, 3, "12.3455", "12.346");
+        checkWrite(5, 3, "12.3455", "12.346");
     }
 
     @Test
     public void truncateFractComponentNegative() {
-        check(5, 3, "12.3455", "-12.346");
+        checkWrite(5, 3, "-12.3455", "-12.346");
+    }
+
+    @Test
+    public void normalizeTruncateNoInt() {
+        checkNormalizeToString("1", 4, 4, ".9999");
+    }
+
+    @Test
+    public void normalizeTruncateFractional() {
+        checkNormalizeToString("1.234567", 4, 2, "1.23");
     }
 
     private void check(int precision, int scale, String value) {
-        check(precision, scale, value, value);
+        checkWrite(precision, scale, value, value);
     }
 
-    private void check(int precision, int scale, String value, String readAs) {
+    private void checkWrite(int precision, int scale, String value, String readAs) {
         SchemaFactory schemaFactory = new SchemaFactory("my_schema");
         String sql = String.format("CREATE TABLE dec_test(dec_col decimal(%d,%d))", precision, scale);
         AkibanInformationSchema ais = schemaFactory.ais(sql);
@@ -88,4 +98,9 @@ public final class ConversionHelperBigDecimalTest {
         assertEquals("after conversion", readAs, sb.toString());
     }
 
+    private void checkNormalizeToString(String in, int precision, int scale, String expected) {
+        BigDecimal bigDecimal = new BigDecimal(in);
+        String actual = ConversionHelperBigDecimal.normalizeToString(bigDecimal, precision, scale);
+        assertEquals(String.format("%s (%d,%d)", in, precision, scale), expected, actual);
+    }
 }
