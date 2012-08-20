@@ -237,7 +237,6 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
 
         // check the list of rows
         checkRows(actualRows, expected);
-       // checkRows(expectedRows, actualRows);
     }
 
     private void checkRows(List<Row> actual, long expected[])
