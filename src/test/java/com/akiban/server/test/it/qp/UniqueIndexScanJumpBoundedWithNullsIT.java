@@ -204,7 +204,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAA(),
-                      new long[] {1021, 1020, 1019, 1018, 1022});
+                      new long[] {1019, 1020, 1021, 1018, 1022});
     }
 
     @Test
@@ -214,7 +214,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                       b_of(1018), true,
                       b_of(1021), true,
                       getAAA(),
-                      new long[] {1021, 1020, 1019, 1018, 1022});
+                      new long[] {1019, 1020, 1021, 1018, 1022});
     }
 
     @Test
@@ -265,58 +265,28 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         }
         cursor.close();
 
-        // find the row with given id
-        List<Row> expectedRows = new ArrayList<Row>(expected.length);
+             // check the list of rows
+        checkRows(actualRows, expected);
+    }
+
+    private void checkRows(List<Row> actual, long expected[])
+    {
+        List<Long> actualList = toListOfLong(actual);
+        List<Long> expectedList = new ArrayList<Long>(expected.length);
         for (long val : expected)
-            expectedRows.add(indexRow(val));
+            expectedList.add(val);
 
-        // check the list of rows
-        checkRows(expectedRows, actualRows);
+        assertEquals(expectedList, actualList);
     }
 
-    private void checkRows(List<Row> expected, List<Row> actual)
+    private List<Long> toListOfLong(List<Row> rows)
     {
-        List<List<Long>> expectedRows = toListOfLong(expected);
-        List<List<Long>> actualRows = toListOfLong(actual);
-        
-        assertEquals(expectedRows, actualRows);
-        
-    }
+        List<Long> ret = new ArrayList<Long>(rows.size());
 
-    private List<List<Long>> toListOfLong(List<Row> rows)
-    {
-        List<List<Long>> ret = new ArrayList<List<Long>>();
-        
-        
         for (Row row : rows)
-        {
-            // nulls are allowed
-            ArrayList<Long> toLong = new ArrayList<Long>();
-            
-            for (int n = 0; n < COLUMN_COUNT; ++n)
-                addColumn(toLong, row.eval(n));
-            
-            ret.add(toLong);
-        }
-        return ret;
-    }
-    
-    private static void addColumn(List<Long> row, ValueSource v)
-    {
-        if (v.isNull())
-        {
-            row.add(null);
-            return;
-        }
+            ret.add(row.eval(3).getInt());
 
-        switch(v.getConversionType())
-        {
-            case LONG:      row.add(v.getLong());
-                            break;
-            case INT:       row.add(v.getInt());
-                            break;
-            default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
-        }
+        return ret;
     }
     
     private API.Ordering getAAA()
