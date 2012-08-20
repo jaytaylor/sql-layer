@@ -65,7 +65,8 @@ public class TestStore
         mainDelegate.updateRow(session,
                            oldRow.toRowData(),
                            newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
-                           columnSelector);
+                           columnSelector,
+                           null);
         TestRow currentRow = map.remove(oldRow.hKey());
         TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
         map.put(mergedRow.hKey(), mergedRow);

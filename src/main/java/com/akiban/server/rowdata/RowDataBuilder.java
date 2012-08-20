@@ -181,7 +181,7 @@ public final class RowDataBuilder {
             if (target.lastEncodedLength() != varWidthExpected) {
                 throw new IllegalStateException("expected to write " + varWidthExpected
                         + " variable-width byte(s), but wrote " + target.lastEncodedLength()
-                        + " (vlength=" + vlength + ')');
+                        + " (vlength=" + vlength + "). FieldDef=" + fieldDef + ", value = <" + source + '>');
             }
             vlength += varWidthExpected;
             variableWidthSectionOffset += varWidthExpected;

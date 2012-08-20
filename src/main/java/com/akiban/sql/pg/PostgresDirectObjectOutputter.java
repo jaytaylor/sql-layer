@@ -34,7 +34,7 @@ import java.io.IOException;
 public class PostgresDirectObjectOutputter extends PostgresOutputter<List<?>>
 {
     public PostgresDirectObjectOutputter(PostgresQueryContext context,
-                                         PostgresBaseStatement statement) {
+                                         PostgresDMLStatement statement) {
         super(context, statement);
     }
 

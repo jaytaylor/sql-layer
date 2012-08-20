@@ -96,4 +96,9 @@ public class SimpleQueryContext extends QueryContextBase
     public long sequenceNextValue(TableName sequence) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public long sequenceCurrentValue(TableName sequence) {
+        throw new UnsupportedOperationException();
+    }
 }

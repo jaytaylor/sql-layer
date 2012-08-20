@@ -28,8 +28,10 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.types.AkType;
 import com.persistit.Tree;
 
 import java.util.*;
@@ -305,6 +307,16 @@ public abstract class Index implements Traversable
         return idAndFlags;
     }
 
+    public boolean containsTableColumn(TableName tableName, String columnName) {
+        for(IndexColumn iCol : keyColumns) {
+            Column column = iCol.getColumn();
+            if(column.getTable().getName().equals(tableName) && column.getName().equals(columnName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Unique, non-PK indexes store a "null separator value", making index rows unique that would otherwise
     // be considered duplicates due to nulls.
     public long nextNullSeparatorValue(TreeService treeService)
@@ -313,6 +325,38 @@ public abstract class Index implements Traversable
         AccumulatorAdapter accumulator =
             new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
         return accumulator.updateAndGet(1);
+    }
+
+    public AkType[] akTypes()
+    {
+        ensureTypeInfo();
+        return akTypes;
+    }
+
+    public AkCollator[] akCollators()
+    {
+        ensureTypeInfo();
+        return akCollators;
+    }
+
+    private void ensureTypeInfo()
+    {
+        if (akTypes == null) {
+            synchronized (this) {
+                if (akTypes == null) {
+                    AkType[] localAkTypes = new AkType[allColumns.size()];
+                    AkCollator[] localAkCollators = new AkCollator[allColumns.size()];
+                    for (IndexColumn indexColumn : allColumns) {
+                        int position = indexColumn.getPosition();
+                        Column column = indexColumn.getColumn();
+                        localAkTypes[position] = column.getType().akType();
+                        localAkCollators[position] = column.getCollator();
+                    }
+                    akTypes = localAkTypes;
+                    akCollators = localAkCollators;
+                }
+            }
+        }
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
@@ -338,6 +382,8 @@ public abstract class Index implements Traversable
     protected IndexRowComposition indexRowComposition;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
+    private volatile AkType[] akTypes;
+    private volatile AkCollator[] akCollators;
 
     public enum JoinType {
         LEFT, RIGHT

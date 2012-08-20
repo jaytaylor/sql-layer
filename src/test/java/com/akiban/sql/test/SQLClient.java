@@ -27,8 +27,9 @@
 package com.akiban.sql.test;
 
 import java.sql.*;
+import java.util.*;
 
-public class SQLClient
+public class SQLClient implements Runnable
 {
     public static void main(String[] args) throws Exception {
         if (args.length < 5) {
@@ -38,61 +39,124 @@ public class SQLClient
             System.exit(1);
         }
         int argi = 0;
-        Class.forName(args[argi++]);
-        Connection conn = DriverManager.getConnection(args[argi++], args[argi++], args[argi++]);
-        String sql = args[argi++];
-        System.out.println(sql);
-        int repeat = 0;
+        String driver, url, user, password, sql;
+        List<String> params;
+        driver = args[argi++];
+        url = args[argi++];
+        user = args[argi++];
+        password = args[argi++];
+        sql = args[argi++];
+        int repeat = 0, nthreads = 0;
+        params = new ArrayList<String>();
         while (argi < args.length) {
             if ("--repeat".equals(args[argi])) {
                 repeat = Integer.valueOf(args[argi+1]);
                 argi += 2;
             }
-            else if ("--cbo".equals(args[argi])) {
-                Statement stmt = conn.createStatement();
-                stmt.execute("SET cbo TO '" + args[argi+1] + "'");
-                stmt.close();
+            else if ("--threads".equals(args[argi])) {
+                nthreads = Integer.valueOf(args[argi+1]);
                 argi += 2;
             }
-            else
-                break;
-        }
-        PreparedStatement stmt = conn.prepareStatement(sql);
-        long startTime = -1, endTime;
-        for (int i = argi; i < args.length; i++) {
-            stmt.setString(i - argi + 1, args[i]);
-        }
-        for (int pass = 0; pass <= repeat; pass++) {
-            if (pass == 1) startTime = System.currentTimeMillis();
-            if (stmt.execute()) {
-                ResultSet rs = stmt.getResultSet();
-                ResultSetMetaData md = rs.getMetaData();
-                if (pass == 0) {
-                    for (int i = 1; i <= md.getColumnCount(); i++) {
-                        if (i > 1) System.out.print("\t");
-                        System.out.print(md.getColumnName(i));
-                    }
-                    System.out.println();
-                }
-                while (rs.next()) {
-                    if (pass > 0) continue;
-                    for (int i = 1; i <= md.getColumnCount(); i++) {
-                        if (i > 1) System.out.print("\t");
-                        System.out.print(rs.getString(i));
-                    }
-                    System.out.println();
-                }
-            }
             else {
-                int count = stmt.getUpdateCount();
-                if (pass == 0)
-                    System.out.println(count + " rows updated.");
+                params.add(args[argi]);
             }
         }
-        endTime =  System.currentTimeMillis();
-        if (repeat > 0) 
-            System.out.println((endTime - startTime) + " ms.");
-        stmt.close();
-        conn.close();
+        Class.forName(driver);
+        System.out.println(sql);
+        long total;
+        if ((repeat == 0) || (nthreads == 0)) {
+            SQLClient client = new SQLClient(url, user, password, sql,
+                                             params, 0, repeat);
+            client.run();
+            total = client.time();
+        }
+        else {
+            new SQLClient(url, user, password, sql, params, 0, 0).run();
+
+            SQLClient[] clients = new SQLClient[nthreads];
+            Thread[] threads = new Thread[nthreads];
+            for (int i = 0; i < nthreads; i++) {
+                clients[i] = new SQLClient(url, user, password, sql, params, 1, repeat);
+                threads[i] = new Thread(clients[i]);
+            }
+            for (int i = 0; i < nthreads; i++) {
+                threads[i].start();
+            }
+            total = 0;
+            for (int i = 0; i < nthreads; i++) {
+                threads[i].join();
+                total += clients[i].time();
+            }
+        }
+        if (repeat > 0) {
+            total = total / (repeat * ((nthreads == 0) ? 1 : nthreads));
+            System.out.println(total + " ms.");
+        }
+    }
+
+    private String url, user, password, sql;
+    private List<String> params;
+    private int start, repeat;
+    private long time;
+
+    public SQLClient(String url, String user, String password, String sql,
+                     List<String> params, int start, int repeat) {
+        this.url = url;
+        this.user = user;
+        this.password = password;
+        this.sql = sql;
+        this.params = params;
+        this.start = start;
+        this.repeat = repeat;
+    }
+        
+    public long time() {
+        return time;
+    }
+
+    @Override
+    public void run() {
+        try {
+            Connection conn = DriverManager.getConnection(url, user, password);
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setString(i + 1, params.get(i));
+            }
+            long startTime = -1, endTime;
+            for (int pass = start; pass <= repeat; pass++) {
+                if (pass == 1) startTime = System.currentTimeMillis();
+                if (stmt.execute()) {
+                    ResultSet rs = stmt.getResultSet();
+                    ResultSetMetaData md = rs.getMetaData();
+                    if (pass == 0) {
+                        for (int i = 1; i <= md.getColumnCount(); i++) {
+                            if (i > 1) System.out.print("\t");
+                            System.out.print(md.getColumnName(i));
+                        }
+                        System.out.println();
+                    }
+                    while (rs.next()) {
+                        if (pass > 0) continue;
+                        for (int i = 1; i <= md.getColumnCount(); i++) {
+                            if (i > 1) System.out.print("\t");
+                            System.out.print(rs.getString(i));
+                        }
+                        System.out.println();
+                    }
+                }
+                else {
+                    int count = stmt.getUpdateCount();
+                    if (pass == 0)
+                        System.out.println(count + " rows updated.");
+                }
+            }
+            endTime =  System.currentTimeMillis();
+            stmt.close();
+            conn.close();
+            time = endTime - startTime;
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 }

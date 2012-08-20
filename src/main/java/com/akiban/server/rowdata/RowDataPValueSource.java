@@ -26,10 +26,11 @@
 
 package com.akiban.server.rowdata;
 
-public final class RowDataPValueSource extends AbstractRowDataPValueSource {
+public final class RowDataPValueSource extends AbstractRowDataPValueSource implements RowDataSource {
 
-    // FieldDefConversionBase interface
+    // RowDataSource interface
 
+    @Override
     public void bind(FieldDef fieldDef, RowData rowData) {
         this.fieldDef = fieldDef;
         this.rowData = rowData;

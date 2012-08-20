@@ -30,68 +30,43 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
-public class BoxLatLon implements SpatialObject
+import static com.akiban.server.geophile.SpaceLatLon.*;
+
+public abstract class BoxLatLon implements SpatialObject
 {
-    // Object interface
-
-    @Override
-    public String toString()
+    public static BoxLatLon newBox(BigDecimal latLoDecimal,
+                                   BigDecimal latHiDecimal,
+                                   BigDecimal lonLoDecimal,
+                                   BigDecimal lonHiDecimal)
     {
-        return String.format("(%s:%s, %s:%s)", latLo, latHi, lonLo, lonHi);
+        long latLo = scaleLat(latLoDecimal);
+        long latHi = scaleLat(latHiDecimal.round(ROUND_UP));
+        long lonLo = fixLon(scaleLon(lonLoDecimal));
+        long lonHi = fixLon(scaleLon(lonHiDecimal.round(ROUND_UP)));
+        return
+            lonLo <= lonHi
+            ? new BoxLatLonWithoutWraparound(latLo, latHi, lonLo, lonHi)
+            : new BoxLatLonWithWraparound(latLo, latHi, lonLo, lonHi);
+            
     }
 
-    // SpatialObject interface
+    // For use by this class
 
-    public long[] arbitraryPoint()
+    // Query boxes are specified as center point += delta. This calculation can put us past min/max lon.
+    // The delta is measured in degrees, so we should be off by no more than 180`. If more than that, then
+    // later checking will detect the problem.
+    private static long fixLon(long lon)
     {
-        return new long[]{latLo, lonLo};
-    }
-
-    public boolean containedBy(Region region)
-    {
-        long rLatLo = region.lo(0);
-        long rLonLo = region.lo(1);
-        long rLatHi = region.hi(0);
-        long rLonHi = region.hi(1);
-        return rLatLo <= latLo && latHi <= rLatHi && rLonLo <= lonLo && lonHi <= rLonHi;
-    }
-
-    public RegionComparison compare(Region region)
-    {
-        long rLatLo = region.lo(0);
-        long rLonLo = region.lo(1);
-        long rLatHi = region.hi(0);
-        long rLonHi = region.hi(1);
-        if (latLo <= rLatLo && rLatHi <= latHi && lonLo <= rLonLo && rLonHi <= lonHi) {
-            return RegionComparison.INSIDE;
-        } else if (rLatHi < latLo || rLatLo > latHi || rLonHi < lonLo || rLonLo > lonHi) {
-            return RegionComparison.OUTSIDE;
-        } else {
-            return RegionComparison.OVERLAP;
+        // Allows for query boxes
+        if (lon < MIN_LON_SCALED) {
+            lon += CIRCLE;
+        } else if (lon > MAX_LON_SCALED) {
+            lon -= CIRCLE;
         }
-    }
-
-    // BoxLatLon interface
-
-    public BoxLatLon(BigDecimal latLo, BigDecimal latHi, BigDecimal lonLo, BigDecimal lonHi)
-    {
-        // SpaceLatLon.scale will truncate and fractional part. That's OK for latLo and lonLo. For latHi and lonHi,
-        // we want to round up, to represent the fact that the box represented by the coarser (scaled) space
-        // is not empty.
-        this.latLo = SpaceLatLon.scaleLat(latLo);
-        this.latHi = SpaceLatLon.scaleLat(latHi.round(ROUND_UP));
-        this.lonLo = SpaceLatLon.scaleLon(lonLo);
-        this.lonHi = SpaceLatLon.scaleLon(lonHi.round(ROUND_UP));
+        return lon;
     }
 
     // Class state
 
     private static final MathContext ROUND_UP = new MathContext(0, RoundingMode.CEILING);
-
-    // Object state
-
-    private final long latLo;
-    private final long latHi;
-    private final long lonLo;
-    private final long lonHi;
 }

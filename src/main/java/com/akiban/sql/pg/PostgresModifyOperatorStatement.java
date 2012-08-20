@@ -31,19 +31,18 @@ import com.akiban.qp.exec.UpdateResult;
 
 import java.io.IOException;
 
-import com.akiban.server.service.session.Session;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 /**
  * An SQL modifying DML statement transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresModifyOperatorStatement extends PostgresBaseStatement
+public class PostgresModifyOperatorStatement extends PostgresDMLStatement
 {
     private String statementType;
     private UpdatePlannable resultOperator;
@@ -74,13 +73,15 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        Session session = server.getSession();
         final UpdateResult updateResult;
+        boolean lockSuccess = false;
         try {
-            lock(session, UNSPECIFIED_DML_WRITE);
+            lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
+            lockSuccess = true;
             updateResult = resultOperator.run(context);
-        } finally {
-            unlock(session, UNSPECIFIED_DML_WRITE);
+        } 
+        finally {
+            unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
         }
 
         LOG.debug("Statement: {}, result: {}", statementType, updateResult);

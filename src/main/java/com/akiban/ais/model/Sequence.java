@@ -159,6 +159,12 @@ public class Sequence implements TreeLink {
         }
         return value;
     }
+
+    public long currentValue(TreeService treeService) throws PersistitException {
+        Tree tree = getTreeCache().getTree();
+        AccumulatorAdapter accum = new AccumulatorAdapter (AccumInfo.AUTO_INC, treeService, tree);
+        return accum.getSnapshot(AccumInfo.AUTO_INC, treeService, tree);
+    }
     
     public void setStartWithAccumulator(TreeService treeService) throws PersistitException {
         Tree tree = getTreeCache().getTree();
