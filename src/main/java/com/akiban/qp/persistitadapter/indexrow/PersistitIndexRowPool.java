@@ -54,13 +54,13 @@ public class PersistitIndexRowPool
         }
     }
 
-    public synchronized void enablePooling(boolean poolingEnabled)
+    public synchronized void enablePooling(boolean newPoolingEnabled)
     {
-        if (this.poolingEnabled && !poolingEnabled) {
+        if (this.poolingEnabled && !newPoolingEnabled) {
             // Disabling
             adapterPools.clear();
         }
-        this.poolingEnabled = poolingEnabled;
+        this.poolingEnabled = newPoolingEnabled;
     }
 
     // For use by this class
