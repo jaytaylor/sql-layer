@@ -205,7 +205,7 @@ public final class ConversionHelperBigDecimal {
         assert valueScale >= 0 : value;
         // MySQL sees "0.0123" as DECIMAL(4, 4). Java sees it as DECIMAL(3, 4). So, just do a simple conversion.
         if (valuePrec < valueScale) {
-            valuePrec = valueScale; // e.g.,
+            valuePrec = valueScale;
         }
         int valueIntDigits = valuePrec - valueScale;
         int declIntDigits = declPrec - declScale;

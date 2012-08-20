@@ -67,6 +67,21 @@ public final class ConversionHelperBigDecimalTest {
     }
 
     @Test
+    public void normalizeTruncateNoIntNegative() {
+        checkNormalizeToString("-1", 4, 4, "-.9999");
+    }
+
+    @Test
+    public void normalizeTruncateOnlyInt() {
+        checkNormalizeToString("1000000", 4, 0, "9999");
+    }
+
+    @Test
+    public void normalizeTruncateMixed() {
+        checkNormalizeToString("1000000", 4, 2, "99.99");
+    }
+
+    @Test
     public void normalizeTruncateFractional() {
         checkNormalizeToString("1.234567", 4, 2, "1.23");
     }
