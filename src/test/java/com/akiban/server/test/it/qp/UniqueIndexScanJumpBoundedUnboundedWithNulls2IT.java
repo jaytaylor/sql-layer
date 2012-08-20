@@ -68,7 +68,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
     private static final int C = 2;
     private static final int ID = 3;
     
-    private static final int INDEX_COLUMN_COUNT = 3;
+    private static final int INDEX_COLUMN_COUNT = 4;
 
     private static final boolean ASC = true;
     private static final boolean DESC = false;
@@ -1658,7 +1658,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         // find the row with given id
         List<Row> expectedRows = new ArrayList<Row>(expected.length);
         for (long val : expected)
-            expectedRows.add(indexRow(val));
+            expectedRows.add(indexRowWithId(val));
 
         // check the list of rows
         checkRows(expectedRows, actualRows);
