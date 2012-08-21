@@ -145,7 +145,7 @@ public interface ServerSession
     public Date currentTime();
 
     /** Get query timeout in seconds or <code>null</code> if it has not been set. */
-    public Long getQueryTimeoutSec();
+    public long getQueryTimeoutSec();
 
     /** Get compatibility mode for MySQL zero dates. */
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();

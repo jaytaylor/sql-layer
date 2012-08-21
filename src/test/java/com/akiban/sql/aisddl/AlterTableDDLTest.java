@@ -190,7 +190,33 @@ public class AlterTableDDLTest {
             expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "i_i bigint NULL", "d1 double NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
     }
-
+    
+    @Test
+    public void addColumnSerialNoPk() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false);
+        parseAndRun("ALTER TABLE a ADD COLUMN new SERIAL");
+        expectColumnChanges("ADD:new");
+        expectIndexChanges();
+        if (Types3Switch.ON) {
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "new MCOMPAT_ BIGINT(21)", "UNIQUE new(new)");
+        } else {
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)");
+        }
+    }
+    
+    @Test
+    public void addColumnSerialPk() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false);
+        parseAndRun("ALTER TABLE a ADD COLUMN new SERIAL PRIMARY KEY");
+        expectColumnChanges("ADD:new");
+        expectIndexChanges("ADD:PRIMARY");
+        if (Types3Switch.ON) {
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "new MCOMPAT_ BIGINT(21)", "UNIQUE new(new)", "PRIMARY(new)");
+        } else {
+            expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)", "PRIMARY(new)");
+        }
+    }
+    
     //
     // DROP COLUMN
     //

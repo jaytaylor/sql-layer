@@ -97,7 +97,7 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         // stolen from TypesTranslation
         int precision = instance.attribute(Attrs.PRECISION);
         int scale = instance.attribute(Attrs.SCALE);

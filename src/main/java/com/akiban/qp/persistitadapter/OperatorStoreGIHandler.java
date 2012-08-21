@@ -79,7 +79,7 @@ class OperatorStoreGIHandler {
                     indexRow.append(column, source);
                 }
             }
-            indexRow.close();
+            indexRow.close(action == Action.STORE);
             indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {
             case STORE:

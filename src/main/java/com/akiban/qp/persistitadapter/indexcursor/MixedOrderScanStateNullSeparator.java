@@ -24,60 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.row;
+package com.akiban.qp.persistitadapter.indexcursor;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.RowType;
+
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.store.PersistitKeyAppender;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
+import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-public abstract class IndexRow extends AbstractRow
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
+
+class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSegment<S, E>
 {
-    // BoundExpressions interface
-
     @Override
-    public ValueSource eval(int index)
+    public boolean jump(S fieldValue) throws PersistitException
     {
-        throw new UnsupportedOperationException();
+        Exchange exchange = cursor.exchange();
+        if (!ascending) {
+            exchange.append(Key.AFTER);
+        }
+        boolean resume = exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, true);
+        return resume;
     }
 
-    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    public MixedOrderScanStateNullSeparator(IndexCursorMixedOrder cursor,
+                                            int field,
+                                            boolean ascending,
+                                            SortKeyAdapter<S, E> sortKeyAdapter)
+        throws PersistitException
     {
-        throw new UnsupportedOperationException();
+        super(cursor, field, ascending, sortKeyAdapter);
     }
-
-    // RowBase interface
-
-    public RowType rowType()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public HKey hKey()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    // IndexRow interface
-
-    public abstract void initialize(RowData rowData, Key hKey);
-
-    public final void append(Column column, ValueSource source)
-    {
-        append(source, column.getType().akType(), column.tInstance(), column.getCollator());
-    }
-
-    public abstract <S> void append(S source, AkType type, TInstance tInstance, AkCollator collator);
-
-    public abstract void close(boolean forInsert);
-
 }

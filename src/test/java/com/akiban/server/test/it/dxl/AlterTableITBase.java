@@ -35,7 +35,6 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
-import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;

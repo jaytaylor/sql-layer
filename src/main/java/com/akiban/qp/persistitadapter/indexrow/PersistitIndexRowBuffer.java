@@ -193,20 +193,23 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     @Override
-    public void close()
+    public void close(boolean forInsert)
     {
         // Write null-separating value if necessary
         if (index.isUniqueAndMayContainNulls()) {
             long nullSeparator = 0;
-            boolean hasNull = false;
-            int keyFields = index.getKeyColumns().size();
-            for (int f = 0; !hasNull && f < keyFields; f++) {
-                pKey.indexTo(f);
-                hasNull = pKey.isNull();
+            if (forInsert) {
+                boolean hasNull = false;
+                int keyFields = index.getKeyColumns().size();
+                for (int f = 0; !hasNull && f < keyFields; f++) {
+                    pKey.indexTo(f);
+                    hasNull = pKey.isNull();
+                }
+                if (hasNull) {
+                    nullSeparator = index.nextNullSeparatorValue(adapter.persistit().treeService());
+                }
             }
-            if (hasNull) {
-                nullSeparator = index.nextNullSeparatorValue(adapter.persistit().treeService());
-            }
+            // else: We're creating an index row to update or delete. Don't need a new null separator value.
             pKey.append(nullSeparator);
         }
         // If necessary, copy pValue state into value. (Check pValueAppender, because that is non-null only in
@@ -231,12 +234,12 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     public void append(Key.EdgeValue edgeValue)
     {
-        // An edgeValue is only useful when attached to pKey, not to pValue. This should only happen when
-        // we've written the last part of the key. DON'T increment pKeyAppends since it isn't a real
-        // key segment being appended.
-        if (pKeyAppends <= pKeyFields) {
-            pKey.append(edgeValue);
-        }
+        // This is unlike other appends. An EdgeValue affects Persistit iteration, so it has to go to a Persistit
+        // Key, not a Value. If we're already appending to Values (pKeyAppends >= pKeyFields), then all we can
+        // do is append to the value, and then rely on beforeStart() to skip rows that don't qualify. Also,
+        // don't increment pKeyAppends, because this append doesn't change where we write next. (In fact, after
+        // writing an EdgeValue we shouldn't be appending more anyway.)
+        pKey.append(edgeValue);
     }
 
     public void tableBitmap(long bitmap)
@@ -285,7 +288,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         int b = 0; // byte position
         int f = 0; // field position
         int end = min(this.pKey.getEncodedSize(), that.pKey.getEncodedSize());
-        while (b < end) {
+        while (b < end && f < pKeyFields) {
             int thisByte = thisBytes[b] & 0xff;
             int thatByte = thatBytes[b] & 0xff;
             c = thisByte - thatByte;
@@ -324,6 +327,14 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             }
         }
         return 0;
+    }
+
+    // For testing only. It does an allocation per call, and is not appropriate for product use.
+    public long nullSeparator()
+    {
+        PersistitKeyValueSource valueSource = new PersistitKeyValueSource();
+        valueSource.attach(pKey, pKeyFields, AkType.LONG, null);
+        return valueSource.getLong();
     }
 
     // For use by subclasses
@@ -407,23 +418,33 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         assert !index.isUnique() || index.isTableIndex() : index;
         this.index = index;
         this.pKey = key;
-        this.pValue = adapter.newKey();
+        if (this.pValue == null) {
+            this.pValue = adapter.newKey();
+        } else {
+            this.pValue.clear();
+        }
         this.value = value;
         if (index.isSpatial()) {
             this.nIndexFields = index.getAllColumns().size() - index.getKeyColumns().size() + 1;
             this.pKeyFields = this.nIndexFields;
-            this.spatialHandler = new SpatialHandler();
+            if (this.spatialHandler == null) {
+                this.spatialHandler = new SpatialHandler();
+            }
         } else {
             this.nIndexFields = index.getAllColumns().size();
             this.pKeyFields = index.isUnique() ? index.getKeyColumns().size() : index.getAllColumns().size();
             this.spatialHandler = null;
         }
         if (writable) {
-            this.pKeyTarget = SORT_KEY_ADAPTER.createTarget();
+            if (this.pKeyTarget == null) {
+                this.pKeyTarget = SORT_KEY_ADAPTER.createTarget();
+            }
             this.pKeyTarget.attach(key);
             this.pKeyAppends = 0;
             if (index.isUnique()) {
-                this.pValueTarget = SORT_KEY_ADAPTER.createTarget();
+                if (this.pValueTarget == null) {
+                    this.pValueTarget = SORT_KEY_ADAPTER.createTarget();
+                }
                 this.pValueTarget.attach(this.pValue);
             } else {
                 this.pValueTarget = null;

@@ -182,6 +182,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         public long sequenceCurrentValue(TableName sequence) {
             return delegate.sequenceCurrentValue(sequence);
         }
+
+        @Override
+        public long getQueryTimeoutSec() {
+            return delegate.getQueryTimeoutSec();
+        }
     }
 
 
