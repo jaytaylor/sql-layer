@@ -23,34 +23,46 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain.std;
 
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.*;
-import java.util.Map;
+package com.akiban.server.explain;
 
-
-public class NestedLoopsExplainer extends OperationExplainer
+public class OperationExplainer extends Explainer 
 {
-    public NestedLoopsExplainer (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map<Object, Explainer> extraInfo)
+    private final Type type; 
+    private Attributes states;
+        
+    public OperationExplainer (Type type, Attributes states)
     {
-        super(Type.NESTED_LOOPS, buildMap(name, innerOp, outerOp, innerType, outerType, extraInfo));
-    }
+        this.type = type;
+        this.states = states;
+    }   
     
-    private static Attributes buildMap (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map<Object, Explainer> extraInfo)
+    @Override
+    public Type getType()
     {
-        Attributes atts = new Attributes();
-        
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.INPUT_OPERATOR, outerOp.getExplainer(extraInfo));
-        atts.put(Label.INPUT_OPERATOR, innerOp.getExplainer(extraInfo));
-        if (innerType != null)
-            atts.put(Label.INNER_TYPE, innerType.getExplainer(extraInfo));
-        if (outerType != null)
-            atts.put(Label.OUTER_TYPE, outerType.getExplainer(extraInfo));
-        
-        return atts;
+        return type;
     }
+
+    @Override
+    public Attributes get()
+    {
+        return states;
+    }
+       
+    @Override
+    public final boolean hasAttributes()
+    {
+        return !(states == null || states.isEmpty());
+    }  
+    
+    // TODO:
+    // could return a new OperationExplainer 
+    // if we want to make OperationExplainer immutable.
+    @Override
+    public final boolean addAttribute (Label label, Explainer ex)
+    {
+        if (states.containsKey(label)) return false;
+        states.put(label, ex);
+        return true;
+    }    
 }

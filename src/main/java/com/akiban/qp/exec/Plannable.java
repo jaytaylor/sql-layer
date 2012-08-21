@@ -28,7 +28,7 @@ package com.akiban.qp.exec;
 
 import com.akiban.qp.operator.Operator;
 
-import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.server.explain.Explainer;
 import java.util.List;
 import java.util.Map;
 

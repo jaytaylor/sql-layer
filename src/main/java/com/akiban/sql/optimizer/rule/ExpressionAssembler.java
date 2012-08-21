@@ -26,14 +26,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
@@ -47,6 +39,16 @@ import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.SubqueryExpression;
+
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
+
 import org.slf4j.Logger;
 
 import java.util.ArrayList;

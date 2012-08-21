@@ -32,10 +32,10 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpressions;
-import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 

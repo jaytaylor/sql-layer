@@ -37,7 +37,7 @@ import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.RankExpression;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;

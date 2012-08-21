@@ -23,44 +23,38 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain;
 
-public  class OperationExplainer extends Explainer {
-    private final Type type; 
-    private Attributes states;
-        
-    public OperationExplainer (Type type, Attributes states)
-    {
-        this.type = type;
-        this.states = states;
-    }   
+package com.akiban.server.explain;
+
+public abstract class Explainer 
+{
+    public abstract Type getType();
+    
+    /**
+     * 
+     * @return a map of this object's attributes if it's an OperationExplainer
+     *         a primitive object (Integer, Double, etc ...), otherwise.
+     */
+    public abstract Object get();
+    
+    public abstract boolean hasAttributes();
+ 
+    public abstract boolean addAttribute (Label label, Explainer ex);
     
     @Override
-    public Type getType()
+    public final boolean equals (Object o)
     {
-        return type;
+        if (o != null && o instanceof Explainer)
+        {
+            return ((Explainer)o).get() == get();
+        }
+        else
+            return false;
     }
-
-    @Override
-    public Attributes get()
-    {
-        return states;
-    }
-       
-    @Override
-    public final boolean hasAttributes()
-    {
-        return !(states == null || states.isEmpty());
-    }  
     
-    // TODO:
-    // could return a new OperationExplainer 
-    // if we want to make OperationExplainer immutable.
     @Override
-    public final boolean addAttribute (Label label, Explainer ex)
+    public final int hashCode ()
     {
-        if (states.containsKey(label)) return false;
-        states.put(label, ex);
-        return true;
-    }    
+        return get().hashCode();
+    }
 }

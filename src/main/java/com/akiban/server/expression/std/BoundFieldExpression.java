@@ -29,15 +29,15 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.Map;
 
 public final class BoundFieldExpression implements Expression {

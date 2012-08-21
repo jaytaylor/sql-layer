@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.explain;
+package com.akiban.server.explain;
 
 /**
  * Identify each attribute

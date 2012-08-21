@@ -26,8 +26,8 @@
 
 package com.akiban.server.types3.texpressions;
 
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.PrimitiveExplainer;
 
 public final class TPreparedExpressions {
 

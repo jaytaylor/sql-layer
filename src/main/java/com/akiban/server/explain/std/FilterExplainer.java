@@ -23,34 +23,35 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain.std;
 
-import com.akiban.ais.model.GroupTable;
+package com.akiban.server.explain.std;
+
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.server.explain.*;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-public class LookUpOperatorExplainer extends OperationExplainer
+public class FilterExplainer extends OperationExplainer
 {
-    public LookUpOperatorExplainer (String name, Attributes atts, GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map<Object, Explainer> extraInfo)
+    public FilterExplainer (String name, Set<RowType> keepType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
-        super(Type.LOOKUP_OPERATOR, buildAtts(name, atts, gTable, iRowType, keepInput, inputOp, extraInfo));
+        super(Type.FILTER, buildMap(name, keepType, inputOp, extraInfo));
+        
     }
     
-    private static Attributes buildAtts (String name, Attributes atts, GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Attributes buildMap (String name, Set<RowType> keepType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
+        Attributes atts = new Attributes();
+        
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
+        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         
-        // TODO: is anything else needed in Group Table other than  its name?
-        atts.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(gTable.getName().toString())); 
-        atts.put(Label.ROWTYPE, iRowType.getExplainer(extraInfo));
-        atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(iRowType.toString()));
-        atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
-        if (null != inputOp)
-            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
-        
+        for (RowType type : keepType)
+            atts.put(Label.KEEP_TYPE, type.getExplainer(extraInfo));
         return atts;
     }
+    
 }

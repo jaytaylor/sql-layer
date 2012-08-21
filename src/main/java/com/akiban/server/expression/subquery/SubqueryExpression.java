@@ -28,8 +28,8 @@ package com.akiban.server.expression.subquery;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
-import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import java.util.Map;
 

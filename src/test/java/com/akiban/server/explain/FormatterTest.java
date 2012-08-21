@@ -24,8 +24,9 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.explain;
+package com.akiban.server.explain;
 
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
@@ -34,7 +35,6 @@ import com.akiban.server.expression.std.FromUnixExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.expression.std.SubStringExpression;
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.Arrays;
 import java.util.Collections;
 import static org.junit.Assert.assertEquals;

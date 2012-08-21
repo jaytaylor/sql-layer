@@ -23,30 +23,42 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain.std;
+
+package com.akiban.server.explain.std;
 
 import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.explain.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
-public class DUIOperatorExplainer extends OperationExplainer
-{
-    public DUIOperatorExplainer (String name, Attributes atts, Operator inputOp, Map<Object, Explainer> extraInfo)
+public class ExpressionExplainer extends OperationExplainer
+{  
+    public ExpressionExplainer(Type type, String name, Map<Object, Explainer> extraInfo, List<? extends Expression> exs)
     {
-        super(Type.DUI, buildAtts(name, atts, inputOp, extraInfo));
+        super(checkType(type), buildMap(name, extraInfo, exs));
+    }
+     
+    public ExpressionExplainer(Type type, String name, Map<Object, Explainer> extraInfo, Expression ... operand)
+    {
+        this(type, name, extraInfo, Arrays.asList(operand));
+    }
+        
+    private static Attributes buildMap (String name, Map<Object, Explainer> extraInfo, List<? extends Expression> exs)
+    {
+        Attributes states = new Attributes();
+        states.put(Label.NAME, PrimitiveExplainer.getInstance(name));
+        if (exs != null)
+            for (Expression ex : exs)
+                states.put(Label.OPERAND, ex.getExplainer(extraInfo));
+        return states;
     }
     
-    private static Attributes buildAtts (String name, Attributes atts, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Type checkType(Type type)
     {
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
-        try
-        {
-            atts.put(Label.TABLE_TYPE, PrimitiveExplainer.getInstance(inputOp.rowType().userTable().getName().toString()));
-        }
-        catch(UnsupportedOperationException exception){}
-        
-        return atts;
+        if (type.generalType() != Type.GeneralType.EXPRESSION)
+            throw new IllegalArgumentException("Expected sub-category of Type.GeneralType.EXPRESSION but got " + type);
+        return type;
     }
 }

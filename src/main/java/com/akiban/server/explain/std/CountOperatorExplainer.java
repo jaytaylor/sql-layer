@@ -23,28 +23,32 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain.std;
+
+package com.akiban.server.explain.std;
 
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.explain.*;
 import java.util.Map;
 
-public class DistinctExplainer extends OperationExplainer
+public class CountOperatorExplainer extends OperationExplainer
 {
-    public DistinctExplainer (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
-        super(Type.DISTINCT, buildMap(name, distinctType, inputOp, extraInfo));
+        super(Type.COUNT_OPERATOR, buildAtts(opName, inputType, resultType, inputOp, extraInfo));
     }
     
-    private static Attributes buildMap (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.DINSTINCT_TYPE, PrimitiveExplainer.getInstance(distinctType));
-        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputType));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(rstType));
+        if (inputOp != null)
+            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         
         return atts;
     }

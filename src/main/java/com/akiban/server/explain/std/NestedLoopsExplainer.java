@@ -23,34 +23,35 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain.std;
+
+package com.akiban.server.explain.std;
 
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.*;
-import java.util.List;
+import com.akiban.server.explain.*;
 import java.util.Map;
-import java.util.Set;
 
-public class FilterExplainer extends OperationExplainer
+
+public class NestedLoopsExplainer extends OperationExplainer
 {
-    public FilterExplainer (String name, Set<RowType> keepType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    public NestedLoopsExplainer (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map<Object, Explainer> extraInfo)
     {
-        super(Type.FILTER, buildMap(name, keepType, inputOp, extraInfo));
-        
+        super(Type.NESTED_LOOPS, buildMap(name, innerOp, outerOp, innerType, outerType, extraInfo));
     }
     
-    private static Attributes buildMap (String name, Set<RowType> keepType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Attributes buildMap (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map<Object, Explainer> extraInfo)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, outerOp.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, innerOp.getExplainer(extraInfo));
+        if (innerType != null)
+            atts.put(Label.INNER_TYPE, innerType.getExplainer(extraInfo));
+        if (outerType != null)
+            atts.put(Label.OUTER_TYPE, outerType.getExplainer(extraInfo));
         
-        for (RowType type : keepType)
-            atts.put(Label.KEEP_TYPE, type.getExplainer(extraInfo));
         return atts;
     }
-    
 }

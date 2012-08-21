@@ -32,15 +32,11 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
-import com.akiban.qp.rowtype.*;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -49,11 +45,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.lang.Math.min;
 import java.math.BigDecimal;
-import java.util.Map;
 
 /**
 

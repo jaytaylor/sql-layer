@@ -29,11 +29,11 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.Explainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.sql.optimizer.explain.Explainer;
 import java.util.Map;
 
 final class ExprUtil {

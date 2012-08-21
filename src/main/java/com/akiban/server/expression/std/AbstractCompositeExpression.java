@@ -27,12 +27,12 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.ArrayList;
 import java.util.Arrays;

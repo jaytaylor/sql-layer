@@ -39,6 +39,7 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
@@ -53,8 +54,7 @@ import org.junit.runner.RunWith;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.qp.exec.Plannable;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.plan.PlanContext;
+import com.akiban.server.explain.Explainer;
 
 import org.junit.Before;
 

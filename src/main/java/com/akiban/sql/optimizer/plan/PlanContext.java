@@ -31,8 +31,8 @@ import com.akiban.sql.optimizer.rule.RulesContext;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.server.explain.Explainer;
 import com.akiban.server.expression.Expression;
-import com.akiban.sql.optimizer.explain.Explainer;
 
 import java.util.Map;
 import java.util.HashMap;

@@ -23,36 +23,30 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain;
 
-public abstract class Explainer {
-    public abstract Type getType();
-    
-    /**
-     * 
-     * @return a map of this object's attributes if it's an OperationExplainer
-     *         a primitive object (Integer, Double, etc ...), otherwise.
-     */
-    public abstract Object get();
-    
-    public abstract boolean hasAttributes();
- 
-    public abstract boolean addAttribute (Label label, Explainer ex);
-    
-    @Override
-    public final boolean equals (Object o)
+package com.akiban.server.explain.std;
+
+import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
+import java.util.Map;
+
+public class DistinctExplainer extends OperationExplainer
+{
+    public DistinctExplainer (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
-        if (o != null && o instanceof Explainer)
-        {
-            return ((Explainer)o).get() == get();
-        }
-        else
-            return false;
+        super(Type.DISTINCT, buildMap(name, distinctType, inputOp, extraInfo));
     }
     
-    @Override
-    public final int hashCode ()
+    private static Attributes buildMap (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
-        return get().hashCode();
+        Attributes atts = new Attributes();
+        
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
+        atts.put(Label.DINSTINCT_TYPE, PrimitiveExplainer.getInstance(distinctType));
+        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        
+        return atts;
     }
 }

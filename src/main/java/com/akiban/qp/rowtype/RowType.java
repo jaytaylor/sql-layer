@@ -34,7 +34,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.server.explain.*;
 import java.util.Map;
 
 public abstract class RowType

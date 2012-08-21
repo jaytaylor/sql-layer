@@ -32,6 +32,7 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.Explainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.ExpressionComposer;
@@ -49,7 +50,6 @@ import java.util.List;
 import java.util.Set;
 
 import static com.akiban.server.expression.std.ComposedExpressionTestBase.ExpressionAttribute.*;
-import com.akiban.sql.optimizer.explain.Explainer;
 import java.util.*;
 import static org.junit.Assert.*;
 

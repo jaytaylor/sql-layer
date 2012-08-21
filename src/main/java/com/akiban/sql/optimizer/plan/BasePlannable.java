@@ -29,8 +29,8 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Format;
+import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.Format;
 
 import java.util.*;
 

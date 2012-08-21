@@ -29,8 +29,8 @@ package com.akiban.sql.pg;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.server.error.UnableToExplainException;
 import com.akiban.server.error.UnsupportedExplainException;
+import com.akiban.server.explain.Explainer;
 import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PlanContext;
 

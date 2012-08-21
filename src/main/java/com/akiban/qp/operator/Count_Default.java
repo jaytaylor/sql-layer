@@ -32,11 +32,11 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.std.CountOperatorExplainer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.std.CountOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 

@@ -23,36 +23,35 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain.std;
 
+package com.akiban.server.explain.std;
+
+import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.server.explain.*;
 import java.util.Map;
 
-public class SortOperatorExplainer extends OperationExplainer
+public class LookUpOperatorExplainer extends OperationExplainer
 {
-    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
+    public LookUpOperatorExplainer (String name, Attributes atts, GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
-        super(Type.SORT, buildMap(name, sortOption, sortType, inputOp, ordering, extraInfo));
+        super(Type.LOOKUP_OPERATOR, buildAtts(name, atts, gTable, iRowType, keepInput, inputOp, extraInfo));
     }
     
-    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
+    private static Attributes buildAtts (String name, Attributes atts, GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map<Object, Explainer> extraInfo)
     {
-        Attributes map = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         
-        map.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        map.put(Label.SORT_OPTION, PrimitiveExplainer.getInstance(sortOption.name()));
-        map.put(Label.ROWTYPE, sortType.getExplainer(extraInfo));
-        map.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
-        for (int i = 0; i < ordering.sortColumns(); i++)
-        {
-            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer(extraInfo));
-            map.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
-        }
+        // TODO: is anything else needed in Group Table other than  its name?
+        atts.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(gTable.getName().toString())); 
+        atts.put(Label.ROWTYPE, iRowType.getExplainer(extraInfo));
+        atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(iRowType.toString()));
+        atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
+        if (null != inputOp)
+            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
         
-        return map;
+        return atts;
     }
 }

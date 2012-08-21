@@ -28,22 +28,6 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.operator.API.InputPreservationOption;
-import com.akiban.qp.operator.API.JoinType;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
-import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
-import com.akiban.server.types3.texpressions.TNullExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -57,15 +41,33 @@ import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
+import com.akiban.qp.operator.API.InputPreservationOption;
+import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
+import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
+import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
+import com.akiban.server.types3.texpressions.TNullExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
+
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.expression.subquery.AnySubqueryExpression;
 import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
-import com.akiban.server.types.AkType;
+import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
+import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.API;
@@ -81,14 +83,14 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 
+import com.akiban.server.explain.*;
+
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
-import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
-import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 

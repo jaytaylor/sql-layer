@@ -32,7 +32,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.AkServer;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
-import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.server.explain.Explainer;
 import org.junit.Before;
 import org.junit.Test;
 

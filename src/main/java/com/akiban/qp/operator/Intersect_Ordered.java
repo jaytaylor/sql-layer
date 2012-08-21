@@ -31,10 +31,10 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
+import com.akiban.server.explain.*;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -45,7 +45,6 @@ import java.util.*;
 
 import static com.akiban.qp.operator.API.IntersectOption;
 import static com.akiban.qp.operator.API.JoinType;
-import com.akiban.sql.optimizer.explain.*;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
@@ -256,7 +255,7 @@ class Intersect_Ordered extends Operator
         atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name()));
         atts.put(Label.INPUT_OPERATOR, left.getExplainer(extraInfo));
         atts.put(Label.INPUT_OPERATOR, right.getExplainer(extraInfo));
-        return new OperationExplainer(com.akiban.sql.optimizer.explain.Type.ORDERED, atts);
+        return new OperationExplainer(Type.ORDERED, atts);
     }
 
     // Inner classes

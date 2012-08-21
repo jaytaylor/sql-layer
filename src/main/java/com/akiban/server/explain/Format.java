@@ -24,13 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.explain;
+package com.akiban.server.explain;
 
-import com.akiban.sql.optimizer.explain.Type.GeneralType;
+import com.akiban.server.explain.Type.GeneralType;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Format {
+public class Format 
+{
     
     private boolean verbose = true;
     private int numSubqueries = 0;

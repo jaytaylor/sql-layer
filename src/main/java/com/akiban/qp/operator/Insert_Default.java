@@ -27,22 +27,21 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.exec.Plannable;
-import com.akiban.sql.optimizer.explain.Explainer;
-import java.util.Collections;
-import java.util.List;
-
-import com.akiban.util.tap.InOutTap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
-import com.akiban.sql.optimizer.explain.*;
-import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**

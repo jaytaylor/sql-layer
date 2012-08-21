@@ -23,32 +23,37 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain.std;
+
+package com.akiban.server.explain.std;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.server.explain.*;
 import java.util.Map;
 
-public class CountOperatorExplainer extends OperationExplainer
+public class SortOperatorExplainer extends OperationExplainer
 {
-    public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
     {
-        super(Type.COUNT_OPERATOR, buildAtts(opName, inputType, resultType, inputOp, extraInfo));
+        super(Type.SORT, buildMap(name, sortOption, sortType, inputOp, ordering, extraInfo));
     }
     
-    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
     {
-        Attributes atts = new Attributes();
+        Attributes map = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputType));
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance(rstType));
-        if (inputOp != null)
-            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        map.put(Label.NAME, PrimitiveExplainer.getInstance(name));
+        map.put(Label.SORT_OPTION, PrimitiveExplainer.getInstance(sortOption.name()));
+        map.put(Label.ROWTYPE, sortType.getExplainer(extraInfo));
+        map.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        for (int i = 0; i < ordering.sortColumns(); i++)
+        {
+            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer(extraInfo));
+            map.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
+        }
         
-        return atts;
+        return map;
     }
 }

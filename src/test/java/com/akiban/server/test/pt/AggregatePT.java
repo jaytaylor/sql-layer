@@ -49,6 +49,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.explain.Explainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.std.BoundFieldExpression;
@@ -62,7 +63,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.sql.optimizer.explain.Explainer;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
