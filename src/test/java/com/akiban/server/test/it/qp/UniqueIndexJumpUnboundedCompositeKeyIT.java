@@ -590,7 +590,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 20
-
+    @Ignore
     @Test
     public void testAADAA_b_2_1013()
     {
@@ -952,7 +952,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 36
-
+    @Ignore
     @Test
     public void testADAAA_b_2_1013()
     {
@@ -1247,7 +1247,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 52
-
+    @Ignore
     @Test
     public void testADDAA_b_2_1013()
     {
@@ -1559,7 +1559,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 68
-
+    @Ignore
     @Test
     public void testDAAAA_b_2_1013()
     {
@@ -1934,7 +1934,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 84
-
+    @Ignore
     @Test
     public void testDADAA_b_2_1013()
     {
@@ -2296,7 +2296,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 100
-
+    @Ignore
     @Test
     public void testDDAAA_b_2_1013()
     {
@@ -2591,7 +2591,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     }
 
     // 116
-
+    @Ignore
     @Test
     public void testDDDAA_b_2_1013()
     {
