@@ -633,6 +633,64 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
 
     }
+    
+    @Test
+    public void testDDADLegalRange()
+    {
+        testRange(getDDAD(),
+                  getDDADId(),
+                  0,
+                  10, true,
+                  14, true,
+                  new long [][]
+                  {
+                      {1014, 1015, 1012, 1013, 1010, 1011},
+                      {1015, 1012, 1013, 1010, 1011},
+                      {1012, 1013, 1010, 1011},
+                      {1013, 1010, 1011},
+                      {1010, 1011},
+                      {1011}
+
+                  });
+    }
+
+    @Test
+    public void testDDADOutOfRangeUpperBound()
+    {
+        testRange(getDDAD(),
+                  getDDADId(),
+                  0,
+                  12, true,
+                  16, true,
+                  new long [][]
+                  {
+                      {1014, 1015, 1012, 1013},
+                      {1015, 1012, 1013},
+                      {1012, 1013},
+                      {1013},
+                      {1014, 1015, 1012, 1013},
+                      {1014, 1015, 1012, 1013}
+                  });
+    }
+
+    @Test
+    public void testDDADOutOfRangeLowerBound()
+    {
+        testRange(getDDAD(),
+                  getDDADId(),
+                  0,
+                  9, true,
+                  14, true,
+                  new long [][]
+                  {
+                        {1014, 1015, 1012, 1013, 1010, 1011},
+                        {1015, 1012, 1013, 1010, 1011},
+                        {1012, 1013, 1010, 1011},
+                        {1013, 1010, 1011},
+                        {1010, 1011},
+                        {1011}
+                  });
+    }
 
     @Test
     public void testDDDA()
@@ -674,6 +732,65 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    public void testDDDALegalRange()
+    {
+        testRange(getDDDA(),
+                  getDDDAId(),
+                  0,
+                  13, true,
+                  15, true,
+                  new long [][]     // range: [15 - 13]
+                  {
+                      {1015, 1014},
+                      {1014},
+                      {},
+                      {},
+                      {},
+                      {}
+                  });
+    }
+
+     
+    @Test
+    public void testDDDAOutOfRangeLowerBound()
+    {
+        testRange(getDDDA(),
+                  getDDDAId(),
+                  0,
+                  1, true,
+                  15, true,
+                  new long [][]     // specified range [15 - 1]
+                  {                 // but it should still only see [15 - 10]
+                      {1015, 1014, 1013, 1012, 1011, 1010},
+                      {1014, 1013, 1012, 1011, 1010},
+                      {1013, 1012, 1011, 1010},
+                      {1012, 1011, 1010},
+                      {1011, 1010},
+                      {1010}
+                  });
+    }
+
+    @Test
+    public void testDDDAOutOfRangeUpperBound()
+    {
+        testRange(getDDDA(),
+                  getDDDAId(),
+                  0,
+                  12, true,
+                  30, true,
+                  new long [][]     // specified range [30 - 12]
+                  {                 // but it should still only see [15 - 12]
+                      {1015, 1014, 1013, 1012},
+                      {1014, 1013, 1012},
+                      {1013, 1012},
+                      {1012},
+                      {},
+                      {}
+
+                  });
+    }
+
+    @Test
     public void testDDDD()
     {
         API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
@@ -712,24 +829,194 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         }
     }
 
-    private void testJump(Cursor cursor, long[] idOrdering, int nudge)
+    @Test
+    public void testDDDDLegalRange()
     {
-        for (int start = 0; start < idOrdering.length; start++) {
+        testRange(getDDDD(),
+                  getDDDDId(),
+                  0,
+                  13, true,
+                  15, true,
+                  new long [][]     // range is: [1015 - 1013]
+                  {
+                     {1015, 1014}, 
+                     {1014},
+                     {},
+                     {},
+                     {},
+                     {}
+                  });
+    }
+
+    @Test
+    public void testDDDDOutOfRangeUpperBound()
+    {   
+        testRange(getDDDD(),
+                  getDDDDId(),
+                  0,
+                  12, true,
+                  21, true,
+                  new long [][]
+                  {
+                     {1015, 1014, 1013, 1012}, 
+                     {1014, 1013, 1012},
+                     {1013, 1012},
+                     {1012},
+                     {},
+                     {}
+                  });
+    }
+
+    @Test
+    public void testDDDDOutOfRangeLowerBound()
+    {
+        testRange(getDDDD(),
+                  getDDDDId(),
+                  0,
+                  3, true,
+                  14, true,
+                  new long [][]     // specified range: [14-3],
+                  {                 // but it should still only see  [10`5 - 1010]
+                     {1015, 1014, 1013, 1012, 1011, 1010}, 
+                     {1014, 1013, 1012, 1011, 1010},
+                     {1013, 1012, 1011, 1010},
+                     {1012, 1011, 1010},
+                     {1011, 1010},
+                     {1010}
+                  });
+    }
+
+    @Test
+    public void testDDDDOutOfRange() // both upper and lower bound
+    {
+        testRange(getDDDD(),
+                  getDDDDId(),
+                  0,
+                  8, true,
+                  20, true,
+                  new long [][]     // specified range: [20 - 8],
+                  {                 // but it should still only see [15 - 10]
+                     {1015, 1014, 1013, 1012, 1011, 1010}, 
+                     {1014, 1013, 1012, 1011, 1010},
+                     {1013, 1012, 1011, 1010},
+                     {1012, 1011, 1010},
+                     {1011, 1010},
+                     {1010}
+                  });
+    }
+
+    private API.Ordering getDADD()
+    {
+        return ordering(A, DESC, B, ASC, C, DESC, ID, DESC);
+    }
+    
+    private long[] getDADDId()
+    {
+        return longs(1011, 1010, 1013, 1012, 1015, 1014);
+    }
+
+    private API.Ordering getDDAA()
+    {
+        return ordering(A, DESC, B, DESC, C, ASC, ID, ASC);
+    }
+    
+    private long[] getDDAAId()
+    {
+        return longs(1014, 1015, 1012, 1013, 1010, 1011);
+    }
+
+    private API.Ordering getDDAD()
+    {
+        return ordering(A, DESC, B, DESC, C, ASC, ID, DESC);
+    }
+
+    private long[] getDDADId()
+    {
+        return longs(1014, 1015, 1012, 1013, 1010, 1011);
+    }
+
+    private API.Ordering getDDDA()
+    {
+         return ordering(A, DESC, B, DESC, C, DESC, ID, ASC);
+    }
+    
+    private long[] getDDDAId()
+    {
+        return longs(1015, 1014, 1013, 1012, 1011, 1010);
+    }
+
+    private API.Ordering getDDDD()
+    {
+        return ordering(A, DESC, B, DESC, C, DESC, ID, DESC);
+    }
+    
+    private long[] getDDDDId()
+    {
+        return longs(1015, 1014, 1013, 1012, 1011, 1010);
+    }
+
+    private void testRange(API.Ordering ordering,
+                           long idOrdering[],
+                           int nudge,
+                           int lo, boolean loInclusive,
+                           int hi, boolean hiInclusive,
+                           long expectedArs[][])
+    {
+        Operator plan = indexScan_Default(idxRowType, bounded(1, lo, loInclusive, hi, hiInclusive), ordering);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
+        testJump(cursor,
+                 idOrdering,
+                 nudge,
+                 expectedArs);
+        cursor.close();
+    }
+
+    private void testJump(Cursor cursor, long idOrdering[], int nudge, long expectedsAr[][])
+    {
+        List<List<Long>> expecteds = new ArrayList<List<Long>>(expectedsAr.length);
+        
+        for (long expectedAr[] : expectedsAr)
+        {
+            List<Long> expected = new ArrayList();
+            for (long val : expectedAr)
+                expected.add(val);
+            expecteds.add(expected);
+        }
+       
+        doTestJump(cursor, idOrdering, nudge, expecteds);
+    }
+
+    private void testJump(Cursor cursor, long idOrdering[], int nudge)
+    {
+        List<List<Long>> expecteds = new ArrayList<List<Long>>();
+        
+        
+        for (int idIndex = 0; idIndex < idOrdering.length; ++idIndex)
+        {
+            List<Long> expected = new ArrayList<Long>();
+            for (int i = idIndex; i < idOrdering.length; i++)
+                expected.add(idOrdering[i]);
+            expecteds.add(expected);
+        }
+        
+        doTestJump(cursor, idOrdering, nudge, expecteds);
+    }
+
+    private void doTestJump(Cursor cursor, long idOrdering[], int nudge, List<List<Long>> expecteds)
+    {
+        for (int start = 0; start < idOrdering.length; ++start)
+        {
             TestRow target = indexRow(idOrdering[start]);
-            // Add nudge to last field
             OverlayingRow nudgedTarget = new OverlayingRow(target);
             nudgedTarget.overlay(3, target.eval(3).getLong() + nudge);
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
             List<Long> actualIds = new ArrayList<Long>();
-            while ((row = cursor.next()) != null) {
+            while ((row = cursor.next()) != null)
                 actualIds.add(row.eval(3).getInt());
-            }
-            List<Long> expectedIds = new ArrayList<Long>();
-            for (int i = start; i < idOrdering.length; i++) {
-                expectedIds.add(idOrdering[i]);
-            }
-            assertEquals(expectedIds, actualIds);
+
+            assertEquals(expecteds.get(start), actualIds);
         }
     }
 

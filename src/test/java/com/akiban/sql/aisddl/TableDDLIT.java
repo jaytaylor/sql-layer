@@ -36,6 +36,7 @@ import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
@@ -366,6 +367,36 @@ public class TableDDLIT extends PostgresServerITBase {
         assertEquals (0, ddlServer().getAIS(session()).getSequences().size());
         
 
+    }
+    
+    @Test
+    public void createSerialTable() throws Exception {
+        String sql = "CREATE TABLE test.t12 (c1 SERIAL PRIMARY KEY)";
+        getConnection().createStatement().execute(sql);
+        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t12");
+        assertNotNull (table);
+        Column column = table.getColumn(0);
+        assertEquals (column.getType(), Types.BIGINT);
+        assertEquals (column.getNullable(), false);
+        assertNotNull (column.getIdentityGenerator());
+        assertEquals (1, column.getIdentityGenerator().getStartsWith());
+        assertEquals (1, column.getIdentityGenerator().getIncrement());
+        assertNotNull(column.getDefaultIdentity());
+        assertTrue(column.getDefaultIdentity().booleanValue());
+
+        assertNotNull (table.getIndex("c1"));
+        Index index = table.getIndex("c1");
+        assertTrue   (index.isUnique());
+        assertEquals (1, index.getKeyColumns().size());
+        assertNotNull (table.getPrimaryKey());
+        index = table.getPrimaryKey().getIndex();
+        assertEquals (1, index.getKeyColumns().size());
+    }
+    
+    @Test (expected=PSQLException.class)
+    public void createDoubleSerialTable() throws Exception {
+        String sql = "CREATE TABLE test.t13 (c1 SERIAL PRIMARY KEY, c2 SERIAL)";
+        getConnection().createStatement().execute(sql);
     }
       
     protected DDLFunctions ddlServer() {

@@ -28,11 +28,7 @@ package com.akiban.sql.aisddl;
 
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.sql.StandardException;
-import java.util.Collection;
-import java.util.List;
 
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.dxl.IndexCheckSummary;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
@@ -46,14 +42,10 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.SQLParser;
@@ -242,6 +234,7 @@ public class TableDDLTest {
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.userTable(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", 0L, 0L, false, false, null, null);
+        builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
         builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", true);
         builder.basicSchemaIsComplete();
 
@@ -257,12 +250,39 @@ public class TableDDLTest {
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.userTable(DEFAULT_SCHEMA, DEFAULT_TABLE);
         builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", 0L, 0L, false, false, null, null);
-        builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", true);
+        builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
+        builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", false);
         builder.basicSchemaIsComplete();
 
         String sql = "CREATE TABLE t1 (c1 INT GENERATED ALWAYS AS IDENTITY)";
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+    
+    @Test
+    public void columnSerial() throws StandardException {
+        makeSeparateAIS();
+        dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.userTable(DEFAULT_SCHEMA, DEFAULT_TABLE);
+        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "bigint", 0L, 0L, false, true, null, null);
+        builder.sequence(DEFAULT_SCHEMA, "sequence_c1", 1, 1, 0, 1000, false);
+        builder.columnAsIdentity(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "sequence_c1", true);
+        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "c1", 0, true, null);
+        builder.basicSchemaIsComplete();
+        
+        String sql = "Create Table " + DEFAULT_TABLE + " (c1 SERIAL)";
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+    
+    @Test (expected=DuplicateSequenceNameException.class)
+    public void duplicateSerialColumns() throws StandardException {
+        String sql = "CREATE TABLE t1 (c1 SERIAL, c2 SERIAL)";
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue(stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
     
@@ -285,6 +305,7 @@ public class TableDDLTest {
             assertNotNull("expected column", expected);
             assertEquals("is nullable", expected.getNullable(), actual.getNullable());
             assertEquals("default value", expected.getDefaultValue(), actual.getDefaultValue());
+            assertEquals("identity", expected.getIdentityGenerator() != null, actual.getIdentityGenerator() != null);
         }
 
         @Override
@@ -307,6 +328,7 @@ public class TableDDLTest {
             if (table.getParentJoin() != null) {
                 checkJoin (table.getParentJoin(), internalAIS.getJoin(JOIN_NAME));
             }
+            
         }
 
         private void checkIndexes(UserTable sourceTable, UserTable checkTable) {
