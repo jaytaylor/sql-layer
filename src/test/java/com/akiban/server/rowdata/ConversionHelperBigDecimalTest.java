@@ -62,6 +62,11 @@ public final class ConversionHelperBigDecimalTest {
     }
 
     @Test
+    public void addPrecisionWriteRead() {
+        checkWrite(5, 3, "2.5", "2.500");
+    }
+
+    @Test
     public void normalizeTruncateNoInt() {
         checkNormalizeToString("1", 4, 4, ".9999");
     }
