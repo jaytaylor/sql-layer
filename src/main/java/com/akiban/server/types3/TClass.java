@@ -48,7 +48,7 @@ public abstract class TClass {
 
     public abstract TFactory factory();
 
-    public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
+    protected abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
     public abstract void fromObject (TExecutionContext contextForErrors, PValueSource in, PValueTarget out);
 
