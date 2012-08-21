@@ -24,8 +24,9 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.explain;
+package com.akiban.server.explain.format;
 
+import com.akiban.server.explain.Explainer;
 import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -41,10 +42,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import org.junit.*;
 
-public class FormatterTest {
-    
-    public FormatterTest() {
-    }
+public class DefaultFormatterTest 
+{
 
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -111,14 +110,14 @@ public class FormatterTest {
         
         Explainer explainer = substr.getExplainer(null);
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \'%Y-%m-%d\'), 9 + 10, 11)";
-        Format f1 = new Format(true);
-        String result = f1.Describe(explainer).get(0);
+        DefaultFormatter f1 = new DefaultFormatter(true);
+        String result = f1.describeToList(explainer).get(0);
         assertEquals(expResult, result);
         
-        Format f2 = new Format(true);
+        DefaultFormatter f2 = new DefaultFormatter(true);
         explainer = substr_.getExplainer(null);
         expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \'%Y-%m-%d\'), 9 + 10, 11)";
-        result = f2.Describe(explainer).get(0);
+        result = f2.describeToList(explainer).get(0);
         assertEquals(expResult, result);
     }
 }

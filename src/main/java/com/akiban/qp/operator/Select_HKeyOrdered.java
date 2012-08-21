@@ -30,6 +30,7 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
+import com.akiban.server.explain.format.DefaultFormatter;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.extract.Extractors;
@@ -95,9 +96,9 @@ class Select_HKeyOrdered extends Operator
     @Override
     public String toString()
     {
-        Format f = new Format(true);
+        DefaultFormatter f = new DefaultFormatter(true);
         StringBuilder sb = new StringBuilder();
-        for (String row : f.Describe(this.getExplainer(null)))
+        for (String row : f.describeToList(this.getExplainer(null)))
         {
             sb.append(row).append('\n');
         }

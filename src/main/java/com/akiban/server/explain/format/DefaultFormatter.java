@@ -24,27 +24,28 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.explain;
+package com.akiban.server.explain.format;
 
+import com.akiban.server.explain.*;
 import com.akiban.server.explain.Type.GeneralType;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class Format 
+public class DefaultFormatter
 {
-    
     private boolean verbose = true;
     private int numSubqueries = 0;
     private List<OperationExplainer> subqueries = new ArrayList<OperationExplainer>();
-    private StringBuilder sb = new StringBuilder("");
+    private StringBuilder sb = new StringBuilder();
     private List<String> rows = new ArrayList<String>();
     
-    public Format(boolean verbose)
+    public DefaultFormatter(boolean verbose)
     {
         this.verbose = verbose;
     }
 
-    public List<String> Describe(Explainer explainer)
+    public List<String> describeToList(Explainer explainer)
     {
         describe(explainer);
         for (int i = 1; i <= numSubqueries; i++)

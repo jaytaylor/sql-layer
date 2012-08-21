@@ -30,7 +30,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
 import com.akiban.server.explain.Explainer;
-import com.akiban.server.explain.Format;
+import com.akiban.server.explain.format.DefaultFormatter;
 
 import java.util.*;
 
@@ -82,8 +82,8 @@ public abstract class BasePlannable extends BasePlanNode
     }
     
     public List<String> explainPlan() {
-        Format f = new Format(true);
-        return f.Describe(plannable.getExplainer(extraInfo));
+        DefaultFormatter f = new DefaultFormatter(true);
+        return f.describeToList(plannable.getExplainer(extraInfo));
     }
     
     @Override
