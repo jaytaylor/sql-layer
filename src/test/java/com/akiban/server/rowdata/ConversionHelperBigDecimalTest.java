@@ -86,6 +86,11 @@ public final class ConversionHelperBigDecimalTest {
         checkNormalizeToString("1.234567", 4, 2, "1.23");
     }
 
+    @Test
+    public void normalizeAddPrecision() {
+        checkNormalizeToString("2.5", 5, 2, "2.50");
+    }
+
     private void check(int precision, int scale, String value) {
         checkWrite(precision, scale, value, value);
     }
