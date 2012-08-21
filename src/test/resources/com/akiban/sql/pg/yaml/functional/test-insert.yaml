@@ -89,7 +89,7 @@
     (-123456.0), (1234567.0), (-1234567.0)
 ---
 - Statement: SELECT (decimal_field) from all_types
-- output: [[1], [123456], [-123456], [4822], [-4822]]
+- output: [[1], [123456], [-123456], [1234567], [-1234567]]
 - output_types: [NUMERIC] 
 ---
 - Statement: DELETE from all_types
