@@ -8,5 +8,5 @@
 - Statement: INSERT INTO dec_test values (2.5)
 ---
 - Statement: SELECT * FROM dec_test
-- output: [[2.50]]
+- output: [['2.50']]
 ...
