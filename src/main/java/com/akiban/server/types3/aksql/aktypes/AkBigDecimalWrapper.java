@@ -72,11 +72,11 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     }
     
     @Override
-    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale, boolean roundUp)
+    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
     {
         value = value.divide(augend.asBigDecimal(),
                 scale,
-                roundUp ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN);
+                RoundingMode.UP);
         return this;
     }
 
@@ -171,18 +171,6 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         return value.signum() == 0;
     }
 
-    @Override
-    public boolean isNegative()
-    {
-        return value.signum() < 0;
-    }
-
-    @Override
-    public boolean isPositive()
-    {
-        return value.signum() > 0;
-    }
-    
     @Override
     public BigDecimalWrapper mod(BigDecimalWrapper num)
     {

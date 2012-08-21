@@ -38,7 +38,7 @@ public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
      BigDecimalWrapper truncate(int scale);
      BigDecimalWrapper round(int scale);
      BigDecimalWrapper divideToIntegeralValue (BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend, int scale, boolean roundUp);
+     BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
      BigDecimalWrapper parseString(String num);
      BigDecimalWrapper round (int precision, int scale);
      BigDecimalWrapper negate();
@@ -51,8 +51,6 @@ public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
      int getPrecision();
      int getSign();
      boolean isZero();
-     boolean isNegative();
-     boolean isPositive();
      void reset();
 
     BigDecimal asBigDecimal();

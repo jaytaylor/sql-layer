@@ -276,9 +276,9 @@ public abstract class MArithmetic extends TArithmetic {
                 output.putObject(getWrapper(context)
                                     .add((BigDecimalWrapper)inputs.get(0).getObject())
                                     .divide(divisor,
-                                            context.outputTInstance().attribute(  // get the scale computed
-                                                      MBigDecimal.Attrs.SCALE),   // during expr generation time
-                                            true)); // the result should be rounded up                         
+                                            context.outputTInstance().
+                                                attribute(MBigDecimal.Attrs.SCALE)));  // get the scale computed
+                                                                                       // during expr generation time
         }
 
        @Override
