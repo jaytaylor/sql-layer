@@ -147,7 +147,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
     };
     
     protected void doEvaluate(long input, PValueTarget output, int arrayPos, PUnderlying type) {
-        long[] datetime = MDatetimes.decodeDatetime(input);
+        long[] datetime = MDatetimes.decodeDate(input);
             
         if (!MDatetimes.isValidDatetime(datetime)) output.putNull();
         else {

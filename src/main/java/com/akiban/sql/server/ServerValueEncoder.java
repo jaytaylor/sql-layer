@@ -233,7 +233,7 @@ public class ServerValueEncoder
     public void appendPValue(PValueSource value, ServerType type, boolean binary) 
             throws IOException {
         TClass tClass = type.getInstance().typeClass();
-        if (tClass == MBinary.VARBINARY)
+        if (tClass instanceof MBinary)
             getByteStream().write(value.getBytes());
         else {
             assert !binary : "can only binary encode VARBINARY";

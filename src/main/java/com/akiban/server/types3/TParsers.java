@@ -41,7 +41,24 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putBool(Boolean.parseBoolean(source.getString()));
+            // parse source is a string representing a number-ish, where '0' is false, any other integer is true.
+            // minus signs and dots are always allowed; "1-1", "1.1", "1.1.1.1" all return true. Bizarre, but that's
+            // how MySQL seems to do it. Otoh, dots and minus signs aren't enough; we need at least one digit.
+            String s = source.getString();
+            Boolean result = null;
+            for (int i = 0, len = s.length(); i < len; ++i) {
+                char c = s.charAt(i);
+                if ((c == '-') || (c == '.'))
+                    continue;
+                if (Character.isDigit(c)) {
+                    result = Boolean.TRUE;
+                }
+                else {
+                    result = Boolean.FALSE;
+                    break;
+                }
+            }
+            target.putBool(result == Boolean.TRUE);
         }
     };
     

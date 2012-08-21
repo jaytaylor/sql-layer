@@ -31,7 +31,6 @@ import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
@@ -41,6 +40,12 @@ import java.nio.charset.Charset;
 public class NumericFormatter {
 
     public static enum FORMAT implements TClassFormatter {
+        FLOAT {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(Float.toString(source.getFloat()));
+            }
+        },
         DOUBLE {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
@@ -80,8 +85,7 @@ public class NumericFormatter {
                 Charset charset = Charset.forName(charsetName);
                 out.append(new String(source.getBytes(), charset));
             }
-        }, 
-        BIGDECIMAL{
+        },BIGDECIMAL{
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 if (source.hasCacheValue()) {
