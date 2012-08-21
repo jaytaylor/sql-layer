@@ -46,6 +46,8 @@ import com.akiban.server.service.session.Session;
 import java.util.Collection;
 import java.util.List;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
+
 /**
  * Simple implementation that throws UnsupportedOperation for all methods.
  */
@@ -66,7 +68,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
     
     @Override
-    public void alterTable(Session session, TableName tableName, UserTable newDefinition,
+    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
                            List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context) {
         throw new UnsupportedOperationException();
     }

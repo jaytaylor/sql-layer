@@ -28,6 +28,7 @@ package com.akiban.server.store;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -199,5 +200,6 @@ public interface SchemaManager {
     void dropSequence(Session session, Sequence sequence);
 
     // TODO: PSSM should handle this itself...
-    void rollbackAIS(Session session, AkibanInformationSchema replacementAIS, Collection<String> schemaNames);
+    void rollbackAIS(Session session, AkibanInformationSchema replacementAIS,
+                     Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames);
 }

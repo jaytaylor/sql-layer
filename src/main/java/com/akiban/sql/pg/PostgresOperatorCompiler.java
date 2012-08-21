@@ -113,7 +113,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             pgType = PostgresType.fromAIS(field.getAIScolumn());
         }
         else if (field.getSQLtype() != null) {
-            pgType = PostgresType.fromDerby(field.getSQLtype());
+            pgType = PostgresType.fromDerby(field.getSQLtype(), field.getTInstance());
         }
         else {
             pgType = new PostgresType(PostgresType.TypeOid.UNKNOWN_TYPE_OID.getOid(),
@@ -150,7 +150,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             for (int i = 0; i < nparams; i++) {
                 DataTypeDescriptor sqlType = sqlTypes[i];
                 if (sqlType != null)
-                    parameterTypes[i] = PostgresType.fromDerby(sqlType);
+                    parameterTypes[i] = PostgresType.fromDerby(sqlType, null);
             }
         }
 
