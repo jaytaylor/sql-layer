@@ -126,7 +126,7 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         return new DataTypeDescriptor(
                 typeId, instance.nullability(), instance.attribute(StringAttribute.LENGTH));
     }

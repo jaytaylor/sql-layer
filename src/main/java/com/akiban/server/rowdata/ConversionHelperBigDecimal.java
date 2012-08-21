@@ -31,6 +31,7 @@ import com.akiban.server.types.ValueSourceException;
 import com.akiban.util.AkibanAppender;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public final class ConversionHelperBigDecimal {
 
@@ -85,7 +86,8 @@ public final class ConversionHelperBigDecimal {
     }
 
     private static int fromObject(BigDecimal value, byte[] dest, int offset, int declPrec, int declScale) {
-        final String from = value.toPlainString();
+        final String from = normalizeToString(value, declPrec, declScale);
+
         final int mask = (from.charAt(0) == '-') ? -1 : 0;
         int fromOff = 0;
 
@@ -193,6 +195,41 @@ public final class ConversionHelperBigDecimal {
         dest[offset] ^= 0x80;
 
         return declIntSize + declFracSize;
+    }
+
+    static String normalizeToString(BigDecimal value, int declPrec, int declScale) {
+        // First, we have to turn the value into one that fits teh FieldDef's constraints.
+        final String from;
+        int valuePrec = value.precision();
+        int valueScale = value.scale();
+        assert valueScale >= 0 : value;
+        // MySQL sees "0.0123" as DECIMAL(4, 4). Java sees it as DECIMAL(3, 4). So, just do a simple conversion.
+        if (valuePrec < valueScale) {
+            valuePrec = valueScale;
+        }
+        int valueIntDigits = valuePrec - valueScale;
+        int declIntDigits = declPrec - declScale;
+        if (valueIntDigits > declIntDigits) {
+            // truncate to something like "99.999"
+            StringBuilder sb = new StringBuilder(declPrec+2); // one for minus sign, one for period
+            if (value.signum() < 0)
+                sb.append('-');
+            for (int i = declPrec; i > 0; --i) {
+                if (i == declScale)
+                    sb.append('.');
+                sb.append('9');
+            }
+            from = sb.toString();
+        }
+        else if (valueScale != declScale) {
+            // just truncate
+            BigDecimal rounded = value.setScale(declScale, RoundingMode.HALF_UP);
+            from = rounded.toPlainString();
+        }
+        else {
+            from = value.toPlainString();
+        }
+        return from;
     }
 
     // for use within this package (for testing)

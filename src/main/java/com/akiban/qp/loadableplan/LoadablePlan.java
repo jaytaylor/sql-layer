@@ -58,7 +58,7 @@ public abstract class LoadablePlan<T>
         List<PostgresType> columnTypes = new ArrayList<PostgresType>();
         for (int jdbcType : jdbcTypes()) {
             DataTypeDescriptor d = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
-            columnTypes.add(PostgresType.fromDerby(d));
+            columnTypes.add(PostgresType.fromDerby(d, null));
         }
         return columnTypes;
     }

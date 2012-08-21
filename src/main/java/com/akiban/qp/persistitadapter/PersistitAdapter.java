@@ -447,6 +447,7 @@ public class PersistitAdapter extends StoreAdapter
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
         session.put(STORE_ADAPTER_KEY, this);
+        indexRowPool.enablePooling(config.getProperty(PersistitIndexRowPool.INDEX_ROW_POOLING).equalsIgnoreCase("true"));
     }
 
     // For use by this class

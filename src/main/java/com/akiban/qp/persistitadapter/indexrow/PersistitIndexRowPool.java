@@ -85,6 +85,7 @@ public class PersistitIndexRowPool
 
     // Class state
 
+    public static final String INDEX_ROW_POOLING = "akserver.indexRowPooling";
     private static final int CAPACITY = 100;
     private static final float LOAD_FACTOR = 0.7f;
 
