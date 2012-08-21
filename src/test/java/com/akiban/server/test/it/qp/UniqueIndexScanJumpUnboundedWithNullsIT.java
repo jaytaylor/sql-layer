@@ -26,10 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import org.junit.Ignore;
 import com.akiban.util.ShareHolder;
-import com.akiban.server.types.ValueSource;
-import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.operator.Operator;
 import org.junit.Test;
 import com.akiban.server.expression.std.FieldExpression;
@@ -52,14 +49,12 @@ import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.*;
 
-public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
+public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
 {
      // Positions of fields within the index row
     private static final int A = 0;
     private static final int B = 1;
     private static final int C = 2;
-
-    private static final int COLUMN_COUNT = 3;
 
     private static final boolean ASC = true;
     private static final boolean DESC = false;
@@ -94,12 +89,14 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
             createNewRow(t, 1015L, 1L, 13L, 133L),
             createNewRow(t, 1016L, 1L, null, 122L),
             createNewRow(t, 1017L, 1L, 14L, 142L),
-            createNewRow(t, 1018L, 1L, 30L, 201L),
+            createNewRow(t, 1018L, 1L, 20L, 201L),
             createNewRow(t, 1019L, 1L, 30L, null),
             createNewRow(t, 1020L, 1L, 30L, null),
             createNewRow(t, 1021L, 1L, 30L, null),
             createNewRow(t, 1022L, 1L, 30L, 300L),
-            createNewRow(t, 1023L, 1L, 40L, 401L)
+            createNewRow(t, 1023L, 1L, 40L, 401L),
+            createNewRow(t, 1024L, 1L, null, 121L),
+            createNewRow(t, 1025L, 1L, null, 123L)
         };
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
@@ -109,11 +106,11 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
                             new TestRow(tRowType,
                                         new Object[] {row.get(1),     // a
                                                       row.get(2),     // b
-                                                      row.get(3),     // c
+                                                      row.get(3)      // c
                                                       }));
         }
     }
-    
+
     /**
      * 
      * @param id
@@ -129,126 +126,100 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     public void testAAA()
     {
         testSkipNulls(1010,
-                      b_of(1010), true,
-                      b_of(1015), true,
                       getAAA(),
-                      new long[]{1010, 1011, 1014, 1015}); // skip 1012 and 1013
+                      new long[]{1010, 1011, 1014, 1015, 1017, 1018, 1019, 1020, 1021, 1022, 1023}); // skip all rows with b = null
     }
 
     @Test
-    public void testAAAToMinNull()
+    public void testAAAToNull()
     {
         testSkipNulls(1012, // jump to one of the nulls
-                      b_of(1010), true,
-                      b_of(1015), true,
                       getAAA(),
-                      new long[] {1012, 1013, 1016, 1010, 1011, 1014, 1015}); // should see everything
-    }                                                                         // with nulls appearing first
+                      new long[] {1012, 1013, 1016, 1025, 1010, 1011, 1014, 1015, 1017, 1018, 1019, 1020, 1021, 1022, 1023}); // should see the nulls first, because null < everything
+    }
 
     @Test
     public void testDDD()
     {
         testSkipNulls(1015,
-                      b_of(1010), true,
-                      b_of(1015), true,
                       getDDD(),
-                      new long[] {1015, 1014, 1011, 1010}); // skip 1012 and 1013
+                      new long[] {1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024}); // should see the nulls last because null < everything
         
     }
 
-    
     @Test
-    public void testDDDToFirstNull()
+    public void testDDDToMinNull()
     {
-        testSkipNulls(1019, // jump to the first null
-                      b_of(1018), true,
-                      b_of(1021), true,
-                      getDDD(),
-                      new long[] {1021, 1020, 1019});   // 3 rows of [1L, 30L, null]
-    }                                                   // (The use of (1021, 1020, 1019) is just for demonstrative purpose.
-                                                        //  They could be anything as long as their mapping
-    @Test                                               // index row is [1L, 30L, null] )
-    public void testDDDToMiddleNull()
-    {
-        testSkipNulls(1020, // jump to the middle null
-                      b_of(1018), true,
-                      b_of(1021), true,
-                      getDDD(),
-                      new long[] {1021, 1020, 1019});
+        testSkipNulls(1024,
+                       getDDD(),
+                       new long[] {1024});
     }
 
     @Test
-    public void testDDDToLastNull()
+    public void testDDDToMediumNull()
     {
-        testSkipNulls(1021, // jump to the first null
-                      b_of(1018), true,
-                      b_of(1021), true,
+        testSkipNulls(1013,
                       getDDD(),
-                      new long[] {1021, 1020, 1019});
-    }
-
-    @Test
-    public void testAAAToFirstNull()
-    {
-        testSkipNulls(1019, // jump to the first null
-                      b_of(1018), true,
-                      b_of(1021), true,
-                      getAAA(),
-                      new long[] {1019, 1020, 1021, 1018, 1022});
-    }
- 
-    @Test
-    public void testAAAToMiddleNull()
-    {
-        testSkipNulls(1020, // jump to the middle null
-                      b_of(1018), true,
-                      b_of(1021), true,
-                      getAAA(),
-                      new long[] {1019, 1020, 1021, 1018, 1022});
-    }
-
-    @Test
-    public void testAAAToLastNull()
-    {
-        testSkipNulls(1021, // jump to the first null
-                      b_of(1018), true,
-                      b_of(1021), true,
-                      getAAA(),
-                      new long[] {1019, 1020, 1021, 1018, 1022});
+                      new long[] {1016, 1013, 1012, 1024});
     }
 
     @Test
     public void testDDDToMaxNull()
     {
-        testSkipNulls(1016,
-                      b_of(1015), false,
-                      b_of(1017), true,
+        testSkipNulls(1025,
                       getDDD(),
-                      new long[] {}); 
+                      new long[] {1025, 1016, 1013, 1012, 1024}); 
     }
-    
+
+    // all the next three tests should return the same thing
+    // because 109, 1020 and 1021 all 'mapped' to the identical index row (with null)
+    @Test
+    public void testDDDToFirstNull()
+    {
+        testSkipNulls(1019, // jump to the first null
+                      getDDD(),
+                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
+    }
+
+    @Test
+    public void testDDDToMiddleNull()
+    {
+        testSkipNulls(1020, // jump to the middle null
+                      getDDD(),
+                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
+    }
+
+    @Test
+    public void testDDDToLastNull()
+    {
+        testSkipNulls(1021, // jump to the last null
+                      getDDD(),
+                      new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
+    }
+
     @Test
     public void testAAD()
     {
-        // currently failing
-        // throw IndexOutOfBoundException
-
         testSkipNulls(1014,
-                      b_of(1010), true,
-                      b_of(1017), true,
                       getAAD(),
-                      new long[] {1014, 1017});
+                      new long[] {1014, 1017, 1018, 1022, 1019, 1020, 1021, 1023}); // skips 1016, which is a null
+    }
+    
+    @Test
+    public void testAAAToFirstNull()
+    {
+        testSkipNulls(1019, // jump to the first null
+                      getAAA(),
+                      new long[] {1019, 1020, 1021, 1022, 1023});
     }
 
-    //TODO: add more test****()
+    //TODO: add more test****() if needed
 
     private void testSkipNulls(long targetId,                  // location to jump to
-                               int bLo, boolean lowInclusive,  // lower bound
-                               int bHi, boolean hiInclusive,   // upper bound
                                API.Ordering ordering,          
                                long expected[])
     {
-        Operator plan = indexScan_Default(idxRowType, bounded(1, bLo, lowInclusive, bHi, hiInclusive), ordering);
+        Operator plan = indexScan_Default(idxRowType, unbounded(), ordering);
         Cursor cursor = cursor(plan, queryContext);
         cursor.open();
         cursor.jump(indexRow(targetId), INDEX_ROW_SELECTOR);
@@ -256,7 +227,6 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         Row row;
         List<Row> actualRows = new ArrayList<Row>();
         List<ShareHolder<Row>> rowHolders = new ArrayList<ShareHolder<Row>>();
-        
         while ((row = cursor.next()) != null)
         {
             // Prevent sharing of rows since verification accumulates them
@@ -265,7 +235,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         }
         cursor.close();
 
-             // check the list of rows
+        // check the list of rows
         checkRows(actualRows, expected);
     }
 
@@ -288,7 +258,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
 
         return ret;
     }
-    
+
     private API.Ordering getAAA()
     {
         return ordering(A, ASC, B, ASC, C, ASC);
@@ -339,12 +309,10 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     {
         return longs;
     }
-
-    private IndexKeyRange bounded(long a, long bLo, boolean loInclusive, long bHi, boolean hiInclusive)
+    
+    private IndexKeyRange unbounded()
     {
-        IndexBound lo = new IndexBound(new TestRow(tRowType, new Object[] {a, bLo}), new SetColumnSelector(0, 1));
-        IndexBound hi = new IndexBound(new TestRow(tRowType, new Object[] {a, bHi}), new SetColumnSelector(0, 1));
-        return IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
+        return IndexKeyRange.unbounded(idxRowType);
     }
 
     private API.Ordering ordering(Object... ord) // alternating column positions and asc/desc

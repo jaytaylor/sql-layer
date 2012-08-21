@@ -426,13 +426,13 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             final long writeStart = System.currentTimeMillis();
             while (System.currentTimeMillis() - writeStart < msForDropping) {
                 writeRows(
-                        createNewRow(tableId, rowCount, Integer.toString(rowCount))
+                        createNewRow(tableId, rowCount, Integer.toString(rowCount), String.format("King Frosty %s", rowCount))
                 );
                 ++rowCount;
             }
             for(int i = rowCount; i < (int) factor * rowCount ; ++i) {
                 writeRows(
-                        createNewRow(tableId, i, Integer.toString(i))
+                        createNewRow(tableId, i, Integer.toString(i), String.format("King Melty %s", i))
                 );
             }
             final long dropStart = System.currentTimeMillis();
@@ -444,7 +444,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         int tableId = createTable(SCHEMA, TABLE, childTableDDL);
         for(int i = 1; i < rowCount ; ++i) {
             writeRows(
-                    createNewRow(tableId, i, Integer.toString(i))
+                    createNewRow(tableId, i, Integer.toString(i), String.format("King Snowy %s", i))
             );
         }
 

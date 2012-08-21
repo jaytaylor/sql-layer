@@ -337,9 +337,12 @@ public class PostgresServerConnection extends ServerSessionBase
         logger.debug("Properties: {}", clientProperties);
         setProperties(clientProperties);
 
-        // Get initial version of AIS.
         session = reqs.sessionService().createSession();
-        updateAIS(null);
+        // TODO: Not needed right now and not a convenient time to
+        // encounter schema lock from long-running DDL.
+        // But see comment in initParser(): what if we wanted to warn
+        // or error when schema does not exist?
+        //updateAIS(null);
 
         if (Boolean.parseBoolean(properties.getProperty("require_password", "false"))) {
             messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());

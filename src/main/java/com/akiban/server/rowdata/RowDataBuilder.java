@@ -181,7 +181,7 @@ public final class RowDataBuilder {
             if (target.lastEncodedLength() != varWidthExpected) {
                 throw new IllegalStateException("expected to write " + varWidthExpected
                         + " variable-width byte(s), but wrote " + target.lastEncodedLength()
-                        + " (vlength=" + vlength + ')');
+                        + " (vlength=" + vlength + "). FieldDef=" + fieldDef + ", value = <" + source + '>');
             }
             vlength += varWidthExpected;
             variableWidthSectionOffset += varWidthExpected;
@@ -427,9 +427,9 @@ public final class RowDataBuilder {
 
     private int readVarWidth(byte[] bytes, int widthWidth) {
         switch (widthWidth) {
-            case 1: return AkServerUtil.getByte(bytes, fixedWidthSectionOffset);
-            case 2: return AkServerUtil.getShort(bytes, fixedWidthSectionOffset);
-            case 3: return AkServerUtil.getMediumInt(bytes, fixedWidthSectionOffset);
+            case 1: return AkServerUtil.getUByte(bytes, fixedWidthSectionOffset);
+            case 2: return AkServerUtil.getUShort(bytes, fixedWidthSectionOffset);
+            case 3: return AkServerUtil.getUMediumInt(bytes, fixedWidthSectionOffset);
             default: throw new UnsupportedOperationException("bad width-of-width: " + widthWidth);
         }
     }
