@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
@@ -844,15 +845,18 @@ public class PostgresServerConnection extends ServerSessionBase
             messenger.setEncoding(value);
             return true;
         }
+        boolean isNewtypes = false;
         if ("OutputFormat".equals(key) ||
             "parserInfixBit".equals(key) ||
             "parserInfixLogical".equals(key) ||
             "parserDoubleQuoted".equals(key) ||
             "columnAsFunc".equals(key) ||
             "cbo".equals(key) ||
-            "newtypes".equals(key)) {
+            (isNewtypes = "newtypes".equals(key))) {
             if (parsedGenerators != null)
                 rebuildCompiler();
+            if (isNewtypes)
+                Types3Switch.SET_ON = getBooleanProperty("newtypes", Types3Switch.DEFAULT);
             return true;
         }
         return super.propertySet(key, value);

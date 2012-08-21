@@ -67,7 +67,7 @@ public abstract class MLength extends TOverloadBase
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
-            int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.LENGTH);
+            int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
             String charset = (StringFactory.Charset.values())[charsetId].name();
             try
             {
