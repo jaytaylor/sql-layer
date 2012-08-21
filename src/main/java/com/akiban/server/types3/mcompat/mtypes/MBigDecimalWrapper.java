@@ -180,12 +180,6 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     public BigDecimal asBigDecimal() {
         return value;
     }
-    
-     @Override
-    public int compareTo(double val)
-    {
-        return value.compareTo(BigDecimal.valueOf(val));
-    }
 
     @Override
     public boolean isZero()

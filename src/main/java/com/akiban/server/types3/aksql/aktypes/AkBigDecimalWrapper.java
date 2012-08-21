@@ -160,12 +160,6 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
-    public int compareTo(double val)
-    {
-        return value.compareTo(BigDecimal.valueOf(val));
-    }
-
-    @Override
     public boolean isZero()
     {
         return value.signum() == 0;
