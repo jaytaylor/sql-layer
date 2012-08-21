@@ -86,10 +86,10 @@
 
 ---
 - Statement: INSERT INTO all_types (decimal_field) VALUES (1.0), (123456.0),
-    (-123456.0), (1234567.0), (-1234567.0)
+    (-123456.0), (1234567.0), (-1234567.0), (1234567890123.0), (-11234567890123.0)
 ---
 - Statement: SELECT (decimal_field) from all_types
-- output: [[1], [123456], [-123456], [1234567], [-1234567]]
+- output: [[1], [123456], [-123456], [1234567], [-1234567], [9999999999], [-9999999999]]
 - output_types: [NUMERIC] 
 ---
 - Statement: DELETE from all_types
