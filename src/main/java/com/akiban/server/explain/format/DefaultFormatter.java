@@ -116,8 +116,10 @@ public class DefaultFormatter
                 sb.append(")");
             }
         }
-        else if (name.equals("Variable"))
-            sb.append(name).append("(pos=").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
+        else if (name.equals("Variable")) {
+            int pos = ((Number)atts.get(Label.BINDING_POSITION).get(0).get()).intValue();
+            sb.append("$").append(pos+1);
+        }
         else if (name.equals("Field")) {
             if (atts.containsKey(Label.COLUMN_NAME))
                 sb.append(atts.get(Label.COLUMN_NAME).get(0).get());
