@@ -39,6 +39,7 @@ import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,11 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new UnableToExplainException ();
         ExplainPlanContext context = new ExplainPlanContext(compiler);
         BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);
-        return new PostgresExplainStatement(result.explainPlan(context.getExplainContext()), compiler.usesPValues());
+        List<String> explain;
+        if (compiler instanceof PostgresJsonCompiler)
+            explain = Collections.singletonList(result.explainToJson(context.getExplainContext()));
+        else
+            explain = result.explainPlan(context.getExplainContext());
+        return new PostgresExplainStatement(explain, compiler.usesPValues());
     }
 }

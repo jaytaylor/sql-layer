@@ -31,6 +31,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.format.DefaultFormatter;
+import com.akiban.server.explain.format.JsonFormatter;
 
 import java.util.*;
 
@@ -69,6 +70,11 @@ public abstract class BasePlannable extends BasePlanNode
     public List<String> explainPlan(ExplainContext context) {
         DefaultFormatter f = new DefaultFormatter(true);
         return f.describeToList(plannable.getExplainer(context));
+    }
+    
+    public String explainToJson(ExplainContext context) {
+        JsonFormatter f = new JsonFormatter();
+        return f.format(plannable.getExplainer(context));
     }
     
     public String explainToString(ExplainContext context) {
