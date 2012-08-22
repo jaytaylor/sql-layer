@@ -29,7 +29,8 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
@@ -74,8 +75,8 @@ public class CompareExpression extends AbstractBinaryExpression {
     }
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
-        Explainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), context, children());
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
         return ex;
     }

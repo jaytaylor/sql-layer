@@ -180,12 +180,12 @@ final class Limit_Default extends Operator
     private final boolean usePVals;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Limit_Default"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
-        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         
         return new CompoundExplainer(Type.LIMIT_OPERATOR, atts);
     }

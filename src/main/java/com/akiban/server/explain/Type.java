@@ -49,7 +49,8 @@ public enum Type
     BINARY_OPERATOR(GeneralType.EXPRESSION),
     SUBQUERY(GeneralType.EXPRESSION),
     LITERAL(GeneralType.EXPRESSION),
-        
+    TYPES3(GeneralType.EXPRESSION), // TODO: Temporary
+
     // OPERATORS
     //--------------------------------------------------------------------------
     SCAN_OPERATOR(GeneralType.OPERATOR),

@@ -29,7 +29,8 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
@@ -91,9 +92,9 @@ public final class BoundFieldExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, fieldExpression);
+        CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context, fieldExpression);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(rowBindingPosition));
         return ex;
     }

@@ -124,13 +124,13 @@ public class FlattenedRowType extends DerivedRowType
     }
     
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(toString()));
-        atts.put(Label.PARENT_TYPE, parent.getExplainer(extraInfo));
-        atts.put(Label.CHILD_TYPE, child.getExplainer(extraInfo));
+        atts.put(Label.PARENT_TYPE, parent.getExplainer(context));
+        atts.put(Label.CHILD_TYPE, child.getExplainer(context));
         
         return new CompoundExplainer(Type.ROWTYPE, atts);
     }

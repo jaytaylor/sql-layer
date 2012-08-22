@@ -117,8 +117,13 @@ class Insert_Default implements UpdatePlannable {
     }
 
     @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
     public String toString() {
-        return String.format("%s(%s)", getClass().getSimpleName(), inputOperator);
+        return String.format("%s(%s)", getName(), inputOperator);
     }
 
     private final Operator inputOperator;
@@ -127,14 +132,14 @@ class Insert_Default implements UpdatePlannable {
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Attributes atts = new Attributes();
-        if (extraInfo != null && extraInfo.containsKey(this))
-        {
-            atts = ((CompoundExplainer)extraInfo.get(this)).get();
-        }
-        return new DUIOperatorExplainer("Insert_Default", atts, inputOperator, extraInfo);
+        Attributes atts;
+        if (context.hasExtraInfo(this))
+            atts = context.getExtraInfo(this).get();
+        else
+            atts = new Attributes();
+        return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
 
     // Inner classes

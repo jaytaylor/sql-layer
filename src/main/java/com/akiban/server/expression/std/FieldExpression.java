@@ -31,7 +31,8 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
@@ -96,13 +97,13 @@ public final class FieldExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, (List)null);
+        CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context, (List)null);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(fieldIndex));
-        ex.addAttribute(Label.ROWTYPE, rowType.getExplainer(extraInfo));
-        if (null != extraInfo && extraInfo.containsKey(this))
-            ex.addAttribute(Label.COLUMN_NAME, extraInfo.get(this));
+        ex.addAttribute(Label.ROWTYPE, rowType.getExplainer(context));
+        if (context.hasExtraInfo(this))
+            ex.get().putAll(context.getExtraInfo(this).get());
         return ex;
     }
     

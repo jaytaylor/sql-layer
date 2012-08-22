@@ -33,7 +33,8 @@ import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.std.CountOperatorExplainer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -138,9 +139,9 @@ class Count_TableStatus extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new CountOperatorExplainer("Count_TableStatus", tableType, resultType, null, extraInfo);
+        return new CountOperatorExplainer(getName(), tableType, resultType, null, context);
     }
 
     // Inner classes

@@ -108,14 +108,16 @@ public class DefaultFormatterTest
         Expression substr = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         Expression substr_ = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1_, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         
-        Explainer explainer = substr.getExplainer(null);
+        ExplainContext context = new ExplainContext(); // Empty
+
+        Explainer explainer = substr.getExplainer(context);
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \'%Y-%m-%d\'), 9 + 10, 11)";
         DefaultFormatter f1 = new DefaultFormatter(true);
         String result = f1.describeToList(explainer).get(0);
         assertEquals(expResult, result);
         
         DefaultFormatter f2 = new DefaultFormatter(true);
-        explainer = substr_.getExplainer(null);
+        explainer = substr_.getExplainer(context);
         expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \'%Y-%m-%d\'), 9 + 10, 11)";
         result = f2.describeToList(explainer).get(0);
         assertEquals(expResult, result);

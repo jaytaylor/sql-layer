@@ -102,7 +102,7 @@ class Update_Default implements UpdatePlannable {
 
     @Override
     public String toString() {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, updateFunction);
+        return String.format("%s(%s -> %s)", getName(), inputOperator, updateFunction);
     }
 
     // constructor
@@ -122,6 +122,12 @@ class Update_Default implements UpdatePlannable {
     }
 
     // Plannable interface
+
+    @Override
+    public String getName()
+    {
+        return getClass().getSimpleName();
+    }
 
     @Override
     public List<Operator> getInputOperators() {
@@ -146,15 +152,15 @@ class Update_Default implements UpdatePlannable {
     private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: Update_Default");
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        if (extraInfo != null && extraInfo.containsKey(this))
+        if (context.hasExtraInfo(this))
         {
-            atts = ((CompoundExplainer)extraInfo.get(this)).get();
+            atts.putAll(context.getExtraInfo(this).get());
         }
         atts.put(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
-        CompoundExplainer ex = new DUIOperatorExplainer("Update_Default", atts, inputOperator, extraInfo);
+        CompoundExplainer ex = new DUIOperatorExplainer(getName(), atts, inputOperator, context);
         return ex;
     }
 

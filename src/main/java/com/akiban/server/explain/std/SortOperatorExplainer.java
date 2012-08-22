@@ -31,26 +31,25 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
-import java.util.Map;
 
 public class SortOperatorExplainer extends CompoundExplainer
 {
-    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
+    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, ExplainContext context)
     {
-        super(Type.SORT, buildMap(name, sortOption, sortType, inputOp, ordering, extraInfo));
+        super(Type.SORT, buildMap(name, sortOption, sortType, inputOp, ordering, context));
     }
     
-    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
+    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, ExplainContext context)
     {
         Attributes map = new Attributes();
         
         map.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         map.put(Label.SORT_OPTION, PrimitiveExplainer.getInstance(sortOption.name()));
-        map.put(Label.ROWTYPE, sortType.getExplainer(extraInfo));
-        map.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        map.put(Label.ROWTYPE, sortType.getExplainer(context));
+        map.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         for (int i = 0; i < ordering.sortColumns(); i++)
         {
-            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer(extraInfo));
+            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer(context));
             map.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
         }
         

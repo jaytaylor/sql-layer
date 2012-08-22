@@ -31,6 +31,11 @@ public class CompoundExplainer extends Explainer
     private final Type type; 
     private Attributes states;
         
+    public CompoundExplainer(Type type)
+    {
+        this(type, new Attributes());
+    }
+
     public CompoundExplainer(Type type, Attributes states)
     {
         this.type = type;
@@ -48,14 +53,7 @@ public class CompoundExplainer extends Explainer
     {
         return states;
     }
-       
-    @Override
-    public final boolean hasAttributes()
-    {
-        return !(states == null || states.isEmpty());
-    }  
     
-    @Override
     public final boolean addAttribute(Label label, Explainer ex)
     {
         if (states.containsKey(label)) return false;

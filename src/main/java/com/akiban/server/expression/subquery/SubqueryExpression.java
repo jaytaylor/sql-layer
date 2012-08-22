@@ -56,11 +56,11 @@ public abstract class SubqueryExpression implements Expression {
     }
     
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
+    public CompoundExplainer getExplainer(ExplainContext context) {
         
         Attributes states = new Attributes();
         states.put(Label.NAME, PrimitiveExplainer.getInstance(name()));
-        states.put(Label.OPERAND, subquery.getExplainer(extraInfo)); 
+        states.put(Label.OPERAND, subquery.getExplainer(context)); 
         states.put(Label.OUTER_TYPE, PrimitiveExplainer.getInstance(outerRowType.toString()));
         states.put(Label.INNER_TYPE, PrimitiveExplainer.getInstance(innerRowType.toString()));
         states.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));

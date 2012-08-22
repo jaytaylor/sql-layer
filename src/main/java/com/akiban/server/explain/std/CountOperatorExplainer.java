@@ -31,16 +31,15 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.explain.*;
-import java.util.Map;
 
 public class CountOperatorExplainer extends CompoundExplainer
 {
-    public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp, ExplainContext context)
     {
-        super(Type.COUNT_OPERATOR, buildAtts(opName, inputType, resultType, inputOp, extraInfo));
+        super(Type.COUNT_OPERATOR, buildAtts(opName, inputType, resultType, inputOp, context));
     }
     
-    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp, ExplainContext context)
     {
         Attributes atts = new Attributes();
         
@@ -48,7 +47,7 @@ public class CountOperatorExplainer extends CompoundExplainer
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputType));
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(rstType));
         if (inputOp != null)
-            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+            atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         
         return atts;
     }

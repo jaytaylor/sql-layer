@@ -188,11 +188,11 @@ class Union_Ordered extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
+    public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Union_Ordered"));
-        atts.put(Label.INPUT_OPERATOR, left.getExplainer(extraInfo));
-        atts.put(Label.INPUT_OPERATOR, right.getExplainer(extraInfo));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
         return new CompoundExplainer(Type.UNION, atts);
     }
 

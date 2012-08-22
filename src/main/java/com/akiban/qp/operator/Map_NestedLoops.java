@@ -150,14 +150,13 @@ class Map_NestedLoops extends Operator
     private final int inputBindingPosition;
 
     @Override
-
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Explainer ex = new NestedLoopsExplainer("Map_NestedLoops", innerInputOperator, outerInputOperator, null, null, extraInfo);
+        CompoundExplainer ex = new NestedLoopsExplainer(getName(), innerInputOperator, outerInputOperator, null, null, context);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
-        if (extraInfo != null && extraInfo.containsKey(this))
+        if (context.hasExtraInfo(this))
         {
-            ex.addAttribute(Label.TABLE_CORRELATION, ((CompoundExplainer)extraInfo.get(this)).get().get(Label.TABLE_CORRELATION).get(0));
+            ex.addAttribute(Label.TABLE_CORRELATION, context.getExtraInfo(this).get().get(Label.TABLE_CORRELATION).get(0));
         }
         return ex;
     }

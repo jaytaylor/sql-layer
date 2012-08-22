@@ -32,7 +32,8 @@ import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.expression.Expression;
@@ -57,8 +58,8 @@ public class CastExpression extends AbstractUnaryExpression
     }
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
-        Explainer ex = super.getExplainer(extraInfo);
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer ex = super.getExplainer(context);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(valueType().name()));
         return ex;
     }

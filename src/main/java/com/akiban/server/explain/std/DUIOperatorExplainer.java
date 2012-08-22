@@ -29,19 +29,18 @@ package com.akiban.server.explain.std;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.server.explain.*;
-import java.util.Map;
 
 public class DUIOperatorExplainer extends CompoundExplainer
 {
-    public DUIOperatorExplainer (String name, Attributes atts, Operator inputOp, Map<Object, Explainer> extraInfo)
+    public DUIOperatorExplainer (String name, Attributes atts, Operator inputOp, ExplainContext context)
     {
-        super(Type.DUI, buildAtts(name, atts, inputOp, extraInfo));
+        super(Type.DUI, buildAtts(name, atts, inputOp, context));
     }
     
-    private static Attributes buildAtts (String name, Attributes atts, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Attributes buildAtts (String name, Attributes atts, Operator inputOp, ExplainContext context)
     {
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         try
         {
             atts.put(Label.TABLE_TYPE, PrimitiveExplainer.getInstance(inputOp.rowType().userTable().getName().toString()));

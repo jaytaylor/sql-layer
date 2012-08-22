@@ -28,7 +28,8 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidParameterValueException;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
@@ -276,9 +277,9 @@ public class ArithExpression extends AbstractBinaryExpression
     }
     
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
+        ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), context, children());
         if (op.isInfix())
             if (name().equals("d"))
             {

@@ -244,17 +244,17 @@ class Intersect_Ordered extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Intersect_Ordered"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFixedFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFixedFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
         atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name()));
-        atts.put(Label.INPUT_OPERATOR, left.getExplainer(extraInfo));
-        atts.put(Label.INPUT_OPERATOR, right.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
         return new CompoundExplainer(Type.ORDERED, atts);
     }
 

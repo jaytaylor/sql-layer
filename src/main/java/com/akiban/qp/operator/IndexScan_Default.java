@@ -207,15 +207,12 @@ class IndexScan_Default extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Attributes atts;
-        if (extraInfo != null && extraInfo.containsKey(this))
-            atts = (Attributes)extraInfo.get(this).get();
-        else
-            atts = new Attributes();
-        
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("IndexScan_Default"));
+        Attributes atts = new Attributes();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get());
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.toString()));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
         atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.toString()));

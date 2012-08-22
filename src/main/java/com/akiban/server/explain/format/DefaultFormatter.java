@@ -64,25 +64,18 @@ public class DefaultFormatter
     }
 
     protected void describe(Explainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
-        if (explainer.hasAttributes())
-        {
-            CompoundExplainer opEx = (CompoundExplainer) explainer;
-            switch (explainer.getType().generalType())
-            {
-            case OPERATOR:
-                describeOperator(opEx, 0);
-                break;
-            case ROWTYPE:
-                describeRowType(opEx);
-                break;
-            default:
-                describeExpression(opEx, needsParens, parentName);
-            }
-        }
-        else
-        {
-            PrimitiveExplainer primEx = (PrimitiveExplainer) explainer;
-            describePrimitive(primEx);
+        switch (explainer.getType().generalType()) {
+        case SCALAR_VALUE:
+            describePrimitive((PrimitiveExplainer)explainer);
+            break;
+        case OPERATOR:
+            describeOperator((CompoundExplainer)explainer, 0);
+            break;
+        case ROWTYPE:
+            describeRowType((CompoundExplainer)explainer);
+            break;
+        default:
+            describeExpression((CompoundExplainer)explainer, needsParens, parentName);
         }
     }
 

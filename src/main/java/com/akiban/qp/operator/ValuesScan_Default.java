@@ -112,11 +112,11 @@ public class ValuesScan_Default extends Operator
     private final RowType rowType;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("ValuesScan_Default"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         for (BindableRow row : rows)
         {
             att.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(row.toString()));

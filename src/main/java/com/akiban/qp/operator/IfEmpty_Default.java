@@ -35,8 +35,10 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpressions;
 import com.akiban.server.explain.Attributes;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.PrimitiveExplainer;
@@ -199,20 +201,20 @@ class IfEmpty_Default extends Operator
     private final API.InputPreservationOption inputPreservation;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("IfEmpty_Default"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         if (pExpressions != null) {
             for (TPreparedExpression ex : pExpressions)
-                throw new UnsupportedOperationException(); // TODO
+                atts.put(Label.OPERAND, TPreparedExpressions.getExplainer(ex));
         }
         else {
             for (Expression ex : oExpressions)
-                atts.put(Label.OPERAND, ex.getExplainer(extraInfo));
+                atts.put(Label.OPERAND, ex.getExplainer(context));
         }
-        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         return new CompoundExplainer(Type.IF_EMPTY, atts);
     }
 

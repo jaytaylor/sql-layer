@@ -195,10 +195,10 @@ class HKeyUnion_Ordered extends Operator
     private final int compareFields;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
+    public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("HKeyUnion_Ordered"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(compareFields));

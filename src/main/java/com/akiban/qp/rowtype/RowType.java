@@ -156,7 +156,7 @@ public abstract class RowType
     }
     
     // Will want to override in most cases.
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
+    public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(toString()));
         return new CompoundExplainer(Type.ROWTYPE, atts);

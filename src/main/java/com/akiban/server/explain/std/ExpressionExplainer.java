@@ -31,27 +31,26 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.explain.*;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class ExpressionExplainer extends CompoundExplainer
 {  
-    public ExpressionExplainer(Type type, String name, Map<Object, Explainer> extraInfo, List<? extends Expression> exs)
+    public ExpressionExplainer(Type type, String name, ExplainContext context, List<? extends Expression> exs)
     {
-        super(checkType(type), buildMap(name, extraInfo, exs));
+        super(checkType(type), buildMap(name, context, exs));
     }
      
-    public ExpressionExplainer(Type type, String name, Map<Object, Explainer> extraInfo, Expression ... operand)
+    public ExpressionExplainer(Type type, String name, ExplainContext context, Expression ... operand)
     {
-        this(type, name, extraInfo, Arrays.asList(operand));
+        this(type, name, context, Arrays.asList(operand));
     }
         
-    private static Attributes buildMap (String name, Map<Object, Explainer> extraInfo, List<? extends Expression> exs)
+    private static Attributes buildMap(String name, ExplainContext context, List<? extends Expression> exs)
     {
         Attributes states = new Attributes();
         states.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         if (exs != null)
             for (Expression ex : exs)
-                states.put(Label.OPERAND, ex.getExplainer(extraInfo));
+                states.put(Label.OPERAND, ex.getExplainer(context));
         return states;
     }
     

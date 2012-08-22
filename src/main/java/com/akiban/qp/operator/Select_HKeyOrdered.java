@@ -166,14 +166,14 @@ class Select_HKeyOrdered extends Operator
     private final TPreparedExpression pPredicate;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("Select_HKeyOrdered"));
-        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         if (predicate != null)
-            att.put(Label.PREDICATE, predicate.getExplainer(extraInfo));
+            att.put(Label.PREDICATE, predicate.getExplainer(context));
         else
             att.put(Label.PREDICATE, TPreparedExpressions.getExplainer(pPredicate));
         return new CompoundExplainer(Type.SELECT_HKEY, att);

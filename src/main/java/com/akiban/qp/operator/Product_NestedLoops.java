@@ -32,7 +32,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -125,9 +126,9 @@ class Product_NestedLoops extends Operator
     }
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new NestedLoopsExplainer("Product_NestedLoops", innerInputOperator, outerInputOperator, innerType, outerType, extraInfo);
+        return new NestedLoopsExplainer(getName(), innerInputOperator, outerInputOperator, innerType, outerType, context);
     }
     
     // Operator interface

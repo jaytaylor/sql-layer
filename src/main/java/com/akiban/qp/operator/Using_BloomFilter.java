@@ -170,11 +170,11 @@ class Using_BloomFilter extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
+    public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
-        if (extraInfo != null && extraInfo.containsKey(this))
-            atts = (Attributes)extraInfo.get(this).get();
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Using_BloomFilter"));
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get());
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(filterBindingPosition));
         return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }

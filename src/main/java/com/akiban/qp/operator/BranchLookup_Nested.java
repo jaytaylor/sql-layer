@@ -282,15 +282,15 @@ public class BranchLookup_Nested extends Operator
     private final int branchRootOrdinal;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        if (extraInfo != null && extraInfo.containsKey(this))
-            atts = ((CompoundExplainer)extraInfo.get(this)).get();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get());
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         
-        return new LookUpOperatorExplainer("BranchLookup_Nested", atts, groupTable, inputRowType, keepInput, null, extraInfo);
+        return new LookUpOperatorExplainer(getName(), atts, groupTable, inputRowType, keepInput, null, context);
     }
 
     // Inner classes

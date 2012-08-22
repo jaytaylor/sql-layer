@@ -29,7 +29,8 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
@@ -105,9 +106,9 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     }
     
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Explainer ex = super.getExplainer(extraInfo);
+        CompoundExplainer ex = super.getExplainer(context);
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance("||"));
         ex.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
         return ex;

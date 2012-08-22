@@ -31,7 +31,8 @@ import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidIntervalFormatException;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.expression.Expression;
@@ -249,9 +250,9 @@ public class IntervalCastExpression extends AbstractUnaryExpression
     }
     
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Explainer ex = super.getExplainer(extraInfo);
+        CompoundExplainer ex = super.getExplainer(context);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(endPoint.type.name()));
         return ex;
     }

@@ -120,16 +120,4 @@ public class PrimitiveExplainer extends Explainer
     {
         return o;
     }
-
-    @Override
-    public boolean hasAttributes()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean addAttribute(Label label, Explainer ex)
-    {
-        throw new UnsupportedOperationException("Primitive Explainer cannot have any attribute.");
-    }
 }

@@ -30,22 +30,21 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
-import java.util.Map;
 
 public class DistinctExplainer extends CompoundExplainer
 {
-    public DistinctExplainer (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    public DistinctExplainer (String name, RowType distinctType, Operator inputOp, ExplainContext context)
     {
-        super(Type.DISTINCT, buildMap(name, distinctType, inputOp, extraInfo));
+        super(Type.DISTINCT, buildMap(name, distinctType, inputOp, context));
     }
     
-    private static Attributes buildMap (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
+    private static Attributes buildMap (String name, RowType distinctType, Operator inputOp, ExplainContext context)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         atts.put(Label.DINSTINCT_TYPE, PrimitiveExplainer.getInstance(distinctType));
-        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         
         return atts;
     }

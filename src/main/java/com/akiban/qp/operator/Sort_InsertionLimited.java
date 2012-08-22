@@ -167,9 +167,9 @@ class Sort_InsertionLimited extends Operator
     private final int limit;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        CompoundExplainer ex = new SortOperatorExplainer("Sort_InsertionLimited", sortOption, sortType, inputOperator, ordering, extraInfo);
+        CompoundExplainer ex = new SortOperatorExplainer(getName(), sortOption, sortType, inputOperator, ordering, context);
         ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
         return ex;
     }

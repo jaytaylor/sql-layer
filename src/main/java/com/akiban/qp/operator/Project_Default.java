@@ -188,17 +188,17 @@ class Project_Default extends Operator
     protected ProjectedRowType projectType;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("Project_Default"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         if (projectType.hasUserTable())
             att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
-        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         if (projections != null)
             for (Expression ex : projections)
-                att.put(Label.PROJECTION, ex.getExplainer(extraInfo));
+                att.put(Label.PROJECTION, ex.getExplainer(context));
         else
             for (TPreparedExpression ex : pExpressions)
                 att.put(Label.PROJECTION, TPreparedExpressions.getExplainer(ex));

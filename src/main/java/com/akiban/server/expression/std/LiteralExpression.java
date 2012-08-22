@@ -32,6 +32,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.explain.Explainer;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
 import com.akiban.server.explain.std.ExpressionExplainer;
@@ -140,7 +141,7 @@ public final class LiteralExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         StringBuilder sb = new StringBuilder();
         SqlLiteralValueFormatter formatter = new SqlLiteralValueFormatter(sb);
@@ -149,7 +150,7 @@ public final class LiteralExpression implements Expression {
         } catch (IOException ex) {
             Logger.getLogger(LiteralExpression.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Explainer ex = new ExpressionExplainer(Type.LITERAL, name(), extraInfo, (List)null);
+        CompoundExplainer ex = new ExpressionExplainer(Type.LITERAL, name(), context, (List)null);
         ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sb.toString()));
         return ex;
     }

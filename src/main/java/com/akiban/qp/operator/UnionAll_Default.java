@@ -191,14 +191,14 @@ final class UnionAll_Default extends Operator {
     private final RowType outputRowType;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("UnionAll_Default"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         
         for (Operator op : inputs)
-            att.put(Label.INPUT_OPERATOR, op.getExplainer(extraInfo));
+            att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
         for (RowType type : inputTypes)
             att.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(type));
        

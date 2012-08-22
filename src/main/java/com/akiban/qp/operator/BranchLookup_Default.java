@@ -302,16 +302,16 @@ public class BranchLookup_Default extends Operator
     private final Limit limit;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        if (extraInfo != null && extraInfo.containsKey(this))
-            atts = ((CompoundExplainer)extraInfo.get(this)).get();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get());
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         
-        return new LookUpOperatorExplainer("BranchLookup_Default", atts, groupTable, inputRowType, keepInput, inputOperator, extraInfo);
+        return new LookUpOperatorExplainer(getName(), atts, groupTable, inputRowType, keepInput, inputOperator, context);
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor

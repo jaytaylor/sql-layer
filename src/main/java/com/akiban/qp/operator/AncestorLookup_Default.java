@@ -250,15 +250,15 @@ class AncestorLookup_Default extends Operator
     private final boolean keepInput;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        if (extraInfo != null && extraInfo.containsKey(this))
-            atts = ((CompoundExplainer)extraInfo.get(this)).get();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get());
         for (UserTable table : ancestors)
             atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
         
-        return new LookUpOperatorExplainer("AncestorLookup_Default", atts, groupTable, rowType, keepInput, inputOperator, extraInfo);
+        return new LookUpOperatorExplainer(getName(), atts, groupTable, rowType, keepInput, inputOperator, context);
     }
 
     // Inner classes

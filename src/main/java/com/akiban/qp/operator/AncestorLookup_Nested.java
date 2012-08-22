@@ -232,15 +232,15 @@ class AncestorLookup_Nested extends Operator
     private final int inputBindingPosition;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-       Attributes atts = new Attributes();
-       if (extraInfo != null && extraInfo.containsKey(this))
-            atts = ((CompoundExplainer) extraInfo.get(this)).get();
-       for (UserTable table : ancestors)
-           atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
+        Attributes atts = new Attributes();
+        for (UserTable table : ancestors)
+            atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
 
-       return new LookUpOperatorExplainer("AncestorLookup_Nested", atts, groupTable, rowType, false, null, extraInfo); // NOTE: keepInput is N/A here
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get());
+        return new LookUpOperatorExplainer(getName(), atts, groupTable, rowType, false, null, context);
     }
 
     // Inner classes

@@ -342,10 +342,10 @@ final class Aggregate_Partial extends Operator
     private final List<? extends TAggregator> pAggrs;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate_Partial"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         int aggs;
         
         if (pAggrs != null) {
@@ -360,10 +360,10 @@ final class Aggregate_Partial extends Operator
         }
         if (inputsIndex > 0)
         {
-            if (extraInfo != null && extraInfo.containsKey(this))
+            if (context.hasExtraInfo(this))
             {
                 StringBuilder sb = new StringBuilder("GROUP BY ");
-                for (Explainer ex : ((CompoundExplainer)extraInfo.get(this)).get().get(Label.GROUPING_OPTION))
+                for (Explainer ex : context.getExtraInfo(this).get().get(Label.GROUPING_OPTION))
                 {
                     sb.append(ex.get()).append(", ");
                 }
@@ -375,7 +375,7 @@ final class Aggregate_Partial extends Operator
             else
                 atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + " fields"));
         }
-        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputRowType.toString()));
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputType.toString()));
         atts.put(Label.BRIEF, PrimitiveExplainer.getInstance(inputsIndex + " keys, " + aggs + " aggregates"));

@@ -271,12 +271,12 @@ class Flatten_HKeyOrdered extends Operator
     private final int parentHKeySegments;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
        
         Attributes atts = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Flatten_HKeyOrdered"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         if (keepParent) 
             atts.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP PARENT"));
         if (keepChild) 
@@ -291,9 +291,9 @@ class Flatten_HKeyOrdered extends Operator
                 atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("RIGHT"));
             else
                 atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("INNER"));
-        atts.put(Label.PARENT_TYPE, parentType.getExplainer(extraInfo));
-        atts.put(Label.CHILD_TYPE, childType.getExplainer(extraInfo));
-        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
+        atts.put(Label.PARENT_TYPE, parentType.getExplainer(context));
+        atts.put(Label.CHILD_TYPE, childType.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         
         return new CompoundExplainer(Type.FLATTEN_OPERATOR, atts);
     }

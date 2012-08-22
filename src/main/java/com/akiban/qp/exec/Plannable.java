@@ -35,6 +35,8 @@ import java.util.Map;
 public interface Plannable extends Explainable {
     List<Operator> getInputOperators();
 
+    String getName();
+
     String describePlan();
 
     String describePlan(Operator inputOperator);

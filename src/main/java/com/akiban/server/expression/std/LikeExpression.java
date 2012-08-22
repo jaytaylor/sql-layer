@@ -32,7 +32,8 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Type;
 import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
@@ -208,9 +209,9 @@ public class LikeExpression extends AbstractCompositeExpression
     }
     
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), extraInfo, children());
+        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), context, children());
     }
 
     @Override

@@ -37,10 +37,6 @@ public abstract class Explainer
      */
     public abstract Object get();
     
-    public abstract boolean hasAttributes();
- 
-    public abstract boolean addAttribute (Label label, Explainer ex);
-    
     @Override
     public final boolean equals (Object o)
     {

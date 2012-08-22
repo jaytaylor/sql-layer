@@ -27,7 +27,8 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.exec.Plannable;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Type;
 import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
@@ -42,9 +43,9 @@ public abstract class AbstractUnaryExpression implements Expression {
     // for most expressions this returns TRUE
     // Those that treat NULL specially must override the method
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new ExpressionExplainer(Type.FUNCTION, name(), extraInfo, operand);
+        return new ExpressionExplainer(Type.FUNCTION, name(), context, operand);
     }
 
     public boolean nullIsContaminating()

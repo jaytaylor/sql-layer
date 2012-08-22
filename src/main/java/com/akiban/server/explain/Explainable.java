@@ -26,9 +26,7 @@
 
 package com.akiban.server.explain;
 
-import java.util.Map;
-
 public interface Explainable
 {
-    Explainer getExplainer(Map<Object, Explainer> extraInfo);
+    CompoundExplainer getExplainer(ExplainContext context);
 }

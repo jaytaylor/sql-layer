@@ -29,7 +29,8 @@ package com.akiban.qp.operator;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -161,9 +162,9 @@ class Sort_Tree extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer(Map<Object, Explainer> extraInfo)
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator, ordering, extraInfo);
+        return new SortOperatorExplainer(getName(), sortOption, sortType, inputOperator, ordering, context);
     }
 
     // Inner classes
