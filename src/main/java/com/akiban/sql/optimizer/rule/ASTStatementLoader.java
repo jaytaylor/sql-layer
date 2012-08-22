@@ -34,10 +34,10 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
-import static com.akiban.sql.optimizer.plan.PlanContext.*;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
+import static com.akiban.sql.optimizer.rule.PlanContext.*;
 
 import com.akiban.sql.optimizer.*;
 

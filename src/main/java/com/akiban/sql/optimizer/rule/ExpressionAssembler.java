@@ -37,7 +37,6 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.SubqueryExpression;
 
 import com.akiban.qp.operator.Operator;

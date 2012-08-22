@@ -29,18 +29,17 @@ package com.akiban.sql.pg;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.server.error.UnableToExplainException;
 import com.akiban.server.error.UnsupportedExplainException;
-import com.akiban.server.explain.ExplainContext;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.PlanContext;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.ExplainStatementNode;
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
-import java.util.HashMap;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,14 +64,8 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new UnsupportedExplainException();
         if (!(innerStmt instanceof DMLStatementNode))
             throw new UnableToExplainException ();
-        final ExplainContext context = new ExplainContext();
-        PlanContext plan = new PlanContext(compiler) {
-                @Override
-                public ExplainContext getExplainContext() {
-                    return context;
-                }
-            };
-        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, plan);
-        return new PostgresExplainStatement(result.explainPlan(context), compiler.usesPValues());
+        ExplainPlanContext context = new ExplainPlanContext(compiler);
+        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);
+        return new PostgresExplainStatement(result.explainPlan(context.getExplainContext()), compiler.usesPValues());
     }
 }

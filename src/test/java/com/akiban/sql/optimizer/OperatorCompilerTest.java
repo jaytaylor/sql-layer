@@ -39,9 +39,9 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
@@ -204,12 +204,10 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        PlanContext plan = new PlanContext(compiler);
-        Map<Object, Explainer> extraInfo = new HashMap<Object, Explainer>();
-        plan.makeInfo(extraInfo);
+        ExplainPlanContext context = new ExplainPlanContext(compiler);
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
-                                                parser.getParameterList(), plan);
-        return result.toString();
+                                                parser.getParameterList(), context);
+        return result.explainToString(context.getExplainContext());
     }
 
     @Override

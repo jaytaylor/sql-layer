@@ -26,27 +26,21 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import org.slf4j.Logger;
+import com.akiban.sql.optimizer.OperatorCompiler;
 
-import com.akiban.server.service.EventTypes;
+import com.akiban.server.explain.ExplainContext;
 
-public abstract class BaseRule
+public class ExplainPlanContext extends PlanContext
 {
-    private final String traceName;
+    private ExplainContext explainContext = new ExplainContext();
 
-    protected BaseRule() {
-        traceName = EventTypes.OPTIMIZE + ": " + getName();
+    public ExplainPlanContext(OperatorCompiler rulesContext) {
+        super(rulesContext);
     }
 
-    public String getTraceName() {
-        return traceName;
+    @Override
+    public ExplainContext getExplainContext() {
+        return explainContext;
     }
 
-    public String getName() {
-        return getClass().getSimpleName();
-    }
-
-    protected abstract Logger getLogger();
-
-    public abstract void apply(PlanContext plan);
 }

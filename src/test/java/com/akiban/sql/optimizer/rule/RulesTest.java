@@ -31,8 +31,8 @@ import com.akiban.sql.TestBase;
 
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.plan.AST;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanToString;
+import com.akiban.sql.optimizer.rule.PlanContext;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;

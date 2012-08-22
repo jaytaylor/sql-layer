@@ -24,11 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.akiban.sql.optimizer.rule;
+
+import com.akiban.sql.optimizer.plan.PlanNode;
+import com.akiban.sql.optimizer.plan.PlanVisitor;
 
 import com.akiban.qp.exec.Plannable;
-import com.akiban.sql.optimizer.rule.RulesContext;
-
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.server.explain.ExplainContext;

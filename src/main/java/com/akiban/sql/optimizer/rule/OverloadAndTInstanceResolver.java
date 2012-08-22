@@ -66,7 +66,6 @@ import com.akiban.sql.optimizer.plan.Limit;
 import com.akiban.sql.optimizer.plan.NullSource;
 import com.akiban.sql.optimizer.plan.ParameterCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;

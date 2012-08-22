@@ -71,18 +71,24 @@ public abstract class BasePlannable extends BasePlanNode
         return f.describeToList(plannable.getExplainer(context));
     }
     
-    @Override
-    public String summaryString() {
-        return withIndentedExplain(new StringBuilder(super.summaryString()));
+    public String explainToString(ExplainContext context) {
+        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context);
     }
 
     @Override
     public String toString() {
-        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()));
+        return explainToString(null);
     }
 
-    protected String withIndentedExplain(StringBuilder str) {
-        ExplainContext context = new ExplainContext(); // Empty
+    @Override
+    public String summaryString() {
+        // Similar to above, but with @hash for consistency.
+        return withIndentedExplain(new StringBuilder(super.summaryString()), null);
+    }
+
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context) {
+        if (context == null)
+            context = new ExplainContext(); // Empty
         for (String operator : explainPlan(context)) {
             str.append("\n  ");
             str.append(operator);
