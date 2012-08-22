@@ -1,7 +1,7 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:DATE NOT NULL]
   Map_NestedLoops(loop_0)
     IndexScan_Default(Index(test.customers.name[IndexColumn(name)]), name, cid)
-    Project_Default(Bound(0,Field(0)), x[1])
+    Project_Default(c.name, x[1])
       IfEmpty_Default(NULL, NULL)
         Project_Default(orders.cid, orders.order_date)
           Select_HKeyOrdered(orders.order_date < DATE '2011-01-01')
