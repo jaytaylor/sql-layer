@@ -31,6 +31,7 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.google.common.primitives.UnsignedLongs;
 
 import java.math.BigDecimal;
 
@@ -173,7 +174,21 @@ public class TParsers
         }
     };
 
-    public static final TParser UNSIGNED_BIGINT = BIGINT; // TODO need a way to handle larger numbers.
+    public static final TParser UNSIGNED_BIGINT = new TParser() {
+        @Override
+        public void parse(TExecutionContext context, PValueSource source, PValueTarget target) {
+            String st = CastUtils.truncateNonDigits(source.getString(), context);
+
+            long value;
+            try {
+                value = UnsignedLongs.parseUnsignedLong(st);
+            } catch (NumberFormatException e) { // overflow error
+                context.reportOverflow(e.getMessage());
+                value = UnsignedLongs.MAX_VALUE;
+            }
+            target.putInt64(value);
+        }
+    };
     
     public static final TParser FLOAT = new TParser()
     {
