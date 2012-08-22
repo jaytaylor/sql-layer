@@ -661,13 +661,13 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public long stdLongToUnix(long longVal, DateTimeZone tz)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return longVal;
         }
 
         @Override
         public long unixToStdLong(long unixVal, DateTimeZone tz)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return unixVal;
         }
 
         @Override

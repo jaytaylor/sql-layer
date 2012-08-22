@@ -9,4 +9,10 @@
 ---
 - Statement: select DATEDIFF('2010-11-30 23:59:59','2010-12-31') from all_types;
 - output: [['-31']]
+---
+- Statement: select datediff('2010-01-01 10:10:10' , '2012-08-14 14:30:10');
+- output: [['-956']]
+---
+- Statement: select datediff('2012-08-14 14:30:10', '2010-01-01 10:10:10');
+- output: [['956']]
 ...

@@ -35,8 +35,10 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
+import org.junit.After;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -55,9 +57,14 @@ public class TableChangeValidatorTest {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
-    private static final List<TableChange> NO_CHANGES = null;
     private static final String NO_INDEX_CHANGE = "{}";
 
+    private List<TableChange> NO_CHANGES = new ArrayList<TableChange>();
+
+    @After
+    public void clearChanges() {
+        NO_CHANGES.clear();
+    }
 
     private static NewUserTableBuilder builder(TableName name) {
         return AISBBasedBuilder.create(SCHEMA).userTable(name);

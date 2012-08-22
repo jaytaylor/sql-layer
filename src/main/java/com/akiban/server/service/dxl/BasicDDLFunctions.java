@@ -42,7 +42,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
@@ -119,9 +118,9 @@ import com.akiban.server.store.statistics.IndexStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
-import static com.akiban.qp.operator.API.insert_Default;
 import static com.akiban.util.Exceptions.throwAlways;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
@@ -182,6 +181,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         @Override
         public long sequenceCurrentValue(TableName sequence) {
             return delegate.sequenceCurrentValue(sequence);
+        }
+
+        @Override
+        public long getQueryTimeoutSec() {
+            return delegate.getQueryTimeoutSec();
         }
     }
 
@@ -433,14 +437,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                           List<TableChange> columnChanges, List<TableChange> indexChanges,
-                           QueryContext context)
+    public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+                                  List<TableChange> origColChanges, List<TableChange> origIndexChanges,
+                                  QueryContext context)
     {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
+        List<TableChange> columnChanges = new ArrayList<TableChange>(origColChanges);
+        List<TableChange> indexChanges = new ArrayList<TableChange>(origIndexChanges);
 
-        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges, ALTER_AUTO_INDEX_CHANGES);
+        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges,
+                                                                  ALTER_AUTO_INDEX_CHANGES);
 
         try {
             validator.compareAndThrowIfNecessary();
@@ -448,8 +455,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new InvalidAlterException(tableName, e.getMessage());
         }
 
+        ChangeLevel changeLevel;
         boolean rollBackNeeded = false;
+        Set<String> savedSchemas = new HashSet<String>();
+        Map<TableName,Integer> savedOrdinals = new HashMap<TableName,Integer>();
         List<Index> indexesToDrop = new ArrayList<Index>();
+
+        savedSchemas.add(tableName.getSchemaName());
+        savedSchemas.add(newDefinition.getName().getSchemaName());
         try {
             AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges);
 
@@ -457,7 +470,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             helper.findAffectedOldIndexes(origTable, indexesToTruncate, indexesToDrop);
             Map<IndexName, List<Column>> affectedGroupIndexes = validator.getAffectedGroupIndexes();
 
-            TableChangeValidator.ChangeLevel changeLevel = validator.getFinalChangeLevel();
+            changeLevel = validator.getFinalChangeLevel();
             Collection<ChangedTableDescription> changedTables = validator.getAllChangedTables();
 
             switch(changeLevel) {
@@ -496,9 +509,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
                     for(ChangedTableDescription desc : validator.getAllChangedTables()) {
                         desc.getPreserveIndexes().put(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT);
-                        Index index = origAIS.getUserTable(desc.getOldName()).getPrimaryKeyIncludingInternal().getIndex();
+                        UserTable oldTable = origAIS.getUserTable(desc.getOldName());
+                        Index index = oldTable.getPrimaryKeyIncludingInternal().getIndex();
                         indexesToTruncate.add(index);
                         indexesToDrop.remove(index);
+                        savedSchemas.add(desc.getOldName().getSchemaName());
+                        savedOrdinals.put(desc.getOldName(), oldTable.rowDef().getOrdinal());
                     }
                     store().truncateIndex(session, indexesToTruncate);
                     doTableChange(session, context, tableName, newDefinition, changedTables, affectedGroupIndexes,
@@ -519,10 +535,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 // All of the data changed was transactional but PSSM changes aren't like that
                 AkibanInformationSchema curAIS = getAIS(session);
                 if(origAIS != curAIS) {
-                    Set<String> schemas = new HashSet<String>();
-                    schemas.add(tableName.getSchemaName());
-                    schemas.add(newDefinition.getName().getSchemaName());
-                    schemaManager().rollbackAIS(session, origAIS, schemas);
+                    schemaManager().rollbackAIS(session, origAIS, savedOrdinals, savedSchemas);
                 }
                 // TODO: rollback new index trees?
             }
@@ -530,6 +543,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         // Complete: we can now get rid of any index trees that shouldn't be here
         store().deleteIndexes(session, indexesToDrop);
+        return changeLevel;
     }
 
     @Override

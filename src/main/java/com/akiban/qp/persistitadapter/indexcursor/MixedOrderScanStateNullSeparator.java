@@ -23,34 +23,39 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common;
 
-import java.math.BigDecimal;
+package com.akiban.qp.persistitadapter.indexcursor;
 
-public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
-    
-     BigDecimalWrapper add(BigDecimalWrapper augend);
-     BigDecimalWrapper subtract(BigDecimalWrapper augend);
-     BigDecimalWrapper multiply(BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend);
-     BigDecimalWrapper floor();
-     BigDecimalWrapper ceil();
-     BigDecimalWrapper truncate(int scale);
-     BigDecimalWrapper round(int scale);
-     BigDecimalWrapper divideToIntegeralValue (BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
-     BigDecimalWrapper parseString(String num);
-     BigDecimalWrapper round (int precision, int scale);
-     BigDecimalWrapper negate();
-     BigDecimalWrapper abs();
-     BigDecimalWrapper mod(BigDecimalWrapper num);
 
-     int compareTo (BigDecimalWrapper o);
-     int getScale();
-     int getPrecision();
-     int getSign();
-     boolean isZero();
-     void reset();
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.exception.PersistitException;
 
-    BigDecimal asBigDecimal();
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
+
+class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSegment<S, E>
+{
+    @Override
+    public boolean jump(S fieldValue) throws PersistitException
+    {
+        Exchange exchange = cursor.exchange();
+        if (!ascending) {
+            exchange.append(Key.AFTER);
+        }
+        boolean resume = exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, true);
+        return resume;
+    }
+
+    public MixedOrderScanStateNullSeparator(IndexCursorMixedOrder cursor,
+                                            int field,
+                                            boolean ascending,
+                                            SortKeyAdapter<S, E> sortKeyAdapter)
+        throws PersistitException
+    {
+        super(cursor, field, ascending, sortKeyAdapter);
+    }
 }

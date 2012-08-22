@@ -190,8 +190,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     startValues[f] = keyAdapter.get(startExpressions, f);
                     endValues[f] = keyAdapter.get(endExpressions, f);
                 }
-                clear(startKey);
-                clear(endKey);
+                clearStart();
+                clearEnd();
                 // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
                 // interpret the nulls literally.
                 int f = 0;
@@ -278,7 +278,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             for (int f = 0; f < startBoundColumns; f++) {
                 startValues[f] = keyAdapter.get(startExpressions, f);
             }
-            clear(startKey);
+            clearStart();
             // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
             // interpret the nulls literally.
             int f = 0;
@@ -330,10 +330,16 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         return pastEnd;
     }
 
-    protected void clear(PersistitIndexRow bound)
+    protected void clearStart()
     {
-        assert bound == startKey || bound == endKey;
-        bound.resetForWrite(index(), adapter.newKey(), null); // TODO: Reuse the existing key
+        startKeyKey.clear();
+        startKey.resetForWrite(index(), startKeyKey, null);
+    }
+
+    protected void clearEnd()
+    {
+        endKeyKey.clear();
+        endKey.resetForWrite(index(), endKeyKey, null);
     }
 
     protected AkType type(int f)
@@ -381,6 +387,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             assert false : ordering;
         }
         this.startKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+        this.startKeyKey = adapter.newKey();
+        this.endKeyKey = adapter.newKey();
         this.startBoundColumns = keyRange.boundColumns();
         this.types = sortKeyAdapter.createAkTypes(startBoundColumns);
         this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
@@ -489,6 +497,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected boolean endInclusive;
     protected PersistitIndexRow startKey;
     protected PersistitIndexRow endKey;
+    private Key startKeyKey;
+    private Key endKeyKey;
     private boolean pastStart;
     private SortKeyAdapter<S, ?> sortKeyAdapter;
 }

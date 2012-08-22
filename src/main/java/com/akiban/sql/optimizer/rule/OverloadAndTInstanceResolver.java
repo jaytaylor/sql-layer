@@ -72,6 +72,7 @@ import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.plan.Subquery;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
@@ -140,11 +141,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     for (int i = 0, size = rsFields.size(); i < size; i++) {
                         ResultField rsField = rsFields.get(i);
                         ExpressionNode projectField = projectFields.get(i);
-                        DataTypeDescriptor projectionType = projectField.getSQLtype();
-                        DataTypeDescriptor rsFieldType = rsField.getSQLtype();
-                        if (!projectionType.equals(rsFieldType)) {
-                            rsField.setSQLtype(projectionType);
-                        }
+                        rsField.setTInstance(projectField.getPreptimeValue().instance());
                     }
                 }
                 else {
@@ -402,8 +399,24 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 expression.setPreptimeValue(ptv);
             }
             else if (columnSource instanceof SubquerySource) {
-                TInstance tInstance = TypesTranslation.toTInstance(expression.getSQLtype());
-                expression.setPreptimeValue(new TPreptimeValue(tInstance));
+                TPreptimeValue tpv;
+                Subquery subquery = ((SubquerySource)columnSource).getSubquery();
+                Project project = findProject(subquery);
+                if (project != null) {
+                    List<ExpressionNode> fields = project.getFields();
+                    if (fields == null || fields.size() != 1) {
+                        logger.warn("subquery should have only had one field: {} in {}", fields, columnSource);
+                        tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
+                    }
+                    else {
+                        tpv = fields.get(0).getPreptimeValue();
+                    }
+                }
+                else {
+                    logger.warn("no Project found for subquery: {}", columnSource);
+                    tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
+                }
+                expression.setPreptimeValue(tpv);
                 return expression;
             }
             else if (columnSource instanceof NullSource) {
