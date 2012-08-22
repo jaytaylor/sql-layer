@@ -27,12 +27,12 @@
 package com.akiban.server.expression;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.Explainable;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.explain.Explainer;
 import java.util.Map;
 
-public interface Expression {
+public interface Expression extends Explainable {
     boolean nullIsContaminating();
             
     /**
@@ -79,10 +79,4 @@ public interface Expression {
      * expression.
      */
     String name ();
-    
-    /**
-     * 
-     * @return the explainer for this expression
-     */
-    Explainer getExplainer(Map<Object, Explainer> extraInfo);
 }

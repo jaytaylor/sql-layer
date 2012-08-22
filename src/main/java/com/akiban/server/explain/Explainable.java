@@ -24,15 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.explain;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
+import java.util.Map;
 
-public interface TPreparedExpression { // TODO; extends Explainable
-    TPreptimeValue evaluateConstant(QueryContext queryContext);
-    TInstance resultType();
-    TEvaluatableExpression build();
+public interface Explainable
+{
+    Explainer getExplainer(Map<Object, Explainer> extraInfo);
 }

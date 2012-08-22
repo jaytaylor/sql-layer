@@ -28,16 +28,14 @@ package com.akiban.qp.exec;
 
 import com.akiban.qp.operator.Operator;
 
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.Explainable;
 import java.util.List;
 import java.util.Map;
 
-public interface Plannable {
+public interface Plannable extends Explainable {
     List<Operator> getInputOperators();
 
     String describePlan();
 
     String describePlan(Operator inputOperator);
-    
-    Explainer getExplainer(Map<Object, Explainer> extraInfo);
 }
