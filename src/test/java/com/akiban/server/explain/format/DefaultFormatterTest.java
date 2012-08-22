@@ -27,6 +27,7 @@
 package com.akiban.server.explain.format;
 
 import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;

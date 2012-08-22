@@ -45,7 +45,11 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 
@@ -58,7 +62,7 @@ import java.util.List;
 abstract class ExpressionAssembler<T> {
 
     public abstract ConstantExpression evalNow(PlanContext planContext, ExpressionNode node);
-    PlanContext plancontext;
+    PlanContext planContext;
 
     protected abstract T assembleFunction(ExpressionNode functionNode,
                                           String functionName,
@@ -152,15 +156,14 @@ abstract class ExpressionAssembler<T> {
     }
 
     private T assembleColumnExpression(ColumnExpression column,
-                                        ColumnExpressionContext columnContext) {
+                                       ColumnExpressionContext columnContext) {
         ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();
         if (currentRow != null) {
             int fieldIndex = currentRow.getIndex(column);
             if (fieldIndex >= 0)
             {
                 T expression = assembleFieldExpression(currentRow.getRowType(), fieldIndex);
-                if (plancontext.hasInfo())
-                    plancontext.giveInfoExpression(((Expression)expression), PrimitiveExplainer.getInstance(column.toString()));
+                addExtraInfo(expression, column);
                 return expression;
             }
         }
@@ -172,12 +175,27 @@ abstract class ExpressionAssembler<T> {
             int fieldIndex = boundRow.getIndex(column);
             if (fieldIndex >= 0) {
                 rowIndex += columnContext.getLoopBindingsOffset();
-                return assembleBoundFieldExpression(boundRow.getRowType(), rowIndex, fieldIndex);
+                T expression = assembleBoundFieldExpression(boundRow.getRowType(), rowIndex, fieldIndex);
+                addExtraInfo(expression, column);
+                return expression;
             }
         }
         logger().debug("Did not find {} from {} in {}",
                 new Object[]{column, column.getTable(), boundRows});
         throw new AkibanInternalException("Column not found " + column);
+    }
+
+    private void addExtraInfo(T expression, ColumnExpression column) {
+        ExplainContext explainContext = planContext.getExplainContext();
+        if ((explainContext != null) &&
+            // TODO: Until TPreparedExpression is Explainable.
+            (expression instanceof Expression)) {
+            CompoundExplainer explainer = new CompoundExplainer(Type.EXTRA_INFO);
+            explainer.addAttribute(Label.NAME, 
+                                   // TODO: Break into pieces.
+                                   PrimitiveExplainer.getInstance(column.toString()));
+            explainContext.putExtraInfo((Expression)expression, explainer);
+        }
     }
 
     public abstract Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys,

@@ -66,20 +66,6 @@ public abstract class BasePlannable extends BasePlanNode
         // Do not copy operators.
     }
     
-    public void giveInfo(Map map) {
-        extraInfo = map;
-    }
-    
-    public boolean hasInfo() {
-        if (null != extraInfo)
-            return !extraInfo.isEmpty();
-        else return false;
-    }
-    
-    public Map getInfo() {
-        return extraInfo;
-    }
-    
     public List<String> explainPlan(ExplainContext context) {
         DefaultFormatter f = new DefaultFormatter(true);
         return f.describeToList(plannable.getExplainer(context));

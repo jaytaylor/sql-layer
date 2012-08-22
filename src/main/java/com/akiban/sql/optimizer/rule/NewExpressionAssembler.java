@@ -86,7 +86,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         RulesContext rulesContext = planContext.getRulesContext();
         this.overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
         this.queryContext = planContext.getQueryContext();
-        this.plancontext = planContext;
+        this.planContext = planContext;
     }
 
     @Override

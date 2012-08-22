@@ -681,19 +681,21 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
             UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
-            
-            if (planContext.hasInfo())
-            {
+            insertExtraInfo(plan, insertStatement);
+            return new PhysicalUpdate(plan, getParameterTypes());
+        }
+
+        protected void insertExtraInfo(UpdatePlannable plan, InsertStatement insertStatement) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
                 atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(insertStatement.getTargetTable().getTable().getName().toString()));
                 for (Column column : insertStatement.getTargetColumns())
                 {
                     atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
                 }
-                planContext.giveInfoOperator(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                context.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-            
-            return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         protected PhysicalUpdate updateStatement(UpdateStatement updateStatement) {
@@ -709,8 +711,13 @@ public class OperatorAssembler extends BaseRule
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
             UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
-            if (planContext.hasInfo())
-            {
+            updateExtraInfo(plan, updateStatement, updateColumns, updates, updatesP);
+            return new PhysicalUpdate(plan, getParameterTypes());
+        }
+
+        protected void updateExtraInfo(UpdatePlannable plan, UpdateStatement updateStatement, List<UpdateColumn> updateColumns, List<Expression> updates, List<TPreparedExpression> updatesP) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
                 atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(updateStatement.getTargetTable().getTable().getName().toString()));
                 for (UpdateColumn column : updateColumns)
@@ -721,23 +728,26 @@ public class OperatorAssembler extends BaseRule
                 else
                     for (Expression expression : updates)
                         if (expression != null)
-                            atts.put(Label.EXPRESSIONS, expression.getExplainer(planContext.getInfo()));
-                planContext.giveInfoOperator(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                            atts.put(Label.EXPRESSIONS, expression.getExplainer(context));
+                context.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-            return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
             UpdatePlannable plan = API.delete_Default(stream.operator, usePValues);
-            if (planContext.hasInfo())
-            {
+            deleteExtraInfo(plan, deleteStatement);
+            return new PhysicalUpdate(plan, getParameterTypes());
+        }
+
+        protected void deleteExtraInfo(UpdatePlannable plan, DeleteStatement deleteStatement) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
                 atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName().toString()));
-                planContext.giveInfoOperator(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                context.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-            return new PhysicalUpdate(plan, getParameterTypes());
         }
 
         // Assemble the top-level query. If there is a ResultSet at
@@ -921,8 +931,13 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
-   
-            if (planContext.hasInfo()) {
+            singleIndexScanExtraInfo(stream.operator, indexScan, index);
+            return stream;
+        }
+
+        protected void singleIndexScanExtraInfo(Operator operator, SingleIndexScan indexScan, Index index) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
                 for (IndexColumn column : index.getAllColumns())
                     atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
@@ -940,11 +955,10 @@ public class OperatorAssembler extends BaseRule
                     atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance(lo.toString()));
                     atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance((indexScan.isLowInclusive() ? "" : "NOT") + "INCLUSIVE"));
                 }
-                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                context.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-
-            return stream;
         }
+
         /**
          * If there are this many or more scans feeding into a tree
          * of intersection / union, then skip scan is enabled for it.
@@ -1142,9 +1156,13 @@ public class OperatorAssembler extends BaseRule
             }
             stream.rowType = null;
             stream.fieldOffsets = null;
-            
-            if (planContext.hasInfo())
-            {
+            ancestorLookupExtraInfo(stream.operator, ancestorLookup);
+            return stream;
+        }
+
+        protected void ancestorLookupExtraInfo(Operator operator, AncestorLookup ancestorLookup) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
                 for (TableSource tableSource : ancestorLookup.getTables())
                 {
@@ -1157,10 +1175,8 @@ public class OperatorAssembler extends BaseRule
                 }
                 else if (ancestorLookup.getInput() instanceof GroupLoopScan)
                     atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(((GroupLoopScan)ancestorLookup.getInput()).getOutsideTable().getTable().getTable().getName().toString()));
-                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                context.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-            
-            return stream;
         }
 
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
@@ -1210,25 +1226,27 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = null;
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
-            
-            if (planContext.hasInfo())
-            {
+            branchLookupExtraInfo(stream.operator, branchLookup);
+            return stream;
+        }
+
+        protected void branchLookupExtraInfo(Operator operator, BranchLookup branchLookup) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
                 for (TableSource tableSource : branchLookup.getTables())
-                {
-                    atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(tableSource.getTable().getTable().getName().toString()));
-                }
+                    {
+                        atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(tableSource.getTable().getTable().getName().toString()));
+                    }
                 int binding = currentBindingPosition();
                 if (lookupBindings.containsKey(binding) && lookupBindings.get(binding) != null)
-                {
-                    atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(lookupBindings.get(binding)));
-                }
+                    {
+                        atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(lookupBindings.get(binding)));
+                    }
                 else if (branchLookup.getInput() instanceof GroupLoopScan)
                     atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(((GroupLoopScan)branchLookup.getInput()).getOutsideTable().getTable().getTable().getName().toString()));
-                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                context.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-            
-            return stream;
         }
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
@@ -1241,23 +1259,25 @@ public class OperatorAssembler extends BaseRule
                                                   stream.operator,
                                                   currentBindingPosition());
             popBoundRow();
-            if (planContext.hasInfo())
-            {
+            mapJoinExtraInfo(stream.operator, mapJoin, pos, outer);
+            return stream;
+        }
+
+        protected void mapJoinExtraInfo(Operator operator, MapJoin mapJoin, int pos, PlanNode outer) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
-                if (outer instanceof Flatten)
-                {
+                if (outer instanceof Flatten) {
                     List<TableNode> nodes = ((Flatten)outer).getTableNodes();
-                    if (nodes.size() == 1)
-                    {
+                    if (nodes.size() == 1) {
                         String name = nodes.get(0).getTable().getName().toString();
                         atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(name));
-                        planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                        context.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
                         
                         lookupBindings.put(pos, name);
                     }
                 }
             }
-            return stream;
         }
 
         protected RowStream assembleProduct(Product product) {
@@ -1366,16 +1386,20 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
-            if (planContext.hasInfo() && aggregateSource.hasGroupBy() && !aggregateSource.isProjectSplitOff())
-            {
+            aggregateSourceExtraInfo(stream.operator, aggregateSource);
+            return stream;
+        }
+
+        protected void aggregateSourceExtraInfo(Operator operator, AggregateSource aggregateSource) {
+            ExplainContext context = planContext.getExplainContext();
+            if ((context != null) && 
+                aggregateSource.hasGroupBy() && !aggregateSource.isProjectSplitOff()) {
                 Attributes atts = new Attributes();
-                for (ExpressionNode node : aggregateSource.getGroupBy())
-                {
+                for (ExpressionNode node : aggregateSource.getGroupBy()) {
                     atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(node.toString()));
                 }
-                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                context.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-            return stream;
         }
 
         protected RowStream assembleDistinct(Distinct distinct) {
@@ -1547,20 +1571,20 @@ public class OperatorAssembler extends BaseRule
                                                     collators,
                                                     usePValues);
             popHashTable(bloomFilter);
-            
-            if (planContext.hasInfo())
-            {
+            usingBloomFilterExtraInfo(stream.operator, usingBloomFilter);
+            return stream;
+        }
+
+        protected void usingBloomFilterExtraInfo(Operator operator, UsingBloomFilter usingBloomFilter) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
-                
-                for (ExpressionNode field : ((Project)usingBloomFilter.getLoader()).getFields())
-                {
+                for (ExpressionNode field : ((Project)usingBloomFilter.getLoader()).getFields()) {
                     atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(field.toString()));
                 }
                 
-                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                context.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-            
-            return stream;
         }
 
         protected RowStream assembleBloomFilterFilter(BloomFilterFilter bloomFilterFilter) {
@@ -1581,18 +1605,20 @@ public class OperatorAssembler extends BaseRule
                                                      fields,
                                                      collators,
                                                      pos);
-            
-            if (planContext.hasInfo())
-            {
+            bloomFilterFilterExtraInfo(stream.operator, bloomFilterFilter);
+            return stream;
+        }
+
+        protected void bloomFilterFilterExtraInfo(Operator operator, BloomFilterFilter bloomFilterFilter) {
+            ExplainContext context = planContext.getExplainContext();
+            if (context != null) {
                 Attributes atts = new Attributes();
                 
                 atts.put(Label.BLOOM_FILTER,  PrimitiveExplainer.getInstance(bloomFilterFilter.getInput().summaryString()));
                 
-                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+                context.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
-            
-            return stream;
-        }        
+        }
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
