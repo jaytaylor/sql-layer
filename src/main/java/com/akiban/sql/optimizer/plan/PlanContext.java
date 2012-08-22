@@ -31,7 +31,7 @@ import com.akiban.sql.optimizer.rule.RulesContext;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.expression.Expression;
 
 import java.util.Map;
@@ -44,7 +44,6 @@ public class PlanContext
 {
     private RulesContext rulesContext;
     private PlanNode plan;
-    private Map<Object, Explainer> extraInfo;
 
     public PlanContext(RulesContext rulesContext) {
         this.rulesContext = rulesContext;
@@ -70,34 +69,6 @@ public class PlanContext
         plan.accept(visitor);
     }
     
-    public void makeInfo(Map map) {
-        extraInfo = map;
-    }
-    
-    public boolean hasInfo() {
-        return (null != extraInfo);
-    }
-    
-    public boolean giveInfoExpression(Expression key, Explainer value) {
-        if (hasInfo())
-            extraInfo.put(key, value);
-        else
-            return false;
-        return true;
-    }
-    
-    public boolean giveInfoOperator(Plannable key, Explainer value) {
-        if (hasInfo())
-            extraInfo.put(key, value);
-        else
-            return false;
-        return true;
-    }
-    
-    public Map getInfo() {
-        return extraInfo;
-    }
-
     /** Type safe tag for storing objects on the context whiteboard. */
     public interface WhiteboardMarker<T> {
     }
@@ -129,5 +100,9 @@ public class PlanContext
      */
     public QueryContext getQueryContext() {
         return new SimpleQueryContext(null);
+    }
+
+    public ExplainContext getExplainContext() {
+        return null;
     }
 }

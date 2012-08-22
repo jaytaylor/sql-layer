@@ -29,7 +29,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
-import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.format.DefaultFormatter;
 
 import java.util.*;
@@ -39,7 +39,6 @@ public abstract class BasePlannable extends BasePlanNode
 {
     private Plannable plannable;
     private DataTypeDescriptor[] parameterTypes;
-    private Map<Object, Explainer> extraInfo;
     
     protected BasePlannable(Plannable plannable,
                             DataTypeDescriptor[] parameterTypes) {
@@ -81,9 +80,9 @@ public abstract class BasePlannable extends BasePlanNode
         return extraInfo;
     }
     
-    public List<String> explainPlan() {
+    public List<String> explainPlan(ExplainContext context) {
         DefaultFormatter f = new DefaultFormatter(true);
-        return f.describeToList(plannable.getExplainer(extraInfo));
+        return f.describeToList(plannable.getExplainer(context));
     }
     
     @Override
@@ -97,7 +96,8 @@ public abstract class BasePlannable extends BasePlanNode
     }
 
     protected String withIndentedExplain(StringBuilder str) {
-        for (String operator : explainPlan()) {
+        ExplainContext context = new ExplainContext(); // Empty
+        for (String operator : explainPlan(context)) {
             str.append("\n  ");
             str.append(operator);
         }
