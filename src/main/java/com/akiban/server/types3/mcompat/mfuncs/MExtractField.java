@@ -121,7 +121,7 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.SEC_INDEX];
             }
         },
-        new TOverloadBase() // MONTH_NAME
+        new TOverloadBase() // MONTHNAME
         {
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
@@ -187,7 +187,7 @@ public abstract class MExtractField extends TOverloadBase
     private final String name;
     private final TClass inputType;
     private final Decoder decoder;
-    MExtractField (String name, TClass inputType, Decoder decoder)
+    private MExtractField (String name, TClass inputType, Decoder decoder)
     {
         this.name = name;
         this.inputType = inputType;
