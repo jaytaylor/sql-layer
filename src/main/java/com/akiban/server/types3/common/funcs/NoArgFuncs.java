@@ -26,20 +26,18 @@
 
 package com.akiban.server.types3.common.funcs;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
+import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkString;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 import com.akiban.server.types3.texpressions.std.NoArgExpression;
 import java.util.Date;
 
@@ -47,58 +45,42 @@ public class NoArgFuncs
 {
     static final int USER_NAME_LENGTH = 77;
 
-    public static final TPreparedExpression PI = new TPreparedExpression()
+    public static final TOverload PI = new TOverloadBase()
     {
-        private final PValue VAL = new PValue(Math.PI);
-        private final TPreptimeValue PREP_VAL = new TPreptimeValue(MApproximateNumber.DOUBLE.instance(), VAL);
-        private final TInstance RESULT_TYPE = MApproximateNumber.DOUBLE.instance();
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder)
+        {
+            // does nothing. doesn't take any arg
+        }
+
         
         @Override
-        public TPreptimeValue evaluateConstant(QueryContext queryContext)
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
-            return PREP_VAL;
+            output.putDouble(Math.PI);
         }
 
         @Override
-        public TInstance resultType()
+        public String displayName()
         {
-            return RESULT_TYPE;
+            return "PI";
         }
 
         @Override
-        public TEvaluatableExpression build()
+        public TOverloadResult resultType()
         {
-            return new TEvaluatableExpression()
-            {
-                @Override
-                public PValueSource resultValue()
-                {
-                    return VAL;
-                }
-
-                @Override
-                public void evaluate()
-                {
-                    // does nothing
-                }
-
-                @Override
-                public void with(Row row)
-                {
-                    // does nothing
-                }
-
-                @Override
-                public void with(QueryContext context)
-                {
-                    // does nothing
-                }
-            };
-        }        
+            return TOverloadResult.fixed(MApproximateNumber.DOUBLE.instance());
+        }
     };
  
     public static final TOverload CUR_DATE = new NoArgExpression("CURRENT_DATE", true)
     {
+        @Override
+        public String[] registeredNames()
+        {
+            return new String[] {"curdate", "current_date"};
+        }
+        
         @Override
         public TInstance tInstance()
         {
@@ -115,6 +97,12 @@ public class NoArgFuncs
     public static final TOverload CUR_TIME = new NoArgExpression("CURRENT_TIME", true)
     {
         @Override
+        public String[] registeredNames()
+        {
+            return new String[] {"curtime", "current_time"};
+        }
+        
+        @Override
         public TInstance tInstance()
         {
             return MDatetimes.TIME.instance();
@@ -130,6 +118,12 @@ public class NoArgFuncs
     public static final TOverload CUR_TIMESTAMP = new NoArgExpression("CURRENT_TIMESTAMP", true)
     {
         @Override
+        public String[] registeredNames()
+        {
+            return new String[] {"current_timestamp", "now", "localtime", "localtimestamp"};
+        }
+
+        @Override
         public TInstance tInstance()
         {
             return MDatetimes.DATETIME.instance();
@@ -144,7 +138,6 @@ public class NoArgFuncs
     
     public static final TOverload UNIX_TIMESTAMP = new NoArgExpression("UNIX_TIMESTAMP", true)
     {
-
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
