@@ -1,0 +1,23 @@
+## Test the CRC32 function
+---
+- Include: all-types-schema.yaml
+##Test with literals
+---
+- Statement: SELECT CRC32(X'616B6962616E');
+- output: [['1192856190']]
+---
+- Statement: SELECT CRC32('');
+- output: [['0']]
+---
+- Statement: SELECT CRC32(null);
+- output: [[null]]
+---
+- Statement: select crc32('hello, world');
+- output_types: [BIGINT]
+- output: [['4289425978']]
+---
+- Statement: INSERT INTO all_types(varchar_field) values ('akserver'), ('mysql'), (null);
+---
+- Statement: SELECT CRC32(varchar_field) from all_types;
+- output: [['461181702'], ['2501908538'], [null]]
+...

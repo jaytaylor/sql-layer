@@ -43,7 +43,7 @@ import java.util.zip.CRC32;
 public class CRC32Expression extends AbstractUnaryExpression
 {
     @Scalar("crc32")
-    public static ExpressionComposer COMPOSER = new UnaryComposer()
+    public static final ExpressionComposer COMPOSER = new UnaryComposer()
     {
         @Override
         protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
@@ -63,8 +63,8 @@ public class CRC32Expression extends AbstractUnaryExpression
             // which is inconviniently unavailable to the expression as of now
             // Thus, letting something else do the cast is the best workaround so far
             argumentTypes.setType(0, AkType.VARBINARY);
-            
-            return ExpressionTypes.U_INT;
+
+            return ExpressionTypes.LONG;
         }
     };
 
@@ -78,25 +78,26 @@ public class CRC32Expression extends AbstractUnaryExpression
         @Override
         public ValueSource eval()
         {
+            
             ValueSource arg = operand();
             if (arg.isNull())
                 return NullValueSource.only();
             
             CRC32 crc32 = new CRC32();
-            ByteSource bs = arg.getVarBinary();
+            ByteSource varbin = arg.getVarBinary();
             
-            crc32.update(bs.byteArray(),
-                         bs.byteArrayOffset(),
-                         bs.byteArrayLength());
+            crc32.update(varbin.byteArray(),
+                         varbin.byteArrayOffset(),
+                         varbin.byteArrayLength());
             
-            valueHolder().putUInt(crc32.getValue());
+            valueHolder().putLong(crc32.getValue());
             return valueHolder();
         }
     }
     
     protected CRC32Expression(Expression argument)
     {
-        super(AkType.U_INT, argument);
+        super(AkType.LONG, argument);
     }
 
     @Override

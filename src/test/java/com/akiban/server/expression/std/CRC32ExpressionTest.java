@@ -83,7 +83,9 @@ public class CRC32ExpressionTest extends ComposedExpressionTestBase
     
     private static String getName(byte arg[])
     {
-        if (arg == null || arg.length == 0)
+        if (arg == null)
+            return "CRC32(CONCAT(NULL))";
+        else if ( arg.length == 0)
             return "CRC32(CONCAT(\'\'))";
 
         StringBuilder builder = new StringBuilder("CRC32(CONCAT(");
@@ -104,7 +106,10 @@ public class CRC32ExpressionTest extends ComposedExpressionTestBase
     {
         alreadyExc = true;
         
-        Expression input = new LiteralExpression(AkType.VARBINARY, new WrappingByteSource(arg));
+        Expression input = arg == null
+                            ? LiteralExpression.forNull()
+                            : new LiteralExpression(AkType.VARBINARY, new WrappingByteSource(arg));
+        
         Expression top = new CRC32Expression(input);
         
         ValueSource actual = top.evaluation().eval();
@@ -112,7 +117,7 @@ public class CRC32ExpressionTest extends ComposedExpressionTestBase
         if (expected == null)
             assertTrue("Top should be null ",actual.isNull());
         else
-            assertEquals(expected.longValue(), actual.getUInt());
+            assertEquals(expected.longValue(), actual.getLong());
     }
     
     @Override
