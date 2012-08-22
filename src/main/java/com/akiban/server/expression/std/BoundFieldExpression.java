@@ -96,6 +96,8 @@ public final class BoundFieldExpression implements Expression {
     {
         CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context, fieldExpression);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(rowBindingPosition));
+        if (context.hasExtraInfo(this))
+            ex.get().putAll(context.getExtraInfo(this).get());
         return ex;
     }
     

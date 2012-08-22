@@ -118,9 +118,13 @@ public class DefaultFormatter
         }
         else if (name.equals("Bound"))
         {
-            sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(",");
-            describe(atts.get(Label.OPERAND).get(0));
-            sb.append(")");
+            if (atts.containsKey(Label.COLUMN_NAME))
+                sb.append(atts.get(Label.COLUMN_NAME).get(0).get());
+            else {
+                sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(",");
+                describe(atts.get(Label.OPERAND).get(0));
+                sb.append(")");
+            }
         }
         else if (name.equals("Variable"))
             sb.append(name).append("(pos=").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
