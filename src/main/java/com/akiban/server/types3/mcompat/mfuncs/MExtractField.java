@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
@@ -175,7 +176,7 @@ public abstract class MExtractField extends TOverloadBase
         long ymd[] = MDatetimes.decodeDate(val);
         if (!MDatetimes.isValidDatetime(ymd))
         {
-            context.reportBadValue("Invalid DATETIME value: " + val);
+            context.warnClient(new InvalidParameterValueException("Invalid DATETIME value: " + val));
             output.putNull();
         }
         else
