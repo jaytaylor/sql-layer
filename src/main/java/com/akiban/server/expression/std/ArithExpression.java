@@ -47,6 +47,7 @@ import com.akiban.util.ArgumentValidation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import org.joda.time.DateTimeZone;
 
 public class ArithExpression extends AbstractBinaryExpression
 {
@@ -422,10 +423,10 @@ public class ArithExpression extends AbstractBinaryExpression
         {
             LongExtractor lEx = Extractors.getLongExtractor(left.getConversionType());
             LongExtractor rEx = Extractors.getLongExtractor(right.getConversionType());
-            long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
-            long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
+            long leftUnix = lEx.stdLongToUnix(lEx.getLong(left), DateTimeZone.UTC);
+            long rightUnix = rEx.stdLongToUnix(rEx.getLong(right), DateTimeZone.UTC);               
             return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos)). 
-                    unixToStdLong(op.evaluate(leftUnix, rightUnix, top));
+                    unixToStdLong(op.evaluate(leftUnix, rightUnix, top), DateTimeZone.UTC);
         }
         
      

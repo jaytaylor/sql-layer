@@ -35,7 +35,6 @@ import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -46,7 +45,7 @@ public abstract class LeftRight extends TOverloadBase
 {
     public static TOverload getLeft(TClass stringType, TClass intType)
     {
-        return new LeftRight(stringType, intType, "LEFT")
+        return new LeftRight(stringType, intType, "LEFT", "getLeft")
         {
 
             @Override
@@ -60,7 +59,7 @@ public abstract class LeftRight extends TOverloadBase
 
     public static TOverload getRight(TClass stringType, TClass intType)
     {
-        return new LeftRight(stringType, intType, "RIGHT")
+        return new LeftRight(stringType, intType, "RIGHT", "getRight")
         {
             @Override
             String getSubstring(String st, int length)
@@ -75,11 +74,14 @@ public abstract class LeftRight extends TOverloadBase
     private final TClass stringType;
     private final TClass intType;
     private final String name;
-    private LeftRight (TClass stringType, TClass intType, String name)
+    private final String registeredName;
+    
+    private LeftRight (TClass stringType, TClass intType, String name, String regname)
     {
         this.stringType = stringType;
         this.intType = intType;
         this.name = name;
+        this.registeredName = regname;
     }
     
     @Override
@@ -106,6 +108,12 @@ public abstract class LeftRight extends TOverloadBase
     public String displayName()
     {
         return name;
+    }
+
+    @Override
+    public String[] registeredNames()
+    {
+        return new String[] {registeredName};
     }
 
     @Override
