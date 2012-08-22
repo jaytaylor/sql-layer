@@ -30,15 +30,14 @@ import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.util.TableChange;
+
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -50,112 +49,24 @@ import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.error.NotNullViolationException;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.aisddl.AlterTableDDL;
-import com.akiban.sql.parser.AlterTableNode;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
-import org.junit.After;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class AlterTableIT extends ITBase {
-    private static final List<TableChange> NO_CHANGES = Collections.emptyList();
-    private final String SCHEMA = "test";
+public class AlterTableBasicIT extends AlterTableITBase {
     private int cid;
     private int oid;
     private int iid;
-
-    // Note: Does not handle null index contents, check manually in that case
-    private static class SingleColumnComparator implements Comparator<NewRow> {
-        private final int colPos;
-
-        SingleColumnComparator(int colPos) {
-            this.colPos = colPos;
-        }
-
-        @Override
-        public int compare(NewRow o1, NewRow o2) {
-            Object col1 = o1.get(colPos);
-            Object col2 = o2.get(colPos);
-            if(col1 == null && col2 == null) {
-                return 0;
-            }
-            if(col1 == null) {
-                return -1;
-            }
-            return ((Comparable)col1).compareTo(col2);
-        }
-    }
-
-    private QueryContext queryContext() {
-        return null; // Not needed
-    }
-
-    private void runAlter(String sql) throws StandardException {
-        SQLParser parser = new SQLParser();
-        StatementNode node = parser.parseStatement(sql);
-        assertTrue("is alter node", node instanceof AlterTableNode);
-        AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
-        updateAISGeneration();
-    }
-
-    private RowBase testRow(RowType type, Object... fields) {
-        return new TestRow(type, fields);
-    }
-
-    private void checkIndexContents(int tableID) {
-        if(tableID == 0) {
-            return;
-        }
-
-        updateAISGeneration();
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        UserTable table = ais.getUserTable(tableID);
-        List<NewRow> tableRows = new ArrayList<NewRow>(scanAll(scanAllRequest(tableID, true)));
-
-        for(TableIndex index : table.getIndexesIncludingInternal()) {
-            if(index.getKeyColumns().size() == 1) {
-                int colPos = index.getKeyColumns().get(0).getColumn().getPosition();
-                Collections.sort(tableRows, new SingleColumnComparator(colPos));
-
-                List<NewRow> indexRows = scanAllIndex(index);
-
-                if(tableRows.size() != indexRows.size()) {
-                    assertEquals(index + " size does not match table size",
-                                 tableRows.toString(), indexRows.toString());
-                }
-
-                for(int i = 0; i < tableRows.size(); ++i) {
-                    Object tableObj = tableRows.get(i).get(colPos);
-                    Object indexObj = indexRows.get(i).get(colPos);
-                    assertEquals(index + " contents mismatch at row " + i,
-                                 tableObj, indexObj);
-                }
-            }
-        }
-    }
-
-    @After
-    public void checkAllIndexes() {
-        checkIndexContents(cid);
-        checkIndexContents(oid);
-        checkIndexContents(iid);
-        cid = oid = iid = 0;
-    }
 
     private void createAndLoadSingleTableGroup() {
         cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(5)");
@@ -212,7 +123,7 @@ public class AlterTableIT extends ITBase {
                 createNewRow(cid, 2L, "B", 20L),
                 createNewRow(cid, 5L, "C", 10L)
         );
-        runAlter("ALTER TABLE c DROP COLUMN c1");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN c1");
         expectFullRows(
                 cid,
                 createNewRow(cid, "C", 10L),
@@ -232,7 +143,7 @@ public class AlterTableIT extends ITBase {
         createAndLoadCOI();
 
         // Will yield 2 groups: C-O and I
-        runAlter("ALTER TABLE o DROP PRIMARY KEY");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE o DROP PRIMARY KEY");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
@@ -344,6 +255,8 @@ public class AlterTableIT extends ITBase {
                 createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null),
                 createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null)
         );
+
+        ddl().dropTable(session(), cName);
     }
 
     @Test
@@ -504,7 +417,7 @@ public class AlterTableIT extends ITBase {
         createAndLoadCOI();
         createGroupIndex("c", "c1_o1_i1", "c.c1,o.o1,i.i1");
 
-        runAlter("ALTER TABLE o DROP GROUPING FOREIGN KEY");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE o DROP GROUPING FOREIGN KEY");
 
         AkibanInformationSchema ais = ddl().getAIS(session());
         Index index = ais.getGroup("c").getIndex("c1_o1_i1");
@@ -607,7 +520,7 @@ public class AlterTableIT extends ITBase {
     @Test
     public void addUniqueKeyExistingColumn() throws StandardException {
         createAndLoadSingleTableGroup();
-        runAlter("ALTER TABLE c ADD UNIQUE(c1)");
+        runAlter(ChangeLevel.INDEX, "ALTER TABLE c ADD UNIQUE(c1)");
         expectIndexes(cid, "PRIMARY", "c1");
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1")),
@@ -625,7 +538,7 @@ public class AlterTableIT extends ITBase {
                 createNewRow(cid, 2L, "20"),
                 createNewRow(cid, 3L, "30")
         );
-        runAlter("ALTER TABLE c ALTER COLUMN c1 NULL");
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE c ALTER COLUMN c1 NULL");
         // Just check metadata
         // Insert needs more plumbing (e.g. Insert_Default), checked in test-alter-nullability.yaml
         UserTable table = getUserTable(SCHEMA, "c");
@@ -640,7 +553,7 @@ public class AlterTableIT extends ITBase {
                 createNewRow(cid, 2L, "20"),
                 createNewRow(cid, 3L, "30")
         );
-        runAlter("ALTER TABLE c ALTER COLUMN c1 NOT NULL");
+        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE c ALTER COLUMN c1 NOT NULL");
         // Just check metadata
         // Insert needs more plumbing (e.g. Insert_Default), checked in test-alter-nullability.yaml
         UserTable table = getUserTable(SCHEMA, "c");
@@ -784,7 +697,7 @@ public class AlterTableIT extends ITBase {
                 createNewRow(iid, 200, 20, "d")
         );
 
-        runAlter("ALTER TABLE i ADD GROUPING FOREIGN KEY(spare_id) REFERENCES o(id)");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE i ADD GROUPING FOREIGN KEY(spare_id) REFERENCES o(id)");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
@@ -829,7 +742,7 @@ public class AlterTableIT extends ITBase {
                 createNewRow(oid, 60, 6, "c")
         );
 
-        runAlter("ALTER TABLE o DROP GROUPING FOREIGN KEY");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE o DROP GROUPING FOREIGN KEY");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
@@ -877,7 +790,7 @@ public class AlterTableIT extends ITBase {
                 createNewRow(iid, 200, 20, "d")
         );
 
-        runAlter("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
@@ -928,7 +841,7 @@ public class AlterTableIT extends ITBase {
                 createNewRow(iid, 200, 20, "d")
         );
 
-        runAlter("ALTER TABLE o DROP GROUPING FOREIGN KEY");
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE o DROP GROUPING FOREIGN KEY");
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
@@ -958,5 +871,151 @@ public class AlterTableIT extends ITBase {
                 },
                 adapter.newGroupCursor(oType.userTable().getGroup().getGroupTable())
         );
+    }
+
+    // bug1037308, part 1
+    @Test
+    public void dropColumnConflatedPKFKOnLeaf() {
+        createTable(
+                SCHEMA, "customers",
+                "cid INT NOT NULL PRIMARY KEY",
+                "name VARCHAR(32) NOT NULL"
+        );
+        createTable(
+                SCHEMA, "orders",
+                "oid INT NOT NULL PRIMARY KEY",
+                "cid INT NOT NULL",
+                "GROUPING FOREIGN KEY(cid) REFERENCES customers(cid)",
+                "order_date DATE NOT NULL"
+        );
+        createTable(
+                SCHEMA, "items",
+                "iid INT NOT NULL PRIMARY KEY",
+                "oid INT NOT NULL",
+                "GROUPING FOREIGN KEY(oid) REFERENCES orders(oid)",
+                "sku VARCHAR(32) NOT NULL",
+                "quan INT NOT NULL"
+        );
+        createTable(
+                SCHEMA, "item_details",
+                "iid INT NOT NULL PRIMARY KEY",
+                "GROUPING FOREIGN KEY(iid) REFERENCES items(iid)",
+                "details VARCHAR(1024)"
+        );
+        // Hit assert in sort index size validation
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE item_details DROP COLUMN iid");
+    }
+
+    // bug1037308, part 2
+    @Test
+    public void dropColumnCascadingKeyFromMiddleOfGroup() {
+        createTable(
+                SCHEMA, "customers",
+                "cid INT NOT NULL PRIMARY KEY",
+                "name VARCHAR(32) NOT NULL"
+        );
+        createTable(
+                SCHEMA, "orders",
+                "oid INT NOT NULL",
+                "cid INT NOT NULL",
+                "PRIMARY KEY(cid, oid)",
+                "GROUPING FOREIGN KEY(cid) REFERENCES customers(cid)",
+                "order_date DATE NOT NULL"
+        );
+        createTable(
+                SCHEMA, "items",
+                "iid INT NOT NULL",
+                "oid INT NOT NULL",
+                "cid INT NOT NULL",
+                "PRIMARY KEY(cid, oid, iid)",
+                "GROUPING FOREIGN KEY(cid,oid) REFERENCES orders(cid,oid)",
+                "sku VARCHAR(32) NOT NULL",
+                "quan INT NOT NULL"
+        );
+        // Hit assert in index size validation
+        runAlter(ChangeLevel.GROUP, "ALTER TABLE orders DROP COLUMN cid");
+    }
+
+    // bug1037387
+    @Test
+    public void alterTableWithDefaults() {
+        createTable(
+                SCHEMA, C_TABLE,
+                "cid int not null generated by default as identity primary key",
+                "c1 varchar(32) default 'bob'",
+                "c2 int default 42",
+                "c3 decimal(5,2) default 0.0",
+                "c4 char(1) default 'N'"
+        );
+        // First example of the failure in the bug
+        runAlter(ChangeLevel.NONE, "ALTER TABLE c ALTER COLUMN cid NOT NULL");
+        // Exception from validator due to defaults incorrectly changing
+        runAlter("ALTER TABLE c ADD family_size int");
+        UserTable table = getUserTable(C_NAME);
+        assertEquals("cid default identity", true, table.getColumn("cid").getDefaultIdentity());
+        assertEquals("c1 default", "bob", table.getColumn("c1").getDefaultValue());
+        assertEquals("c2 default", "42", table.getColumn("c2").getDefaultValue());
+        assertEquals("c3 default", "0.0", table.getColumn("c3").getDefaultValue());
+        assertEquals("c4 default", "N", table.getColumn("c4").getDefaultValue());
+        assertEquals("family_size default", null, table.getColumn("family_size").getDefaultValue());
+    }
+
+    // bug1037387
+    @Test
+    public void modifyColumnPosition() {
+        createTable(SCHEMA, C_TABLE, "c1 int not null primary key, c2 int");
+        createIndex(SCHEMA, C_TABLE, "c2", "c2");
+
+        int cid = tableId(C_NAME);
+        writeRows(
+                createNewRow(cid, 1, 10),
+                createNewRow(cid, 2, 20),
+                createNewRow(cid, 3, 30)
+        );
+
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, C_TABLE);
+        builder.column(SCHEMA, C_TABLE, "c2", 0, "int", null, null, true, false, null, null);
+        builder.column(SCHEMA, C_TABLE, "c1", 1, "int", null, null, false, false, null, null);
+        builder.index(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, C_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        builder.index(SCHEMA, C_TABLE, "c2", true, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup(C_TABLE, SCHEMA, "__akiban_c");
+        builder.addTableToGroup(C_TABLE, SCHEMA, C_TABLE);
+        builder.groupingIsComplete();
+
+        runAlter(ChangeLevel.TABLE,
+                 C_NAME, builder.akibanInformationSchema().getUserTable(C_NAME),
+                 Arrays.asList(TableChange.createModify("c1", "c1"), TableChange.createModify("c2", "c2")),
+                 NO_CHANGES);
+
+        expectFullRows(
+                cid,
+                createNewRow(cid, 10L, 1L),
+                createNewRow(cid, 20L, 2L),
+                createNewRow(cid, 30L, 3L)
+        );
+
+        // Let base class check index contents
+        checkIndexesInstead(C_NAME, "PRIMARY", "c2");
+    }
+
+    // bug1038212
+    @Test
+    public void extendVarcharColumnWithIndex() {
+        cid = createTable(SCHEMA, C_TABLE, "id int not null primary key, state varchar(2)");
+        createIndex(SCHEMA, C_TABLE, "state", "state");
+        NewRow[] rows = {
+                createNewRow(cid, 1L, "AZ"),
+                createNewRow(cid, 2L, "NY"),
+                createNewRow(cid, 3L, "MA"),
+                createNewRow(cid, 4L, "WA")
+        };
+        writeRows(rows);
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE c ALTER COLUMN state SET DATA TYPE varchar(3)");
+        expectFullRows(cid, rows);
+        checkIndexesInstead(C_NAME, "PRIMARY", "state");
     }
 }

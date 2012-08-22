@@ -254,7 +254,7 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+    protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         Boolean isNullable = instance.nullability(); // on separate line to make NPE easier to catch
         int literalFormatId = instance.attribute(formatAttribute);
         IntervalFormat format = formatters[literalFormatId];

@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
@@ -143,6 +144,30 @@ public final class NiceRowTest {
 
         assertEquals("rows", rowOne, rowTwo);
         assertEquals("maps", mapOne, mapTwo);
+    }
+
+    @Test
+    public void toRowDataOneByteUTF8() throws Exception {
+        final int BYTE_COUNT = 0x7F;
+        byte[] bytes = new byte[BYTE_COUNT];
+        for(int i = 0; i < BYTE_COUNT; ++i) {
+            bytes[i] = (byte)i;
+        }
+        String str = new String(bytes, "utf8");
+
+        String ddl = "create table test.t(id int not null primary key, v varchar(255) character set utf8)";
+        RowDef rowDef = SCHEMA_FACTORY.rowDefCache(ddl).getRowDef("test", "t");
+
+        Object[] objects = { 1L, str };
+        RowData rowData = create(rowDef, objects);
+        NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
+
+        assertEquals("fields count", 2, newRow.getFields().size());
+        assertEquals("field[0]", 1L, newRow.get(0));
+        assertEquals("field[1]", str, newRow.get(1));
+        assertEquals("filed[1] charset", "utf8", rowDef.getFieldDef(1).column().getCharsetAndCollation().charset());
+
+        compareRowDatas(rowData, newRow.toRowData());
     }
 
     private static byte[] bytes() {

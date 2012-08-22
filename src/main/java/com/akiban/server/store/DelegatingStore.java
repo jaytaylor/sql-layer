@@ -107,12 +107,8 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         delegate.deleteRow(session, rowData);
     }
 
-    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector) throws PersistitException {
-        delegate.updateRow(session, oldRowData, newRowData, columnSelector);
-    }
-
-    public void alterRow(Session session, boolean hKeyChanged, RowData oldRowData, RowData newRowData, Index[] indexes) throws PersistitException {
-        delegate.alterRow(session, hKeyChanged, oldRowData, newRowData, indexes);
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes) throws PersistitException {
+        delegate.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
     }
 
     public void dropGroup(Session session, int rowDefId) throws PersistitException {

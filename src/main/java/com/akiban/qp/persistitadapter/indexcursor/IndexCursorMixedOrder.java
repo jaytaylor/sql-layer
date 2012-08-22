@@ -119,11 +119,16 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
+        // Reposition cursor by delegating jump to each MixedOrderScanState. Also recompute
+        // startKey so that beforeStart() works.
         assert keyRange != null; // keyRange is null when used from a Sorter
         exchange().clear();
         int field = 0;
         more = true;
         try {
+            if (startKey != null) {
+                clear(startKey);
+            }
             while (more && field < scanStates.size()) {
                 MixedOrderScanState<S> scanState = scanStates.get(field);
                 if (columnSelector.includesColumn(field)) {
@@ -138,11 +143,16 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                             more = scanState.startScan();
                         }
                     }
+                    if (startKey != null) {
+                        startKey.append(fieldValue, akTypeAt(field), tInstanceAt(field), collatorAt(field));
+                        loBoundColumns = field + 1;
+                    }
                 } else {
                     more = scanState.startScan();
                 }
                 field++;
             }
+            loInclusive = true;
             justOpened = true;
         } catch (PersistitException e) {
             close();
@@ -170,7 +180,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         int maxSegments =
             keyRange == null /* sorting */ ? Integer.MAX_VALUE :
             index().isUnique() ? index().getKeyColumns().size() : index().getAllColumns().size();
-        while (f < min(boundColumns, maxSegments)) {
+        while (f < min(loBoundColumns, maxSegments)) {
             BoundExpressions lo = keyRange.lo().boundExpressions(context);
             BoundExpressions hi = keyRange.hi().boundExpressions(context);
             S loSource = sortKeyAdapter.get(lo, f);
@@ -194,15 +204,15 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
              * such an IndexKeyRange.
              *
              * So for scanStates:
-             * - lo(f) = hi(f), f < boundColumns - 1
+             * - lo(f) = hi(f), f < loBoundColumns - 1
              * - lo(f) - hi(f) defines a range, with limits described by keyRange.lo/hiInclusive,
-             *   f = boundColumns - 1
+             *   f = loBoundColumns - 1
              * The last argument to setRangeLimits determines which condition is checked.
              */
             boolean loInclusive;
             boolean hiInclusive;
             boolean singleValue;
-            if (f < boundColumns - 1) {
+            if (f < loBoundColumns - 1) {
                 loInclusive = true;
                 hiInclusive = true;
                 singleValue = true;
@@ -234,8 +244,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             // Add a segment to deal with the null separator. The ordering is that of the next segment (or ascending
             // if there is none).
             boolean ascending = f >= orderingColumns() || ordering.ascending(f);
-            MixedOrderScanStateSingleSegment<S, E> scanState =
-                new MixedOrderScanStateSingleSegment<S, E>(this, f, ascending, sortKeyAdapter);
+            MixedOrderScanStateNullSeparator<S, E> scanState =
+                new MixedOrderScanStateNullSeparator<S, E>(this, f, ascending, sortKeyAdapter);
             scanStates.add(scanState);
         }
         if (f < min(keyColumns(), maxSegments)) {
@@ -266,17 +276,18 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         int orderingColumns = orderingColumns();
         if (keyRange == null) {
             keyColumns = ordering.sortColumns();
-            boundColumns = 0;
+            loBoundColumns = 0;
             tInstances = sortKeyAdapter.createTInstances(orderingColumns);
         } else {
             Index index = keyRange.indexRowType().index();
             keyColumns = index.indexRowComposition().getLength();
-            boundColumns = keyRange.boundColumns();
-            collators = sortKeyAdapter.createAkCollators(boundColumns);
-            akTypes = sortKeyAdapter.createAkTypes(boundColumns);
-            tInstances = sortKeyAdapter.createTInstances(boundColumns + orderingColumns);
+            loBoundColumns = keyRange.boundColumns();
             List<IndexColumn> indexColumns = index.getAllColumns();
-            for (int f = 0; f < boundColumns; f++) {
+            int nColumns = indexColumns.size();
+            collators = sortKeyAdapter.createAkCollators(nColumns);
+            akTypes = sortKeyAdapter.createAkTypes(nColumns);
+            tInstances = sortKeyAdapter.createTInstances(nColumns);
+            for (int f = 0; f < nColumns; f++) {
                 Column column = indexColumns.get(f).getColumn();
                 sortKeyAdapter.setColumnMetadata(column, f, akTypes, collators, tInstances);
             }
@@ -285,8 +296,9 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                 endKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
             }
         }
+        hiBoundColumns = loBoundColumns;
         for (int i = 0; i < orderingColumns; ++i) {
-            sortKeyAdapter.setOrderingMetadata(i, ordering, boundColumns, tInstances);
+            sortKeyAdapter.setOrderingMetadata(i, ordering, loBoundColumns, tInstances);
         }
     }
 
@@ -341,7 +353,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
 
     private void setBoundaries()
     {
-        if (keyRange != null && !unbounded() && index().isUnique()) {
+        if (keyRange != null && !loUnbounded() && index().isUnique()) {
             assert startKey != null : index();
             assert endKey != null : index();
             IndexBound lo = keyRange.lo();
@@ -364,6 +376,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                 startKey.append(sortKeyAdapter.get(startExpressions, f), akTypeAt(f), tInstanceAt(f), collatorAt(f));
                 endKey.append(sortKeyAdapter.get(endExpressions, f), akTypeAt(f), tInstanceAt(f), collatorAt(f));
             }
+            loInclusive = keyRange.loInclusive();
+            hiInclusive = keyRange.hiInclusive();
         }
     }
 
@@ -376,12 +390,12 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean beforeStart(Row row)
     {
         boolean beforeStart;
-        if (startKey == null || row == null || unbounded()) {
+        if (startKey == null || row == null || loUnbounded()) {
             beforeStart = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
             int c = current.compareTo(startKey, ascending);
-            beforeStart = c < 0 || c == 0 && !keyRange.loInclusive();
+            beforeStart = c < 0 || c == 0 && !loInclusive;
         }
         return beforeStart;
     }
@@ -389,7 +403,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean pastEnd(Row row)
     {
         boolean pastEnd;
-        if (endKey == null || unbounded()) {
+        if (endKey == null || hiUnbounded()) {
             pastEnd = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
@@ -399,9 +413,14 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         return pastEnd;
     }
 
-    private boolean unbounded()
+    private boolean loUnbounded()
     {
-        return boundColumns == 0;
+        return loBoundColumns == 0;
+    }
+
+    private boolean hiUnbounded()
+    {
+        return hiBoundColumns == 0;
     }
 
     public AkCollator collatorAt(int field) {
@@ -423,7 +442,10 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     protected final List<MixedOrderScanState<S>> scanStates = new ArrayList<MixedOrderScanState<S>>();
     private final SortKeyAdapter<S, E> sortKeyAdapter;
     private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
-    private final int boundColumns;
+    private int loBoundColumns;
+    private int hiBoundColumns;
+    private boolean loInclusive;
+    private boolean hiInclusive;
     private boolean more;
     private boolean justOpened;
     private AkCollator[] collators;

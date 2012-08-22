@@ -624,7 +624,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         );
 
         try {
-            store().updateRow(session, oldData, newData, columnSelector);
+            store().updateRow(session, oldData, newData, columnSelector, null);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }

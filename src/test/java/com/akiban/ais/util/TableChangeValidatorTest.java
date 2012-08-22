@@ -35,8 +35,10 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
+import org.junit.After;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -55,9 +57,14 @@ public class TableChangeValidatorTest {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
-    private static final List<TableChange> NO_CHANGES = null;
     private static final String NO_INDEX_CHANGE = "{}";
 
+    private List<TableChange> NO_CHANGES = new ArrayList<TableChange>();
+
+    @After
+    public void clearChanges() {
+        NO_CHANGES.clear();
+    }
 
     private static NewUserTableBuilder builder(TableName name) {
         return AISBBasedBuilder.create(SCHEMA).userTable(name);
@@ -552,24 +559,25 @@ public class TableChangeValidatorTest {
 
     @Test
     public void dropGFKFrommMiddleWithGroupIndexes() {
+        TableName iName = new TableName(SCHEMA, "i");
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.userTable("p").colLong("id").colLong("x").pk("id")
                .userTable(TABLE).colLong("id").colLong("pid").colLong("y").pk("id").joinTo(SCHEMA, "p", "fk1").on("pid", "id")
-               .userTable("i").colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id")
+               .userTable(iName).colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id")
                .groupIndex("x_y", Index.JoinType.LEFT).on(TABLE, "y").and("p", "x")                  // spans 2
                .groupIndex("x_y_z", Index.JoinType.LEFT).on("i", "z").and(TABLE, "y").and("p", "x"); // spans 3
         UserTable t1 = builder.unvalidatedAIS().getUserTable(TABLE_NAME);
         builder = AISBBasedBuilder.create(SCHEMA);
         builder.userTable("p").colLong("id").colLong("x").pk("id")
                 .userTable(TABLE).colLong("id").colLong("pid").colLong("y").pk("id").key("__akiban_fk1", "pid")
-                .userTable("i").colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id");
+                .userTable(iName).colLong("id").colLong("tid").colLong("z").pk("id").joinTo(SCHEMA, TABLE, "fk2").on("tid", "id");
         UserTable t2 = builder.unvalidatedAIS().getUserTable(TABLE_NAME);
         validate(
                 t1, t2,
                 NO_CHANGES,
                 NO_CHANGES,
                 ChangeLevel.GROUP,
-                asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP)),
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP), changeDesc(iName, iName, true, ParentChange.UPDATE)),
                 true,
                 false,
                 "{.p.x_y=[], .p.x_y_z=[i.z, t.y]}",

@@ -144,7 +144,7 @@ public class PersistitAdapter extends StoreAdapter
             oldStep = enterUpdateStep();
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
-            store.updateRow(getSession(), oldRowData, newRowData, null);
+            store.updateRow(getSession(), oldRowData, newRowData, null, null);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -209,10 +209,16 @@ public class PersistitAdapter extends StoreAdapter
         try {
             // Altered row does not need defaults from newRowData()
             RowData newRowData = oldRowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
-            oldStep = enterUpdateStep();
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
-            store.alterRow(getSession(), hKeyChanged, oldRowData, newRowData, indexes);
+            if(hKeyChanged) {
+                store.deleteRow(getSession(), oldRowData);
+                oldStep = enterUpdateStep();
+                store.writeRow(getSession(), newRowData);
+            } else {
+                oldStep = enterUpdateStep();
+                store.updateRow(getSession(), oldRowData, newRowData, null, indexes);
+            }
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
