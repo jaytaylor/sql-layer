@@ -1,6 +1,6 @@
 OPERATORS
-Project_Default(Field(1), Field(4), Field(7), Field(8))
-  Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
+Project_Default(customers.name, orders.order_date, items.sku, items.quan)
+  Flatten_HKeyOrdered(test.customers - test.orders INNER test.items)
     Flatten_HKeyOrdered(test.customers INNER test.orders)
-      AncestorLookup_Default(Index(test.items.sku[IndexColumn(sku)]) -> [test.customers, test.orders, test.items])
-        IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(8888)]))
+      AncestorLookup_Default(test._akiban_customers -> test.customers, test.orders, test.items)
+        IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]), sku < 8888, cid, oid, iid)
