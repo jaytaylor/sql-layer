@@ -33,7 +33,6 @@ import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
-import com.akiban.server.explain.format.DefaultFormatter;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpressions;
@@ -86,14 +85,11 @@ class Project_Default extends Operator
     @Override
     public String toString()
     {
-        DefaultFormatter f = new DefaultFormatter(true);
-        StringBuilder sb = new StringBuilder();
-        for (String row : f.describeToList(this.getExplainer(null)))
-        {
-            sb.append(row).append('\n');
+        if (projectType.hasUserTable()) {
+            return String.format("project to table %s (%s)", projectType.userTable(), (pExpressions != null) ? pExpressions.toString() : projections.toString());
+        } else {
+            return String.format("project(%s)", (pExpressions != null) ? pExpressions.toString() : projections.toString());
         }
-        sb.setLength(sb.length()-1);
-        return sb.toString();
     }
 
     // Operator interface
