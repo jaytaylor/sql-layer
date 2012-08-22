@@ -176,7 +176,7 @@ class Using_BloomFilter extends Operator
             atts = (Attributes)extraInfo.get(this).get();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Using_BloomFilter"));
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(filterBindingPosition));
-        return new OperationExplainer(Type.BLOOM_FILTER, atts);
+        return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }
 
     // Inner classes

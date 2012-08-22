@@ -254,7 +254,7 @@ class AncestorLookup_Default extends Operator
     {
         Attributes atts = new Attributes();
         if (extraInfo != null && extraInfo.containsKey(this))
-            atts = ((OperationExplainer)extraInfo.get(this)).get();
+            atts = ((CompoundExplainer)extraInfo.get(this)).get();
         for (UserTable table : ancestors)
             atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
         

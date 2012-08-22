@@ -31,7 +31,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.server.explain.*;
 import java.util.Map;
 
-public class DUIOperatorExplainer extends OperationExplainer
+public class DUIOperatorExplainer extends CompoundExplainer
 {
     public DUIOperatorExplainer (String name, Attributes atts, Operator inputOp, Map<Object, Explainer> extraInfo)
     {

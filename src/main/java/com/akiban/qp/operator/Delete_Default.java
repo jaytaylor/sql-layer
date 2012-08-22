@@ -35,7 +35,7 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.Attributes;
 import com.akiban.server.explain.Explainer;
-import com.akiban.server.explain.OperationExplainer;
+import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
@@ -117,7 +117,7 @@ class Delete_Default implements UpdatePlannable {
         Attributes atts = new Attributes();
         if (extraInfo != null && extraInfo.containsKey(this))
         {
-            atts = ((OperationExplainer)extraInfo.get(this)).get();
+            atts = ((CompoundExplainer)extraInfo.get(this)).get();
         }
         return new DUIOperatorExplainer("Delete_Default", atts, inputOperator, extraInfo);
     }

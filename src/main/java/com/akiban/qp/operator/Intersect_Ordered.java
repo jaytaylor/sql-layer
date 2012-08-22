@@ -255,7 +255,7 @@ class Intersect_Ordered extends Operator
         atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name()));
         atts.put(Label.INPUT_OPERATOR, left.getExplainer(extraInfo));
         atts.put(Label.INPUT_OPERATOR, right.getExplainer(extraInfo));
-        return new OperationExplainer(Type.ORDERED, atts);
+        return new CompoundExplainer(Type.ORDERED, atts);
     }
 
     // Inner classes

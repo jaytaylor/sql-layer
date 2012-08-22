@@ -132,7 +132,7 @@ public class FlattenedRowType extends DerivedRowType
         atts.put(Label.PARENT_TYPE, parent.getExplainer(extraInfo));
         atts.put(Label.CHILD_TYPE, child.getExplainer(extraInfo));
         
-        return new OperationExplainer(Type.ROWTYPE, atts);
+        return new CompoundExplainer(Type.ROWTYPE, atts);
     }
 
     // Object state

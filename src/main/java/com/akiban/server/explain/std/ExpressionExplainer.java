@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class ExpressionExplainer extends OperationExplainer
+public class ExpressionExplainer extends CompoundExplainer
 {  
     public ExpressionExplainer(Type type, String name, Map<Object, Explainer> extraInfo, List<? extends Expression> exs)
     {

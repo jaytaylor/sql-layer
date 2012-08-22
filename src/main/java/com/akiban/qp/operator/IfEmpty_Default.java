@@ -38,7 +38,7 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.explain.Attributes;
 import com.akiban.server.explain.Explainer;
 import com.akiban.server.explain.Label;
-import com.akiban.server.explain.OperationExplainer;
+import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
 import com.akiban.util.ArgumentValidation;
@@ -213,7 +213,7 @@ class IfEmpty_Default extends Operator
                 atts.put(Label.OPERAND, ex.getExplainer(extraInfo));
         }
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
-        return new OperationExplainer(Type.IF_EMPTY, atts);
+        return new CompoundExplainer(Type.IF_EMPTY, atts);
     }
 
     // Inner classes

@@ -26,12 +26,12 @@
 
 package com.akiban.server.explain;
 
-public class OperationExplainer extends Explainer 
+public class CompoundExplainer extends Explainer 
 {
     private final Type type; 
     private Attributes states;
         
-    public OperationExplainer (Type type, Attributes states)
+    public CompoundExplainer(Type type, Attributes states)
     {
         this.type = type;
         this.states = states;
@@ -55,11 +55,8 @@ public class OperationExplainer extends Explainer
         return !(states == null || states.isEmpty());
     }  
     
-    // TODO:
-    // could return a new OperationExplainer 
-    // if we want to make OperationExplainer immutable.
     @Override
-    public final boolean addAttribute (Label label, Explainer ex)
+    public final boolean addAttribute(Label label, Explainer ex)
     {
         if (states.containsKey(label)) return false;
         states.put(label, ex);

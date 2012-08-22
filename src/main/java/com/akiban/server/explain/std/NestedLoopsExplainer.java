@@ -33,7 +33,7 @@ import com.akiban.server.explain.*;
 import java.util.Map;
 
 
-public class NestedLoopsExplainer extends OperationExplainer
+public class NestedLoopsExplainer extends CompoundExplainer
 {
     public NestedLoopsExplainer (String name, Operator innerOp, Operator outerOp, RowType innerType, RowType outerType, Map<Object, Explainer> extraInfo)
     {

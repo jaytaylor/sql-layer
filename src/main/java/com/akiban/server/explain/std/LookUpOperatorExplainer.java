@@ -33,7 +33,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import java.util.Map;
 
-public class LookUpOperatorExplainer extends OperationExplainer
+public class LookUpOperatorExplainer extends CompoundExplainer
 {
     public LookUpOperatorExplainer (String name, Attributes atts, GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, Map<Object, Explainer> extraInfo)
     {

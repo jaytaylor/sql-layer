@@ -128,7 +128,7 @@ class GroupScan_Default extends Operator
         // TODO: could have a getInstance(TableName o) method?
         att.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(cursorCreator.groupTable().getName().getTableName()));
         
-        return new OperationExplainer(Type.SCAN_OPERATOR, att);
+        return new CompoundExplainer(Type.SCAN_OPERATOR, att);
     }
 
     // Inner classes

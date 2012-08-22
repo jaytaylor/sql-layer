@@ -36,7 +36,7 @@ public class DefaultFormatter
 {
     private boolean verbose = true;
     private int numSubqueries = 0;
-    private List<OperationExplainer> subqueries = new ArrayList<OperationExplainer>();
+    private List<CompoundExplainer> subqueries = new ArrayList<CompoundExplainer>();
     private StringBuilder sb = new StringBuilder();
     private List<String> rows = new ArrayList<String>();
     
@@ -66,7 +66,7 @@ public class DefaultFormatter
     protected void describe(Explainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         if (explainer.hasAttributes())
         {
-            OperationExplainer opEx = (OperationExplainer) explainer;
+            CompoundExplainer opEx = (CompoundExplainer) explainer;
             switch (explainer.getType().generalType())
             {
             case OPERATOR:
@@ -86,7 +86,7 @@ public class DefaultFormatter
         }
     }
 
-    protected void describeExpression(OperationExplainer explainer, boolean needsParens, String parentName) {
+    protected void describeExpression(CompoundExplainer explainer, boolean needsParens, String parentName) {
         
         Attributes atts = explainer.get();
         String name = atts.get(Label.NAME).get(0).get().toString();
@@ -115,7 +115,7 @@ public class DefaultFormatter
         else if (explainer.getType().equals(Type.SUBQUERY))
         {
             sb.append("SUBQUERY ").append(++numSubqueries);
-            subqueries.add((OperationExplainer)atts.get(Label.OPERAND).get(0));
+            subqueries.add((CompoundExplainer)atts.get(Label.OPERAND).get(0));
         }
         else if (name.startsWith("CAST"))
         {
@@ -171,7 +171,7 @@ public class DefaultFormatter
         
     }
 
-    protected void describeOperator(OperationExplainer explainer, int depth) {
+    protected void describeOperator(CompoundExplainer explainer, int depth) {
         
         Attributes atts = explainer.get();
         Type type = explainer.getType();
@@ -530,7 +530,7 @@ public class DefaultFormatter
                 {
                     sb.append("  ");
                 }
-                describeOperator((OperationExplainer) input, depth + 1);
+                describeOperator((CompoundExplainer) input, depth + 1);
             }
         }
     }
@@ -541,7 +541,7 @@ public class DefaultFormatter
         sb.delete(0, sb.length());
     }
 
-    private void describeRowType(OperationExplainer opEx) {
+    private void describeRowType(CompoundExplainer opEx) {
         Attributes atts = opEx.get();
         if (atts.containsKey(Label.PARENT_TYPE) && atts.containsKey((Label.CHILD_TYPE)))
         {

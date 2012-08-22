@@ -184,7 +184,7 @@ class Select_HKeyOrdered extends Operator
             att.put(Label.PREDICATE, predicate.getExplainer(extraInfo));
         else
             att.put(Label.PREDICATE, TPreparedExpressions.getExplainer(pPredicate));
-        return new OperationExplainer(Type.SELECT_HKEY, att);
+        return new CompoundExplainer(Type.SELECT_HKEY, att);
     }
 
     // Inner classes

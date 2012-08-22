@@ -204,7 +204,7 @@ final class UnionAll_Default extends Operator {
        
         att.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType));
         
-        return new OperationExplainer(Type.UNION_ALL, att);
+        return new CompoundExplainer(Type.UNION_ALL, att);
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor {

@@ -132,7 +132,7 @@ class Insert_Default implements UpdatePlannable {
         Attributes atts = new Attributes();
         if (extraInfo != null && extraInfo.containsKey(this))
         {
-            atts = ((OperationExplainer)extraInfo.get(this)).get();
+            atts = ((CompoundExplainer)extraInfo.get(this)).get();
         }
         return new DUIOperatorExplainer("Insert_Default", atts, inputOperator, extraInfo);
     }

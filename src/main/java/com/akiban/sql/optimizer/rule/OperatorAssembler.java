@@ -690,7 +690,7 @@ public class OperatorAssembler extends BaseRule
                 {
                     atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
                 }
-                planContext.giveInfoOperator(plan, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
             
             return new PhysicalUpdate(plan, getParameterTypes());
@@ -722,7 +722,7 @@ public class OperatorAssembler extends BaseRule
                     for (Expression expression : updates)
                         if (expression != null)
                             atts.put(Label.EXPRESSIONS, expression.getExplainer(planContext.getInfo()));
-                planContext.giveInfoOperator(plan, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -735,7 +735,7 @@ public class OperatorAssembler extends BaseRule
             {
                 Attributes atts = new Attributes();
                 atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName().toString()));
-                planContext.giveInfoOperator(plan, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -940,7 +940,7 @@ public class OperatorAssembler extends BaseRule
                     atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance(lo.toString()));
                     atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance((indexScan.isLowInclusive() ? "" : "NOT") + "INCLUSIVE"));
                 }
-                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
 
             return stream;
@@ -1157,7 +1157,7 @@ public class OperatorAssembler extends BaseRule
                 }
                 else if (ancestorLookup.getInput() instanceof GroupLoopScan)
                     atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(((GroupLoopScan)ancestorLookup.getInput()).getOutsideTable().getTable().getTable().getName().toString()));
-                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
             
             return stream;
@@ -1225,7 +1225,7 @@ public class OperatorAssembler extends BaseRule
                 }
                 else if (branchLookup.getInput() instanceof GroupLoopScan)
                     atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(((GroupLoopScan)branchLookup.getInput()).getOutsideTable().getTable().getTable().getName().toString()));
-                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
             
             return stream;
@@ -1251,7 +1251,7 @@ public class OperatorAssembler extends BaseRule
                     {
                         String name = nodes.get(0).getTable().getName().toString();
                         atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(name));
-                        planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                        planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
                         
                         lookupBindings.put(pos, name);
                     }
@@ -1373,7 +1373,7 @@ public class OperatorAssembler extends BaseRule
                 {
                     atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(node.toString()));
                 }
-                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
             return stream;
         }
@@ -1557,7 +1557,7 @@ public class OperatorAssembler extends BaseRule
                     atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(field.toString()));
                 }
                 
-                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
             
             return stream;
@@ -1588,7 +1588,7 @@ public class OperatorAssembler extends BaseRule
                 
                 atts.put(Label.BLOOM_FILTER,  PrimitiveExplainer.getInstance(bloomFilterFilter.getInput().summaryString()));
                 
-                planContext.giveInfoOperator(stream.operator, new OperationExplainer(Type.EXTRA_INFO, atts));
+                planContext.giveInfoOperator(stream.operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
             }
             
             return stream;

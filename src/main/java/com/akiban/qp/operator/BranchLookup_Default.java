@@ -306,7 +306,7 @@ public class BranchLookup_Default extends Operator
     {
         Attributes atts = new Attributes();
         if (extraInfo != null && extraInfo.containsKey(this))
-            atts = ((OperationExplainer)extraInfo.get(this)).get();
+            atts = ((CompoundExplainer)extraInfo.get(this)).get();
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));

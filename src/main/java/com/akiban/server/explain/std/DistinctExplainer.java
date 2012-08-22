@@ -32,7 +32,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import java.util.Map;
 
-public class DistinctExplainer extends OperationExplainer
+public class DistinctExplainer extends CompoundExplainer
 {
     public DistinctExplainer (String name, RowType distinctType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {

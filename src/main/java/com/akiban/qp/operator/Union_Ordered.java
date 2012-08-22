@@ -193,7 +193,7 @@ class Union_Ordered extends Operator
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Union_Ordered"));
         atts.put(Label.INPUT_OPERATOR, left.getExplainer(extraInfo));
         atts.put(Label.INPUT_OPERATOR, right.getExplainer(extraInfo));
-        return new OperationExplainer(Type.UNION, atts);
+        return new CompoundExplainer(Type.UNION, atts);
     }
 
     // Inner classes

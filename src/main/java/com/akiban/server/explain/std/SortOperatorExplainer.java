@@ -33,7 +33,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import java.util.Map;
 
-public class SortOperatorExplainer extends OperationExplainer
+public class SortOperatorExplainer extends CompoundExplainer
 {
     public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering, Map<Object, Explainer> extraInfo)
     {

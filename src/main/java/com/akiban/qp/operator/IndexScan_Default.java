@@ -220,7 +220,7 @@ class IndexScan_Default extends Operator
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
         atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.toString()));
         
-        return new OperationExplainer(Type.SCAN_OPERATOR, atts);
+        return new CompoundExplainer(Type.SCAN_OPERATOR, atts);
     }
 
     // Inner classes

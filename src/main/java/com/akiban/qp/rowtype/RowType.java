@@ -159,7 +159,7 @@ public abstract class RowType
     public Explainer getExplainer(Map<Object, Explainer> extraInfo) {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(toString()));
-        return new OperationExplainer(Type.ROWTYPE, atts);
+        return new CompoundExplainer(Type.ROWTYPE, atts);
     }
 
     // For use by subclasses

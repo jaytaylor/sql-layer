@@ -206,7 +206,7 @@ class Project_Default extends Operator
         else
             for (TPreparedExpression ex : pExpressions)
                 att.put(Label.PROJECTION, TPreparedExpressions.getExplainer(ex));
-        return new OperationExplainer(Type.PROJECT, att);
+        return new CompoundExplainer(Type.PROJECT, att);
     }
 
     // Inner classes

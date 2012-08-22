@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class FilterExplainer extends OperationExplainer
+public class FilterExplainer extends CompoundExplainer
 {
     public FilterExplainer (String name, Set<RowType> keepType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {

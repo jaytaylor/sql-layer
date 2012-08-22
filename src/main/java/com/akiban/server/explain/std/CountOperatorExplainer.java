@@ -33,7 +33,7 @@ import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.explain.*;
 import java.util.Map;
 
-public class CountOperatorExplainer extends OperationExplainer
+public class CountOperatorExplainer extends CompoundExplainer
 {
     public CountOperatorExplainer (String opName, RowType inputType, ValuesRowType resultType, Operator inputOp, Map<Object, Explainer> extraInfo)
     {

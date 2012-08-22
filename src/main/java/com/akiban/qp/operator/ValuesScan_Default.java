@@ -122,7 +122,7 @@ public class ValuesScan_Default extends Operator
             att.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(row.toString()));
         }
         
-        return new OperationExplainer(Type.SCAN_OPERATOR, att);
+        return new CompoundExplainer(Type.SCAN_OPERATOR, att);
     }
     
     private static class Execution extends OperatorExecutionBase implements Cursor

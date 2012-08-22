@@ -187,7 +187,7 @@ final class Limit_Default extends Operator
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(extraInfo));
         
-        return new OperationExplainer(Type.LIMIT_OPERATOR, atts);
+        return new CompoundExplainer(Type.LIMIT_OPERATOR, atts);
     }
 
     // internal classes

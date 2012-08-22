@@ -170,7 +170,7 @@ class Select_BloomFilter extends Operator
         if (extraInfo != null && extraInfo.containsKey(this))
             atts = (Attributes)extraInfo.get(this).get();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("Select_BloomFilter"));
-        return new OperationExplainer(Type.BLOOM_FILTER, atts);
+        return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }
 
     // Inner classes
