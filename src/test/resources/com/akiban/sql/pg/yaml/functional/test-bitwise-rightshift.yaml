@@ -37,8 +37,8 @@
 #- output: [[4611686018427387903]]
 ---
 - Statement: SELECT RIGHTSHIFT(4,-2) from all_types;
-- output: [[16]]
+- output: [[0]]
 ---
 - Statement: SELECT RIGHTSHIFT(4,-3) from all_types;
-- output: [[32]]
+- output: [[0]]
 ... 
