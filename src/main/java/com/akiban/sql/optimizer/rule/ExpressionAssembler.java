@@ -190,7 +190,7 @@ abstract class ExpressionAssembler<T> {
             // TODO: Until TPreparedExpression is Explainable.
             (expression instanceof Expression)) {
             CompoundExplainer explainer = new CompoundExplainer(Type.EXTRA_INFO);
-            explainer.addAttribute(Label.NAME, 
+            explainer.addAttribute(Label.COLUMN_NAME, 
                                    // TODO: Break into pieces.
                                    PrimitiveExplainer.getInstance(column.toString()));
             explainContext.putExtraInfo((Expression)expression, explainer);
