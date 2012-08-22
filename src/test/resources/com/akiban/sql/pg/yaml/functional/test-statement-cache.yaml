@@ -29,7 +29,7 @@
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
            ['  Filter_Default(test.t)'],
-           ['    Select_HKeyOrdered(t.s == Variable(pos=0))'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
@@ -85,7 +85,7 @@
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
            ['  Filter_Default(test.t)'],
-           ['    Select_HKeyOrdered(t.s == Variable(pos=0))'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
 - Statement: SET cbo TO 'false'
@@ -93,7 +93,7 @@
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
            ['  Filter_Default(test.t)'],
-           ['    Select_HKeyOrdered(t.s == Variable(pos=0))'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
 - CreateTable: test1.t (n INT)
