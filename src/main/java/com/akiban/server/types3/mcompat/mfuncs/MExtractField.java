@@ -42,9 +42,9 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public abstract class MExtractField extends TOverloadBase
 {
-    public static TOverload[] INSTANCES = new TOverload[]
+    public static final TOverload INSTANCES[] = new TOverload[]
     {
-        new MExtractField("YEAR", MDatetimes.DATE)
+        new MExtractField("YEAR", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -52,7 +52,7 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.YEAR_INDEX];
             }
         },
-        new MExtractField("QUARTER", MDatetimes.DATE)
+        new MExtractField("QUARTER", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -65,7 +65,7 @@ public abstract class MExtractField extends TOverloadBase
                 else return 4;
             }
         },
-        new MExtractField("MONTH", MDatetimes.DATE)
+        new MExtractField("MONTH", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -73,7 +73,7 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.MONTH_INDEX];
             }
         },
-        new MExtractField("LAST_DAY", MDatetimes.DATE)
+        new MExtractField("LAST_DAY", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -81,7 +81,7 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) MDatetimes.getLastDay(ymd);
             }
         },
-        new MExtractField("DAYOFYEAR", MDatetimes.DATE)
+        new MExtractField("DAYOFYEAR", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -89,7 +89,7 @@ public abstract class MExtractField extends TOverloadBase
                 return MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfYear();
             }
         },
-        new MExtractField("DAY", MDatetimes.DATE) // day of month
+        new MExtractField("DAY", MDatetimes.DATE, Decoder.DATE) // day of month
         {    
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -97,7 +97,7 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.DAY_INDEX];
             }
         },
-        new MExtractField("HOUR", MDatetimes.TIME)
+        new MExtractField("HOUR", MDatetimes.TIME, Decoder.TIME)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -105,7 +105,7 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.HOUR_INDEX];
             }
         },
-        new MExtractField("MINUTE", MDatetimes.TIME)
+        new MExtractField("MINUTE", MDatetimes.TIME, Decoder.TIME)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -113,7 +113,7 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.MIN_INDEX];
             }
         },
-        new MExtractField("SECOND", MDatetimes.TIME)
+        new MExtractField("SECOND", MDatetimes.TIME, Decoder.TIME)
         {
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
@@ -155,12 +155,43 @@ public abstract class MExtractField extends TOverloadBase
     };
 
     protected abstract int getField(long ymd[], TExecutionContext context);
+
+    static enum Decoder
+    {
+        DATE
+        {
+            @Override
+            long[] decode(long val)
+            {
+                return MDatetimes.decodeDate(val);
+            }
+        },
+        DATETIME
+        {
+            @Override
+            long[] decode(long val)
+            {
+                return MDatetimes.decodeDatetime(val);
+            }
+        },
+        TIME
+        {
+            long[] decode(long val)
+            {
+                return MDatetimes.decodeTime(val);
+            }
+        };
+        
+        abstract long[] decode(long val);
+    }
     private final String name;
     private final TClass inputType;
-    MExtractField (String name, TClass inputType)
+    private final Decoder decoder;
+    MExtractField (String name, TClass inputType, Decoder decoder)
     {
         this.name = name;
         this.inputType = inputType;
+        this.decoder = decoder;
     }
 
     @Override
@@ -173,7 +204,8 @@ public abstract class MExtractField extends TOverloadBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         int val = inputs.get(0).getInt32();
-        long ymd[] = MDatetimes.decodeDate(val);
+        long ymd[] = decoder.decode(val);
+
         if (!MDatetimes.isValidDatetime(ymd))
         {
             context.warnClient(new InvalidParameterValueException("Invalid DATETIME value: " + val));
