@@ -204,6 +204,9 @@ public class AlterTableITBase extends ITBase {
             if(col1 == null) {
                 return -1;
             }
+            if(col2 == null) {
+                return +1;
+            }
             return ((Comparable)col1).compareTo(col2);
         }
     }
