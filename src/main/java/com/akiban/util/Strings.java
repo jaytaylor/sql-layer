@@ -204,7 +204,7 @@ public abstract class Strings {
         return result;
     }
 
-    //@SuppressWarnings("unused") // primarily useful in debuggers
+    @SuppressWarnings("unused") // primarily useful in debuggers
     public static String dumpException(Throwable t) {
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
@@ -214,7 +214,7 @@ public abstract class Strings {
         return stringWriter.toString();
     }
 
-    //@SuppressWarnings("unused") // primarily useful in debuggers
+    @SuppressWarnings("unused") // primarily useful in debuggers
     public static String[] dumpExceptionAsArray(Throwable t) {
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
