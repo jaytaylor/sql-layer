@@ -41,6 +41,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.types.CharacterTypeAttributes;
+import com.akiban.util.ByteSource;
 import java.io.UnsupportedEncodingException;
 import java.util.zip.CRC32;
 
@@ -69,13 +70,10 @@ public class CRC32Expression extends AbstractUnaryExpression
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            
-            // mysql's input is VARCHAR, but we need it to be VARBINARY
-            // because the function operates on bytes
-            // and in order to get the correct bytes, we need the correct charset
-            // which is inconviniently unavailable to the expression as of now
-            // Thus, letting something else do the cast is the best workaround so far
-            argumentTypes.setType(0, AkType.VARCHAR);
+    
+            // don't cast the type to VARCHAR if it's alraedy a VARBINARY
+            if (argumentTypes.get(0).getType() != AkType.VARBINARY)
+                argumentTypes.setType(0, AkType.VARCHAR);
 
             return ExpressionTypes.LONG;
         }
@@ -101,10 +99,20 @@ public class CRC32Expression extends AbstractUnaryExpression
                     return NullValueSource.only();
                 
                 CRC32 crc32 = new CRC32();
-                byte byteArr[] = arg.getString().getBytes(charset);
                 
-                crc32.update(byteArr);
-                
+                if (arg.getConversionType() == AkType.VARCHAR)
+                {
+                    byte byteArr[] = arg.getString().getBytes(charset);
+                    crc32.update(byteArr);
+                }
+                else
+                {
+                    ByteSource varbin = arg.getVarBinary();
+                    crc32.update(varbin.byteArray(),
+                                 varbin.byteArrayOffset(),
+                                 varbin.byteArrayLength());
+                }
+
                 valueHolder().putLong(crc32.getValue());
                 return valueHolder();
             }
