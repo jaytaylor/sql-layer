@@ -28,7 +28,6 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -43,7 +42,7 @@ public abstract class MRoundBase extends TOverloadBase {
     {
         CEIL() {
             @Override
-            BigDecimalWrapper evaluate(MBigDecimalWrapper result) {
+            BigDecimalWrapper evaluate(BigDecimalWrapper result) {
                 return result.ceil();
             }
             
@@ -54,7 +53,7 @@ public abstract class MRoundBase extends TOverloadBase {
         },
         FLOOR() {
             @Override
-            BigDecimalWrapper evaluate(MBigDecimalWrapper result) {
+            BigDecimalWrapper evaluate(BigDecimalWrapper result) {
                 return result.floor();
             }
             
@@ -65,7 +64,7 @@ public abstract class MRoundBase extends TOverloadBase {
         },
         TRUNCATE() {
             @Override
-            BigDecimalWrapper evaluate(MBigDecimalWrapper result) {
+            BigDecimalWrapper evaluate(BigDecimalWrapper result) {
                 return result.truncate(0);
             }
             
@@ -76,7 +75,7 @@ public abstract class MRoundBase extends TOverloadBase {
         },
         ROUND() {
             @Override
-            BigDecimalWrapper evaluate(MBigDecimalWrapper result) {
+            BigDecimalWrapper evaluate(BigDecimalWrapper result) {
                 return result.round(0);
             }
             
@@ -87,7 +86,7 @@ public abstract class MRoundBase extends TOverloadBase {
         };
         
         abstract double evaluate(double result);
-        abstract BigDecimalWrapper evaluate(MBigDecimalWrapper result);
+        abstract BigDecimalWrapper evaluate(BigDecimalWrapper result);
     }
     
     public static TOverload[] create(final RoundType roundType) {
@@ -95,7 +94,7 @@ public abstract class MRoundBase extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
+                BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
                 output.putObject(roundType.evaluate(result));
             }
 

@@ -60,6 +60,17 @@ public class MBigDecimal extends TClassBase {
     public static final int MAX_INDEX = 0;
     public static final int MIN_INDEX = 1;
 
+    public static BigDecimalWrapper getWrapper(PValueSource source, TInstance tInstance) {
+        if (source.hasCacheValue())
+            return (BigDecimalWrapper) source.getObject();
+        byte[] bytes = source.getBytes();
+        int precision = tInstance.attribute(Attrs.PRECISION);
+        int scale = tInstance.attribute(Attrs.SCALE);
+        StringBuilder sb = new StringBuilder();
+        ConversionHelperBigDecimal.decodeToString(bytes, 0, precision, scale, AkibanAppender.of(sb));
+        return new MBigDecimalWrapper(sb.toString());
+    }
+
     public static void adjustAttrsAsNeeded(TExecutionContext context, PValueSource source,
                                            TInstance targetInstance, PValueTarget target)
     {
@@ -124,7 +135,8 @@ public class MBigDecimal extends TClassBase {
                           TInstance targetInstance,
                           PValueTarget targetValue)
     {
-        CastUtils.doCastDecimal(context,(MBigDecimalWrapper)sourceValue.getObject(), targetValue);
+        BigDecimalWrapper wrapped = MBigDecimal.getWrapper(sourceValue, sourceInstance);
+        CastUtils.doCastDecimal(context, wrapped, targetValue);
     }
 
     @Override

@@ -29,8 +29,9 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.funcs.Abs;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -92,7 +93,7 @@ public class MAbs {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            MBigDecimalWrapper wrapper = (MBigDecimalWrapper) inputs.get(0).getObject();
+            BigDecimalWrapper wrapper = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
             output.putObject(wrapper.abs());
         }
     };
