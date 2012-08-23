@@ -104,16 +104,6 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
     }
 
     @Override
-    public AkServer cast() {
-        return this;
-    }
-
-    @Override
-    public Class<AkServerInterface> castClass() {
-        return AkServerInterface.class;
-    }
-
-    @Override
     public String getServerName()
     {
         return AKSERVER_NAME;

@@ -268,16 +268,6 @@ public class TreeServiceImpl
     }
 
     @Override
-    public TreeService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<TreeService> castClass() {
-        return TreeService.class;
-    }
-
-    @Override
     public Persistit getDb() {
         return dbRef.get();
     }

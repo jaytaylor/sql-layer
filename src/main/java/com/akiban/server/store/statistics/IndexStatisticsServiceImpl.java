@@ -93,16 +93,6 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     /* Service */
 
     @Override
-    public IndexStatisticsService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<IndexStatisticsService> castClass() {
-        return IndexStatisticsService.class;
-    }
-
-    @Override
     public void start() {
         store.setIndexStatistics(this);
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());

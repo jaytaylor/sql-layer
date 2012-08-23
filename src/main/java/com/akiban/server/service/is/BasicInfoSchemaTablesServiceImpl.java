@@ -92,16 +92,6 @@ public class BasicInfoSchemaTablesServiceImpl
     }
 
     @Override
-    public BasicInfoSchemaTablesServiceImpl cast() {
-        return this;
-    }
-
-    @Override
-    public Class<BasicInfoSchemaTablesService> castClass() {
-        return BasicInfoSchemaTablesService.class;
-    }
-
-    @Override
     public void start() {
         AkibanInformationSchema ais = createTablesToRegister();
         attachFactories(ais, true);

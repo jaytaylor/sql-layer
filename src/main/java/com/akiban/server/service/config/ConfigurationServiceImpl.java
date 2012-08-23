@@ -174,16 +174,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 ConfigurationServiceMXBean.class);
     }
 
-    @Override
-    public ConfigurationService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<ConfigurationService> castClass() {
-        return ConfigurationService.class;
-    }
-
     private Map<String, Property> internalLoadProperties()
             throws ServiceStartupException {
         Map<String, Property> ret = loadProperties();

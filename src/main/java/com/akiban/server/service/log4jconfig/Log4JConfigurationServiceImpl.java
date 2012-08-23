@@ -42,16 +42,6 @@ public final class Log4JConfigurationServiceImpl
     }
 
     @Override
-    public Log4JConfigurationService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<Log4JConfigurationService> castClass() {
-        return Log4JConfigurationService.class;
-    }
-
-    @Override
     public void start() {
     }
 

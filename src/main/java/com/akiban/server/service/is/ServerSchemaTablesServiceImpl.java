@@ -72,16 +72,6 @@ public class ServerSchemaTablesServiceImpl
         this.configService = configService;
         this.serverInterface = serverInterface;
     }
-    
-    @Override
-    public ServerSchemaTablesService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<ServerSchemaTablesService> castClass() {
-        return ServerSchemaTablesService.class;
-    }
 
     @Override
     public void start() {

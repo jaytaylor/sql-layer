@@ -81,16 +81,6 @@ public final class SessionServiceImpl implements SessionService, Service<Session
     // Service<SessionService> interface
 
     @Override
-    public SessionService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<SessionService> castClass() {
-        return SessionService.class;
-    }
-
-    @Override
     public void start() {
     }
 

@@ -98,16 +98,6 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
         }
     }
 
-    @Override
-    public JmxRegistryService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<JmxRegistryService> castClass() {
-        return JmxRegistryService.class;
-    }
-
     protected MBeanServer getMBeanServer() {
         return ManagementFactory.getPlatformMBeanServer();
     }

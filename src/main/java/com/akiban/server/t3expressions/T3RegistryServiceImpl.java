@@ -113,16 +113,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     // Service interface
 
     @Override
-    public T3RegistryService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<T3RegistryService> castClass() {
-        return T3RegistryService.class;
-    }
-
-    @Override
     public void start() {
         InstanceFinder registry;
         try {

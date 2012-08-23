@@ -57,11 +57,6 @@ public abstract class DelegatingStore<S extends Store> implements Store {
 
     // Store interface -- non-delegating
 
-    @Override
-    public Store cast() {
-        return this;
-    }
-
     // Store interface -- auto-generated
 
     public void start() {
@@ -74,10 +69,6 @@ public abstract class DelegatingStore<S extends Store> implements Store {
 
     public void crash() {
         delegate.crash();
-    }
-
-    public Class<Store> castClass() {
-        return delegate.castClass();
     }
 
     public RowDefCache getRowDefCache() {

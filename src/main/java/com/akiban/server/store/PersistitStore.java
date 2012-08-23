@@ -152,16 +152,6 @@ public class PersistitStore implements Store {
     }
 
     @Override
-    public Store cast() {
-        return this;
-    }
-
-    @Override
-    public Class<Store> castClass() {
-        return Store.class;
-    }
-
-    @Override
     public PersistitStore getPersistitStore() {
         return this;
     }

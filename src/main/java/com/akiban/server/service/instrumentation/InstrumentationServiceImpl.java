@@ -83,16 +83,6 @@ public class InstrumentationServiceImpl implements
     }
 
     // Service interface
-    
-    @Override
-    public InstrumentationService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<InstrumentationService> castClass() {
-        return InstrumentationService.class;
-    }
 
     @Override
     public void start() {

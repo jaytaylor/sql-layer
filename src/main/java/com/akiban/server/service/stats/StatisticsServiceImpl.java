@@ -103,16 +103,6 @@ public final class StatisticsServiceImpl implements StatisticsService,
     }
 
     @Override
-    public StatisticsService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<StatisticsService> castClass() {
-        return StatisticsService.class;
-    }
-
-    @Override
     public void start() {
         String stats_enable = config.getProperty(STATISTICS_PROPERTY);
 

@@ -84,16 +84,6 @@ public class SwingConsoleServiceImpl implements SwingConsoleService, Service<Swi
     }
 
     @Override
-    public SwingConsoleService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<SwingConsoleService> castClass() {
-        return SwingConsoleService.class;
-    }
-
-    @Override
     public void show() {
         setVisible(true);
     }

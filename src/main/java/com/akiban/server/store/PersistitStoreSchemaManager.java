@@ -722,16 +722,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public SchemaManager cast() {
-        return this;
-    }
-
-    @Override
-    public Class<SchemaManager> castClass() {
-        return SchemaManager.class;
-    }
-
-    @Override
     public void start() {
         updateTimestamp = new AtomicLong();
         skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));

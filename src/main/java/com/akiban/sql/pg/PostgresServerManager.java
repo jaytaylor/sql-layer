@@ -65,16 +65,6 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
                 config, indexStatisticsService, overloadResolutionService);
     }
 
-    /*** Service<PostgresService> ***/
-
-    public PostgresService cast() {
-        return this;
-    }
-
-    public Class<PostgresService> castClass() {
-        return PostgresService.class;
-    }
-
     public void start() throws ServiceStartupException {
         server = new PostgresServer(reqs);
         server.start();

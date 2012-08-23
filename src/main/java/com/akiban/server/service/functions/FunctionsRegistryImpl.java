@@ -88,16 +88,6 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
     // Service interface
 
     @Override
-    public FunctionsRegistry cast() {
-        return this;
-    }
-
-    @Override
-    public Class<FunctionsRegistry> castClass() {
-        return FunctionsRegistry.class;
-    }
-
-    @Override
     public void start() {
     }
 

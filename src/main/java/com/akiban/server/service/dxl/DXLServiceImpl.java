@@ -71,16 +71,6 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Override
-    public DXLService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<DXLService> castClass() {
-        return DXLService.class;
-    }
-
-    @Override
     public void start() {
         List<DXLFunctionsHook> hooks = getHooks();
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();

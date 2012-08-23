@@ -33,21 +33,6 @@ package com.akiban.server.service;
  */
 public interface Service<T>
 {
-    public class NotCastableException extends RuntimeException
-    {}
-    /**
-     * Returns this service as its T type. Implementations should always just <tt>return this</tt>.
-     * @return "this"
-     * @throws NotCastableException if T is null
-     */
-    T cast();
-
-    /**
-     * Returns the class of T.
-     * @return the class that this method's cast() method will return
-     */
-    Class<T> castClass();
-
     void start();
     void stop();
     void crash();

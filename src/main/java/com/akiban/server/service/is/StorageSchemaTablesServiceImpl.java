@@ -95,16 +95,6 @@ public class StorageSchemaTablesServiceImpl
     }
 
     @Override
-    public StorageSchemaTablesService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<StorageSchemaTablesService> castClass() {
-        return StorageSchemaTablesService.class;
-    }
-
-    @Override
     public void start() {
         logger.debug("Starting Storage Schema Tables Service");
         jmxServer = ManagementFactory.getPlatformMBeanServer();

@@ -45,16 +45,6 @@ public class OverloadResolutionServiceImpl implements OverloadResolutionService,
     }
 
     @Override
-    public OverloadResolutionService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<OverloadResolutionService> castClass() {
-        return OverloadResolutionService.class;
-    }
-
-    @Override
     public void start() {
         OverloadResolver resolver = new OverloadResolver(t3Registry);
         if (!resolverRef.compareAndSet(null, resolver))
