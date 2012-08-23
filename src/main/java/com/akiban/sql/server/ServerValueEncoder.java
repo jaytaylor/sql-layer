@@ -37,7 +37,6 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -72,8 +71,10 @@ public class ServerValueEncoder
 
     public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
     public static final String ROUND_ZERO_DATE = "0001-01-01";
-    public static final long ROUND_ZERO_DATETIME_VAL = MDatetimes.parseDatetime(ROUND_ZERO_DATETIME);
-    public static final int ROUND_ZERO_DATE_VAL = MDatetimes.parseDate(ROUND_ZERO_DATE, null);
+    public static final PValueSource ROUND_ZERO_DATETIME_SOURCE
+            = new PValue(MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
+    public static final PValueSource ROUND_ZERO_DATE_SOURCE
+            = new PValue(MDatetimes.parseDate(ROUND_ZERO_DATE, null));
     
     private String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
@@ -81,7 +82,6 @@ public class ServerValueEncoder
     private PrintWriter printWriter;
     private AkibanAppender appender;
     private FromObjectValueSource objectSource;
-    private PValue stringPValue;
 
     public ServerValueEncoder(String encoding) {
         this.encoding = encoding;
@@ -165,13 +165,9 @@ public class ServerValueEncoder
             case EXCEPTION:
                 throw new ZeroDateTimeException();
             case ROUND:
-                if (stringPValue == null)
-                    stringPValue = new PValue(PUnderlying.STRING);
-                String zeroString = (type.getInstance().typeClass() == MDatetimes.DATETIME)
-                        ? ROUND_ZERO_DATETIME
-                        : ROUND_ZERO_DATE;
-                stringPValue.putString(zeroString, null);
-                value = stringPValue;
+                value = (type.getInstance().typeClass() == MDatetimes.DATETIME)
+                        ? ROUND_ZERO_DATETIME_SOURCE
+                        : ROUND_ZERO_DATE_SOURCE;
                 break;
             case CONVERT_TO_NULL:
                 return null;
