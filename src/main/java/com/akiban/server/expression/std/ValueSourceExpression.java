@@ -39,6 +39,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.SqlLiteralValueFormatter;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +105,7 @@ public final class ValueSourceExpression implements Expression
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context);
-        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(valueSource));
+        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(SqlLiteralValueFormatter.format(valueSource)));
         return ex;
     }
 

@@ -202,7 +202,7 @@ class HKeyUnion_Ordered extends Operator
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(compareFields));
-        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputHKeyTableRowType));
+        atts.put(Label.OUTPUT_TYPE, outputHKeyTableRowType.getExplainer(context));
         return new CompoundExplainer(Type.ORDERED, atts);
     }
 

@@ -43,7 +43,7 @@ public class DistinctExplainer extends CompoundExplainer
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.DINSTINCT_TYPE, PrimitiveExplainer.getInstance(distinctType));
+        atts.put(Label.DINSTINCT_TYPE, distinctType.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         
         return atts;

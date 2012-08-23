@@ -26,7 +26,6 @@
 
 package com.akiban.server.explain;
 
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
@@ -66,38 +65,6 @@ public class PrimitiveExplainer extends Explainer
         return PrimitiveExplainer.getInstance(num.doubleValue());
     }
 
-    public static PrimitiveExplainer getInstance(RowType type)
-    {
-        return PrimitiveExplainer.getInstance(type == null ? "NULL" : type.toString());
-    }
-    
-    public static PrimitiveExplainer getInstance(Object o)
-    {
-        if (o instanceof BigDecimal) return getInstance((BigDecimal)o);
-        else if (o instanceof BigInteger) return getInstance((BigInteger)o);
-        else if (o instanceof String) return getInstance((String)o);
-        else if (o instanceof RowType) return getInstance((RowType)o);
-        else throw new UnsupportedOperationException("Explainer for " + o.getClass() + " is not supported yet");
-    }
-
-    public static PrimitiveExplainer getInstance(ValueSource source)
-    {
-        AkType type = source.getConversionType();
-        if (type == AkType.NULL) return getInstance("NULL");
-        switch(type.underlyingType())
-        {
-            case LONG_AKTYPE:    LongExtractor lExtractor = Extractors.getLongExtractor(type);
-                                 return getInstance(lExtractor.getLong(source));
-            case FLOAT_AKTYPE:
-            case DOUBLE_AKTYPE:  return getInstance(Extractors.getDoubleExtractor().getDouble(source));
-            case BOOLEAN_AKTYPE: return getInstance(source.getBool());
-            case OBJECT_AKTYPE:  return getInstance(Extractors.getObjectExtractor(type).getObject(source));
-            default:             throw new UnsupportedOperationException("Explainer for type " + type + " is not supported yet");                
-        }
-    }
-    
-    // TODO:  add more as needed
-       
     private final Type type;
     private final Object o;
     

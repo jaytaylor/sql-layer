@@ -200,9 +200,9 @@ final class UnionAll_Default extends Operator {
         for (Operator op : inputs)
             att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
         for (RowType type : inputTypes)
-            att.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(type));
+            att.put(Label.INPUT_TYPE, type.getExplainer(context));
        
-        att.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType));
+        att.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
         
         return new CompoundExplainer(Type.UNION_ALL, att);
     }

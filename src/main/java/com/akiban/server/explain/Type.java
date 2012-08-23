@@ -76,7 +76,7 @@ public enum Type
     
     // ROWTYPE    
     //--------------------------------------------------------------------------
-    ROWTYPE (GeneralType.ROWTYPE),
+    ROWTYPE(GeneralType.ROWTYPE),
     
     // SCALAR 
     //--------------------------------------------------------------------------
@@ -85,7 +85,7 @@ public enum Type
     STRING(GeneralType.SCALAR_VALUE),
     BOOLEAN(GeneralType.SCALAR_VALUE),
     
-    // SCALAR 
+    // EXTRA_INFO
     //--------------------------------------------------------------------------
     EXTRA_INFO(GeneralType.EXTRA_INFO),
     ;
