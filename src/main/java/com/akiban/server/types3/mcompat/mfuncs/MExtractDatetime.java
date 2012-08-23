@@ -111,12 +111,17 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt64(), output, MDatetimes.HOUR_INDEX, PUnderlying.INT_64);
+            doEvaluate(inputs.get(0).getInt64(), output, MDatetimes.HOUR_INDEX, PUnderlying.INT_32);
         }
 
         @Override
         public String displayName() {
             return "HOUR";
+        }
+
+        @Override
+        public TOverloadResult resultType() {
+            return TOverloadResult.fixed(MNumeric.INT.instance());
         }
     };
     
