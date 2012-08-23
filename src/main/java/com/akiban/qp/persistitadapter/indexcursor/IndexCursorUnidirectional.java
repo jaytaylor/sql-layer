@@ -101,9 +101,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     }
 
     @Override
-    public void destroy()
+    public void close()
     {
-        super.destroy();
+        super.close();
         if (startKey != null) {
             adapter.returnIndexRow(startKey);
         }
