@@ -62,7 +62,8 @@ public class ConcatWSExpression extends AbstractCompositeExpression
                 argumentTypes.setType(n, AkType.VARCHAR);
                 len += argumentTypes.get(n).getPrecision() + dLen;
             }
-            len -= dLen; // delete the last delilmeter
+            if (len > 0)
+                len -= dLen; // delete the last delilmeter
 
             return ExpressionTypes.varchar(len);            
         }
@@ -108,8 +109,9 @@ public class ConcatWSExpression extends AbstractCompositeExpression
                     bd.append(arg.getString()).append(delimeter);
             }
             //remove the last delimeter
-            bd.delete(bd.length() - delimeter.length(),
-                      bd.length());
+            if(bd.length() > 0)
+                bd.delete(bd.length() - delimeter.length(),
+                          bd.length());
 
             valueHolder().putString(bd.toString());
             return valueHolder();
