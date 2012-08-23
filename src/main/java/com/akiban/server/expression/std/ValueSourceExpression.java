@@ -103,7 +103,7 @@ public final class ValueSourceExpression implements Expression
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
-        CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context, (List)null);
+        CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context);
         ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(valueSource));
         return ex;
     }

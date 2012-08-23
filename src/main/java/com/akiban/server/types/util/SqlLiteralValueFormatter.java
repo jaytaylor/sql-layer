@@ -32,6 +32,8 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.util.ByteSource;
 
+import com.akiban.server.error.AkibanInternalException;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -40,6 +42,22 @@ import java.util.Formatter;
 
 public class SqlLiteralValueFormatter
 {
+    public static String format(ValueSource source) {
+        return format(source, source.getConversionType());
+    }
+
+    public static String format(ValueSource source, AkType type) {
+        StringBuilder str = new StringBuilder();
+        SqlLiteralValueFormatter formatter = new SqlLiteralValueFormatter(str);
+        try {
+            formatter.append(source, type);
+        }
+        catch (IOException ex) {
+            throw new AkibanInternalException("IO error writing to string", ex);
+        }
+        return str.toString();
+    }
+
     private Appendable buffer;
     private Formatter formatter;
 
@@ -110,6 +128,16 @@ public class SqlLiteralValueFormatter
             break;
         case BOOL:
             appendBool(source.getBool());
+            break;
+        case INTERVAL_MILLIS:
+            appendIntervalMillis(source.getInterval_Millis());
+            break;
+        case INTERVAL_MONTH:
+            appendIntervalMonth(source.getInterval_Month());
+            break;
+        default:
+            assert false : type;
+            appendVarchar(source.getString());
             break;
         }
     }
@@ -205,4 +233,110 @@ public class SqlLiteralValueFormatter
         buffer.append('\'');
     }
 
+    protected void appendIntervalMillis(long value) throws IOException {
+        if (formatter == null)
+            formatter = new Formatter(buffer);
+        buffer.append("INTERVAL '");
+        long days, hours, mins, secs, millis;
+        if (value < 0) {
+            buffer.append('-');
+            millis = -value;
+        }
+        else {
+            millis = value;
+        }
+        // Could be data-driven, but just enough special cases that
+        // that would be pretty complicated.
+        secs = millis / 1000;
+        millis -= secs * 1000;
+        mins = secs / 60;
+        secs -= mins * 60;
+        hours = mins / 60;
+        mins -= hours * 60;
+        days = hours / 24;
+        hours -= days * 24;
+        String hi = null, lo = null;
+        if (days > 0) {
+            formatter.format("%d", days);
+            hi = lo = "DAY";
+        }
+        if ((hours > 0) ||
+            ((hi != null) && ((mins > 0) || (secs > 0) || (millis > 0)))) {
+            if (hi != null) {
+                formatter.format(":%02d", hours);
+            }
+            else {
+                formatter.format("%d", hours);
+            }
+            lo = "HOUR";
+            if (hi == null) hi = lo;
+        }
+        if ((mins > 0) ||
+            ((hi != null) && ((secs > 0) || (millis > 0)))) {
+            if (hi != null) {
+                formatter.format(":%02d", mins);
+            }
+            else {
+                formatter.format("%d", mins);
+            }
+            lo = "MINUTE";
+            if (hi == null) hi = lo;
+        }
+        if ((secs > 0) || (hi == null) || (millis > 0)) {
+            if (hi != null) {
+                formatter.format(":%02d", secs);
+            }
+            else {
+                formatter.format("%d", secs);
+            }
+            lo = "SECOND";
+            if (hi == null) hi = lo;
+        }
+        if (millis > 0) {
+            formatter.format(".%03d", millis);
+        }
+        buffer.append("' ");
+        buffer.append(hi);
+        if (hi != lo) {
+            buffer.append(" TO ");
+            buffer.append(lo);
+        }
+    }
+
+    protected void appendIntervalMonth(long value) throws IOException {
+        if (formatter == null)
+            formatter = new Formatter(buffer);
+        buffer.append("INTERVAL '");
+        long years, months;
+        if (value < 0) {
+            buffer.append('-');
+            months = -value;
+        }
+        else {
+            months = value;
+        }
+        years = months / 12;
+        months -= years * 12;
+        String hi = null, lo = null;
+        if (years > 0) {
+            formatter.format("%d", years);
+            hi = lo = "YEAR";
+        }
+        if ((months > 0) || (hi == null)) {
+            if (hi != null) {
+                formatter.format("-%02d", months);
+            }
+            else {
+                formatter.format("%d", months);
+            }
+            lo = "MONTH";
+            if (hi == null) hi = lo;
+        }
+        buffer.append("' ");
+        buffer.append(hi);
+        if (hi != lo) {
+            buffer.append(" TO ");
+            buffer.append(lo);
+        }
+    }
 }

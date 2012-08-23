@@ -99,7 +99,7 @@ public final class FieldExpression implements Expression {
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
-        CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context, (List)null);
+        CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(fieldIndex));
         ex.addAttribute(Label.ROWTYPE, rowType.getExplainer(context));
         if (context.hasExtraInfo(this))

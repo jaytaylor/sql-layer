@@ -43,7 +43,7 @@ public abstract class AbstractNoArgExpression implements Expression {
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new ExpressionExplainer(Type.FUNCTION, name(), context, (List)null);
+        return new ExpressionExplainer(Type.FUNCTION, name(), context);
     }
     
     @Override

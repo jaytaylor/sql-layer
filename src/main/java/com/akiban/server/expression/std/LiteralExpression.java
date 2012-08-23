@@ -47,8 +47,6 @@ import com.akiban.server.types.util.ValueHolder;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class LiteralExpression implements Expression {
 
@@ -143,15 +141,9 @@ public final class LiteralExpression implements Expression {
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
-        StringBuilder sb = new StringBuilder();
-        SqlLiteralValueFormatter formatter = new SqlLiteralValueFormatter(sb);
-        try {
-            formatter.append(evaluation.eval());
-        } catch (IOException ex) {
-            Logger.getLogger(LiteralExpression.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        CompoundExplainer ex = new ExpressionExplainer(Type.LITERAL, name(), context, (List)null);
-        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sb.toString()));
+        CompoundExplainer ex = new ExpressionExplainer(Type.LITERAL, name(), context);
+        String sql = SqlLiteralValueFormatter.format(evaluation.eval());
+        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sql));
         return ex;
     }
     
