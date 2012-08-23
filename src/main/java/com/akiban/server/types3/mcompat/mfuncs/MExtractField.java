@@ -55,6 +55,27 @@ public abstract class MExtractField extends TOverloadBase
         new MExtractField("QUARTER", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+            {
+                int val = inputs.get(0).getInt32();
+                long ymd[] = Decoder.DATE.decode(val);
+
+                // special case
+                // month of zero and a sensible value for day (in the range [0, 31] )
+                if (ymd[MDatetimes.MONTH_INDEX] == 0L
+                        && ymd[MDatetimes.DAY_INDEX] >= 0L
+                        && ymd[MDatetimes.DAY_INDEX] <= 31L)
+                    output.putInt32(0);
+                else if (!MDatetimes.isValidDatetime(ymd))
+                {
+                    context.warnClient(new InvalidParameterValueException("Invalid DATETIME value: " + val));
+                    output.putNull();
+                }
+                else
+                    output.putInt32(getField(ymd, context));
+            }
+
+            @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
                 int month = (int) ymd[MDatetimes.MONTH_INDEX];
