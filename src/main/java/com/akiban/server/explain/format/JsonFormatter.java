@@ -26,20 +26,74 @@
 
 package com.akiban.server.explain.format;
 
-import com.akiban.server.explain.*;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Label;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.akiban.server.error.AkibanInternalException;
+
+import com.google.gson.stream.JsonWriter;
+
+import java.util.List;
+import java.util.Map;
+import java.io.IOException;
+import java.io.StringWriter;
 
 public class JsonFormatter
 {
-    Gson gson;
-
-    public JsonFormatter() {
-        gson = new GsonBuilder().setPrettyPrinting().create();
+    public String format(Explainer explainer) {
+        StringWriter str = new StringWriter();
+        JsonWriter writer = new JsonWriter(str);
+        if (true) {
+            writer.setIndent("  "); // Pretty print
+        }
+        try {
+            write(writer, explainer);
+        }
+        catch (IOException ex) {
+            throw new AkibanInternalException("Error writing to string", ex);
+        }
+        return str.toString();
     }
 
-    public String format(Explainer explainer) {
-        return gson.toJson(explainer);
+    public void write(JsonWriter writer, Explainer explainer) throws IOException {
+        switch (explainer.getType().generalType()) {
+        case SCALAR_VALUE:
+            writePrimitive(writer, (PrimitiveExplainer)explainer);
+            break;
+        default:
+            writeCompound(writer, (CompoundExplainer)explainer);
+            break;
+        }
+    }
+
+    protected void writePrimitive(JsonWriter writer, PrimitiveExplainer explainer) throws IOException {
+        switch (explainer.getType()) {
+        case STRING:
+            writer.value((String)explainer.get());
+            break;
+        case EXACT_NUMERIC:
+        case FLOATING_POINT:
+            writer.value((Number)explainer.get());
+            break;
+        default:
+            writer.value(explainer.get().toString());
+        }
+    }
+
+    protected void writeCompound(JsonWriter writer, CompoundExplainer explainer) throws IOException {
+        writer.beginObject();
+        writer.name("type");
+        writer.value(explainer.getType().name().toLowerCase());
+        for (Map.Entry<Label, List<Explainer>> entry : explainer.get().entrySet()) {
+            writer.name(entry.getKey().name().toLowerCase());
+            writer.beginArray();
+            for (Explainer child : entry.getValue()) {
+                write(writer, child);
+            }
+            writer.endArray();
+        }
+        writer.endObject();
     }
 }
