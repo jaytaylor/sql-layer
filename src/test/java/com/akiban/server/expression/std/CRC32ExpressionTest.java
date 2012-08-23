@@ -35,8 +35,6 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
 import java.util.Collection;
 import org.junit.Test;
 
@@ -47,10 +45,10 @@ public class CRC32ExpressionTest extends ComposedExpressionTestBase
 {
     private static boolean alreadyExc = false;
  
-    private final byte arg[];
+    private final String arg;
     private final Long expected;
     
-    public CRC32ExpressionTest(byte arg[], Long expected)
+    public CRC32ExpressionTest(String arg, Long expected)
     {
         this.arg = arg;
         this.expected = expected;
@@ -61,12 +59,12 @@ public class CRC32ExpressionTest extends ComposedExpressionTestBase
     {
         ParameterizationBuilder b = new ParameterizationBuilder();
         
-        test(b, //select crc32(concat(char(0x61),char(0x6B), char(0x69), char(0x62), char(0x61), char(0x6E)));
-             new byte[] {0x61, 0x6B, 0x69, 0x62, 0x61, 0x6E},
+        test(b,
+             "akiban",
              1192856190L);
         
-        test(b, // select crc32(concat(''))
-             new byte[] {},
+        test(b,
+             "",
              0L);
         
         test(b,
@@ -76,29 +74,9 @@ public class CRC32ExpressionTest extends ComposedExpressionTestBase
         return b.asList();
     }
     
-    private static void test(ParameterizationBuilder b, byte arg[], Long exp)
+    private static void test(ParameterizationBuilder b, String arg, Long exp)
     {
-        b.add(getName(arg), arg, exp);
-    }
-    
-    private static String getName(byte arg[])
-    {
-        if (arg == null)
-            return "CRC32(CONCAT(NULL))";
-        else if ( arg.length == 0)
-            return "CRC32(CONCAT(\'\'))";
-
-        StringBuilder builder = new StringBuilder("CRC32(CONCAT(");
-        
-        for (byte b : arg)
-            builder.append("CHAR(0x").append(Integer.toHexString(b)).append("), ");
-
-        // delete the last ", "
-        builder.deleteCharAt(builder.length() -1);
-        builder.deleteCharAt(builder.length() -1);
-        
-        builder.append("))");
-        return builder.toString();
+        b.add("CRC32(" + arg + ") ", arg, exp);
     }
 
     @Test
@@ -108,9 +86,9 @@ public class CRC32ExpressionTest extends ComposedExpressionTestBase
         
         Expression input = arg == null
                             ? LiteralExpression.forNull()
-                            : new LiteralExpression(AkType.VARBINARY, new WrappingByteSource(arg));
+                            : new LiteralExpression(AkType.VARCHAR, arg);
         
-        Expression top = new CRC32Expression(input);
+        Expression top = new CRC32Expression(input, "latin1"); // mysql's most 'popular' charset
         
         ValueSource actual = top.evaluation().eval();
         
@@ -123,7 +101,7 @@ public class CRC32ExpressionTest extends ComposedExpressionTestBase
     @Override
     protected CompositionTestInfo getTestInfo()
     {
-        return new CompositionTestInfo(1, AkType.VARBINARY, true);
+        return new CompositionTestInfo(1, AkType.VARCHAR, true);
     }
 
     @Override

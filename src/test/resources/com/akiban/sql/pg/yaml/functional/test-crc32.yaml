@@ -16,6 +16,9 @@
 - output_types: [BIGINT]
 - output: [['4289425978']]
 ---
+- Statement: SELECT CRC32(1) = CRC32('1');
+- output: [[true]]
+---
 - Statement: INSERT INTO all_types(varchar_field) values ('akserver'), ('mysql'), (null);
 ---
 - Statement: SELECT CRC32(varchar_field) from all_types;

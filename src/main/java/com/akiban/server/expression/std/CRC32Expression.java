@@ -26,6 +26,8 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -36,8 +38,10 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.sql.StandardException;
-import com.akiban.util.ByteSource;
+import com.akiban.sql.types.CharacterTypeAttributes;
+import java.io.UnsupportedEncodingException;
 import java.util.zip.CRC32;
 
 public class CRC32Expression extends AbstractUnaryExpression
@@ -48,7 +52,16 @@ public class CRC32Expression extends AbstractUnaryExpression
         @Override
         protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
-            return new CRC32Expression(argument);
+            String charset;
+            CharacterTypeAttributes att;
+
+            if (argType != null
+                && (att = argType.getCharacterAttributes()) != null)
+                charset = att.getCharacterSet();
+            else
+                charset = Converters.DEFAULT_CS;
+
+            return new CRC32Expression(argument, charset);
         }
 
         @Override
@@ -62,7 +75,7 @@ public class CRC32Expression extends AbstractUnaryExpression
             // and in order to get the correct bytes, we need the correct charset
             // which is inconviniently unavailable to the expression as of now
             // Thus, letting something else do the cast is the best workaround so far
-            argumentTypes.setType(0, AkType.VARBINARY);
+            argumentTypes.setType(0, AkType.VARCHAR);
 
             return ExpressionTypes.LONG;
         }
@@ -70,40 +83,53 @@ public class CRC32Expression extends AbstractUnaryExpression
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        InnerEvaluation(ExpressionEvaluation arg)
+        private final String charset;
+
+        InnerEvaluation(ExpressionEvaluation arg, String charset)
         {
             super(arg);
+            this.charset = charset;
         }
 
         @Override
         public ValueSource eval()
         {
-            
-            ValueSource arg = operand();
-            if (arg.isNull())
+            try
+            {
+                ValueSource arg = operand();
+                if (arg.isNull())
+                    return NullValueSource.only();
+                
+                CRC32 crc32 = new CRC32();
+                byte byteArr[] = arg.getString().getBytes(charset);
+                
+                crc32.update(byteArr);
+                
+                valueHolder().putLong(crc32.getValue());
+                return valueHolder();
+            }
+            catch (UnsupportedEncodingException ex)
+            {
+                QueryContext qc = queryContext();
+                if (qc != null)
+                    qc.warnClient(new InvalidParameterValueException("Invalid charset: " + charset));
                 return NullValueSource.only();
-            
-            CRC32 crc32 = new CRC32();
-            ByteSource varbin = arg.getVarBinary();
-            
-            crc32.update(varbin.byteArray(),
-                         varbin.byteArrayOffset(),
-                         varbin.byteArrayLength());
-            
-            valueHolder().putLong(crc32.getValue());
-            return valueHolder();
+            }
         }
     }
     
-    protected CRC32Expression(Expression argument)
+    private final String charset;
+    
+    protected CRC32Expression(Expression argument, String charset)
     {
         super(AkType.LONG, argument);
+        this.charset = charset;
     }
 
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(operandEvaluation());
+        return new InnerEvaluation(operandEvaluation(), charset);
     }
 
     @Override
