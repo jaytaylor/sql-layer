@@ -258,7 +258,7 @@ class AncestorLookup_Default extends Operator
         for (UserTable table : ancestors)
             atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
         
-        return new LookUpOperatorExplainer(getName(), atts, groupTable, rowType, keepInput, inputOperator, context);
+        return new LookUpOperatorExplainer(getName(), atts, rowType, keepInput, inputOperator, context);
     }
 
     // Inner classes

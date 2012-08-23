@@ -26,7 +26,6 @@
 
 package com.akiban.server.explain.std;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
@@ -34,17 +33,15 @@ import com.akiban.server.explain.*;
 
 public class LookUpOperatorExplainer extends CompoundExplainer
 {
-    public LookUpOperatorExplainer (String name, Attributes atts, GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context)
+    public LookUpOperatorExplainer (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context)
     {
-        super(Type.LOOKUP_OPERATOR, buildAtts(name, atts, gTable, iRowType, keepInput, inputOp, context));
+        super(Type.LOOKUP_OPERATOR, buildAtts(name, atts, iRowType, keepInput, inputOp, context));
     }
     
-    private static Attributes buildAtts (String name, Attributes atts, GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context)
+    private static Attributes buildAtts (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context)
     {
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         
-        // TODO: is anything else needed in Group Table other than  its name?
-        atts.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(gTable.getName().toString())); 
         atts.put(Label.ROWTYPE, iRowType.getExplainer(context));
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(iRowType.toString()));
         atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));

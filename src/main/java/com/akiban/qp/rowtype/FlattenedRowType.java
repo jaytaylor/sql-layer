@@ -97,6 +97,15 @@ public class FlattenedRowType extends DerivedRowType
     {
         return child.hKey();
     }
+    
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer explainer = super.getExplainer(context);
+        explainer.addAttribute(Label.PARENT_TYPE, parent.getExplainer(context));
+        explainer.addAttribute(Label.CHILD_TYPE, child.getExplainer(context));
+        return explainer;
+    }
 
     // FlattenedRowType interface
 
@@ -121,18 +130,6 @@ public class FlattenedRowType extends DerivedRowType
         List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
         parentAndChildTables.addAll(child.typeComposition().tables());
         typeComposition(new SingleBranchTypeComposition(this, parentAndChildTables));
-    }
-    
-    @Override
-    public CompoundExplainer getExplainer(ExplainContext context)
-    {
-        Attributes atts = new Attributes();
-        
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance(toString()));
-        atts.put(Label.PARENT_TYPE, parent.getExplainer(context));
-        atts.put(Label.CHILD_TYPE, child.getExplainer(context));
-        
-        return new CompoundExplainer(Type.ROWTYPE, atts);
     }
 
     // Object state

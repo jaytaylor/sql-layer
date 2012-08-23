@@ -311,7 +311,7 @@ public class BranchLookup_Default extends Operator
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         
-        return new LookUpOperatorExplainer(getName(), atts, groupTable, inputRowType, keepInput, inputOperator, context);
+        return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, inputOperator, context);
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor

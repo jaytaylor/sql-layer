@@ -39,13 +39,13 @@ public class CountOperatorExplainer extends CompoundExplainer
         super(Type.COUNT_OPERATOR, buildAtts(opName, inputType, resultType, inputOp, context));
     }
     
-    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType rstType, Operator inputOp, ExplainContext context)
+    private static Attributes buildAtts (String name, RowType inputType, ValuesRowType resultType, Operator inputOp, ExplainContext context)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputType));
-        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(rstType));
+        atts.put(Label.INPUT_TYPE, inputType.getExplainer(context));
+        atts.put(Label.OUTPUT_TYPE, resultType.getExplainer(context));
         if (inputOp != null)
             atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         

@@ -290,7 +290,7 @@ public class BranchLookup_Nested extends Operator
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         
-        return new LookUpOperatorExplainer(getName(), atts, groupTable, inputRowType, keepInput, null, context);
+        return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, null, context);
     }
 
     // Inner classes

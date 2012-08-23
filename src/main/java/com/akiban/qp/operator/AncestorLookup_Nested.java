@@ -240,7 +240,7 @@ class AncestorLookup_Nested extends Operator
 
         if (context.hasExtraInfo(this))
             atts.putAll(context.getExtraInfo(this).get());
-        return new LookUpOperatorExplainer(getName(), atts, groupTable, rowType, false, null, context);
+        return new LookUpOperatorExplainer(getName(), atts, rowType, false, null, context);
     }
 
     // Inner classes

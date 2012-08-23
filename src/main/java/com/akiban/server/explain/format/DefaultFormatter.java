@@ -149,12 +149,7 @@ public class DefaultFormatter
             started = true;
         }
         else if (atts.containsKey(Label.TABLE_NAME)) {
-            if (atts.containsKey(Label.TABLE_SCHEMA)) {
-                String name = atts.getValue(Label.TABLE_SCHEMA).toString();
-                if (!name.equals(defaultSchemaName))
-                    sb.append(name).append(".");
-            }
-            sb.append(atts.getValue(Label.TABLE_NAME));
+            appendTableName(atts);
             started = true;
         }
         if (atts.containsKey(Label.COLUMN_NAME)) {
@@ -264,7 +259,10 @@ public class DefaultFormatter
                     }
                 }
                 else if (name.equals("GroupScan_Default")) {
-                    sb.append(atts.getValue(Label.SCAN_OPTION)).append(" on ").append(atts.getValue(Label.GROUP_TABLE));
+                    String opt = (String)atts.getValue(Label.SCAN_OPTION);
+                    if (!opt.equals("full scan"))
+                        sb.append(opt).append(" on ");
+                    appendTableName(atts);
                 }
                 else if (name.equals("IndexScan_Default")) {
                     sb.append(atts.getValue(Label.INDEX));
@@ -302,7 +300,7 @@ public class DefaultFormatter
                 break;
             case LOOKUP_OPERATOR:
                 if (name.equals("AncestorLookup_Default")) {
-                    sb.append(atts.getValue(Label.GROUP_TABLE)).append(" -> ");
+                    sb.append(atts.getValue(Label.INPUT_TYPE)).append(" -> ");
                     if (atts.containsKey(Label.TABLE_CORRELATION)) {
                         for (Explainer table : atts.get(Label.TABLE_CORRELATION))
                             sb.append(table.get()).append(", ");
@@ -320,7 +318,7 @@ public class DefaultFormatter
                     if (atts.containsKey(Label.BINDING_POSITION))
                         sb.append(atts.getValue(Label.BINDING_POSITION));
                     else
-                        sb.append(atts.getValue(Label.GROUP_TABLE));
+                        sb.append(atts.getValue(Label.INPUT_TYPE));
                     sb.append(" -> ");
                     if (atts.containsKey(Label.TABLE_CORRELATION)) {
                         for (Explainer table : atts.get(Label.TABLE_CORRELATION))
@@ -336,7 +334,7 @@ public class DefaultFormatter
                     }
                 }
                 else if (name.equals("BranchLookup_Default")) {
-                    sb.append(atts.getValue(Label.GROUP_TABLE)).append(" -> ");
+                    sb.append(atts.getValue(Label.INPUT_TYPE)).append(" -> ");
                     if (atts.containsKey(Label.TABLE_CORRELATION)) {
                         for (Explainer table : atts.get(Label.TABLE_CORRELATION))
                             sb.append(table.get()).append(", ");
@@ -350,7 +348,7 @@ public class DefaultFormatter
                     if (atts.containsKey(Label.BINDING_POSITION))
                         sb.append(atts.getValue(Label.BINDING_POSITION));
                     else
-                        sb.append(atts.getValue(Label.GROUP_TABLE));
+                        sb.append(atts.getValue(Label.INPUT_TYPE));
                     sb.append(" -> ");
                     if (atts.containsKey(Label.TABLE_CORRELATION)) {
                         for (Explainer table : atts.get(Label.TABLE_CORRELATION))
@@ -364,12 +362,14 @@ public class DefaultFormatter
                 break;
             case COUNT_OPERATOR:
                 sb.append("*");
-                if (name.equals("Count_TableStatus"));
-                sb.append(" FROM ").append(atts.getValue(Label.INPUT_TYPE));
+                if (name.equals("Count_TableStatus")) {
+                    sb.append(" FROM ");
+                    append(atts.getAttribute(Label.INPUT_TYPE));
+                }
                 break;
-            case FILTER: // Doesn't seem to be in any of the tests
-                for (Explainer rowtype : atts.get(Label.KEEP_TYPE)) {
-                    append(rowtype);
+            case FILTER:
+                for (Explainer table : atts.get(Label.KEEP_TYPE)) {
+                    append(table);
                     sb.append(", ");
                 }
                 sb.setLength(sb.length()-2);
@@ -509,20 +509,39 @@ public class DefaultFormatter
         }
     }
     
-    protected void newRow() {
-        rows.add(sb.toString());
-        sb.delete(0, sb.length());
-    }
-
     protected void appendRowType(CompoundExplainer opEx) {
         Attributes atts = opEx.get();
-        if (atts.containsKey(Label.PARENT_TYPE) && atts.containsKey((Label.CHILD_TYPE))) {
+        if (atts.containsKey(Label.PARENT_TYPE) && 
+            atts.containsKey((Label.CHILD_TYPE))) {
             append(atts.getAttribute(Label.PARENT_TYPE));
             sb.append(" - ");
             append(atts.getAttribute(Label.CHILD_TYPE));
         }
+        else if (atts.containsKey(Label.LEFT_TYPE) && 
+                 atts.containsKey((Label.RIGHT_TYPE))) {
+            append(atts.getAttribute(Label.LEFT_TYPE));
+            sb.append(" x ");
+            append(atts.getAttribute(Label.RIGHT_TYPE));
+        }
+        else if (atts.containsKey(Label.TABLE_NAME)) {
+            appendTableName(atts);
+        }
         else {
             sb.append(atts.getValue(Label.NAME));
         }
+    }
+
+    protected void appendTableName(Attributes atts) {
+        if (atts.containsKey(Label.TABLE_SCHEMA)) {
+            String name = atts.getValue(Label.TABLE_SCHEMA).toString();
+            if (!name.equals(defaultSchemaName))
+                sb.append(name).append(".");
+        }
+        sb.append(atts.getValue(Label.TABLE_NAME));
+    }
+
+    protected void newRow() {
+        rows.add(sb.toString());
+        sb.delete(0, sb.length());
     }
 }

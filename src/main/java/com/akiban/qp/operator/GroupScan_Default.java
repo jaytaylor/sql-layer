@@ -27,6 +27,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
@@ -125,9 +126,9 @@ class GroupScan_Default extends Operator
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         att.put(Label.SCAN_OPTION, PrimitiveExplainer.getInstance(cursorCreator.describeRange()));
-        // TODO: could have a getInstance(TableName o) method?
-        att.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(cursorCreator.groupTable().getName().getTableName()));
-        
+        TableName rootName = cursorCreator.groupTable().getRoot().getName();
+        att.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(rootName.getSchemaName()));
+        att.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(rootName.getTableName()));
         return new CompoundExplainer(Type.SCAN_OPERATOR, att);
     }
 
