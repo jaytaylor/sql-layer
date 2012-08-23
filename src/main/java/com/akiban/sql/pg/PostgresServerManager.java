@@ -46,7 +46,7 @@ import com.google.inject.Inject;
 /** The PostgreSQL server service.
  * @see PostgresServer
 */
-public class PostgresServerManager implements PostgresService, Service<PostgresService>, JmxManageable {
+public class PostgresServerManager implements PostgresService, Service, JmxManageable {
     private final ServerServiceRequirements reqs;
     private PostgresServer server = null;
 
@@ -63,16 +63,6 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
         reqs = new ServerServiceRequirements(dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
                 config, indexStatisticsService, overloadResolutionService);
-    }
-
-    /*** Service<PostgresService> ***/
-
-    public PostgresService cast() {
-        return this;
-    }
-
-    public Class<PostgresService> castClass() {
-        return PostgresService.class;
     }
 
     public void start() throws ServiceStartupException {

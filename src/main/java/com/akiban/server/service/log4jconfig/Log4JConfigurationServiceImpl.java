@@ -30,7 +30,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 
 public final class Log4JConfigurationServiceImpl
-        implements Log4JConfigurationService, Service<Log4JConfigurationService>, JmxManageable {
+        implements Log4JConfigurationService, Service, JmxManageable {
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -39,16 +39,6 @@ public final class Log4JConfigurationServiceImpl
                 Log4JConfigurationMXBeanSingleton.instance(),
                 Log4JConfigurationMXBean.class
         );
-    }
-
-    @Override
-    public Log4JConfigurationService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<Log4JConfigurationService> castClass() {
-        return Log4JConfigurationService.class;
     }
 
     @Override
