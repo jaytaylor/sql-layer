@@ -54,7 +54,7 @@ import java.lang.management.ManagementFactory;
 /**
  * @author peter
  */
-public class AkServer implements Service<AkServerInterface>, JmxManageable, AkServerInterface
+public class AkServer implements Service, JmxManageable, AkServerInterface
 {
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();

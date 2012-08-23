@@ -156,7 +156,7 @@ import static com.akiban.ais.model.AISMerge.findMaxIndexIDInGroup;
  * </p>
  * </p>
  */
-public class PersistitStoreSchemaManager implements Service<SchemaManager>, SchemaManager {
+public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public static enum SerializationType {
         NONE,
         META_MODEL,

@@ -53,7 +53,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 @Singleton
-public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<FunctionsRegistry>, JmxManageable {
+public final class FunctionsRegistryImpl implements FunctionsRegistry, Service, JmxManageable {
 
     // AggregatorRegistry interface
 

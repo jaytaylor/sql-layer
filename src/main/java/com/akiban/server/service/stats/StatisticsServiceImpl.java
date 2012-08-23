@@ -34,7 +34,7 @@ import com.akiban.util.tap.TapReport;
 import com.google.inject.Inject;
 
 public final class StatisticsServiceImpl implements StatisticsService,
-        Service<StatisticsService>, JmxManageable {
+        Service, JmxManageable {
 
     private static final String STATISTICS_PROPERTY = "akserver.statistics";
 

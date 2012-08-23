@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class OverloadResolutionServiceImpl implements OverloadResolutionService, Service<OverloadResolutionService> {
+public class OverloadResolutionServiceImpl implements OverloadResolutionService, Service {
 
     @Override
     public OverloadResolver getResolver() {

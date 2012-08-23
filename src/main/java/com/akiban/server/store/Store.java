@@ -50,7 +50,7 @@ import java.util.Collection;
  * @author peter
  * 
  */
-public interface Store extends Service<Store> {
+public interface Store extends Service {
 
     RowDefCache getRowDefCache();
 

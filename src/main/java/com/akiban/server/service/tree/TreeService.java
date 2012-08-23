@@ -46,7 +46,7 @@ import com.persistit.exception.PersistitException;
  * @author peter
  * 
  */
-public interface TreeService extends Service<TreeService>, KeyCreator {
+public interface TreeService extends Service, KeyCreator {
 
     final static Logger logger = LoggerFactory.getLogger(TreeService.class.getName());
 

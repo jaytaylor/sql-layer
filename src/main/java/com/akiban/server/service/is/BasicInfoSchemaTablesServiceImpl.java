@@ -64,7 +64,7 @@ import java.util.Map;
 
 public class BasicInfoSchemaTablesServiceImpl
     extends SchemaTablesService
-    implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
+    implements Service, BasicInfoSchemaTablesService {
     
     static final TableName SCHEMATA = new TableName(SCHEMA_NAME, "schemata");
     static final TableName TABLES = new TableName(SCHEMA_NAME, "tables");

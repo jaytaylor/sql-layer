@@ -36,8 +36,7 @@ import java.io.PrintStream;
 
 import com.google.inject.Inject;
 
-public class SwingConsoleServiceImpl implements SwingConsoleService, Service<SwingConsoleService> 
-{
+public class SwingConsoleServiceImpl implements SwingConsoleService, Service {
     private final ServiceManager serviceManager;
     private final PrintStream origOut = System.out;
     private SwingConsole console;

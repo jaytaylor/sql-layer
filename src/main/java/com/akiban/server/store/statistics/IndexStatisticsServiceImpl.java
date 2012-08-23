@@ -61,7 +61,7 @@ import java.util.*;
 import java.io.File;
 import java.io.IOException;
 
-public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
+public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service, JmxManageable
 {
     private final static int INDEX_STATISTICS_TABLE_VERSION = 1;
 

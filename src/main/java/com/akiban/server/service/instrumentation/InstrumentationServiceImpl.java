@@ -44,7 +44,7 @@ import com.akiban.server.service.jmx.JmxManageable;
 
 public class InstrumentationServiceImpl implements
     InstrumentationService, 
-    Service<InstrumentationService>,
+    Service,
     InstrumentationMXBean,
     JmxManageable {
     

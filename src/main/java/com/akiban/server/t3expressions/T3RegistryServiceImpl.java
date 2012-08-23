@@ -74,7 +74,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-public final class T3RegistryServiceImpl implements T3RegistryService, Service<T3RegistryService>, JmxManageable {
+public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
 
     // T3RegistryService interface
 

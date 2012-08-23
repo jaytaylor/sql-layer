@@ -39,7 +39,7 @@ import javax.management.ObjectName;
 
 import com.akiban.server.service.Service;
 
-public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service<JmxRegistryService> {
+public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service {
     private static final String FORMATTER = "com.akiban:type=%s";
 
     private boolean started = false;

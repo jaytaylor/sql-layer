@@ -51,7 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManageable {
+public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     private final Object MONITOR = new Object();
 

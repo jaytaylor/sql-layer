@@ -46,7 +46,7 @@ import com.akiban.util.tap.Tap;
 
 public class ConfigurationServiceImpl implements ConfigurationService,
         ConfigurationServiceMXBean, JmxManageable,
-        Service<ConfigurationService> {
+        Service {
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private final static String AKIBAN_ADMIN = "akiban.admin";
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";

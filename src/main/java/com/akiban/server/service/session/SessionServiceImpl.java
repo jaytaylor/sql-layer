@@ -30,7 +30,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class SessionServiceImpl implements SessionService, Service<SessionService>, SessionEventListener, JmxManageable {
+public final class SessionServiceImpl implements SessionService, Service, SessionEventListener, JmxManageable {
 
     private final AtomicLong sessionsCreated = new AtomicLong();
     private final AtomicLong sessionsClosed = new AtomicLong();
