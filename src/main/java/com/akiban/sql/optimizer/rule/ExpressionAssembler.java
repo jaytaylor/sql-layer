@@ -62,6 +62,7 @@ abstract class ExpressionAssembler<T> {
 
     public abstract ConstantExpression evalNow(PlanContext planContext, ExpressionNode node);
     PlanContext planContext;
+    PlanExplainContext explainContext;
 
     protected abstract T assembleFunction(ExpressionNode functionNode,
                                           String functionName,
@@ -162,7 +163,8 @@ abstract class ExpressionAssembler<T> {
             if (fieldIndex >= 0)
             {
                 T expression = assembleFieldExpression(currentRow.getRowType(), fieldIndex);
-                addExtraInfo(expression, column);
+                if (explainContext != null)
+                    explainColumnExpression(expression, column);
                 return expression;
             }
         }
@@ -175,7 +177,8 @@ abstract class ExpressionAssembler<T> {
             if (fieldIndex >= 0) {
                 rowIndex += columnContext.getLoopBindingsOffset();
                 T expression = assembleBoundFieldExpression(boundRow.getRowType(), rowIndex, fieldIndex);
-                addExtraInfo(expression, column);
+                if (explainContext != null)
+                    explainColumnExpression(expression, column);
                 return expression;
             }
         }
@@ -184,17 +187,13 @@ abstract class ExpressionAssembler<T> {
         throw new AkibanInternalException("Column not found " + column);
     }
 
-    private void addExtraInfo(T expression, ColumnExpression column) {
-        ExplainContext explainContext = planContext.getExplainContext();
-        if ((explainContext != null) &&
-            // TODO: Until TPreparedExpression is Explainable.
-            (expression instanceof Expression)) {
-            CompoundExplainer explainer = new CompoundExplainer(Type.EXTRA_INFO);
-            explainer.addAttribute(Label.COLUMN_NAME, 
-                                   // TODO: Break into pieces.
-                                   PrimitiveExplainer.getInstance(column.toString()));
-            explainContext.putExtraInfo((Expression)expression, explainer);
-        }
+    private void explainColumnExpression(T expression, ColumnExpression column) {
+        CompoundExplainer explainer = new CompoundExplainer(Type.EXTRA_INFO);
+        explainer.addAttribute(Label.COLUMN_NAME, 
+                               // TODO: Break into pieces.
+                               PrimitiveExplainer.getInstance(column.toString()));
+        // TODO: Until TPreparedExpression is Explainable.
+        explainContext.putExtraInfo((Expression)expression, explainer);
     }
 
     public abstract Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys,

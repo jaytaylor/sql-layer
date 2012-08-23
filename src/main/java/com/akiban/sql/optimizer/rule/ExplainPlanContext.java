@@ -28,18 +28,15 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
 
-import com.akiban.server.explain.ExplainContext;
-
 public class ExplainPlanContext extends PlanContext
 {
-    private ExplainContext explainContext = new ExplainContext();
+    private PlanExplainContext explainContext = new PlanExplainContext();
 
     public ExplainPlanContext(OperatorCompiler rulesContext) {
         super(rulesContext);
     }
 
-    @Override
-    public ExplainContext getExplainContext() {
+    public PlanExplainContext getExplainContext() {
         return explainContext;
     }
 

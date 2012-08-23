@@ -39,7 +39,7 @@ public class Attributes extends EnumMap<Label, List<Explainer>>
         List<Explainer> l = get(label);
         if (l == null)
             return null;
-        assert (l.size() == 1);
+        assert (l.size() == 1) : l;
         return l.get(0);
     }
 

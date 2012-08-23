@@ -237,9 +237,9 @@ public class DefaultFormatter
                             if (first) {
                                 Object hi, lo;
                                 if (atts.containsKey(Label.HIGH_COMPARAND)) {
-                                    hi = atts.getValue(Label.HIGH_COMPARAND);
+                                    hi = atts.get(Label.HIGH_COMPARAND).get(0).get();
                                     if (atts.containsKey(Label.LOW_COMPARAND)) {
-                                        lo = atts.getValue(Label.LOW_COMPARAND);
+                                        lo = atts.get(Label.LOW_COMPARAND).get(0).get();
                                         if (atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE"))
                                             if (atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE"))
                                                 sb.append(" BETWEEN ").append(lo).append(" AND ").append(hi);

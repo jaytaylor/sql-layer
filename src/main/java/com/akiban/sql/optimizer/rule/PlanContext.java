@@ -102,8 +102,4 @@ public class PlanContext
     public QueryContext getQueryContext() {
         return new SimpleQueryContext(null);
     }
-
-    public ExplainContext getExplainContext() {
-        return null;
-    }
 }
