@@ -78,7 +78,6 @@ public class PersistitIndexRowPool
 
     private static PersistitIndexRow newIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        INDEX_ROW_ALLOCATION_COUNT.incrementAndGet();
         return
             indexRowType.index().isTableIndex()
             ? new PersistitTableIndexRow(adapter, indexRowType)
@@ -88,7 +87,6 @@ public class PersistitIndexRowPool
     // Class state
 
     public static final String INDEX_ROW_POOLING = "akserver.indexRowPooling";
-    public static final AtomicInteger INDEX_ROW_ALLOCATION_COUNT = new AtomicInteger(0);
     private static final int CAPACITY = 100;
     private static final float LOAD_FACTOR = 0.7f;
 
