@@ -57,7 +57,9 @@ public class MDateName extends TOverloadBase {
             @Override
             void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
                 MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
-                String day = DAYS[datetime.getDayOfWeek()%7];
+                // joda:            mon = 1, ..., sat = 6, sun = 7
+                // mysql DAYOFWEEK: mon = 2, ..., sat = 7, sun = 1
+                String day = DAYS[datetime.getDayOfWeek()%7 + 1];
                 output.putString(day, null);
             }
         };
