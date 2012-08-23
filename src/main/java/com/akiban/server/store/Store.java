@@ -64,6 +64,7 @@ public interface Store {
             long rowCount);
 
     void deleteRow(Session session, RowData rowData) throws PersistitException;
+    void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException;
 
     void updateRow(Session session, RowData oldRowData,
                    RowData newRowData,
@@ -175,5 +176,5 @@ public interface Store {
     /** Get the underlying {@link PersistitStore}. */
     public PersistitStore getPersistitStore();
 
-    void truncateIndex(Session session, Collection<? extends Index> indexes);
+    void truncateIndexes(Session session, Collection<? extends Index> indexes);
 }

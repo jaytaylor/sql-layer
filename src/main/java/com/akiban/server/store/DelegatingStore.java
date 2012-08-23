@@ -99,6 +99,10 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
         delegate.deleteRow(session, rowData);
     }
 
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException {
+        delegate.deleteRow(session, rowData);
+    }
+
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes) throws PersistitException {
         delegate.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
     }
@@ -178,7 +182,7 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
     }
 
     @Override
-    public void truncateIndex(Session session, Collection<? extends Index> indexes) {
-        delegate.truncateIndex(session, indexes);
+    public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
+        delegate.truncateIndexes(session, indexes);
     }
 }
