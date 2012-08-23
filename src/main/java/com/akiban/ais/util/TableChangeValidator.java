@@ -372,13 +372,16 @@ public class TableChangeValidator {
                     }
                     Column oldColumn = oldTable.getColumn(change.getOldName());
                     Column newColumn = newTable.getColumn(change.getNewName());
-                    if((oldColumn.getIdentityGenerator() != null) && (newColumn.getIdentityGenerator() == null)) {
+                    if((oldColumn != null) && (oldColumn.getIdentityGenerator() != null) && (newColumn.getIdentityGenerator() == null)) {
                         seqToDrop = oldColumn.getIdentityGenerator();
                     }
                 } break;
-                case DROP:
-                    seqToDrop = oldTable.getColumn(change.getOldName()).getIdentityGenerator();
-                break;
+                case DROP: {
+                    Column oldColumn = oldTable.getColumn(change.getOldName());
+                    if(oldColumn != null) {
+                        seqToDrop = oldColumn.getIdentityGenerator();
+                    }
+                } break;
             }
             if(seqToDrop != null) {
                 droppedSequences.add(seqToDrop.getSequenceName());
