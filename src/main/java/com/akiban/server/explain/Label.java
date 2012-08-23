@@ -54,6 +54,7 @@ public enum Label
     
     // DESCRIPTION (may or may not needed)
     //--------------------------------------------------------------------------
+    POSITION(Category.DESCRIPTION),
     BINDING_POSITION(Category.DESCRIPTION),
     EXTRA_TAG(Category.DESCRIPTION), // extra info
     INFIX_REPRESENTATION(Category.DESCRIPTION),
@@ -66,6 +67,8 @@ public enum Label
     START_TABLE(Category.IDENTIFIER),
     STOP_TABLE(Category.IDENTIFIER),
     GROUP_TABLE(Category.IDENTIFIER),
+    TABLE_SCHEMA(Category.IDENTIFIER),
+    TABLE_NAME(Category.IDENTIFIER),
     TABLE_CORRELATION(Category.IDENTIFIER),
     COLUMN_NAME(Category.IDENTIFIER),
     

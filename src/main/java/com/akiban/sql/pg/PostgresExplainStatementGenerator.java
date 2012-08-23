@@ -71,7 +71,7 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
         if (compiler instanceof PostgresJsonCompiler)
             explain = Collections.singletonList(result.explainToJson(context.getExplainContext()));
         else
-            explain = result.explainPlan(context.getExplainContext());
+            explain = result.explainPlan(context.getExplainContext(), server.getDefaultSchemaName());
         return new PostgresExplainStatement(explain, compiler.usesPValues());
     }
 }

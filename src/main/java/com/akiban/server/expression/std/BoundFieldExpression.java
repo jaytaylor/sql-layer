@@ -94,7 +94,10 @@ public final class BoundFieldExpression implements Expression {
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
-        CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context, fieldExpression);
+        // Extend Field inside, rather than wrapping it.
+        CompoundExplainer ex = fieldExpression.getExplainer(context);
+        ex.get().remove(Label.NAME); // Want to replace.
+        ex.addAttribute(Label.NAME, PrimitiveExplainer.getInstance(name()));
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(rowBindingPosition));
         if (context.hasExtraInfo(this))
             ex.get().putAll(context.getExtraInfo(this).get());

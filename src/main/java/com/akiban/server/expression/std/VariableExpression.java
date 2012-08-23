@@ -97,7 +97,7 @@ public final class VariableExpression implements Expression {
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
-        CompoundExplainer ex = new ExpressionExplainer(Type.FUNCTION, name(), context);
+        CompoundExplainer ex = new ExpressionExplainer(Type.VARIABLE, name(), context);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(position));
         return ex;
     }

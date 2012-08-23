@@ -39,6 +39,8 @@ import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.optimizer.plan.SubqueryExpression;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.collation.AkCollator;
@@ -189,9 +191,20 @@ abstract class ExpressionAssembler<T> {
 
     private void explainColumnExpression(T expression, ColumnExpression column) {
         CompoundExplainer explainer = new CompoundExplainer(Type.EXTRA_INFO);
-        explainer.addAttribute(Label.COLUMN_NAME, 
-                               // TODO: Break into pieces.
-                               PrimitiveExplainer.getInstance(column.toString()));
+        explainer.addAttribute(Label.TABLE_CORRELATION, 
+                               PrimitiveExplainer.getInstance(column.getTable().getName()));
+        explainer.addAttribute(Label.POSITION, 
+                               PrimitiveExplainer.getInstance(column.getPosition()));
+        Column aisColumn = column.getColumn();
+        if (aisColumn != null) {
+            TableName tableName = aisColumn.getTable().getName();
+            explainer.addAttribute(Label.TABLE_SCHEMA,
+                                   PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            explainer.addAttribute(Label.TABLE_NAME,
+                                   PrimitiveExplainer.getInstance(tableName.getTableName()));
+            explainer.addAttribute(Label.COLUMN_NAME,
+                                   PrimitiveExplainer.getInstance(aisColumn.getName()));
+        }
         // TODO: Until TPreparedExpression is Explainable.
         explainContext.putExtraInfo((Expression)expression, explainer);
     }

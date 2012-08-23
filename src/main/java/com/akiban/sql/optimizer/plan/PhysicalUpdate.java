@@ -51,10 +51,10 @@ public class PhysicalUpdate extends BasePlannable
     }
 
     @Override
-    protected String withIndentedExplain(StringBuilder str, ExplainContext context) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
-        return super.withIndentedExplain(str, context);
+        return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
 }

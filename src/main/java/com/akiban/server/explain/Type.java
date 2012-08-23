@@ -45,10 +45,12 @@ public enum Type
     
     // EXPRESSION
     //-------------------------------------------------------------------------- 
-    FUNCTION(GeneralType.EXPRESSION), 
+    FIELD(GeneralType.EXPRESSION),
+    FUNCTION(GeneralType.EXPRESSION),
     BINARY_OPERATOR(GeneralType.EXPRESSION),
     SUBQUERY(GeneralType.EXPRESSION),
     LITERAL(GeneralType.EXPRESSION),
+    VARIABLE(GeneralType.EXPRESSION),
     TYPES3(GeneralType.EXPRESSION), // TODO: Temporary
 
     // OPERATORS

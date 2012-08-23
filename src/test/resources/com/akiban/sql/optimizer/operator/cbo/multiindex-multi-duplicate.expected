@@ -4,7 +4,7 @@ PhysicalSelect[quan:int[INT], quan:int[INT]]
       Flatten_HKeyOrdered(test.customers - test.orders INNER test.items)
         Flatten_HKeyOrdered(test.customers INNER test.orders)
           AncestorLookup_Default(test._akiban_customers -> test.customers, test.orders, test.items)
-            Intersect_Ordered(skip 1 left, skip 1 right, compare 1, USING 'INNER_JOIN')
+            Intersect_Ordered(skip 1 left, skip 1 right, compare 1)
               IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]), sku = 1234, cid, oid, iid)
               IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]), sku = 4567, cid, oid, iid)
       Filter_Default(test.customers - test.orders - test.items)

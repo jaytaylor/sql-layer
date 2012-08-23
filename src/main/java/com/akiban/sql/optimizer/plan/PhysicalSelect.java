@@ -84,11 +84,11 @@ public class PhysicalSelect extends BasePlannable
     }
     
     @Override
-    protected String withIndentedExplain(StringBuilder str, ExplainContext context) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
         str.append(resultColumns);
-        return super.withIndentedExplain(str, context);
+        return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
 }

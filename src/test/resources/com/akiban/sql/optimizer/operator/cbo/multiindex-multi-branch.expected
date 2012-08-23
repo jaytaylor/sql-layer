@@ -5,6 +5,6 @@ PhysicalSelect[cid:int[INT]]
         Select_HKeyOrdered(addresses.state == 'CA')
           BranchLookup_Default(test._akiban_customers -> test.addresses (via test.customers))
             AncestorLookup_Default(test._akiban_customers -> test.customers)
-              Intersect_Ordered(skip 1 left, skip 1 right, compare 1, USING 'INNER_JOIN')
+              Intersect_Ordered(skip 1 left, skip 1 right, compare 1)
                 IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]), order_date = 2010-04-22, cid, oid)
                 IndexScan_Default(Index(test.addresses.state[IndexColumn(state)]), state = CA, cid, aid)

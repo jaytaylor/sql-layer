@@ -252,7 +252,7 @@ class Intersect_Ordered extends Operator
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFixedFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFixedFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
-        atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name()));
+        atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name().replace("_JOIN", "")));
         atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
         return new CompoundExplainer(Type.ORDERED, atts);

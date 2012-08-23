@@ -67,35 +67,35 @@ public abstract class BasePlannable extends BasePlanNode
         // Do not copy operators.
     }
     
-    public List<String> explainPlan(ExplainContext context) {
-        DefaultFormatter f = new DefaultFormatter(true);
-        return f.describeToList(plannable.getExplainer(context));
+    public List<String> explainPlan(ExplainContext context, String defaultSchemaName) {
+        DefaultFormatter f = new DefaultFormatter(defaultSchemaName, true);
+        return f.format(plannable.getExplainer(context));
     }
     
     public String explainToJson(ExplainContext context) {
         JsonFormatter f = new JsonFormatter();
         return f.format(plannable.getExplainer(context));
     }
-    
-    public String explainToString(ExplainContext context) {
-        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context);
+
+    public String explainToString(ExplainContext context, String defaultSchemaName) {
+        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context, defaultSchemaName);
     }
 
     @Override
     public String toString() {
-        return explainToString(null);
+        return explainToString(null, null);
     }
 
     @Override
     public String summaryString() {
         // Similar to above, but with @hash for consistency.
-        return withIndentedExplain(new StringBuilder(super.summaryString()), null);
+        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null);
     }
 
-    protected String withIndentedExplain(StringBuilder str, ExplainContext context) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (context == null)
             context = new ExplainContext(); // Empty
-        for (String operator : explainPlan(context)) {
+        for (String operator : explainPlan(context, defaultSchemaName)) {
             str.append("\n  ");
             str.append(operator);
         }

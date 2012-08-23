@@ -34,49 +34,77 @@ import java.util.List;
 
 public class DefaultFormatter
 {
-    private boolean verbose = true;
+    private String defaultSchemaName;
+    private boolean verbose;
     private int numSubqueries = 0;
     private List<CompoundExplainer> subqueries = new ArrayList<CompoundExplainer>();
     private StringBuilder sb = new StringBuilder();
     private List<String> rows = new ArrayList<String>();
     
-    public DefaultFormatter(boolean verbose) {
+    public DefaultFormatter(String defaultSchemaName, boolean verbose) {
+        this.defaultSchemaName = defaultSchemaName;
         this.verbose = verbose;
     }
 
-    public List<String> describeToList(Explainer explainer) {
-        describe(explainer);
+    public List<String> format(Explainer explainer) {
+        append(explainer);
         for (int i = 1; i <= numSubqueries; i++) {
             newRow();
             sb.append("SUBQUERY ").append(i).append(':');
             newRow();
-            describeOperator(subqueries.get(i-1), 0);
+            appendOperator(subqueries.get(i-1), 0);
         }
         newRow();
         return rows;
     }
     
-    private void describe(Explainer explainer) {
-        describe(explainer, sb, false, null);
+    protected void append(Explainer explainer) {
+        append(explainer, false, null);
     }
 
-    protected void describe(Explainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
+    protected void append(Explainer explainer, boolean needsParens, String parentName) {
         switch (explainer.getType().generalType()) {
         case SCALAR_VALUE:
-            describePrimitive((PrimitiveExplainer)explainer);
+            appendPrimitive((PrimitiveExplainer)explainer);
             break;
         case OPERATOR:
-            describeOperator((CompoundExplainer)explainer, 0);
+            appendOperator((CompoundExplainer)explainer, 0);
             break;
         case ROWTYPE:
-            describeRowType((CompoundExplainer)explainer);
+            appendRowType((CompoundExplainer)explainer);
             break;
         default:
-            describeExpression((CompoundExplainer)explainer, needsParens, parentName);
+            appendExpression((CompoundExplainer)explainer, needsParens, parentName);
         }
     }
 
-    protected void describeExpression(CompoundExplainer explainer, boolean needsParens, String parentName) {
+    protected void appendPrimitive(PrimitiveExplainer explainer) {
+        sb.append(explainer.get());
+    }
+
+    protected void appendExpression(CompoundExplainer explainer, boolean needsParens, String parentName) {
+        switch (explainer.getType()) {
+        case FIELD:
+            appendField(explainer);
+            break;
+        case FUNCTION:
+        case BINARY_OPERATOR:
+        case TYPES3:
+            appendFunction(explainer, needsParens, parentName);
+            break;
+        case SUBQUERY:
+            appendSubquery(explainer);
+            break;
+        case LITERAL:
+            appendLiteral(explainer);
+            break;
+        case VARIABLE:
+            appendVariable(explainer);
+            break;
+        }
+    }
+
+    protected void appendFunction(CompoundExplainer explainer, boolean needsParens, String parentName) {
         Attributes atts = explainer.get();
         String name = atts.getValue(Label.NAME).toString();
         
@@ -89,48 +117,22 @@ public class DefaultFormatter
             }
             if (needsParens)
                 sb.append("(");
-            describe(leftExplainer, sb, true, name);
+            append(leftExplainer, true, name);
             sb.append(" ").append(atts.getValue(Label.INFIX_REPRESENTATION)).append(" ");
-            describe(rightExplainer, sb, true, name);
+            append(rightExplainer, true, name);
             if (needsParens)
                 sb.append(")");
         }
-        else if (explainer.getType().equals(Type.LITERAL)) {
-            sb.append(atts.getValue(Label.OPERAND));
-        }
-        else if (explainer.getType().equals(Type.SUBQUERY)) {
-            sb.append("SUBQUERY ").append(++numSubqueries);
-            subqueries.add((CompoundExplainer)atts.getAttribute(Label.OPERAND));
-        }
         else if (name.startsWith("CAST")) {
             sb.append(name.substring(0, 4)).append("(");
-            describe(atts.getAttribute(Label.OPERAND));
+            append(atts.getAttribute(Label.OPERAND));
             sb.append(" AS ").append(atts.getValue(Label.OUTPUT_TYPE)).append(")");
-        }
-        else if (name.equals("Bound")) {
-            if (atts.containsKey(Label.COLUMN_NAME))
-                sb.append(atts.getValue(Label.COLUMN_NAME));
-            else {
-                sb.append(name).append("(").append(atts.getValue(Label.BINDING_POSITION)).append(",");
-                describe(atts.getAttribute(Label.OPERAND));
-                sb.append(")");
-            }
-        }
-        else if (name.equals("Variable")) {
-            int pos = ((Number)atts.getValue(Label.BINDING_POSITION)).intValue();
-            sb.append("$").append(pos+1);
-        }
-        else if (name.equals("Field")) {
-            if (atts.containsKey(Label.COLUMN_NAME))
-                sb.append(atts.getValue(Label.COLUMN_NAME));
-            else
-                sb.append(name).append('(').append(atts.getValue(Label.BINDING_POSITION)).append(')');
         }
         else {
             sb.append(name).append('(');
             if (atts.containsKey(Label.OPERAND)) {
                 for (Explainer entry : atts.get(Label.OPERAND)) {
-                    describe(entry);
+                    append(entry);
                     sb.append(", ");
                 }
                 sb.setLength(sb.length()-2);
@@ -139,17 +141,56 @@ public class DefaultFormatter
         }
     }
 
-    protected void describePrimitive(PrimitiveExplainer explainer) {
-
-        if (explainer.getType()==Type.STRING) {
-            sb.append('\'').append(explainer.get()).append('\'');
+    protected void appendField(CompoundExplainer explainer) {
+        Attributes atts = explainer.get();
+        boolean started = false;
+        if (atts.containsKey(Label.TABLE_CORRELATION)) {
+            sb.append(atts.getValue(Label.TABLE_CORRELATION));
+            started = true;
+        }
+        else if (atts.containsKey(Label.TABLE_NAME)) {
+            if (atts.containsKey(Label.TABLE_SCHEMA)) {
+                String name = atts.getValue(Label.TABLE_SCHEMA).toString();
+                if (!name.equals(defaultSchemaName))
+                    sb.append(name).append(".");
+            }
+            sb.append(atts.getValue(Label.TABLE_NAME));
+            started = true;
+        }
+        if (atts.containsKey(Label.COLUMN_NAME)) {
+            if (started) sb.append(".");
+            sb.append(atts.getValue(Label.COLUMN_NAME));
+        }
+        else if (started) {
+            sb.append('[').append(atts.getValue(Label.POSITION)).append(']');
         }
         else {
-            sb.append(explainer.get());
+            sb.append(atts.getValue(Label.NAME)).append('(');
+            if (atts.containsKey(Label.BINDING_POSITION)) {
+                sb.append(atts.getValue(Label.BINDING_POSITION)).append(", ");
+            }
+            sb.append(atts.getValue(Label.POSITION)).append(')');
         }
     }
 
-    protected void describeOperator(CompoundExplainer explainer, int depth) {
+    protected void appendSubquery(CompoundExplainer explainer) {
+        Attributes atts = explainer.get();
+        sb.append("SUBQUERY ").append(++numSubqueries);
+        subqueries.add((CompoundExplainer)atts.getAttribute(Label.OPERAND));
+    }
+
+    protected void appendLiteral(CompoundExplainer explainer) {
+        Attributes atts = explainer.get();
+        sb.append(atts.getValue(Label.OPERAND));
+    }
+
+    protected void appendVariable(CompoundExplainer explainer) {
+        Attributes atts = explainer.get();
+        int pos = ((Number)atts.getValue(Label.BINDING_POSITION)).intValue();
+        sb.append("$").append(pos+1);
+    }
+
+    protected void appendOperator(CompoundExplainer explainer, int depth) {
         
         Attributes atts = explainer.get();
         Type type = explainer.getType();
@@ -205,11 +246,11 @@ public class DefaultFormatter
             sb.append(name).append("(");
             switch (type) {
             case SELECT_HKEY:
-                describe(atts.getAttribute(Label.PREDICATE));
+                append(atts.getAttribute(Label.PREDICATE));
                 break;
             case PROJECT:
                 for (Explainer projection : atts.get(Label.PROJECTION)) {
-                    describe(projection);
+                    append(projection);
                     sb.append(", ");
                 }
                 sb.setLength(sb.length()-2);
@@ -252,7 +293,7 @@ public class DefaultFormatter
                                         sb.append(atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE") ? " <= " : " < ").append(hi);
                                 }
                                 else if (atts.containsKey(Label.LOW_COMPARAND))
-                                    sb.append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(atts.getValue(Label.LOW_COMPARAND));
+                                    sb.append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(atts.get(Label.LOW_COMPARAND).get(0).get());
                                 first = false;
                             }
                         }
@@ -328,35 +369,37 @@ public class DefaultFormatter
                 break;
             case FILTER: // Doesn't seem to be in any of the tests
                 for (Explainer rowtype : atts.get(Label.KEEP_TYPE)) {
-                    describe(rowtype);
+                    append(rowtype);
                     sb.append(", ");
                 }
                 sb.setLength(sb.length()-2);
                 break;
             case FLATTEN_OPERATOR:
-                describe(atts.getAttribute(Label.PARENT_TYPE));
+                append(atts.getAttribute(Label.PARENT_TYPE));
                 sb.append(" ").append(atts.getValue(Label.JOIN_OPTION)).append(" ");
-                describe(atts.getAttribute(Label.CHILD_TYPE));
+                append(atts.getAttribute(Label.CHILD_TYPE));
                 break;
             case ORDERED:
                 sb.append("skip ");
-                describe(atts.getAttribute(Label.LEFT));
+                append(atts.getAttribute(Label.LEFT));
                 sb.append(" left, skip ");
-                describe(atts.getAttribute(Label.RIGHT));
+                append(atts.getAttribute(Label.RIGHT));
                 sb.append(" right, compare ");
-                describe(atts.getAttribute(Label.NUM_COMPARE));
+                append(atts.getAttribute(Label.NUM_COMPARE));
                 if (name.equals("HKeyUnion")) {
                     sb.append(", shorten to ");
-                    describe(atts.getAttribute(Label.OUTPUT_TYPE));
+                    append(atts.getAttribute(Label.OUTPUT_TYPE));
                 }
                 else if (name.equals("Intersect_Ordered")) {
-                    sb.append(", USING ");
-                    describe(atts.getAttribute(Label.JOIN_OPTION));
+                    String join = (String)atts.getValue(Label.JOIN_OPTION);
+                    if (!"INNER".equals(join)) {
+                        sb.append(", USING ").append(join);
+                    }
                 }
                 break;
             case IF_EMPTY:
                 for (Explainer expression : atts.get(Label.OPERAND)) {
-                    describe(expression);
+                    append(expression);
                     sb.append(", ");
                 }
                 if (!atts.valuePairs().isEmpty()) {
@@ -364,7 +407,7 @@ public class DefaultFormatter
                 }
                 break;
             case LIMIT_OPERATOR:
-                describe(atts.getAttribute(Label.LIMIT));
+                append(atts.getAttribute(Label.LIMIT));
                 break;
             case NESTED_LOOPS:
                 if (name.equals("Map_NestedLoops")) {
@@ -374,15 +417,15 @@ public class DefaultFormatter
                         sb.append("loop_").append(atts.getValue(Label.BINDING_POSITION));
                 }
                 else if (name.equals("Product_NestedLoops")) {
-                    describe(atts.getAttribute(Label.OUTER_TYPE));
+                    append(atts.getAttribute(Label.OUTER_TYPE));
                     sb.append(" x ");
-                    describe(atts.getAttribute(Label.INNER_TYPE));
+                    append(atts.getAttribute(Label.INNER_TYPE));
                 }
                 break;
             case SORT:
                 int i = 0;
                 for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
-                    describe(ex);
+                    append(ex);
                     sb.append(' ').append(atts.get(Label.ORDERING).get(i++).get()).append(", ");
                 }
                 if (atts.containsKey(Label.LIMIT)) {
@@ -419,7 +462,7 @@ public class DefaultFormatter
                         sb.append(" SET ");
                         for (int j = 0; j < Math.min(atts.get(Label.COLUMN_NAME).size(), atts.get(Label.EXPRESSIONS).size()); j++) {
                             sb.append(atts.get(Label.COLUMN_NAME).get(j).get()).append(" = ");
-                            describe(atts.get(Label.EXPRESSIONS).get(j));
+                            append(atts.get(Label.EXPRESSIONS).get(j));
                             sb.append(", ");
                         }
                         sb.setLength(sb.length()-2);
@@ -461,22 +504,22 @@ public class DefaultFormatter
                 for (int i = 0; i <= depth; i++) {
                     sb.append("  ");
                 }
-                describeOperator((CompoundExplainer) input, depth + 1);
+                appendOperator((CompoundExplainer) input, depth + 1);
             }
         }
     }
     
-    private void newRow() {
+    protected void newRow() {
         rows.add(sb.toString());
         sb.delete(0, sb.length());
     }
 
-    private void describeRowType(CompoundExplainer opEx) {
+    protected void appendRowType(CompoundExplainer opEx) {
         Attributes atts = opEx.get();
         if (atts.containsKey(Label.PARENT_TYPE) && atts.containsKey((Label.CHILD_TYPE))) {
-            describe(atts.getAttribute(Label.PARENT_TYPE));
+            append(atts.getAttribute(Label.PARENT_TYPE));
             sb.append(" - ");
-            describe(atts.getAttribute(Label.CHILD_TYPE));
+            append(atts.getAttribute(Label.CHILD_TYPE));
         }
         else {
             sb.append(atts.getValue(Label.NAME));

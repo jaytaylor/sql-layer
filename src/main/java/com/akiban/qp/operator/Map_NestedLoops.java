@@ -155,9 +155,7 @@ class Map_NestedLoops extends Operator
         CompoundExplainer ex = new NestedLoopsExplainer(getName(), innerInputOperator, outerInputOperator, null, null, context);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
         if (context.hasExtraInfo(this))
-        {
-            ex.addAttribute(Label.TABLE_CORRELATION, context.getExtraInfo(this).get().get(Label.TABLE_CORRELATION).get(0));
-        }
+            ex.get().putAll(context.getExtraInfo(this).get());
         return ex;
     }
 
