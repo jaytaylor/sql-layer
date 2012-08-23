@@ -70,7 +70,7 @@ public enum Type
     FILTER(GeneralType.OPERATOR),
     PROJECT(GeneralType.OPERATOR),
     SELECT_HKEY(GeneralType.OPERATOR),
-    PHYSICAL_OPERATOR(GeneralType.OPERATOR), // could be broken down to scan_operator, sort operator, etc?
+    AGGREGATE(GeneralType.OPERATOR),
     ORDERED(GeneralType.OPERATOR),
     BLOOM_FILTER(GeneralType.OPERATOR),
     

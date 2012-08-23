@@ -380,7 +380,7 @@ final class Aggregate_Partial extends Operator
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputType.toString()));
         atts.put(Label.BRIEF, PrimitiveExplainer.getInstance(inputsIndex + " keys, " + aggs + " aggregates"));
         
-        return new CompoundExplainer(Type.PHYSICAL_OPERATOR, atts);
+        return new CompoundExplainer(Type.AGGREGATE, atts);
     }
 
     // nested classes

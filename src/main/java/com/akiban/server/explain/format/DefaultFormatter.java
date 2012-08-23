@@ -217,7 +217,7 @@ public class DefaultFormatter
             case COUNT_OPERATOR:
                 sb.append("(*)");
                 break;
-            case PHYSICAL_OPERATOR:
+            case AGGREGATE:
                 sb.append('(').append(atts.get(Label.BRIEF)).append(')');
                 break;
             case DUI:
@@ -469,7 +469,7 @@ public class DefaultFormatter
                     }
                 }
                 break;
-            case PHYSICAL_OPERATOR:
+            case AGGREGATE:
                 if (atts.containsKey(Label.GROUPING_OPTION))
                     sb.append(atts.getValue(Label.GROUPING_OPTION)).append(": ");
                 for (Explainer ex : atts.get(Label.AGGREGATORS)) {
