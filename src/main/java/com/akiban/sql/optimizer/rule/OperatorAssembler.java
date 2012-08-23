@@ -89,6 +89,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.TableName;
 
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.tap.PointTap;
@@ -691,7 +692,9 @@ public class OperatorAssembler extends BaseRule
 
         protected void explainInsertStatement(UpdatePlannable plan, InsertStatement insertStatement) {
             Attributes atts = new Attributes();
-            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(insertStatement.getTargetTable().getTable().getName().toString()));
+            TableName tableName = insertStatement.getTargetTable().getTable().getName();
+            atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
             for (Column column : insertStatement.getTargetColumns()) {
                 atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
             }
@@ -718,7 +721,9 @@ public class OperatorAssembler extends BaseRule
 
         protected void explainUpdateStatement(UpdatePlannable plan, UpdateStatement updateStatement, List<UpdateColumn> updateColumns, List<Expression> updates, List<TPreparedExpression> updatesP) {
             Attributes atts = new Attributes();
-            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(updateStatement.getTargetTable().getTable().getName().toString()));
+            TableName tableName = updateStatement.getTargetTable().getTable().getName();
+            atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
             for (UpdateColumn column : updateColumns)
                 atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
             if (usePValues)
@@ -742,7 +747,9 @@ public class OperatorAssembler extends BaseRule
 
         protected void explainDeleteStatement(UpdatePlannable plan, DeleteStatement deleteStatement) {
             Attributes atts = new Attributes();
-            atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(deleteStatement.getTargetTable().getTable().getName().toString()));
+            TableName tableName = deleteStatement.getTargetTable().getTable().getName();
+            atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
             explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 

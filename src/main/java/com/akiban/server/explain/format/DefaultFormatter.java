@@ -217,16 +217,32 @@ public class DefaultFormatter
                 break;
             case DUI:
                 if (name.equals("Delete_Default")) {
-                    if (atts.containsKey(Label.TABLE_CORRELATION))
-                        sb.append("FROM ").append(atts.getValue(Label.TABLE_CORRELATION));
-                    else if (atts.containsKey(Label.TABLE_TYPE))
-                        sb.append("FROM ").append(atts.getValue(Label.TABLE_TYPE));
+                    if (atts.containsKey(Label.TABLE_NAME)) {
+                        sb.append("FROM ");
+                        appendTableName(atts);
+                    }
+                    else if (atts.containsKey(Label.TABLE_TYPE)) {
+                        sb.append("FROM ");
+                        append(atts.getAttribute(Label.TABLE_TYPE));
+                    }
                 }
                 else if (name.equals("Insert_Default")) {
-                    if (atts.containsKey(Label.TABLE_CORRELATION))
-                        sb.append("INTO ").append(atts.getValue(Label.TABLE_CORRELATION));
-                    else if (atts.containsKey(Label.TABLE_TYPE))
-                        sb.append("INTO ").append(atts.getValue(Label.TABLE_TYPE));
+                    if (atts.containsKey(Label.TABLE_NAME)) {
+                        sb.append("INTO ");
+                        appendTableName(atts);
+                    }
+                    else if (atts.containsKey(Label.TABLE_TYPE)) {
+                        sb.append("INTO ");
+                        append(atts.getAttribute(Label.TABLE_TYPE));
+                    }
+                }
+                else if (name.equals("Update_Default")) {
+                    if (atts.containsKey(Label.TABLE_NAME)) {
+                        appendTableName(atts);
+                    }
+                    else if (atts.containsKey(Label.TABLE_TYPE)) {
+                        append(atts.getAttribute(Label.TABLE_TYPE));
+                    }
                 }
                 break;
             case SCAN_OPERATOR:
@@ -435,16 +451,24 @@ public class DefaultFormatter
                 break;
             case DUI:
                 if (name.equals("Delete_Default")) {
-                    if (atts.containsKey(Label.TABLE_CORRELATION))
-                        sb.append("FROM ").append(atts.getValue(Label.TABLE_CORRELATION));
-                    else if (atts.containsKey(Label.TABLE_TYPE))
-                        sb.append("FROM ").append(atts.getValue(Label.TABLE_TYPE));
+                    if (atts.containsKey(Label.TABLE_NAME)) {
+                        sb.append("FROM ");
+                        appendTableName(atts);
+                    }
+                    else if (atts.containsKey(Label.TABLE_TYPE)) {
+                        sb.append("FROM ");
+                        append(atts.getAttribute(Label.TABLE_TYPE));
+                    }
                 }
                 else if (name.equals("Insert_Default")) {
-                    if (atts.containsKey(Label.TABLE_CORRELATION))
-                        sb.append("INTO ").append(atts.getValue(Label.TABLE_CORRELATION));
-                    else if (atts.containsKey(Label.TABLE_TYPE))
-                        sb.append("INTO ").append(atts.getValue(Label.TABLE_TYPE));
+                    if (atts.containsKey(Label.TABLE_NAME)) {
+                        sb.append("INTO ");
+                        appendTableName(atts);
+                    }
+                    else if (atts.containsKey(Label.TABLE_TYPE)) {
+                        sb.append("INTO ");
+                        append(atts.getAttribute(Label.TABLE_TYPE));
+                    }
                     if (atts.containsKey(Label.COLUMN_NAME)) {
                         sb.append('(');
                         for (Explainer ex : atts.get(Label.COLUMN_NAME))
@@ -454,10 +478,12 @@ public class DefaultFormatter
                     }
                 }
                 else if (name.equals("Update_Default")) {
-                    if (atts.containsKey(Label.TABLE_CORRELATION))
-                        sb.append(atts.getValue(Label.TABLE_CORRELATION));
-                    else if (atts.containsKey(Label.TABLE_TYPE))
-                        sb.append(atts.getValue(Label.TABLE_TYPE));
+                    if (atts.containsKey(Label.TABLE_NAME)) {
+                        appendTableName(atts);
+                    }
+                    else if (atts.containsKey(Label.TABLE_TYPE)) {
+                        append(atts.getAttribute(Label.TABLE_TYPE));
+                    }
                     if (atts.containsKey(Label.COLUMN_NAME)) {
                         sb.append(" SET ");
                         for (int j = 0; j < Math.min(atts.get(Label.COLUMN_NAME).size(), atts.get(Label.EXPRESSIONS).size()); j++) {

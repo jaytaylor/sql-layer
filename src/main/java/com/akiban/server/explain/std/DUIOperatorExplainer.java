@@ -41,12 +41,11 @@ public class DUIOperatorExplainer extends CompoundExplainer
     {
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
-        try
-        {
-            atts.put(Label.TABLE_TYPE, PrimitiveExplainer.getInstance(inputOp.rowType().userTable().getName().toString()));
+        try {
+            atts.put(Label.TABLE_TYPE, inputOp.rowType().getExplainer(context));
         }
-        catch(UnsupportedOperationException exception){}
-        
+        catch (UnsupportedOperationException exception) {
+        }
         return atts;
     }
 }
