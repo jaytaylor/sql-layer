@@ -724,15 +724,13 @@ public class OperatorAssembler extends BaseRule
             TableName tableName = updateStatement.getTargetTable().getTable().getName();
             atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
             atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
-            for (UpdateColumn column : updateColumns)
+            for (UpdateColumn column : updateColumns) {
                 atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
-            if (usePValues)
-                for (TPreparedExpression expression : updatesP)
-                    atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(expression.toString()));
-            else
-                for (Expression expression : updates)
-                    if (expression != null)
-                        atts.put(Label.EXPRESSIONS, expression.getExplainer(explainContext));
+                if (usePValues)
+                    atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(updatesP.get(column.getColumn().getPosition()).toString()));
+                else
+                    atts.put(Label.EXPRESSIONS, updates.get(column.getColumn().getPosition()).getExplainer(explainContext));
+            }
             explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
