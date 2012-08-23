@@ -37,13 +37,14 @@ import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
 import java.util.Collection;
 
-public abstract class DelegatingStore<S extends Store> implements Store {
+public abstract class DelegatingStore<S extends Store & Service> implements Store, Service {
 
     private final S delegate;
 

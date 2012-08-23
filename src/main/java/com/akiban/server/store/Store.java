@@ -36,7 +36,6 @@ import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -50,7 +49,7 @@ import java.util.Collection;
  * @author peter
  * 
  */
-public interface Store extends Service {
+public interface Store {
 
     RowDefCache getRowDefCache();
 
