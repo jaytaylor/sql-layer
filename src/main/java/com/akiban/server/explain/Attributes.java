@@ -35,7 +35,22 @@ public class Attributes extends EnumMap<Label, List<Explainer>>
         super(Label.class);
     }            
     
-    public boolean put (Label label, Explainer ex)
+    public Explainer getAttribute(Label label) {
+        List<Explainer> l = get(label);
+        if (l == null)
+            return null;
+        assert (l.size() == 1);
+        return l.get(0);
+    }
+
+    public Object getValue(Label label) {
+        Explainer explainer = getAttribute(label);
+        if (explainer == null)
+            return null;
+        return explainer.get();
+    }
+
+    public boolean put(Label label, Explainer ex)
     {
         List<Explainer> l = get(label);
         if (l == null)
