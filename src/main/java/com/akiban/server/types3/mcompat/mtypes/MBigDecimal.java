@@ -87,7 +87,7 @@ public class MBigDecimal extends TClassBase {
         else {
             BigDecimalWrapper value = (BigDecimalWrapper) in.getObject();
             int precision = typeInstance.attribute(Attrs.PRECISION);
-            int scale = typeInstance.attribute(Attrs.PRECISION);
+            int scale = typeInstance.attribute(Attrs.SCALE);
             bytes = ConversionHelperBigDecimal.bytesFromObject(
                     value.asBigDecimal(),
                     precision,
