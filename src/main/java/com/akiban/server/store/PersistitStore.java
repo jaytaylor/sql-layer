@@ -44,6 +44,7 @@ import com.akiban.server.collation.CString;
 import com.akiban.server.collation.CStringKeyCoder;
 import com.akiban.server.error.*;
 import com.akiban.server.rowdata.*;
+import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
@@ -65,7 +66,7 @@ import org.slf4j.LoggerFactory;
 import java.rmi.RemoteException;
 import java.util.*;
 
-public class PersistitStore implements Store {
+public class PersistitStore implements Store, Service {
 
     private static final Session.MapKey<Integer, List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
 
@@ -150,16 +151,6 @@ public class PersistitStore implements Store {
     @Override
     public void crash() {
         stop();
-    }
-
-    @Override
-    public Store cast() {
-        return this;
-    }
-
-    @Override
-    public Class<Store> castClass() {
-        return Store.class;
     }
 
     @Override

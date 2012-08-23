@@ -45,7 +45,7 @@ public class TreeServiceImplTest {
     private static class MyConfigService extends TestConfigService {
     }
 
-    private Service<ConfigurationService> configService;
+    private MyConfigService configService;
 
     @Before
     public void startConfiguration() throws Exception {
@@ -60,7 +60,7 @@ public class TreeServiceImplTest {
 
     @Test
     public void startupPropertiesTest() throws Exception {
-        final Properties properties = TreeServiceImpl.setupPersistitProperties(configService.cast());
+        final Properties properties = TreeServiceImpl.setupPersistitProperties(configService);
         assertNotNull(properties.getProperty("datapath"));
         assertNotNull(properties.getProperty("buffer.memory.16384"));
     }

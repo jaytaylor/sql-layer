@@ -45,6 +45,8 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
+
 public interface DDLFunctions {
     /**
      * Create a new table.
@@ -91,8 +93,8 @@ public interface DDLFunctions {
      * @param columnChanges list of all column changes
      * @param indexChanges list of all index changes
      */
-    void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                    List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context);
+    ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+                           List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context);
 
     /**
      * Drops a table if it exists, and possibly its children.

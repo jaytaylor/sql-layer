@@ -122,6 +122,8 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
     @Test
     public void testDateDiff ()
     {
+        test("2012-08-14", "2010-01-01", 956);
+        test("2010-01-01", "2012-08-14", -956);
         test("2011-12-05", "2011-11-01", 34L);
         test("2009-12-10", "2010-01-12", -33L);
         test("2008-02-01", "2008-03-01", -29L);

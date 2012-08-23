@@ -53,7 +53,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 @Singleton
-public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<FunctionsRegistry>, JmxManageable {
+public final class FunctionsRegistryImpl implements FunctionsRegistry, Service, JmxManageable {
 
     // AggregatorRegistry interface
 
@@ -86,16 +86,6 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
     }
 
     // Service interface
-
-    @Override
-    public FunctionsRegistry cast() {
-        return this;
-    }
-
-    @Override
-    public Class<FunctionsRegistry> castClass() {
-        return FunctionsRegistry.class;
-    }
 
     @Override
     public void start() {

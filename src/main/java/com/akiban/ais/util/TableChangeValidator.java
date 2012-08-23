@@ -87,10 +87,12 @@ public class TableChangeValidator {
                                 boolean automaticIndexChanges) {
         ArgumentValidation.notNull("oldTable", oldTable);
         ArgumentValidation.notNull("newTable", newTable);
+        ArgumentValidation.notNull("columnChanges", columnChanges);
+        ArgumentValidation.notNull("indexChanges", indexChanges);
         this.oldTable = oldTable;
         this.newTable = newTable;
-        this.columnChanges = new ArrayList<TableChange>((columnChanges == null) ? Collections.<TableChange>emptyList() : columnChanges);
-        this.indexChanges = new ArrayList<TableChange>((indexChanges == null) ? Collections.<TableChange>emptyList() : indexChanges);
+        this.columnChanges = columnChanges;
+        this.indexChanges = indexChanges;
         this.unmodifiedChanges = new ArrayList<RuntimeException>();
         this.errors = new ArrayList<RuntimeException>();
         this.changedTables = new ArrayList<ChangedTableDescription>();
@@ -181,6 +183,15 @@ public class TableChangeValidator {
             newColumns.put(column.getName(), column);
         }
         checkChanges(ChangeLevel.TABLE, columnChanges, oldColumns, newColumns, false);
+
+        // Look for position changes, not required to be declared
+        for(Map.Entry<String, Column> oldEntry : oldColumns.entrySet()) {
+            Column newColumn = newColumns.get(findNewName(columnChanges, oldEntry.getKey()));
+            if((newColumn != null) && !oldEntry.getValue().getPosition().equals(newColumn.getPosition())) {
+                updateFinalChangeLevel(ChangeLevel.TABLE);
+                break;
+            }
+        }
     }
 
     private void compareIndexes(boolean autoChanges) {
