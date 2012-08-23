@@ -58,6 +58,7 @@ import static com.akiban.ais.util.TableChangeValidatorException.*;
 
 public class TableChangeValidator {
     private static final Map<String,String> EMPTY_STRING_MAP = Collections.emptyMap();
+    private static final List<TableName> EMPTY_TABLE_NAME_LIST = Collections.emptyList();
 
     public static enum ChangeLevel {
         NONE,
@@ -360,12 +361,27 @@ public class TableChangeValidator {
         parentChange = compareParentJoin(columnChanges, oldTable.getParentJoin(), newTable.getParentJoin());
         primaryKeyChanged = containsOldOrNew(indexChanges, Index.PRIMARY_KEY_CONSTRAINT);
 
+        List<TableName> droppedSequences = new ArrayList<TableName>();
         Map<String,String> renamedColumns = new HashMap<String, String>();
         for(TableChange change : columnChanges) {
-            if(change.getChangeType() == TableChange.ChangeType.MODIFY) {
-                if(!change.getOldName().equals(change.getNewName())) {
-                    renamedColumns.put(change.getOldName(), change.getNewName());
-                }
+            Sequence seqToDrop = null;
+            switch(change.getChangeType()) {
+                case MODIFY: {
+                    if(!change.getOldName().equals(change.getNewName())) {
+                        renamedColumns.put(change.getOldName(), change.getNewName());
+                    }
+                    Column oldColumn = oldTable.getColumn(change.getOldName());
+                    Column newColumn = newTable.getColumn(change.getNewName());
+                    if((oldColumn.getIdentityGenerator() != null) && (newColumn.getIdentityGenerator() == null)) {
+                        seqToDrop = oldColumn.getIdentityGenerator();
+                    }
+                } break;
+                case DROP:
+                    seqToDrop = oldTable.getColumn(change.getOldName()).getIdentityGenerator();
+                break;
+            }
+            if(seqToDrop != null) {
+                droppedSequences.add(seqToDrop.getSequenceName());
             }
         }
 
@@ -374,7 +390,8 @@ public class TableChangeValidator {
         Map<String,String> preserveIndexes = new TreeMap<String,String>();
         TableName parentName = (newTable.getParentJoin() != null) ? newTable.getParentJoin().getParent().getName() : null;
         changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, renamedColumns,
-                                                      parentChange, parentName, EMPTY_STRING_MAP, preserveIndexes));
+                                                      parentChange, parentName, EMPTY_STRING_MAP, preserveIndexes,
+                                                      droppedSequences));
 
         if(!isParentChanged() && !primaryKeyChanged) {
             for(Index index : newTable.getIndexes()) {
@@ -455,7 +472,8 @@ public class TableChangeValidator {
         }
         parentRenames = (parentRenames != null) ? parentRenames : EMPTY_STRING_MAP;
         changedTables.add(new ChangedTableDescription(table.getName(), null, EMPTY_STRING_MAP,
-                                                      parentChange, parentName, parentRenames, preserved));
+                                                      parentChange, parentName, parentRenames, preserved,
+                                                      EMPTY_TABLE_NAME_LIST));
     }
 
     private static boolean containsOldOrNew(List<TableChange> changes, String name) {

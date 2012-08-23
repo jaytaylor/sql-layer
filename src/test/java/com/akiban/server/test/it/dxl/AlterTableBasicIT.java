@@ -1060,7 +1060,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN id");
         assertNull("sequence was dropped", ddl().getAIS(session()).getSequence(seq.getSequenceName()));
-        assertNull("id column has no sequence", getUserTable(id).getColumn("id").getIdentityGenerator());
+        assertNull("id column does not exist", getUserTable(id).getColumn("id"));
         expectFullRows(
                 id,
                 createNewRow(id, "1"),

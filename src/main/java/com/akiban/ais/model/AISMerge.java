@@ -136,6 +136,7 @@ public class AISMerge {
                                          Set<IndexName> indexesToFix, final List<JoinChange> joinsToFix,
                                          Collection<ChangedTableDescription> changedTables)
     {
+        final Set<Sequence> excludedSequences = new HashSet<Sequence>();
         final Set<Group> excludedGroups = new HashSet<Group>();
         final Map<TableName,UserTable> filteredTables = new HashMap<TableName,UserTable>();
         for(ChangedTableDescription desc : changedTables) {
@@ -201,6 +202,10 @@ public class AISMerge {
                     indexesToFix.add(newIndex.getIndexName());
                 }
             }
+
+            for(TableName name : desc.getDroppedSequences()) {
+                excludedSequences.add(oldAIS.getSequence(name));
+            }
         }
 
         AISCloner.clone(
@@ -231,6 +236,11 @@ public class AISMerge {
                             }
                         }
                         return true;
+                    }
+
+                    @Override
+                    public boolean isSelected(Sequence sequence) {
+                        return !excludedSequences.contains(sequence);
                     }
                 }
         );
