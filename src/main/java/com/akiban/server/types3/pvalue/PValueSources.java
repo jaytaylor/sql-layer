@@ -33,6 +33,8 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.common.types.StringFactory;
+import com.akiban.server.types3.common.types.StringFactory.Charset;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
@@ -212,7 +214,7 @@ public final class PValueSources {
         }
         else if (object instanceof String) {
             String s = (String) object;
-            tInstance = MString.VARCHAR.instance(s.length());
+            tInstance = MString.VARCHAR.instance(s.length(), Charset.UTF8.ordinal(), -1);
             value = new PValue(s);
         }
         else if (object instanceof Double) {

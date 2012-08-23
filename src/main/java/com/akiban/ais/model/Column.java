@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -704,7 +705,9 @@ public class Column implements ColumnContainer
         if (charsetAndCollation == null)
             return tClass.instance();
         StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
-        return tClass.instance(typeParameter1.intValue(), charset.ordinal(), -1); // TODO collation
+        String collationName = charsetAndCollation.collation();
+        int collatorId = AkCollatorFactory.getAkCollator(collationName).getCollationId();
+        return tClass.instance(typeParameter1.intValue(), charset.ordinal(), collatorId);
     }
 
     private static TInstance textString(CharsetAndCollation charsetAndCollation, TClass tClass) {
