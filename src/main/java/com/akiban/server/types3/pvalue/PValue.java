@@ -27,9 +27,10 @@
 package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.collation.AkCollator;
+import com.akiban.util.StackTracer;
 
 public final class PValue implements PValueSource, PValueTarget {
-
+final StackTracer tracer = new StackTracer();
     // PValue interface
     
     public void underlying(PUnderlying underlying) {

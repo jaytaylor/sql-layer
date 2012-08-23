@@ -391,6 +391,9 @@ public class MDatetimes
 
     public static long[] decodeDatetime (long val)
     {
+        if (countDigits(val) <= 8)
+            // this is a YYYY-MM-DD int -- need to pad it with 0's for HH-MM-SS
+            val *= 1000000;
         return new long[]
         {
             val / DATETIME_YEAR_SCALE,
@@ -640,6 +643,15 @@ public class MDatetimes
             default:
                 return -1;
         }
+    }
+
+    private static int countDigits(long val) {
+        int digits = 0;
+        while (val != 0) {
+            ++digits;
+            val /= 10;
+        }
+        return digits;
     }
 
     public static final int YEAR_INDEX = 0;
