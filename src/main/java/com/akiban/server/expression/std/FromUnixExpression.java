@@ -139,7 +139,7 @@ public class FromUnixExpression extends AbstractCompositeExpression
 
     protected static AkType checkArg (List<? extends Expression> ex)
     {
-        if (ex.size() != 2 & ex.size() != 1) throw new WrongExpressionArityException(1, ex.size());
+        if (ex.size() != 2 && ex.size() != 1) throw new WrongExpressionArityException(1, ex.size());
         return ex.size() == 2 ? AkType.VARCHAR : AkType.DATETIME;
     }
 
