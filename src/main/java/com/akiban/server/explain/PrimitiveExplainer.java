@@ -53,7 +53,7 @@ public class PrimitiveExplainer extends Explainer
     
     public static PrimitiveExplainer getInstance (boolean n)
     {
-        return new PrimitiveExplainer(Type.EXACT_NUMERIC, n);
+        return new PrimitiveExplainer(Type.BOOLEAN, n);
     }
     
     public static PrimitiveExplainer getInstance(BigInteger num)
