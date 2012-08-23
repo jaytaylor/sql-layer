@@ -667,6 +667,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     }
 
     private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass, NewFolder folder) {
+        if (targetClass.equals(tclass(expression)))
+            return expression;
         return castTo(expression, targetClass.instance(), folder);
     }
 
