@@ -34,8 +34,6 @@ import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 import org.junit.Test;
-import org.junit.After;
-import java.util.ArrayList;
 import java.util.Collection;
 
 import static org.junit.Assert.assertFalse;
