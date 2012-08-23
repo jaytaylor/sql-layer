@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class OverloadResolutionServiceImpl implements OverloadResolutionService, Service<OverloadResolutionService> {
+public class OverloadResolutionServiceImpl implements OverloadResolutionService, Service {
 
     @Override
     public OverloadResolver getResolver() {
@@ -42,16 +42,6 @@ public class OverloadResolutionServiceImpl implements OverloadResolutionService,
         if (result == null)
             throw new AkibanInternalException("resolver not set");
         return result;
-    }
-
-    @Override
-    public OverloadResolutionService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<OverloadResolutionService> castClass() {
-        return OverloadResolutionService.class;
     }
 
     @Override

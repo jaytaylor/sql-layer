@@ -29,7 +29,6 @@ package com.akiban.server.service.servicemanager;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManager.State;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
@@ -299,14 +298,14 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         private final AtomicBoolean fullClassNames = new AtomicBoolean(false);
     };
 
-    final Guicer.ServiceLifecycleActions<Service<?>> STANDARD_SERVICE_ACTIONS
-            = new Guicer.ServiceLifecycleActions<Service<?>>()
+    final Guicer.ServiceLifecycleActions<Service> STANDARD_SERVICE_ACTIONS
+            = new Guicer.ServiceLifecycleActions<Service>()
     {
         private Map<Class<? extends JmxManageable>,ObjectName> jmxNames
                 = Collections.synchronizedMap(new HashMap<Class<? extends JmxManageable>, ObjectName>());
 
         @Override
-        public void onStart(Service<?> service) {
+        public void onStart(Service service) {
             service.start();
             if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
                 JmxRegistryService registry = (service instanceof JmxRegistryService)
@@ -325,7 +324,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
 
         @Override
-        public void onShutdown(Service<?> service) {
+        public void onShutdown(Service service) {
             if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
                 JmxRegistryService registry = (service instanceof JmxRegistryService)
                         ? (JmxRegistryService) service
@@ -341,8 +340,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
 
         @Override
-        public Service<?> castIfActionable(Object object) {
-            return (object instanceof Service) ? (Service<?>)object : null;
+        public Service castIfActionable(Object object) {
+            return (object instanceof Service) ? (Service)object : null;
         }
     };
 
@@ -350,21 +349,21 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     private static final String SERVICES_CONFIG_PROPERTY = "services.config";
 
-    private static final Guicer.ServiceLifecycleActions<Service<?>> CRASH_SERVICES
-            = new Guicer.ServiceLifecycleActions<Service<?>>() {
+    private static final Guicer.ServiceLifecycleActions<Service> CRASH_SERVICES
+            = new Guicer.ServiceLifecycleActions<Service>() {
         @Override
-        public void onStart(Service<?> service) {
+        public void onStart(Service service) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void onShutdown(Service<?> service){
+        public void onShutdown(Service service){
             service.crash();
         }
 
         @Override
-        public Service<?> castIfActionable(Object object) {
-            return (object instanceof Service) ? (Service<?>) object : null;
+        public Service castIfActionable(Object object) {
+            return (object instanceof Service) ? (Service) object : null;
         }
     };
 

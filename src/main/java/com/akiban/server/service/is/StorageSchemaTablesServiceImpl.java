@@ -66,7 +66,7 @@ import com.persistit.mxbeans.IOMeterMXBean;
 
 public class StorageSchemaTablesServiceImpl
     extends SchemaTablesService
-    implements Service<StorageSchemaTablesService>, StorageSchemaTablesService {
+    implements Service, StorageSchemaTablesService {
 
     private static final String BASE_PERSITIT_JMX_PATH = "com.persistit:type=Persistit,class=";
 
@@ -92,16 +92,6 @@ public class StorageSchemaTablesServiceImpl
     public StorageSchemaTablesServiceImpl (SchemaManager schemaManager, TreeService treeService) {
         super(schemaManager);
         this.treeService = treeService;
-    }
-
-    @Override
-    public StorageSchemaTablesService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<StorageSchemaTablesService> castClass() {
-        return StorageSchemaTablesService.class;
     }
 
     @Override
