@@ -178,9 +178,6 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             public TOverloadResult resultType()
             {
-                // TODO
-                // Could make this better by trying to evaluate the arg,
-                // if it's literal to get the exact string length
                 return TOverloadResult.fixed(MString.VARCHAR.instance(9));
             }
         },
@@ -209,9 +206,6 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             public TOverloadResult resultType()
             {
-                // TODO
-                // Could make this better by trying to evaluate the arg,
-                // if it's literal to get the exact string length
                 return TOverloadResult.fixed(MString.VARCHAR.instance(9));
             }
         }
