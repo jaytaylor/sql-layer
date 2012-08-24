@@ -73,6 +73,9 @@ public class DefaultFormatter
         case ROWTYPE:
             appendRowType((CompoundExplainer)explainer);
             break;
+        case ROW:
+            appendRow((CompoundExplainer)explainer);
+            break;
         default:
             appendExpression((CompoundExplainer)explainer, needsParens, parentName);
         }
@@ -269,8 +272,10 @@ public class DefaultFormatter
             case SCAN_OPERATOR:
                 if (name.equals("ValuesScan_Default")) {
                     if (atts.containsKey(Label.EXPRESSIONS)) {
-                        for (Explainer row : atts.get(Label.EXPRESSIONS))
-                            sb.append(row.get()).append(", ");
+                        for (Explainer row : atts.get(Label.EXPRESSIONS)) {
+                            append(row);
+                            sb.append(", ");
+                        }
                         sb.setLength(sb.length() - 2);
                     }
                 }
@@ -535,8 +540,21 @@ public class DefaultFormatter
         }
     }
     
-    protected void appendRowType(CompoundExplainer opEx) {
-        Attributes atts = opEx.get();
+    protected void appendRow(CompoundExplainer rEx) {
+        Attributes atts = rEx.get();
+        sb.append('[');
+        if (atts.containsKey(Label.EXPRESSIONS)) {
+            for (Explainer value : atts.get(Label.EXPRESSIONS)) {
+                append(value);
+                sb.append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+        }
+        sb.append(']');
+    }
+
+    protected void appendRowType(CompoundExplainer rtEx) {
+        Attributes atts = rtEx.get();
         if (atts.containsKey(Label.PARENT_TYPE) && 
             atts.containsKey((Label.CHILD_TYPE))) {
             append(atts.getAttribute(Label.PARENT_TYPE));

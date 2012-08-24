@@ -78,6 +78,10 @@ public enum Type
     //--------------------------------------------------------------------------
     ROWTYPE(GeneralType.ROWTYPE),
     
+    // ROW
+    //--------------------------------------------------------------------------
+    ROW(GeneralType.ROW),
+    
     // SCALAR 
     //--------------------------------------------------------------------------
     FLOATING_POINT(GeneralType.SCALAR_VALUE),
@@ -108,6 +112,7 @@ public enum Type
         OPERATOR,
         SCALAR_VALUE,
         ROWTYPE,
+        ROW,
         EXTRA_INFO
     }
 }

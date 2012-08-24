@@ -119,7 +119,7 @@ public class ValuesScan_Default extends Operator
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         for (BindableRow row : rows)
         {
-            att.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(row.toString()));
+            att.put(Label.EXPRESSIONS, row.getExplainer(context));
         }
         
         return new CompoundExplainer(Type.SCAN_OPERATOR, att);
