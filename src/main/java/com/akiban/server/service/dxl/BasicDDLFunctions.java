@@ -255,7 +255,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final QueryContext queryContext = new ShimContext(adapter, context);
 
             Operator plan = filter_Default(
-                    groupScan_Default(origTable.getGroup().getGroupTable()),
+                    groupScan_Default(origTable.getGroup()),
                     Collections.singleton(oldSourceType)
             );
             com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);
@@ -390,7 +390,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         Operator plan = filter_Default(
-                groupScan_Default(origTable.getGroup().getGroupTable()),
+                groupScan_Default(origTable.getGroup()),
                 filteredTypes
         );
         com.akiban.qp.operator.Cursor cursor = API.cursor(plan, queryContext);

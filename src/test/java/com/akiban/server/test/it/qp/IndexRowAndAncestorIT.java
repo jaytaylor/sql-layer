@@ -108,7 +108,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         oOrdinal = ddl().getTable(session(), o).rowDef().getOrdinal();
         iOrdinal = ddl().getTable(session(), i).rowDef().getOrdinal();
         hOrdinal = ddl().getTable(session(), h).rowDef().getOrdinal();
-        group = groupTable(c);
+        group = group(c);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -677,7 +677,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     private IndexRowType ohRightIndexRowType;
     private IndexRowType chLeftIndexRowType;
     private IndexRowType chRightIndexRowType;
-    private GroupTable group;
+    private Group group;
     private int cOrdinal;
     private int oOrdinal;
     private int iOrdinal;

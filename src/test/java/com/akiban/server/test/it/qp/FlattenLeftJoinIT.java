@@ -38,7 +38,7 @@ package com.akiban.server.test.it.qp;
  * of before_child and after_child rows.
  */
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -100,7 +100,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         childRowType = schema.userTableRowType(userTable(child));
         afterChildRowType = schema.userTableRowType(userTable(afterChild));
         parentPidIndexType = indexType(parent, "pid");
-        group = groupTable(ancestor);
+        group = group(ancestor);
         db = new NewRow[]{
             // case 1: one row of each type (except child)
             createNewRow(ancestor, 1L, "a1"),
@@ -558,5 +558,5 @@ public class FlattenLeftJoinIT extends OperatorITBase
     private UserTableRowType childRowType;
     private UserTableRowType afterChildRowType;
     private IndexRowType parentPidIndexType;
-    private GroupTable group;
+    private Group group;
 }

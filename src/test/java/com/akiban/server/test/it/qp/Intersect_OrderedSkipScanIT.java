@@ -72,7 +72,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         parentXIndexRowType = indexType(parent, "x1", "x2");
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
-        coi = groupTable(parent);
+        coi = group(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{

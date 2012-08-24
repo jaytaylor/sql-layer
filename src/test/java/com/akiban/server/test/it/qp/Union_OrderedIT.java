@@ -58,7 +58,7 @@ public class Union_OrderedIT extends OperatorITBase
         tRowType = schema.userTableRowType(userTable(t));
         tPidIndexRowType = indexType(t, "pid");
         tXIndexRowType = indexType(t, "x");
-        coi = groupTable(t);
+        coi = group(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
