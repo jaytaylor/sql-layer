@@ -77,8 +77,6 @@ public class ConcatWSExpression extends AbstractCompositeExpression
         @Override
         public NullTreating getNullTreating()
         {
-            // TODO: could improve this by having the ConstantFolder
-            // remove all the NULLs except the first one
             return NullTreating.REMOVE_AFTER_FIRST;
         }
     };
