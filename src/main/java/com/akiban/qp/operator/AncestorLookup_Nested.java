@@ -34,6 +34,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.LookUpOperatorExplainer;
@@ -235,12 +236,11 @@ class AncestorLookup_Nested extends Operator
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        for (UserTable table : ancestors)
-            atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
-
-        if (context.hasExtraInfo(this))
-            atts.putAll(context.getExtraInfo(this).get());
-        return new LookUpOperatorExplainer(getName(), atts, rowType, false, null, context);
+        atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        for (UserTable table : ancestors) {
+            atts.put(Label.OUTPUT_TYPE, ((Schema)rowType.schema()).userTableRowType(table).getExplainer(context));
+        }
+        return new LookUpOperatorExplainer(getName(), atts, rowType, false, null, context, context.getExtraInfo(this));
     }
 
     // Inner classes

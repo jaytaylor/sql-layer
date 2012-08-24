@@ -70,6 +70,7 @@ public enum Label
     TABLE_NAME(Category.IDENTIFIER),
     TABLE_CORRELATION(Category.IDENTIFIER),
     COLUMN_NAME(Category.IDENTIFIER),
+    INDEX_NAME(Category.IDENTIFIER),
     
     // OPTION
     //--------------------------------------------------------------------------

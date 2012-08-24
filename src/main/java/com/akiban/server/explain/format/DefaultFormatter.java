@@ -119,17 +119,17 @@ public class DefaultFormatter
                     needsParens = false;
             }
             if (needsParens)
-                sb.append("(");
+                sb.append('(');
             append(leftExplainer, true, name);
-            sb.append(" ").append(atts.getValue(Label.INFIX_REPRESENTATION)).append(" ");
+            sb.append(' ').append(atts.getValue(Label.INFIX_REPRESENTATION)).append(' ');
             append(rightExplainer, true, name);
             if (needsParens)
-                sb.append(")");
+                sb.append(')');
         }
         else if (name.startsWith("CAST")) {
-            sb.append(name.substring(0, 4)).append("(");
+            sb.append(name.substring(0, 4)).append('(');
             append(atts.getAttribute(Label.OPERAND));
-            sb.append(" AS ").append(atts.getValue(Label.OUTPUT_TYPE)).append(")");
+            sb.append(" AS ").append(atts.getValue(Label.OUTPUT_TYPE)).append(')');
         }
         else {
             sb.append(name).append('(');
@@ -156,7 +156,7 @@ public class DefaultFormatter
             started = true;
         }
         if (atts.containsKey(Label.COLUMN_NAME)) {
-            if (started) sb.append(".");
+            if (started) sb.append('.');
             sb.append(atts.getValue(Label.COLUMN_NAME));
         }
         else if (started) {
@@ -189,357 +189,353 @@ public class DefaultFormatter
     }
 
     protected void appendOperator(CompoundExplainer explainer, int depth) {
-        
         Attributes atts = explainer.get();
-        Type type = explainer.getType();
-        String name = atts.getValue(Label.NAME).toString();
-        
-        if (!verbose) {
-            sb.append(name.substring(0, name.indexOf('_')));
-            switch (type) {
-            case LOOKUP_OPERATOR:
-                sb.append('(');
-                if (atts.containsKey(Label.TABLE_CORRELATION)) {
-                    for (Explainer table : atts.get(Label.TABLE_CORRELATION))
-                        sb.append(table.get()).append(", ");
-                    sb.setLength(sb.length()-2);
-                }
-                else {
-                    for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
-                        sb.append(table.get()).append(", ");
-                    if (!atts.get(Label.ANCESTOR_TYPE).isEmpty())
-                        sb.setLength(sb.length() - 2);
-                }
-                sb.append(')');
-                break;
-            case COUNT_OPERATOR:
-                sb.append("(*)");
-                break;
-            case AGGREGATE:
-                sb.append('(').append(atts.get(Label.BRIEF)).append(')');
-                break;
-            case DUI:
-                if (name.equals("Delete_Default")) {
-                    if (atts.containsKey(Label.TABLE_NAME)) {
-                        sb.append("FROM ");
-                        appendTableName(atts);
-                    }
-                    else if (atts.containsKey(Label.TABLE_TYPE)) {
-                        sb.append("FROM ");
-                        append(atts.getAttribute(Label.TABLE_TYPE));
-                    }
-                }
-                else if (name.equals("Insert_Default")) {
-                    if (atts.containsKey(Label.TABLE_NAME)) {
-                        sb.append("INTO ");
-                        appendTableName(atts);
-                    }
-                    else if (atts.containsKey(Label.TABLE_TYPE)) {
-                        sb.append("INTO ");
-                        append(atts.getAttribute(Label.TABLE_TYPE));
-                    }
-                }
-                else if (name.equals("Update_Default")) {
-                    if (atts.containsKey(Label.TABLE_NAME)) {
-                        appendTableName(atts);
-                    }
-                    else if (atts.containsKey(Label.TABLE_TYPE)) {
-                        append(atts.getAttribute(Label.TABLE_TYPE));
-                    }
-                }
-                break;
-            case SCAN_OPERATOR:
-                if (name.equals("IndexScan_Default"))
-                    sb.append(atts.getValue(Label.INDEX));
-                break;
-            default:
-                // Nothing needed, as most operators display nothing in brief mode
-            }
+        String name = (String)atts.getValue(Label.NAME);
+        sb.append(verbose ? name : name.substring(0, name.indexOf('_'))).append('(');
+        switch (explainer.getType()) {
+        case SELECT_HKEY:
+            appendSelectOperator(name, atts);
+            break;
+        case PROJECT:
+            appendProjectOperator(name, atts);
+            break;
+        case SCAN_OPERATOR:
+            appendScanOperator(name, atts);
+            break;
+        case LOOKUP_OPERATOR:
+            appendLookupOperator(name, atts);
+            break;
+        case COUNT_OPERATOR:
+            appendCountOperator(name, atts);
+            break;
+        case FILTER:
+            appendFilterOperator(name, atts);
+            break;
+        case FLATTEN_OPERATOR:
+            appendFlattenOperator(name, atts);
+            break;
+        case ORDERED:
+            appendOrderedOperator(name, atts);
+            break;
+        case IF_EMPTY:
+            appendIfEmptyOperator(name, atts);
+            break;
+        case LIMIT_OPERATOR:
+            appendLimitOperator(name, atts);
+            break;
+        case NESTED_LOOPS:
+            appendNestedLoopsOperator(name, atts);
+            break;
+        case SORT:
+            appendSortOperator(name, atts);
+            break;
+        case DUI:
+            appendDUIOperator(name, atts);
+            break;
+        case AGGREGATE:
+            appendAggregateOperator(name, atts);
+            break;
+        case BLOOM_FILTER:
+            appendBloomFilterOperator(name, atts);
+            break;
+        case DISTINCT:
+            appendDistinctOperator(name, atts);
+            break;
+        case UNION_ALL:
+        case UNION:
+            appendUnionOperator(name, atts);
+            break;
+        default:
+            throw new UnsupportedOperationException("Formatter does not recognize " + 
+                                                    explainer.getType());
         }
-        else {
-            sb.append(name).append("(");
-            switch (type) {
-            case SELECT_HKEY:
-                append(atts.getAttribute(Label.PREDICATE));
-                break;
-            case PROJECT:
-                for (Explainer projection : atts.get(Label.PROJECTION)) {
-                    append(projection);
-                    sb.append(", ");
-                }
-                sb.setLength(sb.length()-2);
-                break;
-            case SCAN_OPERATOR:
-                if (name.equals("ValuesScan_Default")) {
-                    if (atts.containsKey(Label.EXPRESSIONS)) {
-                        for (Explainer row : atts.get(Label.EXPRESSIONS)) {
-                            append(row);
-                            sb.append(", ");
-                        }
-                        sb.setLength(sb.length() - 2);
-                    }
-                }
-                else if (name.equals("GroupScan_Default")) {
-                    String opt = (String)atts.getValue(Label.SCAN_OPTION);
-                    if (!opt.equals("full scan"))
-                        sb.append(opt).append(" on ");
-                    appendTableName(atts);
-                }
-                else if (name.equals("IndexScan_Default")) {
-                    sb.append(atts.getValue(Label.INDEX));
-                    if (atts.containsKey(Label.COLUMN_NAME)) {
-                        int i = 0;
-                        if (atts.containsKey(Label.EQUAL_COMPARAND))
-                            for (Explainer comparand : atts.get(Label.EQUAL_COMPARAND))
-                                sb.append(", ").append(atts.get(Label.COLUMN_NAME).get(i++).get()).append(" = ").append(comparand.get());
-                        for (boolean first = true; i < atts.get(Label.COLUMN_NAME).size(); i++) {
-                            sb.append(", ").append(atts.get(Label.COLUMN_NAME).get(i).get());
-                            if (first) {
-                                Object hi, lo;
-                                if (atts.containsKey(Label.HIGH_COMPARAND)) {
-                                    hi = atts.get(Label.HIGH_COMPARAND).get(0).get();
-                                    if (atts.containsKey(Label.LOW_COMPARAND)) {
-                                        lo = atts.get(Label.LOW_COMPARAND).get(0).get();
-                                        if (atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE"))
-                                            if (atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE"))
-                                                sb.append(" BETWEEN ").append(lo).append(" AND ").append(hi);
-                                            else
-                                                sb.append(" <= ").append(hi).append(" AND ").append(" > ").append(lo);
-                                        else
-                                            sb.append(" < ").append(hi).append(" AND ").append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(lo);
-                                    }
-                                    else
-                                        sb.append(atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE") ? " <= " : " < ").append(hi);
-                                }
-                                else if (atts.containsKey(Label.LOW_COMPARAND))
-                                    sb.append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(atts.get(Label.LOW_COMPARAND).get(0).get());
-                                first = false;
-                            }
-                        }
-                    }
-                }
-                break;
-            case LOOKUP_OPERATOR:
-                if (name.equals("AncestorLookup_Default")) {
-                    sb.append(atts.getValue(Label.INPUT_TYPE)).append(" -> ");
-                    if (atts.containsKey(Label.TABLE_CORRELATION)) {
-                        for (Explainer table : atts.get(Label.TABLE_CORRELATION))
-                            sb.append(table.get()).append(", ");
-                        sb.setLength(sb.length()-2);
-                    }
-                    else {
-                        for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
-                            sb.append(table.get()).append(", ");
-                        if (!atts.get(Label.ANCESTOR_TYPE).isEmpty()) {
-                            sb.setLength(sb.length() - 2);
-                        }
-                    }
-                }
-                else if (name.equals("AncestorLookup_Nested")) {
-                    if (atts.containsKey(Label.BINDING_POSITION))
-                        sb.append(atts.getValue(Label.BINDING_POSITION));
-                    else
-                        sb.append(atts.getValue(Label.INPUT_TYPE));
-                    sb.append(" -> ");
-                    if (atts.containsKey(Label.TABLE_CORRELATION)) {
-                        for (Explainer table : atts.get(Label.TABLE_CORRELATION))
-                            sb.append(table.get()).append(", ");
-                        sb.setLength(sb.length()-2);
-                    }
-                    else {
-                        for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
-                            sb.append(table.get()).append(", ");
-                        if (!atts.get(Label.ANCESTOR_TYPE).isEmpty()) {
-                            sb.setLength(sb.length() - 2);
-                        }
-                    }
-                }
-                else if (name.equals("BranchLookup_Default")) {
-                    sb.append(atts.getValue(Label.INPUT_TYPE)).append(" -> ");
-                    if (atts.containsKey(Label.TABLE_CORRELATION)) {
-                        for (Explainer table : atts.get(Label.TABLE_CORRELATION))
-                            sb.append(table.get()).append(", ");
-                        sb.setLength(sb.length()-2);
-                    }
-                    else
-                        sb.append(atts.getValue(Label.OUTPUT_TYPE));
-                    sb.append(" (via ").append(atts.getValue(Label.ANCESTOR_TYPE)).append(')');
-                }
-                else if (name.equals("BranchLookup_Nested")) {
-                    if (atts.containsKey(Label.BINDING_POSITION))
-                        sb.append(atts.getValue(Label.BINDING_POSITION));
-                    else
-                        sb.append(atts.getValue(Label.INPUT_TYPE));
-                    sb.append(" -> ");
-                    if (atts.containsKey(Label.TABLE_CORRELATION)) {
-                        for (Explainer table : atts.get(Label.TABLE_CORRELATION))
-                            sb.append(table.get()).append(", ");
-                        sb.setLength(sb.length()-2);
-                    }
-                    else
-                        sb.append(atts.getValue(Label.OUTPUT_TYPE));
-                    sb.append(" (via ").append(atts.getValue(Label.ANCESTOR_TYPE)).append(")");
-                }
-                break;
-            case COUNT_OPERATOR:
-                sb.append("*");
-                if (name.equals("Count_TableStatus")) {
-                    sb.append(" FROM ");
-                    append(atts.getAttribute(Label.INPUT_TYPE));
-                }
-                break;
-            case FILTER:
-                for (Explainer table : atts.get(Label.KEEP_TYPE)) {
-                    append(table);
-                    sb.append(", ");
-                }
-                sb.setLength(sb.length()-2);
-                break;
-            case FLATTEN_OPERATOR:
-                append(atts.getAttribute(Label.PARENT_TYPE));
-                sb.append(" ").append(atts.getValue(Label.JOIN_OPTION)).append(" ");
-                append(atts.getAttribute(Label.CHILD_TYPE));
-                break;
-            case ORDERED:
-                sb.append("skip ");
-                append(atts.getAttribute(Label.LEFT));
-                sb.append(" left, skip ");
-                append(atts.getAttribute(Label.RIGHT));
-                sb.append(" right, compare ");
-                append(atts.getAttribute(Label.NUM_COMPARE));
-                if (name.equals("HKeyUnion")) {
-                    sb.append(", shorten to ");
-                    append(atts.getAttribute(Label.OUTPUT_TYPE));
-                }
-                else if (name.equals("Intersect_Ordered")) {
-                    String join = (String)atts.getValue(Label.JOIN_OPTION);
-                    if (!"INNER".equals(join)) {
-                        sb.append(", USING ").append(join);
-                    }
-                }
-                break;
-            case IF_EMPTY:
-                for (Explainer expression : atts.get(Label.OPERAND)) {
-                    append(expression);
-                    sb.append(", ");
-                }
-                if (!atts.valuePairs().isEmpty()) {
-                    sb.setLength(sb.length() - 2);
-                }
-                break;
-            case LIMIT_OPERATOR:
-                append(atts.getAttribute(Label.LIMIT));
-                break;
-            case NESTED_LOOPS:
-                if (name.equals("Map_NestedLoops")) {
-                    if(atts.containsKey(Label.TABLE_CORRELATION))
-                        sb.append(atts.getValue(Label.TABLE_CORRELATION));
-                    else
-                        sb.append("loop_").append(atts.getValue(Label.BINDING_POSITION));
-                }
-                else if (name.equals("Product_NestedLoops")) {
-                    append(atts.getAttribute(Label.OUTER_TYPE));
-                    sb.append(" x ");
-                    append(atts.getAttribute(Label.INNER_TYPE));
-                }
-                break;
-            case SORT:
-                int i = 0;
-                for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
-                    append(ex);
-                    sb.append(' ').append(atts.get(Label.ORDERING).get(i++).get()).append(", ");
-                }
-                if (atts.containsKey(Label.LIMIT)) {
-                    sb.append("LIMIT ").append(atts.getValue(Label.LIMIT)).append(", ");
-                }
-                sb.append(atts.getValue(Label.SORT_OPTION));
-                break;
-            case DUI:
-                if (name.equals("Delete_Default")) {
-                    if (atts.containsKey(Label.TABLE_NAME)) {
-                        sb.append("FROM ");
-                        appendTableName(atts);
-                    }
-                    else if (atts.containsKey(Label.TABLE_TYPE)) {
-                        sb.append("FROM ");
-                        append(atts.getAttribute(Label.TABLE_TYPE));
-                    }
-                }
-                else if (name.equals("Insert_Default")) {
-                    if (atts.containsKey(Label.TABLE_NAME)) {
-                        sb.append("INTO ");
-                        appendTableName(atts);
-                    }
-                    else if (atts.containsKey(Label.TABLE_TYPE)) {
-                        sb.append("INTO ");
-                        append(atts.getAttribute(Label.TABLE_TYPE));
-                    }
-                    if (atts.containsKey(Label.COLUMN_NAME)) {
-                        sb.append('(');
-                        for (Explainer ex : atts.get(Label.COLUMN_NAME))
-                            sb.append(ex.get()).append(", ");
-                        sb.setLength(sb.length()-2);
-                        sb.append(')');
-                    }
-                }
-                else if (name.equals("Update_Default")) {
-                    if (atts.containsKey(Label.TABLE_NAME)) {
-                        appendTableName(atts);
-                    }
-                    else if (atts.containsKey(Label.TABLE_TYPE)) {
-                        append(atts.getAttribute(Label.TABLE_TYPE));
-                    }
-                    if (atts.containsKey(Label.COLUMN_NAME)) {
-                        sb.append(" SET ");
-                        for (int j = 0; j < Math.min(atts.get(Label.COLUMN_NAME).size(), atts.get(Label.EXPRESSIONS).size()); j++) {
-                            sb.append(atts.get(Label.COLUMN_NAME).get(j).get()).append(" = ");
-                            append(atts.get(Label.EXPRESSIONS).get(j));
-                            sb.append(", ");
-                        }
-                        sb.setLength(sb.length()-2);
-                    }
-                }
-                break;
-            case AGGREGATE:
-                if (atts.containsKey(Label.GROUPING_OPTION))
-                    sb.append(atts.getValue(Label.GROUPING_OPTION)).append(": ");
-                for (Explainer ex : atts.get(Label.AGGREGATORS)) {
-                    sb.append(ex.get());
-                    sb.append(", ");
-                }
-                sb.setLength(sb.length()-2);
-                break;
-            case BLOOM_FILTER:
-                if (name.equals("Select_BloomFilter") && atts.containsKey(Label.BLOOM_FILTER)) {
-                    sb.append(atts.getValue(Label.BLOOM_FILTER));
-                }
-                else if (name.equals("Using_BloomFilter")) {
-                    sb.append(atts.getValue(Label.BINDING_POSITION));
-                    if (atts.containsKey(Label.EXPRESSIONS))
-                        for (Explainer ex : atts.get(Label.EXPRESSIONS))
-                            sb.append(", ").append(ex.get());
-                }
-                break;
-            case DISTINCT:
-            case UNION_ALL:
-            case UNION:
-                break;
-            default:
-                throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
-            }
-            sb.append(")");
-        }
+        sb.append(')');
         if (atts.containsKey(Label.INPUT_OPERATOR)) {
             for (Explainer input : atts.get(Label.INPUT_OPERATOR)) {
                 newRow();
                 for (int i = 0; i <= depth; i++) {
                     sb.append("  ");
                 }
-                appendOperator((CompoundExplainer) input, depth + 1);
+                appendOperator((CompoundExplainer)input, depth + 1);
+            }
+        }
+    }            
+        
+    protected void appendSelectOperator(String name, Attributes atts) {
+        if (verbose) {
+            append(atts.getAttribute(Label.PREDICATE));
+        }
+    }
+
+    protected void appendProjectOperator(String name, Attributes atts) {
+        if (verbose) {
+            for (Explainer projection : atts.get(Label.PROJECTION)) {
+                append(projection);
+                sb.append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+        }
+    }
+
+    protected void appendScanOperator(String name, Attributes atts) {
+        if (name.equals("IndexScan_Default")) {
+            append(atts.getAttribute(Label.INDEX));
+            if (verbose) {
+                if (atts.containsKey(Label.COLUMN_NAME)) {
+                    int i = 0;
+                    if (atts.containsKey(Label.EQUAL_COMPARAND))
+                        for (Explainer comparand : atts.get(Label.EQUAL_COMPARAND))
+                            sb.append(", ").append(atts.get(Label.COLUMN_NAME).get(i++).get()).append(" = ").append(comparand.get());
+                    for (boolean first = true; i < atts.get(Label.COLUMN_NAME).size(); i++) {
+                        sb.append(", ").append(atts.get(Label.COLUMN_NAME).get(i).get());
+                        if (first) {
+                            Object hi, lo;
+                            if (atts.containsKey(Label.HIGH_COMPARAND)) {
+                                hi = atts.get(Label.HIGH_COMPARAND).get(0).get();
+                                if (atts.containsKey(Label.LOW_COMPARAND)) {
+                                    lo = atts.get(Label.LOW_COMPARAND).get(0).get();
+                                    if (atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE"))
+                                        if (atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE"))
+                                            sb.append(" BETWEEN ").append(lo).append(" AND ").append(hi);
+                                        else
+                                            sb.append(" <= ").append(hi).append(" AND ").append(" > ").append(lo);
+                                    else
+                                        sb.append(" < ").append(hi).append(" AND ").append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(lo);
+                                }
+                                else
+                                    sb.append(atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE") ? " <= " : " < ").append(hi);
+                            }
+                            else if (atts.containsKey(Label.LOW_COMPARAND))
+                                sb.append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(atts.get(Label.LOW_COMPARAND).get(0).get());
+                            first = false;
+                        }
+                    }
+                }
+            }
+        }
+        if (name.equals("ValuesScan_Default")) {
+            if (verbose) {
+                if (atts.containsKey(Label.EXPRESSIONS)) {
+                    for (Explainer row : atts.get(Label.EXPRESSIONS)) {
+                        append(row);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length() - 2);
+                }
+            }
+        }
+        else if (name.equals("GroupScan_Default")) {
+            if (verbose) {
+                String opt = (String)atts.getValue(Label.SCAN_OPTION);
+                if (!opt.equals("full scan"))
+                    sb.append(opt).append(" on ");
+            }
+            appendTableName(atts);
+        }
+    }
+
+    protected void appendLookupOperator(String name, Attributes atts) {
+        if (verbose) {
+            append(atts.getAttribute(Label.INPUT_TYPE));
+            sb.append(" -> ");
+        }
+        for (Explainer table : atts.get(Label.OUTPUT_TYPE)) {
+            append(table);
+            sb.append(", ");
+        }
+        sb.setLength(sb.length() - 2);
+        if (verbose && atts.containsKey(Label.ANCESTOR_TYPE)) {
+            sb.append(" (via ");
+            append(atts.getAttribute(Label.ANCESTOR_TYPE));
+            sb.append(')');
+        }
+    }
+
+    protected void appendCountOperator(String name, Attributes atts) {
+        sb.append("*");
+        if (verbose && name.equals("Count_TableStatus")) {
+            sb.append(" FROM ");
+            append(atts.getAttribute(Label.INPUT_TYPE));
+        }
+    }
+
+    protected void appendFilterOperator(String name, Attributes atts) {
+        if (verbose) {
+            for (Explainer table : atts.get(Label.KEEP_TYPE)) {
+                append(table);
+                sb.append(", ");
+            }
+            sb.setLength(sb.length()-2);
+        }
+    }
+
+    protected void appendFlattenOperator(String name, Attributes atts) {
+        if (verbose) {
+            append(atts.getAttribute(Label.PARENT_TYPE));
+            sb.append(' ').append(atts.getValue(Label.JOIN_OPTION)).append(' ');
+            append(atts.getAttribute(Label.CHILD_TYPE));
+        }
+    }
+
+    protected void appendOrderedOperator(String name, Attributes atts) {
+        if (verbose) {
+            sb.append("skip ");
+            append(atts.getAttribute(Label.LEFT));
+            sb.append(" left, skip ");
+            append(atts.getAttribute(Label.RIGHT));
+            sb.append(" right, compare ");
+            append(atts.getAttribute(Label.NUM_COMPARE));
+            if (name.equals("HKeyUnion")) {
+                sb.append(", shorten to ");
+                append(atts.getAttribute(Label.OUTPUT_TYPE));
+            }
+            else if (name.equals("Intersect_Ordered")) {
+                String join = (String)atts.getValue(Label.JOIN_OPTION);
+                if (!"INNER".equals(join)) {
+                    sb.append(", USING ").append(join);
+                }
             }
         }
     }
-    
+
+    protected void appendIfEmptyOperator(String name, Attributes atts) {
+        if (verbose) {
+            for (Explainer expression : atts.get(Label.OPERAND)) {
+                append(expression);
+                sb.append(", ");
+            }
+            if (!atts.valuePairs().isEmpty()) {
+                sb.setLength(sb.length() - 2);
+            }
+        }
+    }
+
+    protected void appendLimitOperator(String name, Attributes atts) {
+        if (verbose) {
+            append(atts.getAttribute(Label.LIMIT));
+        }
+    }
+
+    protected void appendNestedLoopsOperator(String name, Attributes atts) {
+        if (verbose) {
+            if (name.equals("Map_NestedLoops")) {
+                if(atts.containsKey(Label.TABLE_CORRELATION))
+                    sb.append(atts.getValue(Label.TABLE_CORRELATION));
+                else
+                    sb.append("loop_").append(atts.getValue(Label.BINDING_POSITION));
+            }
+            else if (name.equals("Product_NestedLoops")) {
+                append(atts.getAttribute(Label.OUTER_TYPE));
+                sb.append(" x ");
+                append(atts.getAttribute(Label.INNER_TYPE));
+            }
+        }
+    }
+
+    protected void appendSortOperator(String name, Attributes atts) {
+        if (verbose) {
+            int i = 0;
+            for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
+                append(ex);
+                sb.append(' ').append(atts.get(Label.ORDERING).get(i++).get()).append(", ");
+            }
+            if (atts.containsKey(Label.LIMIT)) {
+                sb.append("LIMIT ").append(atts.getValue(Label.LIMIT)).append(", ");
+            }
+            sb.append(atts.getValue(Label.SORT_OPTION));
+        }
+    }
+
+    protected void appendDUIOperator(String name, Attributes atts) {
+        if (name.equals("Delete_Default")) {
+            if (atts.containsKey(Label.TABLE_NAME)) {
+                sb.append("FROM ");
+                appendTableName(atts);
+            }
+            else if (atts.containsKey(Label.TABLE_TYPE)) {
+                sb.append("FROM ");
+                append(atts.getAttribute(Label.TABLE_TYPE));
+            }
+        }
+        else if (name.equals("Insert_Default")) {
+            if (atts.containsKey(Label.TABLE_NAME)) {
+                sb.append("INTO ");
+                appendTableName(atts);
+            }
+            else if (atts.containsKey(Label.TABLE_TYPE)) {
+                sb.append("INTO ");
+                append(atts.getAttribute(Label.TABLE_TYPE));
+            }
+            if (verbose) {
+                if (atts.containsKey(Label.COLUMN_NAME)) {
+                    sb.append('(');
+                    for (Explainer ex : atts.get(Label.COLUMN_NAME))
+                        sb.append(ex.get()).append(", ");
+                    sb.setLength(sb.length()-2);
+                    sb.append(')');
+                }
+            }
+        }
+        else if (name.equals("Update_Default")) {
+            if (atts.containsKey(Label.TABLE_NAME)) {
+                appendTableName(atts);
+            }
+            else if (atts.containsKey(Label.TABLE_TYPE)) {
+                append(atts.getAttribute(Label.TABLE_TYPE));
+            }
+            if (verbose) {
+                if (atts.containsKey(Label.COLUMN_NAME)) {
+                    sb.append(" SET ");
+                    int ncols = Math.min(atts.get(Label.COLUMN_NAME).size(), 
+                                         atts.get(Label.EXPRESSIONS).size());
+                    for (int j = 0; j < ncols; j++) {
+                        sb.append(atts.get(Label.COLUMN_NAME).get(j).get());
+                        sb.append(" = ");
+                        append(atts.get(Label.EXPRESSIONS).get(j));
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length()-2);
+                }
+            }
+        }
+    }
+
+    protected void appendAggregateOperator(String name, Attributes atts) {
+        if (!verbose)
+            sb.append('(').append(atts.get(Label.BRIEF));
+        else {
+            if (atts.containsKey(Label.GROUPING_OPTION))
+                sb.append(atts.getValue(Label.GROUPING_OPTION)).append(": ");
+            for (Explainer ex : atts.get(Label.AGGREGATORS)) {
+                sb.append(ex.get());
+                sb.append(", ");
+            }
+            sb.setLength(sb.length()-2);
+        }
+    }
+
+    protected void appendBloomFilterOperator(String name, Attributes atts) {
+        if (verbose) {
+            if (name.equals("Select_BloomFilter")) {
+                if (atts.containsKey(Label.BLOOM_FILTER)) {
+                    sb.append(atts.getValue(Label.BLOOM_FILTER));
+                }
+            }
+            else if (name.equals("Using_BloomFilter")) {
+                sb.append(atts.getValue(Label.BINDING_POSITION));
+                if (atts.containsKey(Label.EXPRESSIONS))
+                    for (Explainer ex : atts.get(Label.EXPRESSIONS))
+                        sb.append(", ").append(ex.get());
+            }
+        }
+    }
+
+    protected void appendDistinctOperator(String name, Attributes atts) {
+    }
+
+    protected void appendUnionOperator(String name, Attributes atts) {
+    }
+
     protected void appendRow(CompoundExplainer rEx) {
         Attributes atts = rEx.get();
         sb.append('[');
@@ -567,6 +563,11 @@ public class DefaultFormatter
             sb.append(" x ");
             append(atts.getAttribute(Label.RIGHT_TYPE));
         }
+        else if (atts.containsKey(Label.INDEX_NAME)) {
+            sb.append("Index(");
+            appendTableName(atts);
+            sb.append('.').append(atts.getValue(Label.INDEX_NAME)).append(')');
+        }
         else if (atts.containsKey(Label.TABLE_NAME)) {
             appendTableName(atts);
         }
@@ -579,7 +580,7 @@ public class DefaultFormatter
         if (atts.containsKey(Label.TABLE_SCHEMA)) {
             String name = atts.getValue(Label.TABLE_SCHEMA).toString();
             if (!name.equals(defaultSchemaName))
-                sb.append(name).append(".");
+                sb.append(name).append('.');
         }
         sb.append(atts.getValue(Label.TABLE_NAME));
     }

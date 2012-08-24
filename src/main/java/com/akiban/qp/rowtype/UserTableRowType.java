@@ -29,6 +29,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
@@ -84,8 +85,9 @@ public class UserTableRowType extends AisRowType
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         CompoundExplainer explainer = super.getExplainer(context);
-        explainer.addAttribute(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(table.getName().getSchemaName()));
-        explainer.addAttribute(Label.TABLE_NAME, PrimitiveExplainer.getInstance(table.getName().getTableName()));
+        TableName tableName = table.getName();
+        explainer.addAttribute(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+        explainer.addAttribute(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
         return explainer;
     }
 

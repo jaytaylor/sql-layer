@@ -305,13 +305,11 @@ public class BranchLookup_Default extends Operator
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        if (context.hasExtraInfo(this))
-            atts.putAll(context.getExtraInfo(this).get());
-        atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
-        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
-        atts.put(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
-        
-        return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, inputOperator, context);
+        atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
+        UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
+        if ((ancestorRowType != inputRowType) && (ancestorRowType != outputRowType))
+            atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
+        return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, inputOperator, context, context.getExtraInfo(this));
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor

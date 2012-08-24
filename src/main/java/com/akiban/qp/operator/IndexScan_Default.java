@@ -185,6 +185,7 @@ class IndexScan_Default extends Operator
                              boolean usePValues)
     {
         ArgumentValidation.notNull("indexType", indexType);
+        this.indexType = indexType;
         this.index = indexType.index();
         this.ordering = ordering;
         this.indexKeyRange = indexKeyRange;
@@ -200,6 +201,7 @@ class IndexScan_Default extends Operator
 
     // Object state
 
+    private final IndexRowType indexType;
     private final Index index;
     private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
@@ -215,8 +217,7 @@ class IndexScan_Default extends Operator
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.toString()));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
-        atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.toString()));
-        
+        atts.put(Label.INDEX, indexType.getExplainer(context));
         return new CompoundExplainer(Type.SCAN_OPERATOR, atts);
     }
 

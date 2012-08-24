@@ -33,21 +33,21 @@ import com.akiban.server.explain.*;
 
 public class LookUpOperatorExplainer extends CompoundExplainer
 {
-    public LookUpOperatorExplainer (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context)
+    public LookUpOperatorExplainer (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context, CompoundExplainer extraInfo)
     {
-        super(Type.LOOKUP_OPERATOR, buildAtts(name, atts, iRowType, keepInput, inputOp, context));
+        super(Type.LOOKUP_OPERATOR, buildAtts(name, atts, iRowType, keepInput, inputOp, context, extraInfo));
     }
     
-    private static Attributes buildAtts (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context)
+    private static Attributes buildAtts (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context, CompoundExplainer extraInfo)
     {
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
-        
         atts.put(Label.ROWTYPE, iRowType.getExplainer(context));
-        atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(iRowType.toString()));
+        atts.put(Label.INPUT_TYPE, iRowType.getExplainer(context));
         atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
         if (null != inputOp)
             atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
-        
+        if (extraInfo != null)
+            atts.putAll(extraInfo.get());
         return atts;
     }
 }
