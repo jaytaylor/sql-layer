@@ -57,10 +57,10 @@ cp -p redhat/LICENSE.txt ${RPM_BUILD_ROOT}/usr/share/%{username}
 cp -p redhat/*.tag ${RPM_BUILD_ROOT}/usr/share/%{username}
 cp -p redhat/postgresql.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 
-cp -p target/akiban-server-1.4.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-server-1.4.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
-cp -p redhat/akiban-client-tools-1.3.1-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-client-tools-1.3.1-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
+cp -p target/akiban-server-1.4.0-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-server-1.4.0-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p redhat/akiban-client-tools-1.3.1.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-client-tools-1.3.1.jar
 
 mv redhat/akdump ${RPM_BUILD_ROOT}/usr/bin
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
