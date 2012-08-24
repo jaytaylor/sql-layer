@@ -146,7 +146,7 @@ public class API
 
     public static Operator groupScan_Default(GroupTable groupTable)
     {
-        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable));
+        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable.getGroup()));
     }
 
     public static Operator groupScan_Default(GroupTable groupTable,
@@ -156,7 +156,7 @@ public class API
                                              UserTable shortenUntil)
     {
         return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil));
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable.getGroup(), hKeyBindingPosition, deep, hKeyType, shortenUntil));
     }
 
     // ValuesScan
@@ -184,7 +184,7 @@ public class API
                                                 InputPreservationOption flag,
                                                 Limit limit)
     {
-        return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
+        return new BranchLookup_Default(inputOperator, groupTable.getGroup(), inputRowType, outputRowType, flag, limit);
     }
 
     /** deprecated */
@@ -194,7 +194,7 @@ public class API
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(groupTable,
+        return new BranchLookup_Nested(groupTable.getGroup(),
                                        inputRowType,
                                        null,
                                        outputRowType,
@@ -209,7 +209,7 @@ public class API
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(groupTable,
+        return new BranchLookup_Nested(groupTable.getGroup(),
                                        inputRowType,
                                        ancestorRowType,
                                        outputRowType,
@@ -255,7 +255,7 @@ public class API
                                                   Collection<UserTableRowType> ancestorTypes,
                                                   InputPreservationOption flag)
     {
-        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
+        return new AncestorLookup_Default(inputOperator, groupTable.getGroup(), rowType, ancestorTypes, flag);
     }
 
     public static Operator ancestorLookup_Nested(GroupTable groupTable,
@@ -263,7 +263,7 @@ public class API
                                                  Collection<UserTableRowType> ancestorTypes,
                                                  int hKeyBindingPosition)
     {
-        return new AncestorLookup_Nested(groupTable, rowType, ancestorTypes, hKeyBindingPosition);
+        return new AncestorLookup_Nested(groupTable.getGroup(), rowType, ancestorTypes, hKeyBindingPosition);
     }
 
     // IndexScan
