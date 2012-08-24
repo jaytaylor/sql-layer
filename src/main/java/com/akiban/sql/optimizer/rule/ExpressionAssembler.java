@@ -191,12 +191,12 @@ abstract class ExpressionAssembler<T> {
 
     private void explainColumnExpression(T expression, ColumnExpression column) {
         CompoundExplainer explainer = new CompoundExplainer(Type.EXTRA_INFO);
-        explainer.addAttribute(Label.TABLE_CORRELATION, 
-                               PrimitiveExplainer.getInstance(column.getTable().getName()));
         explainer.addAttribute(Label.POSITION, 
                                PrimitiveExplainer.getInstance(column.getPosition()));
         Column aisColumn = column.getColumn();
         if (aisColumn != null) {
+            explainer.addAttribute(Label.TABLE_CORRELATION, 
+                                   PrimitiveExplainer.getInstance(column.getTable().getName()));
             TableName tableName = aisColumn.getTable().getName();
             explainer.addAttribute(Label.TABLE_SCHEMA,
                                    PrimitiveExplainer.getInstance(tableName.getSchemaName()));

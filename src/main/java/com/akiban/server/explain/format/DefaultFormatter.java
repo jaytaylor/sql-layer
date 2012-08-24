@@ -442,7 +442,11 @@ public class DefaultFormatter
             if (atts.containsKey(Label.LIMIT)) {
                 sb.append("LIMIT ").append(atts.getValue(Label.LIMIT)).append(", ");
             }
-            sb.append(atts.getValue(Label.SORT_OPTION));
+            String opt = (String)atts.getValue(Label.SORT_OPTION);
+            if (opt.equals("PRESERVE_DUPLICATES"))
+                sb.setLength(sb.length() - 2);
+            else
+                sb.append(opt.replace('_', ' '));
         }
     }
 
