@@ -243,7 +243,7 @@ class GroupScan_Default extends Operator
         @Override
         public final String toString()
         {
-            return describeRange() + " on " + targetGroup.getName();
+            return describeRange() + " on " + targetGroup.getGroupTable().getName().getTableName();
         }
 
         // for overriding in subclasses
