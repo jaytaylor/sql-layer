@@ -44,10 +44,6 @@ import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
 {
-    public final GroupCursor newGroupCursor(GroupTable groupTable) {
-        return newGroupCursor(groupTable.getGroup());
-    }
-
     public abstract GroupCursor newGroupCursor(Group group);
 
     public abstract Cursor newIndexCursor(QueryContext context,
