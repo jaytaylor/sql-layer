@@ -73,11 +73,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable)
+    public GroupCursor newGroupCursor(Group group)
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable);
+            cursor = new PersistitGroupCursor(this, group.getGroupTable());
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -347,9 +347,14 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitIndexRow.newIndexRow(this, indexRowType);
     }
 
-    public Exchange takeExchange(GroupTable table) throws PersistitException
+    public Exchange takeExchange(GroupTable groupTable) throws PersistitException
     {
-        return persistit.getExchange(getSession(), table.rowDef());
+        return takeExchange(groupTable.getGroup());
+    }
+
+    public Exchange takeExchange(Group group) throws PersistitException
+    {
+        return persistit.getExchange(getSession(), group);
     }
 
     public Exchange takeExchange(Index index)

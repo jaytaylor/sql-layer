@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
@@ -43,7 +44,11 @@ import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
 {
-    public abstract GroupCursor newGroupCursor(GroupTable groupTable);
+    public final GroupCursor newGroupCursor(GroupTable groupTable) {
+        return newGroupCursor(groupTable.getGroup());
+    }
+
+    public abstract GroupCursor newGroupCursor(Group group);
 
     public abstract Cursor newIndexCursor(QueryContext context,
                                           Index index,

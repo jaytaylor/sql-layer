@@ -26,7 +26,7 @@
 
 package com.akiban.qp.memoryadapter;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
@@ -108,10 +108,10 @@ public class MemoryGroupCursor implements GroupCursor {
         public void close();
     }
     
-    public MemoryGroupCursor (MemoryAdapter adapter, GroupTable groupTable) {
+    public MemoryGroupCursor (MemoryAdapter adapter, Group group) {
         this.adapter = adapter;
-        this.factory = groupTable.getRoot().getMemoryTableFactory();
-        assert this.factory != null : groupTable;
+        this.factory = group.getGroupTable().getRoot().getMemoryTableFactory();
+        assert this.factory != null : group;
     }
     
     private boolean idle = true;
