@@ -240,7 +240,7 @@ class AncestorLookup_Nested extends Operator
         for (UserTable table : ancestors) {
             atts.put(Label.OUTPUT_TYPE, ((Schema)rowType.schema()).userTableRowType(table).getExplainer(context));
         }
-        return new LookUpOperatorExplainer(getName(), atts, rowType, false, null, context, context.getExtraInfo(this));
+        return new LookUpOperatorExplainer(getName(), atts, rowType, false, null, context);
     }
 
     // Inner classes

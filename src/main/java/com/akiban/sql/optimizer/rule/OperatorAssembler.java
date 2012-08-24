@@ -1155,25 +1155,7 @@ public class OperatorAssembler extends BaseRule
             }
             stream.rowType = null;
             stream.fieldOffsets = null;
-            if (explainContext != null)
-                explainAncestorLookup(stream.operator, ancestorLookup);
             return stream;
-        }
-
-        protected void explainAncestorLookup(Operator operator, AncestorLookup ancestorLookup) {
-            Attributes atts = new Attributes();
-            for (TableSource tableSource : ancestorLookup.getTables())
-                {
-                    atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(tableSource.getTable().getTable().getName().toString()));
-                }
-            int binding = currentBindingPosition();
-            if (lookupBindings.containsKey(binding) && lookupBindings.get(binding) != null)
-                {
-                    atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(lookupBindings.get(binding)));
-                }
-            else if (ancestorLookup.getInput() instanceof GroupLoopScan)
-                atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(((GroupLoopScan)ancestorLookup.getInput()).getOutsideTable().getTable().getTable().getName().toString()));
-            explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
@@ -1223,25 +1205,7 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = null;
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
-            if (explainContext != null)
-                explainBranchLookup(stream.operator, branchLookup);
             return stream;
-        }
-
-        protected void explainBranchLookup(Operator operator, BranchLookup branchLookup) {
-            Attributes atts = new Attributes();
-            for (TableSource tableSource : branchLookup.getTables())
-                {
-                    atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(tableSource.getTable().getTable().getName().toString()));
-                }
-            int binding = currentBindingPosition();
-            if (lookupBindings.containsKey(binding) && lookupBindings.get(binding) != null)
-                {
-                    atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(lookupBindings.get(binding)));
-                }
-            else if (branchLookup.getInput() instanceof GroupLoopScan)
-                atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(((GroupLoopScan)branchLookup.getInput()).getOutsideTable().getTable().getTable().getName().toString()));
-            explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
@@ -1254,23 +1218,7 @@ public class OperatorAssembler extends BaseRule
                                                   stream.operator,
                                                   currentBindingPosition());
             popBoundRow();
-            if (explainContext != null)
-                explainMapJoin(stream.operator, mapJoin, pos, outer);
             return stream;
-        }
-
-        protected void explainMapJoin(Operator operator, MapJoin mapJoin, int pos, PlanNode outer) {
-            lookupBindings.remove(pos);
-            Attributes atts = new Attributes();
-            if (outer instanceof Flatten) {
-                List<TableNode> nodes = ((Flatten)outer).getTableNodes();
-                if (nodes.size() == 1) {
-                    String name = nodes.get(0).getTable().getName().toString();
-                    atts.put(Label.TABLE_CORRELATION, PrimitiveExplainer.getInstance(name));
-                    lookupBindings.put(pos, name);
-                }
-            }
-            explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected RowStream assembleProduct(Product product) {
@@ -1938,7 +1886,6 @@ public class OperatorAssembler extends BaseRule
         protected int expressionBindingsOffset, loopBindingsOffset;
         protected Stack<ColumnExpressionToIndex> boundRows = new Stack<ColumnExpressionToIndex>(); // Needs to be List<>.
         protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<BaseHashTable,Integer>();
-        protected Map<Integer,String> lookupBindings = new HashMap<Integer,String>();
 
         protected void computeBindingsOffsets() {
             expressionBindingsOffset = 0;

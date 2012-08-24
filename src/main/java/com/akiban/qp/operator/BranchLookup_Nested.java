@@ -290,7 +290,7 @@ public class BranchLookup_Nested extends Operator
         UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
         if ((ancestorRowType != inputRowType) && (ancestorRowType != outputRowType))
             atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
-        return new LookUpOperatorExplainer(getName(), atts, inputRowType, false, null, context, context.getExtraInfo(this));
+        return new LookUpOperatorExplainer(getName(), atts, inputRowType, false, null, context);
     }
 
     // Inner classes

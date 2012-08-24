@@ -33,12 +33,12 @@ import com.akiban.server.explain.*;
 
 public class LookUpOperatorExplainer extends CompoundExplainer
 {
-    public LookUpOperatorExplainer (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context, CompoundExplainer extraInfo)
+    public LookUpOperatorExplainer (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context)
     {
-        super(Type.LOOKUP_OPERATOR, buildAtts(name, atts, iRowType, keepInput, inputOp, context, extraInfo));
+        super(Type.LOOKUP_OPERATOR, buildAtts(name, atts, iRowType, keepInput, inputOp, context));
     }
     
-    private static Attributes buildAtts (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context, CompoundExplainer extraInfo)
+    private static Attributes buildAtts (String name, Attributes atts, RowType iRowType, boolean keepInput, Operator inputOp, ExplainContext context)
     {
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         atts.put(Label.ROWTYPE, iRowType.getExplainer(context));
@@ -46,8 +46,6 @@ public class LookUpOperatorExplainer extends CompoundExplainer
         atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
         if (null != inputOp)
             atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
-        if (extraInfo != null)
-            atts.putAll(extraInfo.get());
         return atts;
     }
 }
