@@ -46,6 +46,12 @@ public class Aggregators
 
             @Override
             public AkType outputType () { return type;}
+            
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -62,6 +68,12 @@ public class Aggregators
 
             @Override
             public AkType outputType () { return type;}
+            
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -78,6 +90,12 @@ public class Aggregators
 
             @Override
             public AkType outputType () { return type;}
+
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -94,6 +112,12 @@ public class Aggregators
             
             @Override
             public AkType outputType () { return type;}
+             
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -110,6 +134,12 @@ public class Aggregators
            
             @Override
             public AkType outputType () { return type;}
+            
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -126,6 +156,12 @@ public class Aggregators
             
             @Override
             public AkType outputType () { return type;}
+            
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
