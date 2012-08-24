@@ -281,7 +281,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
 
-        Exchange hEx = adapter.takeExchange(userTable.getGroup().getGroupTable());
+        Exchange hEx = adapter.takeExchange(userTable.getGroup());
         try {
             // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
             // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,

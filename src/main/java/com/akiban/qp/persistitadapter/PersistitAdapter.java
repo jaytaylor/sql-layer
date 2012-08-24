@@ -347,11 +347,6 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitIndexRow.newIndexRow(this, indexRowType);
     }
 
-    public Exchange takeExchange(GroupTable groupTable) throws PersistitException
-    {
-        return takeExchange(groupTable.getGroup());
-    }
-
     public Exchange takeExchange(Group group) throws PersistitException
     {
         return persistit.getExchange(getSession(), group);

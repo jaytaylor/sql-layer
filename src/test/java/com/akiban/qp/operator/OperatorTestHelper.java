@@ -174,7 +174,8 @@ public final class OperatorTestHelper {
     private static class TestAdapter extends StoreAdapter
     {
         @Override
-        public GroupCursor newGroupCursor(Group group) {
+        public GroupCursor newGroupCursor(Group group)
+        {
             throw new UnsupportedOperationException();
         }
 

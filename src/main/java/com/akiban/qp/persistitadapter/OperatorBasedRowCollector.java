@@ -293,7 +293,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                                    descending,
                                                    indexKeyRange);
             plan = branchLookup_Default(indexScan,
-                                        group,
+                    group,
                     predicateType.indexRowType(predicateIndex),
                     predicateType,
                     InputPreservationOption.DISCARD_INPUT,
