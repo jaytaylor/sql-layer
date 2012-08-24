@@ -422,7 +422,7 @@ public class PersistitStore implements Store, Service {
                         }
                     }
                 }
-                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow);
+                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, true);
             }
 
             if (deferredIndexKeyLimit <= 0) {
@@ -470,13 +470,19 @@ public class PersistitStore implements Store, Service {
     public void deleteRow(Session session, RowData rowData)
         throws PersistitException
     {
-        deleteRow(session, rowData, null, true);
+        deleteRow(session, rowData, true);
         // TODO: It should be possible to optimize propagateDownGroup for inserts too
         // deleteRow(session, rowData, hKeyDependentTableOrdinals(rowData.getRowDefId()));
     }
 
-    private void deleteRow(Session session, RowData rowData, BitSet tablesRequiringHKeyMaintenance,
-                           boolean propagateHKeyChanges)
+    @Override
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException
+    {
+        deleteRow(session, rowData, deleteIndexes, null, true);
+    }
+
+    private void deleteRow(Session session, RowData rowData, boolean deleteIndexes,
+                           BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
         throws PersistitException
     {
         int rowDefId = rowData.getRowDefId();
@@ -502,15 +508,17 @@ public class PersistitStore implements Store, Service {
 
             // Remove the indexes, including the PK index
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
-            for (Index index : rowDef.getIndexes()) {
-                deleteIndex(session, index, rowData, hEx.getKey(), indexRow);
+            if(deleteIndexes) {
+                for (Index index : rowDef.getIndexes()) {
+                    deleteIndex(session, index, rowData, hEx.getKey(), indexRow);
+                }
             }
 
             // The row being deleted might be the parent of rows that
             // now become orphans. The hkeys
             // of these rows need to be maintained.
             if(propagateHKeyChanges) {
-                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow);
+                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes);
             }
         } finally {
             DELETE_ROW_TAP.out();
@@ -595,7 +603,7 @@ public class PersistitStore implements Store, Service {
                 // A PK or FK field has changed. The row has to be deleted and reinserted, and hkeys of descendent
                 // rows maintained. tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hkeys
                 // could possible be affected.
-                deleteRow(session, oldRowData, tablesRequiringHKeyMaintenance, true);
+                deleteRow(session, oldRowData, true, tablesRequiringHKeyMaintenance, true);
                 writeRow(session, mergedRowData, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
             }
         } finally {
@@ -661,7 +669,8 @@ public class PersistitStore implements Store, Service {
     private void propagateDownGroup(Session session,
                                     Exchange exchange,
                                     BitSet tablesRequiringHKeyMaintenance,
-                                    PersistitIndexRowBuffer indexRowBuffer)
+                                    PersistitIndexRowBuffer indexRowBuffer,
+                                    boolean deleteIndexes)
             throws PersistitException
     {
         // exchange is positioned at a row R that has just been replaced by R', (because we're processing an update
@@ -687,8 +696,10 @@ public class PersistitStore implements Store, Service {
                 // the hkey.
                 exchange.remove();
                 tableStatusCache.rowDeleted(descendentRowDefId);
-                for (Index index : descendentRowDef.getIndexes()) {
-                    deleteIndex(session, index, descendentRowData, exchange.getKey(), indexRowBuffer);
+                if(deleteIndexes) {
+                    for (Index index : descendentRowDef.getIndexes()) {
+                        deleteIndex(session, index, descendentRowData, exchange.getKey(), indexRowBuffer);
+                    }
                 }
                 // Reinsert it, recomputing the hkey and maintaining indexes
                 writeRow(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
@@ -720,11 +731,11 @@ public class PersistitStore implements Store, Service {
         //
         for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
             for (Index index : userRowDef.getIndexes()) {
-                truncateIndex(session, Collections.singleton(index));
+                truncateIndexes(session, Collections.singleton(index));
             }
         }
         for (Index index : groupRowDef.getGroupIndexes()) {
-            truncateIndex(session, Collections.singleton(index));
+            truncateIndexes(session, Collections.singleton(index));
         }
 
         //
@@ -749,7 +760,7 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void truncateIndex(Session session, Collection<? extends Index> indexes) {
+    public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
             Exchange iEx = getExchange(session, index);
             try {
@@ -1328,7 +1339,7 @@ public class PersistitStore implements Store, Service {
         }
     }
 
-    private void removeTrees(Session session, Collection<TreeLink> treeLinks) {
+    private void removeTrees(Session session, Collection<? extends TreeLink> treeLinks) {
         Exchange ex = null;
         try {
             for(TreeLink link : treeLinks) {
@@ -1406,9 +1417,7 @@ public class PersistitStore implements Store, Service {
     
     @Override
     public void deleteSequences (Session session, Collection<? extends Sequence> sequences) {
-        Collection<TreeLink> links = new ArrayList<TreeLink>();
-        links.addAll(sequences);
-        removeTrees(session, links);
+        removeTrees(session, sequences);
     }
 
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,

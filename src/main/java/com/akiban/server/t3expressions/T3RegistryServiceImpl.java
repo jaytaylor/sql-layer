@@ -52,6 +52,7 @@ import com.akiban.util.DagChecker;
 import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Objects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Multimap;
@@ -108,6 +109,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         TClass source = cast.sourceClass();
         TClass target = cast.targetClass();
         return stronglyCastableTo(target).contains(source);
+    }
+
+    @Override
+    public boolean isIndexFriendly(TClass source, TClass target) {
+        return Objects.equal(
+                source.name().categoryName(),
+                target.name().categoryName()
+        );
     }
 
     // Service interface

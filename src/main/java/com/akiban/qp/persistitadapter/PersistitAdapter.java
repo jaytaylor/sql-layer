@@ -214,7 +214,7 @@ public class PersistitAdapter extends StoreAdapter
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
             if(hKeyChanged) {
-                store.deleteRow(getSession(), oldRowData);
+                store.deleteRow(getSession(), oldRowData, false);
                 oldStep = enterUpdateStep();
                 store.writeRow(getSession(), newRowData);
             } else {
