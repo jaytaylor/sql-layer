@@ -77,7 +77,7 @@ public class PersistitAdapter extends StoreAdapter
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, group.getGroupTable());
+            cursor = new PersistitGroupCursor(this, group);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
