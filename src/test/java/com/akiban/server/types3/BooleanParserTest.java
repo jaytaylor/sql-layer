@@ -57,6 +57,8 @@ public final class BooleanParserTest {
         param(builder, "-1", true);
         param(builder, "-1.1-a", true);
         param(builder, ".-1", false);
+        param(builder, "-.1", true);
+        param(builder, "-..1", false);
         param(builder, "1a", true);
         param(builder, "a1", false); // MySQL doesn't believe in steak sauce
         param(builder, "0", false);
