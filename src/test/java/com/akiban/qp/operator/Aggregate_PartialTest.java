@@ -363,6 +363,12 @@ public final class Aggregate_PartialTest extends OldExpressionTestBase {
         public AkType outputType() {
             return AkType.VARCHAR;
         }
+
+        @Override
+        public Aggregator get(Object obj)
+        {
+            return get();
+        }
     };
 
     // nested classes
