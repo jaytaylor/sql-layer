@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -407,7 +408,7 @@ public class AlterTableDDLTest {
         buildCOIJoinedAUnJoined();
         parseAndRun("ALTER TABLE i ALTER COLUMN oid SET DATA TYPE varchar(32)");
         expectColumnChanges("MODIFY:oid->oid");
-        expectIndexChanges("MODIFY:__akiban_fk2->__akiban_fk2");
+        expectIndexChanges();
         // Do not check group and assume join removal handled at lower level (TableChangeValidator)
         if(Types3Switch.ON)
             expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ VARCHAR(32) NULL",
@@ -422,7 +423,7 @@ public class AlterTableDDLTest {
         builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
         parseAndRun("ALTER TABLE a ALTER COLUMN aid SET DATA TYPE INT");
         expectColumnChanges("MODIFY:aid->aid");
-        expectIndexChanges("MODIFY:PRIMARY->PRIMARY");
+        expectIndexChanges();
         if(Types3Switch.ON)
             expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "PRIMARY(aid)");
         else
@@ -1116,8 +1117,8 @@ public class AlterTableDDLTest {
         }
 
         @Override
-        public void alterTable(Session session, TableName tableName, UserTable newDefinition,
-                               List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context) {
+        public ChangeLevel alterTable(Session session, TableName tableName, UserTable newDefinition,
+                                      List<TableChange> columnChanges, List<TableChange> indexChanges, QueryContext context) {
             if(ais.getUserTable(tableName) == null) {
                 throw new NoSuchTableException(tableName);
             }
@@ -1130,6 +1131,7 @@ public class AlterTableDDLTest {
                 indexChangeDesc.add(change.toString());
             }
             newTableDesc = simpleDescribeTable(newDefinition);
+            return ChangeLevel.NONE; // Doesn't matter, just can't be null
         }
 
         @Override

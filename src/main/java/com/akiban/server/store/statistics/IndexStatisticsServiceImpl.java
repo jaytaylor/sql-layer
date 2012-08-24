@@ -61,7 +61,7 @@ import java.util.*;
 import java.io.File;
 import java.io.IOException;
 
-public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
+public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service, JmxManageable
 {
     private final static int INDEX_STATISTICS_TABLE_VERSION = 1;
 
@@ -91,16 +91,6 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
     
     /* Service */
-
-    @Override
-    public IndexStatisticsService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<IndexStatisticsService> castClass() {
-        return IndexStatisticsService.class;
-    }
 
     @Override
     public void start() {

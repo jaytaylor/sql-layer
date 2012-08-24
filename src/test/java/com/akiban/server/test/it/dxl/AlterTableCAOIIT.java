@@ -26,18 +26,19 @@
 
 package com.akiban.server.test.it.dxl;
 
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.util.TableChange;
+import com.akiban.server.error.NotNullViolationException;
+import com.akiban.server.error.PrimaryKeyNullColumnException;
 import org.junit.After;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
+import com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
@@ -57,6 +58,11 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @After
     public void clearTableIDs() {
         cid = aid = oid = iid = -1;
+    }
+
+    @Override
+    protected ChangeLevel getDefaultChangeLevel() {
+        return ChangeLevel.GROUP;
     }
 
     @Override
@@ -185,6 +191,119 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN oid SET DATA TYPE varchar(32)");
         groupsDiffer(O_NAME, I_NAME);
         groupsMatch(C_NAME, A_NAME, O_NAME);
+    }
+
+    //
+    // NULL <parent pk>
+    //
+
+    @Test
+    public void setNull_C_id() {
+        createAndLoadCAOI();
+        try {
+            runAlter("ALTER TABLE " + C_TABLE + " ALTER COLUMN id NULL");
+            fail("Expected: PrimaryKeyNullColumnException");
+        } catch(PrimaryKeyNullColumnException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNull_A_id() {
+        createAndLoadCAOI();
+        try {
+            runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN id NULL");
+            fail("Expected: PrimaryKeyNullColumnException");
+        } catch(PrimaryKeyNullColumnException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNull_O_id() {
+        createAndLoadCAOI();
+        try {
+            runAlter("ALTER TABLE " + O_TABLE + " ALTER COLUMN id NULL");
+            fail("Expected: PrimaryKeyNullColumnException");
+        } catch(PrimaryKeyNullColumnException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNull_I_id() {
+        createAndLoadCAOI();
+        try {
+            runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN id NULL");
+            fail("Expected: PrimaryKeyNullColumnException");
+        } catch(PrimaryKeyNullColumnException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    //
+    // NOT NULL <child fk>
+    //
+
+    @Test
+    public void setNotNull_A_cid() {
+        createAndLoadCAOI();
+        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + A_TABLE + " ALTER COLUMN cid NOT NULL");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNotNull_O_cid() {
+        createAndLoadCAOI();
+        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + O_TABLE + " ALTER COLUMN cid NOT NULL");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNotNull_I_oid() {
+        createAndLoadCAOI();
+        runAlter(ChangeLevel.METADATA_NOT_NULL, "ALTER TABLE " + I_TABLE + " ALTER COLUMN oid NOT NULL");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    //
+    // NOT NULL <child fk> (with failure)
+    //
+
+    @Test
+    public void setNotNull_A_cid_failing() {
+        createAndLoadCAOI();
+        writeRow(aid, 1000L, null, "1000");
+        try {
+            runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN cid NOT NULL");
+            fail("Expected NotNullViolationException");
+        } catch(NotNullViolationException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNotNull_O_cid_failing() {
+        createAndLoadCAOI();
+        writeRow(oid, 1000L, null, "1000");
+        try {
+            runAlter("ALTER TABLE " + O_TABLE + " ALTER COLUMN cid NOT NULL");
+            fail("Expected NotNullViolationException");
+        } catch(NotNullViolationException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+    @Test
+    public void setNotNull_I_oid_failing() {
+        createAndLoadCAOI();
+        writeRow(iid, 1000L, null, "1000");
+        try {
+            runAlter("ALTER TABLE " + I_TABLE + " ALTER COLUMN oid NOT NULL");
+            fail("Expected NotNullViolationException");
+        } catch(NotNullViolationException e) {
+        }
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
     }
 
     //
@@ -463,5 +582,49 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI();
         runRenameColumn(I_NAME, "oid", "dio");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+
+
+    //
+    // Rollback testing
+    //
+
+    @Test
+    public void groupingChangeWithFailureInMiddle() {
+        // "Worst" case scenario, grouping change almost complete and then failure
+        // Create I un-grouped, add GFK to O and change oid to NOT NULL in same alter (with a null row)
+
+        createAndLoadCAOI_FK(true, true, false);
+        writeRow(iid, 1000L, null, "1000");
+
+        AISBuilder builder = new AISBuilder();
+        // stub parent
+        builder.userTable(SCHEMA, O_TABLE);
+        builder.column(SCHEMA, O_TABLE, "id", 0, "int", null, null, false, false, null, null);
+        // Changed child
+        builder.userTable(SCHEMA, I_TABLE);
+        builder.column(SCHEMA, I_TABLE, "id", 0, "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, I_TABLE, "oid", 1, "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, I_TABLE, "ii", 2, "varchar", 5L, null, true, false, null, null);
+        builder.index(SCHEMA, I_TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, I_TABLE, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        builder.index(SCHEMA, I_TABLE, "oid", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, I_TABLE, "oid", "oid", 0, true, null);
+        builder.index(SCHEMA, I_TABLE, "ii", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, I_TABLE, "ii", "ii", 0, true, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup(O_TABLE, SCHEMA, "__akiban_o");
+        builder.addTableToGroup(O_TABLE, SCHEMA, O_TABLE);
+        builder.joinTables("o/i", SCHEMA, O_TABLE, SCHEMA, I_TABLE);
+        builder.joinColumns("o/i", SCHEMA, O_TABLE, "id", SCHEMA, I_TABLE, "oid");
+        builder.addJoinToGroup(O_TABLE, "o/i", 0);
+        builder.groupingIsComplete();
+
+        try {
+            UserTable newDef = builder.akibanInformationSchema().getUserTable(I_NAME);
+            runAlter(ChangeLevel.GROUP, I_NAME, newDef, Arrays.asList(TableChange.createModify("oid", "oid")), NO_CHANGES);
+            fail("Expected NotNullViolationException");
+        } catch(NotNullViolationException e) {
+        }
     }
 }

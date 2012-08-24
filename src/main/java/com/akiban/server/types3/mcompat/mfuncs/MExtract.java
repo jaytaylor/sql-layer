@@ -68,6 +68,12 @@ public abstract class MExtract extends TOverloadBase
             new MExtract(MDatetimes.DATETIME, "TIMESTAMP")
             {
                 @Override
+                public String[] registeredNames()
+                {
+                    return new String[] {"timestamp", "datetime"};
+                }
+
+                @Override
                 protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
                 {
                     long datetime = inputs.get(0).getInt64();
