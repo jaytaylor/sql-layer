@@ -29,11 +29,11 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 
+import com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
@@ -52,6 +52,11 @@ public class AlterTableCAOIConflatedKeysIT extends AlterTableITBase {
     @After
     public void clearTableIDs() {
         cid = aid = oid = iid = -1;
+    }
+
+    @Override
+    protected ChangeLevel getDefaultChangeLevel() {
+        return ChangeLevel.GROUP;
     }
 
     @Override

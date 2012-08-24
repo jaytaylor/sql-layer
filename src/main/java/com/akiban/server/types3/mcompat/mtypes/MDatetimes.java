@@ -596,7 +596,7 @@ public class MDatetimes
                             ymd[YEAR_INDEX], ymd[MONTH_INDEX], ymd[DAY_INDEX],
                             ymd[HOUR_INDEX], ymd[MIN_INDEX], ymd[SEC_INDEX]);
     }
-    
+
     public static boolean isValidDatetime (long ymdhms[])
     {
         return isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms);

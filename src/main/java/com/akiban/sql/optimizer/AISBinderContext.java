@@ -106,6 +106,8 @@ public class AISBinderContext
     
     protected Set<SQLParserFeature> initParser() {
         parser = new SQLParser();
+        parser.getFeatures().remove(SQLParserFeature.GEO_INDEX_DEF_FUNC); // Off by default.
+
         Set<SQLParserFeature> parserFeatures = new HashSet<SQLParserFeature>();
         // TODO: Others that are on by defaults; could have override to turn them
         // off, but they are pretty harmless.
@@ -121,6 +123,8 @@ public class AISBinderContext
         else if (!prop.equals("identifier"))
             throw new InvalidParameterValueException("'" + prop 
                                                      + "' for parserDoubleQuoted");
+        if (getBooleanProperty("parserGeospatialIndexes", false))
+            parserFeatures.add(SQLParserFeature.GEO_INDEX_DEF_FUNC);
         parser.getFeatures().addAll(parserFeatures);
 
         defaultSchemaName = getProperty("database");

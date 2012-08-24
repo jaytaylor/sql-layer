@@ -32,14 +32,18 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
+import com.akiban.server.types3.ErrorHandlingMode;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
@@ -90,6 +94,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 
 public final class OverloadAndTInstanceResolver extends BaseRule {
@@ -469,13 +474,45 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TClass leftTClass = tclass(left);
             TClass rightTClass = tclass(right);
             if (leftTClass != rightTClass) {
-                TClass common = resolver.commonTClass(leftTClass, rightTClass);
-                if (common == null)
-                    throw error("no common type found for comparison of " + expression);
-                left = castTo(left, common);
-                right = castTo(right, common);
-                expression.setLeft(left);
-                expression.setRight(right);
+                boolean needCasts = true;
+                if ( (left.getClass() == ColumnExpression.class)&& (right.getClass() == ConstantExpression.class)) {
+                    // Left is a Column, right is a Constant. Ideally, we'd like to keep the Column as a Column,
+                    // and not a CAST(Column AS _) -- otherwise, we can't use it in an index lookup.
+                    // So, try to cast the const to the column's type. To do this, CAST(Const -> Column) must be
+                    // indexFriendly, *and* casting this result back to the original Const type must equal the same
+                    // const.
+                    if (resolver.getRegistry().isIndexFriendly(leftTClass, rightTClass)) {
+                        TInstance columnType = tinst(left);
+                        TInstance constType = tinst(right);
+                        TCast constToCol = resolver.getTCast(constType, columnType);
+                        if (constToCol != null) {
+                            TCast colToConst = resolver.getTCast(columnType, constType);
+                            if (colToConst != null) {
+                                PValueSource asColType = castValue(constToCol, right.getPreptimeValue(), columnType);
+                                TPreptimeValue asColTypeTpv = (asColType == null)
+                                        ? null
+                                        : new TPreptimeValue(columnType, asColType);
+                                PValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
+                                if (PValueSources.areEqual(asColType, backToConstType)) {
+                                    TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
+                                    ConstantExpression constCasted = new ConstantExpression(constTpv);
+                                    expression.setRight(constCasted);
+                                    assert columnType.equals(tinst(expression.getRight()));
+                                    needCasts = false;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (needCasts) {
+                    TClass common = resolver.commonTClass(leftTClass, rightTClass);
+                    if (common == null)
+                        throw error("no common type found for comparison of " + expression);
+                    left = castTo(left, common);
+                    right = castTo(right, common);
+                    expression.setLeft(left);
+                    expression.setRight(right);
+                }
             }
 
             return boolExpr(expression);
@@ -567,6 +604,35 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             throw new RuntimeException(message); // TODO what actual error type?
         }
 
+    }
+
+    private static PValueSource castValue(TCast cast, TPreptimeValue source, TInstance targetInstance) {
+        if (source == null)
+            return null;
+        boolean targetsMatch = targetInstance.typeClass() == cast.targetClass();
+        boolean sourcesMatch = source.instance().typeClass() == cast.sourceClass();
+        if ( (!targetsMatch) || (!sourcesMatch) )
+            throw new IllegalArgumentException("cast <" + cast + "> not applicable to CAST(" + source + " AS " + targetInstance);
+
+        TExecutionContext context = new TExecutionContext(
+                null,
+                Collections.singletonList(source.instance()),
+                targetInstance,
+                null, // TODO
+                ErrorHandlingMode.ERROR,
+                ErrorHandlingMode.ERROR,
+                ErrorHandlingMode.ERROR
+        );
+        PValue result = new PValue(targetInstance.typeClass().underlyingType());
+        try {
+            cast.evaluate(context, source.value(), result);
+        } catch (Exception e) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("while casting values " + source + " to " + targetInstance + " using " + cast, e);
+            }
+            result = null;
+        }
+        return result;
     }
 
     private static ExpressionNode boolExpr(ExpressionNode expression) {

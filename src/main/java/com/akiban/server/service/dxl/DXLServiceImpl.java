@@ -51,7 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManageable {
+public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     private final Object MONITOR = new Object();
 
@@ -68,16 +68,6 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("DXL", new DXLMXBeanImpl(this, store(), sessionService), DXLMXBean.class);
-    }
-
-    @Override
-    public DXLService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<DXLService> castClass() {
-        return DXLService.class;
     }
 
     @Override

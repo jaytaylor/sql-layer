@@ -58,6 +58,12 @@ public class TPow extends TOverloadBase {
     }
 
     @Override
+    public String[] registeredNames()
+    {
+        return new String[]{"pow", "power"};
+    }
+    
+    @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(inputType.instance());
     }
