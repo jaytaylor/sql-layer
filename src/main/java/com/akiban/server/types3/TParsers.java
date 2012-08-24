@@ -43,23 +43,32 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // parse source is a string representing a number-ish, where '0' is false, any other integer is true.
-            // minus signs and dots are always allowed; "1-1", "1.1", "1.1.1.1" all return true. Bizarre, but that's
-            // how MySQL seems to do it. Otoh, dots and minus signs aren't enough; we need at least one digit.
+            // We're looking for an optional negative, followed by an optional dot, followed by any number of digits,
+            // followed by anything. If any of those digits is not 0, the result is true; otherwise it's false.
             String s = source.getString();
-            Boolean result = null;
+            boolean negativeAllowed = true;
+            boolean periodAllowed = true;
+            boolean result = false;
             for (int i = 0, len = s.length(); i < len; ++i) {
                 char c = s.charAt(i);
-                if ((c == '-') || (c == '.'))
-                    continue;
-                if (Character.isDigit(c)) {
-                    result = Boolean.TRUE;
+                if (negativeAllowed && c == '-') {
+                    negativeAllowed = false;
+                }
+                else if (periodAllowed && c == '.') {
+                    periodAllowed = false;
+                    negativeAllowed = false;
+                }
+                else if (Character.isDigit(c)) {
+                    if (c != '0') {
+                        result = true;
+                        break;
+                    }
                 }
                 else {
-                    result = Boolean.FALSE;
                     break;
                 }
             }
-            target.putBool(result == Boolean.TRUE);
+            target.putBool(result);
         }
     };
     

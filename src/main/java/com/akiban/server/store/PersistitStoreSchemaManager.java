@@ -156,7 +156,7 @@ import static com.akiban.ais.model.AISMerge.findMaxIndexIDInGroup;
  * </p>
  * </p>
  */
-public class PersistitStoreSchemaManager implements Service<SchemaManager>, SchemaManager {
+public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public static enum SerializationType {
         NONE,
         META_MODEL,
@@ -719,16 +719,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     
     public void saveCurrentTimestamp() {
         updateTimestamp.set(treeService.getDb().getCurrentTimestamp());
-    }
-
-    @Override
-    public SchemaManager cast() {
-        return this;
-    }
-
-    @Override
-    public Class<SchemaManager> castClass() {
-        return SchemaManager.class;
     }
 
     @Override

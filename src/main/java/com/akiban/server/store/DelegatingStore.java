@@ -37,13 +37,14 @@ import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
 import java.util.Collection;
 
-public abstract class DelegatingStore<S extends Store> implements Store {
+public abstract class DelegatingStore<S extends Store & Service> implements Store, Service {
 
     private final S delegate;
 
@@ -57,11 +58,6 @@ public abstract class DelegatingStore<S extends Store> implements Store {
 
     // Store interface -- non-delegating
 
-    @Override
-    public Store cast() {
-        return this;
-    }
-
     // Store interface -- auto-generated
 
     public void start() {
@@ -74,10 +70,6 @@ public abstract class DelegatingStore<S extends Store> implements Store {
 
     public void crash() {
         delegate.crash();
-    }
-
-    public Class<Store> castClass() {
-        return delegate.castClass();
     }
 
     public RowDefCache getRowDefCache() {
@@ -104,6 +96,10 @@ public abstract class DelegatingStore<S extends Store> implements Store {
     }
 
     public void deleteRow(Session session, RowData rowData) throws PersistitException {
+        delegate.deleteRow(session, rowData);
+    }
+
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException {
         delegate.deleteRow(session, rowData);
     }
 
@@ -186,7 +182,7 @@ public abstract class DelegatingStore<S extends Store> implements Store {
     }
 
     @Override
-    public void truncateIndex(Session session, Collection<? extends Index> indexes) {
-        delegate.truncateIndex(session, indexes);
+    public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
+        delegate.truncateIndexes(session, indexes);
     }
 }

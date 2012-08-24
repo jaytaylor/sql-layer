@@ -63,7 +63,7 @@ import com.persistit.exception.PersistitException;
 import com.persistit.logging.Slf4jAdapter;
 
 public class TreeServiceImpl
-    implements TreeService, Service<TreeService>, JmxManageable
+    implements TreeService, Service, JmxManageable
 {
 
     private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key
@@ -265,16 +265,6 @@ public class TreeServiceImpl
             --instanceCount;
             assert instanceCount == 0 : instanceCount;
         }
-    }
-
-    @Override
-    public TreeService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<TreeService> castClass() {
-        return TreeService.class;
     }
 
     @Override
