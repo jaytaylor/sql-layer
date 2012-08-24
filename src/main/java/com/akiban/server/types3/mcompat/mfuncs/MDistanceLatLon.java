@@ -71,7 +71,7 @@ public class MDistanceLatLon extends TOverloadBase
         if (Double.compare(dx, MAX_LON) > 0)
             dx = MAX_LON_DIS - dx;
         
-        double dy = Math.abs(y1 - y2);
+        double dy = y1 - y2;
         
         output.putDouble(Math.sqrt(dx * dx + dy * dy));
     }
