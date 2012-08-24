@@ -52,7 +52,7 @@ import com.google.inject.Inject;
 
 public class ServerSchemaTablesServiceImpl
     extends SchemaTablesService
-    implements Service<ServerSchemaTablesService>, ServerSchemaTablesService {
+    implements Service, ServerSchemaTablesService {
 
     static final TableName ERROR_CODES = new TableName (SCHEMA_NAME, "error_codes");
     static final TableName SERVER_INSTANCE_SUMMARY = new TableName (SCHEMA_NAME, "server_instance_summary");
@@ -71,16 +71,6 @@ public class ServerSchemaTablesServiceImpl
         this.manager = manager;
         this.configService = configService;
         this.serverInterface = serverInterface;
-    }
-    
-    @Override
-    public ServerSchemaTablesService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<ServerSchemaTablesService> castClass() {
-        return ServerSchemaTablesService.class;
     }
 
     @Override

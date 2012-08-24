@@ -36,7 +36,6 @@ import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -50,7 +49,7 @@ import java.util.Collection;
  * @author peter
  * 
  */
-public interface Store extends Service<Store> {
+public interface Store {
 
     RowDefCache getRowDefCache();
 
@@ -65,6 +64,7 @@ public interface Store extends Service<Store> {
             long rowCount);
 
     void deleteRow(Session session, RowData rowData) throws PersistitException;
+    void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException;
 
     void updateRow(Session session, RowData oldRowData,
                    RowData newRowData,
@@ -176,5 +176,5 @@ public interface Store extends Service<Store> {
     /** Get the underlying {@link PersistitStore}. */
     public PersistitStore getPersistitStore();
 
-    void truncateIndex(Session session, Collection<? extends Index> indexes);
+    void truncateIndexes(Session session, Collection<? extends Index> indexes);
 }

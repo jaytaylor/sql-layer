@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.TableStatusCache;
-import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -46,7 +45,7 @@ import com.persistit.exception.PersistitException;
  * @author peter
  * 
  */
-public interface TreeService extends Service<TreeService>, KeyCreator {
+public interface TreeService extends KeyCreator {
 
     final static Logger logger = LoggerFactory.getLogger(TreeService.class.getName());
 
