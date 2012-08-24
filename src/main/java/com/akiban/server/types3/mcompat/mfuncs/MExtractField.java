@@ -39,6 +39,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.Locale;
 
 public abstract class MExtractField extends TOverloadBase
 {
@@ -165,7 +166,8 @@ public abstract class MExtractField extends TOverloadBase
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
             {
                 String dayName = MDatetimes.toJodaDatetime(MDatetimes.decodeDate(inputs.get(0).getInt32()),
-                                                           context.getCurrentTimezone()).dayOfWeek().getAsText();
+                                                           context.getCurrentTimezone()).dayOfWeek().
+                                                                getAsText(context.getCurrentLocale());
                 output.putString(dayName, null);
             }
 
@@ -193,7 +195,9 @@ public abstract class MExtractField extends TOverloadBase
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
             {
                 int numericMonth = (int) MDatetimes.decodeDate(inputs.get(0).getInt32())[MDatetimes.MONTH_INDEX];
-                String month = MDatetimes.getMonthName(numericMonth, context.getCurrentLocale(), context);
+                String month = MDatetimes.getMonthName(numericMonth,
+                                                       context.getCurrentLocale().getLanguage(),
+                                                       context);
                 output.putString(month, null);
             }
 

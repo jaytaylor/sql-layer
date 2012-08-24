@@ -38,6 +38,7 @@ import com.akiban.util.SparseArray;
 import com.google.common.base.Objects;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 public final class TExecutionContext {
@@ -93,9 +94,10 @@ public final class TExecutionContext {
         queryContext.warnClient(exception);
     }
 
-    public String getCurrentLocale()
+    public Locale getCurrentLocale()
     {
-        throw new UnsupportedOperationException("getLocale() not supported yet");
+        // TODO: need to get this from the session
+        return Locale.getDefault();
     }
 
     /**
