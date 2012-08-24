@@ -137,6 +137,11 @@ public class OverloadResolverTest {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public boolean isIndexFriendly(TClass source, TClass target) {
+            throw new UnsupportedOperationException();
+        }
+
         public TValidatedOverload validated(TOverload overload) {
             return originalMap.get(overload);
         }

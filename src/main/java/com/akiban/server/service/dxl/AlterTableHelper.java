@@ -95,34 +95,20 @@ public class AlterTableHelper {
         return oldColumn.getPosition();
     }
 
-    public void findAffectedOldIndexes(UserTable table, List<Index> toTruncate, List<Index> toDrop) {
-        for(TableChange change : indexChanges) {
-            switch(change.getChangeType()) {
-                case MODIFY:
-                    toTruncate.add(table.getIndex(change.getOldName()));
-                break;
-                case DROP:
-                    toDrop.add(table.getIndex(change.getOldName()));
-                break;
-            }
-        }
-    }
-
-    public List<Index> findAffectedNewIndexes(UserTable table) {
+    public List<Index> findNewIndexesToBuild(UserTable newTable) {
         List<Index> indexes = new ArrayList<Index>();
         for(TableChange change : indexChanges) {
             switch(change.getChangeType()) {
                 case ADD:
                 case MODIFY:
-                    indexes.add(table.getIndex(change.getNewName()));
+                    indexes.add(newTable.getIndexIncludingInternal(change.getNewName()));
                 break;
             }
         }
         return indexes;
     }
 
-    public void recreateAffectedGroupIndexes(UserTable origTable, final UserTable newTable,
-                                             List<Index> indexesToBuild, List<Index> indexesToDrop,
+    public void recreateAffectedGroupIndexes(UserTable origTable, final UserTable newTable, List<Index> indexesToBuild,
                                              Map<IndexName, List<Column>> affectedGroupIndexes) {
         AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS(), new ProtobufWriter.TableSelector() {
             @Override
@@ -136,18 +122,15 @@ public class AlterTableHelper {
         for(Map.Entry<IndexName, List<Column>> entry : affectedGroupIndexes.entrySet()) {
             GroupIndex origIndex = origGroup.getIndex(entry.getKey().getName());
             List<Column> columns = entry.getValue();
-            if(columns.isEmpty()) {
-                indexesToDrop.add(origIndex);
-            } else {
-                GroupIndex tempIndex = GroupIndex.create(tempAIS, tempGroup, origIndex);
-                for(int i = 0; i < columns.size(); ++i) {
-                    Column column = columns.get(i);
-                    UserTable tempTable = tempAIS.getUserTable(column.getTable().getName());
-                    Column tempColumn = tempTable.getColumn(column.getName());
-                    IndexColumn.create(tempIndex,  tempColumn, i, true, null);
-                }
-                indexesToBuild.add(tempIndex);
+            assert !columns.isEmpty() : origIndex;
+            GroupIndex tempIndex = GroupIndex.create(tempAIS, tempGroup, origIndex);
+            for(int i = 0; i < columns.size(); ++i) {
+                Column column = columns.get(i);
+                UserTable tempTable = tempAIS.getUserTable(column.getTable().getName());
+                Column tempColumn = tempTable.getColumn(column.getName());
+                IndexColumn.create(tempIndex,  tempColumn, i, true, null);
             }
+            indexesToBuild.add(tempIndex);
         }
     }
 }
