@@ -501,16 +501,57 @@ public class DefaultFormatter
     }
 
     protected void appendAggregateOperator(String name, Attributes atts) {
-        if (!verbose)
-            sb.append('(').append(atts.get(Label.BRIEF));
-        else {
-            if (atts.containsKey(Label.GROUPING_OPTION))
-                sb.append(atts.getValue(Label.GROUPING_OPTION)).append(": ");
-            for (Explainer ex : atts.get(Label.AGGREGATORS)) {
-                sb.append(ex.get());
-                sb.append(", ");
+        int nkeys = ((Number)atts.getValue(Label.GROUPING_OPTION)).intValue();
+        List<Explainer> aggrs = atts.get(Label.AGGREGATORS);
+        if (!verbose) {
+            if (nkeys > 0) {
+                sb.append(nkeys).append(" keys");
+                if (aggrs != null) sb.append(',');
             }
-            sb.setLength(sb.length()-2);
+            if (aggrs != null) {
+                sb.append(aggrs.size()).append(" aggregates");
+            }
+        }
+        else {
+            if (nkeys > 0) {
+                sb.append("GROUP BY ");
+                int olen = sb.length();
+                Attributes inputOperator = ((CompoundExplainer)atts.getAttribute(Label.INPUT_OPERATOR)).get();
+                // If all the group by keys are simple columns, use their names.
+                boolean allcols = false;
+                if (inputOperator.getValue(Label.NAME).equals("Project_Default")) {
+                    allcols = true;
+                    List<Explainer> keys = inputOperator.get(Label.PROJECTION);
+                    for (int i = 0; i < nkeys; i++) {
+                        CompoundExplainer key = (CompoundExplainer)keys.get(i);
+                        if (key.getType() == Type.FIELD) {
+                            Attributes kattr = key.get();
+                            if (kattr.containsKey(Label.COLUMN_NAME)) {
+                                sb.append(kattr.getValue(Label.COLUMN_NAME)).append(", ");
+                                continue;
+                            }
+                        }
+                        allcols = false;
+                        break;
+                    }
+                    if (allcols)
+                        sb.setLength(sb.length() - 2);
+                }
+                // Fallback is just count.
+                if (!allcols) {
+                    sb.setLength(olen);
+                    sb.append(nkeys).append(" key");
+                    if (nkeys > 1) sb.append("s");
+                }
+            }
+            if (aggrs != null) {
+                if (nkeys > 0) sb.append(": ");
+                for (Explainer aggr : aggrs) {
+                    append(aggr);
+                    sb.append(", ");
+                }
+                sb.setLength(sb.length() - 2);
+            }
         }
     }
 

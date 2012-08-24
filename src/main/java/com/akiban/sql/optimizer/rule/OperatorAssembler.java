@@ -1327,19 +1327,7 @@ public class OperatorAssembler extends BaseRule
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
-            if (explainContext != null)
-                explainAggregateSource(stream.operator, aggregateSource);
             return stream;
-        }
-
-        protected void explainAggregateSource(Operator operator, AggregateSource aggregateSource) {
-            if (aggregateSource.hasGroupBy() && !aggregateSource.isProjectSplitOff()) {
-                Attributes atts = new Attributes();
-                for (ExpressionNode node : aggregateSource.getGroupBy()) {
-                    atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(node.toString()));
-                }
-                explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
-            }
         }
 
         protected RowStream assembleDistinct(Distinct distinct) {

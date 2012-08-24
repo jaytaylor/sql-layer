@@ -84,8 +84,7 @@ public enum Label
     PROJECT_OPTION(Category.OPTION), // has a table or not
     JOIN_OPTION(Category.OPTION), // INNER, LEFT, etc
     ORDERING(Category.OPTION), // ASC or DESC
-    BRIEF(Category.OPTION),
-    
+
     // TYPE DESCRIPTION
     //--------------------------------------------------------------------------
     INNER_TYPE(Category.TYPE_DESCRIPTION),
