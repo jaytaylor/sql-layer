@@ -939,22 +939,7 @@ public class OperatorAssembler extends BaseRule
 
         protected void explainSingleIndexScan(Operator operator, SingleIndexScan indexScan, Index index) {
             Attributes atts = new Attributes();
-            for (IndexColumn column : index.getAllColumns())
-                atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
-            if (indexScan.getEqualityComparands() != null)
-                for (ExpressionNode node : indexScan.getEqualityComparands())
-                    if (node != null)
-                        atts.put(Label.EQUAL_COMPARAND, PrimitiveExplainer.getInstance(node.toString()));
-            ExpressionNode hi = indexScan.getHighComparand();
-            ExpressionNode lo = indexScan.getLowComparand();
-            if (hi != null) {
-                atts.put(Label.HIGH_COMPARAND, PrimitiveExplainer.getInstance(hi.toString()));
-                atts.put(Label.HIGH_COMPARAND, PrimitiveExplainer.getInstance((indexScan.isHighInclusive() ? "" : "NOT") + "INCLUSIVE"));
-            }
-            if (lo != null) {
-                atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance(lo.toString()));
-                atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance((indexScan.isLowInclusive() ? "" : "NOT") + "INCLUSIVE"));
-            }
+            //...
             explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 

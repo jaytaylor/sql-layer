@@ -279,39 +279,7 @@ public class DefaultFormatter
 
     protected void appendScanOperator(String name, Attributes atts) {
         if (name.equals("IndexScan_Default")) {
-            append(atts.getAttribute(Label.INDEX));
-            if (verbose) {
-                if (atts.containsKey(Label.COLUMN_NAME)) {
-                    int i = 0;
-                    if (atts.containsKey(Label.EQUAL_COMPARAND))
-                        for (Explainer comparand : atts.get(Label.EQUAL_COMPARAND))
-                            sb.append(", ").append(atts.get(Label.COLUMN_NAME).get(i++).get()).append(" = ").append(comparand.get());
-                    for (boolean first = true; i < atts.get(Label.COLUMN_NAME).size(); i++) {
-                        sb.append(", ").append(atts.get(Label.COLUMN_NAME).get(i).get());
-                        if (first) {
-                            Object hi, lo;
-                            if (atts.containsKey(Label.HIGH_COMPARAND)) {
-                                hi = atts.get(Label.HIGH_COMPARAND).get(0).get();
-                                if (atts.containsKey(Label.LOW_COMPARAND)) {
-                                    lo = atts.get(Label.LOW_COMPARAND).get(0).get();
-                                    if (atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE"))
-                                        if (atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE"))
-                                            sb.append(" BETWEEN ").append(lo).append(" AND ").append(hi);
-                                        else
-                                            sb.append(" <= ").append(hi).append(" AND ").append(" > ").append(lo);
-                                    else
-                                        sb.append(" < ").append(hi).append(" AND ").append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(lo);
-                                }
-                                else
-                                    sb.append(atts.get(Label.HIGH_COMPARAND).get(1).get().equals("INCLUSIVE") ? " <= " : " < ").append(hi);
-                            }
-                            else if (atts.containsKey(Label.LOW_COMPARAND))
-                                sb.append(atts.get(Label.LOW_COMPARAND).get(1).get().equals("INCLUSIVE") ? " >= " : " > ").append(atts.get(Label.LOW_COMPARAND).get(0).get());
-                            first = false;
-                        }
-                    }
-                }
-            }
+            appendIndexScanOperator(atts);
         }
         if (name.equals("ValuesScan_Default")) {
             if (verbose) {
@@ -331,6 +299,70 @@ public class DefaultFormatter
                     sb.append(opt).append(" on ");
             }
             appendTableName(atts);
+        }
+    }
+
+    protected void appendIndexScanOperator(Attributes atts) {
+        append(atts.getAttribute(Label.INDEX));
+        if (verbose) {
+            if (false) {
+                // spatial
+            }
+            else {
+                int ncols = atts.get(Label.COLUMN_NAME).size();
+                int nequals = 0;
+                if (atts.containsKey(Label.EQUAL_COMPARAND))
+                    nequals = atts.get(Label.EQUAL_COMPARAND).size();
+                String indexSchema = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_SCHEMA);
+                String indexTable = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_NAME);
+                for (int i = 0; i < ncols; i++) {
+                    sb.append(", ");
+                    String columnSchema = (String)atts.get(Label.TABLE_SCHEMA).get(i).get();
+                    String columnTable = (String)atts.get(Label.TABLE_NAME).get(i).get();
+                    if (!indexSchema.equals(columnSchema))
+                        sb.append(columnSchema).append('.').append(columnTable).append('.');
+                    else if (!indexTable.equals(columnTable))
+                        sb.append(columnTable).append('.');
+                    append(atts.get(Label.COLUMN_NAME).get(i));
+                    if (i < nequals) {
+                        sb.append(" = ");
+                        append(atts.get(Label.EQUAL_COMPARAND).get(i));
+                    }
+                    else {
+                        if (i == nequals) {
+                            Explainer lo = null, hi = null;
+                            boolean loInc = false, hiInc = false;
+                            if (atts.containsKey(Label.LOW_COMPARAND)) {
+                                lo = atts.get(Label.LOW_COMPARAND).get(0);
+                                loInc = (Boolean)atts.get(Label.LOW_COMPARAND).get(1).get();
+                            }
+                            if (atts.containsKey(Label.HIGH_COMPARAND)) {
+                                hi = atts.get(Label.HIGH_COMPARAND).get(0);
+                                hiInc = (Boolean)atts.get(Label.HIGH_COMPARAND).get(1).get();
+                            }
+                            if (loInc && hiInc) {
+                                sb.append(" BETWEEN ");
+                                append(lo);
+                                sb.append(" AND ");
+                                append(hi);
+                            }
+                            else {
+                                if (lo != null) {
+                                    sb.append((loInc) ? " >= " : " > ");
+                                    append(lo);
+                                }
+                                if (hi != null) {
+                                    if (lo != null) sb.append(" AND");
+                                    sb.append((hiInc) ? " <= " : " < ");
+                                    append(hi);
+                                }
+                            }
+                        }
+                        sb.append(" ");
+                        append(atts.get(Label.ORDERING).get(i - nequals));
+                    }
+                }
+            }
         }
     }
 

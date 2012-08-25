@@ -42,7 +42,9 @@ public abstract class Explainer
     {
         if (o != null && o instanceof Explainer)
         {
-            return ((Explainer)o).get() == get();
+            Explainer other = (Explainer)o;
+            return (getType().equals(other.getType()) &&
+                    get().equals(other.get()));
         }
         else
             return false;
@@ -51,6 +53,6 @@ public abstract class Explainer
     @Override
     public final int hashCode ()
     {
-        return get().hashCode();
+        return getType().hashCode() + get().hashCode();
     }
 }
