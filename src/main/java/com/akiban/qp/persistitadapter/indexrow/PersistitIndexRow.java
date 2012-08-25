@@ -47,6 +47,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
+import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
 public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
@@ -120,20 +121,21 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
     }
 
-    public static PersistitIndexRow newIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    // TODO: For pooling experiment
+    public void reset()
     {
-        return
-            indexRowType.index().isTableIndex()
-            ? new PersistitTableIndexRow(adapter, indexRowType)
-            : new PersistitGroupIndexRow(adapter, indexRowType);
+        keyState.clear();
+        super.reset();
     }
+    // TODO: End of pooling experiment
 
     // For use by subclasses
 
     protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
         super(adapter);
-        resetForWrite(indexRowType.index(), adapter.persistit().getKey());
+        this.keyState = adapter.persistit().getKey();
+        resetForWrite(indexRowType.index(), keyState);
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
@@ -184,12 +186,11 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         return keyPSources[i];
     }
 
-
-
     // Object state
 
     protected final HKeyCache<PersistitHKey> hKeyCache;
     protected final UserTable leafmostTable;
+    private final Key keyState;
     private final IndexRowType indexRowType;
     private final AkType[] akTypes;
     private final AkCollator[] akCollators;

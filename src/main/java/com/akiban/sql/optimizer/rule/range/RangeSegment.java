@@ -42,7 +42,7 @@ public final class RangeSegment {
 
     private static final Logger log = LoggerFactory.getLogger(RangeSegment.class);
 
-    public static RangeSegment ONLY_NULL = new RangeSegment(RangeEndpoint.NULL_INCLUSIVE, RangeEndpoint.NULL_INCLUSIVE);
+    public static final RangeSegment ONLY_NULL = new RangeSegment(RangeEndpoint.NULL_INCLUSIVE, RangeEndpoint.NULL_INCLUSIVE);
 
     public static List<RangeSegment> fromComparison(Comparison op, ConstantExpression constantExpression) {
         final RangeEndpoint startPoint;
