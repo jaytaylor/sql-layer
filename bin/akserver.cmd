@@ -28,7 +28,7 @@ REM
 
 SETLOCAL
 
-SET SERVER_JAR=akiban-server-1.4.0-SNAPSHOT-jar-with-dependencies.jar
+SET SERVER_JAR=akiban-server-1.4.1-SNAPSHOT-jar-with-dependencies.jar
 SET SERVICE_NAME=akserver
 SET SERVICE_DNAME=Akiban Server
 SET SERVICE_DESC=Akiban Database Server
