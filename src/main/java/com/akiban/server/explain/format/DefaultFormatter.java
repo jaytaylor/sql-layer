@@ -26,8 +26,10 @@
 
 package com.akiban.server.explain.format;
 
+// NOTE: Should only depend on explain objects and standard Java.
+// Should theoretically be able to run outside of server.
+
 import com.akiban.server.explain.*;
-import com.akiban.server.explain.Type.GeneralType;
 
 import java.util.ArrayList;
 import java.util.List;
