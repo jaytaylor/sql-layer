@@ -54,7 +54,10 @@ public class IndexScanRowState implements IterationHelper
     @Override
     public void closeIteration()
     {
-        row.release();
+        if (row.isHolding()) {
+            adapter.returnIndexRow(row.get());
+            row.release();
+        }
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
@@ -73,7 +76,7 @@ public class IndexScanRowState implements IterationHelper
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;
-        this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
+        this.row = new ShareHolder<PersistitIndexRow>(adapter.takeIndexRow(indexRowType));
     }
 
     // For use by this class
@@ -81,7 +84,7 @@ public class IndexScanRowState implements IterationHelper
     private ShareHolder<PersistitIndexRow> unsharedRow() throws PersistitException
     {
         if (row.isEmpty() || row.isShared()) {
-            row.hold(adapter.newIndexRow(indexRowType));
+            row.hold(adapter.takeIndexRow(indexRowType));
         }
         return row;
     }

@@ -130,7 +130,7 @@ elif [ ${platform} == "binary" ]; then
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
     server_jar=target/akiban-server-1.4.0-SNAPSHOT-jar-with-dependencies.jar
-    akdump_jar=packages-common/akiban-client-tools-1.3.1-SNAPSHOT.jar
+    akdump_jar=packages-common/akiban-client-tools-1.3.2-SNAPSHOT.jar
     postgres_jar=packages-common/postgresql.jar
     akdump_bin=packages-common/akdump
     mac_app='target/Akiban Server.app'

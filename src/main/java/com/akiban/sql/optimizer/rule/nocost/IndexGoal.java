@@ -260,11 +260,11 @@ public class IndexGoal implements Comparator<IndexScan>
     // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness determineOrderEffectiveness(SingleIndexScan index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
+        IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
+        if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
         int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
-        IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
-        if (indexOrdering == null) return result;
         try_sorted:
         if (ordering != null) {
             int idx = nequals;

@@ -50,7 +50,7 @@ public class AdminKey
     // lead: true/false
     public static final String STATE_CHUNKSERVER = "/state/%s.properties";
 
-    public static String[] REQUIRED_KEYS = new String[]{
+    public static final String[] REQUIRED_KEYS = new String[]{
         CONFIG_CLUSTER,
         CONFIG_CHUNKSERVER,
         CONFIG_LOGGING

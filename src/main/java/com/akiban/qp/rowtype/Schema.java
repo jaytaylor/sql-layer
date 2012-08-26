@@ -34,12 +34,12 @@ import java.util.*;
 
 public class Schema extends DerivedTypesSchema
 {
-    public synchronized UserTableRowType userTableRowType(UserTable table)
+    public UserTableRowType userTableRowType(UserTable table)
     {
         return (UserTableRowType) rowTypes.get(table.getTableId());
     }
 
-    public synchronized IndexRowType indexRowType(Index index)
+    public IndexRowType indexRowType(Index index)
     {
         // TODO: Group index schema is always ""; need another way to
         // check for group _table_ index.
@@ -52,7 +52,7 @@ public class Schema extends DerivedTypesSchema
             : groupIndexRowType((GroupIndex) index);
     }
 
-    public synchronized Set<UserTableRowType> userTableTypes()
+    public Set<UserTableRowType> userTableTypes()
     {
         Set<UserTableRowType> userTableTypes = new HashSet<UserTableRowType>();
         for (AisRowType rowType : rowTypes.values()) {
@@ -65,7 +65,7 @@ public class Schema extends DerivedTypesSchema
         return userTableTypes;
     }
 
-    public synchronized Set<RowType> allTableTypes()
+    public Set<RowType> allTableTypes()
     {
         Set<RowType> userTableTypes = new HashSet<RowType>();
         for (RowType rowType : rowTypes.values()) {

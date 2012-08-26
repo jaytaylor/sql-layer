@@ -95,7 +95,7 @@ public class AkInterval extends TClassBase {
     /**
      * A MONTHS interval, whose 64-bit value represents number of months.
      */
-    public static AkInterval MONTHS = new AkInterval(
+    public static final AkInterval MONTHS = new AkInterval(
             AkBundle.INSTANCE.id(),
             "interval months",
             AkCategory.DATE_TIME,
@@ -125,7 +125,7 @@ public class AkInterval extends TClassBase {
      * {@linkplain #secondsRawFrom(long, TimeUnit)} or {@linkplain #secondsRawFromFractionalSeconds(long)}.
      * The resulting value can be added to other raw SECONDS values intuitively, as explained above.</p>
      */
-    public static AkInterval SECONDS = new AkInterval(
+    public static final AkInterval SECONDS = new AkInterval(
             AkBundle.INSTANCE.id(),
             "interval seconds",
             AkCategory.DATE_TIME,

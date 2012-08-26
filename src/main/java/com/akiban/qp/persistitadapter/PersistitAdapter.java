@@ -31,6 +31,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -66,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class PersistitAdapter extends StoreAdapter
 {
@@ -342,9 +344,14 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
-    public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
+    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType)
     {
-        return PersistitIndexRow.newIndexRow(this, indexRowType);
+        return indexRowPool.takeIndexRow(this, indexRowType);
+    }
+
+    public void returnIndexRow(PersistitIndexRow indexRow)
+    {
+        indexRowPool.returnIndexRow(this, (IndexRowType) indexRow.rowType(), indexRow);
     }
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
@@ -413,6 +420,10 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
+    public long id() {
+        return id;
+    }
+
     public PersistitAdapter(Schema schema,
                             Store store,
                             TreeService treeService,
@@ -436,6 +447,7 @@ public class PersistitAdapter extends StoreAdapter
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
         session.put(STORE_ADAPTER_KEY, this);
+        indexRowPool.enablePooling(config.getProperty(PersistitIndexRowPool.INDEX_ROW_POOLING).equalsIgnoreCase("true"));
     }
 
     // For use by this class
@@ -481,8 +493,14 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
+    // Class state
+
+    private static final AtomicLong idCounter = new AtomicLong(0);
+    private static PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
+
     // Object state
 
+    private final long id = idCounter.getAndIncrement();
     private final TreeService treeService;
     private final Store store;
     private final PersistitStore persistit;
