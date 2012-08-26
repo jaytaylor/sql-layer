@@ -116,7 +116,7 @@ public class MDatetimes
     static
     {
         // TODO: add all supported LOCALES here
-        SUPPORTED_LOCALES.add("en");
+        SUPPORTED_LOCALES.add(Locale.ENGLISH.getLanguage());
         
        Map<String, String[]> months = new HashMap<String, String[]>();
        Map<String, String[]> shortMonths = new HashMap<String, String[]>();

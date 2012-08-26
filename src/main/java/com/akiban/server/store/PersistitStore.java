@@ -33,6 +33,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -1167,7 +1168,8 @@ public class PersistitStore implements Store, Service {
         PersistitAdapter adapter = adapter(session);
         if (index.isUniqueAndMayContainNulls()) {
             // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
-            PersistitIndexRow indexRow = PersistitIndexRow.newIndexRow(adapter, adapter.schema().indexRowType(index));
+            IndexRowType indexRowType = adapter.schema().indexRowType(index);
+            PersistitIndexRow indexRow = adapter.takeIndexRow(indexRowType);
             constructIndexRow(exchange, rowData, index, hKey, indexRow, false);
             Key.Direction direction = Key.Direction.GTEQ;
             while (exchange.traverse(direction, true)) {
@@ -1179,6 +1181,7 @@ public class PersistitStore implements Store, Service {
                 }
                 direction = Key.Direction.GT;
             }
+            adapter.returnIndexRow(indexRow);
         } else {
             constructIndexRow(exchange, rowData, index, hKey, indexRowBuffer, false);
             exchange.remove();

@@ -52,7 +52,7 @@ import java.util.jar.JarEntry;
  */
 public abstract class Strings {
     
-    public static String NL = nl();
+    public static final String NL = nl();
     private static final int BASE_CHAR = 10 -'a';
     private static final Set<Character> LEGAL_HEX = new HashSet<Character>();
     static
