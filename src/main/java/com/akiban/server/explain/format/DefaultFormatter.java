@@ -665,7 +665,7 @@ public class DefaultFormatter
                 // Fallback is just count.
                 if (!allcols) {
                     sb.setLength(olen);
-                    sb.append(nkeys).append(" key");
+                    sb.append(nkeys).append(" field");
                     if (nkeys > 1) sb.append("s");
                 }
             }

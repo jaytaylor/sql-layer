@@ -1,6 +1,6 @@
 PhysicalSelect@115872f5[name, _SQL_COL_1]
   Project_Default(Field(0), Field(1))
-    Aggregate_Partial(GROUP BY 1 key: COUNT(*))
+    Aggregate_Partial(GROUP BY 1 field: COUNT(*))
       Project_Default(Field(1), 1)
         Filter_Default(test.customers - test.orders)
           Flatten_HKeyOrdered(test.customers INNER test.orders)
