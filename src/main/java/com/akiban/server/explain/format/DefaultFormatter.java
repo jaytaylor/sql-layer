@@ -316,19 +316,28 @@ public class DefaultFormatter
                 if (atts.containsKey(Label.EQUAL_COMPARAND))
                     nequals = atts.get(Label.EQUAL_COMPARAND).size();
                 String indexSchema = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_SCHEMA);
+                if ("".equals(indexSchema))
+                    indexSchema = null; // Group index.
                 String indexTable = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_NAME);
                 for (int i = 0; i < ncols; i++) {
                     sb.append(", ");
                     String columnSchema = (String)atts.get(Label.TABLE_SCHEMA).get(i).get();
                     String columnTable = (String)atts.get(Label.TABLE_NAME).get(i).get();
-                    if (!indexSchema.equals(columnSchema))
+                    if ((indexSchema != null) &&
+                        !indexSchema.equals(columnSchema))
                         sb.append(columnSchema).append('.').append(columnTable).append('.');
-                    else if (!indexTable.equals(columnTable))
+                    else if ((indexSchema == null) ||
+                             !indexTable.equals(columnTable))
                         sb.append(columnTable).append('.');
                     append(atts.get(Label.COLUMN_NAME).get(i));
                     if (i < nequals) {
-                        sb.append(" = ");
-                        append(atts.get(Label.EQUAL_COMPARAND).get(i));
+                        Explainer comparand = atts.get(Label.EQUAL_COMPARAND).get(i);
+                        if (isLiteralNull(comparand))
+                            sb.append(" IS NULL");
+                        else {
+                            sb.append(" = ");
+                            append(comparand);
+                        }
                     }
                     else {
                         if (i == nequals) {
@@ -337,10 +346,12 @@ public class DefaultFormatter
                             if (atts.containsKey(Label.LOW_COMPARAND)) {
                                 lo = atts.get(Label.LOW_COMPARAND).get(0);
                                 loInc = (Boolean)atts.get(Label.LOW_COMPARAND).get(1).get();
+                                if (!loInc && isLiteralNull(lo)) lo = null;
                             }
                             if (atts.containsKey(Label.HIGH_COMPARAND)) {
                                 hi = atts.get(Label.HIGH_COMPARAND).get(0);
                                 hiInc = (Boolean)atts.get(Label.HIGH_COMPARAND).get(1).get();
+                                if (!hiInc && isLiteralNull(hi)) hi = null;
                             }
                             if (loInc && hiInc) {
                                 sb.append(" BETWEEN ");
@@ -366,6 +377,11 @@ public class DefaultFormatter
                 }
             }
         }
+    }
+
+    private static boolean isLiteralNull(Explainer explainer) {
+        return ((explainer.getType() == Type.LITERAL) &&
+                "NULL".equals(((CompoundExplainer)explainer).get().getValue(Label.OPERAND)));
     }
 
     protected void appendLookupOperator(String name, Attributes atts) {
