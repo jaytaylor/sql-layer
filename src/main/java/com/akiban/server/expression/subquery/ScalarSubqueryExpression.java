@@ -30,6 +30,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.SubqueryTooManyRowsException;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -61,6 +62,13 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
         return "VALUE";
     }
     
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer explainer = super.getExplainer(context);
+        explainer.addAttribute(Label.EXPRESSIONS, expression.getExplainer(context));
+        return explainer;
+    }
+
     public ScalarSubqueryExpression(Operator subquery, Expression expression,
                                     RowType outerRowType, RowType innerRowType, 
                                     int bindingPosition) {

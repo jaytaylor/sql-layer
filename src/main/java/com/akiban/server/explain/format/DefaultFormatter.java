@@ -50,11 +50,9 @@ public class DefaultFormatter
 
     public List<String> format(Explainer explainer) {
         append(explainer);
-        for (int i = 1; i <= numSubqueries; i++) {
+        for (int i = 0; i < numSubqueries; i++) {
             newRow();
-            sb.append("SUBQUERY ").append(i).append(':');
-            newRow();
-            appendOperator(subqueries.get(i-1), 0);
+            appendSubqueryBody(subqueries.get(i), i+1);
         }
         newRow();
         return rows;
@@ -111,7 +109,7 @@ public class DefaultFormatter
 
     protected void appendFunction(CompoundExplainer explainer, boolean needsParens, String parentName) {
         Attributes atts = explainer.get();
-        String name = atts.getValue(Label.NAME).toString();
+        String name = (String)atts.getValue(Label.NAME);
         
         if (atts.containsKey(Label.INFIX_REPRESENTATION)) {
             Explainer leftExplainer = atts.valuePairs().get(0).getValue();
@@ -175,8 +173,26 @@ public class DefaultFormatter
 
     protected void appendSubquery(CompoundExplainer explainer) {
         Attributes atts = explainer.get();
-        sb.append("SUBQUERY ").append(++numSubqueries);
-        subqueries.add((CompoundExplainer)atts.getAttribute(Label.OPERAND));
+        sb.append(atts.getValue(Label.NAME)).append('(');
+        sb.append("SUBQUERY ").append(++numSubqueries).append(')');
+        subqueries.add(explainer);
+    }
+
+    protected void appendSubqueryBody(CompoundExplainer explainer, int n) {
+        Attributes atts = explainer.get();
+        String name = (String)atts.getValue(Label.NAME);
+        sb.append("SUBQUERY ").append(n).append(": ").append(name).append('(');
+        if (atts.containsKey(Label.EXPRESSIONS)) {
+            for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
+                append(ex);
+                sb.append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+        }
+        sb.append(')');
+        newRow();
+        sb.append("  ");
+        appendOperator((CompoundExplainer)atts.getAttribute(Label.OPERAND), 1);
     }
 
     protected void appendLiteral(CompoundExplainer explainer) {
