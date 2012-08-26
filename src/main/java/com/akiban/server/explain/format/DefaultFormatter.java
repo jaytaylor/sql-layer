@@ -307,8 +307,40 @@ public class DefaultFormatter
     protected void appendIndexScanOperator(Attributes atts) {
         append(atts.getAttribute(Label.INDEX));
         if (verbose) {
-            if (false) {
-                // spatial
+            if (atts.containsKey(Label.INDEX_KIND) &&
+                "SPATIAL".equals(atts.getValue(Label.INDEX_KIND))) {
+                sb.append(", (");
+                int ndims = atts.get(Label.LOW_COMPARAND).size();
+                for (int i = 0; i < ndims; i++) {
+                    append(atts.get(Label.COLUMN_NAME).get(i));
+                    sb.append(", ");
+                }
+                sb.setLength(sb.length() - 2);
+                sb.append(')');
+                if (!atts.containsKey(Label.HIGH_COMPARAND)) {
+                    sb.append(" ZNEAR(");
+                    for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
+                        append(ex);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length() - 2);
+                    sb.append(')');
+                }
+                else {
+                    sb.append(" BETWEEN (");
+                    for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
+                        append(ex);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length() - 2);
+                    sb.append(") AND (");
+                    for (Explainer ex : atts.get(Label.HIGH_COMPARAND)) {
+                        append(ex);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length() - 2);
+                    sb.append(')');
+                }
             }
             else {
                 int ncols = atts.get(Label.COLUMN_NAME).size();

@@ -83,6 +83,7 @@ public enum Label
     PROJECT_OPTION(Category.OPTION), // has a table or not
     JOIN_OPTION(Category.OPTION), // INNER, LEFT, etc
     ORDERING(Category.OPTION), // ASC or DESC
+    INDEX_KIND(Category.OPTION),
     ORDER_EFFECTIVENESS(Category.OPTION),
     USED_COLUMNS(Category.OPTION),
 
