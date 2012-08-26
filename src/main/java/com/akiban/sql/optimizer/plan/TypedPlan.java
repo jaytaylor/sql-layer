@@ -24,11 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.sql.optimizer.plan;
 
-public class Types3Switch {
-    public static final boolean DEFAULT = Boolean.getBoolean("newtypes");
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 
-    public static volatile boolean SET_ON = DEFAULT;
-    public static volatile boolean ON = DEFAULT;
+public interface TypedPlan {
+    int nFields();
+    TInstance getTypeAt(int index);
+    void setTypeAt(int index, TPreptimeValue value);
 }

@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.ColumnContainer;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.ErrorHandlingMode;
@@ -45,7 +46,6 @@ import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
@@ -59,6 +59,7 @@ import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
+import com.akiban.sql.optimizer.plan.Distinct;
 import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
@@ -82,14 +83,17 @@ import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.plan.TableSource;
+import com.akiban.sql.optimizer.plan.TypedPlan;
 import com.akiban.sql.optimizer.plan.UpdateStatement;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
@@ -139,29 +143,32 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         public boolean visitLeave(PlanNode n) {
             if (n instanceof ResultSet) {
                 ResultSet rs = (ResultSet) n;
-                Project project = findProject(rs);
-                if (project != null) {
+                TypedPlan typedInput = findTypedPlanNode(rs);
+                if (typedInput != null) {
                     List<ResultField> rsFields = rs.getFields();
-                    List<ExpressionNode> projectFields = project.getFields();
-                    assert rsFields.size() == projectFields.size() : rsFields + " not applicable to " + projectFields;
+                    assert rsFields.size() == typedInput.nFields() : rsFields + " not applicable to " + typedInput;
                     for (int i = 0, size = rsFields.size(); i < size; i++) {
                         ResultField rsField = rsFields.get(i);
-                        ExpressionNode projectField = projectFields.get(i);
-                        rsField.setTInstance(projectField.getPreptimeValue().instance());
+                        rsField.setTInstance(typedInput.getTypeAt(i));
                     }
                 }
                 else {
                     logger.warn("no Project node found for ResultSet: {}", rs);
                 }
             }
+            else if (n instanceof ExpressionsSource) {
+                handleExpressionsSource((ExpressionsSource)n);
+            }
             return true;
         }
 
-        private Project findProject(PlanNode n) {
+        private TypedPlan findTypedPlanNode(PlanNode n) {
             while (true) {
-                if (n instanceof Project)
-                    return (Project) n;
-                if ( (n instanceof ResultSet) || (n instanceof Limit) )
+                if (n instanceof TypedPlan)
+                    return (TypedPlan) n;
+                if ( (n instanceof ResultSet)
+                        || (n instanceof Limit)
+                        || (n instanceof Distinct))
                     n = ((BasePlanWithInput)n).getInput();
                 else
                     return null;
@@ -224,6 +231,84 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
             }
             return n;
+        }
+
+        private void handleExpressionsSource(ExpressionsSource node) {
+            // For each field, we'll fold the instances of that field per row into common types. At the same time,
+            // we'll record on a per-field basis whether any expressions of that field need to be casted (that is,
+            // are not the eventual common type). If so, we'll do the casts in a second pass; if we tried to do them
+            // all in the same path, some fields could end up with unnecessary (and potentially wrong) chained casts.
+            // A null TInstance means an unknown type, which could be a parameter, a literal NULL or of course the
+            // initial fold state.
+
+            List<List<ExpressionNode>> rows = node.getExpressions();
+            List<ExpressionNode> firstRow = rows.get(0);
+            int nfields = firstRow.size();
+            TInstance[] instances = new TInstance[nfields];
+            BitSet needCasts = new BitSet(nfields);
+
+            // First pass. Assume that instances[f] contains the TInstance of the top operand at field f. This could
+            // be null, if that operand doesn't have a type; this is definitely true of the first row, but it can
+            // also happen if an ExpressionNode is a constant NULL.
+            for (int rownum = 0, expressionsSize = rows.size(); rownum < expressionsSize; rownum++) {
+                List<ExpressionNode> row = rows.get(rownum);
+                assert row.size() == nfields : "jagged rows: " + node;
+                for (int field = 0; field < nfields; ++field) {
+                    TInstance botInstance = tinst(row.get(field));
+
+                    // If the two are the same, we know we don't need to cast them.
+                    // This logic also handles the case where both are null, which is not a valid argument
+                    // to resolver.commonTClass.
+                    if (Objects.equal(instances[field], botInstance))
+                        continue;
+
+                    TClass topClass = tclass(instances[field]);
+                    TClass botClass = tclass(botInstance);
+
+                    TClass common = resolver.commonTClass(topClass, botClass);
+                    if (common == null) {
+                        throw new AkibanInternalException("no common type found found between row " + (rownum-1)
+                        + " and " + rownum + " at field " + field);
+                    }
+                    // The two rows have different TClasses at this index, so we'll need at least one of them to
+                    // be casted. Only applies if both are non-null, though.
+                    if ( (topClass != null) && (botClass != null) )
+                        needCasts.set(field);
+
+                    Boolean topIsNullable = (instances[field] == null) ? null : instances[field].nullability();
+                    Boolean botIsNullable = (botInstance == null) ? null : botInstance.nullability();
+                    if (topClass != common){
+                        TInstance instance = (botClass == common) ? botInstance : common.instance();
+                        instances[field] = instance;
+                    }
+
+                    // See if the top instance is not nullable but should be
+                    if (instances[field] != null) {
+                        Boolean isNullable;
+                        if (topIsNullable == null)
+                            isNullable = botIsNullable;
+                        else if (botIsNullable == null)
+                            isNullable = topIsNullable;
+                        else
+                            isNullable = topIsNullable || botIsNullable;
+                        instances[field].setNullable(isNullable);
+                    }
+                }
+            }
+
+            // See if we need any casts
+            if (!needCasts.isEmpty()) {
+                for (List<ExpressionNode> row : rows) {
+                    for (int field = 0; field < nfields; ++field) {
+                        if (needCasts.get(field)) {
+                            ExpressionNode orig = row.get(field);
+                            ExpressionNode cast = castTo(orig, instances[field]);
+                            row.set(field, cast);
+                        }
+                    }
+                }
+            }
+            node.setTInstances(instances);
         }
 
         ExpressionNode handleCastExpression(CastExpression expression) {
@@ -359,10 +444,19 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleSubqueryValueExpression(SubqueryValueExpression expression) {
-            Project project = findProject(expression.getSubquery().getInput());
-            List<ExpressionNode> projectFields = project.getFields();
-            assert projectFields.size() == 1 : projectFields;
-            expression.setPreptimeValue(projectFields.get(0).getPreptimeValue());
+            TypedPlan typedSubquery = findTypedPlanNode(expression.getSubquery().getInput());
+            TPreptimeValue tpv;
+            assert typedSubquery.nFields() == 1 : typedSubquery;
+            if (typedSubquery instanceof Project) {
+                Project project = (Project) typedSubquery;
+                List<ExpressionNode> projectFields = project.getFields();
+                assert projectFields.size() == 1 : projectFields;
+                tpv = projectFields.get(0).getPreptimeValue();
+            }
+            else {
+                tpv = new TPreptimeValue(typedSubquery.getTypeAt(0));
+            }
+            expression.setPreptimeValue(tpv);
             return expression;
         }
 
@@ -439,16 +533,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             else if (columnSource instanceof SubquerySource) {
                 TPreptimeValue tpv;
                 Subquery subquery = ((SubquerySource)columnSource).getSubquery();
-                Project project = findProject(subquery);
-                if (project != null) {
-                    List<ExpressionNode> fields = project.getFields();
-                    if (fields == null || fields.size() != 1) {
-                        logger.warn("subquery should have only had one field: {} in {}", fields, columnSource);
-                        tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
-                    }
-                    else {
-                        tpv = fields.get(0).getPreptimeValue();
-                    }
+                TypedPlan typedSubquery = findTypedPlanNode(subquery.getInput());
+                if (typedSubquery != null) {
+                    tpv = new TPreptimeValue(typedSubquery.getTypeAt(expression.getPosition()));
                 }
                 else {
                     logger.warn("no Project found for subquery: {}", columnSource);
@@ -599,22 +686,24 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private void handleExpressionSource(ExpressionsSource source) {
             for (List<ExpressionNode> row : source.getExpressions()) {
-                castToTarget(row);
+                castToTarget(row, source);
             }
         }
 
-        private void castToTarget(List<ExpressionNode> row) {
+        private void castToTarget(List<ExpressionNode> row, TypedPlan plan) {
             for (int i = 0, ncols = row.size(); i < ncols; ++i) {
                 Column target = targetColumns.get(i).getColumn();
                 ExpressionNode column = row.get(i);
                 ExpressionNode casted = castTo(column, target.tInstance().typeClass());
-                if (column != casted)
+                if (column != casted) {
                     row.set(i, casted);
+                    plan.setTypeAt(i, casted.getPreptimeValue());
+                }
             }
         }
 
         private void handleProject(Project source) {
-            castToTarget(source.getFields());
+            castToTarget(source.getFields(), source);
         }
 
         @Override
@@ -629,30 +718,36 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     }
 
     private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass) {
+        return castTo(expression, targetClass.instance());
+    }
+
+    private static ExpressionNode castTo(ExpressionNode expression, TInstance targetInstance) {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
         if (expression instanceof ParameterExpression) {
-            expression.setPreptimeValue(new TPreptimeValue(targetClass.instance()));
+            expression.setPreptimeValue(new TPreptimeValue(targetInstance));
             return expression;
         }
         if (expression instanceof NullSource) {
-            PValueSource nullSource = PValueSources.getNullSource(targetClass.underlyingType());
-            expression.setPreptimeValue(new TPreptimeValue(targetClass.instance(), nullSource));
+            PValueSource nullSource = PValueSources.getNullSource(targetInstance.typeClass().underlyingType());
+            expression.setPreptimeValue(new TPreptimeValue(targetInstance, nullSource));
             return expression;
         }
 
-        if (targetClass.equals(tclass(expression)))
+        if (targetInstance.equals(tinst(expression)))
             return expression;
-        TInstance instance = targetClass.instance();
-        instance.setNullable(expression.getSQLtype().isNullable());
+        targetInstance.setNullable(expression.getSQLtype().isNullable());
         CastExpression result
-                = new CastExpression(expression, instance.dataTypeDescriptor(), expression.getSQLsource());
-        result.setPreptimeValue(new TPreptimeValue(instance));
+                = new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+        result.setPreptimeValue(new TPreptimeValue(targetInstance));
         return result;
     }
 
     private static TClass tclass(ExpressionNode operand) {
-        TInstance tinst = tinst(operand);
-        return tinst == null ? null : tinst.typeClass();
+        return tclass(tinst(operand));
+    }
+
+    private static TClass tclass(TInstance tInstance) {
+        return (tInstance == null) ? null : tInstance.typeClass();
     }
 
     private static TInstance tinst(ExpressionNode node) {
