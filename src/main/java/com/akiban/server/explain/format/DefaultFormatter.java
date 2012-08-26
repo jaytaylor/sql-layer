@@ -630,41 +630,18 @@ public class DefaultFormatter
         List<Explainer> aggrs = atts.get(Label.AGGREGATORS);
         if (!verbose) {
             if (nkeys > 0) {
-                sb.append(nkeys).append(" keys");
-                if (aggrs != null) sb.append(',');
+                sb.append("group by ").append(nkeys);
+                if (aggrs != null) sb.append(", ");
             }
             if (aggrs != null) {
-                sb.append(aggrs.size()).append(" aggregates");
+                sb.append("aggregate ").append(aggrs.size());
             }
         }
         else {
             if (nkeys > 0) {
                 sb.append("GROUP BY ");
-                int olen = sb.length();
-                Attributes inputOperator = ((CompoundExplainer)atts.getAttribute(Label.INPUT_OPERATOR)).get();
-                // If all the group by keys are simple columns, use their names.
-                boolean allcols = false;
-                if (inputOperator.getValue(Label.NAME).equals("Project_Default")) {
-                    allcols = true;
-                    List<Explainer> keys = inputOperator.get(Label.PROJECTION);
-                    for (int i = 0; i < nkeys; i++) {
-                        CompoundExplainer key = (CompoundExplainer)keys.get(i);
-                        if (key.getType() == Type.FIELD) {
-                            Attributes kattr = key.get();
-                            if (kattr.containsKey(Label.COLUMN_NAME)) {
-                                sb.append(kattr.getValue(Label.COLUMN_NAME)).append(", ");
-                                continue;
-                            }
-                        }
-                        allcols = false;
-                        break;
-                    }
-                    if (allcols)
-                        sb.setLength(sb.length() - 2);
-                }
-                // Fallback is just count.
-                if (!allcols) {
-                    sb.setLength(olen);
+                if (!appendProjectColumns(atts, nkeys)) {
+                    // Fallback is just count.
                     sb.append(nkeys).append(" field");
                     if (nkeys > 1) sb.append("s");
                 }
@@ -682,18 +659,45 @@ public class DefaultFormatter
 
     protected void appendBloomFilterOperator(String name, Attributes atts) {
         if (verbose) {
-            if (name.equals("Select_BloomFilter")) {
-                if (atts.containsKey(Label.BLOOM_FILTER)) {
-                    sb.append(atts.getValue(Label.BLOOM_FILTER));
+            if (name.equals("Using_BloomFilter")) {
+                appendProjectColumns(atts, -1);
+            }            
+            else if (name.equals("Select_BloomFilter")) {
+                if (atts.containsKey(Label.EXPRESSIONS)) {
+                    for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
+                        append(ex);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length() - 2);
                 }
             }
-            else if (name.equals("Using_BloomFilter")) {
-                sb.append(atts.getValue(Label.BINDING_POSITION));
-                if (atts.containsKey(Label.EXPRESSIONS))
-                    for (Explainer ex : atts.get(Label.EXPRESSIONS))
-                        sb.append(", ").append(ex.get());
+        }
+    }
+
+    // If all the inputs are simple columns, display their names.
+    protected boolean appendProjectColumns(Attributes atts, int nfields) {
+        int olen = sb.length();
+        Attributes inputOperator = ((CompoundExplainer)atts.get(Label.INPUT_OPERATOR).get(0)).get();
+        boolean allcols = false;
+        if (inputOperator.getValue(Label.NAME).equals("Project_Default")) {
+            allcols = true;
+            List<Explainer> fields = inputOperator.get(Label.PROJECTION);
+            if (nfields < 0) nfields = fields.size();
+            for (int i = 0; i < nfields; i++) {
+                CompoundExplainer field = (CompoundExplainer)fields.get(i);
+                if (field.getType() == Type.FIELD) {
+                    Attributes kattr = field.get();
+                    if (kattr.containsKey(Label.COLUMN_NAME)) {
+                        sb.append(kattr.getValue(Label.COLUMN_NAME)).append(", ");
+                        continue;
+                    }
+                }
+                allcols = false;
+                break;
             }
         }
+        sb.setLength(allcols ? sb.length() - 2 : olen);
+        return allcols;
     }
 
     protected void appendDistinctOperator(String name, Attributes atts) {

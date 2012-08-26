@@ -167,9 +167,13 @@ class Select_BloomFilter extends Operator
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
-        if (context.hasExtraInfo(this))
-            atts.putAll(context.getExtraInfo(this).get());
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
+        atts.put(Label.INPUT_OPERATOR, input.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, onPositive.getExplainer(context));
+        for (Expression field : fields) {
+            atts.put(Label.EXPRESSIONS, field.getExplainer(context));
+        }
         return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }
 

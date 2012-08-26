@@ -172,10 +172,10 @@ class Using_BloomFilter extends Operator
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
-        if (context.hasExtraInfo(this))
-            atts.putAll(context.getExtraInfo(this).get());
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(filterBindingPosition));
+        atts.put(Label.INPUT_OPERATOR, filterInput.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, streamInput.getExplainer(context));
         return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }
 

@@ -1485,18 +1485,7 @@ public class OperatorAssembler extends BaseRule
                                                     collators,
                                                     usePValues);
             popHashTable(bloomFilter);
-            if (explainContext != null)
-                explainUsingBloomFilter(stream.operator, usingBloomFilter);
             return stream;
-        }
-
-        protected void explainUsingBloomFilter(Operator operator, UsingBloomFilter usingBloomFilter) {
-            Attributes atts = new Attributes();
-            for (ExpressionNode field : ((Project)usingBloomFilter.getLoader()).getFields()) {
-                atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(field.toString()));
-            }
-                
-            explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected RowStream assembleBloomFilterFilter(BloomFilterFilter bloomFilterFilter) {
@@ -1517,17 +1506,7 @@ public class OperatorAssembler extends BaseRule
                                                      fields,
                                                      collators,
                                                      pos);
-            if (explainContext != null)
-                explainBloomFilterFilter(stream.operator, bloomFilterFilter);
             return stream;
-        }
-
-        protected void explainBloomFilterFilter(Operator operator, BloomFilterFilter bloomFilterFilter) {
-            Attributes atts = new Attributes();
-                
-            atts.put(Label.BLOOM_FILTER,  PrimitiveExplainer.getInstance(bloomFilterFilter.getInput().summaryString()));
-                
-            explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected RowStream assembleProject(Project project) {
