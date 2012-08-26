@@ -203,7 +203,7 @@ public class RoundExpression extends AbstractCompositeExpression
     
     private static AkType getTopType(List<? extends Expression> args)
     {
-        if (args.size() != 1 & args.size() != 2)
+        if (args.size() != 1 && args.size() != 2)
             throw new WrongExpressionArityException(2, args.size());
         return args.get(0).valueType();
     }

@@ -30,6 +30,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.util.AkibanAppender;
+import com.google.common.base.Objects;
 
 public final class TInstance {
     
@@ -155,7 +156,7 @@ public final class TInstance {
                 && attr1 == other.attr1
                 && attr2 == other.attr2
                 && attr3 == other.attr3
-                && (!withNullable || ((isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable)))
+                && ((!withNullable) || Objects.equal(isNullable, other.isNullable))
                 && tclass.equals(other.tclass);
     }
 

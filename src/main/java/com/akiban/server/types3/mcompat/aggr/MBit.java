@@ -68,10 +68,10 @@ public abstract class MBit extends TAggregatorBase {
     abstract long process(long i0, long i1);
 
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst) {
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
         if (!source.isNull()) {
             long incoming = source.getInt64();
-            if (isFirst) {
+            if (!state.hasAnyValue()) {
                 state.putInt64(incoming);
             }
             else {

@@ -63,7 +63,7 @@ public class ProtobufWriter {
         boolean isSelected(Sequence sequence);
     }
 
-    public static WriteSelector ALL_SELECTOR = new WriteSelector() {
+    public static final WriteSelector ALL_SELECTOR = new WriteSelector() {
         @Override
         public Columnar getSelected(Columnar columnar) {
             return columnar;

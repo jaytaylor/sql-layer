@@ -101,8 +101,8 @@ public class MSum extends TAggregatorBase {
     }
     
     @Override
-    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst) {
-        if (isFirst)
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+        if (!state.hasAnyValue())
             PValueTargets.copyFrom(source, state);
         else
             sumType.input(instance, source, stateType, state);

@@ -24,17 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.util.HasId;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 
-public interface TAggregator extends HasId {
-    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
-    void emptyValue(PValueTarget state);
-    TInstance resultType(TPreptimeValue value);
-    TClass getTypeClass();
-    String name();
+public interface TypedPlan {
+    int nFields();
+    TInstance getTypeAt(int index);
+    void setTypeAt(int index, TPreptimeValue value);
 }
