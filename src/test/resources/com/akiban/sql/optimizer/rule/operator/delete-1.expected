@@ -2,4 +2,4 @@ PhysicalUpdate@5d89635d
   Delete_Default()
     Select_HKeyOrdered(Field(2) == 'Fred')
       Filter_Default(test.child)
-        GroupScan_Default(full scan on _akiban_parent)
+        GroupScan_Default(test.parent)

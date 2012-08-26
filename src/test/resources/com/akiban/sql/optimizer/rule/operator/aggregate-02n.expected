@@ -1,9 +1,9 @@
 PhysicalSelect@115872f5[name, _SQL_COL_1]
   Project_Default(Field(0), Field(1))
-    Sort_Tree(Field(1) DESC, PRESERVE_DUPLICATES)
-      Aggregate_Partial(GROUP BY 1 field: count(*))
+    Sort_Tree(Field(1) DESC)
+      Aggregate_Partial(GROUP BY 1 key: COUNT(*))
         Project_Default(Field(1), 1)
           Filter_Default(test.customers - test.orders)
             Flatten_HKeyOrdered(test.customers INNER test.orders)
-              BranchLookup_Default(test._akiban_customers -> test.customers (via test.customers))
-                IndexScan_Default(Index(test.customers.name[IndexColumn(name)]))
+              BranchLookup_Default(Index(test.customers.name) -> test.customers)
+                IndexScan_Default(Index(test.customers.name), name ASC, cid)

@@ -1,4 +1,4 @@
 PhysicalUpdate@3b58f1fa
   Update_Default()
-    AncestorLookup_Default(test._akiban_customers -> test.items)
-      IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]))
+    AncestorLookup_Default(Index(test.items.sku) -> test.items)
+      IndexScan_Default(Index(test.items.sku), sku = 'ABCD', orders.cid ASC, oid, iid)

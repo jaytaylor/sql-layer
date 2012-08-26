@@ -2,5 +2,5 @@ PhysicalSelect@3445378f[cid, name, oid, cid, order_date, iid, oid, sku, quan, pr
   Project_Default(Field(0), Field(1), Field(2), Field(3), Field(4), Field(5), Field(6), Field(7), Field(8), Field(9))
     Flatten_HKeyOrdered(test.customers - test.orders INNER test.items)
       Flatten_HKeyOrdered(test.customers INNER test.orders)
-        AncestorLookup_Default(test._akiban_customers -> test.customers, test.orders, test.items)
-          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]))
+        AncestorLookup_Default(Index(.customers.cname_and_sku) -> test.customers, test.orders, test.items)
+          IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku = '1234', customers.cid ASC, orders.oid, items.iid)
