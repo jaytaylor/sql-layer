@@ -315,6 +315,12 @@ public class DefaultFormatter
                 int nequals = 0;
                 if (atts.containsKey(Label.EQUAL_COMPARAND))
                     nequals = atts.get(Label.EQUAL_COMPARAND).size();
+                int norders = atts.get(Label.ORDERING).size();
+                while (norders > nequals+1) {
+                    if (!atts.get(Label.ORDERING).get(norders-1).equals(atts.get(Label.ORDERING).get(norders-2)))
+                        break;
+                    norders--;
+                }
                 String indexSchema = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_SCHEMA);
                 if ("".equals(indexSchema))
                     indexSchema = null; // Group index.
@@ -371,8 +377,10 @@ public class DefaultFormatter
                                 }
                             }
                         }
-                        sb.append(" ");
-                        append(atts.get(Label.ORDERING).get(i - nequals));
+                        if (i < norders) {
+                            sb.append(" ");
+                            append(atts.get(Label.ORDERING).get(i));
+                        }
                     }
                 }
             }
