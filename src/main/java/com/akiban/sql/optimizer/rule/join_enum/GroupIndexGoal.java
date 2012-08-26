@@ -393,6 +393,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                             // Likewise reverse the initial equals segment.
                             reverse.set(0, nequals, true);
                     }
+                    if (idx >= index.getNKeyColumns())
+                        index.setUsesAllColumns(true);
                     idx++;
                     continue;
                 }
@@ -440,6 +442,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     // partially grouped.
                     allFound = false;
                 }
+                if (found >= index.getNKeyColumns()) {
+                    index.setUsesAllColumns(true);
+                }
                 anyFound = true;
             }
             if (anyFound) {
@@ -453,7 +458,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
         else if (queryGoal.getProjectDistinct() != null) {
             assert (queryGoal.getOrdering() == null);
-            if (orderedForDistinct(queryGoal.getProjectDistinct(), 
+            if (orderedForDistinct(index, queryGoal.getProjectDistinct(), 
                                    indexOrdering, nequals)) {
                 return IndexScan.OrderEffectiveness.SORTED;
             }
@@ -466,10 +471,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         List<OrderByExpression> indexOrdering = index.getOrdering();
         if (indexOrdering == null) return false;
         int nequals = index.getNEquality();
-        return orderedForDistinct(projectDistinct, indexOrdering, nequals);
+        return orderedForDistinct(index, projectDistinct, indexOrdering, nequals);
     }
 
-    protected boolean orderedForDistinct(Project projectDistinct, 
+    protected boolean orderedForDistinct(IndexScan index, Project projectDistinct, 
                                          List<OrderByExpression> indexOrdering,
                                          int nequals) {
         List<ExpressionNode> distinct = projectDistinct.getFields();
@@ -483,6 +488,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
             if ((found < 0) || (found >= distinct.size())) {
                 return false;
+            }
+            if (found >= index.getNKeyColumns()) {
+                index.setUsesAllColumns(true);
             }
         }
         return true;
@@ -983,7 +991,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         for (int i = 0; i < ncols; i++) {
             ExpressionNode column = index.getColumns().get(i);
             if ((column instanceof ColumnExpression) && index.isRecoverableAt(i)) {
-                requiredAfter.have((ColumnExpression)column);
+                if (requiredAfter.have((ColumnExpression)column) &&
+                    (i >= index.getNKeyColumns())) {
+                    index.setUsesAllColumns(true);
+                }
             }
         }
         return requiredAfter.isEmpty();
@@ -1295,10 +1306,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         /** Opposite of {@link require}: note that we have a source for this column. */
-        public void have(ColumnExpression expr) {
+        public boolean have(ColumnExpression expr) {
             Set<ColumnExpression> entry = map.get(expr.getTable());
             if (entry != null)
-                entry.remove(expr);
+                return entry.remove(expr);
+            else
+                return false;
         }
 
         public void clear() {

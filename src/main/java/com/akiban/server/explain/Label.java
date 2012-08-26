@@ -78,12 +78,13 @@ public enum Label
     GROUPING_OPTION(Category.OPTION),
     FLATTEN_OPTION(Category.OPTION), // keep parent, etc 
     SORT_OPTION(Category.OPTION),
-    PRESERVE_DUPLICAT(Category.OPTION),
     SCAN_OPTION(Category.OPTION), // full/deep.shallow, etc
     LIMIT(Category.OPTION),
     PROJECT_OPTION(Category.OPTION), // has a table or not
     JOIN_OPTION(Category.OPTION), // INNER, LEFT, etc
     ORDERING(Category.OPTION), // ASC or DESC
+    ORDER_EFFECTIVENESS(Category.OPTION),
+    USED_COLUMNS(Category.OPTION),
 
     // TYPE DESCRIPTION
     //--------------------------------------------------------------------------

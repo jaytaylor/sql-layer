@@ -939,7 +939,8 @@ public class OperatorAssembler extends BaseRule
 
         protected void explainSingleIndexScan(Operator operator, SingleIndexScan indexScan, Index index) {
             Attributes atts = new Attributes();
-            //...
+            atts.put(Label.ORDER_EFFECTIVENESS, PrimitiveExplainer.getInstance(indexScan.getOrderEffectiveness().name()));
+            atts.put(Label.USED_COLUMNS, PrimitiveExplainer.getInstance(indexScan.usesAllColumns() ? indexScan.getColumns().size() : indexScan.getNKeyColumns()));
             explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 

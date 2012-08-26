@@ -315,7 +315,22 @@ public class DefaultFormatter
                 int nequals = 0;
                 if (atts.containsKey(Label.EQUAL_COMPARAND))
                     nequals = atts.get(Label.EQUAL_COMPARAND).size();
+                if (atts.containsKey(Label.USED_COLUMNS)) {
+                    // Don't display non-key columns if not used.
+                    ncols = ((Number)atts.getValue(Label.USED_COLUMNS)).intValue();
+                    int nconds = nequals;
+                    if (atts.containsKey(Label.LOW_COMPARAND) ||
+                        atts.containsKey(Label.HIGH_COMPARAND))
+                        nconds++;
+                    if (ncols < nconds)
+                        ncols = nconds;
+                }
                 int norders = atts.get(Label.ORDERING).size();
+                if (atts.containsKey(Label.ORDER_EFFECTIVENESS) &&
+                    "NONE".equals(atts.getValue(Label.ORDER_EFFECTIVENESS))) {
+                    // No need to display ordering if not used.
+                    norders = 0;
+                }
                 while (norders > nequals+1) {
                     if (!atts.get(Label.ORDERING).get(norders-1).equals(atts.get(Label.ORDERING).get(norders-2)))
                         break;

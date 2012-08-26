@@ -194,7 +194,7 @@ class Project_Default extends Operator
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         if (projectType.hasUserTable())
-            att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
+            att.put(Label.PROJECT_OPTION, projectType.getExplainer(context));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         if (projections != null)
             for (Expression ex : projections)
