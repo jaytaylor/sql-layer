@@ -1,5 +1,5 @@
 PhysicalSelect[_SQL_COL_1:INTEGER]
-  Project_Default(GROUP[1])
-    Aggregate_Partial(GROUP BY 1 field: minINT)
+  Project_Default(Field(1))
+    Aggregate_Partial(GROUP BY cid: MIN)
       Project_Default(customers.cid, customers.cid)
-        IndexScan_Default(Index(test.customers.PRIMARY[IndexColumn(cid)]), cid)
+        IndexScan_Default(Index(customers.PRIMARY), cid ASC)

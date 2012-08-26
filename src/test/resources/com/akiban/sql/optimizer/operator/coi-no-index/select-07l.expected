@@ -1,5 +1,5 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
   Project_Default(1)
-    Filter_Default(test.items)
+    Filter_Default(items)
       Select_HKeyOrdered(items.sku == '1234')
-        GroupScan_Default(full scan on _akiban_customers)
+        GroupScan_Default(customers)

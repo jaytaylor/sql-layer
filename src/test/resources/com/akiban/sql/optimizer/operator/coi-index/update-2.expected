@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Update_Default(test.items SET quan = 42, sku = items.quan)
-    Filter_Default(test.items)
-      GroupScan_Default(full scan on _akiban_customers)
+  Update_Default(items SET quan = items.quan, sku = 42)
+    Filter_Default(items)
+      GroupScan_Default(customers)

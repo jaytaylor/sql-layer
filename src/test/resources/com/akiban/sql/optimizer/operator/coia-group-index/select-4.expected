@@ -1,3 +1,3 @@
 PhysicalSelect[order_date:date[DATE], sku:varchar(32)[VARCHAR]]
   Project_Default(orders.order_date, items.sku)
-    IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), sku < 8888, order_date, cid, oid, iid)
+    IndexScan_Default(Index(.customers.sku_and_date), items.sku < '8888' ASC, orders.order_date)

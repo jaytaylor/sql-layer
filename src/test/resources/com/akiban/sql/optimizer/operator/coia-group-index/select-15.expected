@@ -1,7 +1,7 @@
 PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops(test.items)
-    Filter_Default(test.items)
-      GroupScan_Default(full scan on _akiban_customers)
+  Map_NestedLoops(loop_0)
+    Filter_Default(items)
+      GroupScan_Default(customers)
     Project_Default(items.iid, items.oid, items.sku, items.quan)
       Limit_Default(1)
-        IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), name = Smith, sku = items.sku, cid, oid, iid)
+        IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku = items.sku)

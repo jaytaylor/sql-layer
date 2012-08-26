@@ -1,5 +1,5 @@
 PhysicalUpdate
-  Update_Default(test.items SET quan = 66)
-    Filter_Default(test.items)
-      BranchLookup_Default(test._akiban_customers -> test.items (via test.orders))
-        IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]), order_date > 2011-04-01, cid, oid)
+  Update_Default(items SET quan = 66)
+    Filter_Default(items)
+      BranchLookup_Default(Index(orders.order_date) -> orders)
+        IndexScan_Default(Index(orders.order_date), order_date > DATE '2011-04-01')

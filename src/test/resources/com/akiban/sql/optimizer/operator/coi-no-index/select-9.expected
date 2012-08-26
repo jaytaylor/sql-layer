@@ -1,5 +1,5 @@
 PhysicalSelect[cid:int[INT]]
   Project_Default(customers.cid)
-    Filter_Default(test.customers)
+    Filter_Default(customers)
       Select_HKeyOrdered(customers.name == 'Smith')
-        GroupScan_Default(full scan on _akiban_customers)
+        GroupScan_Default(customers)

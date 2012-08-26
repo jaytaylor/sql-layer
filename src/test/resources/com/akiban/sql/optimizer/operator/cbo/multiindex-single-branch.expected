@@ -1,7 +1,7 @@
 PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], aid:int[INT], cid:int[INT], state:char(2)[VARCHAR], city:varchar(100)[VARCHAR]]
   Project_Default(customers.cid, customers.name, addresses.aid, addresses.cid, addresses.state, addresses.city)
-    Flatten_HKeyOrdered(test.customers INNER test.addresses)
-      AncestorLookup_Default(test._akiban_customers -> test.customers, test.addresses)
+    Flatten_HKeyOrdered(customers INNER addresses)
+      AncestorLookup_Default(Index(addresses.state) -> customers, addresses)
         Intersect_Ordered(skip 1 left, skip 1 right, compare 1)
-          IndexScan_Default(Index(test.addresses.state[IndexColumn(state)]), state = CA, cid, aid)
-          IndexScan_Default(Index(test.customers.name[IndexColumn(name)]), name = Awwyqrezr, cid)
+          IndexScan_Default(Index(addresses.state), state = 'CA')
+          IndexScan_Default(Index(customers.name), name = 'Awwyqrezr')

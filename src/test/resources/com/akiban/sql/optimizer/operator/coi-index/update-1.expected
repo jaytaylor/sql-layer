@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Update_Default(test.customers SET name = 'Smyth')
-    AncestorLookup_Default(test._akiban_customers -> test.customers)
-      IndexScan_Default(Index(test.customers.name[IndexColumn(name)]), name = Smith, cid)
+  Update_Default(customers SET name = 'Smyth')
+    AncestorLookup_Default(Index(customers.name) -> customers)
+      IndexScan_Default(Index(customers.name), name = 'Smith')

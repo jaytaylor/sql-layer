@@ -1,4 +1,4 @@
 PhysicalSelect[_SQL_COL_1:DOUBLE NOT NULL]
   Project_Default(items.quan / 100)
-    Filter_Default(test.items)
-      GroupScan_Default(full scan on _akiban_customers)
+    Filter_Default(items)
+      GroupScan_Default(customers)

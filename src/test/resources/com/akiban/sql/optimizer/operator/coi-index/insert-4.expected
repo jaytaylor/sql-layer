@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Insert_Default(INTO test.orders(oid, cid))
+  Insert_Default(INTO orders(oid, cid))
     Project_Default(205, customers.cid, NULL)
-      IndexScan_Default(Index(test.customers.name[IndexColumn(name)]), name = Jones, cid)
+      IndexScan_Default(Index(customers.name), name = 'Jones', cid)

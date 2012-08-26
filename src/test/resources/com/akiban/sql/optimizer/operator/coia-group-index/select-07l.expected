@@ -1,3 +1,3 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL, _SQL_COL_2:CHAR(5) NOT NULL]
   Project_Default(1, 'hello')
-    IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), sku = 1234, order_date > 2011-01-01, cid, oid, iid)
+    IndexScan_Default(Index(.customers.sku_and_date), items.sku = '1234', orders.order_date > DATE '2011-01-01')

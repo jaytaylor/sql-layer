@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Delete_Default(FROM test.items)
-    AncestorLookup_Default(test._akiban_customers -> test.items)
-      IndexScan_Default(Index(test.items.PRIMARY[IndexColumn(iid)]), iid = 1012, cid, oid)
+  Delete_Default(FROM items)
+    AncestorLookup_Default(Index(items.PRIMARY) -> items)
+      IndexScan_Default(Index(items.PRIMARY), iid = 1012)
