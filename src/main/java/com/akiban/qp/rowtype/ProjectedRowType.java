@@ -26,10 +26,12 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpressions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +63,23 @@ public class ProjectedRowType extends DerivedRowType
     @Override
     public TInstance typeInstanceAt(int index) {
         return tInstances.get(index);
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer explainer = super.getExplainer(context);
+        if (tExprs != null) {
+            for (TPreparedExpression expr : tExprs) {
+                explainer.addAttribute(Label.EXPRESSIONS, TPreparedExpressions.getExplainer(expr));
+            }
+        }
+        else {
+            for (Expression expr : projections) {
+                explainer.addAttribute(Label.EXPRESSIONS, expr.getExplainer(context));
+            }
+        }
+        return explainer;
     }
 
     // ProjectedRowType interface

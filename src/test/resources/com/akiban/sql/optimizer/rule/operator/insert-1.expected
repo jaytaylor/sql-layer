@@ -1,4 +1,4 @@
 PhysicalUpdate@377f4fbb
-  Insert_Default(INTO project([Field(1), Field(0), Field(2)]): test.child)
+  Insert_Default(INTO test.child)
     Project_Default(Field(1), Field(0), Field(2))
       ValuesScan_Default([1, 1, 'Judy'], [1, 2, 'Elroy'])
