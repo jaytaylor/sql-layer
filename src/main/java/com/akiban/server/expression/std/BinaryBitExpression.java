@@ -87,10 +87,12 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             @Override
             protected BigInteger exc (ValueSource left, ValueSource right)
             {
+                BigInteger lhs = bIntExtractor.getObject(left);
                 long shiftBy = lExtractor.getLong(right);
-                if (shiftBy < 0)
+                if (shiftBy < 0) {
                     return BigInteger.ZERO;
-                return bIntExtractor.getObject(left).shiftLeft((int) shiftBy);
+                }
+                return lhs.shiftLeft((int) shiftBy);
             }
         },
         RIGHT_SHIFT
@@ -98,10 +100,11 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             @Override
             protected BigInteger exc (ValueSource left, ValueSource right)
             {
+                BigInteger lhs = bIntExtractor.getObject(left);
                 long shiftBy = lExtractor.getLong(right);
                 if (shiftBy < 0)
                     return BigInteger.ZERO;
-                return bIntExtractor.getObject(left).shiftRight((int) shiftBy);
+                return lhs.shiftRight((int) shiftBy);
             }
         };
 
