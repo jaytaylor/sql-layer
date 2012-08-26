@@ -101,6 +101,29 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     }
 
     @Override
+    public void close()
+    {
+        super.close();
+        if (startKey != null) {
+            clearStart();
+        }
+    }
+
+    @Override
+    public void destroy()
+    {
+        super.destroy();
+        if (startKey != null) {
+            adapter.returnIndexRow(startKey);
+            startKey = null;
+        }
+        if (endKey != null) {
+            adapter.returnIndexRow(endKey);
+            endKey = null;
+        }
+    }
+
+    @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
         assert keyRange != null;
@@ -138,7 +161,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
-        this.endKey = endBoundColumns == 0 ? null : PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+        this.endKey = endBoundColumns == 0 ? null : adapter.takeIndexRow(keyRange.indexRowType());
         this.sortKeyAdapter = sortKeyAdapter;
         initializeCursor(keyRange, ordering);
     }
@@ -371,7 +394,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             this.startInclusive = keyRange.loInclusive();
             this.end = this.hi;
             this.endInclusive = keyRange.hiInclusive();
-            this.keyComparison = startInclusive ? Key.GTEQ : Key.GT;
+            this.initialKeyComparison = startInclusive ? Key.GTEQ : Key.GT;
             this.subsequentKeyComparison = Key.GT;
             this.startBoundary = Key.BEFORE;
         } else if (ordering.allDescending()) {
@@ -380,13 +403,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             this.startInclusive = keyRange.hiInclusive();
             this.end = this.lo;
             this.endInclusive = keyRange.loInclusive();
-            this.keyComparison = startInclusive ? Key.LTEQ : Key.LT;
+            this.initialKeyComparison = startInclusive ? Key.LTEQ : Key.LT;
             this.subsequentKeyComparison = Key.LT;
             this.startBoundary = Key.AFTER;
         } else {
             assert false : ordering;
         }
-        this.startKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+        this.startKey = adapter.takeIndexRow(keyRange.indexRowType());
         this.startKeyKey = adapter.newKey();
         this.endKeyKey = adapter.newKey();
         this.startBoundColumns = keyRange.boundColumns();
@@ -436,6 +459,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             startKey.copyPersistitKeyTo(exchange().getKey());
             pastStart = false;
         }
+        keyComparison = initialKeyComparison;
     }
 
     private Index index()
@@ -453,11 +477,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         this.ordering = ordering;
         if (ordering.allAscending()) {
             this.startBoundary = Key.BEFORE;
-            this.keyComparison = Key.GT;
+            this.initialKeyComparison = Key.GT;
             this.subsequentKeyComparison = Key.GT;
         } else if (ordering.allDescending()) {
             this.startBoundary = Key.AFTER;
-            this.keyComparison = Key.LT;
+            this.initialKeyComparison = Key.LT;
             this.subsequentKeyComparison = Key.LT;
         } else {
             assert false : ordering;
@@ -480,6 +504,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     private API.Ordering ordering;
     protected int direction; // +1 = ascending, -1 = descending
     protected Key.Direction keyComparison;
+    protected Key.Direction initialKeyComparison;
     protected Key.Direction subsequentKeyComparison;
     protected Key.EdgeValue startBoundary; // Start of a scan that is unbounded at the start
     // start/endBoundColumns is the number of index fields with restrictions. They start out having the same value.
