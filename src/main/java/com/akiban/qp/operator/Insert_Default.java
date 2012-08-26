@@ -134,11 +134,9 @@ class Insert_Default implements UpdatePlannable {
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Attributes atts;
+        Attributes atts = new Attributes();
         if (context.hasExtraInfo(this))
-            atts = context.getExtraInfo(this).get();
-        else
-            atts = new Attributes();
+            atts.putAll(context.getExtraInfo(this).get()); 
         return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
 

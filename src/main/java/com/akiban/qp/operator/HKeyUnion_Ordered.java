@@ -197,7 +197,6 @@ class HKeyUnion_Ordered extends Operator
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
-        
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFields));

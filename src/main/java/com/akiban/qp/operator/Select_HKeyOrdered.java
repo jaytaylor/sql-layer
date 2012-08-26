@@ -169,7 +169,6 @@ class Select_HKeyOrdered extends Operator
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
-        
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         if (predicate != null)

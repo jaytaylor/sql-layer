@@ -156,9 +156,7 @@ class Update_Default implements UpdatePlannable {
     {
         Attributes atts = new Attributes();
         if (context.hasExtraInfo(this))
-        {
-            atts.putAll(context.getExtraInfo(this).get());
-        }
+            atts.putAll(context.getExtraInfo(this).get()); 
         atts.put(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
         CompoundExplainer ex = new DUIOperatorExplainer(getName(), atts, inputOperator, context);
         return ex;

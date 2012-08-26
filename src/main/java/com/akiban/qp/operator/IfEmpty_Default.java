@@ -204,7 +204,6 @@ class IfEmpty_Default extends Operator
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         if (pExpressions != null) {
             for (TPreparedExpression ex : pExpressions)
