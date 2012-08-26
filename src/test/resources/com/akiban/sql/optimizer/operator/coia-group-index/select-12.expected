@@ -1,0 +1,3 @@
+PhysicalSelect[iid:int[INT]]
+  Project_Default(items.iid)
+    IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku = '1234', customers.cid, orders.oid, items.iid)
