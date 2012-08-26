@@ -51,9 +51,9 @@
 ---
 - Statement: EXPLAIN SELECT i, j FROM parent INNER JOIN child USING (name)
 - output: [['Project_Default(parent.i, child.j)'],
-           ['  Filter_Default(test.parent - test.child)'],
-           ['    Flatten_HKeyOrdered(test.parent INNER test.child)'],
-           ['      GroupScan_Default(full scan on _akiban_parent)']]
+           ['  Filter_Default(parent - child)'],
+           ['    Flatten_HKeyOrdered(parent INNER child)'],
+           ['      GroupScan_Default(parent)']]
 ---
 - Statement: SELECT i, j FROM parent INNER JOIN child USING (name)
 - output: [[1, 100],[4,400]]

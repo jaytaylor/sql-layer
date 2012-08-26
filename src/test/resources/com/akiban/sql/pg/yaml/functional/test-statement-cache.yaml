@@ -28,9 +28,9 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
-           ['  Filter_Default(test.t)'],
+           ['  Filter_Default(t)'],
            ['    Select_HKeyOrdered(t.s == $1)'],
-           ['      GroupScan_Default(full scan on _akiban_t)']]
+           ['      GroupScan_Default(t)']]
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 ---
@@ -51,8 +51,8 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
-           ['  AncestorLookup_Default(test._akiban_t -> test.t)'],
-           ['    IndexScan_Default(Index(test.t.t_s[IndexColumn(s)]), s = $0, __akiban_pk)']]
+           ['  AncestorLookup_Default(Index(t.t_s) -> t)'],
+           ['    IndexScan_Default(Index(t.t_s), s = $1)']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
@@ -68,8 +68,8 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
-           ['  AncestorLookup_Default(test._akiban_t -> test.t)'],
-           ['    IndexScan_Default(Index(test.t.t_s[IndexColumn(s)]), s = $0, __akiban_pk)']]
+           ['  AncestorLookup_Default(Index(t.t_s) -> t)'],
+           ['    IndexScan_Default(Index(t.t_s), s = $1)']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
@@ -84,17 +84,17 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
-           ['  Filter_Default(test.t)'],
+           ['  Filter_Default(t)'],
            ['    Select_HKeyOrdered(t.s == $1)'],
-           ['      GroupScan_Default(full scan on _akiban_t)']]
+           ['      GroupScan_Default(t)']]
 ---
 - Statement: SET cbo TO 'false'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
-           ['  Filter_Default(test.t)'],
+           ['  Filter_Default(t)'],
            ['    Select_HKeyOrdered(t.s == $1)'],
-           ['      GroupScan_Default(full scan on _akiban_t)']]
+           ['      GroupScan_Default(t)']]
 ---
 - CreateTable: test1.t (n INT)
 ---
