@@ -36,6 +36,10 @@ public final class PValue implements PValueSource, PValueTarget {
         this.underlying = underlying;
         this.state = State.UNSET;
     }
+
+    public void unset() {
+        this.state = State.UNSET;
+    }
     
     // PValueTarget interface
 
@@ -314,7 +318,7 @@ public final class PValue implements PValueSource, PValueTarget {
         this.bVal = bVal;
         this.oCache = oCache;
     }
-    
+
     public PValue() {
         this((PUnderlying)null);
     }

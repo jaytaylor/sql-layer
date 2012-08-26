@@ -555,8 +555,17 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             }
             else if (columnSource instanceof ExpressionsSource) {
                 ExpressionsSource exprsTable = (ExpressionsSource) columnSource;
-                TPreptimeValue ptv = exprsTable.getPreptimeValues().get(expression.getPosition());
-                expression.setPreptimeValue(ptv);
+                List<List<ExpressionNode>> expressions = exprsTable.getExpressions();
+                TPreptimeValue tpv;
+                if (expressions.size() == 1) {
+                    // get the TPV straight from the expression, since there's just one row
+                    tpv = expressions.get(0).get(expression.getPosition()).getPreptimeValue();
+                }
+                else {
+                    TInstance tInstance = exprsTable.getTypeAt(expression.getPosition());
+                    tpv = new TPreptimeValue(tInstance);
+                }
+                expression.setPreptimeValue(tpv);
             }
             else {
                 throw new AssertionError(columnSource + "(" + columnSource.getClass() + ")");
@@ -733,7 +742,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression;
         }
 
-        if (targetInstance.equals(tinst(expression)))
+        if (targetInstance.equalsExcludingNullable(tinst(expression)))
             return expression;
         targetInstance.setNullable(expression.getSQLtype().isNullable());
         CastExpression result
