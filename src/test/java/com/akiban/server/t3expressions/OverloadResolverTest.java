@@ -296,6 +296,33 @@ public class OverloadResolverTest {
         assertSame(msg, validated, result != null ? result.getOverload() : null);
     }
 
+    private void checkCommon(TClass a, TClass b, TClass common) {
+        TClass actualCommon;
+        try {
+            actualCommon = resolver.commonTClass(a, b);
+        } catch (OverloadException e) {
+            actualCommon = null;
+        }
+        assertSame("common(" + a + ", " + b +")", common, actualCommon);
+    }
+
+    @Test
+    public void findCommon_Int_Bigint() {
+        init();
+        checkCommon(TINT, TBIGINT, TBIGINT);
+    }
+
+    @Test
+    public void findCommon_BigInt_Bigint() {
+        init();
+        checkCommon(TBIGINT, TBIGINT, TBIGINT);
+    }
+
+    @Test
+    public void findCommon_Int_Date() {
+        init();
+        checkCommon(TINT, TDATE, null);
+    }
 
     @Test(expected=NoSuchFunctionException.class)
     public void noSuchOverload() {
