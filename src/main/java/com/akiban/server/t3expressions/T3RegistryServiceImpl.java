@@ -90,8 +90,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     }
 
     @Override
-    public Set<TClass> stronglyCastableTo(TClass tClass) {
-        Map<TClass, TCast> castsFrom = strongCastsByTarget.get(tClass);
+    public Set<TClass> stronglyCastableFrom(TClass tClass) {
+        Map<TClass, TCast> castsFrom = strongCastsBySource.get(tClass);
         return castsFrom.keySet();
     }
 
@@ -108,7 +108,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     public boolean isStrong(TCast cast) {
         TClass source = cast.sourceClass();
         TClass target = cast.targetClass();
-        return stronglyCastableTo(target).contains(source);
+        return stronglyCastableFrom(source).contains(target);
     }
 
     @Override
@@ -136,7 +136,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     @Override
     public void stop() {
         castsBySource = null;
-        strongCastsByTarget = null;
+        strongCastsBySource = null;
         overloadsByName = null;
         aggregatorsByName = null;
         tClasses = null;
@@ -170,8 +170,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         castsBySource = createCasts(tClasses, finder);
         createDerivedCasts(castsBySource, finder);
         deriveCastsFromVarchar();
-        strongCastsByTarget = createStrongCastsMap(castsBySource, finder);
-        checkDag(strongCastsByTarget);
+        strongCastsBySource = createStrongCastsMap(castsBySource, finder);
+        checkDag(strongCastsBySource);
 
         overloadsByName = createScalars(finder);
 
@@ -389,12 +389,12 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 TCast cast = castByTarget.getValue();
                 TClass target = castByTarget.getKey();
                 if ( (source == target) || strongCasts.contains(new TCastIdentifier(cast))) {
-                    Map<TClass,TCast> map = result.get(target);
+                    Map<TClass,TCast> map = result.get(source);
                     if (map == null) {
                         map = new HashMap<TClass, TCast>();
-                        result.put(target, map);
+                        result.put(source, map);
                     }
-                    map.put(source, cast);
+                    map.put(target, cast);
                 }
             }
         }
@@ -426,7 +426,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     // object state
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
-    private volatile Map<TClass,Map<TClass,TCast>> strongCastsByTarget;
+    private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
     private volatile Multimap<String, TValidatedOverload> overloadsByName;
     private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
     private volatile Collection<? extends TClass> tClasses;

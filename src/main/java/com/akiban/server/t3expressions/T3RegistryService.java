@@ -46,7 +46,7 @@ public interface T3RegistryService {
      */
     TCast cast(TClass source, TClass target);
 
-    Set<? extends TClass> stronglyCastableTo(TClass tClass);
+    Set<? extends TClass> stronglyCastableFrom(TClass tClass);
     boolean isStrong(TCast cast);
     boolean isIndexFriendly(TClass source, TClass target);
 }
