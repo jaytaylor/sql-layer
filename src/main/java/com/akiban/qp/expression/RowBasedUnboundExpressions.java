@@ -37,7 +37,6 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpressions;
 
 import java.util.List;
 
@@ -52,7 +51,7 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
         Attributes atts = new Attributes();
         if (pExprs != null) {
             for (TPreparedExpression expression : pExprs) {
-                atts.put(Label.EXPRESSIONS, TPreparedExpressions.getExplainer(expression));
+                atts.put(Label.EXPRESSIONS, expression.getExplainer(context));
             }
         }
         else {

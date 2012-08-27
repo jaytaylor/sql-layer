@@ -36,7 +36,6 @@ import com.akiban.server.types.util.SqlLiteralValueFormatter;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpressions;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
@@ -125,7 +124,7 @@ public abstract class BindableRow {
             }
             else {
                 for (TPreparedExpression pexpr : pExprs) {
-                    atts.put(Label.EXPRESSIONS, TPreparedExpressions.getExplainer(pexpr));
+                    atts.put(Label.EXPRESSIONS, pexpr.getExplainer(context));
                 }
             }
             return new CompoundExplainer(Type.ROW, atts);

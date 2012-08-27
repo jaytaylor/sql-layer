@@ -92,7 +92,6 @@ public class DefaultFormatter
             break;
         case FUNCTION:
         case BINARY_OPERATOR:
-        case TYPES3:
             appendFunction(explainer, needsParens, parentName);
             break;
         case SUBQUERY:
