@@ -33,6 +33,7 @@ import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -61,10 +62,10 @@ public class MDistanceLatLon extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        double y1 = doubleInRange((BigDecimalWrapper)inputs.get(0).getObject(), MIN_LAT, MAX_LAT);
-        double x1 = doubleInRange((BigDecimalWrapper)inputs.get(1).getObject(), MIN_LON, MAX_LON);
-        double y2 = doubleInRange((BigDecimalWrapper)inputs.get(2).getObject(), MIN_LAT, MAX_LAT);
-        double x2 = doubleInRange((BigDecimalWrapper)inputs.get(3).getObject(), MIN_LON, MAX_LON);
+        double y1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)), MIN_LAT, MAX_LAT);
+        double x1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1)), MIN_LON, MAX_LON);
+        double y2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(2), context.inputTInstanceAt(2)), MIN_LAT, MAX_LAT);
+        double x2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(3), context.inputTInstanceAt(3)), MIN_LON, MAX_LON);
         
         double dx = Math.abs(x1 - x2);
         // we want the shorter distance of the two
