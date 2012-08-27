@@ -28,6 +28,7 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -70,4 +71,12 @@ public class ExistsSubqueryTExpression extends SubqueryTExpression
                                    outerRowType(), innerRowType(),
                                    bindingPosition());
     }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer explainer = super.getExplainer(context);
+        explainer.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("EXISTS"));
+        return explainer;
+    }
+
 }

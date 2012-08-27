@@ -28,6 +28,8 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.TExpressionExplainer;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -59,6 +61,14 @@ public final class TNullExpression implements TPreparedExpression {
         TEvaluatableExpression result = evaluationsByUnderlying.get(tInstance.typeClass().underlyingType());
         assert result != null : tInstance;
         return result;
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer ex = new TExpressionExplainer(Type.LITERAL, "Literal", context);
+        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance("NULL"));
+        return ex;
     }
 
     @Override

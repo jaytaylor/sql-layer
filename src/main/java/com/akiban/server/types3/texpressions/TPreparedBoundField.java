@@ -29,6 +29,7 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -47,6 +48,19 @@ public final class TPreparedBoundField implements TPreparedExpression {
     @Override
     public TEvaluatableExpression build() {
         return new InnerEvaluation(fieldExpression.build(), rowPosition);
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        // Extend Field inside, rather than wrapping it.
+        CompoundExplainer ex = fieldExpression.getExplainer(context);
+        ex.get().remove(Label.NAME); // Want to replace.
+        ex.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("Bound"));
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(rowPosition));
+        if (context.hasExtraInfo(this))
+            ex.get().putAll(context.getExtraInfo(this).get());
+        return ex;
     }
 
     @Override
