@@ -164,7 +164,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return result;
     }
 
-    private void start(InstanceFinder finder) {
+    void start(InstanceFinder finder) {
         tClasses = new HashSet<TClass>(finder.find(TClass.class));
 
         castsBySource = createCasts(tClasses, finder);

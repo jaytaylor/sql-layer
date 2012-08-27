@@ -29,7 +29,6 @@ import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadException;
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
@@ -39,6 +38,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.TStrongCasts;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -46,16 +46,11 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -63,89 +58,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 public class OverloadResolverTest {
-    private static class SimpleRegistry implements T3RegistryService {
-        private final Map<String,List<TValidatedOverload>> validatedMap = new HashMap<String, List<TValidatedOverload>>();
-        private final Map<TOverload,TValidatedOverload> originalMap = new HashMap<TOverload, TValidatedOverload>();
-        private final Map<TClass, Map<TClass, TCast>> castMap = new HashMap<TClass, Map<TClass, TCast>>();
-        private final Set<TCastIdentifier> strongCasts = new HashSet<TCastIdentifier>();
-
-
-        public SimpleRegistry(TOverload... overloads) {
-            for(TOverload overload : overloads) {
-                TValidatedOverload validated = new TValidatedOverload(overload);
-                originalMap.put(overload, validated);
-                List<TValidatedOverload> list = validatedMap.get(overload.displayName());
-                if(list == null) {
-                    list = new ArrayList<TValidatedOverload>();
-                    validatedMap.put(overload.displayName(), list);
-                }
-                list.add(validated);
-            }
-        }
-
-        public void setCasts(TCast... casts) {
-            castMap.clear();
-            strongCasts.clear();
-            for(TCast cast : casts) {
-                Map<TClass,TCast> map = castMap.get(cast.sourceClass());
-                if(map == null) {
-                    map = new HashMap<TClass, TCast>();
-                    castMap.put(cast.sourceClass(), map);
-                }
-                map.put(cast.targetClass(), cast);
-                if (cast instanceof TestCastBase) {
-                    TestCastBase tcb = (TestCastBase) cast;
-                    if (tcb.isStrong)
-                        strongCasts.add(new TCastIdentifier(cast));
-                }
-            }
-        }
-
-        @Override
-        public List<TValidatedOverload> getOverloads(String name) {
-            return validatedMap.get(name.toLowerCase());
-        }
-
-        @Override
-        public TCast cast(TClass source, TClass target) {
-            Map<TClass,TCast> map = castMap.get(source);
-            if(map != null) {
-                return map.get(target);
-            }
-            return null;
-        }
-
-        @Override
-        public Set<TClass> stronglyCastableTo(TClass tClass) {
-            Map<TClass, TCast> map = T3RegistryServiceImpl.createStrongCastsMap(castMap, strongCasts).get(tClass);
-            Set<TClass> results = (map == null)
-                    ? new HashSet<TClass>(1)
-                    : new HashSet<TClass>(map.keySet());
-            results.add(tClass);
-            return results;
-        }
-
-        @Override
-        public boolean isStrong(TCast cast) {
-            TClass source = cast.sourceClass();
-            TClass target = cast.targetClass();
-            return stronglyCastableTo(target).contains(source);
-        }
-
-        @Override
-        public Collection<? extends TAggregator> getAggregates(String name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isIndexFriendly(TClass source, TClass target) {
-            throw new UnsupportedOperationException();
-        }
-
-        public TValidatedOverload validated(TOverload overload) {
-            return originalMap.get(overload);
-        }
-    }
 
     private static class TestClassBase extends NoAttrTClass {
         private static final TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
@@ -153,25 +65,37 @@ public class OverloadResolverTest {
         public TestClassBase(String name, PUnderlying pUnderlying) {
             super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, null);
         }
+
+        @Override
+        public TCast castToVarchar() {
+            return null;
+        }
+
+        @Override
+        public TCast castFromVarchar() {
+            return null;
+        }
     }
 
     private static class TestCastBase extends TCastBase {
 
-        private final boolean isStrong;
-
-        public TestCastBase(TClass sourceAndTarget) {
-            this(sourceAndTarget, sourceAndTarget, true);
-        }
-
-        public TestCastBase(TClass source, TClass target, boolean isAutomatic) {
+        public TestCastBase(TClass source, TClass target, boolean isStrong) {
             super(source, target, Constantness.UNKNOWN);
-            this.isStrong = isAutomatic;
+            this.isStrong = isStrong;
         }
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             throw new UnsupportedOperationException();
         }
+
+        TStrongCasts strongCasts() {
+            return isStrong
+                    ? TStrongCasts.from(sourceClass()).to(targetClass())
+                    : null;
+        }
+
+        private boolean isStrong;
     }
 
 
@@ -257,25 +181,52 @@ public class OverloadResolverTest {
     private final static TClass TDATE = new TestClassBase("date",  PUnderlying.DOUBLE);
     private final static TClass TVARCHAR = new TestClassBase("varchar",  PUnderlying.BYTES);
 
-    private final static TCast C_INT_INT = new TestCastBase(TINT);
-    private final static TCast C_INT_BIGINT = new TestCastBase(TINT, TBIGINT, true);
-    private final static TCast C_BIGINT_BIGINT = new TestCastBase(TBIGINT);
-    private final static TCast C_BIGINT_INT = new TestCastBase(TBIGINT, TINT, false);
-    private final static TCast C_DATE_DATE = new TestCastBase(TDATE, TDATE, true);
+    private final static TestCastBase C_INT_BIGINT = new TestCastBase(TINT, TBIGINT, true);
+    private final static TestCastBase C_BIGINT_INT = new TestCastBase(TBIGINT, TINT, false);
 
     private final static TestMulBase MUL_INTS = new TestMulBase(TINT);
     private final static TestMulBase MUL_BIGINTS = new TestMulBase(TBIGINT);
     private final static TestMulBase MUL_DATE_INT = new TestMulBase(TDATE, TINT, TDATE);
 
 
-    private SimpleRegistry registry;
     private OverloadResolver resolver;
 
-    private void init(TOverload... overloads) {
-        registry = new SimpleRegistry(overloads);
-        resolver = new OverloadResolver(registry);
-    }
+    private class Initializer {
+        public Initializer overloads(TOverload... overloads) {
+            finder.put(TOverload.class, overloads);
+            return this;
+        }
 
+        public Initializer types(TClass... classes) {
+            finder.put(TClass.class, classes);
+            return this;
+        }
+
+        public Initializer casts(TCast... casts) {
+            for (TCast cast : casts) {
+                if (!castIdentifiers.add(new TCastIdentifier(cast)))
+                    continue;
+                if (cast instanceof TestCastBase) {
+                    TStrongCasts strongCasts = ((TestCastBase) cast).strongCasts();
+                    if (strongCasts != null)
+                        finder.put(TStrongCasts.class, strongCasts);
+                }
+                finder.put(TCast.class, cast);
+                types(cast.sourceClass());
+                types(cast.targetClass());
+            }
+            return this;
+        }
+
+        private void init() {
+            T3RegistryServiceImpl registryImpl = new T3RegistryServiceImpl();
+            registryImpl.start(finder);
+            resolver = new OverloadResolver(registryImpl);
+        }
+
+        private InstanceFinderBuilder finder = new InstanceFinderBuilder();
+        private Set<TCastIdentifier> castIdentifiers = new HashSet<TCastIdentifier>();
+    }
 
     private static TPreptimeValue prepVal(TClass tClass) {
         return (tClass != null) ? new TPreptimeValue(tClass.instance()) : new TPreptimeValue();
@@ -290,10 +241,9 @@ public class OverloadResolverTest {
     }
 
     private void checkResolved(String msg, TOverload expected, String overloadName, List<TPreptimeValue> prepValues) {
-        TValidatedOverload validated = expected != null ? registry.validated(expected) : null;
         // result.getPickingClass() not checked, SimpleRegistry doesn't implement commonTypes()
         OverloadResolver.OverloadResult result = resolver.get(overloadName, prepValues);
-        assertSame(msg, validated, result != null ? result.getOverload() : null);
+        assertSame(msg, expected, result != null ? result.getOverload().getUnderlying() : null);
     }
 
     private void checkCommon(TClass a, TClass b, TClass common) {
@@ -308,73 +258,74 @@ public class OverloadResolverTest {
 
     @Test
     public void findCommon_Int_Bigint() {
-        init();
+        new Initializer().casts(C_INT_BIGINT).init();
         checkCommon(TINT, TBIGINT, TBIGINT);
     }
 
     @Test
     public void findCommon_BigInt_Bigint() {
-        init();
+        new Initializer().types(TINT, TBIGINT).init();
         checkCommon(TBIGINT, TBIGINT, TBIGINT);
     }
 
     @Test
     public void findCommon_Int_Date() {
-        init();
+        new Initializer().types(TINT, TBIGINT, TDATE).init();
         checkCommon(TINT, TDATE, null);
     }
 
     @Test(expected=NoSuchFunctionException.class)
     public void noSuchOverload() {
-        init();
+        new Initializer().init();
         resolver.get("foo", Arrays.asList(prepVal(TINT)));
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooFewParams() {
-        init(MUL_INTS);
+        new Initializer().overloads(MUL_INTS).init();
         resolver.get(MUL_NAME, prepVals(TINT));
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooManyParams() {
-        init(MUL_INTS);
+        new Initializer().overloads(MUL_INTS).init();
         resolver.get(MUL_NAME, prepVals(TINT, TINT, TINT));
     }
 
     // default resolution, exact match
     @Test
     public void mulIntWithInts() {
-        init(MUL_INTS);
+        new Initializer().overloads(MUL_INTS).init();
         checkResolved("INT*INT", MUL_INTS, MUL_NAME, prepVals(TINT, TINT));
     }
 
     // default resolution, types don't match (no registered casts, int -> bigint)
     @Test
     public void mulBigIntWithInts() {
-        init(MUL_BIGINTS);
+        new Initializer().overloads(MUL_BIGINTS).init();
         checkResolved("INT*INT", MUL_BIGINTS, MUL_NAME, prepVals(TINT, TINT));
     }
 
     // default resolution, requires weak cast (bigint -> int)
     @Test
     public void mulIntWithBigInts() {
-        init(MUL_INTS);
+        new Initializer().overloads(MUL_INTS).init();
         checkResolved("INT*INT", MUL_INTS, MUL_NAME, prepVals(TINT, TINT));
     }
 
     // input resolution, no casts
     @Test(expected = OverloadException.class)
     public void mulIntMulBigIntWithIntsNoCasts() {
-        init(MUL_INTS, MUL_BIGINTS);
+        new Initializer().overloads(MUL_INTS, MUL_BIGINTS).init();
         checkResolved("INT*INT", null, MUL_NAME, prepVals(TINT, TINT));
     }
 
     // input resolution, type only casts, only one candidate
     @Test
     public void mulIntMulBigIntWithIntsTypeOnlyCasts() {
-        init(MUL_INTS, MUL_BIGINTS);
-        registry.setCasts(C_INT_INT, C_BIGINT_BIGINT);
+        new Initializer()
+                .types(TINT, TBIGINT)
+                .overloads(MUL_INTS, MUL_BIGINTS).init();
         checkResolved("INT*INT", MUL_INTS, MUL_NAME, prepVals(TINT, TINT));
         checkResolved("BIGINT*BIGINT", MUL_BIGINTS, MUL_NAME, prepVals(TBIGINT, TBIGINT));
     }
@@ -382,19 +333,19 @@ public class OverloadResolverTest {
     // input resolution, more casts, 2 candidates but 1 more specific
     @Test
     public void mulIntMulBigIntWithIntsAndIntBigintStrongAndWeakCasts() {
-        init(MUL_INTS, MUL_BIGINTS);
-        registry.setCasts(C_INT_INT, C_INT_BIGINT,
-                          C_BIGINT_BIGINT, C_BIGINT_INT);
+        new Initializer()
+                .overloads(MUL_INTS, MUL_BIGINTS)
+                .casts(C_INT_BIGINT, C_BIGINT_INT).init();
         // 2 candidates, 1 more specific
         checkResolved("INT*INT", MUL_INTS, MUL_NAME, prepVals(TINT, TINT));
     }
 
     @Test
     public void specMulExampleIntBigIntAndDateCombos() {
-        init(MUL_INTS, MUL_BIGINTS, MUL_DATE_INT);
-        registry.setCasts(C_INT_INT, C_INT_BIGINT,
-                          C_BIGINT_BIGINT, C_BIGINT_INT,
-                          C_DATE_DATE);
+        new Initializer()
+                .overloads(MUL_INTS, MUL_BIGINTS, MUL_DATE_INT)
+                .casts(C_INT_BIGINT, C_BIGINT_INT)
+                .types(TDATE).init();
         // 2 survive filtering, 1 more specific
         checkResolved("INT*INT", MUL_INTS, MUL_NAME, prepVals(TINT, TINT));
         // 1 survives filtering (bigint can't be strongly cast to INT or DATE)
@@ -422,9 +373,7 @@ public class OverloadResolverTest {
         TestGetBase posRem = new TestGetBase(NAME, TINT);
         posRem.builder().covers(TINT, 0).vararg(TINT);
 
-        init(posPos, posRem);
-        registry.setCasts(C_INT_INT);
-
+        new Initializer().overloads(posPos, posRem).init();
         checkResolved(NAME+"(INT,INT)", null, NAME, prepVals(TINT, TINT));
     }
 
@@ -432,7 +381,7 @@ public class OverloadResolverTest {
     public void noArg() {
         final String NAME = "foo";
         TestGetBase noArg = new TestGetBase(NAME, TINT);
-        init(noArg);
+        new Initializer().overloads(noArg).init();
         checkResolved(NAME+"()", noArg, NAME, prepVals());
     }
 
@@ -441,7 +390,7 @@ public class OverloadResolverTest {
         final String NAME = "coalesce";
         TestGetBase coalesce = new TestGetBase(NAME, TVARCHAR);
         coalesce.builder().pickingVararg(null, 0);
-        init(coalesce);
+        new Initializer().overloads(coalesce).init();
 
         try {
             OverloadResolver.OverloadResult result = resolver.get(NAME, prepVals());
@@ -450,8 +399,8 @@ public class OverloadResolverTest {
             // Expected
         }
 
-        checkResolved(NAME+"(INT)", coalesce, NAME, prepVals(TINT));
-        registry.setCasts(C_INT_BIGINT);
+        checkResolved(NAME + "(INT)", coalesce, NAME, prepVals(TINT));
+        new Initializer().overloads(coalesce).casts(C_INT_BIGINT).types(TDATE).init();
         checkResolved(NAME+"(null,INT,BIGINT)", coalesce, NAME, prepVals(null, TINT, TBIGINT));
         try {
             checkResolved(NAME+"(null,DATE,INT)", coalesce, NAME, prepVals(null, TDATE, TINT));
@@ -466,9 +415,9 @@ public class OverloadResolverTest {
         final String NAME = "first";
         TestGetBase first = new TestGetBase(NAME, null);
         first.builder.pickingVararg(null, 0);
-        init(first);
-        checkResolved(NAME+"(INT)", first, NAME, prepVals(TINT));
-        registry.setCasts(C_INT_BIGINT);
+        new Initializer().overloads(first).init();
+        checkResolved(NAME + "(INT)", first, NAME, prepVals(TINT));
+        new Initializer().overloads(first).casts(C_INT_BIGINT).init();
         checkResolved(NAME+"(BIGINT,INT)", first, NAME, prepVals(TBIGINT,TINT));
         try {
             checkResolved(NAME+"()", first, NAME, prepVals());
