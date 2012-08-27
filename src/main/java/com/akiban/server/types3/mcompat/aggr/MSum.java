@@ -34,6 +34,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -76,8 +77,8 @@ public class MSum extends TAggregatorBase {
         DECIMAL(MNumeric.DECIMAL) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
-                BigDecimalWrapper oldState = (BigDecimalWrapper) source.getObject();
-                BigDecimalWrapper input = (BigDecimalWrapper) state.getObject();
+                BigDecimalWrapper oldState = MBigDecimal.getWrapper(source, instance);
+                BigDecimalWrapper input = MBigDecimal.getWrapper(state, instance);
                 state.putObject(oldState.add(input));
             }
         }

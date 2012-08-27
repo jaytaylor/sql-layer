@@ -205,17 +205,7 @@ public abstract class Strings {
     }
 
     @SuppressWarnings("unused") // primarily useful in debuggers
-    public static String dumpException(Throwable t) {
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(stringWriter);
-        t.printStackTrace(printWriter);
-        printWriter.flush();
-        stringWriter.flush();
-        return stringWriter.toString();
-    }
-
-    @SuppressWarnings("unused") // primarily useful in debuggers
-    public static String[] dumpExceptionAsArray(Throwable t) {
+    public static String[] dumpException(Throwable t) {
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
         t.printStackTrace(printWriter);
