@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.ExpressionBasedUpdateFunction;
 import com.akiban.qp.operator.QueryContext;
@@ -69,8 +69,8 @@ public class ConcurrentUpdateIT extends OperatorITBase
         schema = new Schema(rowDefCache().ais());
         aRowType = schema.userTableRowType(userTable(a));
         bRowType = schema.userTableRowType(userTable(b));
-        aGroup = groupTable(a);
-        bGroup = groupTable(b);
+        aGroup = group(a);
+        bGroup = group(b);
         db = new NewRow[]{
             createNewRow(a, 1L, 101L),
             createNewRow(a, 2L, 102L),
@@ -165,7 +165,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             try {
                 transaction.begin();
                 plan.run(queryContext);
-                dump(cursor(groupScan_Default(groupTable), queryContext));
+                dump(cursor(groupScan_Default(group), queryContext));
                 transaction.commit();
                 transaction.end();
             } catch (Exception e) {
@@ -173,14 +173,14 @@ public class ConcurrentUpdateIT extends OperatorITBase
             }
         }
 
-        public TestThread(GroupTable groupTable, UpdatePlannable plan)
+        public TestThread(Group group, UpdatePlannable plan)
         {
-            setName(groupTable.getName().getTableName());
-            this.groupTable = groupTable;
+            setName(group.getName());
+            this.group = group;
             this.plan = plan;
         }
 
-        private GroupTable groupTable;
+        private Group  group;
         private UpdatePlannable plan;
     }
 
@@ -188,5 +188,6 @@ public class ConcurrentUpdateIT extends OperatorITBase
     private int b;
     private UserTableRowType aRowType;
     private UserTableRowType bRowType;
-    private GroupTable aGroup;
-    private GroupTable bGroup;}
+    private Group aGroup;
+    private Group bGroup;
+}

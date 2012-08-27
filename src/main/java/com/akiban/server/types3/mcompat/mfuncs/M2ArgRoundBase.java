@@ -53,7 +53,6 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -73,24 +72,24 @@ public class M2ArgRoundBase extends TOverloadBase {
         TRUNCATE() {
 
             @Override
-            BigDecimalWrapper evaluate(MBigDecimalWrapper result, int scale) {
+            BigDecimalWrapper evaluate(BigDecimalWrapper result, int scale) {
                 return result.truncate(scale);
             }
         },
         ROUND() {
 
             @Override
-            BigDecimalWrapper evaluate(MBigDecimalWrapper result, int scale) {
+            BigDecimalWrapper evaluate(BigDecimalWrapper result, int scale) {
                 return result.round(scale);
             }
         };
 
-        abstract BigDecimalWrapper evaluate(MBigDecimalWrapper result, int scale);
+        abstract BigDecimalWrapper evaluate(BigDecimalWrapper result, int scale);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
+        BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
         int scale = (int) Math.round(inputs.get(1).getDouble());
         output.putObject(roundType.evaluate(result, scale));
     }

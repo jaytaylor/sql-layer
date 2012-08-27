@@ -26,6 +26,7 @@
 
 package com.akiban.qp.memoryadapter;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
@@ -59,8 +60,8 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable) {
-        return new MemoryGroupCursor(this, groupTable);
+    public GroupCursor newGroupCursor(Group group) {
+        return new MemoryGroupCursor(this, group);
     }
 
     @Override

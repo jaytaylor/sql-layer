@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -86,7 +86,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
         bValueIndexRowType = indexType(b, "bvalue");
         cValueIndexRowType = indexType(c, "cvalue");
         rValueIndexRowType = indexType(r, "rvalue");
-        rabc = groupTable(r);
+        rabc = group(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
                           createNewRow(r, 2L, "r2"),
                           createNewRow(a, 13L, 1L, "a13"),
@@ -353,5 +353,5 @@ public class AncestorLookup_NestedIT extends OperatorITBase
     protected IndexRowType bValueIndexRowType;
     protected IndexRowType cValueIndexRowType;
     protected IndexRowType rValueIndexRowType;
-    protected GroupTable rabc;
+    protected Group rabc;
 }

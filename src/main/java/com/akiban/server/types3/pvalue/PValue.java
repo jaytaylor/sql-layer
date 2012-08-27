@@ -29,7 +29,6 @@ package com.akiban.server.types3.pvalue;
 import com.akiban.server.collation.AkCollator;
 
 public final class PValue implements PValueSource, PValueTarget {
-
     // PValue interface
     
     public void underlying(PUnderlying underlying) {

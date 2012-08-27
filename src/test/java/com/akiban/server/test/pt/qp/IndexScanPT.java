@@ -60,7 +60,6 @@ public class IndexScanPT extends QPProfilePTBase
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "x");
-        group = groupTable(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -134,5 +133,4 @@ public class IndexScanPT extends QPProfilePTBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private GroupTable group;
 }

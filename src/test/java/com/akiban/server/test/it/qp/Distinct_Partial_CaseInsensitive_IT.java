@@ -26,11 +26,9 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -65,7 +63,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
-        group = groupTable(t);
+        group = group(t);
         caseSensitiveCollator = tRowType.userTable().getColumn("cs").getCollator();
         caseInsensitiveCollator = tRowType.userTable().getColumn("ci").getCollator();
         db = new NewRow[]{
@@ -503,7 +501,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
 
     private int t;
     private UserTableRowType tRowType;
-    private GroupTable group;
+    private Group group;
     private AkCollator caseSensitiveCollator;
     private AkCollator caseInsensitiveCollator;
 }

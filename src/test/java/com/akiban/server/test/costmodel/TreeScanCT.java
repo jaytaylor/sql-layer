@@ -113,7 +113,6 @@ public class TreeScanCT extends CostModelBase
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, indexedColumn.name());
-        group = groupTable(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -201,7 +200,6 @@ public class TreeScanCT extends CostModelBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private GroupTable group;
     private int start;
     private Object[] keys;
     private CostModelColumn indexedColumn;

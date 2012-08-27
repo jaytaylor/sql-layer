@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.pt.gi;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
@@ -83,8 +83,8 @@ public class GIUpdateProfilePT extends PTBase
                 "address varchar(100)",
                 "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
                 "index(address)");
-        coi = groupTable(customer);
-        String groupName = coi.getGroup().getName();
+        coi = group(customer);
+        String groupName = coi.getName();
         createGroupIndex(groupName, "name_salesman", "customer.name, order.salesman");
         createGroupIndex(groupName, "name_address", "customer.name, address.address");
         schema = new Schema(rowDefCache().ais());
@@ -151,10 +151,9 @@ public class GIUpdateProfilePT extends PTBase
         }
     }
 
-    private GroupTable groupTable(int userTableId)
+    private Group group(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
-        return userTableRowDef.table().getGroup().getGroupTable();
+        return rowDefCache().rowDef(userTableId).table().getGroup();
     }
 
     private UserTable userTable(int userTableId)
@@ -183,7 +182,7 @@ public class GIUpdateProfilePT extends PTBase
     private int order;
     private int item;
     private int address;
-    private GroupTable coi;
+    private Group coi;
     private Schema schema;
     private RowType customerRowType;
     private RowType orderRowType;

@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.StoreAdapter;
@@ -75,7 +75,7 @@ public class DistinctCT extends CostModelBase
             "c3 int",
             "c4 int",
             "c5 int");
-        group = groupTable(t);
+        group = group(t);
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
@@ -148,7 +148,7 @@ public class DistinctCT extends CostModelBase
     private static final int MEASUREMENT_RUNS = 100;
 
     private int t;
-    private GroupTable group;
+    private Group group;
     private Schema schema;
     private RowType tRowType;
     private StoreAdapter adapter;

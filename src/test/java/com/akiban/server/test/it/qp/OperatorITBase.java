@@ -135,7 +135,7 @@ public class OperatorITBase extends ITBase
         addressCidIndexRowType = indexType(address, "cid");
         addressAddressIndexRowType = indexType(address, "address");
         customerNameItemOidIndexRowType = groupIndexType(Index.JoinType.LEFT, "customer.name", "item.oid");
-        coi = groupTable(customer);
+        coi = group(customer);
         customerOrdinal =  ddl().getTable(session(),  customer).rowDef().getOrdinal();
         orderOrdinal =  ddl().getTable(session(),  order).rowDef().getOrdinal();
         itemOrdinal = ddl().getTable(session(),  item).rowDef().getOrdinal();
@@ -240,10 +240,9 @@ public class OperatorITBase extends ITBase
         writeRows(db);
     }
 
-    protected GroupTable groupTable(int userTableId)
+    protected Group group(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
-        return userTableRowDef.table().getGroup().getGroupTable();
+        return rowDefCache().rowDef(userTableId).table().getGroup();
     }
 
     protected UserTable userTable(int userTableId)
@@ -479,7 +478,7 @@ public class OperatorITBase extends ITBase
     protected IndexRowType addressCidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
     protected IndexRowType customerNameItemOidIndexRowType;
-    protected GroupTable coi;
+    protected Group coi;
     protected Schema schema;
     protected NewRow[] db;
     protected NewRow[] emptyDB = new NewRow[0];

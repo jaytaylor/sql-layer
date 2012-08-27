@@ -81,7 +81,7 @@ public class StringFactory implements TFactory
     // default number of characters in a string      
     protected static final int DEFAULT_LENGTH = 255;
     
-    protected static final Charset DEFAULT_CHARSET = Charset.UTF8;
+    public static final Charset DEFAULT_CHARSET = Charset.UTF8;
     
     protected static final int DEFAULT_COLLATION_ID = 0; // TODO:
     

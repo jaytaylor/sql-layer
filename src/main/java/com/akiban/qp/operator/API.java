@@ -26,7 +26,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -144,19 +144,19 @@ public class API
 
     // GroupScan
 
-    public static Operator groupScan_Default(GroupTable groupTable)
+    public static Operator groupScan_Default(Group group)
     {
-        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable));
+        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(group));
     }
 
-    public static Operator groupScan_Default(GroupTable groupTable,
+    public static Operator groupScan_Default(Group group,
                                              int hKeyBindingPosition,
                                              boolean deep,
                                              UserTable hKeyType,
                                              UserTable shortenUntil)
     {
         return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil));
+                new GroupScan_Default.PositionalGroupCursorCreator(group, hKeyBindingPosition, deep, hKeyType, shortenUntil));
     }
 
     // ValuesScan
@@ -169,32 +169,32 @@ public class API
     // BranchLookup
 
     public static Operator branchLookup_Default(Operator inputOperator,
-                                                GroupTable groupTable,
+                                                Group group,
                                                 RowType inputRowType,
                                                 UserTableRowType outputRowType,
                                                 InputPreservationOption flag)
     {
-        return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, NO_LIMIT);
+        return branchLookup_Default(inputOperator, group, inputRowType, outputRowType, flag, NO_LIMIT);
     }
 
     public static Operator branchLookup_Default(Operator inputOperator,
-                                                GroupTable groupTable,
+                                                Group group,
                                                 RowType inputRowType,
                                                 UserTableRowType outputRowType,
                                                 InputPreservationOption flag,
                                                 Limit limit)
     {
-        return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
+        return new BranchLookup_Default(inputOperator, group, inputRowType, outputRowType, flag, limit);
     }
 
     /** deprecated */
-    public static Operator branchLookup_Nested(GroupTable groupTable,
+    public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
                                                UserTableRowType outputRowType,
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(groupTable,
+        return new BranchLookup_Nested(group,
                                        inputRowType,
                                        null,
                                        outputRowType,
@@ -202,14 +202,14 @@ public class API
                                        inputBindingPosition);
     }
 
-    public static Operator branchLookup_Nested(GroupTable groupTable,
+    public static Operator branchLookup_Nested(Group group,
                                                RowType inputRowType,
                                                UserTableRowType ancestorRowType,
                                                UserTableRowType outputRowType,
                                                InputPreservationOption flag,
                                                int inputBindingPosition)
     {
-        return new BranchLookup_Nested(groupTable,
+        return new BranchLookup_Nested(group,
                                        inputRowType,
                                        ancestorRowType,
                                        outputRowType,
@@ -250,20 +250,20 @@ public class API
     // AncestorLookup
 
     public static Operator ancestorLookup_Default(Operator inputOperator,
-                                                  GroupTable groupTable,
+                                                  Group group,
                                                   RowType rowType,
                                                   Collection<UserTableRowType> ancestorTypes,
                                                   InputPreservationOption flag)
     {
-        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
+        return new AncestorLookup_Default(inputOperator, group, rowType, ancestorTypes, flag);
     }
 
-    public static Operator ancestorLookup_Nested(GroupTable groupTable,
+    public static Operator ancestorLookup_Nested(Group group,
                                                  RowType rowType,
                                                  Collection<UserTableRowType> ancestorTypes,
                                                  int hKeyBindingPosition)
     {
-        return new AncestorLookup_Nested(groupTable, rowType, ancestorTypes, hKeyBindingPosition);
+        return new AncestorLookup_Nested(group, rowType, ancestorTypes, hKeyBindingPosition);
     }
 
     // IndexScan

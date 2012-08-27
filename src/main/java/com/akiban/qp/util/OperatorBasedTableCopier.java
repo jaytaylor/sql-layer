@@ -108,7 +108,7 @@ public class OperatorBasedTableCopier implements TableCopier {
 
         Operator plan = project_Table(
                 filter_Default(
-                        groupScan_Default(sourceTable.getGroup().getGroupTable()),
+                        groupScan_Default(sourceTable.getGroup()),
                         Collections.singleton(sourceType)
                 ),
                 sourceType,
