@@ -107,7 +107,6 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
                            "item_value_state.revision_to",
                            "item.created_on",
                            "item.item_id");
-        group = groupTable(item);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
@@ -125,7 +124,6 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
     private RowType itemValueStateRowType;
     private IndexRowType giItemValueState;
     private IndexRowType giNoValueItemValueState;
-    private GroupTable group;
 
     @Test
     public void test()

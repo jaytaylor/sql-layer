@@ -26,7 +26,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -129,7 +129,7 @@ class GroupScan_Default extends Operator
         att.put(Label.NAME, PrimitiveExplainer.getInstance("Group Scan"));
         att.put(Label.SCAN_OPTION, PrimitiveExplainer.getInstance(cursorCreator.describeRange().toUpperCase()));
         // TODO: could have a getInstance(TableName o) method?
-        att.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(cursorCreator.groupTable().getName().getTableName()));
+        att.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(cursorCreator.group().getName()));
         
         return new OperationExplainer(Type.SCAN_OPERATOR, att);
     }
@@ -216,7 +216,7 @@ class GroupScan_Default extends Operator
     {
         Cursor cursor(QueryContext context);
 
-        GroupTable groupTable();
+        Group group();
         
         String describeRange();
     }
@@ -227,28 +227,28 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public final GroupTable groupTable()
+        public final Group group()
         {
-            return targetGroupTable;
+            return targetGroup;
         }
 
 
         // for use by subclasses
 
-        protected AbstractGroupCursorCreator(GroupTable groupTable)
+        protected AbstractGroupCursorCreator(Group group)
         {
-            this.targetGroupTable = groupTable;
+            this.targetGroup = group;
         }
 
         @Override
         public final String toString()
         {
-            return describeRange() + " on " + targetGroupTable.getName().getTableName();
+            return describeRange() + " on " + targetGroup.getGroupTable().getName().getTableName();
         }
 
         // for overriding in subclasses
 
-        private final GroupTable targetGroupTable;
+        private final Group targetGroup;
     }
 
     static class FullGroupCursorCreator extends AbstractGroupCursorCreator
@@ -259,14 +259,14 @@ class GroupScan_Default extends Operator
         @Override
         public Cursor cursor(QueryContext context)
         {
-            return context.getStore(groupTable().getRoot()).newGroupCursor(groupTable());
+            return context.getStore(group().getGroupTable().getRoot()).newGroupCursor(group());
         }
 
         // FullGroupCursorCreator interface
 
-        public FullGroupCursorCreator(GroupTable groupTable)
+        public FullGroupCursorCreator(Group group)
         {
-            super(groupTable);
+            super(group);
         }
 
         // AbstractGroupCursorCreator interface
@@ -287,7 +287,7 @@ class GroupScan_Default extends Operator
         public Cursor cursor(QueryContext context)
         {
             return new HKeyBoundCursor(context, 
-                    context.getStore(groupTable().getRoot()).newGroupCursor(groupTable()), 
+                    context.getStore(group().getGroupTable().getRoot()).newGroupCursor(group()),
                     hKeyBindingPosition, 
                     deep, 
                     hKeyType, 
@@ -296,13 +296,13 @@ class GroupScan_Default extends Operator
 
         // PositionalGroupCursorCreator interface
 
-        PositionalGroupCursorCreator(GroupTable groupTable,
+        PositionalGroupCursorCreator(Group group,
                                      int hKeyBindingPosition,
                                      boolean deep,
                                      UserTable hKeyType,
                                      UserTable shortenUntil)
         {
-            super(groupTable);
+            super(group);
             this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
             if ((shortenUntil == hKeyType) || shortenUntil.isDescendantOf(hKeyType)) {

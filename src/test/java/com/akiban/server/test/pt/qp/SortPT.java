@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.pt.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.StoreAdapter;
@@ -55,7 +55,7 @@ public class SortPT extends QPProfilePTBase
             "id int not null key",
             "rand int",
             "filler varchar(20)");
-        group = groupTable(t);
+        group = group(t);
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
@@ -146,7 +146,7 @@ public class SortPT extends QPProfilePTBase
 
     private final Random random = new Random();
     private int t;
-    private GroupTable group;
+    private Group group;
     private Schema schema;
     private RowType tRowType;
     private StoreAdapter adapter;

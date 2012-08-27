@@ -26,7 +26,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -164,14 +164,14 @@ class AncestorLookup_Default extends Operator
     // AncestorLookup_Default interface
 
     public AncestorLookup_Default(Operator inputOperator,
-                                  GroupTable groupTable,
+                                  Group group,
                                   RowType rowType,
                                   Collection<UserTableRowType> ancestorTypes,
                                   API.InputPreservationOption flag)
     {
         validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
-        this.groupTable = groupTable;
+        this.group = group;
         this.rowType = rowType;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         // Sort ancestor types by depth
@@ -246,7 +246,7 @@ class AncestorLookup_Default extends Operator
     // Object state
 
     private final Operator inputOperator;
-    private final GroupTable groupTable;
+    private final Group group;
     private final RowType rowType;
     private final List<UserTable> ancestors;
     private final boolean keepInput;
@@ -254,7 +254,7 @@ class AncestorLookup_Default extends Operator
     @Override
     public Explainer getExplainer()
     {
-        OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Default", groupTable, rowType, keepInput, inputOperator);
+        OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Default", group, rowType, keepInput, inputOperator);
         for (UserTable table : ancestors)
             ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
         return ex;
@@ -343,7 +343,7 @@ class AncestorLookup_Default extends Operator
             this.input = input;
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
             this.pending = new PendingRows(ancestors.size() + 1);
-            this.ancestorCursor = adapter().newGroupCursor(groupTable);
+            this.ancestorCursor = adapter().newGroupCursor(group);
         }
 
         // For use by this class

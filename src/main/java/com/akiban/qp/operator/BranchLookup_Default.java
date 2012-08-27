@@ -26,7 +26,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.Set;
 
 import static java.lang.Math.min;
-import java.math.BigDecimal;
 
 /**
 
@@ -160,7 +159,7 @@ public class BranchLookup_Default extends Operator
     {
         return String.format("%s(%s %s -> %s limit %s)",
                              getClass().getSimpleName(),
-                             groupTable.getName().getTableName(),
+                             group.getGroupTable().getName().getTableName(),
                              inputRowType,
                              outputRowType,
                              limit);
@@ -197,7 +196,7 @@ public class BranchLookup_Default extends Operator
     // BranchLookup_Default interface
 
     public BranchLookup_Default(Operator inputOperator,
-                                GroupTable groupTable,
+                                Group group,
                                 RowType inputRowType,
                                 UserTableRowType outputRowType,
                                 API.InputPreservationOption flag,
@@ -227,7 +226,7 @@ public class BranchLookup_Default extends Operator
                                   outputTable.getGroup());
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         this.inputOperator = inputOperator;
-        this.groupTable = groupTable;
+        this.group = group;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
         this.limit = limit;
@@ -292,7 +291,7 @@ public class BranchLookup_Default extends Operator
     // Object state
 
     private final Operator inputOperator;
-    private final GroupTable groupTable;
+    private final Group group;
     private final RowType inputRowType;
     private final UserTableRowType outputRowType;
     private final boolean keepInput;
@@ -305,7 +304,7 @@ public class BranchLookup_Default extends Operator
     @Override
     public Explainer getExplainer()
     {
-        OperationExplainer ex = new LookUpOperatorExplainer("Branch Lookup Default", groupTable, inputRowType, keepInput, inputOperator);        
+        OperationExplainer ex = new LookUpOperatorExplainer("Branch Lookup Default", group, inputRowType, keepInput, inputOperator);
         ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
@@ -417,7 +416,7 @@ public class BranchLookup_Default extends Operator
         {
             super(context);
             this.inputCursor = input;
-            this.lookupCursor = adapter().newGroupCursor(groupTable);
+            this.lookupCursor = adapter().newGroupCursor(group);
             this.lookupRowHKey = adapter().newHKey(outputRowType.hKey());
         }
 

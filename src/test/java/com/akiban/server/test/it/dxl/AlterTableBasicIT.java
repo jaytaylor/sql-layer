@@ -160,7 +160,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                         testRow(cType, 2L, "b"),
                         testRow(oType, 30L, 3L, 33L, pk++),
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+                adapter.newGroupCursor(cType.userTable().getGroup())
         );
         compareRows(
                 new RowBase[]{
@@ -169,7 +169,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                         testRow(iType, 111L, 11L, 122L),
                         testRow(iType, 300L, 30L, 330L)
                 },
-                adapter.newGroupCursor(iType.userTable().getGroup().getGroupTable())
+                adapter.newGroupCursor(iType.userTable().getGroup())
         );
     }
 
@@ -723,7 +723,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                         testRow(cType, 10, "zxcv")
 
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+                adapter.newGroupCursor(cType.userTable().getGroup())
         );
     }
 
@@ -756,7 +756,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                         testRow(cType, 5, "qwer"),
                         testRow(cType, 10, "zxcv")
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+                adapter.newGroupCursor(cType.userTable().getGroup())
         );
         compareRows(
                 new RowBase[] {
@@ -764,7 +764,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                         testRow(oType, 11, 1, "b"),
                         testRow(oType, 60, 6, "c"),
                 },
-                adapter.newGroupCursor(oType.userTable().getGroup().getGroupTable())
+                adapter.newGroupCursor(oType.userTable().getGroup())
         );
     }
 
@@ -815,7 +815,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                             testRow(oType, 60, 6, "c"),
                         testRow(cType, 10, "zxcv"),
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+                adapter.newGroupCursor(cType.userTable().getGroup())
         );
     }
 
@@ -856,7 +856,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                         testRow(cType, 5, "qwer"),
                         testRow(cType, 10, "zxcv")
                 },
-                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+                adapter.newGroupCursor(cType.userTable().getGroup())
         );
 
         compareRows(
@@ -870,7 +870,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                             testRow(iType, 200, 20, "d"),
                         testRow(oType, 60, 6, "c"),
                 },
-                adapter.newGroupCursor(oType.userTable().getGroup().getGroupTable())
+                adapter.newGroupCursor(oType.userTable().getGroup())
         );
     }
 

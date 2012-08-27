@@ -26,7 +26,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -147,7 +147,7 @@ public class BranchLookup_Nested extends Operator
     {
         return String.format("%s(%s %s -> %s)",
                              getClass().getSimpleName(),
-                             groupTable.getName().getTableName(),
+                             group.getGroupTable().getName().getTableName(),
                              inputRowType,
                              outputRowType);
     }
@@ -173,14 +173,14 @@ public class BranchLookup_Nested extends Operator
 
     // BranchLookup_Default interface
 
-    public BranchLookup_Nested(GroupTable groupTable,
+    public BranchLookup_Nested(Group group,
                                RowType inputRowType,
                                UserTableRowType ancestorRowType,
                                UserTableRowType outputRowType,
                                API.InputPreservationOption flag,
                                int inputBindingPosition)
     {
-        ArgumentValidation.notNull("groupTable", groupTable);
+        ArgumentValidation.notNull("group", group);
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("flag", flag);
@@ -203,7 +203,7 @@ public class BranchLookup_Nested extends Operator
                                   inputTable.getGroup(),
                                   "outputTable.getGroup()",
                                   outputTable.getGroup());
-        this.groupTable = groupTable;
+        this.group = group;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
@@ -273,7 +273,7 @@ public class BranchLookup_Nested extends Operator
 
     // Object state
 
-    private final GroupTable groupTable;
+    private final Group group;
     private final RowType inputRowType;
     private final UserTableRowType outputRowType;
     private final boolean keepInput;
@@ -286,7 +286,7 @@ public class BranchLookup_Nested extends Operator
     @Override
     public Explainer getExplainer()
     {
-        OperationExplainer ex =  new LookUpOperatorExplainer("Branch Lookup Nested", groupTable, inputRowType, keepInput, null);
+        OperationExplainer ex =  new LookUpOperatorExplainer("Branch Lookup Nested", group, inputRowType, keepInput, null);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
         ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         return ex;
@@ -389,7 +389,7 @@ public class BranchLookup_Nested extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.cursor = adapter().newGroupCursor(groupTable);
+            this.cursor = adapter().newGroupCursor(group);
             this.hKey = adapter().newHKey(outputRowType.hKey());
         }
 

@@ -166,6 +166,10 @@ public class PersistitStore implements Store, Service {
         return treeService.getDb();
     }
 
+    public Exchange getExchange(Session session, Group group) {
+        return treeService.getExchange(session, group.getGroupTable().rowDef());
+    }
+
     public Exchange getExchange(final Session session, final RowDef rowDef) {
         final RowDef groupRowDef = rowDef.getGroupRowDef();
         return treeService.getExchange(session, groupRowDef);

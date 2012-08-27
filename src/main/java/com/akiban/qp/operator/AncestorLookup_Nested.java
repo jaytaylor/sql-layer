@@ -26,7 +26,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -153,13 +153,13 @@ class AncestorLookup_Nested extends Operator
 
     // AncestorLookup_Default interface
 
-    public AncestorLookup_Nested(GroupTable groupTable,
+    public AncestorLookup_Nested(Group group,
                                  RowType rowType,
                                  Collection<UserTableRowType> ancestorTypes,
                                  int inputBindingPosition)
     {
-        validateArguments(groupTable, rowType, ancestorTypes, inputBindingPosition);
-        this.groupTable = groupTable;
+        validateArguments(group, rowType, ancestorTypes, inputBindingPosition);
+        this.group = group;
         this.rowType = rowType;
         this.inputBindingPosition = inputBindingPosition;
         // Sort ancestor types by depth
@@ -182,12 +182,12 @@ class AncestorLookup_Nested extends Operator
 
     // For use by this class
 
-    private void validateArguments(GroupTable groupTable,
+    private void validateArguments(Group group,
                                    RowType rowType,
                                    Collection<? extends RowType> ancestorTypes,
                                    int inputBindingPosition)
     {
-        ArgumentValidation.notNull("groupTable", groupTable);
+        ArgumentValidation.notNull("group", group);
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notNull("ancestorTypes", ancestorTypes);
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
@@ -228,7 +228,7 @@ class AncestorLookup_Nested extends Operator
 
     // Object state
 
-    private final GroupTable groupTable;
+    private final Group group;
     private final RowType rowType;
     private final List<UserTable> ancestors;
     private final int inputBindingPosition;
@@ -236,7 +236,7 @@ class AncestorLookup_Nested extends Operator
     @Override
     public Explainer getExplainer()
     {
-       OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Nested", groupTable, rowType, false, null); // NOTE: keepInput is N/A here
+       OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Nested", group, rowType, false, null); // NOTE: keepInput is N/A here
        for (UserTable table : ancestors)
            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
@@ -329,7 +329,7 @@ class AncestorLookup_Nested extends Operator
         {
             super(context);
             this.pending = new PendingRows(ancestors.size() + 1);
-            this.ancestorCursor = adapter().newGroupCursor(groupTable);
+            this.ancestorCursor = adapter().newGroupCursor(group);
         }
 
         // For use by this class

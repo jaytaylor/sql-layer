@@ -73,7 +73,6 @@ public class HKeyUnionCT extends CostModelBase
             "c5 int not null",
             "primary key(c1, c2, c3, c4, c5)");
         Index index = createIndex(schemaName(), tableName, "idx", "index_key");
-        group = groupTable(t);
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         indexRowType = schema.indexRowType(index);
@@ -155,7 +154,6 @@ public class HKeyUnionCT extends CostModelBase
 
     private final Random random = new Random();
     private int t;
-    private GroupTable group;
     private Schema schema;
     private UserTableRowType tRowType;
     private IndexRowType indexRowType;

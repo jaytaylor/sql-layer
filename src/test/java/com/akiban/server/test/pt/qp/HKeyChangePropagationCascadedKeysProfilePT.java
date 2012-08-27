@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.pt.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.ExpressionBasedUpdateFunction;
 import com.akiban.qp.operator.Operator;
@@ -88,7 +88,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         parentRowType = schema.userTableRowType(userTable(parent));
         child1RowType = schema.userTableRowType(userTable(child1));
         child2RowType = schema.userTableRowType(userTable(child2));
-        group = groupTable(grandparent);
+        group = group(grandparent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading
@@ -112,7 +112,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
     private RowType    parentRowType;
     private RowType    child1RowType;
     private RowType    child2RowType;
-    private GroupTable group;
+    private Group      group;
 
     protected void populateDB(final int grandparents, 
                               final int parentsPerGrandparent, 

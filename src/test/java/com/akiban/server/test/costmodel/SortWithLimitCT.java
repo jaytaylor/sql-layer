@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.StoreAdapter;
@@ -81,7 +81,7 @@ public class SortWithLimitCT extends CostModelBase
             "d int",
             "e int",
             "primary key(id)");
-        group = groupTable(t);
+        group = group(t);
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
@@ -136,7 +136,7 @@ public class SortWithLimitCT extends CostModelBase
 
     private final Random random = new Random();
     private int t;
-    private GroupTable group;
+    private Group group;
     private Schema schema;
     private RowType tRowType;
     private StoreAdapter adapter;

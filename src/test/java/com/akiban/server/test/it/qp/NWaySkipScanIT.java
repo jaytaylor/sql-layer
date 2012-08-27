@@ -70,7 +70,6 @@ public class NWaySkipScanIT extends OperatorITBase
         tXIndexRowType = indexType(t, "x");
         tYIndexRowType = indexType(t, "y");
         tZIndexRowType = indexType(t, "z");
-        group = groupTable(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
@@ -98,7 +97,6 @@ public class NWaySkipScanIT extends OperatorITBase
     private IndexRowType tXIndexRowType;
     private IndexRowType tYIndexRowType;
     private IndexRowType tZIndexRowType;
-    private GroupTable group;
 
     @Test
     public void testTwoIntersects()

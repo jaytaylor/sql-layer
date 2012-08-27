@@ -69,7 +69,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         parentXIndexRowType = indexType(parent, "x");
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
-        coi = groupTable(parent);
+        coi = group(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{

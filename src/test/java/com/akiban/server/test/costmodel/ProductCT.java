@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -87,7 +87,7 @@ public class ProductCT extends CostModelBase
         oneRowType = schema.userTableRowType(userTable(one));
         manyRowType = schema.userTableRowType(userTable(many));
         rootPKIndexType = indexType(root, "rid", "root_instance");
-        group = groupTable(root);
+        group = group(root);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -246,5 +246,5 @@ public class ProductCT extends CostModelBase
     private UserTableRowType oneRowType;
     private UserTableRowType manyRowType;
     private IndexRowType rootPKIndexType;
-    private GroupTable group;
+    private Group group;
 }

@@ -243,19 +243,19 @@ final class OperatorStoreMaintenance {
         if (parentUserTable == null) {
             return null;
         }
-        final GroupTable groupTable = groupIndex.getGroup().getGroupTable();
+        final Group group = groupIndex.getGroup();
         final UserTableRowType parentRowType = branchTables.parentRowType(rowType);
         assert parentRowType != null;
 
         Operator plan = API.groupScan_Default(
-                groupIndex.getGroup().getGroupTable(),
+                groupIndex.getGroup(),
                 HKEY_BINDING_POSITION,
                 false,
                 rowType.userTable(),
                 branchTables.fromRoot().get(0).userTable()
         );
-        plan = API.ancestorLookup_Default(plan, groupTable, rowType, Collections.singleton(parentRowType), API.InputPreservationOption.DISCARD_INPUT);
-        plan = API.branchLookup_Default(plan, groupTable, parentRowType, rowType, API.InputPreservationOption.DISCARD_INPUT);
+        plan = API.ancestorLookup_Default(plan, group, rowType, Collections.singleton(parentRowType), API.InputPreservationOption.DISCARD_INPUT);
+        plan = API.branchLookup_Default(plan, group, parentRowType, rowType, API.InputPreservationOption.DISCARD_INPUT);
         plan = API.filter_Default(plan, Collections.singleton(rowType));
         return plan;
     }
@@ -286,7 +286,7 @@ final class OperatorStoreMaintenance {
         PlanCreationStruct result = new PlanCreationStruct(rowType, groupIndex);
 
         Operator plan = API.groupScan_Default(
-                groupIndex.getGroup().getGroupTable(),
+                groupIndex.getGroup(),
                 HKEY_BINDING_POSITION,
                 false,
                 rowType.userTable(),
@@ -301,7 +301,7 @@ final class OperatorStoreMaintenance {
             UserTableRowType child = branchTables.childOf(rowType);
             plan = API.branchLookup_Default(
                     plan,
-                    groupIndex.getGroup().getGroupTable(),
+                    groupIndex.getGroup(),
                     rowType,
                     child,
                     API.InputPreservationOption.KEEP_INPUT
@@ -310,7 +310,7 @@ final class OperatorStoreMaintenance {
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
                     plan,
-                    groupIndex.getGroup().getGroupTable(),
+                    groupIndex.getGroup(),
                     rowType,
                     ancestors(rowType, branchTables.fromRoot()),
                     API.InputPreservationOption.KEEP_INPUT

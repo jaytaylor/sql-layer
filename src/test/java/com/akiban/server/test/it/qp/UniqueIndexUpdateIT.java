@@ -58,7 +58,6 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         xyIndexRowType = indexType(t, "x", "y");
-        group = groupTable(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -209,5 +208,4 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     private int t;
     private UserTableRowType tRowType;
     private IndexRowType xyIndexRowType;
-    private GroupTable group;
 }

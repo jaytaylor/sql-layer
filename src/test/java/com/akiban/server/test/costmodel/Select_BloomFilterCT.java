@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -137,7 +136,7 @@ public class Select_BloomFilterCT extends CostModelBase
         // filterInput loads the filter with F rows containing the given testId.
         Operator filterInput =
             project_Default(
-                groupScan_Default(groupTable(f)),
+                groupScan_Default(group(f)),
                 fRowType,
                 Arrays.asList(Expressions.field(fRowType, 0)));
         timeFilterInput = new TimeOperator(filterInput);
@@ -181,7 +180,7 @@ public class Select_BloomFilterCT extends CostModelBase
         // filterInput loads the filter with F rows containing the given testId.
         Operator filterInput =
             project_Default(
-                groupScan_Default(groupTable(f)),
+                groupScan_Default(group(f)),
                 fRowType,
                 Arrays.asList(Expressions.field(fRowType, 0)));
         timeFilterInput = new TimeOperator(filterInput);
@@ -240,7 +239,6 @@ public class Select_BloomFilterCT extends CostModelBase
     private UserTableRowType fRowType;
     private IndexRowType dIndexRowType;
     private IndexRowType fIndexRowType;
-    private GroupTable group;
     private TimeOperator timeFilterInput;
     private TimeOperator timeScanInput;
 }

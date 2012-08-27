@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
@@ -88,7 +88,7 @@ public class Product3WayIT extends OperatorITBase
         cRowType = schema.userTableRowType(userTable(c));
         aValueIndexRowType = indexType(a, "avalue");
         rValueIndexRowType = indexType(r, "rvalue");
-        rabc = groupTable(r);
+        rabc = group(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
                           createNewRow(r, 2L, "r2"),
                           createNewRow(a, 13L, 1L, "a13"),
@@ -331,5 +331,5 @@ public class Product3WayIT extends OperatorITBase
     protected UserTableRowType bRowType;
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType rValueIndexRowType;
-    protected GroupTable rabc;
+    protected Group rabc;
 }
