@@ -70,7 +70,6 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         childYIndexRowType = indexType(child, "y");
-        group = groupTable(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
@@ -90,7 +89,6 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
     private IndexRowType parentPidIndexRowType;
     private IndexRowType parentXIndexRowType;
     private IndexRowType childYIndexRowType;
-    private GroupTable group;
 
     @Test
     public void test8x()

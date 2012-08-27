@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Operator;
@@ -58,7 +58,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
         schema = new Schema(rowDefCache().ais());
         txIndexRowType = indexType(t, "x");
         tRowType = schema.userTableRowType(userTable(t));
-        groupTable = groupTable(t);
+        groupTable = group(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
@@ -304,5 +304,5 @@ public class UnionAll_DefaultIT extends OperatorITBase
     private int t;
     private UserTableRowType tRowType;
     private IndexRowType txIndexRowType;
-    private GroupTable groupTable;
+    private Group groupTable;
 }

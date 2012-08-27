@@ -1,5 +1,5 @@
 Name:           akiban
-Version:        1.4.0
+Version:        1.4.1
 Release:        1
 Summary:        Akiban Technologies stack.
 Group:          Applications/Databases

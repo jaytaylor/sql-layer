@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.loadableplan;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.operator.Operator;
@@ -67,12 +67,12 @@ public class TestPlan extends LoadableOperator
     public Operator plan()
     {
         // select id, value, $1 from test
-        GroupTable groupTable = ais().getGroup("test").getGroupTable();
+        Group group = ais().getGroup("test");
         UserTable testTable = ais().getUserTable("test", "test");
         RowType testRowType = schema().userTableRowType(testTable);
         return
             project_Default(
-                groupScan_Default(groupTable),
+                groupScan_Default(group),
                 testRowType,
                 Arrays.asList(Expressions.field(testRowType, 0),
                               Expressions.field(testRowType, 1),

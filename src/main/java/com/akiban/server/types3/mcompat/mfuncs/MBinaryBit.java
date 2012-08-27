@@ -118,7 +118,7 @@ public class MBinaryBit extends TOverloadBase {
             @Override
             long evaluate(long a0, long a1)
             {
-                return a0 << a1;
+                return (a1 < 0) ? 0 : (a0 << a1);
             }
         },
         RIGHTSHIFT
@@ -132,7 +132,7 @@ public class MBinaryBit extends TOverloadBase {
             @Override
             long evaluate(long a0, long a1)
             {
-                return a0 >> a1;
+                return (a1 < 0) ? 0 : (a0 >> a1);
             }
         },
         BITNOT

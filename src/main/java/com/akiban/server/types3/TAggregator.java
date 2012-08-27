@@ -32,7 +32,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.HasId;
 
 public interface TAggregator extends HasId {
-    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, boolean isFirst);
+    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
     void emptyValue(PValueTarget state);
     TInstance resultType(TPreptimeValue value);
     TClass getTypeClass();

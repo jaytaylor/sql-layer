@@ -25,26 +25,26 @@
  */
 package com.akiban.sql.optimizer.explain.std;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.optimizer.explain.*;
 
 public class LookUpOperatorExplainer extends OperationExplainer
 {
-    public LookUpOperatorExplainer (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp)
+    public LookUpOperatorExplainer (String name, Group group, RowType iRowType, boolean keepInput, Operator inputOp)
     {
-        super(Type.LOOKUP_OPERATOR, buildAtts(name, gTable, iRowType, keepInput, inputOp));
+        super(Type.LOOKUP_OPERATOR, buildAtts(name, group, iRowType, keepInput, inputOp));
     }
     
-    private static Attributes buildAtts (String name,GroupTable gTable, RowType iRowType, boolean keepInput, Operator inputOp)
+    private static Attributes buildAtts (String name, Group group, RowType iRowType, boolean keepInput, Operator inputOp)
     {
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         
         // TODO: is anything else needed in Group Table other than  its name?
-        atts.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(gTable.getName().getTableName().toString())); 
+        atts.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(group.getName().toString()));
         
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(iRowType.toString()));
         atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));

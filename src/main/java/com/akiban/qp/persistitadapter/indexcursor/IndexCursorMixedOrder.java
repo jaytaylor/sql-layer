@@ -160,6 +160,18 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         }
     }
 
+    @Override
+    public void close()
+    {
+        super.close();
+        if (startKey != null) {
+            adapter.returnIndexRow(startKey);
+        }
+        if (endKey != null) {
+            adapter.returnIndexRow(endKey);
+        }
+    }
+
     // IndexCursorMixedOrder interface
 
     public static <S, E> IndexCursorMixedOrder<S, E> create(QueryContext context,
@@ -292,8 +304,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                 sortKeyAdapter.setColumnMetadata(column, f, akTypes, collators, tInstances);
             }
             if (index.isUnique()) {
-                startKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
-                endKey = PersistitIndexRow.newIndexRow(adapter, keyRange.indexRowType());
+                startKey = adapter.takeIndexRow(keyRange.indexRowType());
+                endKey = adapter.takeIndexRow(keyRange.indexRowType());
             }
         }
         hiBoundColumns = loBoundColumns;

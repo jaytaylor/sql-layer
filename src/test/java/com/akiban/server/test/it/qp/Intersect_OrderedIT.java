@@ -78,7 +78,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
         alienAidIndexRowType = indexType(alien, "aid");
-        coi = groupTable(parent);
+        coi = group(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{

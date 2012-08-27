@@ -42,6 +42,9 @@ import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.expression.TypesList;
 import com.akiban.sql.StandardException;
+import com.google.common.primitives.Longs;
+import com.google.common.primitives.UnsignedLongs;
+
 import java.math.BigInteger;
 import java.util.List;
 
@@ -84,7 +87,12 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             @Override
             protected BigInteger exc (ValueSource left, ValueSource right)
             {
-                return bIntExtractor.getObject(left).shiftLeft((int)lExtractor.getLong(right));
+                BigInteger lhs = bIntExtractor.getObject(left);
+                long shiftBy = lExtractor.getLong(right);
+                if (shiftBy < 0) {
+                    return BigInteger.ZERO;
+                }
+                return lhs.shiftLeft((int) shiftBy);
             }
         },
         RIGHT_SHIFT
@@ -92,7 +100,11 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             @Override
             protected BigInteger exc (ValueSource left, ValueSource right)
             {
-                return bIntExtractor.getObject(left).shiftRight((int)lExtractor.getLong(right));
+                BigInteger lhs = bIntExtractor.getObject(left);
+                long shiftBy = lExtractor.getLong(right);
+                if (shiftBy < 0)
+                    return BigInteger.ZERO;
+                return lhs.shiftRight((int) shiftBy);
             }
         };
 

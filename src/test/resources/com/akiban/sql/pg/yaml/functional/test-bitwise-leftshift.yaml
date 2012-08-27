@@ -46,7 +46,7 @@
 - output: [[0]]
 ---
 - Statement: SELECT LEFTSHIFT(4,-1) from all_types;
-- output: [[2]] 
+- output: [[0]]
 ---
 - Statement: SELECT LEFTSHIFT(4,-61) from all_types;
 - output: [[0]] 

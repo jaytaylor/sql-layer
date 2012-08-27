@@ -73,7 +73,6 @@ public class SpatialIndexScanIT extends OperatorITBase
         schema = new Schema(rowDefCache().ais());
         pointRowType = schema.userTableRowType(userTable(point));
         xyIndexRowType = indexType(point, "x", "y");
-        group = groupTable(point);
         space = new Space(LO, HI);
         db = new NewRow[]{
         };
@@ -280,7 +279,6 @@ public class SpatialIndexScanIT extends OperatorITBase
     private int point;
     private UserTableRowType pointRowType;
     private IndexRowType xyIndexRowType;
-    private GroupTable group;
     private Space space;
     private Map<Long, Integer> zToId = new TreeMap<Long, Integer>();
     List<Long> xs = new ArrayList<Long>(); // indexed by id

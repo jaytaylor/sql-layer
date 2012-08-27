@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
@@ -43,7 +43,6 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
@@ -81,7 +80,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         schema = new Schema(ddl().getAIS(session()));
         UserTable cTable = getUserTable(customer);
         customerRowType = schema.userTableRowType(cTable);
-        customerGroupTable = cTable.getGroup().getGroupTable();
+        customerGroup = cTable.getGroup();
 
     }
 
@@ -92,7 +91,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         orderBy(ordering, 2, true);
 
         Operator plan = sort_Tree(
-                groupScan_Default(customerGroupTable),
+                groupScan_Default(customerGroup),
                 customerRowType,
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
@@ -113,7 +112,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         orderBy(ordering, 2, false);
 
         Operator plan = sort_Tree(
-                groupScan_Default(customerGroupTable),
+                groupScan_Default(customerGroup),
                 customerRowType,
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
@@ -154,6 +153,6 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
 
     private Schema schema;
     private int customer;
-    private GroupTable customerGroupTable;
+    private Group customerGroup;
     private UserTableRowType customerRowType;
 }

@@ -73,7 +73,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
         tRowType = schema.userTableRowType(userTable(t));
         leftIndexRowType = indexType(t, "test", "l1", "l2", "l3");
         rightIndexRowType = indexType(t, "test", "r1", "r2", "r3");
-        coi = groupTable(t);
+        coi = group(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{

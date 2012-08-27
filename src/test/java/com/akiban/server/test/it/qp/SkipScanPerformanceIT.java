@@ -73,7 +73,6 @@ public class SkipScanPerformanceIT extends OperatorITBase
         tXIndexRowType = indexType(t, "x");
         tYIndexRowType = indexType(t, "y");
         tZIndexRowType = indexType(t, "z");
-        group = groupTable(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -89,7 +88,6 @@ public class SkipScanPerformanceIT extends OperatorITBase
     private IndexRowType tXIndexRowType;
     private IndexRowType tYIndexRowType;
     private IndexRowType tZIndexRowType;
-    private GroupTable group;
 
     // Tests are in pairs, with different values of N. This proves that SEQUENTIAL_SCAN costs increase linearly with N,
     // but SKIP_SCAN costs are constant (due to the way the test data is constructed).

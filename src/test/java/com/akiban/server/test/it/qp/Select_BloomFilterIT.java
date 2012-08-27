@@ -254,7 +254,7 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator loadFilter = project_Default(
             select_HKeyOrdered(
                 filter_Default(
-                    groupScan_Default(groupTable(f)),
+                    groupScan_Default(group(f)),
                     Collections.singleton(fRowType)),
                 fRowType,
                 Expressions.compare(

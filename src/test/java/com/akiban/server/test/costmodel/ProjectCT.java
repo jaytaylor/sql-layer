@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.TimeOperator;
@@ -60,7 +60,7 @@ public class ProjectCT extends CostModelBase
                         "primary key(id)");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
-        group = groupTable(t);
+        group = group(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -98,5 +98,5 @@ public class ProjectCT extends CostModelBase
 
     private int t;
     private RowType tRowType;
-    private GroupTable group;
+    private Group group;
 }
