@@ -205,6 +205,7 @@ class IfEmpty_Default extends Operator
     {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.INPUT_TYPE, rowType.getExplainer(context));
         if (pExpressions != null) {
             for (TPreparedExpression ex : pExpressions)
                 atts.put(Label.OPERAND, TPreparedExpressions.getExplainer(ex));
