@@ -34,6 +34,8 @@ import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
+import com.google.common.primitives.UnsignedLongs;
+
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 
@@ -75,7 +77,13 @@ public class NumericFormatter {
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Long.toString(source.getInt64()));
             }
-        }, 
+        },
+        UINT_64 {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(UnsignedLongs.toString(source.getInt64()));
+            }
+        },
         BYTES {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {

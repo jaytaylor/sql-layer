@@ -33,61 +33,73 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.google.common.base.Objects;
 
 public class BoolLogic extends TOverloadBase
 {
-    public static final TOverload INSTANCES[] = new TOverload[Op.values().length];
+    public static final TOverload BINARIES[] = new TOverload[Op.values().length];
     static
     {
         Op op[] = Op.values();
         for (int n = 0; n <  op.length; ++n)
-            INSTANCES[n] = new BoolLogic(op[n]);
+            BINARIES[n] = new BoolLogic(op[n]);
     }
+
+    public static final TOverload NOT = new TOverloadBase() {
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            builder.covers(AkBool.INSTANCE, 0);
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            output.putBool(!inputs.get(0).getBoolean());
+        }
+
+        @Override
+        public String displayName() {
+            return "NOT";
+        }
+
+        @Override
+        public TOverloadResult resultType() {
+            return TOverloadResult.fixed(AkBool.INSTANCE);
+        }
+    };
 
     private static enum Op
     {
-        AND(new int[]{0, 1})
+        AND(Boolean.FALSE),
+        OR(Boolean.TRUE),
+        XOR(null)
         {
             @Override
-            boolean evaluate(LazyList<? extends PValueSource> inputs)
-            {
-                return inputs.get(0).getBoolean() && inputs.get(1).getBoolean();
-            }
-        }, 
-        OR(AND.coverage)
-        {
-            @Override
-            boolean evaluate(LazyList<? extends PValueSource> inputs)
-            {
-                return inputs.get(0).getBoolean() || inputs.get(1).getBoolean();
-            }
-        }, 
-        XOR(AND.coverage)
-        {
-            @Override
-            boolean evaluate(LazyList<? extends PValueSource> inputs)
-            {
-                return inputs.get(0).getBoolean() ^ inputs.get(1).getBoolean();
-            }
-        }, 
-        NOT(new int[]{0})
-        {
-            @Override
-            boolean evaluate(LazyList<? extends PValueSource> inputs)
-            {
-                return !inputs.get(0).getBoolean();
+            boolean evaluate(boolean first, boolean second) {
+                return first ^ second;
             }
         };
-        
-        public final int[] coverage;
-        private Op(int[] c)
-        {
-            coverage = c;
+
+        private Op(Boolean contaminant) {
+            this.contaminant = contaminant;
         }
-        
-        abstract boolean evaluate(LazyList<? extends PValueSource> inputs);
+
+        private final Boolean contaminant;
+
+        boolean evaluate(boolean first, boolean second) {
+            // this implementation works for both AND and OR.
+            // Since AND's contaminant is FALSE, if we get to this method we know first is true.
+            // In that case, the result is true iff second is true.
+            // Likewise, since OR's contaminant is TRUE, if we get to this method we know first is false, and
+            // the result is true iff second is true.
+            // This means we'll only ever need to override this method for XOR. Since that's a relatively rare
+            // method, hopefully we'll never need it and the JIT can optimize assuming that this method is not
+            // overridden.
+            return second;
+        }
     }
     
     private final Op op;
@@ -96,19 +108,61 @@ public class BoolLogic extends TOverloadBase
     {
         this.op = op;
     }
-    
-    
+
+    @Override
+    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
+        // For non-const inputs, only the second arg can make the whole exprsesion NOT_CONST.
+        if (preptimeValue == null)
+            return (inputIndex == 0) ? Constantness.UNKNOWN : Constantness.NOT_CONST;
+        Boolean arg = getBoolean(preptimeValue);
+        return Objects.equal(arg, op.contaminant) ? Constantness.CONST : Constantness.UNKNOWN;
+    }
+
+    @Override
+    protected boolean nullContaminates(int inputIndex) {
+        return false; // we'll deal with contamination ourselves
+    }
+
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        output.putBool(op.evaluate(inputs));
+        Boolean firstArg = getBoolean(inputs, 0);
+        final Boolean result;
+        if (Objects.equal(op.contaminant, firstArg)) {
+            result = firstArg;
+        }
+        else {
+            // need to look at the second arg
+            Boolean secondArg =  getBoolean(inputs, 1);
+            if (Objects.equal(op.contaminant, secondArg)) {
+                result = secondArg;
+            }
+            else if ( (firstArg == null) || (secondArg == null) ) {
+                result = null;
+            }
+            else {
+                result = op.evaluate(firstArg, secondArg);
+            }
+        }
+        if (result == null)
+            output.putNull();
+        else
+            output.putBool(result);
     }
-    
-    
+
+    private Boolean getBoolean(LazyList<? extends PValueSource> inputs, int i) {
+        return getBoolean(inputs.get(i));
+    }
+
+    private Boolean getBoolean(PValueSource firstInput) {
+        return firstInput.isNull() ? null : firstInput.getBoolean();
+    }
+
+
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(AkBool.INSTANCE, op.coverage);
+        builder.covers(AkBool.INSTANCE, 0, 1);
     }
 
     @Override
