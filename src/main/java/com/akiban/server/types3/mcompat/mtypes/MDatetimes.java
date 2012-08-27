@@ -116,7 +116,7 @@ public class MDatetimes
     static
     {
         // TODO: add all supported LOCALES here
-        SUPPORTED_LOCALES.add("en");
+        SUPPORTED_LOCALES.add(Locale.ENGLISH.getLanguage());
         
        Map<String, String[]> months = new HashMap<String, String[]>();
        Map<String, String[]> shortMonths = new HashMap<String, String[]>();
@@ -611,6 +611,8 @@ public class MDatetimes
  
     public static boolean isValidDayMonth(long ymd[])
     {
+        if (ymd[MONTH_INDEX] == 0)
+            return false;
         long last = getLastDay(ymd);
         return last > 0 && ymd[DAY_INDEX] <= last;
     }

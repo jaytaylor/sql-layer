@@ -37,9 +37,10 @@ import java.util.ArrayList;
 /** A join node explicitly enumerating rows.
  * From VALUES or IN.
  */
-public class ExpressionsSource extends BaseJoinable implements ColumnSource
+public class ExpressionsSource extends BaseJoinable implements ColumnSource, TypedPlan
 {
     private List<List<ExpressionNode>> expressions;
+    private TInstance[] tInstances;
 
     public ExpressionsSource(List<List<ExpressionNode>> expressions) {
         this.expressions = expressions;
@@ -87,15 +88,12 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
         return result;
     }
 
+    public void setTInstances(TInstance[] tInstances) {
+        this.tInstances = tInstances;
+    }
+
     public TInstance[] getFieldTInstances() {
-        if (expressions.isEmpty())
-            return new TInstance[0];
-        List<ExpressionNode> nodes = expressions.get(0);
-        TInstance[] result = new TInstance[nodes.size()];
-        for (int i=0; i < result.length; ++i) {
-            result[i] = nodes.get(i).getPreptimeValue().instance();
-        }
-        return result;
+        return tInstances;
     }
 
     // TODO: It might be interesting to note when it's also sorted for
@@ -174,4 +172,18 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
         }
     }
 
+    @Override
+    public int nFields() {
+        return tInstances.length;
+    }
+
+    @Override
+    public TInstance getTypeAt(int index) {
+        return tInstances[index];
+    }
+
+    @Override
+    public void setTypeAt(int index, TPreptimeValue value) {
+        tInstances[index] = value.instance();
+    }
 }

@@ -45,9 +45,7 @@ class PersistitIndexCursor implements Cursor
     public void open()
     {
         CursorLifecycle.checkIdle(this);
-        rowState.openIteration();
-        indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues);
-        indexCursor.open();
+        indexCursor.open(); // Does iterationHelper.openIteration, where iterationHelper = rowState
         idle = false;
     }
 
@@ -85,7 +83,7 @@ class PersistitIndexCursor implements Cursor
     public void close()
     {
         CursorLifecycle.checkIdleOrActive(this);
-        rowState.closeIteration();
+        indexCursor.close(); // IndexCursor.close() closes the rowState (IndexCursor.iterationHelper)
         idle = true;
     }
 
@@ -93,7 +91,7 @@ class PersistitIndexCursor implements Cursor
     public void destroy()
     {
         destroyed = true;
-        indexCursor = null;
+        indexCursor.destroy();
     }
 
     @Override
@@ -133,6 +131,7 @@ class PersistitIndexCursor implements Cursor
         this.selector = selector;
         this.idle = true;
         this.rowState = new IndexScanRowState((PersistitAdapter)context.getStore(), indexRowType);
+        this.indexCursor = IndexCursor.create(context, keyRange, ordering, rowState, usePValues);
     }
 
     // For use by this class
@@ -146,8 +145,8 @@ class PersistitIndexCursor implements Cursor
     private final boolean isTableIndex;
     private final boolean usePValues;
     private final IterationHelper rowState;
-    private IndexScanSelector selector;
     private IndexCursor indexCursor;
+    private final IndexScanSelector selector;
     private boolean idle;
     private boolean destroyed = false;
     }

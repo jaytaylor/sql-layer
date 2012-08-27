@@ -69,15 +69,13 @@ public class IndexScanPT extends QPProfilePTBase
     {
         Tap.setEnabled(".*", false);
         populateDB(ROWS);
-/*
         run(null, WARMUP_RUNS, 1);
         run("0", MEASURED_RUNS, 1);
+/*
         run("1", MEASURED_RUNS, 2);
         run("2", MEASURED_RUNS, 3);
         run("3", MEASURED_RUNS, 4);
-*/
         run("4", MEASURED_RUNS, 5);
-/*
         run("5", MEASURED_RUNS, 6);
         run("6", MEASURED_RUNS, 7);
         run("7", MEASURED_RUNS, 8);
@@ -110,6 +108,7 @@ public class IndexScanPT extends QPProfilePTBase
                 assert row != null;
             }
             cursor.close();
+            cursor.destroy();
         }
         long end = System.nanoTime();
         if (label != null) {

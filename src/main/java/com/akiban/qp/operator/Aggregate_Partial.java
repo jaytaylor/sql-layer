@@ -406,7 +406,6 @@ final class Aggregate_Partial extends Operator
 
                 assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
                 while (true) {
-                    boolean isFirst = (cursorState == CursorState.OPENING);
                     Row input = nextInput();
                     if (input == null) {
                         if (everSawInput) {
@@ -430,7 +429,7 @@ final class Aggregate_Partial extends Operator
                         saveInput(input); // save this input for the next time this method is invoked
                         return createOutput();
                     }
-                    aggregate(input, isFirst);
+                    aggregate(input);
                 }
             } finally {
                 TAP_NEXT.out();
@@ -475,7 +474,7 @@ final class Aggregate_Partial extends Operator
 
         // for use in this class
 
-        private void aggregate(Row input, boolean isFirst) {
+        private void aggregate(Row input) {
             if (aggregators != null) {
                 for (int i=0; i < aggregators.size(); ++i) {
                     Aggregator aggregator = aggregators.get(i);
@@ -489,7 +488,7 @@ final class Aggregate_Partial extends Operator
                     int inputIndex = i + inputsIndex;
                     TInstance inputType = input.rowType().typeInstanceAt(inputIndex);
                     PValueSource inputSource = input.pvalue(inputIndex);
-                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i), isFirst);
+                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i));
                 }
 
             }
@@ -522,8 +521,11 @@ final class Aggregate_Partial extends Operator
                     PValue pValue = outputRow.pvalueAt(i);
                     int aggregatorIndex = i - inputsIndex;
                     PValue aggregatorState = pAggrsStates.get(aggregatorIndex);
-                    PValueTargets.copyFrom(aggregatorState, pValue);
-                    pAggrs.get(aggregatorIndex).emptyValue(aggregatorState);
+                    if (aggregatorState.hasAnyValue())
+                        PValueTargets.copyFrom(aggregatorState, pValue);
+                    else
+                        pAggrs.get(aggregatorIndex).emptyValue(pValue);
+                    aggregatorState.unset();
                 }
             }
             return outputRow;
@@ -646,10 +648,8 @@ final class Aggregate_Partial extends Operator
                 int nAggrs = pAggrs.size();
                 pAggrsStates = new ArrayList<PValue>(nAggrs);
                 for (int i = 0; i < nAggrs; i++) {
-                    TAggregator aggr = pAggrs.get(i);
                     TInstance stateInstance = pAggrTypes.get(i);
                     PValue state = new PValue(stateInstance.typeClass().underlyingType());
-                    aggr.emptyValue(state);
                     pAggrsStates.add(state);
                 }
             }

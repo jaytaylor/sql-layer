@@ -26,89 +26,55 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.zip.CRC32;
 
-/**
- *
- * Implement the length (char_length and octet_length)
- */
-public abstract class MLength extends TOverloadBase
+public class MCRC32 extends TOverloadBase
 {
-    public static final TOverload CHAR_LENGTH = new MLength("CHAR_LENGTH")
-    {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-        {
-            output.putInt32((inputs.get(0).getString()).length());
-        }
-
-        @Override
-        public String[] registeredNames() {
-            return new String[] { "char_length", "charLength" };
-        }
-    };
-
-    public static final TOverload OCTET_LENGTH = new MLength("OCTET_LENGTH")
-    {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-        {
-            int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
-            String charset = (StringFactory.Charset.values())[charsetId].name();
-            try
-            {
-                output.putInt32((inputs.get(0).getString()).getBytes(charset).length);
-            }
-            catch (UnsupportedEncodingException ex) // impossible to happen
-            {
-                Logger.getLogger(MLength.class.getName()).log(Level.WARNING, null, ex);
-                output.putNull();
-            }
-        }
-
-        @Override
-        public String[] registeredNames() {
-            return new String[] { "octet_length", "getOctetLength" };
-        }
-    };
-
-    private final String name;
-    MLength (String name)
-    {
-        this.name = name;
-    }
-
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
         builder.covers(MString.VARCHAR, 0);
     }
 
-
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+        String charset = StringFactory.Charset.of(context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET));
+        try
+        {
+            CRC32 crc32 = new CRC32();
+            crc32.update(inputs.get(0).getString().getBytes(charset));
+            output.putInt64(crc32.getValue());
+        }
+        catch (UnsupportedEncodingException ex)
+        {
+            context.warnClient(new InvalidParameterValueException("Invalid charset: " + charset));
+            output.putNull();
+        }
+    }
 
     @Override
     public String displayName()
     {
-        return name;
+        return "crc32";
     }
 
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT.instance());
+        return TOverloadResult.fixed(MNumeric.INT_UNSIGNED.instance());
     }
 }
