@@ -1164,7 +1164,10 @@ public class ASTStatementLoader extends BaseRule
                 return new AggregateFunctionExpression(function,
                                                        operand,
                                                        aggregateNode.isDistinct(),
-                                                       type, valueNode);
+                                                       type, valueNode,
+                                                       aggregateNode instanceof GroupConcatNode 
+                                                                ? ((GroupConcatNode)aggregateNode).getSeparator().getString()
+                                                                : null);
             }
             else if (isConditionExpression(valueNode)) {
                 return toCondition(valueNode, projects);
@@ -1340,7 +1343,8 @@ public class ASTStatementLoader extends BaseRule
                         throw new WrongExpressionArityException(2, operands.size());
                     return new AggregateFunctionExpression(methodCall.getMethodName(),
                                                            operands.get(0), false,
-                                                           valueNode.getType(), valueNode);
+                                                           valueNode.getType(), valueNode,
+                                                           null);
                 }
                 else
                     return new FunctionExpression(methodCall.getMethodName(),
