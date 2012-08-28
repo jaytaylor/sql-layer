@@ -42,9 +42,7 @@ class InstanceFinderBuilder implements InstanceFinder {
 
     public void put(Class<?> cls, Object... objects) {
         for (Object obj : objects) {
-            if ( (obj != null) && !cls.isInstance(obj) )
-                throw new IllegalArgumentException(obj + " is not an instance of " + cls);
-            instances.put(cls, obj);
+            instances.put(cls, cls.cast(obj));
         }
     }
 
