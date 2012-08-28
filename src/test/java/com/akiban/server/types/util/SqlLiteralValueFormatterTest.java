@@ -117,6 +117,7 @@ public class SqlLiteralValueFormatterTest
     @Test
     public void testVarbinary() throws Exception {
         test("X'01020304'", new byte[] { 1,2,3,4 });
+        test("X'FF884422'", new byte[] { (byte)0xFF,(byte)0x88,(byte)0x44,(byte)0x22 });
     }
 
     @Test

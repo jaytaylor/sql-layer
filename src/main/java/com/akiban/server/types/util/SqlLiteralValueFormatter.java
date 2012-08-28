@@ -189,7 +189,7 @@ public class SqlLiteralValueFormatter
         int byteArrayLength = value.byteArrayLength();
         for (int i = 0; i < byteArrayLength; i++) {
             int b = byteArray[byteArrayOffset + i] & 0xFF;
-            buffer.append(hexDigit(b >> 8));
+            buffer.append(hexDigit(b >> 4));
             buffer.append(hexDigit(b & 0xF));
         }
         buffer.append('\'');
