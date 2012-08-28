@@ -53,8 +53,10 @@ import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -380,23 +382,18 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // package-local; also used in testing
 
     static Map<TClass, Map<TClass, TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource,
-                                                                        Set<TCastIdentifier> strongCasts) {
+                                                                final Set<TCastIdentifier> strongCasts) {
         Map<TClass,Map<TClass,TCast>> result = new HashMap<TClass, Map<TClass, TCast>>();
         for (Map.Entry<TClass, Map<TClass,TCast>> origEntry : castsBySource.entrySet()) {
-            TClass source = origEntry.getKey();
-            Map<TClass, TCast> castsByTarget = origEntry.getValue();
-            for (Map.Entry<TClass,TCast> castByTarget : castsByTarget.entrySet()) {
-                TCast cast = castByTarget.getValue();
-                TClass target = castByTarget.getKey();
-                if ( (source == target) || strongCasts.contains(new TCastIdentifier(cast))) {
-                    Map<TClass,TCast> map = result.get(source);
-                    if (map == null) {
-                        map = new HashMap<TClass, TCast>();
-                        result.put(source, map);
-                    }
-                    map.put(target, cast);
+            final TClass source = origEntry.getKey();
+            Map<TClass, TCast> filteredView = Maps.filterKeys(origEntry.getValue(), new Predicate<TClass>() {
+                @Override
+                public boolean apply(TClass target) {
+                    return (source == target) || strongCasts.contains(new TCastIdentifier(source, target));
                 }
-            }
+            });
+            assert ! filteredView.isEmpty() : "no strong casts (including self casts) found for " + source;
+            result.put(source, new HashMap<TClass, TCast>(filteredView));
         }
         return result;
     }
