@@ -26,27 +26,25 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.service.InstanceFinder;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 import java.util.Collection;
-import java.util.Set;
 
-public interface T3RegistryService {
-    Collection<? extends TAggregator> getAggregates(String name);
-    Collection<? extends TValidatedOverload> getOverloads(String name);
+class InstanceFinderBuilder implements InstanceFinder {
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Collection<? extends T> find(Class<? extends T> targetClass) {
+        Collection<?> resultWild = instances.get(targetClass);
+        return (Collection<? extends T>) resultWild;
+    }
 
-    /**
-     * Find the registered cast going from source to taret.
-     * @param source Type to cast from
-     * @param target Type to cast to
-     * @return Return matching cast or <tt>null</tt> if none
-     */
-    TCast cast(TClass source, TClass target);
+    public void put(Class<?> cls, Object... objects) {
+        for (Object obj : objects) {
+            instances.put(cls, cls.cast(obj));
+        }
+    }
 
-    Set<? extends TClass> stronglyCastableFrom(TClass tClass);
-    boolean isStrong(TCast cast);
-    boolean isIndexFriendly(TClass source, TClass target);
+    private Multimap<Class<?>,Object> instances = HashMultimap.create();
 }
