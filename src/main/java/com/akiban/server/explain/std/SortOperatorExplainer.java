@@ -49,7 +49,10 @@ public class SortOperatorExplainer extends CompoundExplainer
         map.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         for (int i = 0; i < ordering.sortColumns(); i++)
         {
-            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer(context));
+            if (ordering.usingPVals())
+                map.put(Label.EXPRESSIONS, ordering.tExpression(i).getExplainer(context));
+            else
+                map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer(context));
             map.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
         }
         
