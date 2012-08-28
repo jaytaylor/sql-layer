@@ -424,6 +424,40 @@ public class MDatetimes
             string = string.substring(1);
         }
 
+        
+        if (string.length() > 10 )
+        {
+            String parts[] = string.split(" ");
+
+            // just get the TIME part
+            if (parts.length == 2)
+            {
+                String datePts[] = parts[0].split("-");
+                try
+                {
+                    switch (datePts.length)
+                    {
+                        case 1: // <some value> hh:mm:ss ==> make sure <some value> is a numeric value
+                            Integer.parseInt(datePts[0]);
+                            break;
+                        case 3: // YYYY-MM-dd hh:mm:ss
+                            if (isValidDayMonth(Integer.parseInt(datePts[0]),
+                                                Integer.parseInt(datePts[1]),
+                                                Integer.parseInt(datePts[2])))
+                                break;
+                            // fall thru
+                        default:
+                            throw new InvalidDateFormatException("time", string);
+                    }
+                }
+                catch (NumberFormatException ex)
+                {
+                    throw new InvalidDateFormatException("time", string);
+                }
+
+                string = parts[1];
+            }
+        }
         int hours = 0;
         int minutes = 0;
         int seconds = 0;
@@ -612,6 +646,14 @@ public class MDatetimes
                 && ymdhms[SEC_INDEX] >= 0 && ymdhms[SEC_INDEX] < 60;
     }
  
+    public static boolean isValidDayMonth(int year, int month, int day)
+    {
+        if (month == 0)
+            return false;
+        long last = getLastDay(year, month);
+        return last > 0 && day <= last;
+    }
+
     public static boolean isValidDayMonth(long ymd[])
     {
         if (ymd[MONTH_INDEX] == 0)
@@ -620,6 +662,31 @@ public class MDatetimes
         return last > 0 && ymd[DAY_INDEX] <= last;
     }
         
+    public static long getLastDay(int year, int month)
+    {
+        switch(month)
+        {
+            case 2:
+                return year % 400 == 0 || year % 4 == 0 && year % 100 != 0 ? 29L : 28L;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                return 30L;
+            case 3:
+            case 1:
+            case 5:
+            case 7:
+            case 8:
+            case 10:
+            case 0:
+            case 12:
+                return 31L;
+            default:
+                return -1;
+        }
+    }
+
     public static long getLastDay(long ymd[])
     {
         switch ((int) ymd[1])
