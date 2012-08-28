@@ -1,5 +1,5 @@
 PhysicalSelect[order_date:date[DATE], oid:int[INT], oid:int[INT]]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     IndexScan_Default(Index(orders.order_date), order_date, cid, oid)
     Project_Default(o1.order_date, o1.oid, o2.oid)
       IfEmpty_Default(NULL, NULL, NULL)

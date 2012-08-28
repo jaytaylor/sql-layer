@@ -1,8 +1,8 @@
 PhysicalSelect@3961aadb[name, order_date, name]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     Filter_Default(test.child)
       GroupScan_Default(test.parent)
-    Map_NestedLoops(loop_1)
+    Map_NestedLoops()
       IndexScan_Default(Index(test.parent.name), name = Bound(0, 2), id ASC)
       Project_Default(Field(1), Field(4), Bound(0, 2))
         Select_HKeyOrdered(Bound(0, 2) != 'Smith')

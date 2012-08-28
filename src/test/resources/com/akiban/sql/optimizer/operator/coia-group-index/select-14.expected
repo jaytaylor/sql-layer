@@ -1,5 +1,5 @@
 PhysicalSelect[order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     ValuesScan_Default(['1234'], ['4567'], ['6666'])
     Project_Default(orders.order_date, items.sku, items.quan)
       Flatten_HKeyOrdered(orders INNER items)

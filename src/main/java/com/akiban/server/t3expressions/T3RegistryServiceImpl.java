@@ -53,8 +53,10 @@ import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,8 +92,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     }
 
     @Override
-    public Set<TClass> stronglyCastableTo(TClass tClass) {
-        Map<TClass, TCast> castsFrom = strongCastsByTarget.get(tClass);
+    public Set<TClass> stronglyCastableFrom(TClass tClass) {
+        Map<TClass, TCast> castsFrom = strongCastsBySource.get(tClass);
         return castsFrom.keySet();
     }
 
@@ -108,7 +110,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     public boolean isStrong(TCast cast) {
         TClass source = cast.sourceClass();
         TClass target = cast.targetClass();
-        return stronglyCastableTo(target).contains(source);
+        return stronglyCastableFrom(source).contains(target);
     }
 
     @Override
@@ -136,7 +138,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     @Override
     public void stop() {
         castsBySource = null;
-        strongCastsByTarget = null;
+        strongCastsBySource = null;
         overloadsByName = null;
         aggregatorsByName = null;
         tClasses = null;
@@ -164,14 +166,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return result;
     }
 
-    private void start(InstanceFinder finder) {
+    void start(InstanceFinder finder) {
         tClasses = new HashSet<TClass>(finder.find(TClass.class));
 
         castsBySource = createCasts(tClasses, finder);
         createDerivedCasts(castsBySource, finder);
         deriveCastsFromVarchar();
-        strongCastsByTarget = createStrongCastsMap(castsBySource, finder);
-        checkDag(strongCastsByTarget);
+        strongCastsBySource = createStrongCastsMap(castsBySource, finder);
+        checkDag(strongCastsBySource);
 
         overloadsByName = createScalars(finder);
 
@@ -380,23 +382,18 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // package-local; also used in testing
 
     static Map<TClass, Map<TClass, TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource,
-                                                                        Set<TCastIdentifier> strongCasts) {
+                                                                final Set<TCastIdentifier> strongCasts) {
         Map<TClass,Map<TClass,TCast>> result = new HashMap<TClass, Map<TClass, TCast>>();
         for (Map.Entry<TClass, Map<TClass,TCast>> origEntry : castsBySource.entrySet()) {
-            TClass source = origEntry.getKey();
-            Map<TClass, TCast> castsByTarget = origEntry.getValue();
-            for (Map.Entry<TClass,TCast> castByTarget : castsByTarget.entrySet()) {
-                TCast cast = castByTarget.getValue();
-                TClass target = castByTarget.getKey();
-                if ( (source == target) || strongCasts.contains(new TCastIdentifier(cast))) {
-                    Map<TClass,TCast> map = result.get(target);
-                    if (map == null) {
-                        map = new HashMap<TClass, TCast>();
-                        result.put(target, map);
-                    }
-                    map.put(source, cast);
+            final TClass source = origEntry.getKey();
+            Map<TClass, TCast> filteredView = Maps.filterKeys(origEntry.getValue(), new Predicate<TClass>() {
+                @Override
+                public boolean apply(TClass target) {
+                    return (source == target) || strongCasts.contains(new TCastIdentifier(source, target));
                 }
-            }
+            });
+            assert ! filteredView.isEmpty() : "no strong casts (including self casts) found for " + source;
+            result.put(source, new HashMap<TClass, TCast>(filteredView));
         }
         return result;
     }
@@ -426,7 +423,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     // object state
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
-    private volatile Map<TClass,Map<TClass,TCast>> strongCastsByTarget;
+    private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
     private volatile Multimap<String, TValidatedOverload> overloadsByName;
     private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
     private volatile Collection<? extends TClass> tClasses;

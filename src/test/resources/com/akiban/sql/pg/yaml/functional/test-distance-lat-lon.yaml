@@ -28,4 +28,13 @@
 ---
 - Statement: SELECT DISTANCE_LAT_LON(0, -179, 0, 180)
 - output: [[1.0]]
+---
+- Statement: SELECT DISTANCE_LAT_LON(0, 180, 0, -179)
+- output: [[1.0]]
+---
+- Statement: SELECT DISTANCE_LAT_LON(0, 180, 0, -180)
+- output: [[0.0]]
+---
+- Statement: SELECT DISTANCE_LAT_LON(0, -180, 0, 180)
+- output: [[0.0]]
 ...

@@ -1,6 +1,6 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], quan:int[INT]]
   Sort_Tree(Field(1) DESC)
-    Map_NestedLoops(loop_0)
+    Map_NestedLoops()
       ValuesScan_Default(['MA'], ['NY'], ['VT'])
       Project_Default(customers.name, items.quan)
         Filter_Default(customers - orders - items)

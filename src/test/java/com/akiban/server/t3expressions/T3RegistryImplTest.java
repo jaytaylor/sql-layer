@@ -37,12 +37,9 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.texpressions.Constantness;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -61,7 +58,7 @@ public final class T3RegistryImplTest {
 
     @Test
     public void createSelfCasts() {
-        InstanceFinder finder = new Finder();
+        InstanceFinder finder = createFinder();
         Map<TClass, Map<TClass, TCast>> casts = T3RegistryServiceImpl.createCasts(finder.find(TClass.class), finder);
         checkAll(casts,
                 new CastCheck(CLASS_A, CLASS_A),
@@ -71,9 +68,20 @@ public final class T3RegistryImplTest {
                 new CastCheck(CLASS_E, CLASS_E));
     }
 
+    private InstanceFinderBuilder createFinder() {
+        InstanceFinderBuilder finder = new InstanceFinderBuilder();
+        finder.put(TClass.class, MString.VARCHAR);
+        finder.put(TClass.class, CLASS_A);
+        finder.put(TClass.class, CLASS_B);
+        finder.put(TClass.class, CLASS_C);
+        finder.put(TClass.class, CLASS_D);
+        finder.put(TClass.class, CLASS_E);
+        return finder;
+    }
+
     @Test
     public void simpleCastPath() {
-        Finder finder = new Finder();
+        InstanceFinderBuilder finder = createFinder();
         TCastPath path = TCastPath.create(CLASS_A, CLASS_B, CLASS_C);
         finder.put(TCastPath.class, path);
         Map<TClass, Map<TClass, TCast>> casts = T3RegistryServiceImpl.createCasts(finder.find(TClass.class), finder);
@@ -98,7 +106,7 @@ public final class T3RegistryImplTest {
 
     @Test
     public void jumpingCastPath() {
-        Finder finder = new Finder();
+        InstanceFinderBuilder finder = createFinder();
         finder.put(TCastPath.class, TCastPath.create(CLASS_A, CLASS_B, CLASS_C, CLASS_D, CLASS_E));
 
         Map<TClass, Map<TClass, TCast>> casts = T3RegistryServiceImpl.createCasts(finder.find(TClass.class), finder);
@@ -139,30 +147,6 @@ public final class T3RegistryImplTest {
     private void putCast(TCast cast, Map<TClass, Map<TClass, TCast>> outMap) {
         Object o = outMap.get(cast.sourceClass()).put(cast.targetClass(), cast);
         assert o == null : "putting " + cast + " into " + outMap; // shouldn't happen
-    }
-
-    private class Finder implements InstanceFinder {
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> Collection<? extends T> find(Class<? extends T> targetClass) {
-            Collection<?> resultWild = instances.get(targetClass);
-            return (Collection<? extends T>) resultWild;
-        }
-
-        public void put(Class<?> cls, Object o) {
-            instances.put(cls, o);
-        }
-
-        Finder() {
-            put(TClass.class, MString.VARCHAR);
-            put(TClass.class, CLASS_A);
-            put(TClass.class, CLASS_B);
-            put(TClass.class, CLASS_C);
-            put(TClass.class, CLASS_D);
-            put(TClass.class, CLASS_E);
-        }
-
-        private Multimap<Class<?>,Object> instances = ArrayListMultimap.create();
     }
 
     private void checkAll(Map<TClass, Map<TClass, TCast>> actual, CastCheck... expected) {

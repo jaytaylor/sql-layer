@@ -539,10 +539,7 @@ public class DefaultFormatter
     protected void appendNestedLoopsOperator(String name, Attributes atts) {
         if (verbose) {
             if (name.equals("Map_NestedLoops")) {
-                if(atts.containsKey(Label.TABLE_CORRELATION))
-                    sb.append(atts.getValue(Label.TABLE_CORRELATION));
-                else
-                    sb.append("loop_").append(atts.getValue(Label.BINDING_POSITION));
+                // Label the loop?
             }
             else if (name.equals("Product_NestedLoops")) {
                 append(atts.getAttribute(Label.OUTER_TYPE));

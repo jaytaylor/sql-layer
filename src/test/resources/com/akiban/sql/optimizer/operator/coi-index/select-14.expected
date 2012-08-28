@@ -1,5 +1,5 @@
 PhysicalSelect[order_date:date[DATE]]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     Filter_Default(orders)
       BranchLookup_Default(Index(customers.name) -> customers)
         IndexScan_Default(Index(customers.name), name = 'Smith')
