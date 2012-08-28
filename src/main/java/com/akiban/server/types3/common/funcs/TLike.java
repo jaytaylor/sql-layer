@@ -114,7 +114,7 @@ public class TLike extends TOverloadBase
                 || !matcher.sameState(right, esca)
            )
             context.putExectimeObject(MATCHER_INDEX, 
-                    matcher = Matchers.getMatcher(right, esca, likeType == LikeType.LIKE));
+                    matcher = Matchers.getMatcher(right, esca, likeType == LikeType.ILIKE));
 
         try
         {
