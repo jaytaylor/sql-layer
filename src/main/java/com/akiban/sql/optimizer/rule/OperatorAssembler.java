@@ -727,7 +727,7 @@ public class OperatorAssembler extends BaseRule
             for (UpdateColumn column : updateColumns) {
                 atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
                 if (usePValues)
-                    atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(updatesP.get(column.getColumn().getPosition()).toString()));
+                    atts.put(Label.EXPRESSIONS, updatesP.get(column.getColumn().getPosition()).getExplainer(explainContext));
                 else
                     atts.put(Label.EXPRESSIONS, updates.get(column.getColumn().getPosition()).getExplainer(explainContext));
             }
