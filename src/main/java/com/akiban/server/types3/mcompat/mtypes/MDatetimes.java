@@ -418,6 +418,11 @@ public class MDatetimes
     {
           // (-)HH:MM:SS
         int mul = 1;
+        int hours = 0;
+        int minutes = 0;
+        int seconds = 0;
+        int offset = 0;
+        boolean shortTime = false;
         if (string.length() > 0 && string.charAt(0) == '-')
         {
             mul = -1;
@@ -425,7 +430,8 @@ public class MDatetimes
         }
 
         
-        if (string.length() > 10 )
+        // hh:mm:ss
+        if (string.length() > 8 )
         {
             String parts[] = string.split(" ");
 
@@ -438,9 +444,10 @@ public class MDatetimes
                     switch (datePts.length)
                     {
                         case 1: // <some value> hh:mm:ss ==> make sure <some value> is a numeric value
-                            Integer.parseInt(datePts[0]);
+                            hours = Integer.parseInt(datePts[0]) * 24;
                             break;
                         case 3: // YYYY-MM-dd hh:mm:ss
+                            shortTime = true;
                             if (isValidDayMonth(Integer.parseInt(datePts[0]),
                                                 Integer.parseInt(datePts[1]),
                                                 Integer.parseInt(datePts[2])))
@@ -458,17 +465,15 @@ public class MDatetimes
                 string = parts[1];
             }
         }
-        int hours = 0;
-        int minutes = 0;
-        int seconds = 0;
-        int offset = 0;
+        
         final String values[] = string.split(":");
+
         try
         {
             switch (values.length)
             {
                 case 3:
-                    hours = Integer.parseInt(values[offset++]); // fall
+                    hours += Integer.parseInt(values[offset++]); // fall
                 case 2:
                     minutes = Integer.parseInt(values[offset++]); // fall
                 case 1:
@@ -488,6 +493,9 @@ public class MDatetimes
         hours += minutes / 60;
         minutes %= 60;
 
+        if (!isValidHrMinSec(hours, minutes, seconds, shortTime))
+            throw new InvalidDateFormatException("time", string);
+        
         long ret = mul * (hours* DATETIME_HOUR_SCALE + minutes* DATETIME_MIN_SCALE + seconds);
         
         return (int)CastUtils.getInRange(TIME_MAX, TIME_MIN, ret, context);
@@ -636,16 +644,24 @@ public class MDatetimes
 
     public static boolean isValidDatetime (long ymdhms[])
     {
-        return isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms);
+        return isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms, true);
     }
     
-    public static boolean isValidHrMinSec (long ymdhms[])
+    public static boolean isValidHrMinSec (long ymdhms[], boolean shortTime)
     {
-        return ymdhms[HOUR_INDEX] >= 0 && ymdhms[HOUR_INDEX] < 24 
+        return ymdhms[HOUR_INDEX] >= 0 
+                && (shortTime ? ymdhms[HOUR_INDEX] < 24 : true) // if time portion is from a DATETIME, hour should be less than 24
                 && ymdhms[MIN_INDEX] >= 0 && ymdhms[MIN_INDEX] < 60 
                 && ymdhms[SEC_INDEX] >= 0 && ymdhms[SEC_INDEX] < 60;
     }
  
+    public static boolean isValidHrMinSec(int hr, int min, int sec, boolean shortTime)
+    {
+        return hr >= 0 
+                && (shortTime ? hr < 24 : true) // if time portion is from a DATETIME, hour should be less than 24
+                && min >= 0 && min < 60 
+                && sec >= 0 && sec < 60;
+    }
     public static boolean isValidDayMonth(int year, int month, int day)
     {
         if (month == 0)
