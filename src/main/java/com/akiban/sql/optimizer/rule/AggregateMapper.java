@@ -214,9 +214,9 @@ public class AggregateMapper extends BaseRule
                 ExpressionNode operand = expr.getOperand();
                 List<ExpressionNode> noperands = new ArrayList<ExpressionNode>(2);
                 noperands.add(new AggregateFunctionExpression("SUM", operand, expr.isDistinct(),
-                                                              operand.getSQLtype(), null, null));
+                                                              operand.getSQLtype(), null, null, null));
                 noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
-                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null, null));
+                                                              new DataTypeDescriptor(TypeId.INTEGER_ID, false), null, null, null));
                 return new FunctionExpression("divide",
                                               noperands,
                                               expr.getSQLtype(), expr.getSQLsource());
@@ -246,7 +246,7 @@ public class AggregateMapper extends BaseRule
                 return addKey(column);
             else
                 return addAggregate(new AggregateFunctionExpression("FIRST", column, false,
-                                                                    column.getSQLtype(), null, null));
+                                                                    column.getSQLtype(), null, null, null));
         }
 
         protected boolean isUniqueGroupedTable(ColumnSource columnSource) {

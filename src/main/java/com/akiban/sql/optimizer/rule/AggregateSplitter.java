@@ -33,6 +33,9 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.AggregateSource.Implementation;
 
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.akiban.sql.parser.OrderByColumn;
+import com.akiban.sql.parser.OrderByList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +95,34 @@ public class AggregateSplitter extends BaseRule
         if (distinct)
             ninput = new Distinct(ninput);
         source.replaceInput(input, ninput);
+        
+        
+        // order by
+        List<OrderByExpression> orderBy = checkOrderBy(source);
+        if(orderBy != null)
+        {
+            input = source.getInput();
+            PlanNode sortedInput = new Sort(new Project(input, fields),
+                                            orderBy);
+            source.replaceInput(input, sortedInput);
+            
+        }
+    }
+    
+    protected List<OrderByExpression> checkOrderBy(AggregateSource source)
+    {
+        List<OrderByExpression> ret = null;
+        ExpressionNode operand = null;
+        for (AggregateFunctionExpression aggregate: source.getAggregates())
+        {
+            List<OrderByExpression> cur = aggregate.getOrderBy();
+            if (ret == null)
+                ret = cur;
+            else if (cur != null && !cur.equals(ret))
+                throw new UnsupportedSQLException("Mix of ORDERY-BY ",
+                                                  aggregate.getSQLsource());
+        }
+        return ret;
     }
 
     /** Check that all the <code>DISTINCT</code> qualifications are

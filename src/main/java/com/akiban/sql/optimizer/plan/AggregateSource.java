@@ -50,6 +50,7 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     private List<Object> options;
     private int nGroupBy;
     private List<String> aggregateFunctions;
+    
     private TableSource table;
 
     private Implementation implementation;

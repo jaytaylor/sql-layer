@@ -27,8 +27,11 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.akiban.sql.parser.OrderByList;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
+import java.util.List;
 
 /** An expression representing the result (total) of an aggregate function.
  */
@@ -38,15 +41,18 @@ public class AggregateFunctionExpression extends BaseExpression
     private ExpressionNode operand;
     private boolean distinct;
     private Object option;
+    private List<OrderByExpression> orderBy;
 
     public AggregateFunctionExpression(String function, ExpressionNode operand,
                                        boolean distinct, 
-                                       DataTypeDescriptor sqlType, ValueNode sqlSource, Object option) {
+                                       DataTypeDescriptor sqlType, ValueNode sqlSource,
+                                       Object option, List<OrderByExpression> orderBy) {
         super(sqlType, "COUNT".equals(function) ? AkType.LONG : operand.getAkType(), sqlSource);
         this.function = function;
         this.operand = operand;
         this.distinct = distinct;
         this.option = option;
+        this.orderBy = orderBy;
     }
 
     public String getFunction() {
@@ -66,6 +72,11 @@ public class AggregateFunctionExpression extends BaseExpression
     public Object getOption()
     {
         return option;
+    }
+    
+    public List<OrderByExpression> getOrderBy()
+    {
+        return orderBy;
     }
 
     @Override
