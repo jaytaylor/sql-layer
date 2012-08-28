@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.server.explain.*;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
@@ -76,6 +77,12 @@ public final class TValidatedOverload implements TOverload {
     @Override
     public String toString(List<? extends TPreparedExpression> inputs, TInstance resultType) {
         return overload.toString(inputs, resultType);
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context, List<? extends TPreparedExpression> inputs, TInstance resultType)
+    {
+        return overload.getExplainer(context, inputs, resultType);
     }
 
     @Override

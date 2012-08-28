@@ -29,7 +29,6 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
-import com.akiban.server.explain.std.TExpressionExplainer;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -80,7 +79,7 @@ public final class TPreparedFunction implements TPreparedExpression {
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new TExpressionExplainer(Type.FUNCTION, overload.displayName(), context, inputs);
+        return overload.getExplainer(context, inputs, resultType);
     }
 
     @Override
