@@ -208,8 +208,8 @@ public abstract class MArithmetic extends TArithmetic {
 
         @Override
         protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
-               return plusOrMinusArithmetic(arg0Precision, arg0Scale, arg1Precision, arg1Scale);
-           }
+            return plusOrMinusArithmetic(arg0Precision, arg0Scale, arg1Precision, arg1Scale);
+        }
     };
     
     // (Regular) Divide functions
@@ -297,8 +297,8 @@ public abstract class MArithmetic extends TArithmetic {
 
         @Override
         protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
-               throw new UnsupportedOperationException(); // TODO
-           }
+            throw new UnsupportedOperationException(); // TODO
+        }
    };
     
    // integer division
