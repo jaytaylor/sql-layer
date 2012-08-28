@@ -133,4 +133,13 @@ public final class Strongs {
     public static final TStrongCasts fromTimestamp = TStrongCasts.from(MDatetimes.TIMESTAMP).to(
             MApproximateNumber.DOUBLE
     );
+
+    public static final TStrongCasts fromDecimal = TStrongCasts.from(MNumeric.DECIMAL).to(
+            MNumeric.DECIMAL_UNSIGNED,
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromDecimalUnsigned = TStrongCasts.from(MNumeric.DECIMAL_UNSIGNED).to(
+            MApproximateNumber.DOUBLE
+    );
 }
