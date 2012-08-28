@@ -206,10 +206,10 @@ public abstract class MArithmetic extends TArithmetic {
                         .subtract(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
         }
 
-    @Override
-    protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
-           return plusOrMinusArithmetic(arg0Precision, arg0Scale, arg1Precision, arg1Scale);
-       }
+        @Override
+        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
+               return plusOrMinusArithmetic(arg0Precision, arg0Scale, arg1Precision, arg1Scale);
+           }
     };
     
     // (Regular) Divide functions
@@ -295,10 +295,10 @@ public abstract class MArithmetic extends TArithmetic {
                                                                                        // during expr generation time
         }
 
-    @Override
-    protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
-           throw new UnsupportedOperationException(); // TODO
-       }
+        @Override
+        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
+               throw new UnsupportedOperationException(); // TODO
+           }
    };
     
    // integer division
