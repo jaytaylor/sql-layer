@@ -68,8 +68,7 @@ class ReferencesCorrect implements AISValidation,Visitor {
         if (userTable == null) {
             output.reportFailure(new AISValidationFailure(
                     new AISNullReferenceException ("ais", "", "user table")));
-        }
-        if (userTable.isGroupTable()) {
+        } else if (userTable.isGroupTable()) {
             output.reportFailure(new AISValidationFailure(
                     new BadAISInternalSettingException("User table", userTable.getName().toString(), "isGroupTable")));
         }
@@ -81,8 +80,7 @@ class ReferencesCorrect implements AISValidation,Visitor {
         if (column == null) {
             output.reportFailure(new AISValidationFailure(
                     new AISNullReferenceException ("user table", visitingTable.getName().toString(), "column")));
-        }
-        if (column.getTable() != visitingTable) {
+        } else if (column.getTable() != visitingTable) {
             output.reportFailure(new AISValidationFailure(
                     new BadAISReferenceException ("column", column.getName(), "table", visitingTable.getName().toString())));
         }
@@ -94,8 +92,7 @@ class ReferencesCorrect implements AISValidation,Visitor {
         if (groupTable == null) {
             output.reportFailure(new AISValidationFailure(
                     new AISNullReferenceException("ais", "", "group table")));
-        }
-        if (groupTable.isUserTable()) {
+        } else if (groupTable.isUserTable()) {
             output.reportFailure(new AISValidationFailure(
                     new BadAISInternalSettingException ("Group table", groupTable.getName().toString(), "isUserTable")));
         }
@@ -107,9 +104,7 @@ class ReferencesCorrect implements AISValidation,Visitor {
         if (group == null) {
             output.reportFailure(new AISValidationFailure(
                     new AISNullReferenceException("ais", "", "group")));
-            return;
-        }
-        if (group.getGroupTable() == null) {
+        } else  if (group.getGroupTable() == null) {
             output.reportFailure(new AISValidationFailure(
                     new AISNullReferenceException("group", group.getName(), "group table")));
         }
@@ -138,9 +133,7 @@ class ReferencesCorrect implements AISValidation,Visitor {
         if (indexColumn == null) {
             output.reportFailure(new AISValidationFailure (
                     new AISNullReferenceException ("index", visitingIndex.getIndexName().toString(), "column")));
-            return;
-        }
-        if (indexColumn.getIndex() != visitingIndex) {
+        } else if (indexColumn.getIndex() != visitingIndex) {
             output.reportFailure(new AISValidationFailure (
                     new BadAISReferenceException ("Index column",indexColumn.getColumn().getName(), 
                             "index", visitingIndex.getIndexName().toString())));

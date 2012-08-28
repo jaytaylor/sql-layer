@@ -64,7 +64,6 @@ public class UniqueIndexScanIT extends OperatorITBase
         xIndexRowType = indexType(item, "x");
         yIndexRowType = indexType(item, "y");
         xyIndexRowType = indexType(item, "x", "y");
-        group = groupTable(item);
         db = new NewRow[]{
             createNewRow(item, 1L, 10L, 10L),
             createNewRow(item, 2L, 20L, 20L),
@@ -559,6 +558,5 @@ public class UniqueIndexScanIT extends OperatorITBase
     private IndexRowType xIndexRowType;
     private IndexRowType yIndexRowType;
     private IndexRowType xyIndexRowType;
-    private GroupTable group;
 
 }

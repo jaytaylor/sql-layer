@@ -62,7 +62,7 @@ public final class Cast_From_Decimal {
     public static final TCast TO_FLOAT = new TCastBase(MNumeric.DECIMAL, MApproximateNumber.FLOAT) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            BigDecimalWrapper decimal = (BigDecimalWrapper) source.getObject();
+            BigDecimalWrapper decimal = MBigDecimal.getWrapper(source, context.inputTInstanceAt(0));
             float asFloat = decimal.asBigDecimal().floatValue();
             target.putFloat(asFloat);
         }
@@ -71,7 +71,7 @@ public final class Cast_From_Decimal {
     public static final TCast UNSIGNED_TO_FLOAT = new TCastBase(MNumeric.DECIMAL_UNSIGNED, MApproximateNumber.FLOAT) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            BigDecimalWrapper decimal = (BigDecimalWrapper) source.getObject();
+            BigDecimalWrapper decimal = MBigDecimal.getWrapper(source, context.inputTInstanceAt(0));
             float asFloat = decimal.asBigDecimal().floatValue();
             target.putFloat(asFloat);
         }
@@ -80,7 +80,7 @@ public final class Cast_From_Decimal {
     public static final TCast TO_DOUBLE = new TCastBase(MNumeric.DECIMAL, MApproximateNumber.DOUBLE) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            BigDecimalWrapper decimal = (BigDecimalWrapper) source.getObject();
+            BigDecimalWrapper decimal = MBigDecimal.getWrapper(source, context.inputTInstanceAt(0));
             double asDouble = decimal.asBigDecimal().doubleValue();
             target.putDouble(asDouble);
         }
@@ -89,7 +89,7 @@ public final class Cast_From_Decimal {
     public static final TCast TO_BIGINT = new TCastBase(MNumeric.DECIMAL, MNumeric.BIGINT) {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            BigDecimalWrapper wrapped = (BigDecimalWrapper) source.getObject();
+            BigDecimalWrapper wrapped = MBigDecimal.getWrapper(source, context.inputTInstanceAt(0));
             BigDecimal bd = wrapped.asBigDecimal();
             int signum = bd.signum();
             long longVal;

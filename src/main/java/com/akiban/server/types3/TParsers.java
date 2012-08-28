@@ -31,6 +31,7 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.google.common.primitives.UnsignedLongs;
 
 import java.math.BigDecimal;
 
@@ -41,7 +42,33 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putBool(Boolean.parseBoolean(source.getString()));
+            // parse source is a string representing a number-ish, where '0' is false, any other integer is true.
+            // We're looking for an optional negative, followed by an optional dot, followed by any number of digits,
+            // followed by anything. If any of those digits is not 0, the result is true; otherwise it's false.
+            String s = source.getString();
+            boolean negativeAllowed = true;
+            boolean periodAllowed = true;
+            boolean result = false;
+            for (int i = 0, len = s.length(); i < len; ++i) {
+                char c = s.charAt(i);
+                if (negativeAllowed && c == '-') {
+                    negativeAllowed = false;
+                }
+                else if (periodAllowed && c == '.') {
+                    periodAllowed = false;
+                    negativeAllowed = false;
+                }
+                else if (Character.isDigit(c)) {
+                    if (c != '0') {
+                        result = true;
+                        break;
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+            target.putBool(result);
         }
     };
     
@@ -156,7 +183,21 @@ public class TParsers
         }
     };
 
-    public static final TParser UNSIGNED_BIGINT = BIGINT; // TODO need a way to handle larger numbers.
+    public static final TParser UNSIGNED_BIGINT = new TParser() {
+        @Override
+        public void parse(TExecutionContext context, PValueSource source, PValueTarget target) {
+            String st = CastUtils.truncateNonDigits(source.getString(), context);
+
+            long value;
+            try {
+                value = UnsignedLongs.parseUnsignedLong(st);
+            } catch (NumberFormatException e) { // overflow error
+                context.reportOverflow(e.getMessage());
+                value = UnsignedLongs.MAX_VALUE;
+            }
+            target.putInt64(value);
+        }
+    };
     
     public static final TParser FLOAT = new TParser()
     {

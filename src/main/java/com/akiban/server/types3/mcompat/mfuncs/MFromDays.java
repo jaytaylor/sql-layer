@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -38,6 +39,10 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class MFromDays extends TOverloadBase
 {
+    public static final TOverload INSTANCE = new MFromDays();
+    
+    private MFromDays(){};
+
     private static final long BEGINNING = MDatetimes.getTimestamp(new long[]{0, 1, 1, 0, 0, 0},
                                                                   "UTC");
     private  static final long FACTOR = 3600L * 1000 * 24;
@@ -62,6 +67,7 @@ public class MFromDays extends TOverloadBase
     {
         return "FROM_DAYS";
     }
+
     @Override
     public TOverloadResult resultType()
     {

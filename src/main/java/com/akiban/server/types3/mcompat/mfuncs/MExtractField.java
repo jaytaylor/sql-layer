@@ -39,6 +39,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.Locale;
 
 public abstract class MExtractField extends TOverloadBase
 {
@@ -94,6 +95,17 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.MONTH_INDEX];
             }
         },
+        new MExtractField("WEEKDAY", MDatetimes.DATE, Decoder.DATE)
+        {
+            @Override
+            protected int getField(long[] ymd, TExecutionContext context)
+            {
+                
+                 //mysql: (0 = Monday, 1 = Tuesday, … 6 = Sunday).
+                 //joda:  mon = 1, ..., sat = 6, sun = 7
+                return MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfWeek() - 1;
+            }   
+        },
         new MExtractField("LAST_DAY", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
@@ -142,6 +154,35 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.SEC_INDEX];
             }
         },
+        new TOverloadBase() // DAYNAME
+        {
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder)
+            {
+                builder.covers(MDatetimes.DATE, 0);
+            }
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+            {
+                String dayName = MDatetimes.toJodaDatetime(MDatetimes.decodeDate(inputs.get(0).getInt32()),
+                                                           context.getCurrentTimezone()).dayOfWeek().
+                                                                getAsText(context.getCurrentLocale());
+                output.putString(dayName, null);
+            }
+
+            @Override
+            public String displayName()
+            {
+                return "DAYNAME";
+            }
+
+            @Override
+            public TOverloadResult resultType()
+            {
+                return TOverloadResult.fixed(MString.VARCHAR.instance(9));
+            }
+        },
         new TOverloadBase() // MONTHNAME
         {
             @Override
@@ -154,7 +195,9 @@ public abstract class MExtractField extends TOverloadBase
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
             {
                 int numericMonth = (int) MDatetimes.decodeDate(inputs.get(0).getInt32())[MDatetimes.MONTH_INDEX];
-                String month = MDatetimes.getMonthName(numericMonth, context.getCurrentLocale(), context);
+                String month = MDatetimes.getMonthName(numericMonth,
+                                                       context.getCurrentLocale().getLanguage(),
+                                                       context);
                 output.putString(month, null);
             }
 
@@ -167,9 +210,6 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             public TOverloadResult resultType()
             {
-                // TODO
-                // Could make this better by trying to evaluate the arg,
-                // if it's literal to get the exact string length
                 return TOverloadResult.fixed(MString.VARCHAR.instance(9));
             }
         }

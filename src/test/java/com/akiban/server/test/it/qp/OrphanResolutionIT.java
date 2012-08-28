@@ -26,35 +26,21 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.field;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class OrphanResolutionIT extends OperatorITBase
 {
@@ -74,7 +60,7 @@ public class OrphanResolutionIT extends OperatorITBase
         schema = new Schema(rowDefCache().ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
-        group = groupTable(parent);
+        group = group(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
@@ -114,5 +100,5 @@ public class OrphanResolutionIT extends OperatorITBase
     private int child;
     private UserTableRowType parentRowType;
     private UserTableRowType childRowType;
-    private GroupTable group;
+    private Group group;
 }

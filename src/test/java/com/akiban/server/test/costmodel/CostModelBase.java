@@ -54,9 +54,9 @@ public class CostModelBase extends ApiTestBase
         disableTaps();
     }
 
-    protected GroupTable groupTable(int userTableId)
+    protected Group group(int userTableId)
     {
-        return rowDefCache().rowDef(userTableId).table().getGroup().getGroupTable();
+        return rowDefCache().rowDef(userTableId).table().getGroup();
     }
 
     protected UserTable userTable(int userTableId)

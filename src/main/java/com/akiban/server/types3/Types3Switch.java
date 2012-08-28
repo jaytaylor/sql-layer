@@ -27,5 +27,8 @@
 package com.akiban.server.types3;
 
 public class Types3Switch {
-    public static volatile boolean ON = Boolean.getBoolean("newtypes");
+    public static final boolean DEFAULT = Boolean.getBoolean("newtypes");
+
+    public static volatile boolean SET_ON = DEFAULT;
+    public static volatile boolean ON = DEFAULT;
 }

@@ -29,11 +29,14 @@ package com.akiban.server.types3.pvalue;
 import com.akiban.server.collation.AkCollator;
 
 public final class PValue implements PValueSource, PValueTarget {
-
     // PValue interface
     
     public void underlying(PUnderlying underlying) {
         this.underlying = underlying;
+        this.state = State.UNSET;
+    }
+
+    public void unset() {
         this.state = State.UNSET;
     }
     
@@ -314,7 +317,7 @@ public final class PValue implements PValueSource, PValueTarget {
         this.bVal = bVal;
         this.oCache = oCache;
     }
-    
+
     public PValue() {
         this((PUnderlying)null);
     }

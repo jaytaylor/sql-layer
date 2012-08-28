@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -76,7 +76,7 @@ public class FlattenCT extends CostModelBase
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         parentPKIndexType = indexType(parent, "pid", "parent_instance");
-        group = groupTable(parent);
+        group = group(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -140,5 +140,5 @@ public class FlattenCT extends CostModelBase
     private UserTableRowType parentRowType;
     private UserTableRowType childRowType;
     private IndexRowType parentPKIndexType;
-    private GroupTable group;
+    private Group group;
 }

@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.pt.qp;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -79,7 +80,7 @@ public class GroupScanProfilePT extends QPProfilePTBase
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
-        coi = groupTable(customer);
+        coi = group(customer);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -140,5 +141,5 @@ public class GroupScanProfilePT extends QPProfilePTBase
     protected IndexRowType itemOidIndexRowType;
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
-    protected GroupTable   coi;
+    protected Group coi;
 }

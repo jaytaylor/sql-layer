@@ -108,7 +108,7 @@ public class Cast_From_Bigint
         {
             long raw = source.getInt64();
             long ymd[] = MDatetimes.decodeDatetime(raw);
-                        if (!MDatetimes.isValidDatetime(ymd))
+            if (!MDatetimes.isValidDatetime(ymd))
             {
                 context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
                 target.putNull();

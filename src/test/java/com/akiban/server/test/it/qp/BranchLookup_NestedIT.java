@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -85,7 +85,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
         aValueIndexRowType = indexType(a, "avalue");
         bValueIndexRowType = indexType(b, "bvalue");
         cValueIndexRowType = indexType(c, "cvalue");
-        rabc = groupTable(r);
+        rabc = group(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
                           createNewRow(r, 2L, "r2"),
                           createNewRow(a, 13L, 1L, "a13"),
@@ -424,5 +424,5 @@ public class BranchLookup_NestedIT extends OperatorITBase
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType bValueIndexRowType;
     protected IndexRowType cValueIndexRowType;
-    protected GroupTable rabc;
+    protected Group rabc;
 }

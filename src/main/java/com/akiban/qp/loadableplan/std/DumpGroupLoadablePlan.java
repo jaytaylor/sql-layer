@@ -102,7 +102,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             if (rootTable == null)
                 throw new NoSuchTableException(schemaName, tableName);
             cursor = context.getStore(rootTable)
-                .newGroupCursor(rootTable.getGroup().getGroupTable());
+                .newGroupCursor(rootTable.getGroup());
             cursor.open();
             tableSizes = new HashMap<UserTable,Integer>();
             buffer = new StringBuilder();

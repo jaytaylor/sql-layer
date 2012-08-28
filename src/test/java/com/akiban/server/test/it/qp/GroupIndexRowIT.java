@@ -26,8 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -76,7 +76,7 @@ public class GroupIndexRowIT extends OperatorITBase
         memberInfoRowType = schema.userTableRowType(userTable(memberInfo));
         entitlementUserGroupRowType = schema.userTableRowType(userTable(entitlementUserGroup));
         groupIndexRowType = groupIndexType(Index.JoinType.LEFT, "entitlement_user_group.uid", "member_info.lastLogin");
-        group = groupTable(user);
+        group = group(user);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
@@ -128,5 +128,5 @@ public class GroupIndexRowIT extends OperatorITBase
     private UserTableRowType memberInfoRowType;
     private UserTableRowType entitlementUserGroupRowType;
     private IndexRowType groupIndexRowType;
-    private GroupTable group;
+    private Group group;
 }

@@ -84,6 +84,18 @@ public class AggregateSplitter extends BaseRule
                 }
             }
         }
+         
+        // order by
+        List<OrderByExpression> orderBy = checkOrderBy(source);
+        if(orderBy != null)
+        {
+            PlanNode input = source.getInput();
+            PlanNode sortedInput = new Sort(new Project(input, source.splitOffProject()),
+                                            orderBy);
+            source.replaceInput(input, sortedInput);
+            
+        }
+        
         boolean distinct = checkDistinctDistincts(source);
         // Another way to do this would be to have a different class
         // for AggregateSource in the split-off state. Doing that
@@ -96,17 +108,7 @@ public class AggregateSplitter extends BaseRule
             ninput = new Distinct(ninput);
         source.replaceInput(input, ninput);
         
-        
-        // order by
-        List<OrderByExpression> orderBy = checkOrderBy(source);
-        if(orderBy != null)
-        {
-            input = source.getInput();
-            PlanNode sortedInput = new Sort(new Project(input, fields),
-                                            orderBy);
-            source.replaceInput(input, sortedInput);
-            
-        }
+       
     }
     
     protected List<OrderByExpression> checkOrderBy(AggregateSource source)

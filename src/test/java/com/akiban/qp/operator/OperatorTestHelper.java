@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
@@ -173,7 +174,7 @@ public final class OperatorTestHelper {
     private static class TestAdapter extends StoreAdapter
     {
         @Override
-        public GroupCursor newGroupCursor(GroupTable groupTable)
+        public GroupCursor newGroupCursor(Group group)
         {
             throw new UnsupportedOperationException();
         }

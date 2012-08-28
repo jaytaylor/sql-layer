@@ -137,7 +137,7 @@ public final class TComparisonExpression implements TPreparedExpression {
         final boolean result;
         switch (actualComparison) {
         case EQ:
-            result = (comparison == Comparison.EQ);
+            result = (comparison == Comparison.EQ) || (comparison == Comparison.LE) || (comparison == Comparison.GE);
             break;
         case GT:
             result = (comparison == Comparison.GT || comparison == Comparison.GE || comparison == Comparison.NE);

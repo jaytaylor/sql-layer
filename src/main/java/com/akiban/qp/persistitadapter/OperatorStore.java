@@ -109,7 +109,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
 
             UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
-            GroupTable groupTable = userTable.getGroup().getGroupTable();
+            Group group = userTable.getGroup();
 
             final TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
             assert index != null : userTable;
@@ -130,7 +130,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             Operator indexScan = indexScan_Default(indexType, false, range);
             Operator scanOp;
-            scanOp = ancestorLookup_Default(indexScan, groupTable, indexType, Collections.singletonList(tableType), API.InputPreservationOption.DISCARD_INPUT);
+            scanOp = ancestorLookup_Default(indexScan, group, indexType, Collections.singletonList(tableType), API.InputPreservationOption.DISCARD_INPUT);
 
             // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
             // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
@@ -281,7 +281,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
 
-        Exchange hEx = adapter.takeExchange(userTable.getGroup().getGroupTable());
+        Exchange hEx = adapter.takeExchange(userTable.getGroup());
         try {
             // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
             // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,

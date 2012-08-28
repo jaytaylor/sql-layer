@@ -54,10 +54,9 @@ import static org.junit.Assert.assertTrue;
 
 public class QPProfilePTBase extends PTBase
 {
-    protected GroupTable groupTable(int userTableId)
+    protected Group group(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
-        return userTableRowDef.table().getGroup().getGroupTable();
+        return rowDefCache().rowDef(userTableId).table().getGroup();
     }
 
     protected UserTable userTable(int userTableId)

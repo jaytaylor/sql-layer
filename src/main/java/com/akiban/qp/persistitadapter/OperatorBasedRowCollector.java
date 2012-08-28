@@ -286,21 +286,21 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         // Plan and query
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
         boolean useIndex = predicateIndex != null;
-        GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
+        Group group = queryRootTable.getGroup();
         Operator plan;
         if (useIndex) {
             Operator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
                                                    descending,
                                                    indexKeyRange);
             plan = branchLookup_Default(indexScan,
-                    groupTable,
+                    group,
                     predicateType.indexRowType(predicateIndex),
                     predicateType,
                     InputPreservationOption.DISCARD_INPUT,
                     limit);
         } else {
             assert !descending;
-            plan = groupScan_Default(groupTable);
+            plan = groupScan_Default(group);
             if (scanLimit != ScanLimit.NONE) {
                 if (scanLimit instanceof FixedCountLimit) {
                     plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit(), usePVals);
@@ -313,7 +313,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (queryRootType != predicateType) {
             List<UserTableRowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
-                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, InputPreservationOption.KEEP_INPUT);
+                plan = ancestorLookup_Default(plan, group, predicateType, ancestorTypes, InputPreservationOption.KEEP_INPUT);
             }
         }
         // Get rid of everything above query root table.

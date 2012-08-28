@@ -128,8 +128,8 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
-                        .add((BigDecimalWrapper)inputs.get(0).getObject())
-                        .add((BigDecimalWrapper)inputs.get(1).getObject()));
+                        .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
+                        .add(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
         }
 
         @Override
@@ -188,8 +188,8 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
-                        .add((BigDecimalWrapper)inputs.get(0).getObject())
-                        .subtract((BigDecimalWrapper)inputs.get(1).getObject()));
+                        .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
+                        .subtract(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
         }
 
        @Override
@@ -268,13 +268,13 @@ public abstract class MArithmetic extends TArithmetic {
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
-            BigDecimalWrapper divisor = (BigDecimalWrapper) inputs.get(1).getObject();
+            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
             
             if (divisor.isZero())
                 output.putNull();
             else
                 output.putObject(getWrapper(context)
-                                    .add((BigDecimalWrapper)inputs.get(0).getObject())
+                                    .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
                                     .divide(divisor,
                                             context.outputTInstance().
                                                 attribute(MBigDecimal.Attrs.SCALE)));  // get the scale computed
@@ -380,13 +380,13 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
-            BigDecimalWrapper divisor = (BigDecimalWrapper) inputs.get(1).getObject();
+            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
             
             if (divisor.isZero())
                 output.putNull();
             else
                 output.putObject(getWrapper(context)
-                                    .add((BigDecimalWrapper)inputs.get(0).getObject())
+                                    .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
                                     .divideToIntegeralValue(divisor)); // scale is 0
         }
    };
@@ -543,13 +543,13 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {            
-             BigDecimalWrapper divisor = (BigDecimalWrapper) inputs.get(1).getObject();
+             BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
 
              if (divisor.isZero())
                  output.putNull();
              else
                  output.putObject(getWrapper(context)
-                                     .add((BigDecimalWrapper)inputs.get(0).getObject())
+                                     .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
                                      .mod(divisor));
         }
    };

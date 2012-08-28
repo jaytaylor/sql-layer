@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
@@ -84,7 +85,6 @@ import com.akiban.qp.expression.UnboundExpressions;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
@@ -926,8 +926,8 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleGroupScan(GroupScan groupScan) {
             RowStream stream = new RowStream();
-            GroupTable groupTable = groupScan.getGroup().getGroup().getGroupTable();
-            stream.operator = API.groupScan_Default(groupTable);
+            Group group = groupScan.getGroup().getGroup();
+            stream.operator = API.groupScan_Default(group);
             stream.unknownTypesPresent = true;
             return stream;
         }
@@ -1052,7 +1052,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleAncestorLookup(AncestorLookup ancestorLookup) {
             RowStream stream;
-            GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
+            Group group = ancestorLookup.getDescendant().getGroup();
             List<UserTableRowType> ancestorTypes =
                 new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
@@ -1062,7 +1062,7 @@ public class OperatorAssembler extends BaseRule
                 stream = new RowStream();
                 int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)ancestorLookup.getInput()));
                 ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
-                stream.operator = API.ancestorLookup_Nested(groupTable, 
+                stream.operator = API.ancestorLookup_Nested(group,
                                                             boundRow.getRowType(),
                                                             ancestorTypes,
                                                             rowIndex + loopBindingsOffset);
@@ -1077,7 +1077,7 @@ public class OperatorAssembler extends BaseRule
                     flag = API.InputPreservationOption.KEEP_INPUT;
                 }
                 stream.operator = API.ancestorLookup_Default(stream.operator,
-                                                             groupTable,
+                                                             group,
                                                              inputRowType,
                                                              ancestorTypes,
                                                              flag);
@@ -1089,12 +1089,12 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleBranchLookup(BranchLookup branchLookup) {
             RowStream stream;
-            GroupTable groupTable = branchLookup.getSource().getGroup().getGroupTable();
+            Group group = branchLookup.getSource().getGroup();
             if (branchLookup.getInput() == null) {
                 // Simple version for Product_NestedLoops.
                 stream = new RowStream();
                 API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
-                stream.operator = API.branchLookup_Nested(groupTable, 
+                stream.operator = API.branchLookup_Nested(group,
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getAncestor()),
                                                           tableRowType(branchLookup.getBranch()), 
@@ -1108,7 +1108,7 @@ public class OperatorAssembler extends BaseRule
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
                 int rowIndex = lookupNestedBoundRowIndex(((GroupLoopScan)branchLookup.getInput()));
                 ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
-                stream.operator = API.branchLookup_Nested(groupTable, 
+                stream.operator = API.branchLookup_Nested(group,
                                                           boundRow.getRowType(),
                                                           tableRowType(branchLookup.getAncestor()),
                                                           tableRowType(branchLookup.getBranch()), 
@@ -1125,8 +1125,8 @@ public class OperatorAssembler extends BaseRule
                     inputRowType = tableRowType(branchLookup.getSource());
                     flag = API.InputPreservationOption.KEEP_INPUT;
                 }
-                stream.operator = API.branchLookup_Default(stream.operator, 
-                                                           groupTable, 
+                stream.operator = API.branchLookup_Default(stream.operator,
+                                                           group,
                                                            inputRowType,
                                                            tableRowType(branchLookup.getBranch()), 
                                                            flag);

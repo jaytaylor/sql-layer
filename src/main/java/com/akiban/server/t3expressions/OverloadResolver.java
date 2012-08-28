@@ -110,8 +110,8 @@ public final class OverloadResolver {
             return tClass1;
 
         // Alright, neither is null and they're both different. Try the hard way.
-        Set<? extends TClass> t1Targets = registry.stronglyCastableTo(tClass1);
-        Set<? extends TClass> t2Targets = registry.stronglyCastableTo(tClass2);
+        Set<? extends TClass> t1Targets = registry.stronglyCastableFrom(tClass1);
+        Set<? extends TClass> t2Targets = registry.stronglyCastableFrom(tClass2);
 
         // TODO: The following is not very efficient -- opportunity for optimization?
 
