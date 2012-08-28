@@ -45,6 +45,10 @@ import java.util.Map;
 
 public final class TValidatedOverload implements TOverload {
 
+    public TOverload getUnderlying() {
+        return overload;
+    }
+
     // TOverload methods (straight delegation)
 
     @Override
