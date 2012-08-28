@@ -171,7 +171,7 @@ abstract class ExpressionAssembler<T> {
     }
 
     public abstract Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys,
-                                            List<String> names);
+                                            List<String> names, List<Object> options);
 
     public interface ColumnExpressionToIndex {
         /** Return the field position of the given column in the target row. */

@@ -1166,7 +1166,7 @@ public class ASTStatementLoader extends BaseRule
                                                        aggregateNode.isDistinct(),
                                                        type, valueNode,
                                                        aggregateNode instanceof GroupConcatNode 
-                                                                ? ((GroupConcatNode)aggregateNode).getSeparator().getString()
+                                                                ? ((GroupConcatNode)aggregateNode).getSeparator()
                                                                 : null);
             }
             else if (isConditionExpression(valueNode)) {

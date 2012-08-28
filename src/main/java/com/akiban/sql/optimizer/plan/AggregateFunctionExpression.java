@@ -37,16 +37,16 @@ public class AggregateFunctionExpression extends BaseExpression
     private String function;
     private ExpressionNode operand;
     private boolean distinct;
-    private Object arg;
+    private Object option;
 
     public AggregateFunctionExpression(String function, ExpressionNode operand,
                                        boolean distinct, 
-                                       DataTypeDescriptor sqlType, ValueNode sqlSource, Object arg) {
+                                       DataTypeDescriptor sqlType, ValueNode sqlSource, Object option) {
         super(sqlType, "COUNT".equals(function) ? AkType.LONG : operand.getAkType(), sqlSource);
         this.function = function;
         this.operand = operand;
         this.distinct = distinct;
-        this.arg = arg;
+        this.option = option;
     }
 
     public String getFunction() {
@@ -63,9 +63,9 @@ public class AggregateFunctionExpression extends BaseExpression
         this.operand = operand;
     }
 
-    public Object getArg()
+    public Object getOption()
     {
-        return arg;
+        return option;
     }
 
     @Override
@@ -77,7 +77,7 @@ public class AggregateFunctionExpression extends BaseExpression
                  (other.operand == null) :
                  operand.equals(other.operand)) &&
                 (distinct == other.distinct) &&
-                (arg == null ? other.arg == null : arg.equals(other.arg)));
+                (option == null ? other.option == null : option.equals(other.option)));
     }
 
     @Override

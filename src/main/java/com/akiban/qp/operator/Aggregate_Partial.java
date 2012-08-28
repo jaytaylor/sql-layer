@@ -184,8 +184,13 @@ final class Aggregate_Partial extends Operator
         final List<Aggregator> aggregators;
         if (aggregatorFactories != null) {
             aggregators = new ArrayList<Aggregator>();
-            for (AggregatorFactory factory : aggregatorFactories) {
-                aggregators.add(factory.get());
+            int limit = aggregatorFactories.size();
+            for (int n = 0; n < limit; ++n)
+            {
+                Object option = options.get(n);
+                AggregatorFactory ag = aggregatorFactories.get(n);
+                
+                aggregators.add(ag.get(option));
             }
         }
         else {
@@ -222,7 +227,8 @@ final class Aggregate_Partial extends Operator
     public Aggregate_Partial(Operator inputOperator,
                              RowType inputRowType,
                              int inputsIndex,
-                             List<AggregatorFactory> aggregatorFactories) {
+                             List<AggregatorFactory> aggregatorFactories,
+                             List<Object> options) {
         this(
                 inputOperator,
                 inputRowType,
@@ -230,7 +236,8 @@ final class Aggregate_Partial extends Operator
                 aggregatorFactories,
                 null,
                 null,
-                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, aggregatorFactories, null)
+                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, aggregatorFactories, null),
+                options
         );
     }
 
@@ -238,7 +245,8 @@ final class Aggregate_Partial extends Operator
                              RowType inputRowType,
                              int inputsIndex,
                              List<? extends TAggregator> aggregatorFactories,
-                             List<? extends TInstance> pAggrTypes) {
+                             List<? extends TInstance> pAggrTypes,
+                             List<Object> options) {
         this(
                 inputOperator,
                 inputRowType,
@@ -246,7 +254,8 @@ final class Aggregate_Partial extends Operator
                 null,
                 aggregatorFactories,
                 pAggrTypes,
-                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, null, pAggrTypes)
+                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, null, pAggrTypes),
+                options
         );
     }
 
@@ -288,9 +297,10 @@ final class Aggregate_Partial extends Operator
                       RowType inputRowType,
                       int inputsIndex,
                       List<AggregatorFactory> aggregatorFactories,
-                      AggregatedRowType outputType)
+                      AggregatedRowType outputType,
+                      List<Object> options)
     {
-        this(inputOperator, inputRowType, inputsIndex, aggregatorFactories, null, null, outputType);
+        this(inputOperator, inputRowType, inputsIndex, aggregatorFactories, null, null, outputType, options);
     }
 
     Aggregate_Partial(Operator inputOperator,
@@ -299,7 +309,8 @@ final class Aggregate_Partial extends Operator
                       List<AggregatorFactory> aggregatorFactories,
                       List<? extends TAggregator> pAggrs,
                       List<? extends TInstance> pAggrTypes,
-                      AggregatedRowType outputType) {
+                      AggregatedRowType outputType,
+                      List<Object> options) {
         this.inputOperator = inputOperator;
         this.inputRowType = inputRowType;
         this.inputsIndex = inputsIndex;
@@ -307,6 +318,7 @@ final class Aggregate_Partial extends Operator
         this.outputType = outputType;
         this.pAggrs = pAggrs;
         this.pAggrTypes = pAggrTypes;
+        this.options = options;
         validate();
     }
 
@@ -347,6 +359,7 @@ final class Aggregate_Partial extends Operator
     private final List<AggregatorFactory> aggregatorFactories;
     private final List<? extends TInstance> pAggrTypes;
     private final List<? extends TAggregator> pAggrs;
+    private final List<Object> options;
 
     @Override
     public Explainer getExplainer()
