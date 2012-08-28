@@ -136,7 +136,7 @@ public class NumericFormatter {
                 out.append("X'");
                 for (int i = 0; i < value.length; i++) {
                     int b = value[i] & 0xFF;
-                    out.append(hexDigit(b >> 8));
+                    out.append(hexDigit(b >> 4));
                     out.append(hexDigit(b & 0xF));
                 }
                 out.append('\'');
