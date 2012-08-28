@@ -188,9 +188,9 @@ public class ServerValueEncoder
         return getByteStream();
     }
     
-        /** Encode the given direct value. */
+    /** Encode the given direct value. */
     public ByteArrayOutputStream encodePObject(Object value, ServerType type, 
-                                              boolean binary) throws IOException {
+                                               boolean binary) throws IOException {
         if (value == null)
             return null;
         reset();
@@ -263,7 +263,7 @@ public class ServerValueEncoder
         }
 
         // TODO this is inefficient, but I want to get it working. I created a task to fix it in pivotal.
-        PValueSource source = PValueSources.fromObject(objectSource, type.getAkType()).value();
+        PValueSource source = PValueSources.fromObject(value, type.getAkType()).value();
         appendPValue(source, type, binary);
     }
     
