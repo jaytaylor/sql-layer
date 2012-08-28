@@ -1,5 +1,8 @@
 ## Test CONCAT_WS
 ---
+- Statement: SELECT CONCAT_WS('a', '1');
+- output: [['1']]
+---
 - Statement: SELECT CONCAT_WS('a', '1', '2', '3');
 - output: [['1a2a3']]
 ---
@@ -17,4 +20,10 @@
 --- # empty strings are NOT skipped
 - Statement: SELECT concat_ws('abc', '', '', '');
 - output: [['abcabc']]
+---
+- Statement: SELECT CONCAT_WS();
+- error: [4250C]
+---
+- Statement: SELECT CONCAT_WS('a');
+- error: [4250C]
 ...

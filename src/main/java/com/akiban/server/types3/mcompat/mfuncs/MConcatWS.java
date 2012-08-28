@@ -49,18 +49,17 @@ public class MConcatWS extends TOverloadBase
         // the function should have at least 2 args
         builder.covers(MString.VARCHAR, 0, 1).vararg(MString.VARCHAR, 2);
     }
+    
+    @Override
+    protected boolean nullContaminates(int inputIndex)
+    {
+        return inputIndex == 0;
+    }
 
     @Override
-    public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        PValueSource delimSource = inputs.get(0);
-        if (delimSource.isNull())
-        {
-            output.putNull();
-            return;
-        }
-        
-        String delim = delimSource.getString();
+        String delim = inputs.get(0).getString();
         StringBuilder ret = new StringBuilder();
 
         for (int n = 1; n < inputs.size(); ++n)
@@ -72,14 +71,8 @@ public class MConcatWS extends TOverloadBase
         if (ret.length()!= 0)
             ret.delete(ret.length() - delim.length(),
                        ret.length());
-        
+
         output.putString(ret.toString(), null);
-    }
-    
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        assert false : "This shouldn't be called";
     }
 
     @Override
