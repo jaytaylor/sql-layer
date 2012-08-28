@@ -41,6 +41,8 @@ import java.util.List;
 public interface ExpressionComposer {
     public static enum NullTreating
     {
+        REMOVE_AFTER_FIRST,  // only remove the NULLs if it's the first arg (ELT and CONCAT_WS)
+        
         IGNORE,       // The function will treat NULL as if it were any regular value
        
         RETURN_NULL,  // The function will return NULL if at least one of its operands is NULL

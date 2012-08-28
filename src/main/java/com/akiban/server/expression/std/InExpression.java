@@ -66,7 +66,7 @@ public final class InExpression extends AbstractCompositeExpression {
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.IGNORE;
+            return NullTreating.RETURN_NULL; // NULL is actually contaminating in IN
         }
     };
 
@@ -83,7 +83,7 @@ public final class InExpression extends AbstractCompositeExpression {
 
     @Override
     public boolean nullIsContaminating() {
-        return false;
+        return true;
     }
 
     public InExpression(Expression lhs, List<? extends Expression> rhs) {

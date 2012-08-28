@@ -29,6 +29,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
@@ -37,82 +38,100 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
+import java.util.Iterator;
 import java.util.List;
 
-public class EltExpression extends AbstractCompositeExpression
+public class ConcatWSExpression extends AbstractCompositeExpression
 {
-    @Scalar("elt")
+    @Scalar("concat_ws")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer()
     {
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
-            int size = argumentTypes.size();
-            if (size < 2) throw new WrongExpressionArityException(2, size);
+            if (argumentTypes.size() < 2)
+                throw new WrongExpressionArityException(2, argumentTypes.size());
             
-            argumentTypes.setType(0, AkType.LONG);
-            AkType top = CoalesceExpression.getTopType(argumentTypes.subList(1, size));
+            argumentTypes.setType(0, AkType.VARCHAR);
             
-            int maxPre = 0;
-            int maxScale = 0;
-            for (int n = 1; n < size; ++n)
+            int len = 0;
+            int dLen = argumentTypes.get(0).getPrecision();
+            
+            for (int n = 1; n < argumentTypes.size(); ++n)
             {
-                argumentTypes.setType(n, top);
-                maxPre = Math.max(maxPre, argumentTypes.get(n).getPrecision());
-                maxScale = Math.max(maxScale, argumentTypes.get(n).getScale());
+                argumentTypes.setType(n, AkType.VARCHAR);
+                len += argumentTypes.get(n).getPrecision() + dLen;
             }
-            
-            return ExpressionTypes.newType(top, maxPre, maxScale);
+            if (len > 0)
+                len -= dLen; // delete the last delilmeter
+
+            return ExpressionTypes.varchar(len);            
         }
 
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            return new EltExpression(arguments);
+            return new ConcatWSExpression(arguments);
         }
 
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.REMOVE_AFTER_FIRST; // This is a special case. NULL only makes the top NULL 
-                                                   // if it's the first arg
+            return NullTreating.REMOVE_AFTER_FIRST;
         }
-        
     };
-
-    @Override
-    public String name() {
-        return "ELT";
-    }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
-        InnerEvaluation (List<? extends ExpressionEvaluation> evals)
+        public InnerEvaluation(List<? extends ExpressionEvaluation> args)
         {
-            super(evals);
+            super(args);
         }
-        
+
         @Override
         public ValueSource eval()
         {
-            ValueSource indexSource = children().get(0).eval();
-            long index;
-            if (indexSource.isNull() || (index = indexSource.getLong()) <= 0 || index >= children().size()) 
+            Iterator<? extends ExpressionEvaluation> iter = children().iterator();
+            ValueSource delimeterSource = iter.next().eval();
+            
+            if (delimeterSource.isNull())
                 return NullValueSource.only();
-            return valueHolder().copyFrom(children().get((int)index).eval());
+            
+            String delimeter = delimeterSource.getString();
+            StringBuilder bd = new StringBuilder();
+
+            while (iter.hasNext())
+            {
+                ValueSource arg = iter.next().eval();
+                if (!arg.isNull())
+                    bd.append(arg.getString()).append(delimeter);
+            }
+            //remove the last delimeter
+            if(bd.length() > 0)
+                bd.delete(bd.length() - delimeter.length(),
+                          bd.length());
+
+            valueHolder().putString(bd.toString());
+            return valueHolder();
         }
+    }
+
+    protected ConcatWSExpression(List<? extends Expression> args)
+    {
+        super(AkType.VARCHAR, args);
+    }
+
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("CONCAT_WS");
     }
 
     @Override
     public boolean nullIsContaminating()
     {
-        return false; // This is a fun case. NULL is only contaminating if it is        
-    }                 // the first arg.
-
-    @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append(name());
+        // NULL is comtaminating only when it's the first arg
+        return false;
     }
 
     @Override
@@ -120,17 +139,10 @@ public class EltExpression extends AbstractCompositeExpression
     {
         return new InnerEvaluation(childrenEvaluations());
     }
-    
-    EltExpression (List<? extends Expression> children)
+
+    @Override
+    public String name()
     {
-        super(checkType(children),  children);
-    }
-    
-    private static AkType checkType(List<? extends Expression> children)
-    {
-        if (children.size() < 2) 
-            throw new WrongExpressionArityException(2, children.size());
-        else                                    // input types have been "homogenised", so it's
-            return children.get(1).valueType(); // safe to just return the 'first' arg in the list
+        return "CONCAT_WS";
     }
 }
