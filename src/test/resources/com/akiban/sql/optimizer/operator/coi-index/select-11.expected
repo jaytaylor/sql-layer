@@ -1,5 +1,5 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], value:DATE]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     Project_Default(Field(0), Field(1))
       Aggregate_Partial(GROUP BY cid: MAX)
         Project_Default(orders.cid, orders.order_date)

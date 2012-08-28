@@ -1,5 +1,5 @@
 PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     Distinct_Partial()
       Project_Default(i2.sku)
         IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku)

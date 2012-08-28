@@ -2,7 +2,7 @@ PhysicalSelect[name:varchar(32)[VARCHAR], _SQL_COL_1:VARCHAR(32) CHARACTER SET u
   Project_Default(customers.name, VALUE(SUBQUERY 1))
     IndexScan_Default(Index(customers.name), name)
   SUBQUERY 1: VALUE(Field(0))
-    Map_NestedLoops(loop_1)
+    Map_NestedLoops()
       Filter_Default(items)
         GroupScan_Default(customers)
       Project_Default(i2.sku)

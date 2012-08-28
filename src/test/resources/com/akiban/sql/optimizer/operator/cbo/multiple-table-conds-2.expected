@@ -1,7 +1,7 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     IndexScan_Default(Index(parent.name), name)
-    Map_NestedLoops(loop_1)
+    Map_NestedLoops()
       Select_HKeyOrdered(LIKE_SENSITIVE(customers.name, 'M%'))
         IndexScan_Default(Index(customers.name), name = parent.name)
       Project_Default(customers.name)

@@ -1,8 +1,8 @@
 PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], oid:int[INT], cid:int[INT], order_date:date[DATE], id:int[INT], pid:int[INT], name:varchar(256)[VARCHAR], iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     Filter_Default(child)
       GroupScan_Default(parent)
-    Map_NestedLoops(loop_1)
+    Map_NestedLoops()
       Flatten_HKeyOrdered(customers INNER orders)
         AncestorLookup_Default(Index(orders.PRIMARY) -> customers, orders)
           IndexScan_Default(Index(orders.PRIMARY), oid = child.pid)

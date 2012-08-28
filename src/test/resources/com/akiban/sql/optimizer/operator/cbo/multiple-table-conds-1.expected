@@ -1,5 +1,5 @@
 PhysicalSelect[cid:int[INT]]
-  Map_NestedLoops(loop_0)
+  Map_NestedLoops()
     AncestorLookup_Default(Index(parent.PRIMARY) -> parent)
       IndexScan_Default(Index(parent.PRIMARY), id > 1)
     Project_Default(customers.cid)

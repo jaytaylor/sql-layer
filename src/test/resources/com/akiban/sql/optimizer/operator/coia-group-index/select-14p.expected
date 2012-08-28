@@ -1,5 +1,5 @@
 PhysicalSelect[VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin][order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops(loop_3)
+  Map_NestedLoops()
     Sort_InsertionLimited(Field(0) ASC, LIMIT 4, SUPPRESS DUPLICATES)
       ValuesScan_Default(['1234'], [$1], [$2], [$3])
     Project_Default(orders.order_date, items.sku, items.quan)
