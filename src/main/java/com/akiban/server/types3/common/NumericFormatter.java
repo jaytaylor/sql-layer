@@ -38,6 +38,7 @@ import com.google.common.primitives.UnsignedLongs;
 
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
+import java.util.Formatter;
 
 public class NumericFormatter {
 
@@ -47,11 +48,21 @@ public class NumericFormatter {
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Float.toString(source.getFloat()));
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                new Formatter(out.getAppendable()).format("%e", source.getFloat());
+            }
         },
         DOUBLE {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Double.toString(source.getDouble()));
+            }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                new Formatter(out.getAppendable()).format("%e", source.getFloat());
             }
         },
         INT_8 {
@@ -59,11 +70,21 @@ public class NumericFormatter {
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Byte.toString(source.getInt8()));
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                format(instance, source, out);
+            }
         },
         INT_16 {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Short.toString(source.getInt16()));
+            }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                format(instance, source, out);
             }
         },
         INT_32 {
@@ -71,17 +92,32 @@ public class NumericFormatter {
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Integer.toString(source.getInt32()));
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                format(instance, source, out);
+            }
         },
         INT_64 {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Long.toString(source.getInt64()));
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                format(instance, source, out);
+            }
         },
         UINT_64 {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(UnsignedLongs.toString(source.getInt64()));
+            }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                format(instance, source, out);
             }
         },
         BYTES {
@@ -93,7 +129,27 @@ public class NumericFormatter {
                 Charset charset = Charset.forName(charsetName);
                 out.append(new String(source.getBytes(), charset));
             }
-        },BIGDECIMAL{
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                byte[] value = source.getBytes();
+                out.append("X'");
+                for (int i = 0; i < value.length; i++) {
+                    int b = value[i] & 0xFF;
+                    out.append(hexDigit(b >> 8));
+                    out.append(hexDigit(b & 0xF));
+                }
+                out.append('\'');
+            }
+
+            private char hexDigit(int n) {
+                if (n < 10)
+                    return (char)('0' + n);
+                else
+                    return (char)('A' + n - 10);
+            }
+        },
+        BIGDECIMAL{
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 if (source.hasCacheValue()) {
@@ -105,6 +161,11 @@ public class NumericFormatter {
                     int scale = instance.attribute(Attrs.SCALE);
                     ConversionHelperBigDecimal.decodeToString(source.getBytes(), 0, precision, scale, out);
                 }
+            }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                format(instance, source, out);
             }
         }
     }

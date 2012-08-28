@@ -52,8 +52,7 @@ public final class TPreparedLiteral implements TPreparedExpression {
     {
         CompoundExplainer ex = new TExpressionExplainer(Type.LITERAL, "Literal", context);
         StringBuilder sql = new StringBuilder();
-        // TODO: How to get legal SQL syntax?
-        tInstance.format(value, AkibanAppender.of(sql));
+        tInstance.formatAsLiteral(value, AkibanAppender.of(sql));
         ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sql.toString()));
         return ex;
     }
