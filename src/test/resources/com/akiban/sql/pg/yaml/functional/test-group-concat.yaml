@@ -21,9 +21,9 @@
 ---
 - Statement: SELECT group_concat() from all_types;
 - error: [42515]
-#--- #failing for no known reason (could be due to the test frame work)
-#- Statement: SELECT GROUP_CONCAT(varchar_field, varchar_field separator '1'), group_concat(varchar_field, varchar_field separator '2') from all_types;
-#- output: [['aa1bb1cc1dd1dd'], ['aa2bb2cc2dd2dd']]
+---
+- Statement: SELECT GROUP_CONCAT(varchar_field, varchar_field separator '1'), group_concat(varchar_field, varchar_field separator '2') from all_types;
+- output: [['aa1bb1cc1dd1dd', 'aa2bb2cc2dd2dd']]
 --- #throw unsupported sql 
 - Statement: SELECT GROUP_CONCAT(distinct varchar_field, varchar_field order by varchar_field desc) from all_types;
 - output: [['aa,bb,cc,dd']]
