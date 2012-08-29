@@ -1,7 +1,7 @@
 PhysicalSelect[cid:int[INT], order_date:date[DATE]]
-  project(Field(0), Field(4))
-    Filter_Default([flatten(test.customers, test.orders)])
-      Flatten_HKeyOrdered(test.customers INNER test.orders)
-        BranchLookup_Default(_akiban_customers test.customers -> test.orders limit NO LIMIT)
-          AncestorLookup_Default(Index(test.addresses.state[IndexColumn(state)]) -> [test.customers])
-            IndexScan_Default(Index(test.addresses.state[IndexColumn(state)]) (>=UnboundExpressions[Literal(MA)],<=UnboundExpressions[Literal(MA)]))
+  Project_Default(customers.cid, orders.order_date)
+    Filter_Default(customers - orders)
+      Flatten_HKeyOrdered(customers INNER orders)
+        BranchLookup_Default(customers -> orders)
+          AncestorLookup_Default(Index(addresses.state) -> customers)
+            IndexScan_Default(Index(addresses.state), state = 'MA')

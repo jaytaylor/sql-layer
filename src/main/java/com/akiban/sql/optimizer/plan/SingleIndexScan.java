@@ -48,6 +48,7 @@ public final class SingleIndexScan extends IndexScan {
     private List<OrderByExpression> ordering;
 
     private OrderEffectiveness orderEffectiveness;
+    private boolean usesAllColumns;
 
     // Conditions subsumed by this index.
     // TODO: any cases where a condition is only partially handled and
@@ -236,6 +237,21 @@ public final class SingleIndexScan extends IndexScan {
     @Override
     public List<IndexColumn> getIndexColumns() {
         return index.getAllColumns();
+    }
+
+    @Override
+    public int getNKeyColumns() {
+        return index.getKeyColumns().size();
+    }
+
+    @Override
+    public boolean usesAllColumns() {
+        return usesAllColumns;
+    }
+
+    @Override
+    public void setUsesAllColumns(boolean usesAllColumns) {
+        this.usesAllColumns = usesAllColumns;
     }
 
     @Override

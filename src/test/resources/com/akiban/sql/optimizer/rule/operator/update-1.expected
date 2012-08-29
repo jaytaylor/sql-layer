@@ -1,4 +1,4 @@
 PhysicalUpdate@3b58f1fa
-  Update_Default(AncestorLookup_Default(Index(test.items.sku[IndexColumn(sku)]) -> [test.items]) -> ExpressionRowUpdateFunction([null, null, Literal(ABCX), null, null]))
-    AncestorLookup_Default(Index(test.items.sku[IndexColumn(sku)]) -> [test.items])
-      IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]) (>=UnboundExpressions[Literal(ABCD)],<=UnboundExpressions[Literal(ABCD)]))
+  Update_Default()
+    AncestorLookup_Default(Index(test.items.sku) -> test.items)
+      IndexScan_Default(Index(test.items.sku), sku = 'ABCD', orders.cid ASC, oid, iid)

@@ -68,6 +68,10 @@ select-14: NOT EXISTS
 
 select-15: index intersection and union
 
+select-16: Use a Bloom filter to help with selective semi-join
+
+select-17: Various index uses to show EXPLAIN variation
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)

@@ -1,8 +1,8 @@
 SelectQuery@221b5102
   ResultSet@2f636bcc[cid]
-    Project@283a3662[SELECT[0]]
+    Project@283a3662[PROJECT[0]]
       Distinct@5c87090
-        Sort@2a5600e7[SELECT[1], SELECT[0]]
+        Sort@2a5600e7[PROJECT[1], PROJECT[0]]
           Project@74555367[customers.cid, customers.name]
             Select@dd6cadc[]
               TableSource@4797eae6(customers)

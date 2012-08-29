@@ -1,7 +1,7 @@
 PhysicalSelect[_SQL_COL_1:INTEGER, _SQL_COL_2:DOUBLE, _SQL_COL_3:INTEGER]
-  project(Field(0), Field(1) / Field(2), Field(3))
-    Aggregation(without GROUP BY: [minINT, sumINT, count, maxINT])
-      Sort_Tree(project([Field(3), Field(3), Field(3), Field(3)]), SUPPRESS_DUPLICATES)
-        project(Field(3), Field(3), Field(3), Field(3))
-          Filter_Default([test.items])
-            GroupScan_Default(full scan on _akiban_customers)
+  Project_Default(Field(0), Field(1) / Field(2), Field(3))
+    Aggregate_Partial(MIN, SUM, COUNT, MAX)
+      Sort_Tree(Field(0) ASC, Field(1) ASC, Field(2) ASC, Field(3) ASC, SUPPRESS DUPLICATES)
+        Project_Default(items.quan, items.quan, items.quan, items.quan)
+          Filter_Default(items)
+            GroupScan_Default(customers)

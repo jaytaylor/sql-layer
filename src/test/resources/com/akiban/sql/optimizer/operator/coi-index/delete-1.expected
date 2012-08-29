@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Delete_Default(AncestorLookup_Default(Index(test.items.PRIMARY[IndexColumn(iid)]) -> [test.items]))
-    AncestorLookup_Default(Index(test.items.PRIMARY[IndexColumn(iid)]) -> [test.items])
-      IndexScan_Default(Index(test.items.PRIMARY[IndexColumn(iid)]) (>=UnboundExpressions[Literal(1012)],<=UnboundExpressions[Literal(1012)]))
+  Delete_Default(FROM items)
+    AncestorLookup_Default(Index(items.PRIMARY) -> items)
+      IndexScan_Default(Index(items.PRIMARY), iid = 1012)

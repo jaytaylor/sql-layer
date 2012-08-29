@@ -167,6 +167,10 @@ public final class FunctionsRegistryImplTest {
             throw new UnsupportedOperationException();
         }
         @Override
+        public String getName () {
+            return "TEST";
+        }
+        @Override
         public AkType outputType() {
             return AkType.NULL;
         }

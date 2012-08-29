@@ -26,14 +26,15 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
+import com.akiban.server.explain.*;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -44,7 +45,6 @@ import java.util.*;
 
 import static com.akiban.qp.operator.API.IntersectOption;
 import static com.akiban.qp.operator.API.JoinType;
-import com.akiban.sql.optimizer.explain.*;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
@@ -244,16 +244,18 @@ class Intersect_Ordered extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Intersect"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFixedFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFixedFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
-        atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name()));
-        return new OperationExplainer(com.akiban.sql.optimizer.explain.Type.ORDERED, atts);
+        atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name().replace("_JOIN", "")));
+        atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
+        return new CompoundExplainer(Type.ORDERED, atts);
     }
 
     // Inner classes

@@ -33,8 +33,8 @@ import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.rule.PlanContext;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;

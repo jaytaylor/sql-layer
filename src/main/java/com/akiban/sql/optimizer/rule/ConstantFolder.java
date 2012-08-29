@@ -811,7 +811,7 @@ public class ConstantFolder extends BaseRule
         private OldExpressionAssembler oldExpressionAssembler;
         
         public OldFolder(PlanContext planContext) {
-            this(planContext, new OldExpressionAssembler(planContext.getRulesContext()));
+            this(planContext, new OldExpressionAssembler(planContext));
         }
         
         private OldFolder(PlanContext planContext, OldExpressionAssembler expressionAssembler) {
@@ -895,7 +895,7 @@ public class ConstantFolder extends BaseRule
 
     public static final class NewFolder extends Folder {
         public NewFolder(PlanContext planContext) {
-            super(planContext, new NewExpressionAssembler(planContext.getRulesContext(), planContext.getQueryContext()));
+            super(planContext, new NewExpressionAssembler(planContext));
         }
 
         @Override

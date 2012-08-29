@@ -30,5 +30,6 @@ import com.akiban.server.types.AkType;
 
 public interface AggregatorFactory {
     Aggregator get();
+    String getName();
     AkType outputType();
 }

@@ -35,6 +35,7 @@ import static com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.sql.optimizer.rule.ASTStatementLoader;
 import com.akiban.sql.optimizer.rule.BaseRule;
+import com.akiban.sql.optimizer.rule.PlanContext;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 

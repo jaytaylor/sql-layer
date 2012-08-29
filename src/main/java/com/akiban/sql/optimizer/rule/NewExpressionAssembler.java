@@ -66,7 +66,6 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.types.CharacterTypeAttributes;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,9 +81,11 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     private OverloadResolver overloadResolver;
     private QueryContext queryContext;
 
-    public NewExpressionAssembler(RulesContext rulesContext, QueryContext queryContext) {
+    public NewExpressionAssembler(PlanContext planContext) {
+        RulesContext rulesContext = planContext.getRulesContext();
         this.overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
-        this.queryContext = queryContext;
+        this.queryContext = planContext.getQueryContext();
+        this.planContext = planContext;
     }
 
     @Override

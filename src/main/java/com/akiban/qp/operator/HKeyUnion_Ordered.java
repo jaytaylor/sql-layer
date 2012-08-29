@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.row.Row;
@@ -36,7 +37,7 @@ import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.RankExpression;
-import com.akiban.sql.optimizer.explain.*;
+import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -47,6 +48,7 @@ import java.util.Set;
 
 import static java.lang.Math.min;
 import java.math.BigDecimal;
+import java.util.Map;
 
 /**
  <h1>Overview</h1>
@@ -193,15 +195,14 @@ class HKeyUnion_Ordered extends Operator
     private final int compareFields;
 
     @Override
-    public Explainer getExplainer() {
+    public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
-        
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("HKeyUnion"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFields));
         atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(compareFields));
-        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputHKeyTableRowType));
-        return new OperationExplainer(Type.ORDERED, atts);
+        atts.put(Label.OUTPUT_TYPE, outputHKeyTableRowType.getExplainer(context));
+        return new CompoundExplainer(Type.ORDERED, atts);
     }
 
     // Inner classes

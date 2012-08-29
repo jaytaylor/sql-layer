@@ -26,12 +26,14 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.AggregatedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.explain.*;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TAggregator;
@@ -41,20 +43,11 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
 
@@ -349,26 +342,23 @@ final class Aggregate_Partial extends Operator
     private final List<? extends TAggregator> pAggrs;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));
-        
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         if (pAggrs != null) {
             for (TAggregator agg : pAggrs)
-                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.name().toUpperCase()));
         }
         else {
             for (AggregatorFactory agg : aggregatorFactories)
-                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.getName().toUpperCase()));
         }
-        
-        atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
-        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
-        atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputRowType.toString()));
-        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputType.toString()));
-        
-        return new OperationExplainer(Type.PHYSICAL_OPERATOR, atts);
+        atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance(inputsIndex));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
+        atts.put(Label.INPUT_TYPE, inputRowType.getExplainer(context));
+        atts.put(Label.OUTPUT_TYPE, outputType.getExplainer(context));
+        return new CompoundExplainer(Type.AGGREGATE, atts);
     }
 
     // nested classes

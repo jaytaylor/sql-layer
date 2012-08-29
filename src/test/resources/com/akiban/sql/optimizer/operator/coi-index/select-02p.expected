@@ -1,6 +1,6 @@
 PhysicalSelect[VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin][name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  project(Field(1), Field(4), Field(7), Field(8))
-    Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
-      Flatten_HKeyOrdered(test.customers INNER test.orders)
-        AncestorLookup_Default(Index(test.items.sku[IndexColumn(sku)]) -> [test.customers, test.orders, test.items])
-          IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Variable(pos=0)]))
+  Project_Default(customers.name, orders.order_date, items.sku, items.quan)
+    Flatten_HKeyOrdered(customers - orders INNER items)
+      Flatten_HKeyOrdered(customers INNER orders)
+        AncestorLookup_Default(Index(items.sku) -> customers, orders, items)
+          IndexScan_Default(Index(items.sku), sku < $1)

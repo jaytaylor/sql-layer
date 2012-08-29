@@ -28,9 +28,10 @@ package com.akiban.server.expression.subquery;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
-import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
+import java.util.Map;
 
 public abstract class SubqueryExpression implements Expression {
 
@@ -55,16 +56,14 @@ public abstract class SubqueryExpression implements Expression {
     }
     
     @Override
-    public Explainer getExplainer () {
-        
+    public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes states = new Attributes();
         states.put(Label.NAME, PrimitiveExplainer.getInstance(name()));
-        states.put(Label.OPERAND, subquery.getExplainer()); 
-        states.put(Label.OUTER_TYPE, PrimitiveExplainer.getInstance(outerRowType.toString()));
-        states.put(Label.INNER_TYPE, PrimitiveExplainer.getInstance(innerRowType.toString()));
+        states.put(Label.OPERAND, subquery.getExplainer(context)); 
+        states.put(Label.OUTER_TYPE, outerRowType.getExplainer(context));
+        states.put(Label.INNER_TYPE, innerRowType.getExplainer(context));
         states.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
-        
-        return new OperationExplainer(Type.SUBQUERY, states);
+        return new CompoundExplainer(Type.SUBQUERY, states);
     }
 
     // for use by subclasses

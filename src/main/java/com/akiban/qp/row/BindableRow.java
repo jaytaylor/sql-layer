@@ -29,11 +29,14 @@ package com.akiban.qp.row;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.SqlLiteralValueFormatter;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpressions;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
@@ -88,6 +91,7 @@ public abstract class BindableRow {
     // BindableRow instance interface
 
     public abstract Row bind(QueryContext context);
+    public abstract CompoundExplainer getExplainer(ExplainContext context);
 
     private static Row strictCopy(Row input, boolean usePValues) {
         RowCopier oldCopier;
@@ -109,6 +113,22 @@ public abstract class BindableRow {
         @Override
         public Row bind(QueryContext context) {
             return new ExpressionRow(rowType, context, expressions, pExprs);
+        }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context) {
+            Attributes atts = new Attributes();
+            if (expressions != null) {
+                for (Expression expression : expressions) {
+                    atts.put(Label.EXPRESSIONS, expression.getExplainer(context));
+                }
+            }
+            else {
+                for (TPreparedExpression pexpr : pExprs) {
+                    atts.put(Label.EXPRESSIONS, TPreparedExpressions.getExplainer(pexpr));
+                }
+            }
+            return new CompoundExplainer(Type.ROW, atts);
         }
 
         private BindingExpressions(RowType rowType, List<? extends Expression> expressions,
@@ -252,6 +272,15 @@ public abstract class BindableRow {
         @Override
         public Row bind(QueryContext context) {
             return row;
+        }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context) {
+            Attributes atts = new Attributes();
+            for (int i = 0; i < row.rowType().nFields(); i++) {
+                atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(SqlLiteralValueFormatter.format(row.eval(i))));
+            }
+            return new CompoundExplainer(Type.ROW, atts);
         }
 
         @Override

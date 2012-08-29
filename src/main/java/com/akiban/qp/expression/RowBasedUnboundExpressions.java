@@ -28,10 +28,16 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.Attributes;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.Type;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpressions;
 
 import java.util.List;
 
@@ -39,6 +45,22 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
     @Override
     public BoundExpressions get(QueryContext context) {
         return new ExpressionsAndBindings(rowType, expressions, pExprs, context);
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        Attributes atts = new Attributes();
+        if (pExprs != null) {
+            for (TPreparedExpression expression : pExprs) {
+                atts.put(Label.EXPRESSIONS, TPreparedExpressions.getExplainer(expression));
+            }
+        }
+        else {
+            for (Expression expression : expressions) {
+                atts.put(Label.EXPRESSIONS, expression.getExplainer(context));
+            }
+        }
+        return new CompoundExplainer(Type.ROW, atts);
     }
 
     @Override

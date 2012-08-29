@@ -28,6 +28,8 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.CompoundExplainer;
 
 public class IndexBound
 {
@@ -44,6 +46,10 @@ public class IndexBound
     public ColumnSelector columnSelector()
     {
         return columnSelector;
+    }
+
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        return unboundExpressions.getExplainer(context);
     }
 
     public IndexBound(BoundExpressions row, ColumnSelector columnSelector)
@@ -69,6 +75,11 @@ public class IndexBound
         @Override
         public BoundExpressions get(QueryContext context) {
             return expressions;
+        }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

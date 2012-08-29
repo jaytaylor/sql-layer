@@ -26,17 +26,21 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import java.util.Collections;
 import java.util.List;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
+import com.akiban.server.explain.Attributes;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+import java.util.Map;
 
 /**
 
@@ -104,13 +108,21 @@ class Delete_Default implements UpdatePlannable {
 
     @Override
     public String toString() {
-        return String.format("%s(%s)", getClass().getSimpleName(), inputOperator);
+        return String.format("%s(%s)", getName(), inputOperator);
     }
     
     @Override
-    public Explainer getExplainer()
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new DUIOperatorExplainer("DELETE", inputOperator);
+        Attributes atts = new Attributes();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get());
+        return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
 
     @Override

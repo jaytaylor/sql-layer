@@ -29,8 +29,8 @@ package com.akiban.sql.optimizer;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.rule.BaseRule;
+import com.akiban.sql.optimizer.rule.PlanContext;
 import com.akiban.sql.optimizer.rule.SchemaRulesContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import static com.akiban.sql.optimizer.rule.DefaultRules.*;
@@ -42,7 +42,6 @@ import com.akiban.sql.parser.NodeFactory;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserContext;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.server.error.SQLParserInternalException;
 
@@ -114,8 +113,8 @@ public class OperatorCompiler extends SchemaRulesContext
         return compile(stmt, params, new PlanContext(this));
     }
 
-    protected BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params,
-                                    PlanContext plan) {
+    public BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params,
+                                 PlanContext plan) {
         stmt = bindAndTransform(stmt); // Get into standard form.
         plan.setPlan(new AST(stmt, params));
         applyRules(plan);

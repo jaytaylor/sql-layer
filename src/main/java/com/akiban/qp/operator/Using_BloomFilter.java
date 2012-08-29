@@ -26,22 +26,21 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.explain.*;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
-import java.math.BigDecimal;
-
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -171,8 +170,13 @@ class Using_BloomFilter extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer() {
-        return PrimitiveExplainer.getInstance(toString());
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(filterBindingPosition));
+        atts.put(Label.INPUT_OPERATOR, filterInput.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, streamInput.getExplainer(context));
+        return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }
 
     // Inner classes

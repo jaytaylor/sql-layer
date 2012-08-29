@@ -27,17 +27,15 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import java.util.Map;
 
 /**
 
@@ -122,16 +120,16 @@ class GroupScan_Default extends Operator
     private final GroupCursorCreator cursorCreator;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("Group Scan"));
-        att.put(Label.SCAN_OPTION, PrimitiveExplainer.getInstance(cursorCreator.describeRange().toUpperCase()));
-        // TODO: could have a getInstance(TableName o) method?
-        att.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(cursorCreator.group().getName()));
-        
-        return new OperationExplainer(Type.SCAN_OPERATOR, att);
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        att.put(Label.SCAN_OPTION, PrimitiveExplainer.getInstance(cursorCreator.describeRange()));
+        TableName rootName = cursorCreator.group().getRoot().getName();
+        att.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(rootName.getSchemaName()));
+        att.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(rootName.getTableName()));
+        return new CompoundExplainer(Type.SCAN_OPERATOR, att);
     }
 
     // Inner classes

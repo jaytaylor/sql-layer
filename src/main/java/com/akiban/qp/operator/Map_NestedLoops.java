@@ -26,22 +26,21 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.std.NestedLoopsExplainer;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -151,14 +150,13 @@ class Map_NestedLoops extends Operator
     private final int inputBindingPosition;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        // Explainer ex = new NestedLoopsExplainer("Map_NestedLoops", innerInputOperator, outerInputOperator, null, null);
-        // ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
-        // return ex;
-        
-        // TODO optimizer assign name to binding
-        return PrimitiveExplainer.getInstance("Map_NestedLoops");
+        CompoundExplainer ex = new NestedLoopsExplainer(getName(), innerInputOperator, outerInputOperator, null, null, context);
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        if (context.hasExtraInfo(this))
+            ex.get().putAll(context.getExtraInfo(this).get());
+        return ex;
     }
 
     // Inner classes

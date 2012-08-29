@@ -27,6 +27,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.*;
+import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
@@ -65,6 +66,17 @@ public abstract class IndexRowType extends AisRowType
     public HKey hKey()
     {
         return tableType.hKey();
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer explainer = super.getExplainer(context);
+        IndexName indexName = index.getIndexName();
+        explainer.addAttribute(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(indexName.getSchemaName()));
+        explainer.addAttribute(Label.TABLE_NAME, PrimitiveExplainer.getInstance(indexName.getTableName()));
+        explainer.addAttribute(Label.INDEX_NAME, PrimitiveExplainer.getInstance(indexName.getName()));
+        return explainer;
     }
 
     // IndexRowType interface
