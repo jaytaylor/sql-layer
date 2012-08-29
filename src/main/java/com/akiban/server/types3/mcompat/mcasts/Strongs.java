@@ -142,4 +142,8 @@ public final class Strongs {
     public static final TStrongCasts fromDecimalUnsigned = TStrongCasts.from(MNumeric.DECIMAL_UNSIGNED).to(
             MApproximateNumber.DOUBLE
     );
+
+    public static final TStrongCasts fromFloat = TStrongCasts.from(MApproximateNumber.FLOAT).to(
+            MApproximateNumber.DOUBLE
+    );
 }
