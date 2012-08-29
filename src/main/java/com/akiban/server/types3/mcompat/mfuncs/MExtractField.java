@@ -39,7 +39,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.Locale;
 
 public abstract class MExtractField extends TOverloadBase
 {
@@ -93,6 +92,18 @@ public abstract class MExtractField extends TOverloadBase
             protected int getField(long[] ymd, TExecutionContext context)
             {
                 return (int) ymd[MDatetimes.MONTH_INDEX];
+            }
+        },
+        new MExtractField("DAYOFWEEK", MDatetimes.DATE, Decoder.DATE)
+        {
+            @Override
+            protected int getField(long[] ymd, TExecutionContext context)
+            {
+                // mysql:  (1 = Sunday, 2 = Monday, …, 7 = Saturday
+                // joda    (7 = Sunday, 1 = mon, l...., 6 = Saturday
+                return MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfWeek()
+                       % 7 + 1;
+
             }
         },
         new MExtractField("WEEKDAY", MDatetimes.DATE, Decoder.DATE)
