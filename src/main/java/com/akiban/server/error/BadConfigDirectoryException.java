@@ -26,8 +26,8 @@
 
 package com.akiban.server.error;
 
-public class BadAdminDirectoryException extends InvalidOperationException {
-    public BadAdminDirectoryException (String adminDirectory) {
-        super (ErrorCode.BAD_ADMIN_DIRECTORY, adminDirectory);
+public class BadConfigDirectoryException extends InvalidOperationException {
+    public BadConfigDirectoryException(String adminDirectory) {
+        super (ErrorCode.BAD_CONFIG_DIRECTORY, adminDirectory);
     }
 }
