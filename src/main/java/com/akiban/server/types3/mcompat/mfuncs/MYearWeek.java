@@ -65,7 +65,7 @@ public abstract class MYearWeek extends TOverloadBase
             @Override
             protected int getMode(TExecutionContext context, LazyList<? extends PValueSource> inputs)
             {
-                int mode = inputs.get(1).getInt32();
+                int mode = (int) inputs.get(1).getInt64();
                 if (mode < 0 || mode > 7)
                 {
                     context.warnClient(new InvalidParameterValueException("MODE out of range [0, 7]: " + mode));
@@ -77,7 +77,7 @@ public abstract class MYearWeek extends TOverloadBase
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
             {
-                builder.covers(MDatetimes.DATE, 0).covers(MNumeric.INT, 1);
+                builder.covers(MDatetimes.DATE, 0).covers(MNumeric.BIGINT, 1);
             }
         }
     };
