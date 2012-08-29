@@ -259,6 +259,13 @@ public abstract class TClass {
             formatter.format(instance, source, out);
     }
 
+    void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+        if (source.isNull())
+            out.append("NULL");
+        else
+            formatter.formatAsLiteral(instance, source, out);
+    }
+
     // for use by subclasses
 
     protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);

@@ -131,7 +131,7 @@ public class OperatorAssembler extends BaseRule
         new Assembler(plan, usePValues).apply();
     }
 
-    interface PartialAssembler<T> extends SubqueryOperatorAssembler<T> {
+    interface PartialAssembler<T extends Explainable> extends SubqueryOperatorAssembler<T> {
         List<T> assembleExpressions(List<ExpressionNode> expressions,
                                     ColumnExpressionToIndex fieldOffsets);
         List<T> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
@@ -154,21 +154,21 @@ public class OperatorAssembler extends BaseRule
         API.Ordering createOrdering();
     }
 
-    private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Object>() {
+    private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Explainable>() {
         @Override
-        public List<Object> assembleExpressions(List<ExpressionNode> expressions,
+        public List<Explainable> assembleExpressions(List<ExpressionNode> expressions,
                                                 ColumnExpressionToIndex fieldOffsets) {
             return null;
         }
 
         @Override
-        public void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, Object[] arr,
+        public void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, Explainable[] arr,
                                            int i)
         { // nothing; arr is null
         }
 
         @Override
-        public void fillNulls(Index index, Object[] keys) {
+        public void fillNulls(Index index, Explainable[] keys) {
             // nothing; keys are null
         }
 
@@ -178,18 +178,18 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-        public List<Object> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
+        public List<Explainable> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
                                                  ColumnExpressionToIndex fieldOffsets) {
             return null;
         }
 
         @Override
-        public Object assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets) {
+        public Explainable assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets) {
             return null;
         }
 
         @Override
-        public Object assembleSubqueryExpression(SubqueryExpression subqueryExpression) {
+        public Explainable assembleSubqueryExpression(SubqueryExpression subqueryExpression) {
             return null;
         }
 
@@ -200,13 +200,13 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-        public List<Object> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+        public List<Explainable> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
                                                 ColumnExpressionToIndex fieldOffsets) {
             return null;
         }
 
         @Override
-        public Object[] createNulls(Index index, int nkeys) {
+        public Explainable[] createNulls(Index index, int nkeys) {
             return null;
         }
 
@@ -222,19 +222,19 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-        public Object field(RowType rowType, int position) {
+        public Explainable field(RowType rowType, int position) {
             return null;
         }
     };
 
     @SuppressWarnings("unchecked")
-    private static <T> PartialAssembler<T> nullAssembler() {
+    private static <T extends Explainable> PartialAssembler<T> nullAssembler() {
         return (PartialAssembler<T>) NULL_PARTIAL_ASSEMBLER;
     }
 
     static class Assembler {
 
-        abstract class BasePartialAssembler<T> implements PartialAssembler<T> {
+        abstract class BasePartialAssembler<T extends Explainable> implements PartialAssembler<T> {
 
             protected BasePartialAssembler(ExpressionAssembler<T> expressionAssembler) {
                 this.expressionAssembler = expressionAssembler;
@@ -727,7 +727,7 @@ public class OperatorAssembler extends BaseRule
             for (UpdateColumn column : updateColumns) {
                 atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
                 if (usePValues)
-                    atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(updatesP.get(column.getColumn().getPosition()).toString()));
+                    atts.put(Label.EXPRESSIONS, updatesP.get(column.getColumn().getPosition()).getExplainer(explainContext));
                 else
                     atts.put(Label.EXPRESSIONS, updates.get(column.getColumn().getPosition()).getExplainer(explainContext));
             }

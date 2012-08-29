@@ -35,7 +35,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpressions;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
@@ -201,7 +200,7 @@ class Project_Default extends Operator
                 att.put(Label.PROJECTION, ex.getExplainer(context));
         else
             for (TPreparedExpression ex : pExpressions)
-                att.put(Label.PROJECTION, TPreparedExpressions.getExplainer(ex));
+                att.put(Label.PROJECTION, ex.getExplainer(context));
         return new CompoundExplainer(Type.PROJECT, att);
     }
 

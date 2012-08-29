@@ -51,7 +51,6 @@ public enum Type
     SUBQUERY(GeneralType.EXPRESSION),
     LITERAL(GeneralType.EXPRESSION),
     VARIABLE(GeneralType.EXPRESSION),
-    TYPES3(GeneralType.EXPRESSION), // TODO: Temporary
 
     // OPERATORS
     //--------------------------------------------------------------------------

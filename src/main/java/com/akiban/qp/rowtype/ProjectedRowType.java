@@ -31,7 +31,6 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpressions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,7 +70,7 @@ public class ProjectedRowType extends DerivedRowType
         CompoundExplainer explainer = super.getExplainer(context);
         if (tExprs != null) {
             for (TPreparedExpression expr : tExprs) {
-                explainer.addAttribute(Label.EXPRESSIONS, TPreparedExpressions.getExplainer(expr));
+                explainer.addAttribute(Label.EXPRESSIONS, expr.getExplainer(context));
             }
         }
         else {

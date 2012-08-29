@@ -47,6 +47,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.Explainable;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
 import com.akiban.server.explain.PrimitiveExplainer;
@@ -60,11 +61,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-abstract class ExpressionAssembler<T> {
+abstract class ExpressionAssembler<T extends Explainable> {
 
     public abstract ConstantExpression evalNow(PlanContext planContext, ExpressionNode node);
-    PlanContext planContext;
-    PlanExplainContext explainContext;
+    final PlanContext planContext;
+    final PlanExplainContext explainContext;
+
+    protected ExpressionAssembler(PlanContext planContext) {
+        this.planContext = planContext;
+        if (planContext instanceof ExplainPlanContext)
+            explainContext = ((ExplainPlanContext)planContext).getExplainContext();
+        else
+            explainContext = null;
+    }
 
     protected abstract T assembleFunction(ExpressionNode functionNode,
                                           String functionName,
@@ -205,8 +214,7 @@ abstract class ExpressionAssembler<T> {
             explainer.addAttribute(Label.COLUMN_NAME,
                                    PrimitiveExplainer.getInstance(aisColumn.getName()));
         }
-        // TODO: Until TPreparedExpression is Explainable.
-        explainContext.putExtraInfo((Expression)expression, explainer);
+        explainContext.putExtraInfo(expression, explainer);
     }
 
     public abstract Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys,

@@ -35,7 +35,6 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpressions;
 import com.akiban.server.explain.Attributes;
 import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
@@ -208,7 +207,7 @@ class IfEmpty_Default extends Operator
         atts.put(Label.INPUT_TYPE, rowType.getExplainer(context));
         if (pExpressions != null) {
             for (TPreparedExpression ex : pExpressions)
-                atts.put(Label.OPERAND, TPreparedExpressions.getExplainer(ex));
+                atts.put(Label.OPERAND, ex.getExplainer(context));
         }
         else {
             for (Expression ex : oExpressions)

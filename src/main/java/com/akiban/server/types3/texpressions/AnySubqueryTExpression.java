@@ -29,6 +29,7 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -45,6 +46,14 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
     public TEvaluatableExpression build() {
         TEvaluatableExpression child = expression.build();
         return new InnerEvaluatable(subquery(), child, outerRowType(), innerRowType(), bindingPosition());
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer explainer = super.getExplainer(context);
+        explainer.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("ANY"));
+        explainer.addAttribute(Label.EXPRESSIONS, expression.getExplainer(context));
+        return explainer;
     }
 
     public AnySubqueryTExpression(Operator subquery, TPreparedExpression expression,
