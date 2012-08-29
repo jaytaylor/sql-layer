@@ -46,6 +46,7 @@ public final class PersistitValuePValueSource implements PValueSource {
 
     public void getReady() {
         if (persistitValue.isNull()) {
+            persistitValue.skip(); // need to advance to next object in the stream
             cacheObject = NULL;
         }
         else {
