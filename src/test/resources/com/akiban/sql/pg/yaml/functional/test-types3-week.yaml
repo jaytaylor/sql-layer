@@ -1,7 +1,4 @@
-# Test the WEEK() function
-# BUG: 902169, 902168
-# Status: triaged
----
+# Test the WEEK() function in types3
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')

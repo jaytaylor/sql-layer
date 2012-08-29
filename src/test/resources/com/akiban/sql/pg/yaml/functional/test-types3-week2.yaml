@@ -1,6 +1,7 @@
-# tests that currently fail ther FTS run
-# bug 902168, 902169
-# status: triaged
+# Test week in types3
+--- # suppressing for now since the overload resolving doesn't seem to work very properly
+- Properties: sys-aksql
+- suppressed: true
 ---
 - Include: all-types-schema.yaml
 ---

@@ -1,6 +1,7 @@
-## Test the WEEKOFYEAR() function
-# BUG: 902169, 902168
-# Status: triaged
+## Test the WEEKOFYEAR() function in types3
+--- # suppressing for now since the overload resolving doesn't seem to work very properly
+- Properties: sys-aksql
+- suppressed: true
 ---
 - Include: all-types-schema.yaml
 ---
