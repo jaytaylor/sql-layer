@@ -224,7 +224,11 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             long[] decode(long val)
             {
-                return MDatetimes.decodeDate(val);
+                long ret[] = MDatetimes.decodeDate(val);
+                if (!MDatetimes.isValidDayMonth(ret))
+                    return null;
+                else
+                    return ret;
             }
         },
         DATETIME
@@ -232,14 +236,23 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             long[] decode(long val)
             {
-                return MDatetimes.decodeDatetime(val);
+                long ret[] = MDatetimes.decodeDatetime(val);
+                if (!MDatetimes.isValidDatetime(ret))
+                    return null;
+                else
+                    return ret;
             }
         },
         TIME
         {
+            @Override
             long[] decode(long val)
             {
-                return MDatetimes.decodeTime(val);
+                long ret[] = MDatetimes.decodeTime(val);
+                if (!MDatetimes.isValidHrMinSec(ret, false))
+                    return null;
+                else
+                    return ret;
             }
         };
         
@@ -267,7 +280,7 @@ public abstract class MExtractField extends TOverloadBase
         int val = inputs.get(0).getInt32();
         long ymd[] = decoder.decode(val);
 
-        if (!MDatetimes.isValidDatetime(ymd))
+        if (ymd == null)
         {
             context.warnClient(new InvalidParameterValueException("Invalid DATETIME value: " + val));
             output.putNull();
