@@ -131,21 +131,21 @@ public class AkInterval extends TClassBase {
 
         @Override
         public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
-            long value = source.getInt64();
+            long value = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
             Formatter formatter = new Formatter(out.getAppendable());
             out.append("INTERVAL '");
-            long days, hours, mins, secs, millis;
+            long days, hours, mins, secs, micros;
             if (value < 0) {
                 out.append('-');
-                millis = -value;
+                micros = -value;
             }
             else {
-                millis = value;
+                micros = value;
             }
             // Could be data-driven, but just enough special cases that
             // that would be pretty complicated.
-            secs = millis / 1000;
-            millis -= secs * 1000;
+            secs = micros / 1000000;
+            micros -= secs * 1000000;
             mins = secs / 60;
             secs -= mins * 60;
             hours = mins / 60;
@@ -158,7 +158,7 @@ public class AkInterval extends TClassBase {
                 hi = lo = "DAY";
             }
             if ((hours > 0) ||
-                ((hi != null) && ((mins > 0) || (secs > 0) || (millis > 0)))) {
+                ((hi != null) && ((mins > 0) || (secs > 0) || (micros > 0)))) {
                 if (hi != null) {
                     formatter.format(":%02d", hours);
                 }
@@ -169,7 +169,7 @@ public class AkInterval extends TClassBase {
                 if (hi == null) hi = lo;
             }
             if ((mins > 0) ||
-                ((hi != null) && ((secs > 0) || (millis > 0)))) {
+                ((hi != null) && ((secs > 0) || (micros > 0)))) {
                 if (hi != null) {
                     formatter.format(":%02d", mins);
                 }
@@ -179,7 +179,7 @@ public class AkInterval extends TClassBase {
                 lo = "MINUTE";
                 if (hi == null) hi = lo;
             }
-            if ((secs > 0) || (hi == null) || (millis > 0)) {
+            if ((secs > 0) || (hi == null) || (micros > 0)) {
                 if (hi != null) {
                     formatter.format(":%02d", secs);
                 }
@@ -189,8 +189,11 @@ public class AkInterval extends TClassBase {
                 lo = "SECOND";
                 if (hi == null) hi = lo;
             }
-            if (millis > 0) {
-                formatter.format(".%03d", millis);
+            if (micros > 0) {
+                if ((micros % 1000) == 0)
+                    formatter.format(".%03d", micros / 1000);
+                else
+                    formatter.format(".%06d", micros);
             }
             out.append("' ");
             out.append(hi);
