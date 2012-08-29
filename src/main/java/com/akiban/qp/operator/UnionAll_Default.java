@@ -27,21 +27,17 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -51,6 +47,7 @@ import com.akiban.util.tap.InOutTap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  <h1>Overview</h1>
@@ -194,20 +191,20 @@ final class UnionAll_Default extends Operator {
     private final RowType outputRowType;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("UNION ALL"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         
         for (Operator op : inputs)
-            att.put(Label.INPUT_OPERATOR, op.getExplainer());
+            att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
         for (RowType type : inputTypes)
-            att.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(type));
+            att.put(Label.INPUT_TYPE, type.getExplainer(context));
        
-        att.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType));
+        att.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
         
-        return new OperationExplainer(Type.UNION_ALL, att);
+        return new CompoundExplainer(Type.UNION_ALL, att);
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor {

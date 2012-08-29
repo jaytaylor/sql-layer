@@ -29,6 +29,7 @@ package com.akiban.server.test.pt;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -48,6 +49,8 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.std.BoundFieldExpression;
@@ -61,7 +64,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.sql.optimizer.explain.Explainer;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -287,7 +289,7 @@ public class AggregatePT extends ApiTestBase {
         }
 
         @Override
-        public Explainer getExplainer() {
+        public CompoundExplainer getExplainer(ExplainContext context) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
@@ -658,7 +660,7 @@ public class AggregatePT extends ApiTestBase {
         }
 
         @Override
-        public Explainer getExplainer() {
+        public CompoundExplainer getExplainer(ExplainContext context) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }

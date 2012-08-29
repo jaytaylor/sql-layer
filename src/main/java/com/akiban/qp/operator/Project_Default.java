@@ -26,21 +26,20 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpressions;
-import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  <h1>Overview</h1>
@@ -86,7 +85,11 @@ class Project_Default extends Operator
     @Override
     public String toString()
     {
-        return Format.Describe(this.getExplainer());
+        if (projectType.hasUserTable()) {
+            return String.format("project to table %s (%s)", projectType.userTable(), (pExpressions != null) ? pExpressions.toString() : projections.toString());
+        } else {
+            return String.format("project(%s)", (pExpressions != null) ? pExpressions.toString() : projections.toString());
+        }
     }
 
     // Operator interface
@@ -185,23 +188,21 @@ class Project_Default extends Operator
     protected ProjectedRowType projectType;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("project"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         if (projectType.hasUserTable())
-            att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
-        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
-        if (projections != null) {
+            att.put(Label.PROJECT_OPTION, projectType.getExplainer(context));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
+        if (projections != null)
             for (Expression ex : projections)
-                att.put(Label.PROJECTION, ex.getExplainer());
-        }
-        else {
+                att.put(Label.PROJECTION, ex.getExplainer(context));
+        else
             for (TPreparedExpression ex : pExpressions)
                 att.put(Label.PROJECTION, TPreparedExpressions.getExplainer(ex));
-        }
-        return new OperationExplainer(Type.PROJECT, att);
+        return new CompoundExplainer(Type.PROJECT, att);
     }
 
     // Inner classes

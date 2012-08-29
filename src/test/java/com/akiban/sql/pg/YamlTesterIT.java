@@ -1338,9 +1338,9 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "---\n" +
 	    "- Statement: SELECT * FROM c\n" +
 	    "- explain: |\n" +
-	    "    project(Field(0), Field(1))\n" +
-	    "      Filter_Default(["+PostgresServerITBase.SCHEMA_NAME+".c])\n" +
-	    "        GroupScan_Default(full scan on _akiban_c)");
+	    "    Project_Default(c.cid, c.name)\n" +
+	    "      Filter_Default(c)\n" +
+	    "        GroupScan_Default(c)");
     }
 
     @Test

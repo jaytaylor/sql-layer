@@ -26,13 +26,14 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.explain.*;
 import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -46,6 +47,7 @@ import java.util.Set;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
+import java.util.*;
 
 /**
  <h1>Overview</h1>
@@ -186,8 +188,12 @@ class Union_Ordered extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
+        return new CompoundExplainer(Type.UNION, atts);
     }
 
     // Inner classes

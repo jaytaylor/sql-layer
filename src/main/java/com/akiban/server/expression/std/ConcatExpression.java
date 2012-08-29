@@ -26,8 +26,15 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -38,15 +45,11 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.AkibanAppender;
 import java.math.BigDecimal;
 
 import java.util.List;
+import java.util.Map;
 
 public final class ConcatExpression extends AbstractCompositeExpression {
 
@@ -103,9 +106,9 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     }
     
     @Override
-    public Explainer getExplainer ()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Explainer ex = super.getExplainer();
+        CompoundExplainer ex = super.getExplainer(context);
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance("||"));
         ex.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
         return ex;

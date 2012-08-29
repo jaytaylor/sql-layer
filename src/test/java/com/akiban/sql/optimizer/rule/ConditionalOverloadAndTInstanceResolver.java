@@ -27,7 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.sql.optimizer.plan.PlanContext;
+import com.akiban.sql.optimizer.rule.PlanContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

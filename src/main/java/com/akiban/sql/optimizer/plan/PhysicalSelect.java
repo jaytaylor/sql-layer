@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.server.explain.ExplainContext;
 
 import java.util.List;
 import java.util.Arrays;
@@ -83,11 +84,11 @@ public class PhysicalSelect extends BasePlannable
     }
     
     @Override
-    protected String withIndentedExplain(StringBuilder str) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
         str.append(resultColumns);
-        return super.withIndentedExplain(str);
+        return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
 }

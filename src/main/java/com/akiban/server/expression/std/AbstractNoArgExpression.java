@@ -26,21 +26,24 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractNoArgExpression implements Expression {
 
     // Expression interface
     
     @Override
-    public Explainer getExplainer ()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new ExpressionExplainer(Type.FUNCTION, name(), (List)null);
+        return new ExpressionExplainer(Type.FUNCTION, name(), context);
     }
     
     @Override

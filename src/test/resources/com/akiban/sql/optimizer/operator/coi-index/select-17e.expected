@@ -1,0 +1,3 @@
+PhysicalSelect[cid:int[INT]]
+  Project_Default(customers.cid)
+    IndexScan_Default(Index(customers.name), name = 'Smith', cid)

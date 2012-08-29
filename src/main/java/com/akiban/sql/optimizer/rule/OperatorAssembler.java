@@ -28,24 +28,6 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.operator.API.InputPreservationOption;
-import com.akiban.qp.operator.API.JoinType;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
-import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
-import com.akiban.server.types3.texpressions.TNullExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -59,15 +41,33 @@ import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
+import com.akiban.qp.operator.API.InputPreservationOption;
+import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
+import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
+import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
+import com.akiban.server.types3.texpressions.TNullExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
+
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.expression.subquery.AnySubqueryExpression;
 import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
-import com.akiban.server.types.AkType;
+import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
+import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.API;
@@ -83,12 +83,15 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 
+import com.akiban.server.explain.*;
+
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableName;
 
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
-import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -399,7 +402,7 @@ public class OperatorAssembler extends BaseRule
 
         private class OldPartialAssembler extends BasePartialAssembler<Expression> {
 
-            private OldPartialAssembler(RulesContext context) {
+            private OldPartialAssembler(PlanContext context) {
                 super(new OldExpressionAssembler(context));
             }
 
@@ -474,8 +477,8 @@ public class OperatorAssembler extends BaseRule
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
-            private NewPartialAssembler(RulesContext context, QueryContext queryContext) {
-                super(new NewExpressionAssembler(context, queryContext));
+            private NewPartialAssembler(PlanContext context) {
+                super(new NewExpressionAssembler(context));
             }
 
             @Override
@@ -549,6 +552,7 @@ public class OperatorAssembler extends BaseRule
 
         private PlanContext planContext;
         private SchemaRulesContext rulesContext;
+        private PlanExplainContext explainContext;
         private Schema schema;
         private boolean usePValues;
         private final PartialAssembler<Expression> oldPartialAssembler;
@@ -559,15 +563,17 @@ public class OperatorAssembler extends BaseRule
             this.usePValues = usePValues;
             this.planContext = planContext;
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
+            if (planContext instanceof ExplainPlanContext)
+                explainContext = ((ExplainPlanContext)planContext).getExplainContext();
             schema = rulesContext.getSchema();
             if (usePValues) {
-                newPartialAssembler = new NewPartialAssembler(rulesContext, this.planContext.getQueryContext());
+                newPartialAssembler = new NewPartialAssembler(planContext);
                 oldPartialAssembler = nullAssembler();
                 partialAssembler = newPartialAssembler;
             }
             else {
                 newPartialAssembler = nullAssembler();
-                oldPartialAssembler = new OldPartialAssembler(rulesContext);
+                oldPartialAssembler = new OldPartialAssembler(planContext);
                 partialAssembler = oldPartialAssembler;
             }
             computeBindingsOffsets();
@@ -679,7 +685,20 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
             UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
+            if (explainContext != null)
+                explainInsertStatement(plan, insertStatement);
             return new PhysicalUpdate(plan, getParameterTypes());
+        }
+
+        protected void explainInsertStatement(UpdatePlannable plan, InsertStatement insertStatement) {
+            Attributes atts = new Attributes();
+            TableName tableName = insertStatement.getTargetTable().getTable().getName();
+            atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
+            for (Column column : insertStatement.getTargetColumns()) {
+                atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
+            }
+            explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected PhysicalUpdate updateStatement(UpdateStatement updateStatement) {
@@ -695,14 +714,41 @@ public class OperatorAssembler extends BaseRule
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
             UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
+            if (explainContext != null)
+                explainUpdateStatement(plan, updateStatement, updateColumns, updates, updatesP);
             return new PhysicalUpdate(plan, getParameterTypes());
+        }
+
+        protected void explainUpdateStatement(UpdatePlannable plan, UpdateStatement updateStatement, List<UpdateColumn> updateColumns, List<Expression> updates, List<TPreparedExpression> updatesP) {
+            Attributes atts = new Attributes();
+            TableName tableName = updateStatement.getTargetTable().getTable().getName();
+            atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
+            for (UpdateColumn column : updateColumns) {
+                atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getColumn().getName()));
+                if (usePValues)
+                    atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(updatesP.get(column.getColumn().getPosition()).toString()));
+                else
+                    atts.put(Label.EXPRESSIONS, updates.get(column.getColumn().getPosition()).getExplainer(explainContext));
+            }
+            explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
             UpdatePlannable plan = API.delete_Default(stream.operator, usePValues);
+            if (explainContext != null)
+                explainDeleteStatement(plan, deleteStatement);
             return new PhysicalUpdate(plan, getParameterTypes());
+        }
+
+        protected void explainDeleteStatement(UpdatePlannable plan, DeleteStatement deleteStatement) {
+            Attributes atts = new Attributes();
+            TableName tableName = deleteStatement.getTargetTable().getTable().getName();
+            atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
+            explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         // Assemble the top-level query. If there is a ResultSet at
@@ -796,6 +842,7 @@ public class OperatorAssembler extends BaseRule
                     usePValues);
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
+
             return stream;
         }
 
@@ -885,10 +932,20 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
+            if (explainContext != null)
+                explainSingleIndexScan(stream.operator, indexScan, index);
             return stream;
         }
 
-        /** If there are this many or more scans feeding into a tree
+        protected void explainSingleIndexScan(Operator operator, SingleIndexScan indexScan, Index index) {
+            Attributes atts = new Attributes();
+            atts.put(Label.ORDER_EFFECTIVENESS, PrimitiveExplainer.getInstance(indexScan.getOrderEffectiveness().name()));
+            atts.put(Label.USED_COLUMNS, PrimitiveExplainer.getInstance(indexScan.usesAllColumns() ? indexScan.getColumns().size() : indexScan.getNKeyColumns()));
+            explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+        }
+
+        /**
+         * If there are this many or more scans feeding into a tree
          * of intersection / union, then skip scan is enabled for it.
          * (3 scans means 2 intersections or intersection with a two-value union.)
          */
@@ -1139,7 +1196,8 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
             int pos = pushBoundRow(null); // Allocate slot in case loops in outer.
-            RowStream ostream = assembleStream(mapJoin.getOuter());
+            PlanNode outer = mapJoin.getOuter();
+            RowStream ostream = assembleStream(outer);
             boundRows.set(pos, ostream.fieldOffsets);
             RowStream stream = assembleStream(mapJoin.getInner());
             stream.operator = API.map_NestedLoops(ostream.operator, 
@@ -1449,7 +1507,7 @@ public class OperatorAssembler extends BaseRule
                                                      collators,
                                                      pos);
             return stream;
-        }        
+        }
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());

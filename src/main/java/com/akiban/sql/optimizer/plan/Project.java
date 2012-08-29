@@ -47,7 +47,7 @@ public class Project extends BasePlanWithInput implements ColumnSource, TypedPla
 
     @Override
     public String getName() {
-        return "SELECT";
+        return "PROJECT";
     }
 
     @Override

@@ -30,8 +30,6 @@ import org.slf4j.Logger;
 
 import com.akiban.server.service.EventTypes;
 
-import com.akiban.sql.optimizer.plan.PlanContext;
-
 public abstract class BaseRule
 {
     private final String traceName;

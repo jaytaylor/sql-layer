@@ -28,6 +28,12 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidParameterValueException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
@@ -38,15 +44,11 @@ import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.AbstractArithValueSource;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import org.joda.time.DateTimeZone;
 
 public class ArithExpression extends AbstractBinaryExpression
@@ -275,9 +277,9 @@ public class ArithExpression extends AbstractBinaryExpression
     }
     
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+        ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), context, children());
         if (op.isInfix())
             if (name().equals("d"))
             {

@@ -26,17 +26,20 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
+import java.util.Map;
 
 public final class BoundFieldExpression implements Expression {
     @Override
@@ -89,10 +92,15 @@ public final class BoundFieldExpression implements Expression {
     }
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Explainer ex = new ExpressionExplainer (Type.FUNCTION, name(), fieldExpression);
+        // Extend Field inside, rather than wrapping it.
+        CompoundExplainer ex = fieldExpression.getExplainer(context);
+        ex.get().remove(Label.NAME); // Want to replace.
+        ex.addAttribute(Label.NAME, PrimitiveExplainer.getInstance(name()));
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(rowBindingPosition));
+        if (context.hasExtraInfo(this))
+            ex.get().putAll(context.getExtraInfo(this).get());
         return ex;
     }
     

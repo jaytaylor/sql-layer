@@ -36,3 +36,10 @@ CREATE TABLE handling
   iid int NOT NULL,
   GROUPING FOREIGN KEY (iid) REFERENCES items(iid)
 );
+
+CREATE TABLE categories
+(
+   cat int NOT NULL,
+   sku varchar(32) NOT NULL
+);
+CREATE UNIQUE INDEX cat_sku ON categories(cat,sku);

@@ -89,6 +89,11 @@ public final class FirstAggregator implements Aggregator {
         }
 
         @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
         public AkType outputType() {
             return type;
         }

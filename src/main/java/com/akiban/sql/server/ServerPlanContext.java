@@ -26,7 +26,7 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.sql.optimizer.plan.PlanContext;
+import com.akiban.sql.optimizer.rule.PlanContext;
 
 import com.akiban.qp.operator.QueryContext;
 

@@ -26,9 +26,12 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.SortOperatorExplainer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -36,11 +39,6 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.WrappingByteSource;
@@ -169,9 +167,9 @@ class Sort_InsertionLimited extends Operator
     private final int limit;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        OperationExplainer ex = new SortOperatorExplainer("SORT INSERTION LIMITED", sortOption, sortType, inputOperator);
+        CompoundExplainer ex = new SortOperatorExplainer(getName(), sortOption, sortType, inputOperator, ordering, context);
         ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
         return ex;
     }

@@ -1,0 +1,1 @@
+SELECT name FROM customers WHERE name > 'Jones' AND name < 'Smith'

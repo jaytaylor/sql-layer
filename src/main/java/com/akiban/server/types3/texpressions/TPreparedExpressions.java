@@ -26,14 +26,18 @@
 
 package com.akiban.server.types3.texpressions;
 
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
 
 public final class TPreparedExpressions {
 
-    public static Explainer getExplainer(TPreparedExpression expression) {
-        String toString = expression.toString();
-        return PrimitiveExplainer.getInstance(toString);
+    public static CompoundExplainer getExplainer(TPreparedExpression expression) {
+        CompoundExplainer explainer = new CompoundExplainer(Type.TYPES3);
+        explainer.addAttribute(Label.NAME,
+                               PrimitiveExplainer.getInstance(expression.toString()));
+        return explainer;
     }
 
     private TPreparedExpressions() {}

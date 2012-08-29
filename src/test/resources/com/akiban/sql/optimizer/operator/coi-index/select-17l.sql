@@ -1,0 +1,1 @@
+SELECT name FROM customers WHERE name BETWEEN 'Jones' AND 'Smith' ORDER BY name

@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.server.explain.ExplainContext;
 
 import java.util.Arrays;
 
@@ -50,10 +51,10 @@ public class PhysicalUpdate extends BasePlannable
     }
 
     @Override
-    protected String withIndentedExplain(StringBuilder str) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
-        return super.withIndentedExplain(str);
+        return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
 }

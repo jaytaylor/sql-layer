@@ -78,6 +78,11 @@ public class Group implements Traversable
         this.groupTable = groupTable;
     }
 
+    public UserTable getRoot()
+    {
+        return groupTable.getRoot();
+    }
+
     public Collection<GroupIndex> getIndexes()
     {
         return Collections.unmodifiableCollection(internalGetIndexMap().values());
