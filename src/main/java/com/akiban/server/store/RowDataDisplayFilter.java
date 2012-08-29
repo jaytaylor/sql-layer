@@ -26,14 +26,7 @@
 
 package com.akiban.server.store;
 
-import com.akiban.ais.metamodel.io.CSVTarget;
-import com.akiban.ais.metamodel.io.MessageSource;
-import com.akiban.ais.metamodel.io.Reader;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.util.GrowableByteBuffer;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Management.DisplayFilter;
 
 class RowDataDisplayFilter implements DisplayFilter {
@@ -50,6 +43,8 @@ class RowDataDisplayFilter implements DisplayFilter {
     public String toValueDisplayString(final Exchange exchange) {
         final String treeName = exchange.getTree().getName();
 
+        // TODO: UPDATE FOR PROTOBUF
+        /*
         if (treeName.equals(TreeService.SCHEMA_TREE_NAME)) {
             try {
                 final Key key = exchange.getKey();
@@ -62,7 +57,7 @@ class RowDataDisplayFilter implements DisplayFilter {
             } catch (Exception e) {
                 // fall through and attempt to use default display filter
             }
-        }
+        }*/
         return defaultFilter.toValueDisplayString(exchange);
     }
 }
