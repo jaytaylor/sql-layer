@@ -43,10 +43,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.AISCloner;
-import com.akiban.ais.metamodel.io.MessageSource;
-import com.akiban.ais.metamodel.io.MessageTarget;
-import com.akiban.ais.metamodel.io.Reader;
-import com.akiban.ais.metamodel.io.TableSubsetWriter;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
@@ -85,6 +81,8 @@ import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
 import com.akiban.server.error.TableNotInGroupException;
 import com.akiban.server.error.UndefinedViewException;
+import com.akiban.server.error.UnsupportedMetadataTypeException;
+import com.akiban.server.error.UnsupportedMetadataVersionException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
@@ -150,7 +148,7 @@ import static com.akiban.ais.model.AISMerge.findMaxIndexIDInGroup;
  *     <tr>
  *         <td>"byAIS"</td>
  *         <td>byte[]</td>
- *         <td>Value is as constructed by {@link MessageTarget}</td>
+ *         <td>Value is as constructed by (now deleted) com.akiban.ais.metamodel.io.MessageTarget</td>
  *     </tr>
  * </table>
  * </p>
@@ -918,35 +916,18 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                             case NONE:
                                 // Empty tree, nothing to do
                             break;
-                            case META_MODEL:
-                                checkAndSetSerialization(typeForVolume);
-                                loadMetaModel(ex, newAIS);
-                            break;
                             case PROTOBUF:
                                 checkAndSetSerialization(typeForVolume);
                                 loadProtobuf(ex, newAIS);
                             break;
-                            case UNKNOWN:
-                                throw new IllegalStateException("Unknown AIS serialization: " + ex);
                             default:
-                                throw new IllegalStateException("Unhandled serialization type: " + typeForVolume);
+                                throw new UnsupportedMetadataTypeException(typeForVolume.name());
                         }
                     }
                 }, SCHEMA_TREE_NAME);
             }
         });
         return newAIS;
-    }
-
-    private static void loadMetaModel(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
-        ex.clear().append(METAMODEL_PARENT_KEY).fetch();
-        if(!ex.getValue().isDefined()) {
-            throw new IllegalStateException(ex.toString() + " has no associated value (expected byte[])");
-        }
-        byte[] storedAIS = ex.getValue().getByteArray();
-        GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
-        Reader reader = new Reader(new MessageSource(buffer));
-        reader.load(newAIS);
     }
 
     private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
@@ -962,7 +943,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             int storedVersion = key.decodeInt();
             String storedSchema = key.decodeString();
             if(storedVersion != PROTOBUF_PSSM_VERSION) {
-                throw new IllegalArgumentException("Unsupported version for schema "+storedSchema+": " + storedVersion);
+                LOG.debug("Unsupported version {} for schema {}", storedVersion, storedSchema);
+                throw new UnsupportedMetadataVersionException(PROTOBUF_PSSM_VERSION, storedVersion);
             }
 
             byte[] storedAIS = ex.getValue().getByteArray();
@@ -1003,26 +985,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 treeService.populateTreeCache(sequence);
             }
         }
-    }
-    
-    private void saveMetaModel(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String volume)
-            throws PersistitException {
-        buffer.clear();
-        new TableSubsetWriter(new MessageTarget(buffer)) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                final String schemaName = table.getName().getSchemaName();
-                return !schemaName.equals("akiban_information_schema") &&
-                       !schemaName.equals(TableName.INFORMATION_SCHEMA) &&
-                       getVolumeForSchemaTree(schemaName).equals(volume);
-            }
-        }.save(newAIS);
-        buffer.flip();
-
-        ex.clear().append(METAMODEL_PARENT_KEY);
-        ex.getValue().clear();
-        ex.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
-        ex.store();
     }
 
     private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String schema)
@@ -1308,15 +1270,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(serializationType == SerializationType.NONE) {
             serializationType = DEFAULT_SERIALIZATION;
         }
-        switch(serializationType) {
-            case PROTOBUF:
-                saveProtobuf(ex, buffer, newAIS, schema);
-            break;
-            case META_MODEL:
-                saveMetaModel(ex, buffer, newAIS, getVolumeForSchemaTree(schema));
-            break;
-            default:
-                throw new IllegalStateException("Cannot serialize as " + serializationType);
+        if(serializationType == SerializationType.PROTOBUF) {
+            saveProtobuf(ex, buffer, newAIS, schema);
+        } else {
+            throw new IllegalStateException("Cannot serialize as " + serializationType);
         }
     }
 

@@ -372,6 +372,8 @@ public enum ErrorCode {
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
     INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
     IS_TABLE_VERSION_MISMATCH ("52", "012", Importance.ERROR, ISTableVersionMismatchException.class),
+    UNSUPPORTED_METADATA_TYPE ("52", "013", Importance.ERROR, UnsupportedMetadataTypeException.class),
+    UNSUPPORTED_METADATA_VERSION ("52", "014", Importance.ERROR, UnsupportedMetadataVersionException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
