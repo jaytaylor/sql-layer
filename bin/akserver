@@ -84,7 +84,7 @@ launch_service()
         # default AKIBAN_CONF dir
         AKIBAN_CONF="${akiban_home}/conf"
     fi
-    akiban_parms="-Dakiban.admin=$AKIBAN_CONF"
+    akiban_parms="-Dakserver.config_dir=$AKIBAN_CONF"
 
     if [ "x$pidpath" != "x" ]; then
         akiban_parms="$akiban_parms -Dakserver.pidfile=$pidpath"
