@@ -28,7 +28,6 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;

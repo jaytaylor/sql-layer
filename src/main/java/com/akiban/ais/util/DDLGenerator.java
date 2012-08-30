@@ -29,10 +29,8 @@ package com.akiban.ais.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;

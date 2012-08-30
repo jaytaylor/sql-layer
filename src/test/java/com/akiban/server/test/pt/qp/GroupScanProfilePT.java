@@ -27,7 +27,6 @@
 package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.IndexRowType;
