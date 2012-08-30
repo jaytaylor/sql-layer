@@ -35,7 +35,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
 
 class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
 {
@@ -157,7 +157,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
             cursor.exchange().append(Key.AFTER);
             direction = Key.LT;
         }
-        SORT_TRAVERSE.hit();
+        INDEX_TRAVERSE.hit();
         return direction;
     }
 
@@ -193,7 +193,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
                 setupEndComparison(loInclusive ? Comparison.GE : Comparison.GT, loSource);
             }
         }
-        SORT_TRAVERSE.hit();
+        INDEX_TRAVERSE.hit();
         return direction;
     }
 
