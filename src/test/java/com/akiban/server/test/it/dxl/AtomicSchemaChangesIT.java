@@ -26,16 +26,14 @@
 
 package com.akiban.server.test.it.dxl;
 
-import com.akiban.ais.metamodel.io.MessageTarget;
-import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -62,7 +60,6 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
     }
 
-    @Ignore("bug941657 - Invalid grouping foreign keys not handled")
     @Test
     public void tryFailValidation() throws Exception
     {
@@ -213,7 +210,7 @@ public class AtomicSchemaChangesIT extends ITBase
     private GrowableByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
         GrowableByteBuffer buffer = new GrowableByteBuffer(BUFFER_SIZE);
-        new Writer(new MessageTarget(buffer)).save(ais);
+        new ProtobufWriter(buffer).save(ais);
         buffer.flip();
         return buffer;
     }

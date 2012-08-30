@@ -78,7 +78,7 @@ public class IndexKeyRange
 
     public boolean unbounded()
     {
-        return lo == null && hi == null;
+        return (boundColumns == 0);
     }
 
     public int boundColumns()

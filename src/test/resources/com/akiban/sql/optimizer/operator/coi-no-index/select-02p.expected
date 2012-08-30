@@ -1,7 +1,7 @@
 PhysicalSelect[VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin][name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  project(Field(1), Field(4), Field(7), Field(8))
-    Filter_Default([flatten(flatten(test.customers, test.orders), test.items)])
-      Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
-        Flatten_HKeyOrdered(test.customers INNER test.orders)
-          Select_HKeyOrdered(Field(2) < Variable(pos=0))
-            GroupScan_Default(full scan on _akiban_customers)
+  Project_Default(customers.name, orders.order_date, items.sku, items.quan)
+    Filter_Default(customers - orders - items)
+      Flatten_HKeyOrdered(customers - orders INNER items)
+        Flatten_HKeyOrdered(customers INNER orders)
+          Select_HKeyOrdered(items.sku < $1)
+            GroupScan_Default(customers)

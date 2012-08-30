@@ -1,6 +1,6 @@
 PhysicalUpdate@55a7b0bf
-  Insert_Default(project(NULL, Field(1), Field(0)))
-    project(NULL, Field(1), Field(0))
-      UnionAll_Default
-        IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(IGNORE)]))
-        IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(IGNORE)],<UnboundExpressions[Literal(NULL)]))
+  Insert_Default(INTO test.child)
+    Project_Default(NULL, Field(1), Field(0))
+      UnionAll_Default()
+        IndexScan_Default(Index(test.parent.name), name < 'IGNORE' ASC, id)
+        IndexScan_Default(Index(test.parent.name), name > 'IGNORE' ASC, id)

@@ -26,27 +26,30 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractCompositeExpression implements Expression {
 
     // Expression interface
 
     @Override
-    public Explainer getExplainer ()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new ExpressionExplainer(Type.FUNCTION, name(), children);
+        return new ExpressionExplainer(Type.FUNCTION, name(), context, children);
     }
     
     @Override

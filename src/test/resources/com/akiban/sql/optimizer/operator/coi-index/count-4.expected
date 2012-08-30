@@ -1,6 +1,6 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
-  project(Field(0))
-    Count_Default(flatten(test.customers, test.orders))
-      Filter_Default([flatten(test.customers, test.orders)])
-        Flatten_HKeyOrdered(test.customers INNER test.orders)
-          GroupScan_Default(full scan on _akiban_customers)
+  Project_Default(Field(0))
+    Count_Default(*)
+      Filter_Default(customers - orders)
+        Flatten_HKeyOrdered(customers INNER orders)
+          GroupScan_Default(customers)

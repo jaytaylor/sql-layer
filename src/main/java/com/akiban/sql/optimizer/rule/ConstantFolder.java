@@ -26,7 +26,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -812,7 +811,7 @@ public class ConstantFolder extends BaseRule
         private OldExpressionAssembler oldExpressionAssembler;
         
         public OldFolder(PlanContext planContext) {
-            this(planContext, new OldExpressionAssembler(planContext.getRulesContext()));
+            this(planContext, new OldExpressionAssembler(planContext));
         }
         
         private OldFolder(PlanContext planContext, OldExpressionAssembler expressionAssembler) {
@@ -839,6 +838,7 @@ public class ConstantFolder extends BaseRule
             if (anyNull)
                 switch(oldExpressionAssembler.getFunctionRegistry().composer(fun.getFunction()).getNullTreating())
                 {
+                case REMOVE_AFTER_FIRST: return removeNull(fun, 1);   
                 case REMOVE:       return removeNull(fun);
                 case RETURN_NULL: return new BooleanConstantExpression(null,
                         fun.getSQLtype(),
@@ -864,7 +864,7 @@ public class ConstantFolder extends BaseRule
                 return Constantness.VARIABLE;
         }
 
-        private ExpressionNode removeNull(FunctionExpression fun)
+        private ExpressionNode removeNull(FunctionExpression fun, int start)
         {
             List<ExpressionNode> operands = fun.getOperands();
 
@@ -872,7 +872,7 @@ public class ConstantFolder extends BaseRule
                 return new BooleanConstantExpression(null,
                         fun.getSQLtype(),
                         fun.getSQLsource());
-            int i = 0;
+            int i = start;
             while (i < operands.size())
             {
                 ExpressionNode operand = operands.get(i);
@@ -886,11 +886,16 @@ public class ConstantFolder extends BaseRule
             }
             return fun;
         }
+
+        private ExpressionNode removeNull(FunctionExpression fun)
+        {
+            return removeNull(fun, 0);
+        }
     }
 
     public static final class NewFolder extends Folder {
         public NewFolder(PlanContext planContext) {
-            super(planContext, new NewExpressionAssembler(planContext.getRulesContext(), planContext.getQueryContext()));
+            super(planContext, new NewExpressionAssembler(planContext));
         }
 
         @Override

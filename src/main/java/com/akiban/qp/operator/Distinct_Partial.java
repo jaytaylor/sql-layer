@@ -26,17 +26,19 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.std.DistinctExplainer;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.std.DistinctExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -154,9 +156,9 @@ class Distinct_Partial extends Operator
     private final boolean usePValue;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new DistinctExplainer("DISTINCT PARTIAL", distinctType, inputOperator);
+        return new DistinctExplainer(getName(), distinctType, inputOperator, context);
     }
 
     // Inner classes

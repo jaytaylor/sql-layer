@@ -26,18 +26,21 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AkServer;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
-import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.qp.operator.API.cursor;
+import java.util.Map;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -210,7 +213,7 @@ public class QueryTimeoutIT extends OperatorITBase
         }
 
         @Override
-        public Explainer getExplainer()
+        public CompoundExplainer getExplainer(ExplainContext context)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }

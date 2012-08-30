@@ -278,7 +278,7 @@ class YamlTester {
 		    fail("Unknown command: " + commandName);
 		}
 		if (suppressed) {
-		    System.err.println(context() + "Test suppressed: exiting");
+		    System.err.println(context(null) + "Test suppressed: exiting");
 		    break;
 		}
 	    }
@@ -289,13 +289,13 @@ class YamlTester {
 	    throw e;
 	} catch (Throwable e) {
 	    /* Add context */
-	    throw new ContextAssertionError(e.toString(), e);
+	    throw new ContextAssertionError(null, e.toString(), e);
 	}
     }
 
     private void bulkloadCommand(Object value, List<Object> sequence) {
         // ignore this command.  Not meant for ITs, only system testing
-        throw new ContextAssertionError("Bulk Load command is not supported in ITs");
+        throw new ContextAssertionError(null, "Bulk Load command is not supported in ITs");
     }
 
     private void includeCommand(Object value, List<Object> sequence) {
@@ -306,6 +306,7 @@ class YamlTester {
 	File include = new File(includeValue);
 	if (sequence.size() > 1) {
 	    throw new ContextAssertionError(
+            includeValue,
 		    "The Include command does not support attributes"
 			    + "\nFound: " + sequence.get(1));
 	}
@@ -323,7 +324,7 @@ class YamlTester {
 	try {
 	    in = new InputStreamReader(new FileInputStream(include), "UTF-8");
 	} catch (IOException e) {
-	    throw new ContextAssertionError("Problem accessing include file "
+	    throw new ContextAssertionError(includeValue, "Problem accessing include file "
 		    + include + ": " + e, e);
 	}
 	int originalCommandNumber = commandNumber;
@@ -405,6 +406,7 @@ class YamlTester {
 	    }
 	    if (!errorSpecified) {
 		throw new ContextAssertionError(
+            statement,
 			"Unexpected statement execution failure: "
 				+ sqlException, sqlException);
 	    }
@@ -916,11 +918,11 @@ class YamlTester {
 		got++;
 	    }
 	    if (got > expected) {
-		throw new ContextAssertionError("Too many output rows:"
+		throw new ContextAssertionError(statement, "Too many output rows:"
 			+ "\nExpected: " + expected + "\n     got: " + got);
 	    } else if (!more && (params == null || paramsRow == params.size())
 		    && (got < expected)) {
-		throw new ContextAssertionError("Too few output rows:"
+		throw new ContextAssertionError(statement, "Too few output rows:"
 			+ "\nExpected: " + expected + "\n     got: " + got);
 	    }
 	}
@@ -984,6 +986,7 @@ class YamlTester {
                         break;
                     } else if (!rowsEqual(row, resultsRow)) {
                         throw new ContextAssertionError(
+                            statement,
                             "Unexpected output in row " + (outputRow + 1) + ":"
                             + "\nExpected: " + arrayString(row)
                             + "\n     got: "
@@ -1614,18 +1617,18 @@ class YamlTester {
 
     /** An assertion error that includes context information. */
     private class ContextAssertionError extends AssertionError {
-	ContextAssertionError(String message) {
-	    super(context() + message);
+	ContextAssertionError(String failedStatement, String message) {
+	    super(context(failedStatement) + message);
 	}
 
-	ContextAssertionError(String message, Throwable cause) {
-	    super(context() + message);
+	ContextAssertionError(String failedStatement, String message, Throwable cause) {
+	    super(context(failedStatement) + message);
 	    initCause(cause);
 	}
     }
 
-    private String context() {
-	StringBuffer context = new StringBuffer();
+    private String context(String failedStatement) {
+	StringBuilder context = new StringBuilder();
 	if (filename != null) {
 	    context.append(filename);
 	}
@@ -1643,7 +1646,10 @@ class YamlTester {
 	    }
 	    context.append("Command ").append(commandNumber);
 	    if (commandName != null) {
-		context.append(" (").append(commandName).append(')');
+		context.append(" (").append(commandName);
+        if (failedStatement != null)
+            context.append(": <").append(failedStatement).append('>');
+        context.append(')');
 	    }
 	}
 	if (context.length() != 0) {

@@ -1,7 +1,7 @@
 SelectQuery@7f328c7a
   ResultSet@4fa4ded3[order_date, name]
     Distinct@5121177e
-      Sort@8c3c315[SELECT[0], SELECT[1]]
+      Sort@8c3c315[PROJECT[0], PROJECT[1]]
         MapJoin@193936e1()
           Flatten@7b41fab6(customers INNER orders)
             GroupScan@28b301f2(Group(customers -> test._akiban_customers), rows = 1000, cost = 59729.0)

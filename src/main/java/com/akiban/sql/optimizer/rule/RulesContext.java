@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.PlanContext;
-
 import org.slf4j.Logger;
 
 import java.util.List;

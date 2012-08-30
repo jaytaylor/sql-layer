@@ -26,12 +26,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
@@ -43,17 +37,43 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.SubqueryExpression;
+
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.Explainable;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
+
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-abstract class ExpressionAssembler<T> {
+abstract class ExpressionAssembler<T extends Explainable> {
 
     public abstract ConstantExpression evalNow(PlanContext planContext, ExpressionNode node);
+    final PlanContext planContext;
+    final PlanExplainContext explainContext;
+
+    protected ExpressionAssembler(PlanContext planContext) {
+        this.planContext = planContext;
+        if (planContext instanceof ExplainPlanContext)
+            explainContext = ((ExplainPlanContext)planContext).getExplainContext();
+        else
+            explainContext = null;
+    }
 
     protected abstract T assembleFunction(ExpressionNode functionNode,
                                           String functionName,
@@ -147,12 +167,17 @@ abstract class ExpressionAssembler<T> {
     }
 
     private T assembleColumnExpression(ColumnExpression column,
-                                        ColumnExpressionContext columnContext) {
+                                       ColumnExpressionContext columnContext) {
         ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();
         if (currentRow != null) {
             int fieldIndex = currentRow.getIndex(column);
             if (fieldIndex >= 0)
-                return assembleFieldExpression(currentRow.getRowType(), fieldIndex);
+            {
+                T expression = assembleFieldExpression(currentRow.getRowType(), fieldIndex);
+                if (explainContext != null)
+                    explainColumnExpression(expression, column);
+                return expression;
+            }
         }
 
         List<ColumnExpressionToIndex> boundRows = columnContext.getBoundRows();
@@ -162,12 +187,34 @@ abstract class ExpressionAssembler<T> {
             int fieldIndex = boundRow.getIndex(column);
             if (fieldIndex >= 0) {
                 rowIndex += columnContext.getLoopBindingsOffset();
-                return assembleBoundFieldExpression(boundRow.getRowType(), rowIndex, fieldIndex);
+                T expression = assembleBoundFieldExpression(boundRow.getRowType(), rowIndex, fieldIndex);
+                if (explainContext != null)
+                    explainColumnExpression(expression, column);
+                return expression;
             }
         }
         logger().debug("Did not find {} from {} in {}",
                 new Object[]{column, column.getTable(), boundRows});
         throw new AkibanInternalException("Column not found " + column);
+    }
+
+    private void explainColumnExpression(T expression, ColumnExpression column) {
+        CompoundExplainer explainer = new CompoundExplainer(Type.EXTRA_INFO);
+        explainer.addAttribute(Label.POSITION, 
+                               PrimitiveExplainer.getInstance(column.getPosition()));
+        Column aisColumn = column.getColumn();
+        if (aisColumn != null) {
+            explainer.addAttribute(Label.TABLE_CORRELATION, 
+                                   PrimitiveExplainer.getInstance(column.getTable().getName()));
+            TableName tableName = aisColumn.getTable().getName();
+            explainer.addAttribute(Label.TABLE_SCHEMA,
+                                   PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+            explainer.addAttribute(Label.TABLE_NAME,
+                                   PrimitiveExplainer.getInstance(tableName.getTableName()));
+            explainer.addAttribute(Label.COLUMN_NAME,
+                                   PrimitiveExplainer.getInstance(aisColumn.getName()));
+        }
+        explainContext.putExtraInfo(expression, explainer);
     }
 
     public abstract Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys,

@@ -26,16 +26,19 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.std.SortOperatorExplainer;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -159,12 +162,9 @@ class Sort_Tree extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator);
-        
-        // TODO implement for real
-        //return PrimitiveExplainer.getInstance(toString()); // Dummy explainer
+        return new SortOperatorExplainer(getName(), sortOption, sortType, inputOperator, ordering, context);
     }
 
     // Inner classes

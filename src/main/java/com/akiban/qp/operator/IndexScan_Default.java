@@ -26,20 +26,20 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,6 +187,7 @@ class IndexScan_Default extends Operator
                              boolean usePValues)
     {
         ArgumentValidation.notNull("indexType", indexType);
+        this.indexType = indexType;
         this.index = indexType.index();
         this.ordering = ordering;
         this.indexKeyRange = indexKeyRange;
@@ -202,6 +203,7 @@ class IndexScan_Default extends Operator
 
     // Object state
 
+    private final IndexRowType indexType;
     private final Index index;
     private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
@@ -209,15 +211,61 @@ class IndexScan_Default extends Operator
     private final boolean usePValues;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
-        
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Index Scan"));
-        atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.toString()));
-        atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
-        
-        return new OperationExplainer(Type.SCAN_OPERATOR, atts);
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.INDEX, indexType.getExplainer(context));
+        for (IndexColumn indexColumn : index.getAllColumns()) {
+            Column column = indexColumn.getColumn();
+            atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(column.getTable().getName().getSchemaName()));
+            atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(column.getTable().getName().getTableName()));
+            atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
+        }
+        if (!indexKeyRange.unbounded()) {
+            List<Explainer> loExprs = null, hiExprs = null;
+            if (indexKeyRange.lo() != null) {
+                loExprs = indexKeyRange.lo().getExplainer(context).get().get(Label.EXPRESSIONS);
+            }
+            if (indexKeyRange.hi() != null) {
+                hiExprs = indexKeyRange.hi().getExplainer(context).get().get(Label.EXPRESSIONS);
+            }
+            if (indexKeyRange.spatial()) {
+                atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL"));
+                if (loExprs != null)
+                    atts.put(Label.LOW_COMPARAND, loExprs);
+                if (hiExprs != null)
+                    atts.put(Label.HIGH_COMPARAND, hiExprs);
+            }
+            else {
+                int boundColumns = indexKeyRange.boundColumns();
+                for (int i = 0; i < boundColumns; i++) {
+                    boolean equals = ((i < boundColumns-1) ||
+                                      ((loExprs != null) && (hiExprs != null) &&
+                                       indexKeyRange.loInclusive() && indexKeyRange.hiInclusive() &&
+                                       loExprs.get(i).equals(hiExprs.get(i))));
+                    if (equals) {
+                        atts.put(Label.EQUAL_COMPARAND, loExprs.get(i));
+                    }
+                    else {
+                        if (loExprs != null) {
+                            atts.put(Label.LOW_COMPARAND, loExprs.get(i));
+                            atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance(indexKeyRange.loInclusive()));
+                        }
+                        if (hiExprs != null) {
+                            atts.put(Label.HIGH_COMPARAND, hiExprs.get(i));
+                            atts.put(Label.HIGH_COMPARAND, PrimitiveExplainer.getInstance(indexKeyRange.hiInclusive()));
+                        }
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < ordering.sortColumns(); i++) {
+            atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
+        }
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get()); 
+        return new CompoundExplainer(Type.SCAN_OPERATOR, atts);
     }
 
     // Inner classes

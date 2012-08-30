@@ -55,14 +55,6 @@ public interface Store {
 
     void writeRow(Session session, RowData rowData) throws PersistitException;
 
-    void writeRowForBulkLoad(Session session, Exchange hEx,
-            RowDef rowDef, RowData rowData, int[] ordinals,
-            int[] nKeyColumns, FieldDef[] fieldDefs,
-            Object[] hKey) throws PersistitException;
-
-    void updateTableStats(Session session, RowDef rowDef,
-            long rowCount);
-
     void deleteRow(Session session, RowData rowData) throws PersistitException;
     void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException;
 

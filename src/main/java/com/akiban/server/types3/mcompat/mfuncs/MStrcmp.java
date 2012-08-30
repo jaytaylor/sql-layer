@@ -51,8 +51,13 @@ public class MStrcmp extends TOverloadBase {
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         String st1 = inputs.get(0).getString();
         String st2 = inputs.get(1).getString();
-        
-        output.putInt32(st1.compareTo(st2));
+
+        int cmp = st1.compareTo(st2);
+        if (cmp < 0)
+            cmp = -1;
+        else if (cmp > 0)
+            cmp = 1;
+        output.putInt32(cmp);
     }
 
     @Override

@@ -1,8 +1,8 @@
 PhysicalSelect[order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  project(Field(4), Field(7), Field(8))
-    Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
-      Flatten_HKeyOrdered(test.customers INNER test.orders)
-        AncestorLookup_Default(Index(test.items.sku[IndexColumn(sku)]) -> [test.customers, test.orders, test.items])
-          UnionAll_Default
-            IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]) (>=UnboundExpressions[Literal(1234)],<=UnboundExpressions[Literal(1234)]))
-            IndexScan_Default(Index(test.items.sku[IndexColumn(sku)]) (>=UnboundExpressions[Literal(4567)],<=UnboundExpressions[Literal(4567)]))
+  Project_Default(orders.order_date, items.sku, items.quan)
+    Flatten_HKeyOrdered(customers - orders INNER items)
+      Flatten_HKeyOrdered(customers INNER orders)
+        AncestorLookup_Default(Index(items.sku) -> customers, orders, items)
+          UnionAll_Default()
+            IndexScan_Default(Index(items.sku), sku = '1234', orders.cid ASC, oid, iid)
+            IndexScan_Default(Index(items.sku), sku = '4567', orders.cid ASC, oid, iid)

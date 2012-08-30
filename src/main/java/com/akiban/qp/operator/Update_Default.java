@@ -29,11 +29,8 @@ package com.akiban.qp.operator;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
@@ -41,6 +38,7 @@ import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
 
@@ -104,7 +102,7 @@ class Update_Default implements UpdatePlannable {
 
     @Override
     public String toString() {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, updateFunction);
+        return String.format("%s(%s -> %s)", getName(), inputOperator, updateFunction);
     }
 
     // constructor
@@ -124,6 +122,12 @@ class Update_Default implements UpdatePlannable {
     }
 
     // Plannable interface
+
+    @Override
+    public String getName()
+    {
+        return getClass().getSimpleName();
+    }
 
     @Override
     public List<Operator> getInputOperators() {
@@ -148,10 +152,13 @@ class Update_Default implements UpdatePlannable {
     private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: Update_Default");
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        OperationExplainer ex = new DUIOperatorExplainer("UPDATE DEFAULT", inputOperator);
-        ex.addAttribute(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
+        Attributes atts = new Attributes();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get()); 
+        atts.put(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
+        CompoundExplainer ex = new DUIOperatorExplainer(getName(), atts, inputOperator, context);
         return ex;
     }
 

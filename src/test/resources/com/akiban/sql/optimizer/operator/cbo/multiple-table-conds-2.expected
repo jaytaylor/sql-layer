@@ -1,11 +1,11 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  Map_NestedLoops
-    IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (,))
-    Map_NestedLoops
-      Select_HKeyOrdered(LIKE_SENSITIVE(Field(0), 'M%'))
-        IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
-      project(Bound(1,Field(0)))
-        Select_HKeyOrdered(Bound(0,Field(0)) != Field(3))
-          AncestorLookup_Default(Index(test.addresses.state[IndexColumn(state)]) -> [test.addresses])
-            Select_HKeyOrdered((Field(0) != Bound(1,Field(0))) AND (Field(0) != 'WY'))
-              IndexScan_Default(Index(test.addresses.state[IndexColumn(state)]) (>UnboundExpressions[Literal(M)],<UnboundExpressions[Literal(NULL)]))
+  Map_NestedLoops()
+    IndexScan_Default(Index(parent.name), name)
+    Map_NestedLoops()
+      Select_HKeyOrdered(LIKE_SENSITIVE(customers.name, 'M%'))
+        IndexScan_Default(Index(customers.name), name = parent.name)
+      Project_Default(customers.name)
+        Select_HKeyOrdered(parent.name != addresses.city)
+          AncestorLookup_Default(Index(addresses.state) -> addresses)
+            Select_HKeyOrdered((addresses.state != customers.name) AND (addresses.state != 'WY'))
+              IndexScan_Default(Index(addresses.state), state > 'M')

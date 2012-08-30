@@ -28,6 +28,8 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.TExpressionExplainer;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
@@ -43,6 +45,16 @@ public final class TPreparedLiteral implements TPreparedExpression {
     @Override
     public TEvaluatableExpression build() {
         return new Evaluation(value);
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer ex = new TExpressionExplainer(Type.LITERAL, "Literal", context);
+        StringBuilder sql = new StringBuilder();
+        tInstance.formatAsLiteral(value, AkibanAppender.of(sql));
+        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sql.toString()));
+        return ex;
     }
 
     @Override

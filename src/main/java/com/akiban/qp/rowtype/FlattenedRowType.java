@@ -28,11 +28,15 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import java.math.BigDecimal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class FlattenedRowType extends DerivedRowType
 {
@@ -92,6 +96,15 @@ public class FlattenedRowType extends DerivedRowType
     public HKey hKey()
     {
         return child.hKey();
+    }
+    
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer explainer = super.getExplainer(context);
+        explainer.addAttribute(Label.PARENT_TYPE, parent.getExplainer(context));
+        explainer.addAttribute(Label.CHILD_TYPE, child.getExplainer(context));
+        return explainer;
     }
 
     // FlattenedRowType interface

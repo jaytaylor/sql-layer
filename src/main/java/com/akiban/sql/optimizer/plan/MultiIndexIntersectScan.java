@@ -172,6 +172,21 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
+    public int getNKeyColumns() {
+        return outputScan.getNKeyColumns();
+    }
+
+    @Override
+    public boolean usesAllColumns() {
+        return outputScan.usesAllColumns();
+    }
+
+    @Override
+    public void setUsesAllColumns(boolean usesAllColumns) {
+        outputScan.setUsesAllColumns(usesAllColumns);
+    }
+
+    @Override
     protected String summarizeIndex(int indentation) {
         boolean pretty = indentation >= 0;
         int nextIndentation = pretty ? indentation + 1 : -1;

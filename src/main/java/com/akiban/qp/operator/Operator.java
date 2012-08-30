@@ -43,10 +43,16 @@ public abstract class Operator implements Plannable
     @Override
     public String toString()
     {
-        return getClass().getSimpleName();
+        return getName();
     }
 
     // Operator interface
+
+    @Override
+    public String getName()
+    {
+        return getClass().getSimpleName();
+    }
 
     // I'm not sure I like having this as part of the interface. On one hand, operators like Flatten create new
     // RowTypes and it's handy to get access to those new RowTypes. On the other hand, not all operators do this,

@@ -1,5 +1,5 @@
 PhysicalUpdate
-  Update_Default(Filter_Default([test.items]) -> ExpressionRowUpdateFunction([null, null, null, Literal(66)]))
-    Filter_Default([test.items])
-      BranchLookup_Default(_akiban_customers Index(test.orders.order_date[IndexColumn(order_date)]) -> test.orders limit NO LIMIT)
-        IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[Literal(2011-04-01)],<UnboundExpressions[Literal(NULL)]))
+  Update_Default(items SET quan = 66)
+    Filter_Default(items)
+      BranchLookup_Default(Index(orders.order_date) -> orders)
+        IndexScan_Default(Index(orders.order_date), order_date > DATE '2011-04-01')

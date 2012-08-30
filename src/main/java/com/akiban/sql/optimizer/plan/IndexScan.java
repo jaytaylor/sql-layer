@@ -141,6 +141,9 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public abstract OrderEffectiveness getOrderEffectiveness();
     public abstract List<ExpressionNode> getColumns();
     public abstract List<IndexColumn> getIndexColumns();
+    public abstract int getNKeyColumns();
+    public abstract boolean usesAllColumns();
+    public abstract void setUsesAllColumns(boolean usesAllColumns);
     public abstract List<ExpressionNode> getEqualityComparands();
     public abstract List<ConditionExpression> getConditions();
     public abstract boolean hasConditions();

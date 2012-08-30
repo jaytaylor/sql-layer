@@ -1,3 +1,11 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], _SQL_COL_1:VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin]
-  project(Field(0), VALUE('Map_NestedLoops'))
-    IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (,))
+  Project_Default(customers.name, VALUE(SUBQUERY 1))
+    IndexScan_Default(Index(customers.name), name)
+  SUBQUERY 1: VALUE(Field(0))
+    Map_NestedLoops()
+      Filter_Default(items)
+        GroupScan_Default(customers)
+      Project_Default(i2.sku)
+        Select_HKeyOrdered(i1.quan == (i2.quan * 10))
+          AncestorLookup_Default(Index(items.sku) -> items)
+            IndexScan_Default(Index(items.sku), sku = customers.name)

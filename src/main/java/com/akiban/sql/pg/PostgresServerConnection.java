@@ -643,11 +643,15 @@ public class PostgresServerConnection extends ServerSessionBase
         // A running query checks session state for query cancelation during Cursor.next() calls. If the
         // query is stuck in a blocking operation, then thread interruption should unstick it. Either way,
         // the query should eventually throw QueryCanceledException which will be caught by topLevel().
-        session.cancelCurrentQuery(true);
+        if (session != null) {
+            session.cancelCurrentQuery(true);
+        }
         if (thread != null) {
             thread.interrupt();
         }
-        messenger.setCancel(true);
+        if (messenger != null) {
+            messenger.setCancel(true);
+        }
     }
 
     // When the AIS changes, throw everything away, since it might

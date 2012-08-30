@@ -26,37 +26,13 @@
 
 package com.akiban.server.test.it.store;
 
-import com.akiban.server.store.PSSMTestShim;
-import com.google.inject.ProvisionException;
 import org.junit.Test;
-
-import java.util.concurrent.Callable;
 
 import static com.akiban.server.test.it.store.SchemaManagerIT.*;
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
 
 public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerITBase {
-    @Test
-    public void existingMetaModelReadAndUpgraded() throws Exception {
-        transactionally(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                PSSMTestShim.clearAISFromDisk(pssm, session());
-                return null;
-            }
-        });
-
-        pssm.setSerializationType(SerializationType.META_MODEL);
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-
-        safeRestart();
-
-        assertEquals("Protobuf after load", SerializationType.PROTOBUF, pssm.getSerializationType());
-        createTable(SCHEMA, T2_NAME, T2_DDL);
-        assertEquals("Still Protobuf after save", "[PROTOBUF]", pssm.getAllSerializationTypes(session()).toString());
-    }
-
     @Test
     public void newDataSetReadAndSavedAsProtobuf() throws Exception {
         createTable(SCHEMA, T1_NAME, T1_DDL);
@@ -65,18 +41,5 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         safeRestart();
 
         assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
-    }
-
-    // Provision = error during startup of PSSM
-    @Test(expected=ProvisionException.class)
-    public void mixedMetaModelAndProtobufIsIllegal() throws Exception {
-        // Create a bad volume on purpose to make sure we detect on load
-        pssm.setSerializationType(SerializationType.META_MODEL);
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-
-        pssm.setSerializationType(SerializationType.PROTOBUF);
-        createTable(SCHEMA, T2_NAME, T2_DDL);
-
-        safeRestart();
     }
 }

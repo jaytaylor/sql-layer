@@ -963,3 +963,20 @@ SampledCount: 1000000
 Statistics: []
 Table: handling
 Timestamp: 2012-05-10T00:23:54.000Z
+---
+Index: cat_sku
+RowCount: 10000
+SampledCount: 10000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 100
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 9900
+    key: [2]
+    lt: 0
+Table: categories
+Timestamp: 2012-06-07T00:00:00.000Z

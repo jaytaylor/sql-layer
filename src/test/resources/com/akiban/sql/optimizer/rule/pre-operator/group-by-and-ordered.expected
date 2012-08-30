@@ -1,6 +1,6 @@
 SelectQuery@30ad6f6f
   ResultSet@4a6ef960[oid, order_date]
-    Project@3bb633cd[SELECT[1], SELECT[0]]
+    Project@3bb633cd[PROJECT[1], PROJECT[0]]
       Distinct@237bec94
         Project@193f003f[orders.order_date, orders.oid]
           SingleIndexScan@7e561816(Index(.customers.sku_and_date_2[IndexColumn(sku), IndexColumn(order_date), IndexColumn(oid)]), covering/SORTED/reverse, =1234, rows = 97, cost = 81.2734)
