@@ -75,7 +75,7 @@ public class TaskGenerator
     private void generateTasks(Group group) throws Exception
     {
         logger.info("Generating tasks");
-        UserTable root = group.getGroupTable().getRoot();
+        UserTable root = group.getRoot();
         actions.generateTasksForTableContainingHKeyColumns(loader, root, tasks);
         for (Join join : root.getChildJoins()) {
             generateTasks(join);
