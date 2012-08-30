@@ -86,8 +86,7 @@ public class TableDDL
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ais.getUserTable(tableName) == null && 
-                ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
+        if (ais.getUserTable(tableName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS)
             {
                 if (context != null)
@@ -110,8 +109,7 @@ public class TableDDL
         ExistenceCheck existenceCheck = dropGroup.getExistenceCheck();
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ais.getUserTable(tableName) == null && 
-                ais.getGroupTable(tableName) == null) {
+        if (ais.getUserTable(tableName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS) {
                 if (context != null) {
                     context.warnClient(new NoSuchTableException (tableName));
