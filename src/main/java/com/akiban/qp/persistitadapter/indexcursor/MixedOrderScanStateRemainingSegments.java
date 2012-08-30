@@ -30,7 +30,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
 
 class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
 {
@@ -43,14 +43,14 @@ class MixedOrderScanStateRemainingSegments<S> extends MixedOrderScanState<S>
         } else {
             exchange.getKey().copyTo(subtreeRootKey);
         }
-        SORT_TRAVERSE.hit();
+        INDEX_TRAVERSE.hit();
         return exchange.traverse(Key.GT, true);
     }
 
     @Override
     public boolean advance() throws PersistitException
     {
-        SORT_TRAVERSE.hit();
+        INDEX_TRAVERSE.hit();
         Exchange exchange = cursor.exchange();
         boolean more = ascending ? exchange.next(true) : exchange.previous(true);
         if (more) {

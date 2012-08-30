@@ -149,5 +149,5 @@ public abstract class IndexCursor implements Cursor
     private boolean idle = true;
     private boolean destroyed = false;
 
-    static final PointTap SORT_TRAVERSE = Tap.createCount("traverse_sort");
+    static final PointTap INDEX_TRAVERSE = Tap.createCount("index_traverse");
 }
