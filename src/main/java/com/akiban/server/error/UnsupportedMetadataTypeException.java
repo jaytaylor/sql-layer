@@ -24,15 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.metamodel;
+package com.akiban.server.error;
 
-public class MetaModelException extends RuntimeException {
-
-    public MetaModelException (Exception ex) {
-        super (ex);
-    }
-    
-    public MetaModelException (String message) {
-        super (message);
+public class UnsupportedMetadataTypeException extends InvalidOperationException {
+    public UnsupportedMetadataTypeException(String typeName) {
+        super(ErrorCode.UNSUPPORTED_METADATA_TYPE, typeName);
     }
 }

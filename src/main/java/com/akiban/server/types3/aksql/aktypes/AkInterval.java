@@ -68,6 +68,44 @@ public class AkInterval extends TClassBase {
             Formatter formatter = new Formatter(out.getAppendable());
             formatter.format("INTERVAL '%d-%d", years, months);
         }
+
+        @Override
+        public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            long value = source.getInt64();
+            Formatter formatter = new Formatter(out.getAppendable());
+            out.append("INTERVAL '");
+            long years, months;
+            if (value < 0) {
+                out.append('-');
+                months = -value;
+            }
+            else {
+                months = value;
+            }
+            years = months / 12;
+            months -= years * 12;
+            String hi = null, lo = null;
+            if (years > 0) {
+                formatter.format("%d", years);
+                hi = lo = "YEAR";
+            }
+            if ((months > 0) || (hi == null)) {
+                if (hi != null) {
+                    formatter.format("-%02d", months);
+                }
+                else {
+                    formatter.format("%d", months);
+                }
+                lo = "MONTH";
+                if (hi == null) hi = lo;
+            }
+            out.append("' ");
+            out.append(hi);
+            if (hi != lo) {
+                out.append(" TO ");
+                out.append(lo);
+            }
+        }
     };
 
     private static TClassFormatter secondsFormatter = new TClassFormatter() {
@@ -89,6 +127,80 @@ public class AkInterval extends TClassBase {
 
             Formatter formatter = new Formatter(out.getAppendable());
             formatter.format("INTERVAL '%d %d:%d:%d.%05d", days, hours, minutes, seconds, micros);
+        }
+
+        @Override
+        public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            long value = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
+            Formatter formatter = new Formatter(out.getAppendable());
+            out.append("INTERVAL '");
+            long days, hours, mins, secs, micros;
+            if (value < 0) {
+                out.append('-');
+                micros = -value;
+            }
+            else {
+                micros = value;
+            }
+            // Could be data-driven, but just enough special cases that
+            // that would be pretty complicated.
+            secs = micros / 1000000;
+            micros -= secs * 1000000;
+            mins = secs / 60;
+            secs -= mins * 60;
+            hours = mins / 60;
+            mins -= hours * 60;
+            days = hours / 24;
+            hours -= days * 24;
+            String hi = null, lo = null;
+            if (days > 0) {
+                formatter.format("%d", days);
+                hi = lo = "DAY";
+            }
+            if ((hours > 0) ||
+                ((hi != null) && ((mins > 0) || (secs > 0) || (micros > 0)))) {
+                if (hi != null) {
+                    formatter.format(":%02d", hours);
+                }
+                else {
+                    formatter.format("%d", hours);
+                }
+                lo = "HOUR";
+                if (hi == null) hi = lo;
+            }
+            if ((mins > 0) ||
+                ((hi != null) && ((secs > 0) || (micros > 0)))) {
+                if (hi != null) {
+                    formatter.format(":%02d", mins);
+                }
+                else {
+                    formatter.format("%d", mins);
+                }
+                lo = "MINUTE";
+                if (hi == null) hi = lo;
+            }
+            if ((secs > 0) || (hi == null) || (micros > 0)) {
+                if (hi != null) {
+                    formatter.format(":%02d", secs);
+                }
+                else {
+                    formatter.format("%d", secs);
+                }
+                lo = "SECOND";
+                if (hi == null) hi = lo;
+            }
+            if (micros > 0) {
+                if ((micros % 1000) == 0)
+                    formatter.format(".%03d", micros / 1000);
+                else
+                    formatter.format(".%06d", micros);
+            }
+            out.append("' ");
+            out.append(hi);
+            if (hi != lo) {
+                out.append(" TO ");
+                out.append(lo);
+            }
         }
     };
 

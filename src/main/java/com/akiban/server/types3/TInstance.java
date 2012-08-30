@@ -50,6 +50,10 @@ public final class TInstance {
         tclass.format(this, source, out);
     }
     
+    public void formatAsLiteral(PValueSource source, AkibanAppender out) {
+        tclass.formatAsLiteral(this, source, out);
+    }
+    
     public int attribute(Attribute attribute) {
         if (enumClass != attribute.getClass())
             throw new IllegalArgumentException("Illegal attribute: " + attribute.name());

@@ -28,6 +28,8 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.TExpressionExplainer;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
@@ -71,6 +73,14 @@ public final class TCastExpression implements TPreparedExpression {
     @Override
     public TEvaluatableExpression build() {
         return new CastEvaluation(input.build(), cast, sourceInstance, targetInstance, preptimeContext);
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer ex = new TExpressionExplainer(Type.FUNCTION, "CAST", context);
+        ex.addAttribute(Label.OPERAND, input.getExplainer(context));
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(targetInstance.toString()));
+        return ex;
     }
 
     @Override

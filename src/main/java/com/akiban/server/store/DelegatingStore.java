@@ -80,21 +80,6 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
         delegate.writeRow(session, rowData);
     }
 
-    public void writeRowForBulkLoad(Session session,
-                                    Exchange hEx,
-                                    RowDef rowDef,
-                                    RowData rowData,
-                                    int[] ordinals,
-                                    int[] nKeyColumns,
-                                    FieldDef[] hKeyFieldDefs,
-                                    Object[] hKeyValues) throws PersistitException {
-        delegate.writeRowForBulkLoad(session, hEx, rowDef, rowData, ordinals, nKeyColumns, hKeyFieldDefs, hKeyValues);
-    }
-
-    public void updateTableStats(Session session, RowDef rowDef, long rowCount) {
-        delegate.updateTableStats(session, rowDef, rowCount);
-    }
-
     public void deleteRow(Session session, RowData rowData) throws PersistitException {
         delegate.deleteRow(session, rowData);
     }

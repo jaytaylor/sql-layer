@@ -36,7 +36,7 @@ import com.akiban.server.types.util.SqlLiteralValueFormatter;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpressions;
+import com.akiban.util.AkibanAppender;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
@@ -93,7 +93,7 @@ public abstract class BindableRow {
     public abstract Row bind(QueryContext context);
     public abstract CompoundExplainer getExplainer(ExplainContext context);
 
-    private static Row strictCopy(Row input, boolean usePValues) {
+    private static ImmutableRow strictCopy(Row input, boolean usePValues) {
         RowCopier oldCopier;
         RowPCopier newCopier;
         if (usePValues) {
@@ -125,7 +125,7 @@ public abstract class BindableRow {
             }
             else {
                 for (TPreparedExpression pexpr : pExprs) {
-                    atts.put(Label.EXPRESSIONS, TPreparedExpressions.getExplainer(pexpr));
+                    atts.put(Label.EXPRESSIONS, pexpr.getExplainer(context));
                 }
             }
             return new CompoundExplainer(Type.ROW, atts);
@@ -278,9 +278,20 @@ public abstract class BindableRow {
         public CompoundExplainer getExplainer(ExplainContext context) {
             Attributes atts = new Attributes();
             for (int i = 0; i < row.rowType().nFields(); i++) {
-                atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(SqlLiteralValueFormatter.format(row.eval(i))));
+                atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(formatAsLiteral(i)));
             }
             return new CompoundExplainer(Type.ROW, atts);
+        }
+
+        private String formatAsLiteral(int i) {
+            if (row.usingPValues()) {
+                StringBuilder str = new StringBuilder();
+                row.rowType().typeInstanceAt(i).formatAsLiteral(row.pvalue(i), AkibanAppender.of(str));
+                return str.toString();
+            }
+            else {
+                return SqlLiteralValueFormatter.format(row.eval(i));
+            }
         }
 
         @Override
@@ -288,10 +299,10 @@ public abstract class BindableRow {
             return String.valueOf(row);
         }
 
-        private Delegating(Row row) {
+        private Delegating(ImmutableRow row) {
             this.row = row;
         }
 
-        private final Row row;
+        private final ImmutableRow row;
     }
 }

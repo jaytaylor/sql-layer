@@ -36,7 +36,6 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpressions;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -174,7 +173,7 @@ class Select_HKeyOrdered extends Operator
         if (predicate != null)
             att.put(Label.PREDICATE, predicate.getExplainer(context));
         else
-            att.put(Label.PREDICATE, TPreparedExpressions.getExplainer(pPredicate));
+            att.put(Label.PREDICATE, pPredicate.getExplainer(context));
         return new CompoundExplainer(Type.SELECT_HKEY, att);
     }
 
