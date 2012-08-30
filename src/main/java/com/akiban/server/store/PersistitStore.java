@@ -58,7 +58,6 @@ import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -272,30 +271,6 @@ public class PersistitStore implements Store, Service {
         return uniqueId;
     }
 
-    void constructHKey(Exchange hEx, RowDef rowDef, int[] ordinals,
-            int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues) throws PersistitInterruptedException {
-        PersistitKeyAppender appender = PersistitKeyAppender.create(hEx.getKey());
-        final Key hkey = hEx.getKey();
-        hkey.clear();
-        int k = 0;
-        for (int i = 0; i < ordinals.length; i++) {
-            appender.append(ordinals[i]);
-            for (int j = 0; j < nKeyColumns[i]; j++) {
-                FieldDef fieldDef = hKeyFieldDefs[k];
-                if (fieldDef.isPKLessTableCounter()) {
-                    // TODO: Maintain a counter elsewhere, maybe in the
-                    // FieldDef. At the end of the bulk load,
-                    // TODO: assign the counter to TableStatus.
-                    long id = tableStatusCache.createNewUniqueID(fieldDef.getRowDef().getRowDefId());
-                    hkey.append(id);
-                } else {
-                    appender.append(hKeyValues[k], fieldDef);
-                }
-                k++;
-            }
-        }
-    }
-
     private static void constructIndexRow(Exchange exchange,
                                           RowData rowData,
                                           Index index,
@@ -436,38 +411,6 @@ public class PersistitStore implements Store, Service {
             WRITE_ROW_TAP.out();
             releaseExchange(session, hEx);
         }
-    }
-
-    @Override
-    public void writeRowForBulkLoad(final Session session, Exchange hEx,
-            RowDef rowDef, RowData rowData, int[] ordinals, int[] nKeyColumns,
-            FieldDef[] hKeyFieldDefs, Object[] hKeyValues) throws PersistitException  {
-        /*
-         * if (verbose && LOG.isInfoEnabled()) { LOG.info("BulkLoad writeRow: "
-         * + rowData.toString(rowDefCache)); }
-         */
-
-        constructHKey(hEx, rowDef, ordinals, nKeyColumns, hKeyFieldDefs,
-                hKeyValues);
-        packRowData(hEx, rowDef, rowData);
-        // Store the h-row
-        hEx.store();
-        /*
-         * for (final IndexDef indexDef : rowDef.getIndexDefs()) { // Insert the
-         * index keys (except for the case of a // root table's PK index.) if
-         * (!indexDef.isHKeyEquivalent()) { insertIntoIndex(indexDef, rowData,
-         * hEx.getKey(), deferIndexes); } } if (deferredIndexKeyLimit <= 0) {
-         * putAllDeferredIndexKeys(); }
-         */
-        return;
-    }
-
-    // TODO - remove - this is used only by the PersistitStoreAdapter in
-    // bulk loader.
-    @Override
-    public void updateTableStats(final Session session, RowDef rowDef,
-            long rowCount) {
-        // no-up for now
     }
 
     @Override
