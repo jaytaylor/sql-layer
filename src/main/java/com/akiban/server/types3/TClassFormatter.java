@@ -31,4 +31,5 @@ import com.akiban.util.AkibanAppender;
 public interface TClassFormatter {
     
     public void format(TInstance instance, PValueSource source, AkibanAppender out);
+    public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out);
 }

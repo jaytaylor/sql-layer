@@ -265,6 +265,10 @@ public final class PValueSources {
             tInstance = MString.VARCHAR.instance(1);
             value = new PValue(object.toString());
         }
+        else if (object instanceof Short) {
+            tInstance = MNumeric.SMALLINT.instance();
+            value = new PValue((Short)object);
+        }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
         }

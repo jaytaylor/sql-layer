@@ -24,45 +24,40 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.metamodel.io;
+package com.akiban.server.explain.std;
 
-import java.util.ArrayList;
+import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.*;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import com.akiban.ais.metamodel.Source;
-
-public class ArraySource extends Source
-{
-    // Source interface
-
-    @Override
-    public void close()
+public class TExpressionExplainer extends CompoundExplainer
+{  
+    public TExpressionExplainer(Type type, String name, ExplainContext context, List<? extends TPreparedExpression> exs)
     {
+        super(checkType(type), buildMap(name, context, exs));
     }
-
-    @Override 
-    public int readVersion ()
+     
+    public TExpressionExplainer(Type type, String name, ExplainContext context, TPreparedExpression ... operand)
     {
-        return 0;
+        this(type, name, context, Arrays.asList(operand));
+    }
+        
+    private static Attributes buildMap(String name, ExplainContext context, List<? extends TPreparedExpression> exs)
+    {
+        Attributes states = new Attributes();
+        states.put(Label.NAME, PrimitiveExplainer.getInstance(name));
+        if (exs != null)
+            for (TPreparedExpression ex : exs)
+                states.put(Label.OPERAND, ex.getExplainer(context));
+        return states;
     }
     
-    @Override
-    protected final void read(String typename, Receiver receiver)
+    private static Type checkType(Type type)
     {
-        for (Map<String, Object> map : columns) {
-            receiver.receive(map);
-        }
+        if (type.generalType() != Type.GeneralType.EXPRESSION)
+            throw new IllegalArgumentException("Expected sub-category of Type.GeneralType.EXPRESSION but got " + type);
+        return type;
     }
-
-    // ArraySource interface
-
-    public void addColumn(Map<String, Object> map)
-    {
-        columns.add(map);
-    }
-
-    // State
-
-    private final List<Map<String, Object>> columns = new ArrayList<Map<String, Object>>();
 }

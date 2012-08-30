@@ -29,6 +29,8 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.TExpressionExplainer;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -76,6 +78,13 @@ public final class TComparisonExpression implements TPreparedExpression {
         TInstance rightInstance = right.resultType();
         TEvaluatableExpression rightEval = right.build();
         return new CompareEvaluation(leftInstance, leftEval, comparison, rightInstance, rightEval, collator);
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer ex = new TExpressionExplainer(Type.BINARY_OPERATOR, comparison.name(), context, left, right);
+        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
+        return ex;
     }
 
     @Override

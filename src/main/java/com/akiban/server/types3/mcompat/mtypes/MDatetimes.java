@@ -80,17 +80,38 @@ public class MDatetimes
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(dateToString(source.getInt32()));
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append("DATE '");
+                out.append(dateToString(source.getInt32()));
+                out.append("'");
+            }
         }, 
         DATETIME {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(datetimeToString(source.getInt64()));
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append("TIMESTAMP '");
+                out.append(datetimeToString(source.getInt64()));
+                out.append("'");
+            }
         }, 
         TIME {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(timeToString(source.getInt32()));
+            }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append("TIME '");
+                out.append(timeToString(source.getInt32()));
+                out.append("'");
             }
         }, 
         YEAR {         
@@ -104,11 +125,23 @@ public class MDatetimes
                     year += 1900;
                 out.append(year);
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                format(instance, source, out);
+            }
         }, 
         TIMESTAMP {      
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(timestampToString(source.getInt32(), null));
+            }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append("TIMESTAMP '");
+                out.append(datetimeToString(source.getInt64()));
+                out.append("'");
             }
         }
     }

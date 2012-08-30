@@ -27,8 +27,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.aksql.aktypes.AkString;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -176,25 +177,25 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     static final PostgresType BOOL_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID.getOid(), (short)1, -1, AkType.BOOL, MNumeric.TINYINT.instance());
+        new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID.getOid(), (short)1, -1, AkType.BOOL, AkBool.INSTANCE.instance());
     static final PostgresType INT2_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID.getOid(), (short)2, -1, AkType.LONG, MNumeric.BIGINT.instance());
+        new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID.getOid(), (short)2, -1, AkType.LONG, AkNumeric.SMALLINT.instance());
     static final PostgresType OID_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG, MNumeric.BIGINT.instance());
+        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG, AkNumeric.INT.instance());
     static final PostgresType TYPNAME_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType IDENT_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)128, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)128, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType LIST_TYPE_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)13, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)13, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType CHAR0_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)0, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)0, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType CHAR1_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType INDEXDEF_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1024, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType VIEWDEF_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)32768, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)32768, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -572,7 +573,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(8); // 8 columns for this query
         writeColumn(messenger, encoder, usePVals, // relchecks
-                    0, INT2_PG_TYPE);
+                    (short)0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relkind
                     table.isView() ? "v" : "r", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasindex
@@ -602,9 +603,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relkind
                     table.isView() ? "v" : "r", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relchecks
-                    0, INT2_PG_TYPE);
+                    (short)0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // reltriggers
-                    0, INT2_PG_TYPE);
+                    (short)0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
         messenger.sendMessage();
@@ -630,7 +631,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             writeColumn(messenger, encoder, usePVals, // attnotnull
                         column.getNullable() ? "f" : "t", CHAR1_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // attnum
-                        column.getPosition(), INT2_PG_TYPE);
+                        column.getPosition().shortValue(), INT2_PG_TYPE);
             if (hasCollation)
                 writeColumn(messenger, encoder, usePVals, // attcollation
                             null, CHAR0_PG_TYPE);

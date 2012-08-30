@@ -28,7 +28,7 @@ package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.persistit.exception.PersistitException;
 
-import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
+import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.INDEX_TRAVERSE;
 
 abstract class MixedOrderScanState<S>
 {
@@ -43,7 +43,7 @@ abstract class MixedOrderScanState<S>
 
     public boolean advance() throws PersistitException
     {
-        SORT_TRAVERSE.hit();
+        INDEX_TRAVERSE.hit();
         return ascending ? cursor.exchange().next(false) : cursor.exchange().previous(false);
     }
 

@@ -78,14 +78,14 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     private static final TValidatedOverload ifElseValidated = new TValidatedOverload(AkIfElse.INSTANCE);
 
-    private OverloadResolver overloadResolver;
-    private QueryContext queryContext;
+    private final OverloadResolver overloadResolver;
+    private final QueryContext queryContext;
 
     public NewExpressionAssembler(PlanContext planContext) {
+        super(planContext);
         RulesContext rulesContext = planContext.getRulesContext();
-        this.overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
-        this.queryContext = planContext.getQueryContext();
-        this.planContext = planContext;
+        overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
+        queryContext = planContext.getQueryContext();
     }
 
     @Override
