@@ -278,8 +278,11 @@ public final class OverloadResolver {
             // ... input's type it NULL or ?
             if (inputInstance == null)       // input
                 continue;
-            // ... input set takes ANY
             TInputSet inputSet = overload.inputSetAt(i);
+            // ... input's type is the same as this?
+            if (inputSet.targetType() == inputInstance.typeClass())
+                continue;
+            // ... input set takes ANY
             if (inputSet.targetType() == null)
                 continue;
             // ... input can be strongly cast to input set
