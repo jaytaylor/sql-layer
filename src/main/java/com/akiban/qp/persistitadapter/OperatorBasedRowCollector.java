@@ -224,10 +224,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
         }
+        if(!rowDef.isUserTable()) {
+            throw new IllegalArgumentException("Must scan a UserTable: " + rowDef);
+        }
         OperatorBasedRowCollector rowCollector =
-            rowDef.isUserTable()
-            // UserTable, column predicates apply to it alone
-            ? new OneTableRowCollector(config,
+              new OneTableRowCollector(config,
                                        session,
                                        store,
                                        rowDef,
@@ -236,19 +237,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        start,
                                        startColumns,
                                        end,
-                                       endColumns)
-            // GroupTable, column predicates can apply to two distinct tables
-            : new TwoTableRowCollector(config,
-                                       session,
-                                       store,
-                                       rowDef,
-                                       indexId,
-                                       scanFlags,
-                                       start,
-                                       startColumns,
-                                       end,
-                                       endColumns,
-                                       columnBitMap);
+                                       endColumns);
         boolean singleRow = (scanFlags & SCAN_FLAGS_SINGLE_ROW) != 0;
         boolean descending = (scanFlags & SCAN_FLAGS_DESCENDING) != 0;
         boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
