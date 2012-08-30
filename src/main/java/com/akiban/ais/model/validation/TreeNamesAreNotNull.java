@@ -50,9 +50,6 @@ public class TreeNamesAreNotNull implements AISValidation {
         for(UserTable table : ais.getUserTables().values()) {
             checkTable(table);
         }
-        for(GroupTable table : ais.getGroupTables().values()) {
-            checkTable(table);
-        }
         for(Group group : ais.getGroups().values()) {
             for(Index index : group.getIndexes()) {
                 checkIndex(index);

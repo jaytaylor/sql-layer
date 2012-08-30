@@ -58,26 +58,6 @@ public class DDLGenerator
         this.useTableName = tableName;
     }
 
-    public List<String> createAllGroupTables(AkibanInformationSchema ais)
-    {
-        List<String> ddl = new ArrayList<String>();
-        for (GroupTable groupTable : ais.getGroupTables().values()) {
-            String createTable = createTable(groupTable);
-            ddl.add(createTable);
-        }
-        return ddl;
-    }
-
-    public List<String> dropAllGroupTables(AkibanInformationSchema ais)
-    {
-        List<String> ddl = new ArrayList<String>();
-        for (GroupTable groupTable : ais.getGroupTables().values()) {
-            String dropTable = dropTable(groupTable);
-            ddl.add(dropTable);
-        }
-        return ddl;
-    }
-
     public String createTable(Table table)
     {
         // columns

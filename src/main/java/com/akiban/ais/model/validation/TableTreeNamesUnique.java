@@ -27,7 +27,9 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.DuplicateTableTreeNamesException;
 
 import java.util.HashMap;
@@ -41,11 +43,15 @@ class TableTreeNamesUnique implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Map<String,GroupTable> treeNameMap = new HashMap<String, GroupTable>();
+        Map<String,UserTable> treeNameMap = new HashMap<String, UserTable>();
 
-        for(GroupTable table : ais.getGroupTables().values()) {
+        for(Group group : ais.getGroups().values()) {
+            UserTable table = group.getRoot();
+            if(table == null) {
+                continue; // Checked in other validations.
+            }
             String treeName = table.getTreeName();
-            GroupTable curTable = treeNameMap.get(treeName);
+            UserTable curTable = treeNameMap.get(treeName);
             if(curTable != null) {
                 output.reportFailure(
                     new AISValidationFailure(
