@@ -35,7 +35,7 @@ public abstract class ServerType
 {
     public enum BinaryEncoding {
         NONE, INT8, INT16, INT32, INT64, FLOAT32, FLOAT64, STRING_BYTES,
-        C_BOOLEAN, FLOAT64_SECS_2000, INT64_MICROS_2000, BINARY_OCTAL_TEXT
+        BINARY_OCTAL_TEXT, C_BOOLEAN, FLOAT64_SECS_2000_NOTZ, INT64_MICROS_2000_NOTZ
     }
 
     private AkType akType;

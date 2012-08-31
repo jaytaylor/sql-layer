@@ -43,6 +43,7 @@ import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
+import org.joda.time.DateTimeZone;
 import java.io.*;
 
 public class ServerValueEncoder
@@ -268,17 +269,30 @@ public class ServerValueEncoder
             case C_BOOLEAN:
                 getDataStream().write(Extractors.getBooleanExtractor().getBoolean(value, false) ? 1 : 0);
                 break;
-            case FLOAT64_SECS_2000:
-                getDataStream().writeDouble(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) - 946702800L);
+            case FLOAT64_SECS_2000_NOTZ:
+                getDataStream().writeDouble(seconds2000NoTZ(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value)));
                 break;
-            case INT64_MICROS_2000:
-                getDataStream().writeLong((Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) - 946702800L) * 1000000L);
+            case INT64_MICROS_2000_NOTZ:
+                getDataStream().writeLong(seconds2000NoTZ(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value)) * 1000000L);
                 break;
             case NONE:
             default:
                 throw new UnsupportedOperationException("No binary encoding for " + type);
             }
         }
+    }
+
+    /** Adjust seconds since 1970-01-01 00:00:00-UTC to seconds since
+     * 2000-01-01 00:00:00 timezoneless. A conversion from local time
+     * to UTC involves an offset that varies for Summer time. A
+     * conversion from local time to timezoneless just removes the
+     * zone as though all days were the same length.
+     */
+    private static long seconds2000NoTZ(long unixtime) {
+        long delta = 946702800L; // 2000-01-01 00:00:00-UTC.
+        DateTimeZone dtz = DateTimeZone.getDefault();
+        delta -= (dtz.getOffset(unixtime * 1000) - dtz.getStandardOffset(unixtime * 1000)) / 1000;
+        return unixtime - delta;
     }
 
     /** Append the given value to the buffer. */
