@@ -140,7 +140,7 @@ public class PostgresType extends ServerType
         _INET_TYPE_OID(1041, "_inet"),
         _CIDR_TYPE_OID(651, "_cidr"),
         _CSTRING_TYPE_OID(1263, "_cstring"),
-        BPCHAR_TYPE_OID(1042, "bpchar"),
+        BPCHAR_TYPE_OID(1042, "bpchar", BinaryEncoding.STRING_BYTES),
         VARCHAR_TYPE_OID(1043, "varchar", BinaryEncoding.STRING_BYTES),
         DATE_TYPE_OID(1082, "date"),
         TIME_TYPE_OID(1083, "time"),
@@ -374,7 +374,7 @@ public class PostgresType extends ServerType
             if (tInstance == null) tInstance = AkBool.INSTANCE.instance();
             break;
         case TypeId.FormatIds.CHAR_TYPE_ID:
-            oid = TypeOid.CHAR_TYPE_OID;
+            oid = TypeOid.BPCHAR_TYPE_OID;
             akType = AkType.VARCHAR;
             if (tInstance == null) tInstance = charType(type, MString.VARCHAR);
             break;
