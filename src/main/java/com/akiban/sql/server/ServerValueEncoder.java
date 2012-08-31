@@ -245,34 +245,34 @@ public class ServerValueEncoder
                     getByteStream().write(ba, offset, length);
                 }
                 break;
-            case INT8:
+            case INT_8:
                 getDataStream().write((byte)Extractors.getLongExtractor(AkType.INT).getLong(value));
                 break;
-            case INT16:
+            case INT_16:
                 getDataStream().writeShort((short)Extractors.getLongExtractor(AkType.INT).getLong(value));
                 break;
-            case INT32:
+            case INT_32:
                 getDataStream().writeInt((int)Extractors.getLongExtractor(AkType.INT).getLong(value));
                 break;
-            case INT64:
+            case INT_64:
                 getDataStream().writeLong(Extractors.getLongExtractor(AkType.LONG).getLong(value));
                 break;
-            case FLOAT32:
+            case FLOAT_32:
                 getDataStream().writeFloat((float)Extractors.getDoubleExtractor().getDouble(value));
                 break;
-            case FLOAT64:
+            case FLOAT_64:
                 getDataStream().writeDouble(Extractors.getDoubleExtractor().getDouble(value));
                 break;
             case STRING_BYTES:
                 getByteStream().write(Extractors.getStringExtractor().getObject(value).getBytes(encoding));
                 break;
-            case C_BOOLEAN:
+            case BOOLEAN_C:
                 getDataStream().write(Extractors.getBooleanExtractor().getBoolean(value, false) ? 1 : 0);
                 break;
-            case FLOAT64_SECS_2000_NOTZ:
+            case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
                 getDataStream().writeDouble(seconds2000NoTZ(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value)));
                 break;
-            case INT64_MICROS_2000_NOTZ:
+            case TIMESTAMP_INT64_MICROS_2000_NOTZ:
                 getDataStream().writeLong(seconds2000NoTZ(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value)) * 1000000L);
                 break;
             case NONE:
@@ -280,19 +280,6 @@ public class ServerValueEncoder
                 throw new UnsupportedOperationException("No binary encoding for " + type);
             }
         }
-    }
-
-    /** Adjust seconds since 1970-01-01 00:00:00-UTC to seconds since
-     * 2000-01-01 00:00:00 timezoneless. A conversion from local time
-     * to UTC involves an offset that varies for Summer time. A
-     * conversion from local time to timezoneless just removes the
-     * zone as though all days were the same length.
-     */
-    private static long seconds2000NoTZ(long unixtime) {
-        long delta = 946702800L; // 2000-01-01 00:00:00-UTC.
-        DateTimeZone dtz = DateTimeZone.getDefault();
-        delta -= (dtz.getOffset(unixtime * 1000) - dtz.getStandardOffset(unixtime * 1000)) / 1000;
-        return unixtime - delta;
     }
 
     /** Append the given value to the buffer. */
@@ -356,4 +343,18 @@ public class ServerValueEncoder
     public void appendString(String string) throws IOException {
         printWriter.write(string);
     }
+
+    /** Adjust seconds since 1970-01-01 00:00:00-UTC to seconds since
+     * 2000-01-01 00:00:00 timezoneless. A conversion from local time
+     * to UTC involves an offset that varies for Summer time. A
+     * conversion from local time to timezoneless just removes the
+     * zone as though all days were the same length.
+     */
+    private static long seconds2000NoTZ(long unixtime) {
+        long delta = 946702800L; // 2000-01-01 00:00:00-UTC.
+        DateTimeZone dtz = DateTimeZone.getDefault();
+        delta -= (dtz.getOffset(unixtime * 1000) - dtz.getStandardOffset(unixtime * 1000)) / 1000;
+        return unixtime - delta;
+    }
+
 }

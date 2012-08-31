@@ -34,8 +34,10 @@ import com.akiban.server.types3.TInstance;
 public abstract class ServerType
 {
     public enum BinaryEncoding {
-        NONE, INT8, INT16, INT32, INT64, FLOAT32, FLOAT64, STRING_BYTES,
-        BINARY_OCTAL_TEXT, C_BOOLEAN, FLOAT64_SECS_2000_NOTZ, INT64_MICROS_2000_NOTZ
+        NONE, INT_8, INT_16, INT_32, INT_64, FLOAT_32, FLOAT_64, STRING_BYTES,
+        BINARY_OCTAL_TEXT, BOOLEAN_C, 
+        TIMESTAMP_FLOAT64_SECS_2000_NOTZ, TIMESTAMP_INT64_MICROS_2000_NOTZ,
+        DECIMAL_PG_NUMERIC_VAR
     }
 
     private AkType akType;
