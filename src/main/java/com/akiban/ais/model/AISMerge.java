@@ -145,7 +145,7 @@ public class AISMerge {
             UserTable newTable = desc.getNewDefinition();
 
             // These don't affect final outcome and may be reset later. Needed by clone process.
-            if(newTable != null) {
+            if((newTable != null) && (newTable.getGroup() != null)) {
                 newTable.setTableId(oldTable.getTableId());
                 newTable.getGroup().setTreeName(oldTable.getGroup().getTreeName());
             }
