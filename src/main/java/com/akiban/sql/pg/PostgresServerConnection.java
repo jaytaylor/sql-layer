@@ -211,6 +211,9 @@ public class PostgresServerConnection extends ServerSessionBase
                     case EXECUTE_TYPE:
                         processExecute();
                         break;
+                    case FLUSH_TYPE:
+                        processFlush();
+                        break;
                     case CLOSE_TYPE:
                         processClose();
                         break;
@@ -615,6 +618,10 @@ public class PostgresServerConnection extends ServerSessionBase
         if (reqs.instrumentation().isQueryLogEnabled()) {
             reqs.instrumentation().logQuery(sessionId, sql, (System.nanoTime() - startTime), rowsProcessed);
         }
+    }
+
+    protected void processFlush() throws IOException {
+        messenger.flush();
     }
 
     protected void processClose() throws IOException {
