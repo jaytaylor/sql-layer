@@ -128,6 +128,8 @@ public class AISBinderContext
         parser.getFeatures().addAll(parserFeatures);
 
         defaultSchemaName = getProperty("database");
+        if (defaultSchemaName == null)
+            defaultSchemaName = getProperty("user");
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
         BindingNodeFactory.wrap(parser);
