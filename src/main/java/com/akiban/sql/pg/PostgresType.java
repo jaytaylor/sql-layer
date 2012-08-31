@@ -141,7 +141,7 @@ public class PostgresType extends ServerType
         _CIDR_TYPE_OID(651, "_cidr"),
         _CSTRING_TYPE_OID(1263, "_cstring"),
         BPCHAR_TYPE_OID(1042, "bpchar"),
-        VARCHAR_TYPE_OID(1043, "varchar"),
+        VARCHAR_TYPE_OID(1043, "varchar", BinaryEncoding.STRING_BYTES),
         DATE_TYPE_OID(1082, "date"),
         TIME_TYPE_OID(1083, "time"),
         TIMESTAMP_TYPE_OID(1114, "timestamp", BinaryEncoding.FLOAT64_SECS_2000),

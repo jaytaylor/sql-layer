@@ -82,6 +82,7 @@ public class ServerValueEncoder
     private PrintWriter printWriter;
     private AkibanAppender appender;
     private FromObjectValueSource objectSource;
+    private DataOutputStream dataStream;
 
     public ServerValueEncoder(String encoding) {
         this.encoding = encoding;
@@ -113,6 +114,13 @@ public class ServerValueEncoder
 
     public AkibanAppender getAppender() {
         return appender;
+    }
+
+    public DataOutputStream getDataStream() {
+        printWriter.flush();
+        if (dataStream == null)
+            dataStream = new DataOutputStream(byteStream);
+        return dataStream;
     }
 
     /** Encode the given value into a stream that can then be passed
@@ -235,6 +243,36 @@ public class ServerValueEncoder
                     int length = bs.byteArrayLength();
                     getByteStream().write(ba, offset, length);
                 }
+                break;
+            case INT8:
+                getDataStream().write((byte)Extractors.getLongExtractor(AkType.INT).getLong(value));
+                break;
+            case INT16:
+                getDataStream().writeShort((short)Extractors.getLongExtractor(AkType.INT).getLong(value));
+                break;
+            case INT32:
+                getDataStream().writeInt((int)Extractors.getLongExtractor(AkType.INT).getLong(value));
+                break;
+            case INT64:
+                getDataStream().writeLong(Extractors.getLongExtractor(AkType.LONG).getLong(value));
+                break;
+            case FLOAT32:
+                getDataStream().writeFloat((float)Extractors.getDoubleExtractor().getDouble(value));
+                break;
+            case FLOAT64:
+                getDataStream().writeDouble(Extractors.getDoubleExtractor().getDouble(value));
+                break;
+            case STRING_BYTES:
+                getByteStream().write(Extractors.getStringExtractor().getObject(value).getBytes(encoding));
+                break;
+            case C_BOOLEAN:
+                getDataStream().write(Extractors.getBooleanExtractor().getBoolean(value, false) ? 1 : 0);
+                break;
+            case INT64_MICROS_2000:
+                getDataStream().writeLong((Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) - 946702800000L) * 1000);
+                break;
+            case FLOAT64_SECS_2000:
+                getDataStream().writeDouble((Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) - 946702800000L) / 1000.0);
                 break;
             case NONE:
             default:
