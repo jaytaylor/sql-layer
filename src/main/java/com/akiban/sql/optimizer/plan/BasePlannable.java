@@ -26,13 +26,14 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.operator.Operator;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.format.DefaultFormatter;
+import com.akiban.server.explain.format.JsonFormatter;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 /** Physical operator plan */
 public abstract class BasePlannable extends BasePlanNode
@@ -60,44 +61,41 @@ public abstract class BasePlannable extends BasePlanNode
         return v.visit(this);
     }
 
-
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         // Do not copy operators.
     }
     
-    public List<String> explainPlan() {
-        List<String> result = new ArrayList<String>();
-        explainPlan(plannable, result, 0);
-        return result;
-    }
-
-    protected static void explainPlan(Plannable operator,
-                                      List<String> into, int depth) {
-            
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < depth; i++)
-            sb.append("  ");
-        sb.append(operator);
-        into.add(sb.toString());
-        for (Operator inputOperator : operator.getInputOperators()) {
-            explainPlan(inputOperator, into, depth+1);
-        }
+    public List<String> explainPlan(ExplainContext context, String defaultSchemaName) {
+        DefaultFormatter f = new DefaultFormatter(defaultSchemaName, true);
+        return f.format(plannable.getExplainer(context));
     }
     
-    @Override
-    public String summaryString() {
-        return withIndentedExplain(new StringBuilder(super.summaryString()));
+    public String explainToJson(ExplainContext context) {
+        JsonFormatter f = new JsonFormatter();
+        return f.format(plannable.getExplainer(context));
+    }
+
+    public String explainToString(ExplainContext context, String defaultSchemaName) {
+        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context, defaultSchemaName);
     }
 
     @Override
     public String toString() {
-        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()));
+        return explainToString(null, null);
     }
 
-    protected String withIndentedExplain(StringBuilder str) {
-        for (String operator : explainPlan()) {
+    @Override
+    public String summaryString() {
+        // Similar to above, but with @hash for consistency.
+        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null);
+    }
+
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
+        if (context == null)
+            context = new ExplainContext(); // Empty
+        for (String operator : explainPlan(context, defaultSchemaName)) {
             str.append("\n  ");
             str.append(operator);
         }

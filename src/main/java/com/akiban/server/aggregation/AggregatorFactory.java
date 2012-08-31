@@ -34,5 +34,6 @@ public interface AggregatorFactory {
     // For GROUP_CONCAT, it'd be the optional delimeter
     Aggregator get(Object obj);
     Aggregator get();
+    String getName();
     AkType outputType();
 }

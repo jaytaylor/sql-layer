@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.TExpressionExplainer;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -90,6 +92,12 @@ public abstract class TOverloadBase implements TOverload {
 
     protected String toStringArgsPrefix() {
         return "";
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context, List<? extends TPreparedExpression> inputs, TInstance resultType)
+    {
+        return new TExpressionExplainer(Type.FUNCTION, displayName(), context, inputs);
     }
 
     @Override

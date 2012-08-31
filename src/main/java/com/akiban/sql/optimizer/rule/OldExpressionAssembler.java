@@ -62,11 +62,12 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
 {
     private static final Logger logger = LoggerFactory.getLogger(OldExpressionAssembler.class);
 
-    private FunctionsRegistry functionsRegistry;
+    private final FunctionsRegistry functionsRegistry;
 
-    public OldExpressionAssembler(RulesContext rulesContext) {
-        this.functionsRegistry = ((SchemaRulesContext)
-                                  rulesContext).getFunctionsRegistry();
+    public OldExpressionAssembler(PlanContext planContext) {
+        super(planContext);
+        RulesContext rulesContext = planContext.getRulesContext();
+        functionsRegistry = ((SchemaRulesContext)rulesContext).getFunctionsRegistry();
     }
 
     public FunctionsRegistry getFunctionRegistry()

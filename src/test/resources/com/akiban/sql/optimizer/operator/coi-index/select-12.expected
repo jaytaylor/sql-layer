@@ -1,9 +1,9 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  project(Field(0))
-    UnionAll_Default
-      UnionAll_Default
-        UnionAll_Default
-          IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(Arthur)]))
-          IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(Arthur)],<UnboundExpressions[Literal(John)]))
-        IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(John)],<UnboundExpressions[Literal(Victor)]))
-      IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(Victor)],<UnboundExpressions[Literal(NULL)]))
+  Project_Default(customers.name)
+    UnionAll_Default()
+      UnionAll_Default()
+        UnionAll_Default()
+          IndexScan_Default(Index(customers.name), name < 'Arthur' ASC, cid)
+          IndexScan_Default(Index(customers.name), name > 'Arthur' AND < 'John' ASC, cid)
+        IndexScan_Default(Index(customers.name), name > 'John' AND < 'Victor' ASC, cid)
+      IndexScan_Default(Index(customers.name), name > 'Victor' ASC, cid)

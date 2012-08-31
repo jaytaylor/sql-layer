@@ -26,22 +26,25 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Map;
 
 public class CastExpression extends AbstractUnaryExpression
 {
@@ -55,8 +58,8 @@ public class CastExpression extends AbstractUnaryExpression
     }
 
     @Override
-    public Explainer getExplainer () {
-        Explainer ex = super.getExplainer();
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer ex = super.getExplainer(context);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(valueType().name()));
         return ex;
     }

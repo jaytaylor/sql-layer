@@ -64,7 +64,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private final int port;
     private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
-    private boolean running = false;
+    private volatile boolean running = false;
     private volatile long startTime = 0;
     private boolean listening = false;
     private Map<Integer,PostgresServerConnection> connections =
@@ -151,6 +151,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         }
     }
 
+    @Override
     public void run() {
         logger.info("Postgres server listening on port {}", port);
         int sessionId = 0;

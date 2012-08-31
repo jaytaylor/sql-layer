@@ -64,16 +64,6 @@
             <version>1.2</version>
         </dependency>
         <dependency>
-            <groupId>velocity</groupId>
-            <artifactId>velocity-dep</artifactId>
-            <version>1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.10</version>
-        </dependency>
-        <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit</artifactId>
             <version>3.1.7-SNAPSHOT</version>
@@ -146,6 +136,11 @@
             <groupId>com.ibm.icu</groupId>
             <artifactId>icu4j</artifactId>
             <version>49.1</version>
+        </dependency>
+        <dependency>
+             <groupId>com.google.code.gson</groupId>
+             <artifactId>gson</artifactId>
+             <version>2.2.2</version>
         </dependency>
     </dependencies>
     <build>
@@ -341,7 +336,6 @@
                         <exclude>.idea/**</exclude>
                         <exclude>**/*.proto</exclude>
                         <exclude>.bzrignore</exclude>
-                        <exclude>velocity.log</exclude>
                         <!-- No extension. Manually add header and ignore -->
                         <exclude>bin/*</exclude>
                         <exclude>conf/config/jvm.options</exclude>

@@ -39,6 +39,11 @@ public class TFormatter {
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Boolean.toString(source.getBoolean()));
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(source.getBoolean() ? "TRUE" : "FALSE");
+            }
         }
     }
 }

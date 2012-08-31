@@ -1,6 +1,6 @@
 PhysicalSelect@1b43f4ce[city, state]
-  project(Field(2), Field(1))
-    Sort_Tree(test.places)
+  Project_Default(Field(2), Field(1))
+    Sort_Tree(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) ASC)
       Select_HKeyOrdered(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) <= 0.0466)
-        AncestorLookup_Default(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[-90000000:90000000, -180000000:180000000] -> [test.places])
-          IndexScan_Default(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[-90000000:90000000, -180000000:180000000] (>=UnboundExpressions[Arith(- -> Literal(42.3583), Literal(0.0466) -> DECIMAL), Arith(- -> Literal(-71.0603), Literal(0.0466) -> DECIMAL)],<=UnboundExpressions[Arith(+ -> Literal(42.3583), Literal(0.0466) -> DECIMAL), Arith(+ -> Literal(-71.0603), Literal(0.0466) -> DECIMAL)]))
+        AncestorLookup_Default(Index(test.places.places_geo) -> test.places)
+          IndexScan_Default(Index(test.places.places_geo), (lat, lon) BETWEEN (42.3583 - 0.0466, -71.0603 - 0.0466) AND (42.3583 + 0.0466, -71.0603 + 0.0466))

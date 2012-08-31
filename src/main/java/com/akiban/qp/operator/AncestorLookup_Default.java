@@ -28,17 +28,16 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -252,12 +251,13 @@ class AncestorLookup_Default extends Operator
     private final boolean keepInput;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Default", group, rowType, keepInput, inputOperator);
-        for (UserTable table : ancestors)
-            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
-        return ex;
+        Attributes atts = new Attributes();
+        for (UserTable table : ancestors) {
+            atts.put(Label.OUTPUT_TYPE, ((Schema)rowType.schema()).userTableRowType(table).getExplainer(context));
+        }
+        return new LookUpOperatorExplainer(getName(), atts, rowType, keepInput, inputOperator, context);
     }
 
     // Inner classes

@@ -96,7 +96,7 @@ public abstract class MExtract extends TOverloadBase
                     int time = inputs.get(0).getInt32();
                     long hms[] = MDatetimes.decodeTime(time);
 
-                    if (!MDatetimes.isValidHrMinSec(hms))
+                    if (!MDatetimes.isValidHrMinSec(hms, false))
                     {
                         context.reportBadValue("Invalid TIME value: " + time);
                         output.putNull();

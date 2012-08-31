@@ -1,8 +1,8 @@
 PhysicalSelect[VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin][order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops
-    Sort_InsertionLimited(values([VARCHAR]), 4, SUPPRESS_DUPLICATES)
-      ValuesScan_Default[ImmutableRow[1234], Bindable[Variable(pos=0)], Bindable[Variable(pos=1)], Bindable[Variable(pos=2)]]
-    project(Field(2), Field(5), Field(6))
-      Flatten_HKeyOrdered(test.orders INNER test.items)
-        AncestorLookup_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) -> [test.orders, test.items])
-          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Literal(Smith), Bound(3,Field(0))],<=UnboundExpressions[Literal(Smith), Bound(3,Field(0))]))
+  Map_NestedLoops()
+    Sort_InsertionLimited(Field(0) ASC, LIMIT 4, SUPPRESS DUPLICATES)
+      ValuesScan_Default(['1234'], [$1], [$2], [$3])
+    Project_Default(orders.order_date, items.sku, items.quan)
+      Flatten_HKeyOrdered(orders INNER items)
+        AncestorLookup_Default(Index(.customers.cname_and_sku) -> orders, items)
+          IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku = Bound(3, 0))

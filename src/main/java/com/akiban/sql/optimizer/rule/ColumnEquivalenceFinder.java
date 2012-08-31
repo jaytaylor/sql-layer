@@ -33,7 +33,6 @@ import com.akiban.sql.optimizer.plan.ConditionExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionVisitor;
 import com.akiban.sql.optimizer.plan.JoinNode;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Select;

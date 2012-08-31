@@ -48,7 +48,7 @@ class AbstractAggregator implements Aggregator
         return new AbstractAggregator(pr,t);
     }
 
-    protected  AkType type;
+    protected AkType type;
     protected AbstractProcessor processor;
     protected ValueHolder value;
 

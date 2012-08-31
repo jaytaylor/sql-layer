@@ -28,17 +28,15 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
-import com.akiban.qp.rowtype.*;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -47,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.lang.Math.min;
@@ -302,13 +301,14 @@ public class BranchLookup_Default extends Operator
     private final Limit limit;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        OperationExplainer ex = new LookUpOperatorExplainer("Branch Lookup Default", group, inputRowType, keepInput, inputOperator);
-        ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
-        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
-        ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
-        return ex;
+        Attributes atts = new Attributes();
+        atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
+        UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
+        if ((ancestorRowType != inputRowType) && (ancestorRowType != outputRowType))
+            atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
+        return new LookUpOperatorExplainer(getName(), atts, inputRowType, keepInput, inputOperator, context);
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor

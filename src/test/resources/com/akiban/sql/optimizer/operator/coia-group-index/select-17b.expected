@@ -1,11 +1,11 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], quan:int[INT]]
-  Sort_Tree(project([Field(1), Field(8)]))
-    Map_NestedLoops
-      ValuesScan_Default[ImmutableRow[MA], ImmutableRow[NY], ImmutableRow[VT]]
-      project(Field(1), Field(8))
-        Filter_Default([flatten(flatten(test.customers, test.orders), test.items)])
-          Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
-            Flatten_HKeyOrdered(test.customers INNER test.orders)
-              BranchLookup_Default(_akiban_customers test.customers -> test.orders limit NO LIMIT)
-                AncestorLookup_Default(Index(test.addresses.state[IndexColumn(state)]) -> [test.customers])
-                  IndexScan_Default(Index(test.addresses.state[IndexColumn(state)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
+  Sort_Tree(Field(1) DESC)
+    Map_NestedLoops()
+      ValuesScan_Default(['MA'], ['NY'], ['VT'])
+      Project_Default(customers.name, items.quan)
+        Filter_Default(customers - orders - items)
+          Flatten_HKeyOrdered(customers - orders INNER items)
+            Flatten_HKeyOrdered(customers INNER orders)
+              BranchLookup_Default(customers -> orders)
+                AncestorLookup_Default(Index(addresses.state) -> customers)
+                  IndexScan_Default(Index(addresses.state), state = Bound(0, 0))

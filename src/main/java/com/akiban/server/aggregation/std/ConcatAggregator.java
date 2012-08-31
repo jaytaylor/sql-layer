@@ -82,6 +82,12 @@ public class ConcatAggregator implements Aggregator
             {
                 return AkType.VARCHAR;
             }
+
+            @Override
+            public String getName()
+            {
+                return name;
+            }
         };
     }
    

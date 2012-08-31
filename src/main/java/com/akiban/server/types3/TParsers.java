@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.error.InvalidDateFormatException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
@@ -247,11 +249,19 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            int ret = MDatetimes.parseDate(source.getString(), context);
-            if (ret < 0)
+            try
+            {
+                int ret = MDatetimes.parseDate(source.getString(), context);
+                if (ret < 0)
+                    target.putNull();
+                else
+                    target.putInt32(ret);
+            }
+            catch (InvalidDateFormatException e)
+            {
+                context.warnClient(e);
                 target.putNull();
-            else
-                target.putInt32(ret);
+            }
         }
     };
 
@@ -260,7 +270,15 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(MDatetimes.parseDatetime(source.getString()));
+            try
+            {
+                target.putInt64(MDatetimes.parseDatetime(source.getString()));
+            }
+             catch (InvalidDateFormatException e)
+            {
+                context.warnClient(e);
+                target.putNull();
+            }
         }
     };
     
@@ -269,7 +287,15 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32(MDatetimes.parseTime(source.getString(), context));
+            try
+            {
+                target.putInt32(MDatetimes.parseTime(source.getString(), context));
+            }
+            catch (InvalidDateFormatException e)
+            {
+                context.warnClient(e);
+                target.putNull();
+            }
         }
     };
 
@@ -278,7 +304,15 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32(MDatetimes.parseTimestamp(source.getString(), context.getCurrentTimezone(), context));
+            try
+            {
+                target.putInt32(MDatetimes.parseTimestamp(source.getString(), context.getCurrentTimezone(), context));
+            }
+             catch (InvalidDateFormatException e)
+            {
+                context.warnClient(e);
+                target.putNull();
+            }
         }
     };
     
@@ -287,7 +321,15 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt8((byte)CastUtils.parseInRange(source.getString(), Byte.MAX_VALUE, Byte.MIN_VALUE, context));
+            try
+            {
+                target.putInt8((byte)CastUtils.parseInRange(source.getString(), Byte.MAX_VALUE, Byte.MIN_VALUE, context));
+            }
+             catch (InvalidDateFormatException e)
+            {
+                context.warnClient(e);
+                target.putNull();
+            }
         }
     };
     

@@ -41,6 +41,7 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
@@ -52,6 +53,8 @@ import org.junit.runner.RunWith;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.Explainer;
 
 import org.junit.Before;
 
@@ -62,6 +65,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class OperatorCompilerTest extends NamedParamsTestBase 
@@ -200,9 +204,10 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
+        ExplainPlanContext context = new ExplainPlanContext(compiler);
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
-                                                parser.getParameterList());
-        return result.toString();
+                                                parser.getParameterList(), context);
+        return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA);
     }
 
     @Override

@@ -26,23 +26,21 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpressions;
-import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  <h1>Overview</h1>
@@ -96,7 +94,7 @@ class Select_HKeyOrdered extends Operator
     @Override
     public String toString()
     {
-        return Format.Describe(this.getExplainer());
+        return String.format("%s(%s, %s)", getClass().getSimpleName(), predicateRowType, (pPredicate != null) ? pPredicate.toString() : predicate.toString());
     }
 
     // Operator interface
@@ -167,17 +165,16 @@ class Select_HKeyOrdered extends Operator
     private final TPreparedExpression pPredicate;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes att = new Attributes();
-        
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("Select_HKeyOrdered"));
-        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         if (predicate != null)
-            att.put(Label.PREDICATE, predicate.getExplainer());
+            att.put(Label.PREDICATE, predicate.getExplainer(context));
         else
-            att.put(Label.PREDICATE, TPreparedExpressions.getExplainer(pPredicate));
-        return new OperationExplainer(Type.SELECT_HKEY, att);
+            att.put(Label.PREDICATE, pPredicate.getExplainer(context));
+        return new CompoundExplainer(Type.SELECT_HKEY, att);
     }
 
     // Inner classes

@@ -1,6 +1,6 @@
 PhysicalSelect[_SQL_COL_1:DOUBLE]
-  project(Field(0) / Field(1))
-    Aggregation(without GROUP BY: [sumINT, count(*)])
-      project(Field(3), 1)
-        Filter_Default([test.items])
-          GroupScan_Default(full scan on _akiban_customers)
+  Project_Default(Field(0) / Field(1))
+    Aggregate_Partial(SUM, COUNT(*))
+      Project_Default(items.quan, 1)
+        Filter_Default(items)
+          GroupScan_Default(customers)

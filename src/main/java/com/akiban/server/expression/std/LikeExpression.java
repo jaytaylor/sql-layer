@@ -26,26 +26,29 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
-import com.akiban.server.expression.TypesList;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.List;
+import java.util.Map;
 
 
 public class LikeExpression extends AbstractCompositeExpression
@@ -206,9 +209,9 @@ public class LikeExpression extends AbstractCompositeExpression
     }
     
     @Override
-    public Explainer getExplainer ()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        return new ExpressionExplainer (Type.BINARY_OPERATOR, name(), children());
+        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), context, children());
     }
 
     @Override

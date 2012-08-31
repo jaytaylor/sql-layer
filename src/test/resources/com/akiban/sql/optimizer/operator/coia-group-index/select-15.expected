@@ -1,7 +1,7 @@
 PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops
-    Filter_Default([test.items])
-      GroupScan_Default(full scan on _akiban_customers)
-    project(Bound(0,Field(0)), Bound(0,Field(1)), Bound(0,Field(2)), Bound(0,Field(3)))
-      Limit_Default(limit=1: IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Literal(Smith), Bound(0,Field(2))],<=UnboundExpressions[Literal(Smith), Bound(0,Field(2))])))
-        IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Literal(Smith), Bound(0,Field(2))],<=UnboundExpressions[Literal(Smith), Bound(0,Field(2))]))
+  Map_NestedLoops()
+    Filter_Default(items)
+      GroupScan_Default(customers)
+    Project_Default(items.iid, items.oid, items.sku, items.quan)
+      Limit_Default(1)
+        IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku = items.sku)

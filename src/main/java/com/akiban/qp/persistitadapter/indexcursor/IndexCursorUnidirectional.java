@@ -64,7 +64,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         Row next = null;
         if (exchange() != null) {
             try {
-                SORT_TRAVERSE.hit();
+                INDEX_TRAVERSE.hit();
                 if (exchange().traverse(keyComparison, true)) {
                     next = row();
                     // If we're scanning a unique key index, then the row format has the declared key in the

@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
@@ -34,12 +35,13 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.server.explain.Attributes;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -48,6 +50,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -197,20 +200,21 @@ class IfEmpty_Default extends Operator
     private final API.InputPreservationOption inputPreservation;
 
     @Override
-    public Explainer getExplainer()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Attributes att = new Attributes();
-        
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("If Empty"));
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.INPUT_TYPE, rowType.getExplainer(context));
         if (pExpressions != null) {
             for (TPreparedExpression ex : pExpressions)
-                throw new UnsupportedOperationException(); // TODO
+                atts.put(Label.OPERAND, ex.getExplainer(context));
         }
         else {
             for (Expression ex : oExpressions)
-                att.put(Label.OPERAND, ex.getExplainer());
+                atts.put(Label.OPERAND, ex.getExplainer(context));
         }
-        return new OperationExplainer(Type.IF_EMPTY, att);
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
+        return new CompoundExplainer(Type.IF_EMPTY, atts);
     }
 
     // Inner classes

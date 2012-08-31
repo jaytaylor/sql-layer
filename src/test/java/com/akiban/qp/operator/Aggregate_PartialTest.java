@@ -369,6 +369,10 @@ public final class Aggregate_PartialTest extends OldExpressionTestBase {
             return new TestAggregator();
         }
         @Override
+        public String getName () {
+            return "TEST";
+        }
+        @Override
         public AkType outputType() {
             return AkType.VARCHAR;
         }

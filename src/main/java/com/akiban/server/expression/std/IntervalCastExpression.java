@@ -26,24 +26,28 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.types.conversion.Converters;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.server.types.extract.Extractors;
-import java.util.HashMap;
-import com.akiban.sql.types.TypeId;
+import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidIntervalFormatException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.sql.types.TypeId;
 
 import static com.akiban.server.types.AkType.*;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class IntervalCastExpression extends AbstractUnaryExpression
 {
@@ -246,9 +250,9 @@ public class IntervalCastExpression extends AbstractUnaryExpression
     }
     
     @Override
-    public Explainer getExplainer ()
+    public CompoundExplainer getExplainer(ExplainContext context)
     {
-        Explainer ex = super.getExplainer();
+        CompoundExplainer ex = super.getExplainer(context);
         ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(endPoint.type.name()));
         return ex;
     }

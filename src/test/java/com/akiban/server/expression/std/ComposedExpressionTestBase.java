@@ -28,9 +28,12 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.junit.OnlyIfNot;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.ExpressionComposer;
@@ -48,7 +51,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.akiban.server.expression.std.ComposedExpressionTestBase.ExpressionAttribute.*;
-import com.akiban.sql.optimizer.explain.Explainer;
+import java.util.*;
 import static org.junit.Assert.*;
 
 public abstract class ComposedExpressionTestBase {
@@ -345,7 +348,7 @@ public abstract class ComposedExpressionTestBase {
         }
 
         @Override
-        public Explainer getExplainer()
+        public CompoundExplainer getExplainer(ExplainContext context)
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }

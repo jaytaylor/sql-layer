@@ -77,6 +77,23 @@ public abstract class TString extends TClass
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(source.getString());
             }
+
+            @Override
+            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                String value = source.getString();
+                out.append('\'');
+                if (value.indexOf('\'') < 0)
+                    out.append(value);
+                else {
+                    for (int i = 0; i < value.length(); i++) {
+                        int ch = value.charAt(i);
+                        if (ch == '\'')
+                            out.append('\'');
+                        out.append((char)ch);
+                    }
+                }
+                out.append('\'');
+            }
         }
     }
 
