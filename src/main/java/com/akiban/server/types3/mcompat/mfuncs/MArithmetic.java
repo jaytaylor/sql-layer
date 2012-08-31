@@ -295,10 +295,19 @@ public abstract class MArithmetic extends TArithmetic {
                                                                                        // during expr generation time
         }
 
-        @Override
-        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
-            throw new UnsupportedOperationException(); // TODO
-        }
+       @Override
+       protected long precisionAndScale(int p1, int s1, int p2, int s2) 
+       {
+           // http://msdn.microsoft.com/en-us/library/ms190476%28v=SQL.90%29.aspx
+           
+           //precision: p1 - s1 + s2 + max(6, s1 + p2 + 1) 
+           // scale: max(6, s1 + p2 + 1)
+           
+           int precision = p1 - s1 + p2 + Math.max(6, s1 + p2 + 1);
+           int scale = Math.max(6, s1 + p2 + 1);
+
+           return packPrecisionAndScale(precision, scale);
+       }
    };
     
    // integer division

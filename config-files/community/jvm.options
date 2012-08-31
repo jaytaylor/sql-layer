@@ -47,10 +47,6 @@ if [ "x$MAX_HEAP_SIZE" = "x" ]; then
     calculate_heap_size
 fi
 
-# specify path to the MySQL base directory on this machine
-# this is needed for the Akiban bulk loader.
-JVM_OPTS="$JVM_OPTS -Dmysql.install.dir=/usr/local/mysql"
-
 # Here we create the arguments that will get passed to the jvm when
 # starting the akiban server.
 
