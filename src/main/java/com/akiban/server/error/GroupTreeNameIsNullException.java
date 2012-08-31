@@ -24,32 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model.validation;
+package com.akiban.server.error;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.TreeNameMismatchException;
+import com.akiban.ais.model.Group;
 
-/**
- * All UserTable's in a given Group must have the same tree name as that groups GroupTable.
- */
-class TablesInGroupSameTreeName implements AISValidation {
-
-    @Override
-    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for(UserTable userTable : ais.getUserTables().values()) {
-            GroupTable groupTable = userTable.getGroup() != null ? userTable.getGroup().getGroupTable() : null;
-            if(groupTable != null) {
-                String userTableTreeName = userTable.getTreeName();
-                String groupTableTreeName = groupTable.getTreeName();
-                if(!userTableTreeName.equals(groupTableTreeName)) {
-                    output.reportFailure(
-                        new AISValidationFailure(
-                                new TreeNameMismatchException(userTable.getName(), userTableTreeName, groupTableTreeName)));
-                }
-            }
-            // else: handled elsewhere, TablesInAGroup
-        }
+public class GroupTreeNameIsNullException extends InvalidOperationException {
+    public GroupTreeNameIsNullException(Group group) {
+        super(ErrorCode.GROUP_TREE_NAME_IS_NULL,
+              group.getRoot().getName().getSchemaName(),
+              group.getRoot().getName().getTableName());
     }
 }

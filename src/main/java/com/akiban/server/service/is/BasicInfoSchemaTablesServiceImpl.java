@@ -180,7 +180,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                              table.getName().getTableName(),
                                              tableType,
                                              table.getTableId(),
-                                             table.hasMemoryTableFactory() ? null : table.getTreeName(),
+                                             table.hasMemoryTableFactory() ? null : table.getGroup().getTreeName(),
                                              CHARSET_SCHEMA,
                                              table.getCharsetAndCollation().charset(),
                                              COLLATION_SCHEMA,

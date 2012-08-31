@@ -29,35 +29,26 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.DuplicateTableTreeNamesException;
+import com.akiban.server.error.DuplicateGroupTreeNamesException;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Check GroupTable's for unique tree names. Only check the GroupTables because
- * all tables in a group must have the same tree name, see {@link TablesInGroupSameTreeName}
- */
-class TableTreeNamesUnique implements AISValidation {
+class GroupTreeNamesUnique implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Map<String,UserTable> treeNameMap = new HashMap<String, UserTable>();
+        Map<String,Group> treeNameMap = new HashMap<String,Group>();
 
         for(Group group : ais.getGroups().values()) {
-            UserTable table = group.getRoot();
-            if(table == null) {
-                continue; // Checked in other validations.
-            }
-            String treeName = table.getTreeName();
-            UserTable curTable = treeNameMap.get(treeName);
-            if(curTable != null) {
+            String treeName = group.getTreeName();
+            Group curGroup = treeNameMap.put(treeName, group);
+            if(curGroup != null) {
+                UserTable root = group.getRoot();
+                UserTable curRoot = curGroup.getRoot();
                 output.reportFailure(
                     new AISValidationFailure(
-                            new DuplicateTableTreeNamesException (table.getName(), curTable.getName(), treeName)));
-            }
-            else {
-                treeNameMap.put(treeName, table);
+                            new DuplicateGroupTreeNamesException(root.getName(), curRoot.getName(), treeName)));
             }
         }
     }
