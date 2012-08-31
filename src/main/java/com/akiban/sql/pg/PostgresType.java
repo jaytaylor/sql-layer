@@ -226,19 +226,24 @@ public class PostgresType extends ServerType
     }
     
     /*** Representation. ***/
-    private int oid;
+    private TypeOid oid;
     private short length;
     private int modifier;
 
-    public PostgresType(int oid, short length, int modifier, AkType akType, TInstance instance) {
+    public PostgresType(TypeOid oid, short length, int modifier, AkType akType, TInstance instance) {
         super(akType, instance);
         this.oid = oid;
         this.length = length;
         this.modifier = modifier;
     }
 
+    @Override
+    public BinaryEncoding getBinaryEncoding() {
+        return oid.getBinaryEncoding();
+    }    
+
     public int getOid() {
-        return oid;
+        return oid.getOid();
     }
     public short getLength() {
         return length;
@@ -252,29 +257,29 @@ public class PostgresType extends ServerType
     }
         
     public static PostgresType fromAIS(Type aisType, Column aisColumn, boolean nullable, TInstance tInstance)  {
-        int oid;
+        TypeOid oid;
         short length = -1;
         int modifier = -1;
 
         String encoding = aisType.encoding();
 
         if ("VARCHAR".equals(encoding))
-            oid = TypeOid.VARCHAR_TYPE_OID.getOid();
+            oid = TypeOid.VARCHAR_TYPE_OID;
         else if ("INT".equals(encoding) ||
                  "U_INT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
-                oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1; this also could be BOOLEAN (TINYINT(1)).
+                oid = TypeOid.INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
                 break;
             case 2:
             case 3:
-                oid = TypeOid.INT2_TYPE_OID.getOid();
+                oid = TypeOid.INT2_TYPE_OID;
                 break;
             case 4:
-                oid = TypeOid.INT4_TYPE_OID.getOid();
+                oid = TypeOid.INT4_TYPE_OID;
                 break;
             case 8:
-                oid = TypeOid.INT8_TYPE_OID.getOid();
+                oid = TypeOid.INT8_TYPE_OID;
                 break;
             default:
                 throw new UnknownTypeSizeException (aisType);
@@ -282,32 +287,32 @@ public class PostgresType extends ServerType
         }
         else if ("U_BIGINT".equals(encoding)) {
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
-            return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
+            return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
                                     aisType.akType(), MNumeric.BIGINT_UNSIGNED.instance());
         }
         else if ("DATE".equals(encoding))
-            oid = TypeOid.DATE_TYPE_OID.getOid();
+            oid = TypeOid.DATE_TYPE_OID;
         else if ("TIME".equals(encoding))
-            oid = TypeOid.TIME_TYPE_OID.getOid();
+            oid = TypeOid.TIME_TYPE_OID;
         else if ("DATETIME".equals(encoding) ||
                  "TIMESTAMP".equals(encoding))
-            oid = TypeOid.TIMESTAMP_TYPE_OID.getOid();
+            oid = TypeOid.TIMESTAMP_TYPE_OID;
         else if ("BLOB".equals(encoding) ||
                  "TEXT".equals(encoding))
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
         else if ("YEAR".equals(encoding))
-            oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1
+            oid = TypeOid.INT2_TYPE_OID; // No INT1
         else if ("DECIMAL".equals(encoding) ||
                  "U_DECIMAL".equals(encoding))
-            oid = TypeOid.NUMERIC_TYPE_OID.getOid();
+            oid = TypeOid.NUMERIC_TYPE_OID;
         else if ("FLOAT".equals(encoding) ||
                  "U_FLOAT".equals(encoding))
-            oid = TypeOid.FLOAT4_TYPE_OID.getOid();
+            oid = TypeOid.FLOAT4_TYPE_OID;
         else if ("DOUBLE".equals(encoding) ||
                  "U_DOUBLE".equals(encoding))
-            oid = TypeOid.FLOAT8_TYPE_OID.getOid();
+            oid = TypeOid.FLOAT8_TYPE_OID;
         else if ("VARBINARY".equals(encoding))
-            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            oid = TypeOid.BYTEA_TYPE_OID;
         else
             throw new UnknownDataTypeException (encoding);
 
@@ -339,7 +344,7 @@ public class PostgresType extends ServerType
     }
 
     public static PostgresType fromDerby(DataTypeDescriptor type, TInstance tInstance)  {
-        int oid;
+        TypeOid oid;
         short length = -1;
         int modifier = -1;
 
@@ -349,43 +354,43 @@ public class PostgresType extends ServerType
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-            oid = TypeOid.INTERVAL_TYPE_OID.getOid();
+            oid = TypeOid.INTERVAL_TYPE_OID;
             akType = AkType.INTERVAL_MILLIS;
             if (tInstance == null) tInstance = AkInterval.SECONDS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-            oid = TypeOid.INTERVAL_TYPE_OID.getOid();
+            oid = TypeOid.INTERVAL_TYPE_OID;
             akType = AkType.INTERVAL_MONTH;
             if (tInstance == null) tInstance = AkInterval.MONTHS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
-            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            oid = TypeOid.BYTEA_TYPE_OID;
             akType = AkType.VARBINARY;
             if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-            oid = TypeOid.BOOL_TYPE_OID.getOid();
+            oid = TypeOid.BOOL_TYPE_OID;
             akType = AkType.BOOL;
             if (tInstance == null) tInstance = AkBool.INSTANCE.instance();
             break;
         case TypeId.FormatIds.CHAR_TYPE_ID:
-            oid = TypeOid.CHAR_TYPE_OID.getOid();
+            oid = TypeOid.CHAR_TYPE_OID;
             akType = AkType.VARCHAR;
             if (tInstance == null) tInstance = charType(type, MString.VARCHAR);
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
-            oid = TypeOid.DATE_TYPE_OID.getOid();
+            oid = TypeOid.DATE_TYPE_OID;
             akType = AkType.DATE;
             if (tInstance == null) tInstance = MDatetimes.DATE.instance();
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            oid = TypeOid.NUMERIC_TYPE_OID.getOid();
+            oid = TypeOid.NUMERIC_TYPE_OID;
             akType = AkType.DECIMAL;
             if (tInstance == null) tInstance = MNumeric.DECIMAL.instance(type.getPrecision(), type.getScale());
             break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            oid = TypeOid.FLOAT8_TYPE_OID.getOid();
+            oid = TypeOid.FLOAT8_TYPE_OID;
             if (typeId.isUnsigned()) {
                 akType = AkType.U_DOUBLE;
                 if (tInstance == null) tInstance = MApproximateNumber.DOUBLE_UNSIGNED.instance();
@@ -396,7 +401,7 @@ public class PostgresType extends ServerType
             }
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
-            oid = TypeOid.INT4_TYPE_OID.getOid();
+            oid = TypeOid.INT4_TYPE_OID;
             if (typeId.isUnsigned()) {
                 akType = AkType.U_INT;
                 if (tInstance == null) tInstance = MNumeric.INT_UNSIGNED.instance();
@@ -409,25 +414,25 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned()) {
                 if (tInstance == null) tInstance = MNumeric.BIGINT_UNSIGNED.instance();
-                return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
+                return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
                                         AkType.U_BIGINT, tInstance);
             }
-            oid = TypeOid.INT8_TYPE_OID.getOid();
+            oid = TypeOid.INT8_TYPE_OID;
             akType = AkType.LONG;
             if (tInstance == null) tInstance = MNumeric.BIGINT.instance();
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
             akType = AkType.TEXT;
             if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
             akType = AkType.TEXT;
             if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.REAL_TYPE_ID:
-            oid = TypeOid.FLOAT4_TYPE_OID.getOid();
+            oid = TypeOid.FLOAT4_TYPE_OID;
             if (typeId.isUnsigned()) {
                 akType = AkType.U_FLOAT;
                 if (tInstance == null) tInstance = MApproximateNumber.FLOAT_UNSIGNED.instance();
@@ -438,7 +443,7 @@ public class PostgresType extends ServerType
             }
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            oid = TypeOid.INT2_TYPE_OID.getOid();
+            oid = TypeOid.INT2_TYPE_OID;
             if (typeId == TypeId.YEAR_ID) {
                 akType = AkType.YEAR;
                 if (tInstance == null) tInstance = MDatetimes.YEAR.instance();
@@ -449,12 +454,12 @@ public class PostgresType extends ServerType
             }
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
-            oid = TypeOid.TIME_TYPE_OID.getOid();
+            oid = TypeOid.TIME_TYPE_OID;
             akType = AkType.TIME;
             if (tInstance == null) tInstance = MDatetimes.TIME.instance();
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            oid = TypeOid.TIMESTAMP_TYPE_OID.getOid();
+            oid = TypeOid.TIMESTAMP_TYPE_OID;
             if (typeId == TypeId.DATETIME_ID) {
                 akType = AkType.DATETIME;
                 if (tInstance == null) tInstance = MDatetimes.DATETIME.instance();
@@ -468,32 +473,32 @@ public class PostgresType extends ServerType
             }
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1
+            oid = TypeOid.INT2_TYPE_OID; // No INT1
             akType = AkType.INT;
             if (tInstance == null) tInstance = MNumeric.INT.instance();
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
-            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            oid = TypeOid.BYTEA_TYPE_OID;
             akType = AkType.VARBINARY;
             if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
             akType = AkType.VARBINARY;
             if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            oid = TypeOid.VARCHAR_TYPE_OID.getOid();
+            oid = TypeOid.VARCHAR_TYPE_OID;
             akType = AkType.VARCHAR;
             if (tInstance == null) tInstance = charType(type, MString.VARCHAR);
             break;
         case TypeId.FormatIds.CLOB_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
             akType = AkType.TEXT;
             if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.XML_TYPE_ID:
-            oid = TypeOid.XML_TYPE_OID.getOid();
+            oid = TypeOid.XML_TYPE_OID;
             akType = AkType.TEXT;
             if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
@@ -547,9 +552,7 @@ public class PostgresType extends ServerType
                 str.append(",").append(modifier);
             str.append(")");
         }
-        TypeOid inst = TypeOid.fromOid(oid);
-        if (inst != null)
-            str.append("/").append(inst.getName());
+        str.append("/").append(oid.getName());
         return str.toString();
     }
 

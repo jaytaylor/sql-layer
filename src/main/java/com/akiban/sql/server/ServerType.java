@@ -54,6 +54,10 @@ public abstract class ServerType
         return instance;
     }
 
+    public BinaryEncoding getBinaryEncoding() {
+        return BinaryEncoding.NONE;
+    }
+
     @Override
     public String toString() {
         return String.valueOf(akType);

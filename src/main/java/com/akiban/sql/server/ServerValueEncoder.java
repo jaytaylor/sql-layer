@@ -206,34 +206,68 @@ public class ServerValueEncoder
     /** Append the given value to the buffer. */
     public void appendValue(ValueSource value, ServerType type, boolean binary) 
             throws IOException {
-        if (type.getAkType() == AkType.VARBINARY) {
-            ByteSource bs = Extractors.getByteSourceExtractor().getObject(value);
-            byte[] ba = bs.byteArray();
-            int offset = bs.byteArrayOffset();
-            int length = bs.byteArrayLength();
-            if (binary)
-                getByteStream().write(ba, offset, length);
-            else {
-                for (int i = 0; i < length; i++) {
-                    printWriter.format("\\%03o", ba[offset+i]);
+        if (!binary) {
+            // Handle unusual text encoding of binary types.
+            switch (type.getBinaryEncoding()) {
+            case BINARY_OCTAL_TEXT:
+                {
+                    ByteSource bs = Extractors.getByteSourceExtractor().getObject(value);
+                    byte[] ba = bs.byteArray();
+                    int offset = bs.byteArrayOffset();
+                    int length = bs.byteArrayLength();
+                    for (int i = 0; i < length; i++) {
+                        printWriter.format("\\%03o", ba[offset+i]);
+                    }
                 }
+                break;
+            default:
+                value.appendAsString(appender, Quote.NONE);
+                break;
             }
         }
         else {
-            assert !binary;
-            value.appendAsString(appender, Quote.NONE);
+            switch (type.getBinaryEncoding()) {
+            case BINARY_OCTAL_TEXT:
+                {
+                    ByteSource bs = Extractors.getByteSourceExtractor().getObject(value);
+                    byte[] ba = bs.byteArray();
+                    int offset = bs.byteArrayOffset();
+                    int length = bs.byteArrayLength();
+                    getByteStream().write(ba, offset, length);
+                }
+                break;
+            case NONE:
+            default:
+                throw new UnsupportedOperationException("No binary encoding for " + type);
+            }
         }
     }
-    
+
     /** Append the given value to the buffer. */
     public void appendPValue(PValueSource value, ServerType type, boolean binary) 
             throws IOException {
-        TClass tClass = type.getInstance().typeClass();
-        if (tClass instanceof MBinary)
-            getByteStream().write(value.getBytes());
+        if (!binary) {
+            // Handle unusual text encoding of binary types.
+            switch (type.getBinaryEncoding()) {
+            case BINARY_OCTAL_TEXT:
+                for (byte b : value.getBytes()) {
+                    printWriter.format("\\%03o", b);
+                }
+                break;
+            default:
+                type.getInstance().format(value, appender);
+                break;
+            }
+        }
         else {
-            assert !binary : "can only binary encode VARBINARY";
-            type.getInstance().format(value, appender);
+            switch (type.getBinaryEncoding()) {
+            case BINARY_OCTAL_TEXT:
+                getByteStream().write(value.getBytes());
+                break;
+            case NONE:
+            default:
+                throw new UnsupportedOperationException("No binary encoding for " + type);
+            }
         }
     }
     
