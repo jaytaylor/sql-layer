@@ -159,7 +159,7 @@ public class PostgresType extends ServerType
         _BIT_TYPE_OID(1561, "_bit"),
         VARBIT_TYPE_OID(1562, "varbit"),
         _VARBIT_TYPE_OID(1563, "_varbit"),
-        NUMERIC_TYPE_OID(1700, "numeric"),
+        NUMERIC_TYPE_OID(1700, "numeric", BinaryEncoding.DECIMAL_PG_NUMERIC_VAR),
         REFCURSOR_TYPE_OID(1790, "refcursor"),
         _REFCURSOR_TYPE_OID(2201, "_refcursor"),
         REGPROCEDURE_TYPE_OID(2202, "regprocedure"),

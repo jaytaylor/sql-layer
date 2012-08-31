@@ -44,6 +44,7 @@ import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
 import org.joda.time.DateTimeZone;
+import java.math.BigDecimal;
 import java.io.*;
 
 public class ServerValueEncoder
@@ -275,6 +276,11 @@ public class ServerValueEncoder
             case TIMESTAMP_INT64_MICROS_2000_NOTZ:
                 getDataStream().writeLong(seconds2000NoTZ(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value)) * 1000000L);
                 break;
+            case DECIMAL_PG_NUMERIC_VAR:
+                for (short d : pgNumericVar(Extractors.getDecimalExtractor().getObject(value))) {
+                    getDataStream().writeShort(d);
+                }
+                break;
             case NONE:
             default:
                 throw new UnsupportedOperationException("No binary encoding for " + type);
@@ -355,6 +361,71 @@ public class ServerValueEncoder
         DateTimeZone dtz = DateTimeZone.getDefault();
         delta -= (dtz.getOffset(unixtime * 1000) - dtz.getStandardOffset(unixtime * 1000)) / 1000;
         return unixtime - delta;
+    }
+
+    private static final short NUMERIC_POS = 0x0000;
+    private static final short NUMERIC_NEG = 0x4000;
+    private static final short NUMERIC_NAN = (short)0xC000;
+
+    private static short[] pgNumericVar(BigDecimal n) {
+        short ndigits, weight, sign, dscale;
+        dscale = (short)n.scale();
+        if (dscale < 0) dscale = 0;
+        String s = n.toPlainString();
+        int lpos = 0;
+        sign = NUMERIC_POS;
+        if (s.charAt(lpos) == '-') {
+            sign = NUMERIC_NEG;
+            lpos++;
+        }
+        int dposl = s.indexOf('.', lpos), dposr;
+        if (dposl < 0) 
+            dposr = dposl = s.length();
+        else
+            dposr = dposl + 1;
+        int nleft = (dposl - lpos + 3) / 4;
+        weight = (short)(nleft - 1);
+        int nright = (s.length() - dposr + 3) / 4;
+        ndigits = (short)(nleft + nright);
+        while ((ndigits > 0) && (pgNumericDigit(s, ndigits-1, 
+                                                lpos, dposl, dposr, 
+                                                nleft, nright) == 0)) {
+            ndigits--;
+        }
+        short[] digits = new short[ndigits+4];
+        digits[0] = ndigits;
+        digits[1] = weight;
+        digits[2] = sign;
+        digits[3] = dscale;
+        for (int i = 0; i < ndigits; i++) {
+            digits[i + 4] = pgNumericDigit(s, i, lpos, dposl, dposr, nleft, nright);
+        }
+        return digits;
+    }
+
+    private static short pgNumericDigit(String s, int index, 
+                                        int lpos, int dposl, int dposr, 
+                                        int nleft, int nright) {
+        short result = 0;
+        if (index < nleft) {
+            int pos = dposl + (index - nleft) * 4;
+            for (int i = 0; i < 4; i++) {
+                result = (short)(result * 10);
+                if (pos >= lpos)
+                    result += s.charAt(pos) - '0';
+                pos++;
+            }
+        }
+        else {
+            int pos = dposr + (index - nleft) * 4;
+            for (int i = 0; i < 4; i++) {
+                result = (short)(result * 10);
+                if (pos < s.length())
+                    result += s.charAt(pos) - '0';
+                pos++;
+            }
+        }
+        return result;
     }
 
 }
