@@ -268,11 +268,11 @@ public class ServerValueEncoder
             case C_BOOLEAN:
                 getDataStream().write(Extractors.getBooleanExtractor().getBoolean(value, false) ? 1 : 0);
                 break;
-            case INT64_MICROS_2000:
-                getDataStream().writeLong((Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) - 946702800000L) * 1000);
-                break;
             case FLOAT64_SECS_2000:
-                getDataStream().writeDouble((Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) - 946702800000L) / 1000.0);
+                getDataStream().writeDouble(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) - 946702800L);
+                break;
+            case INT64_MICROS_2000:
+                getDataStream().writeLong((Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) - 946702800L) * 1000000L);
                 break;
             case NONE:
             default:
