@@ -711,7 +711,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
      */
     private boolean canFastTruncate(Session session, UserTable userTable) {
         List<UserTable> tableList = new ArrayList<UserTable>();
-        tableList.add(userTable.getGroup().getGroupTable().getRoot());
+        tableList.add(userTable.getGroup().getRoot());
         while(!tableList.isEmpty()) {
             UserTable table = tableList.remove(tableList.size() - 1);
             if(table != userTable) {

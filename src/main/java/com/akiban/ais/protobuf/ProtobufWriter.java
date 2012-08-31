@@ -282,7 +282,7 @@ public class ProtobufWriter {
     }
 
     private static void writeGroup(AISProtobuf.Schema.Builder schemaBuilder, Group group, WriteSelector selector) {
-        final UserTable rootTable = group.getGroupTable().getRoot();
+        final UserTable rootTable = group.getRoot();
         AISProtobuf.Group.Builder groupBuilder = AISProtobuf.Group.newBuilder().
                 setRootTableName(rootTable.getName().getTableName()).
                 setTreeName(rootTable.getTreeName());

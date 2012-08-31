@@ -28,7 +28,6 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
@@ -112,75 +111,6 @@ public final class DDLInvalidatesScansIT extends ITBase {
         dml().scanSome(session(), cursor, output);
         dml().closeCursor(session(), cursor);
         assertEquals("rows scanned", expectedCustomers(), output.getRows());
-    }
-
-    @Test(expected=TableDefinitionChangedException.class)
-    public void dropTableScanOnGroup() throws InvalidOperationException {
-        final CursorId cursor;
-        try {
-            AkibanInformationSchema ais = ddl().getAIS(session());
-            UserTable customerUtable = ais.getUserTable(SCHEMA, CUSTOMERS);
-            GroupTable customerGtable = customerUtable.getGroup().getGroupTable();
-            cursor = openFullScan(customerGtable.getTableId(), 1);
-            ddl().dropTable(session(), tableName(SCHEMA, ORDERS));
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
-        }
-
-        scanExpectingException(cursor);
-    }
-
-    @Test(expected=TableDefinitionChangedException.class)
-    public void addTableScanOnGroup() throws InvalidOperationException {
-        final CursorId cursor;
-        try {
-            AkibanInformationSchema ais = ddl().getAIS(session());
-            UserTable customerUtable = ais.getUserTable(SCHEMA, CUSTOMERS);
-            GroupTable customerGtable = customerUtable.getGroup().getGroupTable();
-            cursor = openFullScan(customerGtable.getTableId(), 1);
-            createAddresses();
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
-        }
-
-        scanExpectingException(cursor);
-    }
-
-    @Test(expected=TableDefinitionChangedException.class)
-    public void dropIndexScanOnGroup() throws InvalidOperationException {
-        final CursorId cursor;
-        try {
-            AkibanInformationSchema ais = ddl().getAIS(session());
-            UserTable customerUtable = ais.getUserTable(SCHEMA, CUSTOMERS);
-            GroupTable customerGtable = customerUtable.getGroup().getGroupTable();
-            cursor = openFullScan(customerGtable.getTableId(), 1);
-            ddl().dropTableIndexes(
-                    session(),
-                    customerUtable.getName(),
-                    Collections.singleton(
-                            customerUtable.getIndexes().iterator().next().getIndexName().getName()
-                    ));
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
-        }
-
-        scanExpectingException(cursor);
-    }
-
-    @Test(expected=TableDefinitionChangedException.class)
-    public void addIndexScanOnGroup() throws InvalidOperationException {
-        final CursorId cursor;
-        try {
-            AkibanInformationSchema ais = ddl().getAIS(session());
-            UserTable customerUtable = ais.getUserTable(SCHEMA, CUSTOMERS);
-            GroupTable customerGtable = customerUtable.getGroup().getGroupTable();
-            cursor = openFullScan(customerGtable.getTableId(), 1);
-            ddl().createIndexes(session(), Collections.singleton(createIndex()));
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
-        }
-
-        scanExpectingException(cursor);
     }
 
     @Test(expected=TableDefinitionChangedException.class)

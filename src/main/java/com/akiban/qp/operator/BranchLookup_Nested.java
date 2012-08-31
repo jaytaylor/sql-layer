@@ -145,7 +145,7 @@ public class BranchLookup_Nested extends Operator
     {
         return String.format("%s(%s %s -> %s)",
                              getClass().getSimpleName(),
-                             group.getGroupTable().getName().getTableName(),
+                             group.getRoot().getName(),
                              inputRowType,
                              outputRowType);
     }
