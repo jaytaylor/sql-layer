@@ -158,7 +158,7 @@ public class BranchLookup_Default extends Operator
     {
         return String.format("%s(%s %s -> %s limit %s)",
                              getClass().getSimpleName(),
-                             group.getGroupTable().getName().getTableName(),
+                             group.getRoot().getName(),
                              inputRowType,
                              outputRowType,
                              limit);

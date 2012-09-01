@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;

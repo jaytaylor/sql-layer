@@ -75,6 +75,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
             }
         }
         ret.put(JOURNAL_SIZE_KEY, new Property(JOURNAL_SIZE_KEY, Long.toString(UNIT_TEST_PERSISTIT_JOURNAL_SIZE)));
+        ret.put(PARSE_SPATIAL_INDEX, new Property(PARSE_SPATIAL_INDEX, "true"));
         return ret;
     }
 
@@ -143,6 +144,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private final static String BUFFER_SIZE_KEY = "persistit.buffersize";
     private final static String BUFFER_MEMORY_KEY_PREFIX = "persistit.buffer.memory";
     private final static String JOURNAL_SIZE_KEY = "persistit.journalsize";
+    private final static String PARSE_SPATIAL_INDEX = "akserver.postgres.parserGeospatialIndexes";
     private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
     private final static long UNIT_TEST_PERSISTIT_JOURNAL_SIZE = 128 * 1024 * 1024;
     private final static String UNIT_TEST_COMMIT_POLICY = "SOFT";

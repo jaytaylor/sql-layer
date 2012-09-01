@@ -650,17 +650,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public Table getTable(Session session, int tableId) throws NoSuchTableIdException {
         logger.trace("getting AIS Table for {}", tableId);
-        for (Table userTable : getAIS(session).getUserTables().values()) {
-            if (tableId == userTable.getTableId()) {
-                return userTable;
-            }
+        Table table = getAIS(session).getUserTable(tableId);
+        if(table == null) {
+            throw new NoSuchTableIdException(tableId);
         }
-        for (Table groupTable : getAIS(session).getGroupTables().values()) {
-            if (tableId == groupTable.getTableId()) {
-                return groupTable;
-            }
-        }
-        throw new NoSuchTableIdException(tableId);
+        return table;
     }
 
     @Override
