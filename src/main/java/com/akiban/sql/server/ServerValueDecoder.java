@@ -53,12 +53,13 @@ public class ServerValueDecoder
      */
     public  <T extends ServerSession> void decodeValue(byte[] encoded, ServerType type, boolean binary,
                                                        ServerQueryContext<T> context, int index) {
-        AkType akType = null;
+        AkType targetType = null;
         if (type != null)
-            akType = type.getAkType();
-        if (akType == null)
-            akType = AkType.VARCHAR;
+            targetType = type.getAkType();
+        if (targetType == null)
+            targetType = AkType.VARCHAR;
         Object value;
+        AkType decodedType = null; // If not evident from reflection.
         if (encoded == null) {
             value = null;
         }
@@ -103,9 +104,11 @@ public class ServerValueDecoder
                     break;
                 case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
                     value = seconds2000NoTZ((long)getDataStream(encoded).readDouble());
+                    decodedType = AkType.TIMESTAMP;
                     break;
                 case TIMESTAMP_INT64_MICROS_2000_NOTZ:
                     value = seconds2000NoTZ(getDataStream(encoded).readLong() / 1000000L);
+                    decodedType = AkType.TIMESTAMP;
                     break;
                 case DECIMAL_PG_NUMERIC_VAR:
                     {
@@ -128,8 +131,11 @@ public class ServerValueDecoder
                 throw new AkibanInternalException("IO error reading from byte array", ex);
             }
         }
-        objectSource.setReflectively(value);
-        context.setValue(index, objectSource, akType);
+        if (decodedType != null)
+            objectSource.setExplicitly(value, decodedType);
+        else
+            objectSource.setReflectively(value);
+        context.setValue(index, objectSource, targetType);
     }
    
     public <T extends ServerSession> void decodePValue(byte[] encoded, ServerType type, boolean binary,
