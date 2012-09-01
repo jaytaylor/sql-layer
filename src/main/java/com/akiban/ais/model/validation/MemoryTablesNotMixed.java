@@ -46,7 +46,7 @@ public class MemoryTablesNotMixed implements AISValidation {
     }
 
     private void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
-        UserTable rootTable = group.getGroupTable().getRoot();
+        UserTable rootTable = group.getRoot();
         if(rootTable == null) {
             return; // Caught elsewhere
         }

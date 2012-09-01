@@ -28,7 +28,6 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
@@ -48,9 +47,6 @@ public class TreeNamesAreNotNull implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for(UserTable table : ais.getUserTables().values()) {
-            checkTable(table);
-        }
-        for(GroupTable table : ais.getGroupTables().values()) {
             checkTable(table);
         }
         for(Group group : ais.getGroups().values()) {

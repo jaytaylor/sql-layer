@@ -164,11 +164,6 @@ public class RowDef implements TreeLink {
         return (UserTable) table;
     }
 
-    public GroupTable groupTable() {
-        assert table instanceof GroupTable : this;
-        return (GroupTable) table;
-    }
-
     /**
      * Display the fieldCoordinates array
      */
@@ -414,12 +409,11 @@ public class RowDef implements TreeLink {
     }
 
     public int getGroupRowDefId() {
-        return table instanceof GroupTable ? table.getTableId() : table
-                .getGroup().getGroupTable().getTableId();
+        return table.isGroupTable() ? table.getTableId() : table.getGroup().getGroupTable().getTableId();
     }
 
     public RowDef getGroupRowDef() {
-        return (table instanceof GroupTable) ? this : table.getGroup().getGroupTable().rowDef();
+        return table().isGroupTable() ? this : table.getGroup().getGroupTable().rowDef();
     }
 
     public Index[] getIndexes() {

@@ -241,7 +241,7 @@ class GroupScan_Default extends Operator
         @Override
         public final String toString()
         {
-            return describeRange() + " on " + targetGroup.getGroupTable().getName().getTableName();
+            return describeRange() + " on " + targetGroup.getRoot().getName();
         }
 
         // for overriding in subclasses
@@ -257,7 +257,7 @@ class GroupScan_Default extends Operator
         @Override
         public Cursor cursor(QueryContext context)
         {
-            return context.getStore(group().getGroupTable().getRoot()).newGroupCursor(group());
+            return context.getStore(group().getRoot()).newGroupCursor(group());
         }
 
         // FullGroupCursorCreator interface
@@ -285,7 +285,7 @@ class GroupScan_Default extends Operator
         public Cursor cursor(QueryContext context)
         {
             return new HKeyBoundCursor(context, 
-                    context.getStore(group().getGroupTable().getRoot()).newGroupCursor(group()),
+                    context.getStore(group().getRoot()).newGroupCursor(group()),
                     hKeyBindingPosition, 
                     deep, 
                     hKeyType, 

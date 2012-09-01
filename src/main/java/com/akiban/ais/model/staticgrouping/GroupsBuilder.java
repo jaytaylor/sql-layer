@@ -220,7 +220,7 @@ public final class GroupsBuilder
                 continue;
             }
             final String groupName;
-            if (uTable.getGroup().getGroupTable().getRoot() == uTable) {
+            if (uTable.getGroup().getRoot() == uTable) {
                 groupName = "__GROUP_" + uTable.getGroup().getName();
             }
             else {

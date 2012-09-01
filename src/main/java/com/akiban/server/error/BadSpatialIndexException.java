@@ -24,36 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.server.error;
 
-import com.akiban.server.types.AkType;
+import com.akiban.sql.parser.QueryTreeNode;
 
-public class PostgresBoundQueryContext extends PostgresQueryContext 
-{
-    private PostgresStatement statement;
-    private boolean[] columnBinary;
-    private boolean defaultColumnBinary;
-    
-    public PostgresBoundQueryContext(PostgresServerSession server,
-                                     PostgresStatement statement) {
-        super(server);
-        this.statement = statement;
+public final class BadSpatialIndexException extends BaseSQLException {
+    public BadSpatialIndexException(String indexName, QueryTreeNode referenceNode) {
+        super(ErrorCode.BAD_SPATIAL_INDEX, indexName, referenceNode);
     }
-
-    public PostgresStatement getStatement() {
-        return statement;
-    }
-    
-    protected void setColumnBinary(boolean[] columnBinary, boolean defaultColumnBinary) {
-        this.columnBinary = columnBinary;
-        this.defaultColumnBinary = defaultColumnBinary;
-    }
-
-    public boolean isColumnBinary(int i) {
-        if ((columnBinary != null) && (i < columnBinary.length))
-            return columnBinary[i];
-        else
-            return defaultColumnBinary;
-    }
-
 }

@@ -29,10 +29,8 @@ package com.akiban.ais.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
@@ -56,26 +54,6 @@ public class DDLGenerator
     public DDLGenerator(final String schemaName, final String tableName) {
         this.useSchemaName = schemaName;
         this.useTableName = tableName;
-    }
-
-    public List<String> createAllGroupTables(AkibanInformationSchema ais)
-    {
-        List<String> ddl = new ArrayList<String>();
-        for (GroupTable groupTable : ais.getGroupTables().values()) {
-            String createTable = createTable(groupTable);
-            ddl.add(createTable);
-        }
-        return ddl;
-    }
-
-    public List<String> dropAllGroupTables(AkibanInformationSchema ais)
-    {
-        List<String> ddl = new ArrayList<String>();
-        for (GroupTable groupTable : ais.getGroupTables().values()) {
-            String dropTable = dropTable(groupTable);
-            ddl.add(dropTable);
-        }
-        return ddl;
     }
 
     public String createTable(Table table)
