@@ -798,6 +798,10 @@ public class API
         return new Insert_Default(inputOperator, usePVals);
     }
 
+    public static Operator insert_Returning (Operator inputOperator, boolean usePVals) 
+    {
+        return new Insert_Returning (inputOperator, usePVals);
+    }
 
     // Update
 
@@ -814,6 +818,10 @@ public class API
         return new Delete_Default(inputOperator, usePValues);
     }
 
+    public static Operator delete_Returning (Operator inputOperator, boolean usePValues)
+    {
+        return new Delete_Returning(inputOperator, usePValues);
+    }
     // Execution interface
 
     public static Cursor cursor(Operator root, QueryContext context)
