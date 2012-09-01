@@ -79,13 +79,16 @@ public class ServerValueDecoder
                     value = encoded;
                     break;
                 case INT_8:
-                    value = getDataStream(encoded).read();
+                    value = (long)getDataStream(encoded).read();
+                    decodedType = AkType.INT;
                     break;
                 case INT_16:
-                    value = getDataStream(encoded).readShort();
+                    value = (long)getDataStream(encoded).readShort();
+                    decodedType = AkType.INT;
                     break;
                 case INT_32:
-                    value = getDataStream(encoded).readInt();
+                    value = (long)getDataStream(encoded).readInt();
+                    decodedType = AkType.INT;
                     break;
                 case INT_64:
                     value = getDataStream(encoded).readLong();
