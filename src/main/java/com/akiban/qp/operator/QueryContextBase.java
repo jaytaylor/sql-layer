@@ -152,20 +152,6 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void setValue(int index, Object value, AkType type, boolean usePValues)
-    {
-        if (usePValues) {
-            PValueSource source = PValueSources.fromObject(value, type).value();
-            setPValue(index, source);
-        }
-        else {
-            FromObjectValueSource source = new FromObjectValueSource();
-            source.setReflectively(value);
-            setValue(index, source, type);
-        }
-    }
-
-    @Override
     public Row getRow(int index) {
         if (!bindings.isDefined(index))
             throw new BindingNotSetException(index);
