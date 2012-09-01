@@ -148,9 +148,25 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             int nparams = sqlTypes.length;
             parameterTypes = new PostgresType[nparams];
             for (int i = 0; i < nparams; i++) {
+                PostgresType pgType = null;
                 DataTypeDescriptor sqlType = sqlTypes[i];
                 if (sqlType != null)
-                    parameterTypes[i] = PostgresType.fromDerby(sqlType, null);
+                    pgType = PostgresType.fromDerby(sqlType, null);
+                if ((paramTypes != null) && (i < paramTypes.length)) {
+                    // Make a type that has the target that the query wants, with the
+                    // OID that the client proposed to send so that we
+                    // decode it properly.
+                    PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
+                    if (oid != null) {
+                        if (pgType == null)
+                            pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                        else
+                            pgType = new PostgresType(oid,  (short)-1, -1, 
+                                                      pgType.getAkType(),
+                                                      pgType.getInstance());
+                    }
+                }
+                parameterTypes[i] = pgType;
             }
         }
 

@@ -38,6 +38,7 @@ import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
 import java.io.*;
 
+/** Decode values from external representation into query bindings. */
 public class ServerValueDecoder
 {
     private String encoding;

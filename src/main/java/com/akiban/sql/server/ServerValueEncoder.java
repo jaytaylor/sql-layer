@@ -47,6 +47,7 @@ import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
 import java.io.*;
 
+/** Encode result values for transmission. */
 public class ServerValueEncoder
 {
     public static enum ZeroDateTimeBehavior {
