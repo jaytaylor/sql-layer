@@ -177,7 +177,19 @@ public class ServerValueDecoder
     private static final short NUMERIC_NAN = (short)0xC000;
 
     private static BigDecimal pgNumericVar(short[] digits) {
-        return null;
+        short ndigits, weight, sign, dscale;
+        ndigits = digits[0];
+        weight = digits[1];
+        sign = digits[2];
+        dscale = digits[3];
+        BigDecimal result = BigDecimal.ZERO;
+        for (int i = 0; i < ndigits; i++) {
+            BigDecimal digit = new BigDecimal(digits[i + 4]);
+            result = result.add(digit.scaleByPowerOfTen((weight - i) * 4));
+        }
+        if (sign == NUMERIC_NEG)
+            result = result.negate();
+        return result;
     }
 
 }
