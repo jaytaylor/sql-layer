@@ -27,54 +27,36 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-public class ProductRowType extends DerivedRowType
+public class ProductRowType extends CompoundRowType
 {
     // Object interface
 
     @Override
     public String toString()
     {
-        return String.format("product(%s: %s x %s)", branchType, leftType, rightType);
+        return String.format("product(%s: %s x %s)", branchType, first(), second());
     }
 
     // RowType interface
 
     @Override
-    public int nFields()
-    {
-        return leftType.nFields() + rightType.nFields() - branchType.nFields();
-    }
-
-    @Override
     public AkType typeAt(int index) {
-        if (index < leftType.nFields())
-            return leftType.typeAt(index);
-        return rightType.typeAt(index - leftType.nFields() + branchType.nFields());
+        if (index < first().nFields())
+            return first().typeAt(index);
+        return second().typeAt(index - first().nFields() + branchType.nFields());
     }
 
     @Override
     public TInstance typeInstanceAt(int index) {
-        if (index < leftType.nFields())
-            return leftType.typeInstanceAt(index);
-        return rightType.typeInstanceAt(index - leftType.nFields() + branchType.nFields());
-    }
-
-    @Override
-    public CompoundExplainer getExplainer(ExplainContext context)
-    {
-        CompoundExplainer explainer = super.getExplainer(context);
-        explainer.addAttribute(Label.LEFT_TYPE, leftType.getExplainer(context));
-        explainer.addAttribute(Label.RIGHT_TYPE, rightType.getExplainer(context));
-        return explainer;
+        if (index < first().nFields())
+            return first().typeInstanceAt(index);
+        return second().typeInstanceAt(index - first().nFields() + branchType.nFields());
     }
 
     // ProductRowType interface
@@ -86,12 +68,12 @@ public class ProductRowType extends DerivedRowType
 
     public RowType leftType()
     {
-        return leftType;
+        return first();
     }
 
     public RowType rightType()
     {
-        return rightType;
+        return second();
     }
 
     public ProductRowType(DerivedTypesSchema schema, 
@@ -100,18 +82,12 @@ public class ProductRowType extends DerivedRowType
                           UserTableRowType branchType, 
                           RowType rightType)
     {
-        super(schema, typeId);
-        assert leftType.schema() == schema : leftType;
-        assert rightType.schema() == schema : rightType;
+        super(schema, typeId, leftType, rightType);
         this.branchType =
             branchType == null
             ? leafmostCommonType(leftType, rightType)
             : branchType;
-        this.leftType = leftType;
-        this.rightType = rightType;
-        List<UserTable> tables = new ArrayList<UserTable>(leftType.typeComposition().tables());
-        tables.addAll(rightType.typeComposition().tables());
-        typeComposition(new TypeComposition(this, tables));
+        this.nFields = leftType.nFields() + rightType.nFields() - this.branchType.nFields();
     }
 
     // For use by this class
@@ -133,6 +109,4 @@ public class ProductRowType extends DerivedRowType
     // Object state
 
     private final RowType branchType;
-    private final RowType leftType;
-    private final RowType rightType;
 }
