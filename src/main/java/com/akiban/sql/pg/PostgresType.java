@@ -450,7 +450,7 @@ public class PostgresType extends ServerType
             }
             else {
                 akType = AkType.LONG;
-                if (tInstance == null) tInstance = MNumeric.INT.instance();
+                if (tInstance == null) tInstance = (typeId.isUnsigned()) ? MNumeric.SMALLINT_UNSIGNED.instance() : MNumeric.SMALLINT.instance();
             }
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
@@ -475,7 +475,7 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = TypeOid.INT2_TYPE_OID; // No INT1
             akType = AkType.LONG;
-            if (tInstance == null) tInstance = MNumeric.INT.instance();
+            if (tInstance == null) tInstance = (typeId.isUnsigned()) ? MNumeric.TINYINT_UNSIGNED.instance() : MNumeric.TINYINT.instance();
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             oid = TypeOid.BYTEA_TYPE_OID;
