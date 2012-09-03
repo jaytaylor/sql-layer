@@ -143,16 +143,17 @@ public class ServerValueDecoder
    
     public <T extends ServerSession> void decodePValue(byte[] encoded, ServerType type, boolean binary,
                                                        ServerQueryContext<T> context, int index) {
-        AkType akType = null;
+        AkType targetType = null;
         if (type != null)
-            akType = type.getAkType();
-        if (akType == null)
-            akType = AkType.VARCHAR;
+            targetType = type.getAkType();
+        if (targetType == null)
+            targetType = AkType.VARCHAR;
         Object value;
-        if (binary || (encoded == null)) {
-            value = encoded;
+        AkType decodedType = null; // If not evident from reflection.
+        if (encoded == null) {
+            value = null;
         }
-        else {
+        else if (!binary) {
             try {
                 value = new String(encoded, encoding);
             }
@@ -160,7 +161,72 @@ public class ServerValueDecoder
                 throw new UnsupportedCharsetException("", "", encoding);
             }
         }
-        PValueSource source = PValueSources.fromObject(value, akType).value();
+        else {
+            try {
+                switch (type.getBinaryEncoding()) {
+                case BINARY_OCTAL_TEXT:
+                default:
+                    value = encoded;
+                    break;
+                case INT_8:
+                    value = (long)getDataStream(encoded).read();
+                    decodedType = AkType.INT;
+                    break;
+                case INT_16:
+                    value = (long)getDataStream(encoded).readShort();
+                    decodedType = AkType.INT;
+                    break;
+                case INT_32:
+                    value = (long)getDataStream(encoded).readInt();
+                    decodedType = AkType.INT;
+                    break;
+                case INT_64:
+                    value = getDataStream(encoded).readLong();
+                    break;
+                case FLOAT_32:
+                    value = getDataStream(encoded).readFloat();
+                    break;
+                case FLOAT_64:
+                    value = getDataStream(encoded).readDouble();
+                    break;
+                case STRING_BYTES:
+                    value = new String(encoded, encoding);
+                    break;
+                case BOOLEAN_C:
+                    value = (encoded[0] != 0);
+                    break;
+                case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
+                    value = seconds2000NoTZ((long)getDataStream(encoded).readDouble());
+                    decodedType = AkType.TIMESTAMP;
+                    break;
+                case TIMESTAMP_INT64_MICROS_2000_NOTZ:
+                    value = seconds2000NoTZ(getDataStream(encoded).readLong() / 1000000L);
+                    decodedType = AkType.TIMESTAMP;
+                    break;
+                case DECIMAL_PG_NUMERIC_VAR:
+                    {
+                        DataInputStream dstr = getDataStream(encoded);
+                        short ndigits = dstr.readShort();
+                        short[] digits = new short[ndigits + 4];
+                        digits[0] = ndigits;
+                        for (int i = 1; i < digits.length; i++) {
+                            digits[i] = dstr.readShort();
+                        }
+                        value = pgNumericVar(digits);
+                    }
+                    break;
+                }
+            }
+            catch (UnsupportedEncodingException ex) {
+                throw new UnsupportedCharsetException("", "", encoding);
+            }
+            catch (IOException ex) {
+                throw new AkibanInternalException("IO error reading from byte array", ex);
+            }
+        }
+        if (decodedType == null)
+            decodedType = targetType;
+        PValueSource source = PValueSources.fromObject(value, decodedType).value();
         context.setPValue(index, source);
     }
 
