@@ -34,6 +34,7 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -309,6 +310,41 @@ public class ServerValueEncoder
             switch (type.getBinaryEncoding()) {
             case BINARY_OCTAL_TEXT:
                 getByteStream().write(value.getBytes());
+                break;
+            case INT_8:
+                getDataStream().write(value.getInt8());
+                break;
+            case INT_16:
+                getDataStream().writeShort(value.getInt16());
+                break;
+            case INT_32:
+                getDataStream().writeInt(value.getInt32());
+                break;
+            case INT_64:
+                getDataStream().writeLong(value.getInt64());
+                break;
+            case FLOAT_32:
+                getDataStream().writeFloat(value.getFloat());
+                break;
+            case FLOAT_64:
+                getDataStream().writeDouble(value.getDouble());
+                break;
+            case STRING_BYTES:
+                getByteStream().write(value.getString().getBytes(encoding));
+                break;
+            case BOOLEAN_C:
+                getDataStream().write(value.getBoolean() ? 1 : 0);
+                break;
+            case TIMESTAMP_FLOAT64_SECS_2000_NOTZ:
+                getDataStream().writeDouble(seconds2000NoTZ(value.getInt64()));
+                break;
+            case TIMESTAMP_INT64_MICROS_2000_NOTZ:
+                getDataStream().writeLong(seconds2000NoTZ(value.getInt64()) * 1000000L);
+                break;
+            case DECIMAL_PG_NUMERIC_VAR:
+                for (short d : pgNumericVar(((BigDecimalWrapper)value.getObject()).asBigDecimal())) {
+                    getDataStream().writeShort(d);
+                }
                 break;
             case NONE:
             default:
