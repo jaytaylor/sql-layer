@@ -34,7 +34,7 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -342,7 +342,7 @@ public class ServerValueEncoder
                 getDataStream().writeLong(seconds2000NoTZ(value.getInt64()) * 1000000L);
                 break;
             case DECIMAL_PG_NUMERIC_VAR:
-                for (short d : pgNumericVar(((BigDecimalWrapper)value.getObject()).asBigDecimal())) {
+                for (short d : pgNumericVar(MBigDecimal.getWrapper(value, type.getInstance()).asBigDecimal())) {
                     getDataStream().writeShort(d);
                 }
                 break;
