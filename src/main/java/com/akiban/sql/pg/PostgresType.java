@@ -426,7 +426,7 @@ public class PostgresType extends ServerType
                 if (tInstance == null) tInstance = MDatetimes.YEAR.instance();
             }
             else {
-                akType = AkType.INT;
+                akType = AkType.LONG;
                 if (tInstance == null) tInstance = MNumeric.INT.instance();
             }
             break;
@@ -451,7 +451,7 @@ public class PostgresType extends ServerType
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1
-            akType = AkType.INT;
+            akType = AkType.LONG;
             if (tInstance == null) tInstance = MNumeric.INT.instance();
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
