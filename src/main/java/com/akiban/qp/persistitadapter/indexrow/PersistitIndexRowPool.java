@@ -124,6 +124,7 @@ public class PersistitIndexRowPool
                 indexRows = new ArrayDeque<PersistitIndexRow>();
                 indexRowCache.put(indexRowType, indexRows);
             }
+            assert !indexRows.contains(indexRow);
             indexRows.addLast(indexRow);
         }
 
