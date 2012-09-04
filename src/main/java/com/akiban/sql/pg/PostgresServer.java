@@ -212,13 +212,26 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public void cancelQuery(int sessionId) {
-        getConnection(sessionId).cancelQuery();
+        cancelQuery(sessionId, "JMX");
+    }
+
+    public void cancelQuery(int sessionId, String byUser) {
+        getConnection(sessionId).cancelQuery(null, byUser);
     }
 
     @Override
     public void killConnection(int sessionId) {
+        killConnection(sessionId, "your session being disconnected", "JMX");
+    }
+
+    public void killConnection(int sessionId, String reason, String byUser) {
         PostgresServerConnection conn = getConnection(sessionId);
-        conn.cancelQuery();
+        conn.cancelQuery(reason, byUser);
+        try {
+            Thread.sleep(100);
+        }
+        catch (InterruptedException ex) {
+        }
         conn.stop();
     }
 

@@ -94,6 +94,8 @@ public class PostgresServerConnection extends ServerSessionBase
     
     private String sql;
     
+    private volatile String cancelForKillReason, cancelByUser;
+
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int sessionId, int secret,
                                     ServerServiceRequirements reqs) {
@@ -219,8 +221,20 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    logError(ErrorLogLevel.INFO, "Query canceled", ex);
-                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                    InvalidOperationException nex = ex;
+                    if (cancelForKillReason != null) {
+                        nex = new ConnectionTerminatedException(cancelForKillReason);
+                        nex.initCause(ex);
+                        cancelForKillReason = null;
+                    }
+                    logError(ErrorLogLevel.INFO, "Query canceled", nex);
+                    String msg = nex.getShortMessage();
+                    if (cancelByUser != null) {
+                        if (nex == ex) msg = "Query canceled";
+                        msg += " by " + cancelByUser;
+                        cancelByUser = null;
+                    }
+                    sendErrorResponse(type, nex, nex.getCode(), msg);
                 } catch (ConnectionTerminatedException ex) {
                     logError(ErrorLogLevel.DEBUG, "Query terminated self", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
@@ -364,7 +378,7 @@ public class PostgresServerConnection extends ServerSessionBase
         int secret = messenger.readInt();
         PostgresServerConnection connection = server.getConnection(sessionId);
         if ((connection != null) && (secret == connection.secret)) {
-            connection.cancelQuery();
+            connection.cancelQuery(null, null);
         }
         stop();                 // That's all for this connection.
     }
@@ -639,7 +653,9 @@ public class PostgresServerConnection extends ServerSessionBase
         stop();
     }
 
-    public void cancelQuery() {
+    public void cancelQuery(String forKillReason, String byUser) {
+        this.cancelForKillReason = forKillReason;
+        this.cancelByUser = byUser;
         // A running query checks session state for query cancelation during Cursor.next() calls. If the
         // query is stuck in a blocking operation, then thread interruption should unstick it. Either way,
         // the query should eventually throw QueryCanceledException which will be caught by topLevel().

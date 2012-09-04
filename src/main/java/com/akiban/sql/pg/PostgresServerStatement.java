@@ -98,6 +98,7 @@ public class PostgresServerStatement implements PostgresStatement {
         PostgresServerConnection current = (PostgresServerConnection)session;
         PostgresServer server = current.getServer();
         Integer sessionId = statement.getSessionID();
+        String byUser = session.getProperty("user");
         String completeCurrent = null;
         /*
          * Note: Caution when adding new types and check execution under ROLLBACK, see getTransactionAbortedMode()
@@ -110,10 +111,10 @@ public class PostgresServerStatement implements PostgresStatement {
         case INTERRUPT_SESSION:
             if (sessionId == null) {
                 for (Integer sesId : server.getCurrentSessions()) {
-                    server.cancelQuery(sesId);
+                    server.cancelQuery(sesId, byUser);
                 }
             } else if (server.getConnection(sessionId) != null) {
-                server.cancelQuery(sessionId);
+                server.cancelQuery(sessionId, byUser);
             } 
             sendComplete (session.getMessenger());
             break;
@@ -126,23 +127,21 @@ public class PostgresServerStatement implements PostgresStatement {
                         PostgresServerConnection conn = server.getConnection(sesId);
                         if (conn == current)
                             completeCurrent = msg;
-                        else {
-                            sendCompleteClosed(conn, msg);
-                            server.killConnection(sesId);
-                        }
+                        else
+                            server.killConnection(sesId, msg, byUser);
                     }
                 }
                 else {
                     PostgresServerConnection conn = server.getConnection(sessionId);
                     if (conn == current)
                         completeCurrent = msg;
-                    else if (conn != null) {
-                        sendCompleteClosed(conn, msg);
-                        server.killConnection(sessionId);
-                    }
+                    else if (conn != null)
+                        server.killConnection(sessionId, msg, byUser);
                     // TODO: Else no such session error?
                 }
             }
+            if (completeCurrent == null)
+                sendComplete(session.getMessenger());
             break;
         case SHUTDOWN:
             {
@@ -151,13 +150,12 @@ public class PostgresServerStatement implements PostgresStatement {
                     PostgresServerConnection conn = server.getConnection(sesId);
                     if (conn == current)
                         completeCurrent = msg;
-                    else {
-                        sendCompleteClosed(server.getConnection(sesId), msg);
-                        server.killConnection(sesId);
-                    }
+                    else
+                        server.killConnection(sesId, msg, byUser);
                 }
                 shutdown(session, statement.isShutdownImmediate());
             }
+            // Note: no completion, since shutting down right away.
             break;
         }
         // Now finally do what was indicated for the current connection.
@@ -177,12 +175,7 @@ public class PostgresServerStatement implements PostgresStatement {
         messenger.sendMessage();
         
     }
-    
-    protected void sendCompleteClosed(PostgresServerConnection session, String reason) throws Exception {
-        InvalidOperationException ex = new ConnectionTerminatedException (reason);
-        session.sendErrorResponse(PostgresMessages.QUERY_TYPE, ex, ex.getCode(), ex.getMessage());
-    }
-    
+
     protected void shutdown (final PostgresServerSession server, final boolean immediate) throws Exception {
         new Thread() {
             @Override
