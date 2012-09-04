@@ -156,12 +156,20 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void createMessenger() throws IOException {
-        // We flush() when we mean it. 
-        // So, turn off kernel delay, but wrap a buffer so every
-        // message isn't its own packet.
-        socket.setTcpNoDelay(true);
-        messenger = new PostgresMessenger(socket.getInputStream(),
-                                          new BufferedOutputStream(socket.getOutputStream()));
+        messenger = new PostgresMessenger(socket) {
+                @Override
+                public void idle() {
+                    if (cancelForKillReason != null) {
+                        String msg = cancelForKillReason;
+                        cancelForKillReason = null;
+                        if (cancelByUser != null) {
+                            msg += " by " + cancelByUser;
+                            cancelByUser = null;
+                        }
+                        throw new ConnectionTerminatedException(msg);
+                    }
+                }
+            };
     }
 
     protected void topLevel() throws IOException, Exception {
@@ -173,6 +181,11 @@ public class PostgresServerConnection extends ServerSessionBase
                 PostgresMessages type;
                 try {
                     type = messenger.readMessage(startupComplete);
+                } catch (ConnectionTerminatedException ex) {
+                    logError(ErrorLogLevel.DEBUG, "Request to terminate", ex);
+                    type = PostgresMessages.QUERY_TYPE;
+                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                    continue;
                 } finally {
                     READ_MESSAGE.out();
                 }
