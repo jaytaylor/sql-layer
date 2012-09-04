@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;

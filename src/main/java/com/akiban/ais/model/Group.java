@@ -31,10 +31,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.service.tree.TreeCache;
+import com.akiban.server.service.tree.TreeLink;
 
-public class Group implements Traversable
+public class Group implements Traversable, TreeLink
 {
     public static Group create(AkibanInformationSchema ais, String groupName)
     {
@@ -157,13 +160,41 @@ public class Group implements Traversable
         }
     }
 
+    public void setTreeName(String treeName) {
+        this.treeName = treeName;
+    }
+
     private Map<String, GroupIndex> internalGetIndexMap() {
         return indexMap;
+    }
+
+    // TreeLink
+
+    @Override
+    public String getSchemaName() {
+        return groupTable.getName().getSchemaName(); // TODO: Will be root.getName()
+    }
+
+    @Override
+    public String getTreeName() {
+        return treeName;
+    }
+
+    @Override
+    public void setTreeCache(TreeCache cache) {
+        treeCache.set(cache);
+    }
+
+    @Override
+    public TreeCache getTreeCache() {
+        return treeCache.get();
     }
 
     // State
 
     private final String name;
-    private GroupTable groupTable;
     private final Map<String, GroupIndex> indexMap;
+    private final AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
+    private String treeName;
+    private GroupTable groupTable;
 }

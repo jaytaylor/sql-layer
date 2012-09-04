@@ -282,10 +282,12 @@ public class ProtobufWriter {
     }
 
     private static void writeGroup(AISProtobuf.Schema.Builder schemaBuilder, Group group, WriteSelector selector) {
-        final UserTable rootTable = group.getGroupTable().getRoot();
+        final UserTable rootTable = group.getRoot();
         AISProtobuf.Group.Builder groupBuilder = AISProtobuf.Group.newBuilder().
-                setRootTableName(rootTable.getName().getTableName()).
-                setTreeName(rootTable.getTreeName());
+                setRootTableName(rootTable.getName().getTableName());
+        if(group.getTreeName() != null) {
+                groupBuilder.setTreeName(group.getTreeName());
+        }
 
         for(Index index : group.getIndexes()) {
             if(selector.isSelected(index)) {

@@ -79,26 +79,6 @@ public final class ScanBufferTooSmallIT extends ITBase {
         doTest(userTable, userTable.getPrimaryKey().getIndex().getIndexId());
     }
 
-    @Test(expected=BufferFullException.class)
-    public void onGroupTable() throws InvalidOperationException, BufferFullException {
-        UserTable userTable = getUserTable("ts", "c");
-        Table groupTable = userTable.getGroup().getGroupTable();
-
-        int uTablePKID = userTable.getPrimaryKey().getIndex().getIndexId();
-        Index uTablePKOnGroup = null;
-        for (Index groupTableIndex : groupTable.getIndexes()) {
-            if (groupTableIndex.getIndexId() == uTablePKID) {
-                uTablePKOnGroup = groupTableIndex;
-                break;
-            }
-        }
-        if (uTablePKOnGroup == null) {
-            throw new NullPointerException();
-        }
-
-        doTest(groupTable, uTablePKOnGroup.getIndexId());
-    }
-
     private void doTest(Table table, int indexId) throws InvalidOperationException, BufferFullException {
         Set<Integer> columns = allColumns(table);
         int size = sizeForOneRow(table.getTableId(), indexId, columns);

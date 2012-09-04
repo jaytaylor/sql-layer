@@ -247,14 +247,6 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
         return rowDef;
     }
 
-    public String getTreeName() {
-        return treeName;
-    }
-
-    public void setTreeName(String treeName) {
-        this.treeName = treeName;
-    }
-
     // State
     private final Map<String, TableIndex> indexMap;
     private final Map<String, TableIndex> unmodifiableIndexMap;
@@ -265,6 +257,5 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
     private Integer tableId;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
-    protected String treeName;
     private RowDef rowDef;
 }

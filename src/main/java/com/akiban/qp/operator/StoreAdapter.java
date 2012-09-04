@@ -27,7 +27,6 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;

@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -41,7 +40,6 @@ import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static junit.framework.Assert.assertEquals;
 
 // Like IndexScanIT, but testing unique indexes and the handling of duplicate nulls
 

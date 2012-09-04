@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;

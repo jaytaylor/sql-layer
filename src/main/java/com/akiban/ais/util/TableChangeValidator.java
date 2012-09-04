@@ -213,7 +213,7 @@ public class TableChangeValidator {
         if(parentChange == ParentChange.DROP) {
             traverseStart = oldTable;
         } else {
-           traverseStart = oldTable.getGroup().getGroupTable().getRoot();
+           traverseStart = oldTable.getGroup().getRoot();
         }
 
         traverseStart.traverseTableAndDescendants(new NopVisitor() {

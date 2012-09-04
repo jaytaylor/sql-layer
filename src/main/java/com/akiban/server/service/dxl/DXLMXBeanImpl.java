@@ -144,7 +144,7 @@ class DXLMXBeanImpl implements DXLMXBean {
         try {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             for(com.akiban.ais.model.Group group: ais.getGroups().values()) {
-                final String groupTableSchema = group.getGroupTable().getName().getSchemaName();
+                final String groupTableSchema = group.getRoot().getName().getSchemaName();
                 if(groupTableSchema.equals(schemaName)) {
                     dxlService.ddlFunctions().dropGroup(session, group.getName());
                 }

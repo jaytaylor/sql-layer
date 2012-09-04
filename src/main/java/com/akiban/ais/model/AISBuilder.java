@@ -320,10 +320,10 @@ public class AISBuilder {
 
     public void createGroup(String groupName, String groupSchemaName, String groupTableName, int groupTableID) {
         LOG.info("createGroup: {} -> {}.{} ({})", new Object[]{groupName, groupSchemaName, groupTableName, groupTableID});
-        GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, groupTableID);
         Group group = Group.create(ais, groupName);
+        GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, groupTableID);
         groupTable.setGroup(group);
-        groupTable.setTreeName(nameGenerator.generateGroupTreeName(group));
+        group.setTreeName(nameGenerator.generateGroupTreeName(group));
         if(tableIdGenerator <= groupTableID) {
             tableIdGenerator = groupTableID + 1;
         }
@@ -536,32 +536,6 @@ public class AISBuilder {
         // table should be ROOT
         for (Join canParentJoin : table.getCandidateParentJoins()) {
             canParentJoin.setGroupingUsage(GroupingUsage.NEVER);
-        }
-
-        // Move table to group. Get the children first (see comment in
-        // moveTreeToGroup).
-        List<Join> children = table.getChildJoins();
-        setTablesGroup(table, group);
-
-        // update group table columns and indexes for the affected groups
-        updateGroupTablesOnMove(oldGroup, group, children);
-    }
-
-    public void moveTreeToNoGroup(String schemaName, String tableName) {
-        LOG.info("moveTree: " + schemaName + "." + tableName + " -> no group ");
-        // table
-        UserTable table = ais.getUserTable(schemaName, tableName);
-        checkFound(table, "moving tree", "table", concat(schemaName, tableName));
-
-        // group
-        Group oldGroup = table.getGroup();
-        Group group = null;
-
-        // Remove table's parent join from its current group (if there is a
-        // parent)
-        Join parentJoin = table.getParentJoin();
-        if (parentJoin != null) {
-            parentJoin.setGroup(null);
         }
 
         // Move table to group. Get the children first (see comment in
@@ -789,7 +763,6 @@ public class AISBuilder {
 
     private void setTablesGroup(Table table, Group group) {
         table.setGroup(group);
-        table.setTreeName(group != null ? group.getGroupTable().getTreeName() : "");
     }
 
     public int getTableIdOffset() {
@@ -805,10 +778,10 @@ public class AISBuilder {
      * must have the same tree name). If testing parts of builder that aren't grouped and
      * LIVE_VALIDATIONS are called, this is a simple work around for that.
      */
-    public void setTableTreeNamesForTest() {
-        for(UserTable table : ais.getUserTables().values()) {
-            if(table.getTreeName() == null) {
-                table.setTreeName(table.getName().getDescription());
+    public void setGroupTreeNamesForTest() {
+        for(Group group : ais.getGroups().values()) {
+            if(group.getTreeName() == null) {
+                group.setTreeName(group.getName());
             }
         }
     }
