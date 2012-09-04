@@ -65,7 +65,6 @@ public class PostgresMessenger implements DataInput, DataOutput
     private ByteArrayOutputStream byteOutput;
     private DataOutputStream messageOutput;
     private String encoding = "UTF-8";
-    private boolean cancel = false;
 
     public PostgresMessenger(InputStream inputStream, OutputStream outputStream) {
         this.inputStream = inputStream;
@@ -99,16 +98,6 @@ public class PostgresMessenger implements DataInput, DataOutput
                                                      encoding + "'");
         }
         this.encoding = newEncoding;
-    }
-
-    /** Has a cancel been sent? */
-    public synchronized boolean isCancel() {
-        return cancel;
-    }
-    /** Mark as cancelled. Cleared at the start of results. 
-     * Usually set from a thread running a request just for that purpose. */
-    public synchronized void setCancel(boolean cancel) {
-        this.cancel = cancel;
     }
 
     /** Read the next message from the stream, without any type opcode. */

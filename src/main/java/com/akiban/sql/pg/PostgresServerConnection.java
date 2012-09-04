@@ -649,9 +649,6 @@ public class PostgresServerConnection extends ServerSessionBase
         if (thread != null) {
             thread.interrupt();
         }
-        if (messenger != null) {
-            messenger.setCancel(true);
-        }
     }
 
     // When the AIS changes, throw everything away, since it might
