@@ -182,10 +182,10 @@ public class PostgresServerConnection extends ServerSessionBase
                 try {
                     type = messenger.readMessage(startupComplete);
                 } catch (ConnectionTerminatedException ex) {
-                    logError(ErrorLogLevel.DEBUG, "Request to terminate", ex);
-                    type = PostgresMessages.QUERY_TYPE;
-                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
-                    continue;
+                    logError(ErrorLogLevel.DEBUG, "About to terminate", ex);
+                    notifyClient(QueryContext.NotificationLevel.WARNING,
+                                 ex.getCode(), ex.getShortMessage());
+                    break;
                 } finally {
                     READ_MESSAGE.out();
                 }
