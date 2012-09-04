@@ -96,6 +96,9 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                         advance(scanStates.size() - 1);
                         if (more) {
                             next = row();
+                            // Guard against bug 1046053
+                            assert next != startKey;
+                            assert next != endKey;
                         } else {
                             close();
                         }
@@ -161,14 +164,16 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     }
 
     @Override
-    public void close()
+    public void destroy()
     {
-        super.close();
+        super.destroy();
         if (startKey != null) {
             adapter.returnIndexRow(startKey);
+            startKey = null;
         }
         if (endKey != null) {
             adapter.returnIndexRow(endKey);
+            endKey = null;
         }
     }
 
