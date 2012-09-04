@@ -97,15 +97,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
                 putObj = source.getString();
                 break;
             case BYTES:
-                // bytes are a special case, in that they're not easily to-stringable
-                byte[] bytes = source.getBytes();
-                String charset = fieldDef.column().getCharsetAndCollation().charset();
-                try {
-                    putObj = new String(bytes, charset);
-                } catch (UnsupportedEncodingException e) {
-                    throw new AkibanInternalException("while encoding bytes as " + charset
-                            + ": " + Arrays.toString(bytes));
-                }
+                putObj = source.getBytes();
                 break;
             default:
                 throw new AssertionError(source.getUnderlyingType());
