@@ -358,7 +358,7 @@ public enum ErrorCode {
     SERVICE_NOT_STARTED     ("52", "001", Importance.ERROR, ServiceNotStartedException.class),
     SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceStartupException.class),
     SERVICE_CIRC_DEPEND     ("52", "003", Importance.ERROR, CircularDependencyException.class),
-    BAD_ADMIN_DIRECTORY     ("52", "004", Importance.ERROR, BadAdminDirectoryException.class),
+    BAD_CONFIG_DIRECTORY    ("52", "004", Importance.ERROR, BadConfigDirectoryException.class),
     ZOOKEEPER_INIT_FAIL     ("52", "005", Importance.ERROR, ZooKeeperInitFailureException.class),
     CONFIG_LOAD_FAILED      ("52", "006", Importance.ERROR, ConfigurationPropertiesLoadException.class),
     THREAD_START_INTR       ("52", "007", Importance.ERROR, ThreadStartInterruptedException.class),
