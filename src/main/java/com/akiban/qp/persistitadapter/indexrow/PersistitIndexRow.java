@@ -121,13 +121,11 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
     }
 
-    // TODO: For pooling experiment
     public void reset()
     {
         keyState.clear();
         super.reset();
     }
-    // TODO: End of pooling experiment
 
     // For use by subclasses
 
