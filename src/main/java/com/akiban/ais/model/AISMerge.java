@@ -145,9 +145,9 @@ public class AISMerge {
             UserTable newTable = desc.getNewDefinition();
 
             // These don't affect final outcome and may be reset later. Needed by clone process.
-            if(newTable != null) {
+            if((newTable != null) && (newTable.getGroup() != null)) {
                 newTable.setTableId(oldTable.getTableId());
-                newTable.setTreeName(oldTable.getTreeName());
+                newTable.getGroup().setTreeName(oldTable.getGroup().getTreeName());
             }
 
             switch(desc.getParentChange()) {
@@ -553,14 +553,12 @@ public class AISMerge {
         // Collect all tree names
         Set<String> treeNames = new HashSet<String>();
         for(Group group : ais.getGroups().values()) {
+            treeNames.add(group.getTreeName());
             for(Index index : group.getIndexes()) {
                 treeNames.add(index.getTreeName());
             }
         }
         for(UserTable table : ais.getUserTables().values()) {
-            if(table.getParentJoin() == null) {
-                treeNames.add(table.getTreeName());
-            }
             for(Index index : table.getIndexesIncludingInternal()) {
                 treeNames.add(index.getTreeName());
             }
