@@ -52,6 +52,7 @@ import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.error.InsertWrongCountException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.OrderGroupByNonIntegerConstant;
@@ -1180,6 +1181,9 @@ public class ASTStatementLoader extends BaseRule
             if (table == null)
                 throw new NoSuchTableException(tableName.getSchemaName(), 
                                                tableName.getTableName());
+            if (table.isAISTable()) { 
+                throw new ProtectedTableDDLException (table.getName());
+            }
             return getTableNode(table);
         }
     
