@@ -185,7 +185,8 @@ public class PostgresServerConnection extends ServerSessionBase
                     logError(ErrorLogLevel.DEBUG, "About to terminate", ex);
                     notifyClient(QueryContext.NotificationLevel.WARNING,
                                  ex.getCode(), ex.getShortMessage());
-                    break;
+                    stop();
+                    continue;
                 } finally {
                     READ_MESSAGE.out();
                 }
@@ -235,19 +236,22 @@ public class PostgresServerConnection extends ServerSessionBase
                     }
                 } catch (QueryCanceledException ex) {
                     InvalidOperationException nex = ex;
+                    boolean forKill = false;
                     if (cancelForKillReason != null) {
                         nex = new ConnectionTerminatedException(cancelForKillReason);
                         nex.initCause(ex);
                         cancelForKillReason = null;
+                        forKill = true;
                     }
                     logError(ErrorLogLevel.INFO, "Query canceled", nex);
                     String msg = nex.getShortMessage();
                     if (cancelByUser != null) {
-                        if (nex == ex) msg = "Query canceled";
+                        if (!forKill) msg = "Query canceled";
                         msg += " by " + cancelByUser;
                         cancelByUser = null;
                     }
                     sendErrorResponse(type, nex, nex.getCode(), msg);
+                    if (forKill) stop();
                 } catch (ConnectionTerminatedException ex) {
                     logError(ErrorLogLevel.DEBUG, "Query terminated self", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
