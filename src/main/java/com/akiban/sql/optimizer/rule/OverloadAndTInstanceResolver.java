@@ -488,12 +488,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         if (constToCol != null) {
                             TCast colToConst = resolver.getTCast(columnType, constType);
                             if (colToConst != null) {
-                                PValueSource asColType = castValue(constToCol, right.getPreptimeValue(), columnType);
+                                TPreptimeValue constValue = right.getPreptimeValue();
+                                PValueSource asColType = castValue(constToCol, constValue, columnType);
                                 TPreptimeValue asColTypeTpv = (asColType == null)
                                         ? null
                                         : new TPreptimeValue(columnType, asColType);
                                 PValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
-                                if (PValueSources.areEqual(asColType, backToConstType)) {
+                                if (PValueSources.areEqual(constValue.value(), backToConstType)) {
                                     TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
                                     ConstantExpression constCasted = new ConstantExpression(constTpv);
                                     expression.setRight(constCasted);
