@@ -684,6 +684,21 @@ public class PostgresServerConnection extends ServerSessionBase
         }
     }
 
+    public void waitAndStop() {
+        // Wait a little bit for the connection to stop itself.
+        for (int i = 0; i < 5; i++) {
+            if (!running) return;
+            try {
+                Thread.sleep(50);
+            }
+            catch (InterruptedException ex) {
+                break;
+            }
+        }
+        // Force stop.
+        stop();
+    }
+
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
     protected void updateAIS(PostgresQueryContext context) {

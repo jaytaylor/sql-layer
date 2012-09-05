@@ -28,6 +28,7 @@ package com.akiban.sql.pg;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
+import java.util.Collection;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -110,12 +111,15 @@ public class PostgresServerStatement implements PostgresStatement {
             break;
         case INTERRUPT_SESSION:
             if (sessionId == null) {
-                for (Integer sesId : server.getCurrentSessions()) {
-                    server.cancelQuery(sesId, byUser);
+                for (PostgresServerConnection conn : server.getConnections()) {
+                    conn.cancelQuery(null, byUser);
                 }
-            } else if (server.getConnection(sessionId) != null) {
-                server.cancelQuery(sessionId, byUser);
             } 
+            else {
+                PostgresServerConnection conn = server.getConnection(sessionId);
+                if (conn != null)
+                    conn.cancelQuery(null, byUser);
+            }
             sendComplete (session.getMessenger());
             break;
         case DISCONNECT_SESSION:
@@ -123,20 +127,26 @@ public class PostgresServerStatement implements PostgresStatement {
             {
                 String msg = "your session being disconnected";
                 if (sessionId == null) {
-                    for (Integer sesId : server.getCurrentSessions()) {
-                        PostgresServerConnection conn = server.getConnection(sesId);
+                    Collection<PostgresServerConnection> conns = server.getConnections();
+                    for (PostgresServerConnection conn : conns) {
                         if (conn == current)
                             completeCurrent = msg;
                         else
-                            server.killConnection(sesId, msg, byUser);
+                            conn.cancelQuery(msg, byUser);
+                    }
+                    for (PostgresServerConnection conn : conns) {
+                        if (conn != current)
+                            conn.waitAndStop();
                     }
                 }
                 else {
                     PostgresServerConnection conn = server.getConnection(sessionId);
                     if (conn == current)
                         completeCurrent = msg;
-                    else if (conn != null)
-                        server.killConnection(sessionId, msg, byUser);
+                    else if (conn != null) {
+                        conn.cancelQuery(msg, byUser);
+                        conn.waitAndStop();
+                    }
                     // TODO: Else no such session error?
                 }
             }
@@ -146,16 +156,22 @@ public class PostgresServerStatement implements PostgresStatement {
         case SHUTDOWN:
             {
                 String msg = "Akiban server being shutdown";
-                for (Integer sesId : server.getCurrentSessions()) {
-                    PostgresServerConnection conn = server.getConnection(sesId);
+                Collection<PostgresServerConnection> conns = server.getConnections();
+                for (PostgresServerConnection conn : conns) {
                     if (conn == current)
                         completeCurrent = msg;
-                    else
-                        server.killConnection(sesId, msg, byUser);
+                    else if (!statement.isShutdownImmediate())
+                        conn.cancelQuery(msg, byUser);
                 }
-                shutdown(session, statement.isShutdownImmediate());
+                if (!statement.isShutdownImmediate()) {
+                    for (PostgresServerConnection conn : conns) {
+                        if (conn != current)
+                            conn.waitAndStop();
+                    }
+                }
+                shutdown();
             }
-            // Note: no completion, since shutting down right away.
+            // Note: no command completion, since always terminating.
             break;
         }
         // Now finally do what was indicated for the current connection.
@@ -176,7 +192,7 @@ public class PostgresServerStatement implements PostgresStatement {
         
     }
 
-    protected void shutdown (final PostgresServerSession server, final boolean immediate) throws Exception {
+    protected void shutdown () throws Exception {
         new Thread() {
             @Override
             public void run() {
