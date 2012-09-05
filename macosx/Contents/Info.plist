@@ -51,7 +51,7 @@
         <dict>
           <key>apple.laf.useScreenMenuBar</key>
           <string>true</string>
-          <key>akiban.admin</key>
+          <key>akserver.config_dir</key>
           <string>$APP_PACKAGE/Contents/Resources</string>
           <key>services.config</key>
           <string>$APP_PACKAGE/Contents/Resources/config/services-config.yaml</string>

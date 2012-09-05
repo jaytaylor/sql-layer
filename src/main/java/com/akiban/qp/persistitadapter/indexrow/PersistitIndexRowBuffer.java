@@ -399,7 +399,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
-    // TODO: For pooling experiment
     public void reset()
     {
         pKey.clear();
@@ -407,7 +406,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             pValue.clear();
         }
     }
-    // TODO: End of pooling experiment
 
     // For use by this class
 

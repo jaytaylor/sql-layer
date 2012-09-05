@@ -31,6 +31,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NegativeLimitException;
+import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValue;
 import org.junit.Before;
@@ -119,7 +120,7 @@ public class LimitIT extends OperatorITBase
         if (Types3Switch.ON)
             queryContext.setPValue(0, new PValue(2));
         else
-        queryContext.setValue(0, 2L);
+            queryContext.setValue(0, new FromObjectValueSource().setReflectively(2L));
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -136,7 +137,7 @@ public class LimitIT extends OperatorITBase
         if (Types3Switch.ON)
             queryContext.setPValue(0, new PValue(-1));
         else
-            queryContext.setValue(0, -1L);
+            queryContext.setValue(0, new FromObjectValueSource().setReflectively(-1L));
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor);

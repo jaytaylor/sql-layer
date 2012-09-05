@@ -38,6 +38,9 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValue;
 
 public class PersistitCLILoadablePlanIT extends ITBase {
 
@@ -51,10 +54,18 @@ public class PersistitCLILoadablePlanIT extends ITBase {
         QueryContext queryContext = queryContext(adapter);
 
         DirectObjectCursor cursor = plan.cursor(queryContext);
-        queryContext.setValue(0, "stat");
-        queryContext.setValue(1, "count=3");
-        queryContext.setValue(2, "delay=2");
-        queryContext.setValue(3, "-a");
+        if (Types3Switch.ON) {
+            queryContext.setPValue(0, new PValue("stat"));
+            queryContext.setPValue(1, new PValue("count=3"));
+            queryContext.setPValue(2, new PValue("delay=2"));
+            queryContext.setPValue(3, new PValue("-a"));
+        }
+        else {
+            queryContext.setValue(0, new FromObjectValueSource().setReflectively("stat"));
+            queryContext.setValue(1, new FromObjectValueSource().setReflectively("count=3"));
+            queryContext.setValue(2, new FromObjectValueSource().setReflectively("delay=2"));
+            queryContext.setValue(3, new FromObjectValueSource().setReflectively("-a"));
+        }
         
         int populatedResults = 0;
         int emptyResults = 0;

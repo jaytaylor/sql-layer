@@ -29,7 +29,9 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
+import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSources;
 
 public class PostgresLoadablePlan
 {
@@ -50,10 +52,19 @@ public class PostgresLoadablePlan
         return null;
     }
     
-    public static void setParameters(PostgresQueryContext context, Object[] args) {
+    public static void setParameters(PostgresQueryContext context, Object[] args, boolean usePVals) {
         if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                context.setValue(i, args[i]);
+            if (usePVals) {
+                for (int i = 0; i < args.length; i++) {
+                    context.setPValue(i, PValueSources.fromObject(args[i], null).value());
+                }
+            }
+            else {
+                FromObjectValueSource source = new FromObjectValueSource();
+                for (int i = 0; i < args.length; i++) {
+                    source.setReflectively(args[i]);
+                    context.setValue(i, source);
+                }
             }
         }
     }

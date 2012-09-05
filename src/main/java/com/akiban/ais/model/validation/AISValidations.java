@@ -52,8 +52,7 @@ public final class AISValidations {
     public static final AISValidation TABLE_HAS_PRIMARY_KEY = new TableHasPrimaryKey();
     public static final AISValidation TABLEID_UNIQUE = new TableIDsUnique();
     public static final AISValidation TABLES_IN_A_GROUP = new TablesInAGroup();
-    public static final AISValidation TABLES_IN_GROUP_SAME_TREE_NAME = new TablesInGroupSameTreeName();
-    public static final AISValidation TABLE_TREE_NAMES_UNIQUE = new TableTreeNamesUnique();
+    public static final AISValidation GROUP_TREE_NAMES_UNIQUE = new GroupTreeNamesUnique();
     public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
     public static final AISValidation GROUP_INDEX_DEPTH = new GroupIndexDepth();
     public static final AISValidation TREE_NAMES_NOT_NULL = new TreeNamesAreNotNull();
@@ -85,8 +84,7 @@ public final class AISValidations {
                 JOIN_TO_ONE_PARENT,
                 JOIN_TO_PARENT_PK,
                 JOIN_COLUMN_TYPES_MATCH,
-                TABLES_IN_GROUP_SAME_TREE_NAME,
-                TABLE_TREE_NAMES_UNIQUE,
+                GROUP_TREE_NAMES_UNIQUE,
                 INDEX_TREE_NAMES_UNIQUE,
                 TYPES_ARE_FROM_STATIC,
                 GROUP_INDEX_DEPTH,
