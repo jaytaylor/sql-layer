@@ -128,6 +128,7 @@ public class MDateAddSub extends TOverloadBase
                     if (ret < 0)
                         ret *= (sign = -1);
                     
+                    // turn millis back to hour-min-sec
                     long seconds = ret / 1000L;
                     long hours = seconds / 3600;
                     long minutes = (seconds - hours * 3600) / 60;
@@ -394,8 +395,8 @@ public class MDateAddSub extends TOverloadBase
         if (ymd[MDatetimes.HOUR_INDEX] < 0)
             ymd[MDatetimes.HOUR_INDEX] *= sign = -1;
         
-        return sign * ymd[MDatetimes.HOUR_INDEX] * 3600000
-                + ymd[MDatetimes.MIN_INDEX] * 60000
-                + ymd[MDatetimes.SEC_INDEX] * 1000;
+        return sign * (ymd[MDatetimes.HOUR_INDEX] * 3600000
+                        + ymd[MDatetimes.MIN_INDEX] * 60000
+                        + ymd[MDatetimes.SEC_INDEX] * 1000);
     }
 }
