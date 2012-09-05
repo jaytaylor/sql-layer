@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
@@ -42,103 +43,103 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import org.joda.time.MutableDateTime;
 
-public class MDatesub extends TOverloadBase
+public class MDateAddSub extends TOverloadBase
 {
     public static final TOverload[] INSTANCES = new TOverload[]
     {
         //ADDDATE
-        new MDatesub(Helper.DO_ADD, FirstType.DATE, SecondType.DAY, "DATE_ADD", "ADDDATE"),
-        new MDatesub(Helper.DO_ADD, FirstType.DATETIME, SecondType.DAY, "DATE_ADD", "ADDDATE"),
-        new MDatesub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.DAY, "DATE_ADD", "ADDDATE"),
-        new MDatesub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.DAY, "DATE_ADD", "ADDDATE"),
-        new MDatesub(Helper.DO_ADD, FirstType.VARCHAR, SecondType.DAY, "DATE_ADD", "ADDDATE")
-        {
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-            {
-                String st
-            }
-        },
-//        new MDatesub(Helper.DO_ADD, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
-//        new MDatesub(Helper.DO_ADD, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
-//        new MDatesub(Helper.DO_ADD, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
-//        new MDatesub(Helper.DO_ADD, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
-//        new MDatesub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
-//        new MDatesub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
-        
+        new MDateAddSub(Helper.DO_ADD, FirstType.DATE, SecondType.DAY, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.DATETIME, SecondType.DAY, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.DAY, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.DAY, "DATE_ADD", "ADDDATE"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.DAY, "DATE_ADD", "ADDDATE"),
+//        new MDateAddSub(Helper.DO_ADD, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
+//        new MDateAddSub(Helper.DO_ADD, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+//        new MDateAddSub(Helper.DO_ADD, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
+//        new MDateAddSub(Helper.DO_ADD, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+//        new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
+//        new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+//        new SubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
+//        new SubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+
         // SUBDATE
-        new MDatesub(Helper.DO_SUB, FirstType.DATE, SecondType.DAY, "DATE_SUB", "SUBDATE"),
-        new MDatesub(Helper.DO_SUB, FirstType.DATETIME, SecondType.DAY, "DATE_SUB", "SUBDATE"),
-        new MDatesub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.DAY, "DATE_SUB", "SUBDATE"),
-//        new MDatesub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
-//        new MDatesub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
-//        new MDatesub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
-//        new MDatesub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
-//        new MDatesub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
-//        new MDatesub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.DAY, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.DAY, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.DAY, "DATE_SUB", "SUBDATE"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.DAY, "DATE_SUB", "SUBDATE"),
+//        new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
+//        new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
+//        new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
+//        new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
+//        new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
+//        new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
         
+        // ADDTIME
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.TIME, "TIME_ADD", "ADDTIME"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
     };
 
-    static class TimeLike extends MDatesub
+    private static class AddSubWithVarchar extends MDateAddSub
     {
-        TimeLike(Helper h, SecondType sec, String...ns)
+        AddSubWithVarchar (Helper h, SecondType sec, String...ns)
         {
-            super(h, FirstType.VARCHAR_DATE, sec, ns);
+            super(h, FirstType.VARCHAR, sec, ns);
         }
-
+        
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
-            String st = inputs.get(0).getString();
-            
-            // 3 'forms' of TIME:
-            // (-)hh:mm:ss
-            // (-)N hh:mm:ss
-            // YYYY-MM-dd hh:mm:ss
-            
-            int hr = 0, min = 0, sec = 0, offset = 0;;
-            String parts[] = st.split("\\s++");
-            
-            switch(parts.length)
+            long ymd[] = new long[6];
+            int stType;
+            long millis;
+            String arg0 = inputs.get(0).getString();
+            try
             {
-                case 1:
-                    final String values[] = st.split(":");
-                    try
-                    {
-                        switch (values.length)
-                        {
-                            case 3:
-                                hr = Integer.parseInt(values[offset++]); // fall
-                            case 2:
-                                min = Integer.parseInt(values[offset++]); // fall
-                            case 1:
-                                sec = Integer.parseInt(values[offset]);
-                                break;
-                            default:
-                                context.warnClient(new InvalidDateFormatException("TIME", st));
-                                output.putNull();
-                                return;
-                        }
-                    }
-                    catch (NumberFormatException ex)
-                    {
-                        context.warnClient(new InvalidDateFormatException("TIME", st));
-                        output.putNull();
-                        return;
-                    }
-
-                    min += sec / 60;
-                    sec %= 60;
-                    hr += min / 60;
-                    min %= 60;
+                stType = MDatetimes.parseDateOrTime(arg0, ymd);
+                millis = secondArg.toMillis(inputs.get(1));
+            }
+            catch (InvalidDateFormatException e)
+            {
+                context.warnClient(e);
+                output.putNull();
+                return;
+            }
+            
+            MutableDateTime dt;
+            switch (stType)
+            {
+                case MDatetimes.DATE_ST:
+                    dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
+                    helper.compute(dt, millis);
+                    output.putString(dt.toString("YYYY-MM-dd"), null);
                     break;
-                    
-                case 2:
+                case MDatetimes.DATETIME_ST:
+                    dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
+                    helper.compute(dt, millis);
+                    output.putString(dt.toString("YYYY-MM-dd hh:mm:ss"), null);
                     break;
+                case MDatetimes.TIME_ST:
+                    long arg0Millis = timeToMillis(ymd);
                     
+                    long ret = helper == Helper.DO_ADD ? arg0Millis + millis: arg0Millis - millis;
+                    int sign = 1;
+                    if (ret < 0)
+                        ret *= (sign = -1);
+                    
+                    long seconds = ret / 1000L;
+                    long hours = seconds / 3600;
+                    long minutes = (seconds - hours * 3600) / 60;
+                    seconds -= (minutes * 60 + hours * 3600);
+                    hours *= sign;
+                    
+                    output.putString(String.format("%02d:%02d:%02d",
+                                                   hours, minutes, seconds),
+                                     null);
+                    break;
                 default:
-                    context.warnClient(new InvalidDateFormatException("TIME", st));
-                    output.putNull();
-                    return;
+                    throw new AkibanInternalException("unexpected argument: " + stType);
             }
         }
     }
@@ -147,6 +148,7 @@ public class MDatesub extends TOverloadBase
     {
         DO_ADD
         {
+            @Override
             protected void compute(MutableDateTime date, long delta)
             {
                 date.add(delta);
@@ -154,6 +156,7 @@ public class MDatesub extends TOverloadBase
         },
         DO_SUB
         {
+            @Override
             protected void compute(MutableDateTime date, long delta)
             {
                 date.add(-delta);
@@ -165,21 +168,18 @@ public class MDatesub extends TOverloadBase
 
     private static enum FirstType
     {
-        VARCHAR_DATE(MString.VARCHAR.instance(29))
+        VARCHAR(MString.VARCHAR.instance(29))
         {
             @Override
             long[] decode(PValueSource val, TExecutionContext context)
             {
-                String st = val.getString();
-                long ret[] = MDatetimes.decodeDate(val.getInt32());
-                return  MDatetimes.isValidDayMonth(ret) ? ret : null;
+                throw new AkibanInternalException("shouldn't have been used");
             }
             
             @Override
             protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
             {
-                
-                out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDatetime(par3)));
+                throw new AkibanInternalException("shouldn't have been used");
             }
         },
         DATE(MDatetimes.DATE)
@@ -204,8 +204,7 @@ public class MDatesub extends TOverloadBase
             long[] decode(PValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeTime(val.getInt32());
-                // TODO use the new method isValidHrMinSec from other branch
-                return MDatetimes.isValidHrMinSec(ret) ? ret : null;
+                return MDatetimes.isValidHrMinSec(ret, false) ? ret : null;
             }
             
             @Override
@@ -219,8 +218,8 @@ public class MDatesub extends TOverloadBase
             @Override
             long[] decode(PValueSource val, TExecutionContext context)
             {
-                long ret[] = MDatetimes.decodeDatetime(val.getInt32());
-                return !MDatetimes.isValidDatetime(ret) ? ret : null;
+                long ret[] = MDatetimes.decodeDatetime(val.getInt64());
+                return MDatetimes.isValidDatetime(ret) ? ret : null;
             }
             
             @Override
@@ -276,6 +275,44 @@ public class MDatesub extends TOverloadBase
 //                // TODO
 //            }
 //        },
+        TIME(MDatetimes.TIME)
+        {
+            @Override
+            protected long toMillis(PValueSource arg)
+            {
+                int val = arg.getInt32();
+                long hms[] = MDatetimes.decodeTime(val);
+                
+                return timeToMillis(hms);
+                
+            }
+        },
+        TIME_STRING(MString.VARCHAR)
+        {
+            @Override
+            protected long toMillis(PValueSource arg)
+            {
+                String st = arg.getString();
+                long hms[] = new long[6];
+                int stType = MDatetimes.parseDateOrTime(st, hms);
+                
+                switch(stType)
+                {
+                    case MDatetimes.TIME_ST:
+                        return timeToMillis(hms);
+                    default:
+                        throw new InvalidDateFormatException("TIME", st);
+                }
+            }
+        },
+        SECOND(MNumeric.BIGINT)
+        {
+            @Override
+            protected long toMillis(PValueSource arg)
+            {
+                return arg.getInt64() * 1000L;
+            }
+        },
         DAY(MNumeric.BIGINT)
         {
             @Override
@@ -301,7 +338,7 @@ public class MDatesub extends TOverloadBase
     protected final SecondType secondArg;
     protected final String names[];
 
-    private MDatesub(Helper h, FirstType first, SecondType sec, String...ns)
+    private MDateAddSub(Helper h, FirstType first, SecondType sec, String...ns)
     {
         helper = h;
         firstArg = first;
@@ -312,9 +349,13 @@ public class MDatesub extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        long ymd[] = firstArg.decode(inputs.get(0), context);
+        PValueSource arg0 = inputs.get(0);
+        long ymd[] = firstArg.decode(arg0, context);
         if (ymd == null)
+        {
             output.putNull();
+            context.warnClient(new InvalidDateFormatException("DATE", arg0.toString()));
+        }
         else
         {
             MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
@@ -345,5 +386,16 @@ public class MDatesub extends TOverloadBase
     public TOverloadResult resultType()
     {
         return TOverloadResult.fixed(firstArg.type);
+    }
+    
+    static long timeToMillis(long ymd[])
+    {
+        int sign = 1;
+        if (ymd[MDatetimes.HOUR_INDEX] < 0)
+            ymd[MDatetimes.HOUR_INDEX] *= sign = -1;
+        
+        return sign * ymd[MDatetimes.HOUR_INDEX] * 3600000
+                + ymd[MDatetimes.MIN_INDEX] * 60000
+                + ymd[MDatetimes.SEC_INDEX] * 1000;
     }
 }
