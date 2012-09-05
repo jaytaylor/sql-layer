@@ -148,10 +148,12 @@ public final class OverloadResolver {
     }
 
     public OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
-        Collection<? extends TValidatedOverload> namedOverloads = registry.getOverloads(name);
-        if (namedOverloads == null || namedOverloads.isEmpty()) {
+        ScalarsGroup scalarsGroup = registry.getOverloads(name);
+        Iterator<Collection<? extends TValidatedOverload>> groupIter = scalarsGroup.iterator();
+        if (!groupIter.hasNext()) {
             throw new NoSuchFunctionException(name);
         }
+        Collection<? extends TValidatedOverload> namedOverloads = groupIter.next(); // TODO need to use this in a loop
         if (namedOverloads.size() == 1) {
             return defaultResolution(inputs, namedOverloads);
         } else {

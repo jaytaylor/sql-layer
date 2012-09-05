@@ -56,6 +56,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
@@ -64,12 +65,14 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +85,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // T3RegistryService interface
 
     @Override
-    public Collection<TValidatedOverload> getOverloads(String name) {
+    public ScalarsGroup getOverloads(String name) {
         return overloadsByName.get(name.toLowerCase());
     }
 
@@ -195,7 +198,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return local;
     }
 
-    private static Multimap<String, TValidatedOverload> createScalars(InstanceFinder finder) {
+    private static Map<String, ScalarsGroup> createScalars(InstanceFinder finder) {
         Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
 
         int errors = 0;
@@ -219,7 +222,12 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             sb.append(" while collecting scalar functions. Check logs for details.");
             throw new AkibanInternalException(sb.toString());
         }
-        return overloadsByName;
+        Map<String, ScalarsGroup> results = new HashMap<String, ScalarsGroup>(overloadsByName.size());
+        for (Map.Entry<String, Collection<TValidatedOverload>> entry : overloadsByName.asMap().entrySet()) {
+            ScalarsGroup scalarsGroup = new ScalarsGroupImpl(entry.getValue());
+            results.put(entry.getKey(), scalarsGroup);
+        }
+        return results;
     }
 
     private static void rejectTOverload(TOverload overload, Throwable e) {
@@ -424,7 +432,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // object state
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
-    private volatile Multimap<String, TValidatedOverload> overloadsByName;
+    private volatile Map<String, ScalarsGroup> overloadsByName;
     private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
     private volatile Collection<? extends TClass> tClasses;
     private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {
@@ -437,6 +445,20 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     };
 
     // inner classes
+
+    private static class ScalarsGroupImpl implements ScalarsGroup {
+
+        @Override
+        public Iterator<Collection<? extends TValidatedOverload>> iterator() {
+            return Collections.<Collection<? extends TValidatedOverload>>singleton(overloads).iterator(); // TODO
+        }
+
+        public ScalarsGroupImpl(Collection<TValidatedOverload> allOverloads) {
+            this.overloads = allOverloads;
+        }
+
+        private final Collection<? extends TValidatedOverload> overloads;
+    }
 
     private static class SelfCast implements TCast {
 
@@ -617,7 +639,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         }
 
         private Object scalarDescriptors() {
-            return describeOverloads(overloadsByName.asMap(), Functions.toStringFunction());
+            Map<String, Collection<TValidatedOverload>> flattenedOverloads = Maps.transformValues(overloadsByName, scalarGroupFlattener);
+            return describeOverloads(flattenedOverloads, Functions.toStringFunction());
         }
 
         private Object aggregateDescriptors() {
@@ -666,4 +689,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return new Yaml(options).dump(obj);
         }
     }
+    private static Function<? super ScalarsGroup, Collection<TValidatedOverload>> scalarGroupFlattener
+            = new Function<ScalarsGroup, Collection<TValidatedOverload>>() {
+        @Override
+        public Collection<TValidatedOverload> apply(ScalarsGroup scalarsGroup) {
+            Collection<TValidatedOverload> results = new ArrayList<TValidatedOverload>();
+            for (Collection<? extends TValidatedOverload> collection : scalarsGroup)
+                results.addAll(collection);
+            return results;
+        }
+    };
 }
