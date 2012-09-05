@@ -112,12 +112,13 @@ public class PostgresServerStatement implements PostgresStatement {
         case INTERRUPT_SESSION:
             if (sessionId == null) {
                 for (PostgresServerConnection conn : server.getConnections()) {
-                    conn.cancelQuery(null, byUser);
+                    if (conn != current)
+                        conn.cancelQuery(null, byUser);
                 }
             } 
             else {
                 PostgresServerConnection conn = server.getConnection(sessionId);
-                if (conn != null)
+                if ((conn != null) && (conn != current))
                     conn.cancelQuery(null, byUser);
             }
             sendComplete (session.getMessenger());
