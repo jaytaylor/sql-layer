@@ -166,12 +166,11 @@ public class PersistitStore implements Store, Service {
     }
 
     public Exchange getExchange(Session session, Group group) {
-        return treeService.getExchange(session, group.getGroupTable().rowDef());
+        return treeService.getExchange(session, group);
     }
 
     public Exchange getExchange(final Session session, final RowDef rowDef) {
-        final RowDef groupRowDef = rowDef.getGroupRowDef();
-        return treeService.getExchange(session, groupRowDef);
+        return treeService.getExchange(session, rowDef.getGroup());
     }
 
     public Exchange getExchange(final Session session, final Index index) {
@@ -1186,7 +1185,7 @@ public class PersistitStore implements Store, Service {
         final Value value = hEx.getValue();
         value.put(rowData);
         final int at = value.getEncodedSize() - rowData.getInnerSize();
-        int storedTableId = treeService.aisToStore(rowDef, rowData.getRowDefId());
+        int storedTableId = treeService.aisToStore(rowDef.getGroup(), rowData.getRowDefId());
         /*
          * Overwrite rowDefId field within the Value instance with the absolute
          * rowDefId.
@@ -1329,7 +1328,7 @@ public class PersistitStore implements Store, Service {
         }
         
         // And the group tree
-        treeLinks.add(table.rowDef());
+        treeLinks.add(table.getGroup());
         // And drop them all
         removeTrees(session, treeLinks);
         indexStatistics.deleteIndexStatistics(session, tableIndexes);
