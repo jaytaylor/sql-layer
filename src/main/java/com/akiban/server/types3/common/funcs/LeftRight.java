@@ -64,7 +64,7 @@ public abstract class LeftRight extends TOverloadBase
             @Override
             String getSubstring(String st, int length)
             {
-                return st.substring(st.length() - length, length);
+                return st.substring(st.length() - length, st.length());
             }
         };
     }
