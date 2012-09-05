@@ -199,6 +199,8 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             super(buffer, currentSchema);
             this.maxRowCount = maxRowCount;
             literalFormatter = new SqlLiteralValueFormatter(buffer);
+            // TODO: Workaround INSERT problems with literal timestamp into datetime field.
+            literalFormatter.setDateTimeFormat(SqlLiteralValueFormatter.DateTimeFormat.NONE);
         }
 
         @Override
