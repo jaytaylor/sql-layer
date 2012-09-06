@@ -333,6 +333,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             switch (transactionMode) {
             case REQUIRED_WRITE:
             case WRITE:
+            case WRITE_STEP_ISOLATED:
                 transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
                 break;
             }
