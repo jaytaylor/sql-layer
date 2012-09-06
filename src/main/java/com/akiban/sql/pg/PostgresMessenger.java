@@ -338,6 +338,9 @@ public class PostgresMessenger implements DataInput, DataOutput
         messageOutput.writeUTF(s);
     }
 
+    /** Called every <code>IDLE_INTERVAL</code> ms. while waiting for a message.
+     * Overridden to allow insertion of asynch notifications.
+     */
     public void idle() {
     }
 
