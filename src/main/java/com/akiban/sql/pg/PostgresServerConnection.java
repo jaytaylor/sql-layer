@@ -212,6 +212,9 @@ public class PostgresServerConnection extends ServerSessionBase
                     case EXECUTE_TYPE:
                         processExecute();
                         break;
+                    case FLUSH_TYPE:
+                        processFlush();
+                        break;
                     case CLOSE_TYPE:
                         processClose();
                         break;
@@ -402,7 +405,7 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void authenticationOkay(String user) throws IOException {
         Properties status = new Properties();
         // This is enough to make the JDBC driver happy.
-        status.put("client_encoding", properties.getProperty("client_encoding", "UNICODE"));
+        status.put("client_encoding", properties.getProperty("client_encoding", "UTF8"));
         status.put("server_encoding", messenger.getEncoding());
         status.put("server_version", "8.4.7"); // Not sure what the min it'll accept is.
         status.put("session_authorization", user);
@@ -631,6 +634,10 @@ public class PostgresServerConnection extends ServerSessionBase
         if (reqs.instrumentation().isQueryLogEnabled()) {
             reqs.instrumentation().logQuery(sessionId, sql, (System.nanoTime() - startTime), rowsProcessed);
         }
+    }
+
+    protected void processFlush() throws IOException {
+        messenger.flush();
     }
 
     protected void processClose() throws IOException {
