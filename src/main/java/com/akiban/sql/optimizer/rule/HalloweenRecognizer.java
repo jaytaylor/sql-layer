@@ -67,7 +67,7 @@ public class HalloweenRecognizer extends BaseRule
                 for (UpdateStatement.UpdateColumn updateColumn : ((UpdateStatement)stmt).getUpdateColumns()) {
                     updateColumns.add(updateColumn.getColumn());
                 }
-                for (Column pkColumn : targetTable.getTable().getPrimaryKey().getColumns()) {
+                for (Column pkColumn : targetTable.getTable().getPrimaryKeyIncludingInternal().getColumns()) {
                     if (updateColumns.contains(pkColumn)) {
                         requireStepIsolation = true;
                         break update;
