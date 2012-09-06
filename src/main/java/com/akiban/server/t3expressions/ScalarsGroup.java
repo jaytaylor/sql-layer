@@ -19,5 +19,6 @@ import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.Collection;
 
-public interface ScalarsGroup extends Iterable<Collection<? extends TValidatedOverload>> {
+public interface ScalarsGroup {
+    Collection<? extends TValidatedOverload> getOverloads();
 }

@@ -27,7 +27,6 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
-import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
@@ -148,7 +147,7 @@ public final class OverloadResolver {
     }
 
     public OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
-        ScalarsGroup scalarsGroup = registry.getOverloads(name);
+        Iterable<? extends ScalarsGroup> scalarsGroup = registry.getOverloads(name);
         if (scalarsGroup == null) {
             throw new NoSuchFunctionException(name);
         }
@@ -194,10 +193,11 @@ public final class OverloadResolver {
     }
 
     private OverloadResult inputBasedResolution(String name, List<? extends TPreptimeValue> inputs,
-                                                ScalarsGroup scalarsGroup)
+                                                Iterable<? extends ScalarsGroup> scalarGroupsByPriority)
     {
         TValidatedOverload mostSpecific = null;
-        for (Collection<? extends TValidatedOverload> namedOverloads : scalarsGroup) {
+        for (ScalarsGroup scalarsGroup : scalarGroupsByPriority) {
+            Collection<? extends TValidatedOverload> namedOverloads = scalarsGroup.getOverloads();
             List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
             for (TValidatedOverload overload : namedOverloads) {
                 if (isCandidate(overload, inputs)) {
@@ -246,16 +246,6 @@ public final class OverloadResolver {
         }
         sb.append(')');
         return new OverloadException(sb.toString());
-    }
-
-    private OverloadResult defaultResolution(List<? extends TPreptimeValue> inputs,
-                                             Collection<? extends TValidatedOverload> namedOverloads) {
-        int nInputs = inputs.size();
-        TValidatedOverload resolvedOverload = namedOverloads.iterator().next();
-        // throwing an exception here isn't strictly required, but it gives the user a more specific error
-        if (!resolvedOverload.coversNInputs(nInputs))
-            throw new WrongExpressionArityException(resolvedOverload.positionalInputs(), nInputs);
-        return buildResult(resolvedOverload, inputs);
     }
 
     private boolean isMostSpecific(TClass candidate, Set<? extends TClass> castGroup) {

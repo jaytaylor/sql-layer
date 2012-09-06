@@ -56,8 +56,11 @@ import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -70,7 +73,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +86,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // T3RegistryService interface
 
     @Override
-    public ScalarsGroup getOverloads(String name) {
+    public Iterable<? extends ScalarsGroup> getOverloads(String name) {
         return overloadsByName.get(name.toLowerCase());
     }
 
@@ -197,7 +199,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return local;
     }
 
-    private static Map<String, ScalarsGroup> createScalars(InstanceFinder finder) {
+    private static ListMultimap<String, ScalarsGroup> createScalars(InstanceFinder finder) {
         Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
 
         int errors = 0;
@@ -221,10 +223,46 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             sb.append(" while collecting scalar functions. Check logs for details.");
             throw new AkibanInternalException(sb.toString());
         }
-        Map<String, ScalarsGroup> results = new HashMap<String, ScalarsGroup>(overloadsByName.size());
+
+        ListMultimap<String, ScalarsGroup> results = ArrayListMultimap.create();
         for (Map.Entry<String, Collection<TValidatedOverload>> entry : overloadsByName.asMap().entrySet()) {
-            ScalarsGroup scalarsGroup = new ScalarsGroupImpl(entry.getValue());
-            results.put(entry.getKey(), scalarsGroup);
+            String overloadName = entry.getKey();
+            Collection<TValidatedOverload> allOverloads = entry.getValue();
+            for (Collection<TValidatedOverload> priorityGroup : scalarsByPriority(allOverloads)) {
+                ScalarsGroup scalarsGroup = new ScalarsGroupImpl(priorityGroup);
+                results.put(overloadName, scalarsGroup);
+            }
+        }
+        return Multimaps.unmodifiableListMultimap(results);
+    }
+
+
+    private static List<Collection<TValidatedOverload>> scalarsByPriority(
+            Collection<TValidatedOverload> overloads)
+    {
+        // First, we'll put this into a SortedMap<Integer, Collection<TVO>> so that we have each subset of the
+        // overloads grouped by priority. Then we'll go over those collections; for each one, we'll wrap it in
+        // an unmodifiable Collection (so that users of the iterator() can't modify the Collections).
+        // Finally, we'll wrap the result in an unmodifiable Collection (so that users can't remove Collections
+        // from it via the Iterator).
+        SortedMap<Integer, ArrayList<TValidatedOverload>> byPriority
+                = new TreeMap<Integer, ArrayList<TValidatedOverload>>();
+        for (TValidatedOverload overload : overloads) {
+            for (int priority : overload.getPriorities()) {
+                ArrayList<TValidatedOverload> thisPriorityOverloads = byPriority.get(priority);
+                if (thisPriorityOverloads == null) {
+                    thisPriorityOverloads = new ArrayList<TValidatedOverload>();
+                    byPriority.put(priority, thisPriorityOverloads);
+                }
+                thisPriorityOverloads.add(overload);
+            }
+        }
+
+        List<Collection<TValidatedOverload>> results
+                = new ArrayList<Collection<TValidatedOverload>>(byPriority.size());
+        for (ArrayList<TValidatedOverload> priorityGroup : byPriority.values()) {
+            priorityGroup.trimToSize();
+            results.add(Collections.unmodifiableCollection(priorityGroup));
         }
         return results;
     }
@@ -431,7 +469,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // object state
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
-    private volatile Map<String, ScalarsGroup> overloadsByName;
+    private volatile ListMultimap<String, ScalarsGroup> overloadsByName;
     private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
     private volatile Collection<? extends TClass> tClasses;
     private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {
@@ -448,45 +486,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     private static class ScalarsGroupImpl implements ScalarsGroup {
 
         @Override
-        public Iterator<Collection<? extends TValidatedOverload>> iterator() {
-            return overloads.iterator();
+        public Collection<? extends TValidatedOverload> getOverloads() {
+            return overloads;
         }
 
-        public ScalarsGroupImpl(Collection<TValidatedOverload> allOverloads) {
-            this.overloads = scalarsByPriority(allOverloads);
+        public ScalarsGroupImpl(Collection<TValidatedOverload> overloads) {
+            this.overloads = Collections.unmodifiableCollection(overloads);
         }
 
-        private static List<Collection<? extends TValidatedOverload>> scalarsByPriority(
-                Collection<TValidatedOverload> overloads)
-        {
-            // First, we'll put this into a SortedMap<Integer, Collection<TVO>> so that we have each subset of the
-            // overloads grouped by priority. Then we'll go over those collections; for each one, we'll wrap it in
-            // an unmodifiable Collection (so that users of the iterator() can't modify the Collections).
-            // Finally, we'll wrap the result in an unmodifiable Collection (so that users can't remove Collections
-            // from it via the Iterator).
-            SortedMap<Integer, ArrayList<TValidatedOverload>> byPriority
-                    = new TreeMap<Integer, ArrayList<TValidatedOverload>>();
-            for (TValidatedOverload overload : overloads) {
-                for (int priority : overload.getPriorities()) {
-                    ArrayList<TValidatedOverload> thisPriorityOverloads = byPriority.get(priority);
-                    if (thisPriorityOverloads == null) {
-                        thisPriorityOverloads = new ArrayList<TValidatedOverload>();
-                        byPriority.put(priority, thisPriorityOverloads);
-                    }
-                    thisPriorityOverloads.add(overload);
-                }
-            }
-
-            List<Collection<? extends TValidatedOverload>> results
-                    = new ArrayList<Collection<? extends TValidatedOverload>>(byPriority.size());
-            for (ArrayList<TValidatedOverload> priorityGroup : byPriority.values()) {
-                priorityGroup.trimToSize();
-                results.add(Collections.unmodifiableCollection(priorityGroup));
-            }
-            return Collections.unmodifiableList(results);
-        }
-
-        private final List<Collection<? extends TValidatedOverload>> overloads;
+        private final Collection<? extends TValidatedOverload> overloads;
     }
 
     private static class SelfCast implements TCast {
@@ -668,8 +676,13 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         }
 
         private Object scalarDescriptors() {
-            Map<String, Collection<TValidatedOverload>> flattenedOverloads = Maps.transformValues(overloadsByName, scalarGroupFlattener);
-            return describeOverloads(flattenedOverloads, Functions.toStringFunction());
+            Multimap<String, TValidatedOverload> flattenedOverloads = HashMultimap.create();
+            for (Map.Entry<String, ScalarsGroup> entry : overloadsByName.entries()) {
+                String overloadName = entry.getKey();
+                ScalarsGroup scalarsGroup = entry.getValue();
+                flattenedOverloads.putAll(overloadName, scalarsGroup.getOverloads());
+            }
+            return describeOverloads(flattenedOverloads.asMap(), Functions.toStringFunction());
         }
 
         private Object aggregateDescriptors() {
@@ -718,14 +731,4 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return new Yaml(options).dump(obj);
         }
     }
-    private static Function<? super ScalarsGroup, Collection<TValidatedOverload>> scalarGroupFlattener
-            = new Function<ScalarsGroup, Collection<TValidatedOverload>>() {
-        @Override
-        public Collection<TValidatedOverload> apply(ScalarsGroup scalarsGroup) {
-            Collection<TValidatedOverload> results = new ArrayList<TValidatedOverload>();
-            for (Collection<? extends TValidatedOverload> collection : scalarsGroup)
-                results.addAll(collection);
-            return results;
-        }
-    };
 }
