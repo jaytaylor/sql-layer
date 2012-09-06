@@ -33,6 +33,7 @@ import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
 import com.akiban.sql.server.ServerStatementCache;
 import com.akiban.sql.server.ServerTransaction;
+import com.akiban.sql.server.ServerValueDecoder;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
@@ -226,6 +227,9 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     case EXECUTE_TYPE:
                         processExecute();
+                        break;
+                    case FLUSH_TYPE:
+                        processFlush();
                         break;
                     case CLOSE_TYPE:
                         processClose();
@@ -432,7 +436,7 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void authenticationOkay(String user) throws IOException {
         Properties status = new Properties();
         // This is enough to make the JDBC driver happy.
-        status.put("client_encoding", properties.getProperty("client_encoding", "UNICODE"));
+        status.put("client_encoding", properties.getProperty("client_encoding", "UTF8"));
         status.put("server_encoding", messenger.getEncoding());
         status.put("server_version", "8.4.7"); // Not sure what the min it'll accept is.
         status.put("session_authorization", user);
@@ -560,9 +564,9 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void processBind() throws IOException {
         String portalName = messenger.readString();
         String stmtName = messenger.readString();
-        Object[] params = null;
+        byte[][] params = null;
+        boolean[] paramsBinary = null;
         {
-            boolean[] paramsBinary = null;
             short nformats = messenger.readShort();
             if (nformats > 0) {
                 paramsBinary = new boolean[nformats];
@@ -571,21 +575,13 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             short nparams = messenger.readShort();
             if (nparams > 0) {
-                params = new Object[nparams];
-                boolean binary = false;
+                params = new byte[nparams][];
                 for (int i = 0; i < nparams; i++) {
-                    if (i < nformats)
-                        binary = paramsBinary[i];
                     int len = messenger.readInt();
                     if (len < 0) continue;      // Null
                     byte[] param = new byte[len];
                     messenger.readFully(param, 0, len);
-                    if (binary) {
-                        params[i] = param;
-                    }
-                    else {
-                        params[i] = new String(param, messenger.getEncoding());
-                    }
+                    params[i] = param;
                 }
             }
         }
@@ -604,8 +600,31 @@ public class PostgresServerConnection extends ServerSessionBase
             }
         }
         PostgresStatement pstmt = preparedStatements.get(stmtName);
-        boundPortals.put(portalName, new PostgresBoundQueryContext(this, pstmt, 
-                                                                   params, resultsBinary, defaultResultsBinary));
+        PostgresBoundQueryContext bound = new PostgresBoundQueryContext(this, pstmt);
+        if (params != null) {
+            ServerValueDecoder decoder = new ServerValueDecoder(messenger.getEncoding());
+            PostgresType[] parameterTypes = null;
+            boolean usePValues = false;
+            if (pstmt instanceof PostgresBaseStatement) {
+                PostgresDMLStatement dml = (PostgresDMLStatement)pstmt;
+                parameterTypes = dml.getParameterTypes();
+                usePValues = dml.usesPValues();
+            }
+            for (int i = 0; i < params.length; i++) {
+                PostgresType pgType = null;
+                if (parameterTypes != null)
+                    pgType = parameterTypes[i];
+                boolean binary = false;
+                if ((paramsBinary != null) && (i < paramsBinary.length))
+                    binary = paramsBinary[i];
+                if (usePValues)
+                    decoder.decodePValue(params[i], pgType, binary, bound, i);
+                else
+                    decoder.decodeValue(params[i], pgType, binary, bound, i);
+            }
+        }
+        bound.setColumnBinary(resultsBinary, defaultResultsBinary);
+        boundPortals.put(portalName, bound);
         messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
@@ -646,6 +665,10 @@ public class PostgresServerConnection extends ServerSessionBase
         if (reqs.instrumentation().isQueryLogEnabled()) {
             reqs.instrumentation().logQuery(sessionId, sql, (System.nanoTime() - startTime), rowsProcessed);
         }
+    }
+
+    protected void processFlush() throws IOException {
+        messenger.flush();
     }
 
     protected void processClose() throws IOException {

@@ -54,8 +54,8 @@ public final class DropTreesIT extends ITBase {
 
     private TreeLink treeLink(Object o) {
         if(o == null) throw new IllegalArgumentException("TreeLink holder is null");
-        if(o instanceof Table) return (TreeLink) ((Table)o).rowDef();
-        if(o instanceof Index) return (TreeLink) ((Index)o).indexDef();
+        if(o instanceof Table) return ((Table)o).getGroup();
+        if(o instanceof Index) return ((Index)o).indexDef();
         throw new IllegalArgumentException("Unknown TreeLink holder: " + o);
     }
 

@@ -24,12 +24,32 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.error;
+package com.akiban.ais.model.validation;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.DuplicateGroupTreeNamesException;
 
-public class TreeNameMismatchException extends InvalidOperationException {
-    public TreeNameMismatchException (TableName table, String tableTreename, String groupTreename) {
-        super (ErrorCode.TREENAME_MISMATCH, table.getSchemaName(), table.getTableName(), tableTreename, groupTreename);
+import java.util.HashMap;
+import java.util.Map;
+
+class GroupTreeNamesUnique implements AISValidation {
+
+    @Override
+    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
+        Map<String,Group> treeNameMap = new HashMap<String,Group>();
+
+        for(Group group : ais.getGroups().values()) {
+            String treeName = group.getTreeName();
+            Group curGroup = treeNameMap.put(treeName, group);
+            if(curGroup != null) {
+                UserTable root = group.getRoot();
+                UserTable curRoot = curGroup.getRoot();
+                output.reportFailure(
+                    new AISValidationFailure(
+                            new DuplicateGroupTreeNamesException(root.getName(), curRoot.getName(), treeName)));
+            }
+        }
     }
 }

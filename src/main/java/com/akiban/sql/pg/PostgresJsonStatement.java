@@ -47,7 +47,7 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
         super(resultOperator, resultRowType,
               // Looks like just one unlimited VARCHAR to the client.
               Collections.singletonList("JSON"),
-              Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(),
+              Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID,
                                                          (short)-1, -1, AkType.VARCHAR, MString.VARCHAR.instance())),
               parameterTypes,
               usePValues);

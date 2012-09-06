@@ -33,48 +33,31 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-// TODO: EXPERIMENTAL
-
 public class PersistitIndexRowPool
 {
     // PersistitIndexRowPool interface
 
     public PersistitIndexRow takeIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        PersistitIndexRow indexRow;
-        if (poolingEnabled) {
-            indexRow = adapterPool(adapter).takeIndexRow(indexRowType);
-        } else {
-            // Ensure the pool is cleared (in case poolingEnabled was toggled recently).
-            threadAdapterPools.remove();
-            indexRow = newIndexRow(adapter, indexRowType);
-        }
-        return indexRow;
+        PersistitIndexRow persistitIndexRow = adapterPool(adapter).takeIndexRow(indexRowType);
+        // new RuntimeException("take " + persistitIndexRow.hashCode()).printStackTrace();
+        return persistitIndexRow;
     }
 
     public void returnIndexRow(PersistitAdapter adapter, IndexRowType indexRowType, PersistitIndexRow indexRow)
     {
-        if (poolingEnabled) {
-            adapterPool(adapter).returnIndexRow(indexRowType, indexRow);
-        }
-    }
-
-    public synchronized void enablePooling(boolean newPoolingEnabled)
-    {
-        this.poolingEnabled = newPoolingEnabled;
-        LOG.info("Index row pooling set to {}", this.poolingEnabled);
+        // new RuntimeException("return " + indexRow.hashCode()).printStackTrace();
+        adapterPool(adapter).returnIndexRow(indexRowType, indexRow);
     }
 
     public PersistitIndexRowPool()
     {
-        LOG.info("Index row pooling initialized to {}", poolingEnabled);
     }
 
     // For use by this class
 
     private AdapterPool adapterPool(PersistitAdapter adapter)
     {
-        assert poolingEnabled;
         LinkedHashMap<Long, AdapterPool> adapterPool = threadAdapterPools.get();
         AdapterPool pool = adapterPool.get(adapter.id());
         if (pool == null) {
@@ -94,14 +77,11 @@ public class PersistitIndexRowPool
 
     // Class state
 
-    public static final String INDEX_ROW_POOLING = "akserver.indexRowPooling";
     private static final int CAPACITY_PER_THREAD = 10;
     private static final float LOAD_FACTOR = 0.7f;
-    private static final Logger LOG = LoggerFactory.getLogger(PersistitIndexRowPool.class.getName());
 
     // Object state
 
-    private boolean poolingEnabled = true;
     private final ThreadLocal<LinkedHashMap<Long, AdapterPool>> threadAdapterPools =
         new ThreadLocal<LinkedHashMap<Long, AdapterPool>>()
         {
@@ -144,6 +124,7 @@ public class PersistitIndexRowPool
                 indexRows = new ArrayDeque<PersistitIndexRow>();
                 indexRowCache.put(indexRowType, indexRows);
             }
+            assert !indexRows.contains(indexRow);
             indexRows.addLast(indexRow);
         }
 

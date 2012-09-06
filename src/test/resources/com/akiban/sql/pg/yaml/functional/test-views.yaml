@@ -37,8 +37,15 @@
 ---
 - Statement: SELECT * FROM s
 - output_ordered: [[1],[2],[3],[9]]
+---
+- Statement: CREATE VIEW vn AS SELECT id,null,s FROM t
+---
+- Statement: SELECT * FROM vn
+- output_ordered: [[1, null, 'foo'],[2, null, 'bar']]
 
 # Clean up views so table can be dropped
+---
+- Statement: DROP VIEW vn
 ---
 - Statement: DROP VIEW s
 ---

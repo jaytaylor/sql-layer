@@ -177,25 +177,25 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     static final PostgresType BOOL_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID.getOid(), (short)1, -1, AkType.BOOL, AkBool.INSTANCE.instance());
+        new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID, (short)1, -1, AkType.BOOL, AkBool.INSTANCE.instance());
     static final PostgresType INT2_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID.getOid(), (short)2, -1, AkType.LONG, AkNumeric.SMALLINT.instance());
+        new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID, (short)2, -1, AkType.LONG, AkNumeric.SMALLINT.instance());
     static final PostgresType OID_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG, AkNumeric.INT.instance());
+        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID, (short)4, -1, AkType.LONG, AkNumeric.INT.instance());
     static final PostgresType TYPNAME_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)255, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType IDENT_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)128, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)128, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType LIST_TYPE_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)13, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)13, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType CHAR0_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)0, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)0, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType CHAR1_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType INDEXDEF_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1024, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1024, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
     static final PostgresType VIEWDEF_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)32768, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)32768, -1, AkType.VARCHAR, AkString.VARCHAR.instance());
 
     @Override
     public PostgresType[] getParameterTypes() {

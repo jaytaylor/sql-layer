@@ -33,14 +33,14 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.GroupTreeNameIsNullException;
 import com.akiban.server.error.IndexTreeNameIsNullException;
 import com.akiban.server.error.SequenceTreeNameIsNullException;
-import com.akiban.server.error.TableTreeNameIsNullException;
 
 import java.util.Collection;
 
 /**
- * Check all table and index tree names are not null.
+ * Check all group and index tree names are not null.
  */
 public class TreeNamesAreNotNull implements AISValidation {
 
@@ -50,6 +50,7 @@ public class TreeNamesAreNotNull implements AISValidation {
             checkTable(table);
         }
         for(Group group : ais.getGroups().values()) {
+            checkGroup(group);
             for(Index index : group.getIndexes()) {
                 checkIndex(index);
             }
@@ -59,10 +60,13 @@ public class TreeNamesAreNotNull implements AISValidation {
         }
     }
 
-    private static void checkTable(Table table) {
-        if(table.getTreeName() == null) {
-            throw new TableTreeNameIsNullException(table);
+    private static void checkGroup(Group group) {
+        if(group.getTreeName() == null) {
+            throw new GroupTreeNameIsNullException(group);
         }
+    }
+
+    private static void checkTable(Table table) {
         final Collection<TableIndex> indexes;
         if(table.isUserTable()) {
             indexes = ((UserTable)table).getIndexesIncludingInternal();
