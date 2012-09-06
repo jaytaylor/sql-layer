@@ -56,7 +56,6 @@ import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
@@ -65,7 +64,6 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -77,6 +75,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -450,14 +449,44 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         @Override
         public Iterator<Collection<? extends TValidatedOverload>> iterator() {
-            return Collections.<Collection<? extends TValidatedOverload>>singleton(overloads).iterator(); // TODO
+            return overloads.iterator();
         }
 
         public ScalarsGroupImpl(Collection<TValidatedOverload> allOverloads) {
-            this.overloads = allOverloads;
+            this.overloads = scalarsByPriority(allOverloads);
         }
 
-        private final Collection<? extends TValidatedOverload> overloads;
+        private static List<Collection<? extends TValidatedOverload>> scalarsByPriority(
+                Collection<TValidatedOverload> overloads)
+        {
+            // First, we'll put this into a SortedMap<Integer, Collection<TVO>> so that we have each subset of the
+            // overloads grouped by priority. Then we'll go over those collections; for each one, we'll wrap it in
+            // an unmodifiable Collection (so that users of the iterator() can't modify the Collections).
+            // Finally, we'll wrap the result in an unmodifiable Collection (so that users can't remove Collections
+            // from it via the Iterator).
+            SortedMap<Integer, ArrayList<TValidatedOverload>> byPriority
+                    = new TreeMap<Integer, ArrayList<TValidatedOverload>>();
+            for (TValidatedOverload overload : overloads) {
+                for (int priority : overload.getPriorities()) {
+                    ArrayList<TValidatedOverload> thisPriorityOverloads = byPriority.get(priority);
+                    if (thisPriorityOverloads == null) {
+                        thisPriorityOverloads = new ArrayList<TValidatedOverload>();
+                        byPriority.put(priority, thisPriorityOverloads);
+                    }
+                    thisPriorityOverloads.add(overload);
+                }
+            }
+
+            List<Collection<? extends TValidatedOverload>> results
+                    = new ArrayList<Collection<? extends TValidatedOverload>>(byPriority.size());
+            for (ArrayList<TValidatedOverload> priorityGroup : byPriority.values()) {
+                priorityGroup.trimToSize();
+                results.add(Collections.unmodifiableCollection(priorityGroup));
+            }
+            return Collections.unmodifiableList(results);
+        }
+
+        private final List<Collection<? extends TValidatedOverload>> overloads;
     }
 
     private static class SelfCast implements TCast {
