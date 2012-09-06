@@ -224,7 +224,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             throw new AkibanInternalException(sb.toString());
         }
 
-        ListMultimap<String, ScalarsGroup> results = ArrayListMultimap.create();
+        ArrayListMultimap<String, ScalarsGroup> results = ArrayListMultimap.create();
         for (Map.Entry<String, Collection<TValidatedOverload>> entry : overloadsByName.asMap().entrySet()) {
             String overloadName = entry.getKey();
             Collection<TValidatedOverload> allOverloads = entry.getValue();
@@ -233,6 +233,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 results.put(overloadName, scalarsGroup);
             }
         }
+        results.trimToSize();
         return Multimaps.unmodifiableListMultimap(results);
     }
 
