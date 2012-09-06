@@ -149,16 +149,10 @@ public final class OverloadResolver {
 
     public OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
         ScalarsGroup scalarsGroup = registry.getOverloads(name);
-        Iterator<Collection<? extends TValidatedOverload>> groupIter = scalarsGroup.iterator();
-        if (!groupIter.hasNext()) {
+        if (scalarsGroup == null) {
             throw new NoSuchFunctionException(name);
         }
-        Collection<? extends TValidatedOverload> namedOverloads = groupIter.next(); // TODO need to use this in a loop
-        if (namedOverloads.size() == 1) {
-            return defaultResolution(inputs, namedOverloads);
-        } else {
-            return inputBasedResolution(name, inputs, namedOverloads);
-        }
+        return inputBasedResolution(name, inputs, scalarsGroup);
     }
 
     public TAggregator getAggregation(String name, TClass inputType) {
@@ -200,27 +194,35 @@ public final class OverloadResolver {
     }
 
     private OverloadResult inputBasedResolution(String name, List<? extends TPreptimeValue> inputs,
-                                                Collection<? extends TValidatedOverload> namedOverloads) {
-        List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
-        for (TValidatedOverload overload : namedOverloads) {
-            if (isCandidate(overload, inputs)) {
-                candidates.add(overload);
+                                                ScalarsGroup scalarsGroup)
+    {
+        TValidatedOverload mostSpecific = null;
+        for (Collection<? extends TValidatedOverload> namedOverloads : scalarsGroup) {
+            List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
+            for (TValidatedOverload overload : namedOverloads) {
+                if (isCandidate(overload, inputs)) {
+                    candidates.add(overload);
+                }
+            }
+            if (candidates.isEmpty())
+                continue; // try next priority group of namedOverloads
+            if (candidates.size() == 1) {
+                mostSpecific = candidates.get(0);
+                break; // found one!
+            } else {
+                List<List<TValidatedOverload>> groups = reduceToMinimalCastGroups(candidates);
+                if (groups.size() == 1 && groups.get(0).size() == 1) {
+                    mostSpecific = groups.get(0).get(0);
+                    break; // found one!
+                }
+                else {
+                    // this priority group had too many candidates; this is an error
+                    throw overloadException(name, inputs);
+                }
             }
         }
-        if (candidates.isEmpty())
-            throw overloadException(name, inputs);
-        TValidatedOverload mostSpecific = null;
-        if (candidates.size() == 1) {
-            mostSpecific = candidates.get(0);
-        } else {
-            List<List<TValidatedOverload>> groups = reduceToMinimalCastGroups(candidates);
-            if (groups.size() == 1 && groups.get(0).size() == 1)
-                mostSpecific = groups.get(0).get(0);
-            // else: 0 or >1 candidates
-            // TODO: Throw or let registry handle it?
-        }
         if (mostSpecific == null)
-            throw overloadException(name, inputs);
+            throw overloadException(name, inputs); // no priority group had any candidates; this is an error
         return buildResult(mostSpecific, inputs);
     }
 
