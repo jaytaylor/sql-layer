@@ -27,6 +27,7 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
@@ -196,10 +197,14 @@ public final class OverloadResolver {
                                                 Iterable<? extends ScalarsGroup> scalarGroupsByPriority)
     {
         TValidatedOverload mostSpecific = null;
+        boolean sawRightArity = false;
         for (ScalarsGroup scalarsGroup : scalarGroupsByPriority) {
             Collection<? extends TValidatedOverload> namedOverloads = scalarsGroup.getOverloads();
             List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
             for (TValidatedOverload overload : namedOverloads) {
+                if (!overload.coversNInputs(inputs.size()))
+                    continue;
+                sawRightArity = true;
                 if (isCandidate(overload, inputs)) {
                     candidates.add(overload);
                 }
@@ -221,8 +226,12 @@ public final class OverloadResolver {
                 }
             }
         }
-        if (mostSpecific == null)
-            throw overloadException(name, inputs); // no priority group had any candidates; this is an error
+        if (mostSpecific == null) {
+            // no priority group had any candidates; this is an error
+            if (sawRightArity)
+                throw overloadException(name, inputs);
+            throw new WrongExpressionArityException(-1, inputs.size()); // TODO on expected inputs!
+        }
         return buildResult(mostSpecific, inputs);
     }
 
@@ -264,8 +273,6 @@ public final class OverloadResolver {
     }
 
     private boolean isCandidate(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
-        if (!overload.coversNInputs(inputs.size()))
-            return false;
         for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
             TInstance inputInstance = inputs.get(i).instance();
             // allow this input if...
