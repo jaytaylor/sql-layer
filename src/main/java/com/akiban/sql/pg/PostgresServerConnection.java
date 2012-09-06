@@ -787,6 +787,13 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
+        PersistitAdapter persistitAdapter = null;
+        if ((transaction != null) &&
+            // As opposed to WRITE_STEP_ISOLATED.
+            (pstmt.getTransactionMode() == PostgresStatement.TransactionMode.WRITE)) {
+            persistitAdapter = (PersistitAdapter)adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+            persistitAdapter.withStepChanging(false);
+        }
         ServerTransaction localTransaction = beforeExecute(pstmt);
         int rowsProcessed = 0;
         boolean success = false;
@@ -797,6 +804,8 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         finally {
             afterExecute(pstmt, localTransaction, success);
+            if (persistitAdapter != null)
+                persistitAdapter.withStepChanging(true); // Keep conservative default.
             sessionTracer.endEvent();
         }
         return rowsProcessed;

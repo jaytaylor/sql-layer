@@ -167,7 +167,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         return new PostgresModifyOperatorStatement(statementType,
                                                    update.getUpdatePlannable(),
                                                    parameterTypes,
-                                                   usesPValues());
+                                                   usesPValues(),
+                                                   update.isRequireStepIsolation());
     }
 
     protected PostgresStatement generateSelect(PhysicalSelect select,
