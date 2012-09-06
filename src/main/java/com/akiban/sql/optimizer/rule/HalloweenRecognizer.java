@@ -30,6 +30,8 @@ import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +40,8 @@ import java.util.*;
 
 /** Identify queries that are susceptible to the Halloween problem.
  * <ul>
- * <li>Updating a primary key, which can change hkeys are so group navigation.</li>
+ * <li>Updating a primary or grouping foreign key, 
+ * which can change hkeys and so group navigation.</li>
  * <li>Updating a field of an index that is scanned.</li>
  * <li>A <em>second</em> access to the target table.</li>
  * </ul>
@@ -59,6 +62,7 @@ public class HalloweenRecognizer extends BaseRule
             TableNode targetTable = stmt.getTargetTable();
             boolean requireStepIsolation = false;
             Set<Column> updateColumns = new HashSet<Column>();
+            update:
             if (stmt instanceof UpdateStatement) {
                 for (UpdateStatement.UpdateColumn updateColumn : ((UpdateStatement)stmt).getUpdateColumns()) {
                     updateColumns.add(updateColumn.getColumn());
@@ -66,7 +70,16 @@ public class HalloweenRecognizer extends BaseRule
                 for (Column pkColumn : targetTable.getTable().getPrimaryKey().getColumns()) {
                     if (updateColumns.contains(pkColumn)) {
                         requireStepIsolation = true;
-                        break;
+                        break update;
+                    }
+                }
+                Join parentJoin = targetTable.getTable().getParentJoin();
+                if (parentJoin != null) {
+                    for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
+                        if (updateColumns.contains(joinColumn.getChild())) {
+                            requireStepIsolation = true;
+                            break update;
+                        }
                     }
                 }
             }
