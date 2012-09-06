@@ -715,6 +715,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 Thread.sleep(50);
             }
             catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
                 break;
             }
         }
