@@ -87,7 +87,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     @Override
     public Iterable<? extends ScalarsGroup> getOverloads(String name) {
-        return overloadsByName.get(name.toLowerCase());
+        List<ScalarsGroup> result = overloadsByName.get(name.toLowerCase());
+        return result.isEmpty() ? null : result;
     }
 
     @Override
