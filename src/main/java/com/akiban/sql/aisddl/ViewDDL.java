@@ -35,7 +35,10 @@ import com.akiban.sql.optimizer.AISViewDefinition;
 import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.ExistenceCheck;
+import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.ResultColumn;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -85,8 +88,14 @@ public class ViewDDL
                      binderContext.getParserProperties(schemaName), tableColumnReferences);
         int colpos = 0;
         for (ResultColumn rc : viewdef.getResultColumns()) {
+            DataTypeDescriptor type = rc.getType();
+            if (type == null) {
+                if (rc.getExpression().getNodeType() != NodeTypes.UNTYPED_NULL_CONSTANT_NODE)
+                    throw new AkibanInternalException(rc.getName() + " has unknown type");
+                type = new DataTypeDescriptor(TypeId.CHAR_ID, true, 0);
+            }
             TableDDL.addColumn(builder, schemaName, viewName, rc.getName(), colpos++,
-                               rc.getType(), rc.getType().isNullable(), false, null);
+                               type, type.isNullable(), false, null);
         }
         View view = builder.akibanInformationSchema().getView(schemaName, viewName);
         ddlFunctions.createView(session, view);
