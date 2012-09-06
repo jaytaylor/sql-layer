@@ -53,6 +53,21 @@ public class BaseUpdateStatement extends BaseStatement
     }
 
     @Override
+    public String summaryString() {
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append('(');
+        fillSummaryString(str);
+        if (requireStepIsolation)
+            str.append(", HALLOWEEN");
+        str.append(')');
+        return str.toString();
+    }
+
+    protected void fillSummaryString(StringBuilder str) {
+        str.append(getTargetTable());
+    }
+
+    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         targetTable = map.duplicate(targetTable);
