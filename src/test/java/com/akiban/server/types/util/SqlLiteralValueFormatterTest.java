@@ -42,8 +42,8 @@ public class SqlLiteralValueFormatterTest
 
     @Test
     public void testDatetime() throws Exception {
-        test("TIMESTAMP '2001-01-01 00:00:00'", "2001-01-01", AkType.DATETIME);
-        test("TIMESTAMP '2001-01-01 13:01:59'", "2001-01-01 13:01:59", AkType.DATETIME);
+        test("DATETIME '2001-01-01 00:00:00'", "2001-01-01", AkType.DATETIME);
+        test("DATETIME '2001-01-01 13:01:59'", "2001-01-01 13:01:59", AkType.DATETIME);
     }
 
     @Test
