@@ -293,10 +293,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 break;
             case WRITE:
             case NEW_WRITE:
+            case WRITE_STEP_ISOLATED:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
                 localTransaction = new ServerTransaction(this, false);
-                localTransaction.beforeUpdate();
+                localTransaction.beforeUpdate(true);
                 break;
             }
         }
@@ -328,10 +329,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         }
         else {
             // Make changes visible in open global transaction.
-            switch (stmt.getTransactionMode()) {
+            ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
+            switch (transactionMode) {
             case REQUIRED_WRITE:
             case WRITE:
-                transaction.afterUpdate();
+                transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
                 break;
             }
         }
