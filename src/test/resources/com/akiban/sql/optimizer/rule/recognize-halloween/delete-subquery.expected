@@ -1,0 +1,9 @@
+DeleteStatement@535811d6(t, HALLOWEEN)
+  Select@3afb2359[EXISTS(Subquery@45061ea3)]
+    Flatten@d4d7fd9(t)
+      GroupScan@5b048661(Group(t -> test._akiban_t), rows = 1, cost = 0.820000)
+        TableSource@14c582bc(t - TableGroup@61278f6(t))
+
+Subquery@45061ea3
+  Select@10968c3c[t.id != ot.id]
+    SingleIndexScan@26c36197(Index(test.t.t_n[IndexColumn(n)]), covering/NONE, =t.n, rows = 1, cost = 6.84560)
