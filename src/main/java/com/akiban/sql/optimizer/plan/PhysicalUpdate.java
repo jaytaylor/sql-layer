@@ -62,6 +62,8 @@ public class PhysicalUpdate extends BasePlannable
     protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
+        if (requireStepIsolation)
+            str.append("/STEP_ISOLATE");
         return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
