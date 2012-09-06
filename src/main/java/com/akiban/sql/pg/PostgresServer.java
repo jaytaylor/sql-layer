@@ -200,6 +200,10 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         connections.remove(sessionId);
     }
     
+    public synchronized Collection<PostgresServerConnection> getConnections() {
+        return new ArrayList<PostgresServerConnection>(connections.values());
+    }
+
     @Override
     public String getSqlString(int sessionId) {
         return getConnection(sessionId).getSqlString();
@@ -212,14 +216,14 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public void cancelQuery(int sessionId) {
-        getConnection(sessionId).cancelQuery();
+        getConnection(sessionId).cancelQuery(null, "JMX");
     }
 
     @Override
     public void killConnection(int sessionId) {
         PostgresServerConnection conn = getConnection(sessionId);
-        conn.cancelQuery();
-        conn.stop();
+        conn.cancelQuery("your session being disconnected", "JMX");
+        conn.waitAndStop();
     }
 
     public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
