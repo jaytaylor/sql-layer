@@ -105,7 +105,7 @@ public class HalloweenRecognizer extends BaseRule
                     for (TableSource table : single.getTables()) {
                         if (table.getTable() == targetTable) {
                             targetMaxUses--;
-                            if (targetMaxUses <= 0) {
+                            if (targetMaxUses < 0) {
                                 requireStepIsolation = true;
                             }
                             break;
@@ -147,7 +147,7 @@ public class HalloweenRecognizer extends BaseRule
                 for (TableSource table : ((TableLoader)n).getTables()) {
                     if (table.getTable() == targetTable) {
                         targetMaxUses--;
-                        if (targetMaxUses <= 0) {
+                        if (targetMaxUses < 0) {
                             requireStepIsolation = true;
                             break;
                         }
