@@ -86,28 +86,22 @@ public class AggregateSplitter extends BaseRule
         }
         
         Object[] distinctOrderby = checkDistinctDistinctsAndOrderby(source);
-
-        
-        // Another way to do this would be to have a different class
-        // for AggregateSource in the split-off state. Doing that
-        // would require replacing expression references to the old
-        // one as a ColumnSource.
         List<ExpressionNode> fields = source.splitOffProject();
         PlanNode input = source.getInput();
         PlanNode ninput = new Project(input, fields);
-        if ((Boolean)distinctOrderby[0])
-            ninput = new Distinct(ninput);
-        source.replaceInput(input, ninput);
         
+        // order-by and distinct cannot exist together for now
+        // so it's safe to do this:
+        //
         // order by
         List<OrderByExpression> orderBy = (List<OrderByExpression>)distinctOrderby[1];
-       if (orderBy != null)
-       {
-            input = source.getInput();
-            PlanNode sortedInput = new Sort(new Project(input, fields),
-                                            orderBy);
-            source.replaceInput(input, sortedInput);
-       }
+        if (orderBy != null)
+              ninput = new Sort(ninput, orderBy);
+        // distinct
+        else if ((Boolean)distinctOrderby[0])
+            ninput = new Distinct(ninput);
+        
+        source.replaceInput(input, ninput);
     }
 
     /** Check that all the <code>DISTINCT</code> qualifications are
@@ -153,7 +147,9 @@ public class AggregateSplitter extends BaseRule
                 }
             }
        
-        
+        // both distinct and order-by are used, throw an error for now
+        if (ret != null && distinct)
+            throw new UnsupportedSQLException("Use of BOTH DISTINCT and ORDER-BY is not supported yet in" + source.getName());
         return new Object[]{distinct, ret};
     }
 
