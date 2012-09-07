@@ -29,13 +29,10 @@ package com.akiban.server.rowdata;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.*;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.TableStatus;
-import com.akiban.server.service.tree.TreeCache;
-import com.akiban.server.service.tree.TreeLink;
 
 /**
  * Contain the relevant schema information for one version of a table
@@ -47,7 +44,7 @@ import com.akiban.server.service.tree.TreeLink;
  * @author peter
  * 
  */
-public class RowDef implements TreeLink {
+public class RowDef {
 
     private final Table table;
 
@@ -114,8 +111,6 @@ public class RowDef implements TreeLink {
      */
     private final byte[][] varLenFieldMap;
 
-    private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
-
     public RowDef(Table table, final TableStatus tableStatus) {
         this.table = table;
         this.tableStatus = tableStatus;
@@ -164,11 +159,6 @@ public class RowDef implements TreeLink {
         return (UserTable) table;
     }
 
-    public GroupTable groupTable() {
-        assert table instanceof GroupTable : this;
-        return (GroupTable) table;
-    }
-
     /**
      * Display the fieldCoordinates array
      */
@@ -205,10 +195,10 @@ public class RowDef implements TreeLink {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s (%s.%s)",
+        StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s (%s)",
                                                            table.getTableId(),
                                                            table.getName(),
-                                                           getTreeName(), getPkTreeName()));
+                                                           getPkTreeName()));
         if (userTableRowDefs != null) {
             for (int i = 0; i < userTableRowDefs.length; i++) {
                 sb.append(i == 0 ? "{" : ",");
@@ -414,12 +404,11 @@ public class RowDef implements TreeLink {
     }
 
     public int getGroupRowDefId() {
-        return table instanceof GroupTable ? table.getTableId() : table
-                .getGroup().getGroupTable().getTableId();
+        return table.isGroupTable() ? table.getTableId() : table.getGroup().getGroupTable().getTableId();
     }
 
     public RowDef getGroupRowDef() {
-        return (table instanceof GroupTable) ? this : table.getGroup().getGroupTable().rowDef();
+        return table().isGroupTable() ? this : table.getGroup().getGroupTable().rowDef();
     }
 
     public Index[] getIndexes() {
@@ -479,10 +468,6 @@ public class RowDef implements TreeLink {
 
     public String getTableName() {
         return table.getName().getTableName();
-    }
-
-    public String getTreeName() {
-        return table.getTreeName();
     }
 
     public String getSchemaName() {
@@ -561,7 +546,7 @@ public class RowDef implements TreeLink {
     /**
      * Compute lookup tables used to in the {@link #fieldLocation(RowData, int)}
      * method. This method is invoked once when a RowDef is first constructed.
-     * 
+     *
      * @param fieldDefs
      */
     void preComputeFieldCoordinates(final FieldDef[] fieldDefs) {
@@ -633,7 +618,6 @@ public class RowDef implements TreeLink {
         final RowDef def = (RowDef) o;
         return this == def || def.getRowDefId() == def.getRowDefId()
                 && AkServerUtil.equals(table.getName(), def.table.getName())
-                && AkServerUtil.equals(getTreeName(), def.getTreeName())
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexes, def.indexes)
                 && getOrdinal() == def.getOrdinal()
@@ -644,17 +628,11 @@ public class RowDef implements TreeLink {
     @Override
     public int hashCode() {
         return getRowDefId() ^ table.getName().hashCode()
-                ^ AkServerUtil.hashCode(getTreeName()) ^ Arrays.hashCode(fieldDefs)
+                ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(parentJoinFields);
     }
 
-    @Override
-    public void setTreeCache(TreeCache cache) {
-        treeCache.set(cache);
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache.get();
+    public Group getGroup() {
+        return table.getGroup();
     }
 }

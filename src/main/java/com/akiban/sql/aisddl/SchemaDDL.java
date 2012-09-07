@@ -119,11 +119,6 @@ public class SchemaDDL {
                 return true;
             }
         }
-        for (TableName t : ais.getGroupTables().keySet()) {
-            if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                return true;
-            }
-        }
         return false;
     }
 }

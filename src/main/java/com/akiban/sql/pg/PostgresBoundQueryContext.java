@@ -34,25 +34,19 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     private boolean[] columnBinary;
     private boolean defaultColumnBinary;
     
-    public PostgresBoundQueryContext(PostgresServerSession server, 
-                                     PostgresStatement statement,
-                                     Object[] parameters,
-                                     boolean[] columnBinary, 
-                                     boolean defaultColumnBinary) {
+    public PostgresBoundQueryContext(PostgresServerSession server,
+                                     PostgresStatement statement) {
         super(server);
         this.statement = statement;
-        this.columnBinary = columnBinary;
-        this.defaultColumnBinary = defaultColumnBinary;
-        if (parameters != null) {
-            boolean usePValues = false;
-            if (statement instanceof PostgresBaseStatement)
-                usePValues = ((PostgresDMLStatement)statement).usesPValues();
-            decodeParameters(parameters, usePValues);
-        }
     }
 
     public PostgresStatement getStatement() {
         return statement;
+    }
+    
+    protected void setColumnBinary(boolean[] columnBinary, boolean defaultColumnBinary) {
+        this.columnBinary = columnBinary;
+        this.defaultColumnBinary = defaultColumnBinary;
     }
 
     public boolean isColumnBinary(int i) {
@@ -60,19 +54,6 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
             return columnBinary[i];
         else
             return defaultColumnBinary;
-    }
-
-    protected void decodeParameters(Object[] parameters, boolean usePValues) {
-        PostgresType[] parameterTypes = statement.getParameterTypes();
-        for (int i = 0; i < parameters.length; i++) {
-            PostgresType pgType = (parameterTypes == null) ? null : parameterTypes[i];
-            AkType akType = null;
-            if (pgType != null)
-                akType = pgType.getAkType();
-            if (akType == null)
-                akType = AkType.VARCHAR;
-            setValue(i, parameters[i], akType, usePValues);
-        }
     }
 
 }

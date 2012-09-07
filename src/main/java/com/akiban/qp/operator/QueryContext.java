@@ -70,21 +70,6 @@ public interface QueryContext
     public void setValue(int index, ValueSource value, AkType type);
 
     /**
-     * Bind a value to the given index.
-     * @param index the index to set
-     * @param value the value to assign
-     */
-    public void setValue(int index, Object value);
-
-    /**
-     * Bind a value to the given index.
-     * @param index the index to set
-     * @param value the value to assign
-     * @param usePValues
-     */
-    public void setValue(int index, Object value, AkType type, boolean usePValues);
-
-    /**
      * Gets the row bound to the given index.
      * @param index the index to look up
      * @return the row at that index

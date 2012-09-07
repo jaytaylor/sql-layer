@@ -26,10 +26,10 @@
 
 package com.akiban.server.error;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.sql.parser.QueryTreeNode;
 
-public class TreeNameMismatchException extends InvalidOperationException {
-    public TreeNameMismatchException (TableName table, String tableTreename, String groupTreename) {
-        super (ErrorCode.TREENAME_MISMATCH, table.getSchemaName(), table.getTableName(), tableTreename, groupTreename);
+public final class BadSpatialIndexException extends BaseSQLException {
+    public BadSpatialIndexException(String indexName, QueryTreeNode referenceNode) {
+        super(ErrorCode.BAD_SPATIAL_INDEX, indexName, referenceNode);
     }
 }

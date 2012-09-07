@@ -1069,4 +1069,16 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
         checkIndexesInstead(C_NAME);
     }
+
+    // bug1046793
+    @Test
+    public void dropColumnAutoDropsGroupIndex() {
+        createAndLoadCOI();
+        createGroupIndex("c", "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE o DROP COLUMN o1");
+        assertEquals("Remaining group indexes", "[]", ddl().getAIS(session()).getGroup("c").getIndexes().toString());
+        checkIndexesInstead(C_NAME, "PRIMARY");
+        checkIndexesInstead(O_NAME, "PRIMARY");
+        checkIndexesInstead(I_NAME, "PRIMARY");
+    }
 }

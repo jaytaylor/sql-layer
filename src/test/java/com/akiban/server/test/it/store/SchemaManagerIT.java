@@ -485,8 +485,8 @@ public final class SchemaManagerIT extends ITBase {
         for(TableName pair[] : testNames) {
             createTable(pair[0].getSchemaName(), pair[0].getTableName(), "id int not null primary key");
             createTable(pair[1].getSchemaName(), pair[1].getTableName(), "id int not null primary key");
-            String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getTreeName();
-            String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getTreeName();
+            String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getGroup().getTreeName();
+            String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getGroup().getTreeName();
             assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
         }
     }
@@ -555,8 +555,8 @@ public final class SchemaManagerIT extends ITBase {
         ddl().renameTable(session(), tableName(SCHEMA, T1_NAME), tableName("foo", "bar"));
         createTable(SCHEMA, T1_NAME, T1_DDL);
 
-        String originalTreeName = getUserTable(SCHEMA, T1_NAME).getTreeName();
-        String newTreeName = getUserTable("foo", "bar").getTreeName();
+        String originalTreeName = getUserTable(SCHEMA, T1_NAME).getGroup().getTreeName();
+        String newTreeName = getUserTable("foo", "bar").getGroup().getTreeName();
         assertTrue("Unique tree names", !originalTreeName.equals(newTreeName));
     }
 

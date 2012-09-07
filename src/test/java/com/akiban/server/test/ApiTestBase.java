@@ -974,10 +974,6 @@ public class ApiTestBase {
         return stripAISTables(ddl().getAIS(session()).getUserTables());
     }
 
-    protected final Map<TableName,GroupTable> getGroupTables() {
-        return stripAISTables(ddl().getAIS(session()).getGroupTables());
-    }
-
     private static <T extends Table> Map<TableName,T> stripAISTables(Map<TableName,T> map) {
         final Map<TableName,T> ret = new HashMap<TableName, T>(map);
         for(Iterator<TableName> iter=ret.keySet().iterator(); iter.hasNext(); ) {

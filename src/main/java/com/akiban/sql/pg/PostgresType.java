@@ -65,106 +65,106 @@ public class PostgresType extends ServerType
 
     public enum TypeOid {
 
-        BOOL_TYPE_OID(16, "bool", TypType.BASE),
-        BYTEA_TYPE_OID(17, "bytea", TypType.BASE),
-        CHAR_TYPE_OID(18, "char", TypType.BASE),
-        NAME_TYPE_OID(19, "name", TypType.BASE),
-        INT8_TYPE_OID(20, "int8", TypType.BASE),
-        INT2_TYPE_OID(21, "int2", TypType.BASE),
-        INT2VECTOR_TYPE_OID(22, "int2vector", TypType.BASE),
-        INT4_TYPE_OID(23, "int4", TypType.BASE),
-        REGPROC_TYPE_OID(24, "regproc", TypType.BASE),
-        TEXT_TYPE_OID(25, "text", TypType.BASE),
-        OID_TYPE_OID(26, "oid", TypType.BASE),
-        TID_TYPE_OID(27, "tid", TypType.BASE),
-        XID_TYPE_OID(28, "xid", TypType.BASE),
-        CID_TYPE_OID(29, "cid", TypType.BASE),
-        OIDVECTOR_TYPE_OID(30, "oidvector", TypType.BASE),
+        BOOL_TYPE_OID(16, "bool", BinaryEncoding.BOOLEAN_C),
+        BYTEA_TYPE_OID(17, "bytea", BinaryEncoding.BINARY_OCTAL_TEXT),
+        CHAR_TYPE_OID(18, "char"),
+        NAME_TYPE_OID(19, "name"),
+        INT8_TYPE_OID(20, "int8", BinaryEncoding.INT_64),
+        INT2_TYPE_OID(21, "int2", BinaryEncoding.INT_16),
+        INT2VECTOR_TYPE_OID(22, "int2vector"),
+        INT4_TYPE_OID(23, "int4", BinaryEncoding.INT_32),
+        REGPROC_TYPE_OID(24, "regproc"),
+        TEXT_TYPE_OID(25, "text"),
+        OID_TYPE_OID(26, "oid"),
+        TID_TYPE_OID(27, "tid"),
+        XID_TYPE_OID(28, "xid"),
+        CID_TYPE_OID(29, "cid"),
+        OIDVECTOR_TYPE_OID(30, "oidvector"),
         PG_TYPE_TYPE_OID(71, "pg_type", TypType.COMPOSITE),
         PG_ATTRIBUTE_TYPE_OID(75, "pg_attribute", TypType.COMPOSITE),
         PG_PROC_TYPE_OID(81, "pg_proc", TypType.COMPOSITE),
         PG_CLASS_TYPE_OID(83, "pg_class", TypType.COMPOSITE),
-        XML_TYPE_OID(142, "xml", TypType.BASE),
-        _XML_TYPE_OID(143, "_xml", TypType.BASE),
-        SMGR_TYPE_OID(210, "smgr", TypType.BASE),
-        POINT_TYPE_OID(600, "point", TypType.BASE),
-        LSEG_TYPE_OID(601, "lseg", TypType.BASE),
-        PATH_TYPE_OID(602, "path", TypType.BASE),
-        BOX_TYPE_OID(603, "box", TypType.BASE),
-        POLYGON_TYPE_OID(604, "polygon", TypType.BASE),
-        LINE_TYPE_OID(628, "line", TypType.BASE),
-        _LINE_TYPE_OID(629, "_line", TypType.BASE),
-        FLOAT4_TYPE_OID(700, "float4", TypType.BASE),
-        FLOAT8_TYPE_OID(701, "float8", TypType.BASE),
-        ABSTIME_TYPE_OID(702, "abstime", TypType.BASE),
-        RELTIME_TYPE_OID(703, "reltime", TypType.BASE),
-        TINTERVAL_TYPE_OID(704, "tinterval", TypType.BASE),
-        UNKNOWN_TYPE_OID(705, "unknown", TypType.BASE),
-        CIRCLE_TYPE_OID(718, "circle", TypType.BASE),
-        _CIRCLE_TYPE_OID(719, "_circle", TypType.BASE),
-        MONEY_TYPE_OID(790, "money", TypType.BASE),
-        _MONEY_TYPE_OID(791, "_money", TypType.BASE),
-        MACADDR_TYPE_OID(829, "macaddr", TypType.BASE),
-        INET_TYPE_OID(869, "inet", TypType.BASE),
-        CIDR_TYPE_OID(650, "cidr", TypType.BASE),
-        _BOOL_TYPE_OID(1000, "_bool", TypType.BASE),
-        _BYTEA_TYPE_OID(1001, "_bytea", TypType.BASE),
-        _CHAR_TYPE_OID(1002, "_char", TypType.BASE),
-        _NAME_TYPE_OID(1003, "_name", TypType.BASE),
-        _INT2_TYPE_OID(1005, "_int2", TypType.BASE),
-        _INT2VECTOR_TYPE_OID(1006, "_int2vector", TypType.BASE),
-        _INT4_TYPE_OID(1007, "_int4", TypType.BASE),
-        _REGPROC_TYPE_OID(1008, "_regproc", TypType.BASE),
-        _TEXT_TYPE_OID(1009, "_text", TypType.BASE),
-        _OID_TYPE_OID(1028, "_oid", TypType.BASE),
-        _TID_TYPE_OID(1010, "_tid", TypType.BASE),
-        _XID_TYPE_OID(1011, "_xid", TypType.BASE),
-        _CID_TYPE_OID(1012, "_cid", TypType.BASE),
-        _OIDVECTOR_TYPE_OID(1013, "_oidvector", TypType.BASE),
-        _BPCHAR_TYPE_OID(1014, "_bpchar", TypType.BASE),
-        _VARCHAR_TYPE_OID(1015, "_varchar", TypType.BASE),
-        _INT8_TYPE_OID(1016, "_int8", TypType.BASE),
-        _POINT_TYPE_OID(1017, "_point", TypType.BASE),
-        _LSEG_TYPE_OID(1018, "_lseg", TypType.BASE),
-        _PATH_TYPE_OID(1019, "_path", TypType.BASE),
-        _BOX_TYPE_OID(1020, "_box", TypType.BASE),
-        _FLOAT4_TYPE_OID(1021, "_float4", TypType.BASE),
-        _FLOAT8_TYPE_OID(1022, "_float8", TypType.BASE),
-        _ABSTIME_TYPE_OID(1023, "_abstime", TypType.BASE),
-        _RELTIME_TYPE_OID(1024, "_reltime", TypType.BASE),
-        _TINTERVAL_TYPE_OID(1025, "_tinterval", TypType.BASE),
-        _POLYGON_TYPE_OID(1027, "_polygon", TypType.BASE),
-        ACLITEM_TYPE_OID(1033, "_aclitem", TypType.BASE),
-        _ACLITEM_TYPE_OID(1034, "_aclitem", TypType.BASE),
-        _MACADDR_TYPE_OID(1040, "_macaddr", TypType.BASE),
-        _INET_TYPE_OID(1041, "_inet", TypType.BASE),
-        _CIDR_TYPE_OID(651, "_cidr", TypType.BASE),
-        _CSTRING_TYPE_OID(1263, "_cstring", TypType.BASE),
-        BPCHAR_TYPE_OID(1042, "bpchar", TypType.BASE),
-        VARCHAR_TYPE_OID(1043, "varchar", TypType.BASE),
-        DATE_TYPE_OID(1082, "date", TypType.BASE),
-        TIME_TYPE_OID(1083, "time", TypType.BASE),
-        TIMESTAMP_TYPE_OID(1114, "timestamp", TypType.BASE),
-        _TIMESTAMP_TYPE_OID(1115, "_timestamp", TypType.BASE),
-        _DATE_TYPE_OID(1182, "_date", TypType.BASE),
-        _TIME_TYPE_OID(1183, "_time", TypType.BASE),
-        TIMESTAMPTZ_TYPE_OID(1184, "timestamptz", TypType.BASE),
-        _TIMESTAMPTZ_TYPE_OID(1185, "_timestamptz", TypType.BASE),
-        INTERVAL_TYPE_OID(1186, "interval", TypType.BASE),
-        _INTERVAL_TYPE_OID(1187, "_interval", TypType.BASE),
-        _NUMERIC_TYPE_OID(1231, "_numeric", TypType.BASE),
-        TIMETZ_TYPE_OID(1266, "timetz", TypType.BASE),
-        _TIMETZ_TYPE_OID(1270, "_timetz", TypType.BASE),
-        BIT_TYPE_OID(1560, "bit", TypType.BASE),
-        _BIT_TYPE_OID(1561, "_bit", TypType.BASE),
-        VARBIT_TYPE_OID(1562, "varbit", TypType.BASE),
-        _VARBIT_TYPE_OID(1563, "_varbit", TypType.BASE),
-        NUMERIC_TYPE_OID(1700, "numeric", TypType.BASE),
-        REFCURSOR_TYPE_OID(1790, "refcursor", TypType.BASE),
-        _REFCURSOR_TYPE_OID(2201, "_refcursor", TypType.BASE),
-        REGPROCEDURE_TYPE_OID(2202, "regprocedure", TypType.BASE),
-        REGOPER_TYPE_OID(2203, "regoper", TypType.BASE),
-        REGOPERATOR_TYPE_OID(2204, "regoperator", TypType.BASE);
+        XML_TYPE_OID(142, "xml"),
+        _XML_TYPE_OID(143, "_xml"),
+        SMGR_TYPE_OID(210, "smgr"),
+        POINT_TYPE_OID(600, "point"),
+        LSEG_TYPE_OID(601, "lseg"),
+        PATH_TYPE_OID(602, "path"),
+        BOX_TYPE_OID(603, "box"),
+        POLYGON_TYPE_OID(604, "polygon"),
+        LINE_TYPE_OID(628, "line"),
+        _LINE_TYPE_OID(629, "_line"),
+        FLOAT4_TYPE_OID(700, "float4", BinaryEncoding.FLOAT_32),
+        FLOAT8_TYPE_OID(701, "float8", BinaryEncoding.FLOAT_64),
+        ABSTIME_TYPE_OID(702, "abstime"),
+        RELTIME_TYPE_OID(703, "reltime"),
+        TINTERVAL_TYPE_OID(704, "tinterval"),
+        UNKNOWN_TYPE_OID(705, "unknown"),
+        CIRCLE_TYPE_OID(718, "circle"),
+        _CIRCLE_TYPE_OID(719, "_circle"),
+        MONEY_TYPE_OID(790, "money"),
+        _MONEY_TYPE_OID(791, "_money"),
+        MACADDR_TYPE_OID(829, "macaddr"),
+        INET_TYPE_OID(869, "inet"),
+        CIDR_TYPE_OID(650, "cidr"),
+        _BOOL_TYPE_OID(1000, "_bool"),
+        _BYTEA_TYPE_OID(1001, "_bytea"),
+        _CHAR_TYPE_OID(1002, "_char"),
+        _NAME_TYPE_OID(1003, "_name"),
+        _INT2_TYPE_OID(1005, "_int2"),
+        _INT2VECTOR_TYPE_OID(1006, "_int2vector"),
+        _INT4_TYPE_OID(1007, "_int4"),
+        _REGPROC_TYPE_OID(1008, "_regproc"),
+        _TEXT_TYPE_OID(1009, "_text"),
+        _OID_TYPE_OID(1028, "_oid"),
+        _TID_TYPE_OID(1010, "_tid"),
+        _XID_TYPE_OID(1011, "_xid"),
+        _CID_TYPE_OID(1012, "_cid"),
+        _OIDVECTOR_TYPE_OID(1013, "_oidvector"),
+        _BPCHAR_TYPE_OID(1014, "_bpchar"),
+        _VARCHAR_TYPE_OID(1015, "_varchar"),
+        _INT8_TYPE_OID(1016, "_int8"),
+        _POINT_TYPE_OID(1017, "_point"),
+        _LSEG_TYPE_OID(1018, "_lseg"),
+        _PATH_TYPE_OID(1019, "_path"),
+        _BOX_TYPE_OID(1020, "_box"),
+        _FLOAT4_TYPE_OID(1021, "_float4"),
+        _FLOAT8_TYPE_OID(1022, "_float8"),
+        _ABSTIME_TYPE_OID(1023, "_abstime"),
+        _RELTIME_TYPE_OID(1024, "_reltime"),
+        _TINTERVAL_TYPE_OID(1025, "_tinterval"),
+        _POLYGON_TYPE_OID(1027, "_polygon"),
+        ACLITEM_TYPE_OID(1033, "_aclitem"),
+        _ACLITEM_TYPE_OID(1034, "_aclitem"),
+        _MACADDR_TYPE_OID(1040, "_macaddr"),
+        _INET_TYPE_OID(1041, "_inet"),
+        _CIDR_TYPE_OID(651, "_cidr"),
+        _CSTRING_TYPE_OID(1263, "_cstring"),
+        BPCHAR_TYPE_OID(1042, "bpchar", BinaryEncoding.STRING_BYTES),
+        VARCHAR_TYPE_OID(1043, "varchar", BinaryEncoding.STRING_BYTES),
+        DATE_TYPE_OID(1082, "date"),
+        TIME_TYPE_OID(1083, "time"),
+        TIMESTAMP_TYPE_OID(1114, "timestamp", BinaryEncoding.TIMESTAMP_FLOAT64_SECS_2000_NOTZ),
+        _TIMESTAMP_TYPE_OID(1115, "_timestamp"),
+        _DATE_TYPE_OID(1182, "_date"),
+        _TIME_TYPE_OID(1183, "_time"),
+        TIMESTAMPTZ_TYPE_OID(1184, "timestamptz"),
+        _TIMESTAMPTZ_TYPE_OID(1185, "_timestamptz"),
+        INTERVAL_TYPE_OID(1186, "interval"),
+        _INTERVAL_TYPE_OID(1187, "_interval"),
+        _NUMERIC_TYPE_OID(1231, "_numeric"),
+        TIMETZ_TYPE_OID(1266, "timetz"),
+        _TIMETZ_TYPE_OID(1270, "_timetz"),
+        BIT_TYPE_OID(1560, "bit"),
+        _BIT_TYPE_OID(1561, "_bit"),
+        VARBIT_TYPE_OID(1562, "varbit"),
+        _VARBIT_TYPE_OID(1563, "_varbit"),
+        NUMERIC_TYPE_OID(1700, "numeric", BinaryEncoding.DECIMAL_PG_NUMERIC_VAR),
+        REFCURSOR_TYPE_OID(1790, "refcursor"),
+        _REFCURSOR_TYPE_OID(2201, "_refcursor"),
+        REGPROCEDURE_TYPE_OID(2202, "regprocedure"),
+        REGOPER_TYPE_OID(2203, "regoper"),
+        REGOPERATOR_TYPE_OID(2204, "regoperator");
         
         enum TypType {
             BASE,
@@ -177,11 +177,25 @@ public class PostgresType extends ServerType
         private int oid;
         private String name;
         private TypType type;
+        private BinaryEncoding binaryEncoding;
         
-        TypeOid(int oid, String name, TypType type) {
+        TypeOid(int oid, String name, TypType type, BinaryEncoding binaryEncoding) {
             this.oid = oid;
             this.name = name;
             this.type = type;
+            this.binaryEncoding = binaryEncoding;
+        }
+
+        TypeOid(int oid, String name, TypType type) {
+            this(oid, name, type, BinaryEncoding.NONE);
+        }
+
+        TypeOid(int oid, String name, BinaryEncoding binaryEncoding) {
+            this(oid, name, TypType.BASE, binaryEncoding);
+        }
+
+        TypeOid(int oid, String name) {
+            this(oid, name, TypType.BASE, BinaryEncoding.NONE);
         }
 
         public int getOid() {
@@ -196,6 +210,10 @@ public class PostgresType extends ServerType
             return type;
         }
 
+        public BinaryEncoding getBinaryEncoding() {
+            return binaryEncoding;
+        }
+
         public static TypeOid fromOid(int oid) {
             for (TypeOid inst : values()) {
                 if (inst.getOid() == oid) {
@@ -208,19 +226,24 @@ public class PostgresType extends ServerType
     }
     
     /*** Representation. ***/
-    private int oid;
+    private TypeOid oid;
     private short length;
     private int modifier;
 
-    public PostgresType(int oid, short length, int modifier, AkType akType, TInstance instance) {
+    public PostgresType(TypeOid oid, short length, int modifier, AkType akType, TInstance instance) {
         super(akType, instance);
         this.oid = oid;
         this.length = length;
         this.modifier = modifier;
     }
 
+    @Override
+    public BinaryEncoding getBinaryEncoding() {
+        return oid.getBinaryEncoding();
+    }    
+
     public int getOid() {
-        return oid;
+        return oid.getOid();
     }
     public short getLength() {
         return length;
@@ -234,29 +257,29 @@ public class PostgresType extends ServerType
     }
         
     public static PostgresType fromAIS(Type aisType, Column aisColumn, boolean nullable, TInstance tInstance)  {
-        int oid;
+        TypeOid oid;
         short length = -1;
         int modifier = -1;
 
         String encoding = aisType.encoding();
 
         if ("VARCHAR".equals(encoding))
-            oid = TypeOid.VARCHAR_TYPE_OID.getOid();
+            oid = TypeOid.VARCHAR_TYPE_OID;
         else if ("INT".equals(encoding) ||
                  "U_INT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
-                oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1; this also could be BOOLEAN (TINYINT(1)).
+                oid = TypeOid.INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
                 break;
             case 2:
             case 3:
-                oid = TypeOid.INT2_TYPE_OID.getOid();
+                oid = TypeOid.INT2_TYPE_OID;
                 break;
             case 4:
-                oid = TypeOid.INT4_TYPE_OID.getOid();
+                oid = TypeOid.INT4_TYPE_OID;
                 break;
             case 8:
-                oid = TypeOid.INT8_TYPE_OID.getOid();
+                oid = TypeOid.INT8_TYPE_OID;
                 break;
             default:
                 throw new UnknownTypeSizeException (aisType);
@@ -264,32 +287,32 @@ public class PostgresType extends ServerType
         }
         else if ("U_BIGINT".equals(encoding)) {
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
-            return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
+            return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
                                     aisType.akType(), MNumeric.BIGINT_UNSIGNED.instance());
         }
         else if ("DATE".equals(encoding))
-            oid = TypeOid.DATE_TYPE_OID.getOid();
+            oid = TypeOid.DATE_TYPE_OID;
         else if ("TIME".equals(encoding))
-            oid = TypeOid.TIME_TYPE_OID.getOid();
+            oid = TypeOid.TIME_TYPE_OID;
         else if ("DATETIME".equals(encoding) ||
                  "TIMESTAMP".equals(encoding))
-            oid = TypeOid.TIMESTAMP_TYPE_OID.getOid();
+            oid = TypeOid.TIMESTAMP_TYPE_OID;
         else if ("BLOB".equals(encoding) ||
                  "TEXT".equals(encoding))
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
         else if ("YEAR".equals(encoding))
-            oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1
+            oid = TypeOid.INT2_TYPE_OID; // No INT1
         else if ("DECIMAL".equals(encoding) ||
                  "U_DECIMAL".equals(encoding))
-            oid = TypeOid.NUMERIC_TYPE_OID.getOid();
+            oid = TypeOid.NUMERIC_TYPE_OID;
         else if ("FLOAT".equals(encoding) ||
                  "U_FLOAT".equals(encoding))
-            oid = TypeOid.FLOAT4_TYPE_OID.getOid();
+            oid = TypeOid.FLOAT4_TYPE_OID;
         else if ("DOUBLE".equals(encoding) ||
                  "U_DOUBLE".equals(encoding))
-            oid = TypeOid.FLOAT8_TYPE_OID.getOid();
+            oid = TypeOid.FLOAT8_TYPE_OID;
         else if ("VARBINARY".equals(encoding))
-            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            oid = TypeOid.BYTEA_TYPE_OID;
         else
             throw new UnknownDataTypeException (encoding);
 
@@ -321,7 +344,7 @@ public class PostgresType extends ServerType
     }
 
     public static PostgresType fromDerby(DataTypeDescriptor type, TInstance tInstance)  {
-        int oid;
+        TypeOid oid;
         short length = -1;
         int modifier = -1;
 
@@ -331,43 +354,43 @@ public class PostgresType extends ServerType
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-            oid = TypeOid.INTERVAL_TYPE_OID.getOid();
+            oid = TypeOid.INTERVAL_TYPE_OID;
             akType = AkType.INTERVAL_MILLIS;
             if (tInstance == null) tInstance = AkInterval.SECONDS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-            oid = TypeOid.INTERVAL_TYPE_OID.getOid();
+            oid = TypeOid.INTERVAL_TYPE_OID;
             akType = AkType.INTERVAL_MONTH;
             if (tInstance == null) tInstance = AkInterval.MONTHS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
-            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            oid = TypeOid.BYTEA_TYPE_OID;
             akType = AkType.VARBINARY;
             if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-            oid = TypeOid.BOOL_TYPE_OID.getOid();
+            oid = TypeOid.BOOL_TYPE_OID;
             akType = AkType.BOOL;
             if (tInstance == null) tInstance = AkBool.INSTANCE.instance();
             break;
         case TypeId.FormatIds.CHAR_TYPE_ID:
-            oid = TypeOid.CHAR_TYPE_OID.getOid();
+            oid = TypeOid.BPCHAR_TYPE_OID;
             akType = AkType.VARCHAR;
             if (tInstance == null) tInstance = charType(type, MString.VARCHAR);
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
-            oid = TypeOid.DATE_TYPE_OID.getOid();
+            oid = TypeOid.DATE_TYPE_OID;
             akType = AkType.DATE;
             if (tInstance == null) tInstance = MDatetimes.DATE.instance();
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            oid = TypeOid.NUMERIC_TYPE_OID.getOid();
+            oid = TypeOid.NUMERIC_TYPE_OID;
             akType = AkType.DECIMAL;
             if (tInstance == null) tInstance = MNumeric.DECIMAL.instance(type.getPrecision(), type.getScale());
             break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            oid = TypeOid.FLOAT8_TYPE_OID.getOid();
+            oid = TypeOid.FLOAT8_TYPE_OID;
             if (typeId.isUnsigned()) {
                 akType = AkType.U_DOUBLE;
                 if (tInstance == null) tInstance = MApproximateNumber.DOUBLE_UNSIGNED.instance();
@@ -378,7 +401,7 @@ public class PostgresType extends ServerType
             }
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
-            oid = TypeOid.INT4_TYPE_OID.getOid();
+            oid = TypeOid.INT4_TYPE_OID;
             if (typeId.isUnsigned()) {
                 akType = AkType.U_INT;
                 if (tInstance == null) tInstance = MNumeric.INT_UNSIGNED.instance();
@@ -391,25 +414,25 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned()) {
                 if (tInstance == null) tInstance = MNumeric.BIGINT_UNSIGNED.instance();
-                return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
+                return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
                                         AkType.U_BIGINT, tInstance);
             }
-            oid = TypeOid.INT8_TYPE_OID.getOid();
+            oid = TypeOid.INT8_TYPE_OID;
             akType = AkType.LONG;
             if (tInstance == null) tInstance = MNumeric.BIGINT.instance();
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
             akType = AkType.TEXT;
             if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
             akType = AkType.TEXT;
             if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.REAL_TYPE_ID:
-            oid = TypeOid.FLOAT4_TYPE_OID.getOid();
+            oid = TypeOid.FLOAT4_TYPE_OID;
             if (typeId.isUnsigned()) {
                 akType = AkType.U_FLOAT;
                 if (tInstance == null) tInstance = MApproximateNumber.FLOAT_UNSIGNED.instance();
@@ -420,23 +443,23 @@ public class PostgresType extends ServerType
             }
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            oid = TypeOid.INT2_TYPE_OID.getOid();
+            oid = TypeOid.INT2_TYPE_OID;
             if (typeId == TypeId.YEAR_ID) {
                 akType = AkType.YEAR;
                 if (tInstance == null) tInstance = MDatetimes.YEAR.instance();
             }
             else {
-                akType = AkType.INT;
-                if (tInstance == null) tInstance = MNumeric.INT.instance();
+                akType = AkType.LONG;
+                if (tInstance == null) tInstance = (typeId.isUnsigned()) ? MNumeric.SMALLINT_UNSIGNED.instance() : MNumeric.SMALLINT.instance();
             }
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
-            oid = TypeOid.TIME_TYPE_OID.getOid();
+            oid = TypeOid.TIME_TYPE_OID;
             akType = AkType.TIME;
             if (tInstance == null) tInstance = MDatetimes.TIME.instance();
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            oid = TypeOid.TIMESTAMP_TYPE_OID.getOid();
+            oid = TypeOid.TIMESTAMP_TYPE_OID;
             if (typeId == TypeId.DATETIME_ID) {
                 akType = AkType.DATETIME;
                 if (tInstance == null) tInstance = MDatetimes.DATETIME.instance();
@@ -450,32 +473,32 @@ public class PostgresType extends ServerType
             }
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1
-            akType = AkType.INT;
-            if (tInstance == null) tInstance = MNumeric.INT.instance();
+            oid = TypeOid.INT2_TYPE_OID; // No INT1
+            akType = AkType.LONG;
+            if (tInstance == null) tInstance = (typeId.isUnsigned()) ? MNumeric.TINYINT_UNSIGNED.instance() : MNumeric.TINYINT.instance();
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
-            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            oid = TypeOid.BYTEA_TYPE_OID;
             akType = AkType.VARBINARY;
             if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
             akType = AkType.VARBINARY;
             if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            oid = TypeOid.VARCHAR_TYPE_OID.getOid();
+            oid = TypeOid.VARCHAR_TYPE_OID;
             akType = AkType.VARCHAR;
             if (tInstance == null) tInstance = charType(type, MString.VARCHAR);
             break;
         case TypeId.FormatIds.CLOB_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID.getOid();
+            oid = TypeOid.TEXT_TYPE_OID;
             akType = AkType.TEXT;
             if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.XML_TYPE_ID:
-            oid = TypeOid.XML_TYPE_OID.getOid();
+            oid = TypeOid.XML_TYPE_OID;
             akType = AkType.TEXT;
             if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
@@ -529,9 +552,7 @@ public class PostgresType extends ServerType
                 str.append(",").append(modifier);
             str.append(")");
         }
-        TypeOid inst = TypeOid.fromOid(oid);
-        if (inst != null)
-            str.append("/").append(inst.getName());
+        str.append("/").append(oid.getName());
         return str.toString();
     }
 

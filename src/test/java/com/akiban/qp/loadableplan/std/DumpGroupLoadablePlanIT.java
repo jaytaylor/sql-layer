@@ -34,6 +34,9 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.TestBase;
 import com.akiban.sql.pg.PostgresServerFilesITBase;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValue;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
@@ -100,10 +103,18 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                     return SCHEMA_NAME;
                 }
             };
-        queryContext.setValue(0, SCHEMA_NAME);
-        queryContext.setValue(1, GROUP_NAME);
-        if (multiple)
-            queryContext.setValue(2, 10L);
+        if (Types3Switch.ON) {
+            queryContext.setPValue(0, new PValue(SCHEMA_NAME));
+            queryContext.setPValue(1, new PValue(GROUP_NAME));
+            if (multiple)
+                queryContext.setPValue(2, new PValue(10L));
+        }
+        else {
+            queryContext.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));
+            queryContext.setValue(1, new FromObjectValueSource().setReflectively(GROUP_NAME));
+            if (multiple)
+                queryContext.setValue(2, new FromObjectValueSource().setReflectively(10L));
+        }
 
         DirectObjectCursor cursor = plan.cursor(queryContext);
         

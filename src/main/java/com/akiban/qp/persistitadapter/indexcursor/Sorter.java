@@ -119,7 +119,8 @@ public class Sorter
                 loadTap.out();
             }
         } catch (PersistitException e) {
-            LOG.error("Caught exception while loading tree for sort", e);
+            if (!adapter.isFromInterruption(e))
+                LOG.error("Caught exception while loading tree for sort", e);
             exchange.removeAll();
             adapter.handlePersistitException(e);
         }
@@ -172,7 +173,8 @@ public class Sorter
             tempVolumeState.startSort();
             return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
         } catch (PersistitException e) {
-            LOG.error("Caught exception while getting exchange for sort", e);
+            if (!adapter.isFromInterruption(e))
+                LOG.error("Caught exception while getting exchange for sort", e);
             adapter.handlePersistitException(e);
             assert false; // handlePersistitException should throw something
             return null;

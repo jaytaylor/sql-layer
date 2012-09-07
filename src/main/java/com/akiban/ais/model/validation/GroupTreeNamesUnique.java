@@ -24,53 +24,32 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.admin.config;
+package com.akiban.ais.model.validation;
 
-import com.akiban.admin.Address;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.DuplicateGroupTreeNamesException;
 
-// Represents chunkserver address, port & lead config, specified in /config/cluster.properties
-// For configuration details of a single chunkserver, the class to use is ChunkserverConfig
+import java.util.HashMap;
+import java.util.Map;
 
-public class AkServerNetworkConfig
-{
-    @Override
-    public String toString()
-    {
-        return String.format("Chunkserver(%s%s)", lead ? "*" : "", address);
-    }
+class GroupTreeNamesUnique implements AISValidation {
 
     @Override
-    public boolean equals(Object o)
-    {
-        AkServerNetworkConfig that = (AkServerNetworkConfig) o;
-        return this.name.equals(that.name) &&
-               this.address.equals(that.address) &&
-               this.lead == that.lead;
-    }
+    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
+        Map<String,Group> treeNameMap = new HashMap<String,Group>();
 
-    public AkServerNetworkConfig(String name, Address address, boolean lead)
-    {
-        this.name = name;
-        this.address = address;
-        this.lead = lead;
+        for(Group group : ais.getGroups().values()) {
+            String treeName = group.getTreeName();
+            Group curGroup = treeNameMap.put(treeName, group);
+            if(curGroup != null) {
+                UserTable root = group.getRoot();
+                UserTable curRoot = curGroup.getRoot();
+                output.reportFailure(
+                    new AISValidationFailure(
+                            new DuplicateGroupTreeNamesException(root.getName(), curRoot.getName(), treeName)));
+            }
+        }
     }
-
-    public String name()
-    {
-        return name;
-    }
-
-    public Address address()
-    {
-        return address;
-    }
-
-    public boolean lead()
-    {
-        return lead;
-    }
-
-    private final String name;
-    private final Address address;
-    private boolean lead;
 }

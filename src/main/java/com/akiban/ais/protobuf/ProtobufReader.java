@@ -175,8 +175,8 @@ public class ProtobufReader {
             hasRequiredFields(pbGroup);
             String rootTableName = pbGroup.getRootTableName();
             Group group = Group.create(destAIS, nameGenerator.generateGroupName(rootTableName));
-            String treeName = pbGroup.hasTreeName() ? pbGroup.getTreeName() : null;
-            newGroups.add(new NewGroupInfo(schema, group, pbGroup, treeName));
+            group.setTreeName(pbGroup.hasTreeName() ? pbGroup.getTreeName() : null);
+            newGroups.add(new NewGroupInfo(schema, group, pbGroup));
         }
         return newGroups;
     }
@@ -196,7 +196,6 @@ public class ProtobufReader {
         for(NewGroupInfo newGroupInfo : newGroups) {
             String rootTableName = newGroupInfo.pbGroup.getRootTableName();
             UserTable rootUserTable = destAIS.getUserTable(newGroupInfo.schema, rootTableName);
-            rootUserTable.setTreeName(newGroupInfo.pbGroup.getTreeName());
             rootUserTable.setGroup(newGroupInfo.group);
             joinsNeedingGroup.addAll(rootUserTable.getCandidateChildJoins());
 
@@ -208,8 +207,6 @@ public class ProtobufReader {
             );
             newGroupInfo.group.setGroupTable(groupTable);
             groupTable.setGroup(newGroupInfo.group);
-            groupTable.setTreeName(newGroupInfo.treeName);
-            rootUserTable.setTreeName(newGroupInfo.treeName);
         }
         
         for(int i = 0; i < joinsNeedingGroup.size(); ++i) {
@@ -217,7 +214,6 @@ public class ProtobufReader {
             Group group = join.getParent().getGroup();
             join.setGroup(group);
             join.getChild().setGroup(group);
-            join.getChild().setTreeName(join.getParent().getTreeName());
             joinsNeedingGroup.addAll(join.getChild().getCandidateChildJoins());
         }
 
@@ -641,13 +637,11 @@ public class ProtobufReader {
         final String schema;
         final Group group;
         final AISProtobuf.Group pbGroup;
-        final String treeName;
 
-        public NewGroupInfo(String schema, Group group, AISProtobuf.Group pbGroup, String treeName) {
+        public NewGroupInfo(String schema, Group group, AISProtobuf.Group pbGroup) {
             this.schema = schema;
             this.group = group;
             this.pbGroup = pbGroup;
-            this.treeName = treeName;
         }
     }
 }
