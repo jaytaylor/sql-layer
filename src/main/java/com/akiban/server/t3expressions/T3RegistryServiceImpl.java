@@ -68,6 +68,7 @@ import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -84,6 +85,10 @@ import java.util.TreeSet;
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
 
     // T3RegistryService interface
+
+    public T3RegistryServiceImpl()
+    {
+    }
 
     @Override
     public Iterable<? extends ScalarsGroup> getOverloads(String name) {
@@ -200,6 +205,60 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return local;
     }
 
+    static final Comparator<TValidatedOverload> comparator = new Comparator<TValidatedOverload>()
+    {
+        @Override
+        public int compare(TValidatedOverload t, TValidatedOverload t1)
+        {
+            return nArgsOf(t) - nArgsOf(t1);
+        }
+    };
+
+    private static int nArgsOf(TValidatedOverload ovl)
+    {
+        return ovl.positionalInputs();
+    }
+
+    private static BitSet doFindSameType(Collection<? extends TValidatedOverload> overloads)
+    {
+        List<TValidatedOverload> list = new ArrayList<TValidatedOverload>(overloads.size());
+        list.addAll(overloads);
+        Collections.sort(list,comparator);
+
+        // overload with the longest argument list
+        TValidatedOverload maxOvl = list.get(list.size() -1);
+        int maxArgc = nArgsOf(maxOvl);
+        BitSet bitset = new BitSet(maxArgc);
+        Boolean same;
+
+        for (int n = 0; n < maxArgc; ++n)
+        {
+            same = Boolean.TRUE;
+            TClass common = maxOvl.inputSetAt(n).targetType();
+            for (int m = 0; m < list.size(); ++m)
+            {
+                TValidatedOverload ovl = list.get(m);
+                int curArgc = nArgsOf(ovl);
+                
+                // if the arg is absent === > TRUE
+                if (n >= curArgc) // n is out of range in 'this' overloads' input set
+                    continue;     // so just skip checking the arg
+
+                TClass targetType = ovl.inputSetAt(n).targetType();
+                if (targetType != null && !ovl.inputSetAt(n).targetType().equals(common) // neither is ANY
+                        || targetType == null && common != null) // or both are ANY
+                {
+                    same = Boolean.FALSE;
+                    break;
+                }
+                
+            }
+            bitset.set(n, same);
+        }
+
+        return bitset;
+    }
+
     private static ListMultimap<String, ScalarsGroup> createScalars(InstanceFinder finder) {
         Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
 
@@ -230,7 +289,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             String overloadName = entry.getKey();
             Collection<TValidatedOverload> allOverloads = entry.getValue();
             for (Collection<TValidatedOverload> priorityGroup : scalarsByPriority(allOverloads)) {
-                ScalarsGroup scalarsGroup = new ScalarsGroupImpl(priorityGroup);
+                ScalarsGroup scalarsGroup = new ScalarsGroupImpl(priorityGroup, doFindSameType(priorityGroup));
                 results.put(overloadName, scalarsGroup);
             }
         }
@@ -469,10 +528,12 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     private static final Logger logger = LoggerFactory.getLogger(T3RegistryServiceImpl.class);
 
     // object state
+
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
     private volatile ListMultimap<String, ScalarsGroup> overloadsByName;
     private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
+    private volatile Map<String, BitSet> sameType;
     private volatile Collection<? extends TClass> tClasses;
     private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {
         @Override
@@ -492,11 +553,22 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return overloads;
         }
 
-        public ScalarsGroupImpl(Collection<TValidatedOverload> overloads) {
+        public ScalarsGroupImpl(Collection<TValidatedOverload> overloads,
+                                BitSet bs) {
             this.overloads = Collections.unmodifiableCollection(overloads);
+            this.sameType = bs;
         }
 
+        @Override
+        public boolean hasSameTypeAt(int pos)
+        {
+            return sameType.get(pos);
+        }
+        
+        private BitSet sameType;
+        
         private final Collection<? extends TValidatedOverload> overloads;
+
     }
 
     private static class SelfCast implements TCast {
@@ -733,4 +805,5 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return new Yaml(options).dump(obj);
         }
     }
+
 }

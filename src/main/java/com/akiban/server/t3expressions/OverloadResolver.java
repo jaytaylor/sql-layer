@@ -39,9 +39,11 @@ import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public final class OverloadResolver {
@@ -196,6 +198,7 @@ public final class OverloadResolver {
     private OverloadResult inputBasedResolution(String name, List<? extends TPreptimeValue> inputs,
                                                 Iterable<? extends ScalarsGroup> scalarGroupsByPriority)
     {
+
         TValidatedOverload mostSpecific = null;
         boolean sawRightArity = false;
         for (ScalarsGroup scalarsGroup : scalarGroupsByPriority) {
@@ -205,7 +208,7 @@ public final class OverloadResolver {
                 if (!overload.coversNInputs(inputs.size()))
                     continue;
                 sawRightArity = true;
-                if (isCandidate(overload, inputs)) {
+                if (isCandidate(overload, inputs, scalarsGroup)) {
                     candidates.add(overload);
                 }
             }
@@ -272,8 +275,18 @@ public final class OverloadResolver {
         return isStrong(registry.cast(source, target));
     }
 
-    private boolean isCandidate(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
+    private boolean isCandidate(TValidatedOverload overload,
+                                List<? extends TPreptimeValue> inputs,
+                                ScalarsGroup scalarGroups) {
+        if (!overload.coversNInputs(inputs.size()))
+            return false;
+
         for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
+            // alow this input if
+            // all overloads of this name have the same at this position
+            if (scalarGroups.hasSameTypeAt(i))
+                continue;
+            
             TInstance inputInstance = inputs.get(i).instance();
             // allow this input if...
             // ... input's type it NULL or ?
