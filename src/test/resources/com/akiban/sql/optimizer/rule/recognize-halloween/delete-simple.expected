@@ -1,0 +1,6 @@
+DeleteStatement@1da781d1(t)
+  Select@603bcf8c[]
+    Flatten@3ccda037(t)
+      AncestorLookup@5fd19a10(t -> [t])
+        SingleIndexScan@39d9c195(Index(test.t.t_n[IndexColumn(n)]), NONE, <100, rows = 1, cost = 12.2006)
+        TableSource@4b387a81(t - TableGroup@7343adf(t))

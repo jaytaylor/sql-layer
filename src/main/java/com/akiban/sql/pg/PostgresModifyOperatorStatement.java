@@ -46,6 +46,7 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
 {
     private String statementType;
     private UpdatePlannable resultOperator;
+    private boolean requireStepIsolation;
 
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
@@ -54,15 +55,20 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
                                            PostgresType[] parameterTypes,
-                                           boolean usesPValues) {
+                                           boolean usesPValues,
+                                           boolean requireStepIsolation) {
         super(parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
+        this.requireStepIsolation = requireStepIsolation;
     }
     
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.WRITE;
+        if (requireStepIsolation)
+            return TransactionMode.WRITE_STEP_ISOLATED;
+        else
+            return TransactionMode.WRITE;
     }
 
     @Override

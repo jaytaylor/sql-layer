@@ -1,0 +1,1 @@
+INSERT INTO t(id,n) SELECT id, CHAR_LENGTH(s) FROM t2

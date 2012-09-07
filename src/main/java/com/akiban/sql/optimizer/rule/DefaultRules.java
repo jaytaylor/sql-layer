@@ -51,6 +51,7 @@ public class DefaultRules
             new SortSplitter(),
             new MapFolder(),
             new ExpressionCompactor(),
+            new HalloweenRecognizer(),
             new OperatorAssembler(true)
     );
 
@@ -73,6 +74,7 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
+        new HalloweenRecognizer(),
         new OperatorAssembler(false)
      );
 
@@ -95,6 +97,7 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
+        new HalloweenRecognizer(),
         new OperatorAssembler(false)
      );
 

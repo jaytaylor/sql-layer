@@ -110,19 +110,19 @@ public class AlterTableHelper {
 
     public void recreateAffectedGroupIndexes(UserTable origTable, final UserTable newTable, List<Index> indexesToBuild,
                                              Map<IndexName, List<Column>> affectedGroupIndexes) {
-        AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS(), new ProtobufWriter.TableSelector() {
-            @Override
-            public boolean isSelected(Columnar columnar) {
-                return columnar.isTable() && (newTable.getGroup() == ((Table) columnar).getGroup());
-            }
-        });
+        // Ideally only would copy the Group, but that is vulnerable to changing group names. Even if we handle that
+        // by looking up the new name, index creation in PSSM requires index.getName().getTableName() match the actual.
+        AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS());
 
         Group origGroup = origTable.getGroup();
         Group tempGroup = tempAIS.getGroup(newTable.getGroup().getName());
         for(Map.Entry<IndexName, List<Column>> entry : affectedGroupIndexes.entrySet()) {
             GroupIndex origIndex = origGroup.getIndex(entry.getKey().getName());
             List<Column> columns = entry.getValue();
-            assert !columns.isEmpty() : origIndex;
+            // TableChangeValidator returns the index with no remaining columns
+            if(columns.isEmpty()) {
+                continue;
+            }
             GroupIndex tempIndex = GroupIndex.create(tempAIS, tempGroup, origIndex);
             for(int i = 0; i < columns.size(); ++i) {
                 Column column = columns.get(i);

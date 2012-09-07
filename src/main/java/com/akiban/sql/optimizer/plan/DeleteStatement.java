@@ -36,9 +36,4 @@ public class DeleteStatement extends BaseUpdateStatement
                            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
         super(query, targetTable, columnEquivalencies);
     }
-
-    @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + getTargetTable() + ")";
-    }
 }
