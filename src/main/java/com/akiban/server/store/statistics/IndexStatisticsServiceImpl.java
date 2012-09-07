@@ -205,6 +205,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
+        catch (PersistitAdapterException ex) {
+            if (ex.getCause() instanceof PersistitInterruptedException)
+                throw new QueryCanceledException(session);
+            else
+                throw ex;
+        }
         if (result != null) {
             cache.put(index, result);
             return result;
@@ -257,6 +263,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 log.error("error while analyzing " + index, ex);
                 throw new PersistitAdapterException(ex);
             }
+            catch (PersistitAdapterException ex) {
+                if (ex.getCause() instanceof PersistitInterruptedException)
+                    throw new QueryCanceledException(session);
+                else
+                    throw ex;
+            }
             catch (RuntimeException e) {
                 log.error("error while analyzing " + index, e);
                 throw e;
@@ -299,6 +311,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
             }
+            catch (PersistitAdapterException ex) {
+                if (ex.getCause() instanceof PersistitInterruptedException)
+                    throw new QueryCanceledException(session);
+                else
+                    throw ex;
+            }
             cache.remove(index);
         }
     }
@@ -321,6 +339,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
+            }
+            catch (PersistitAdapterException ex) {
+                if (ex.getCause() instanceof PersistitInterruptedException)
+                    throw new QueryCanceledException(session);
+                else
+                    throw ex;
             }
             cache.put(index, indexStatistics);
         }
