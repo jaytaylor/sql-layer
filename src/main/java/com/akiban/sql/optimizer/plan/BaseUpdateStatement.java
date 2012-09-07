@@ -33,6 +33,7 @@ import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 public class BaseUpdateStatement extends BaseStatement
 {
     private TableNode targetTable;
+    private boolean requireStepIsolation;
 
     protected BaseUpdateStatement(PlanNode query, TableNode targetTable,
                                   EquivalenceFinder<ColumnExpression> columnEquivalencies) {
@@ -42,6 +43,28 @@ public class BaseUpdateStatement extends BaseStatement
 
     public TableNode getTargetTable() {
         return targetTable;
+    }
+
+    public boolean isRequireStepIsolation() {
+        return requireStepIsolation;
+    }
+    public void setRequireStepIsolation(boolean requireStepIsolation) {
+        this.requireStepIsolation = requireStepIsolation;
+    }
+
+    @Override
+    public String summaryString() {
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append('(');
+        fillSummaryString(str);
+        if (requireStepIsolation)
+            str.append(", HALLOWEEN");
+        str.append(')');
+        return str.toString();
+    }
+
+    protected void fillSummaryString(StringBuilder str) {
+        str.append(getTargetTable());
     }
 
     @Override

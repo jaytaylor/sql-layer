@@ -392,6 +392,13 @@ public class PersistitAdapter extends StoreAdapter
         return treeService.getTransaction(getSession());
     }
 
+    public boolean withStepChanging() {
+        return withStepChanging;
+    }
+    public void withStepChanging(boolean withStepChanging) {
+        this.withStepChanging = withStepChanging;
+    }
+
     public int enterUpdateStep()
     {
         return enterUpdateStep(false);
@@ -496,6 +503,6 @@ public class PersistitAdapter extends StoreAdapter
     private final TreeService treeService;
     private final Store store;
     private final PersistitStore persistit;
-    private final boolean withStepChanging;
+    private boolean withStepChanging;
     private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 }

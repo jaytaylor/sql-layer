@@ -74,14 +74,15 @@ public class ServerTransaction
         case NEW_WRITE:
             throw new TransactionInProgressException();
         case WRITE:
+        case WRITE_STEP_ISOLATED:
             if (readOnly)
                 throw new TransactionReadOnlyException();
-            beforeUpdate();
+            beforeUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
         }
     }
 
-    public void beforeUpdate() {
-        if (transaction.getStep() == 0)
+    public void beforeUpdate(boolean withStepIsolation) {
+        if (withStepIsolation && (transaction.getStep() == 0))
             // On the first non-read statement in a transaction, move
             // to step 1 to enable isolation against later steps.
             // Step 1 will do the update and then we'll move to step 2
@@ -89,8 +90,8 @@ public class ServerTransaction
             transaction.incrementStep();
     }
 
-    public void afterUpdate() {
-        if (!transaction.isRollbackPending())
+    public void afterUpdate(boolean withStepIsolation) {
+        if (withStepIsolation && !transaction.isRollbackPending())
             transaction.incrementStep();
     }
 
