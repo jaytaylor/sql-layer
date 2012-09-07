@@ -301,6 +301,7 @@ public class AlterTableDDL {
         // Remove all and recreate (note: hidden PK and column are handled by DDL interface)
         tableCopy.dropColumns();
         tableCopy.removeIndexes(tableCopy.getIndexesIncludingInternal());
+        tableCopy.getGroup().removeIndexes(tableCopy.getGroup().getIndexes());
 
         int colPos = 0;
         for(Column origColumn : origTable.getColumns()) {
