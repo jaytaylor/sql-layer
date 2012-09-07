@@ -26,7 +26,11 @@
 
 package com.akiban.qp.rowtype;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.UserTable;
 
 public class FlattenedRowType extends CompoundRowType
 {
@@ -61,5 +65,10 @@ public class FlattenedRowType extends CompoundRowType
     public FlattenedRowType(DerivedTypesSchema schema, int typeId, RowType parent, RowType child)
     {
         super(schema, typeId, parent, child);
+        // re-replace the type composition with the single branch type
+        List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
+        parentAndChildTables.addAll(child.typeComposition().tables());
+        typeComposition(new SingleBranchTypeComposition(this, parentAndChildTables));
+        
     }
 }
