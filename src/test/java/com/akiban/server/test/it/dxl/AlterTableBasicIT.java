@@ -79,9 +79,13 @@ public class AlterTableBasicIT extends AlterTableITBase {
     }
 
     private void createAndLoadCOI() {
-        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(1)");
-        oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, o1 int, grouping foreign key(cid) references c(id)");
-        iid = createTable(SCHEMA, "i", "id int not null primary key, oid int, i1 int, grouping foreign key(oid) references o(id)");
+        createAndLoadCOI(SCHEMA);
+    }
+
+    private void createAndLoadCOI(String schema) {
+        cid = createTable(schema, "c", "id int not null primary key, c1 char(1)");
+        oid = createTable(schema, "o", "id int not null primary key, cid int, o1 int, grouping foreign key(cid) references c(id)");
+        iid = createTable(schema, "i", "id int not null primary key, oid int, i1 int, grouping foreign key(oid) references o(id)");
         writeRows(
                 createNewRow(cid, 1L, "a"),
                     createNewRow(oid, 10L, 1L, 11L),
@@ -1080,5 +1084,35 @@ public class AlterTableBasicIT extends AlterTableITBase {
         checkIndexesInstead(C_NAME, "PRIMARY");
         checkIndexesInstead(O_NAME, "PRIMARY");
         checkIndexesInstead(I_NAME, "PRIMARY");
+    }
+
+    // bug1047090
+    @Test
+    public void changeColumnAffectGroupIndexMultiRootTablesSameName() {
+        final String schema1 = "test1";
+        final String schema2 = "test2";
+        createAndLoadCOI(schema1);
+        createAndLoadCOI(schema2);
+        String groupName = getUserTable(schema2, "c").getGroup().getName();
+        createGroupIndex(groupName, "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
+
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE test2.o ALTER COLUMN o1 SET DATA TYPE bigint");
+
+        Index gi = getUserTable(schema2, "c").getGroup().getIndex("c1_01");
+        assertNotNull("GI still exists", gi);
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        IndexRowType indexRowType = schema.indexRowType(gi);
+        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        compareRows(
+                new RowBase[] {
+                        testRow(indexRowType, "a", 11L, 1L, 10L),
+                        testRow(indexRowType, "a", 12L, 1L, 11L)
+                },
+                API.cursor(
+                        API.indexScan_Default(indexRowType, false, IndexKeyRange.unbounded(indexRowType)),
+                        new SimpleQueryContext(adapter)
+                )
+        );
     }
 }
