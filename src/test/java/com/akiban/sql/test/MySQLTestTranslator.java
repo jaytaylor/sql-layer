@@ -51,6 +51,7 @@ public class MySQLTestTranslator {
     final String target_path = System.getProperty("user.dir")
             + "/src/test/resources/com/akiban/sql/pg/yaml/mysql-test/";
     private static final String skip_key = "# AUTOGEN: SKIP";
+    public static final String single_quote = "'";
     
     // It is also possible to filter the list of returned files.
     // This example does not return any files that start with `.'.
@@ -58,14 +59,7 @@ public class MySQLTestTranslator {
         public boolean accept(final File dir, final String name) {
             boolean accept;
             
-            accept = !name.startsWith(".")
-                    && !name.startsWith("tc")
-                    && !name.startsWith("se")
-                    && !name.startsWith("an")
-                    && !name.startsWith("sq")
-                    && !name.startsWith("ix")
-                    && !name.startsWith("db")
-                    && !name.startsWith("rpl")
+            accept = name.startsWith("in")
                     && (name.endsWith(".result") || (name.startsWith("data") && name
                             .endsWith(".inc")));
             return accept;
@@ -141,7 +135,7 @@ public class MySQLTestTranslator {
                 } else if (strLine.toUpperCase().startsWith("SELECT")) {
                     translateSelect(strLine);
                 } else if (strLine.toUpperCase().startsWith("TRUNCATE TABLE")) {
-                    translateComment(strLine);
+                    translateTruncateTable(strLine);
                 } else if (strLine.toUpperCase().startsWith("--SOURCE")) {
                     translateInclude(strLine);
                 } else if (strLine.toUpperCase().startsWith("DROP TABLE")) {
@@ -168,6 +162,8 @@ public class MySQLTestTranslator {
                     translateComment(strLine);
                 } else if (strLine.toUpperCase().startsWith("WARNING")) {
                     translateComment(strLine);
+                } else if (strLine.toUpperCase().startsWith("NOTE")) {
+                    translateWarning(br.readLine());
                 } else if (strLine.toUpperCase().startsWith("LOAD")) {
                     translateComment(strLine);
                 } else if (strLine.toUpperCase().startsWith("USE")) {
@@ -195,6 +191,8 @@ public class MySQLTestTranslator {
                 } else if (strLine.length() > 0) {
                     translateData(strLine);
                 }
+                
+                
             }
             //Close the input stream
             
@@ -222,12 +220,22 @@ public class MySQLTestTranslator {
         data = new StringBuilder();
     }
 
+    private void translateWarning(String strLine) {
+        // source: # Note       1265    Data truncated for column 'c1' at row 1
+        // output: #- warnings: [[1, 'WARN:   Data truncated for column ''C1'' at row 1']]
+        strLine = strLine.replaceAll(single_quote, single_quote+single_quote);
+        strLine = strLine.substring(10);
+        blockData.append("#- warnings: [1,'" + strLine + "']"
+                + System.getProperty("line.separator"));
+    }
+
     /* return true to skip processing file because target file is working
      don't mess with it
      */
     private boolean checkTargetFile(String strFilename) {
         boolean retVal = false;
         File f = new File(strFilename);
+        f.mkdirs();
         if (f.exists()) {
 
             BufferedReader br = null;
@@ -257,20 +265,27 @@ public class MySQLTestTranslator {
     }
 
     private void translateError(String strLine) {
+        strLine = strLine.replaceAll(single_quote, single_quote+single_quote);
+        strLine = strLine.split(":")[0];
+        strLine = strLine.replaceAll(":"," ");
+        strLine = strLine.replaceAll("23000","23501");
+        strLine = strLine.replaceAll("ERROR ","");
         blockData.append("- error: ['" + strLine + "']"
                 + System.getProperty("line.separator"));
     }
 
-    @SuppressWarnings("unused")
     private void translateTruncateTable(String strLine) {
         finishData();
-
-        strLine = strLine.toUpperCase().replaceAll("TRUNCATE TABLE", "");
         strLine = strLine.replaceAll(";", "");
+        strLine = strLine.replaceAll(" t1 "," T1 ");
+        strLine = strLine.replaceAll(" t2 "," T2 ");
+        strLine = strLine.replaceAll(" t3 "," T3 ");
+        strLine = strLine.replaceAll(" t4 "," T4 ");
+        strLine = strLine.replaceAll(" t5 "," T5 ");
         final String[] tableList = strLine.split(",");
         for (int x = 0; x < tableList.length; x++) {
             data.append("---" + System.getProperty("line.separator")
-                    + "- TruncateTable: " + tableList[x]
+                    + "- Statement: " + tableList[x]
                     + System.getProperty("line.separator"));
         }
     }
@@ -303,10 +318,11 @@ public class MySQLTestTranslator {
             alldata[smallCounter] = realdata;
             smallCounter++;
             for (int x = 0; x < realdata.length; x++) {
+                String preData = single_quote + realdata[x].replaceAll(single_quote, single_quote+single_quote) + single_quote;
                 if (x == 0) {
-                    tempData.append("[" + realdata[x]);
+                    tempData.append("[" + preData);
                 } else {
-                    tempData.append("," + realdata[x]);
+                    tempData.append("," + preData);
                 }
             }
             tempData.append("]");
@@ -321,12 +337,20 @@ public class MySQLTestTranslator {
         strLine = strLine.replaceAll("<=>", "=");
         strLine = strLine.replaceAll(";", "");
         blockData.append("---" + System.getProperty("line.separator")
-                + "- Statement: " + strLine);
+                + "- Statement: " + strLine+System.getProperty("line.separator"));
 
     }
 
-    private void translateStatement(final String strLine) {
+    private void translateStatement(String strLine) {
         finishData();
+        //System.out.println("******Testing: "+strLine);
+        strLine = strLine.replaceAll("ADDTIME\\(NOW\\(\\),'1 01:01:01'\\)", "ADDTIME(NOW(),INTERVAL '1 01:01:01' DAY_SECOND)");
+        strLine = strLine.replaceAll("ADDTIME\\(NOW\\(\\),'2 02:01:01'\\)", "ADDTIME(NOW(),INTERVAL '2 02:01:01' DAY_SECOND)");
+        strLine = strLine.replaceAll("ADDTIME\\(NOW\\(\\),'3 03:01:01'\\)", "ADDTIME(NOW(),INTERVAL '3 03:01:01' DAY_SECOND)");
+        strLine = strLine.replaceAll("ADDTIME\\(NOW\\(\\),'4 04:01:01'\\)", "ADDTIME(NOW(),INTERVAL '4 04:01:01' DAY_SECOND)");
+        strLine = strLine.replaceAll(" t4 "," T4 ");
+        strLine = strLine.replaceAll(" t5 "," T5 ");
+        //System.out.println("******Testing(POST): "+strLine);
         data.append("---" + System.getProperty("line.separator")
                 + "- Statement: " + strLine
                 + System.getProperty("line.separator"));
@@ -358,8 +382,20 @@ public class MySQLTestTranslator {
         strLine = strLine.toUpperCase().replaceAll("TEXT", "CLOB");
         strLine = strLine.toUpperCase().replaceAll("VARBINARY", "VARCHAR");
         strLine = strLine.toUpperCase().replaceAll("BINARY", "VARCHAR");
-        strLine = strLine.toUpperCase().replaceAll("T1\\(C1", "T1 \\(C1");
+        strLine = strLine.toUpperCase().replaceAll("FIXED", "DECIMAL");
+        strLine = strLine.toUpperCase().replaceAll("FLOAT", "DECIMAL");
+        strLine = strLine.toUpperCase().replaceAll("DOUBLE", "DECIMAL");
+        strLine = strLine.toUpperCase().replaceAll("REAL", "DECIMAL");
+        strLine = strLine.toUpperCase().replaceAll("PRECISION", "");
+        
+        strLine = strLine.toUpperCase().replaceAll("T1\\(C", "T1 \\(C");
+        strLine = strLine.toUpperCase().replaceAll("T2\\(C", "T2 \\(C");
+        strLine = strLine.toUpperCase().replaceAll("T3\\(C", "T3 \\(C");
+        strLine = strLine.toUpperCase().replaceAll("T4\\(C", "T4 \\(C");
+        strLine = strLine.toUpperCase().replaceAll("T5\\(C", "T5 \\(C");
 
+        strLine = strLine.toUpperCase().replaceAll("AUTO_INCREMENT","GENERATED BY DEFAULT AS IDENTITY");
+        
         data.append("---" + System.getProperty("line.separator")
                 + "- CreateTable: " + strLine
                 + System.getProperty("line.separator"));
@@ -393,13 +429,16 @@ public class MySQLTestTranslator {
     private void finishData() {
         if (blockData != null && blockData.length() > 0) {
             data.append(blockData);
-            data.append(";" + System.getProperty("line.separator"));
+            //data.append(System.getProperty("line.separator"));
             if (tempData != null && tempData.length() > 0) {
-                data.append("- output_ordered: [" + tempData.toString() + "]"
+                String mod = tempData.toString();
+                data.append("- output_ordered: [" + mod + "]"
                         + System.getProperty("line.separator"));
             } else {
-                data.append("- row_count: 0"
+                if (!blockData.toString().contains("warnings") && !blockData.toString().contains("error:")) {
+                    data.append("- row_count: 0"
                         + System.getProperty("line.separator"));
+                }
             }
             tempData = new StringBuilder();
             blockData = new StringBuilder();
