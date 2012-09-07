@@ -26,6 +26,8 @@
 
 package com.akiban.server.service.config;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -36,7 +38,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.akiban.admin.Admin;
+import com.akiban.server.error.BadConfigDirectoryException;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.error.ServiceStartupException;
@@ -48,11 +50,12 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         ConfigurationServiceMXBean, JmxManageable,
         Service {
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
-    private final static String AKIBAN_ADMIN = "akiban.admin";
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
-    /** Chunkserver properties. Format specified by chunkserver. */
 
-    public static final String CONFIG_CHUNKSERVER = "/config/server.properties";
+    /** Server properties. Format specified by server. */
+    public static final String CONFIG_DIR_PROP = "akserver.config_dir";
+    public static final String CONFIG_SERVER = "/config/server.properties";
+
     private Map<String,Property> properties = null;
     private final Set<String> requiredKeys = new HashSet<String>();
 
@@ -199,7 +202,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
      * for customization in unit tests. For example, some unit tests create data
      * files in a temporary directory. These should also override
      * {@link #unloadProperties()} to clean them up.
-     * @throws IOException if loading the properties throws an IO exception
      * @return the configuration properties
      */
     protected Map<String, Property> loadProperties() {
@@ -207,24 +209,23 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
         props = loadResourceProperties(props);
         props = loadSystemProperties(props);
-        if (shouldLoadAdminProperties()) {
-            props = loadAdminProperties(props);
+        if (shouldLoadConfigDirProperties()) {
+            props = loadConfigDirProperties(props);
         }
 
-        return propetiesToMap(props);
+        return propertiesToMap(props);
     }
 
     /**
      * Override this method in unit tests to clean up any temporary files, etc.
      * A class that overrides {@link #loadProperties()} should probably also
      * override this method.
-     * @throws IOException not thrown by the default implementation
      */
     protected void unloadProperties() {
 
     }
 
-    protected boolean shouldLoadAdminProperties() {
+    protected boolean shouldLoadConfigDirProperties() {
         return true;
     }
 
@@ -232,7 +233,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         return requiredKeys;
     }
 
-    private static Map<String, Property> propetiesToMap(
+    private static Map<String, Property> propertiesToMap(
             Properties properties) {
         Map<String, Property> ret = new HashMap<String, Property>();
         for (String keyStr : properties.stringPropertyNames()) {
@@ -294,14 +295,34 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         return loadedSystemProps;
     }
 
-    private static Properties loadAdminProperties(Properties defaults) {
-        Properties adminProps = chainProperties(defaults);
-        final String akibanAdmin = adminProps.getProperty(AKIBAN_ADMIN);
-        if (akibanAdmin != null && !"NONE".equals(akibanAdmin)) {
-            final Admin admin = Admin.only();
-            adminProps.putAll(admin.get(CONFIG_CHUNKSERVER).properties());
+    private static Properties loadConfigDirProperties(Properties defaults) {
+        Properties combined = chainProperties(defaults);
+        String configDirPath = combined.getProperty(CONFIG_DIR_PROP);
+        if (configDirPath != null && !"NONE".equals(configDirPath)) {
+            File configDir = new File(configDirPath);
+            if (!configDir.exists() || !configDir.isDirectory()) {
+                throw new BadConfigDirectoryException(configDir.getAbsolutePath());
+            }
+            try {
+                loadFromFile(combined, configDirPath, CONFIG_SERVER);
+            } catch(IOException e) {
+                throw new ConfigurationPropertiesLoadException(CONFIG_SERVER, e.getMessage());
+            }
         }
-        return adminProps;
+        return combined;
+    }
+
+    private static void loadFromFile(Properties props, String directory, String fileName) throws IOException {
+        FileInputStream fis = null;
+        try {
+            File file = new File(directory, fileName);
+            fis = new FileInputStream(file);
+            props.load(fis);
+        } finally {
+            if(fis != null) {
+                fis.close();
+            }
+        }
     }
 
     private static boolean keyIsInteresting(String key) {

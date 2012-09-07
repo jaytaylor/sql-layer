@@ -122,7 +122,10 @@ public class AlterTableHelper {
         for(Map.Entry<IndexName, List<Column>> entry : affectedGroupIndexes.entrySet()) {
             GroupIndex origIndex = origGroup.getIndex(entry.getKey().getName());
             List<Column> columns = entry.getValue();
-            assert !columns.isEmpty() : origIndex;
+            // TableChangeValidator returns the index with no remaining columns
+            if(columns.isEmpty()) {
+                continue;
+            }
             GroupIndex tempIndex = GroupIndex.create(tempAIS, tempGroup, origIndex);
             for(int i = 0; i < columns.size(); ++i) {
                 Column column = columns.get(i);

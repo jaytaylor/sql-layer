@@ -50,7 +50,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    protected boolean shouldLoadAdminProperties() {
+    protected boolean shouldLoadConfigDirProperties() {
         return false;
     }
 
