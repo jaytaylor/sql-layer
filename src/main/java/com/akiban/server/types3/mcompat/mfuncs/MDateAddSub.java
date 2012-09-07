@@ -34,6 +34,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -53,26 +54,26 @@ public class MDateAddSub extends TOverloadBase
         new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.DAY, "DATE_ADD", "ADDDATE"),
         new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.DAY, "DATE_ADD", "ADDDATE"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.DAY, "DATE_ADD", "ADDDATE"),
-//        new MDateAddSub(Helper.DO_ADD, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
-//        new MDateAddSub(Helper.DO_ADD, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
-//        new MDateAddSub(Helper.DO_ADD, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
-//        new MDateAddSub(Helper.DO_ADD, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
-//        new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
-//        new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
-//        new SubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
-//        new SubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD_MONTH, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD_MONTH, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
+        new MDateAddSub(Helper.DO_ADD_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
+        new AddSubWithVarchar(Helper.DO_ADD_MONTH, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
 
         // SUBDATE
         new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.DAY, "DATE_SUB", "SUBDATE"),
         new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.DAY, "DATE_SUB", "SUBDATE"),
         new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.DAY, "DATE_SUB", "SUBDATE"),
         new AddSubWithVarchar(Helper.DO_SUB, SecondType.DAY, "DATE_SUB", "SUBDATE"),
-//        new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
-//        new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
-//        new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
-//        new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
-//        new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
-//        new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE"),
+        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE"),
         
         // ADDTIME
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.TIME, "TIME_ADD", "ADDTIME"),
@@ -147,6 +148,22 @@ public class MDateAddSub extends TOverloadBase
     
     private static enum Helper
     {
+        DO_ADD_MONTH
+        {
+            @Override
+            protected void compute(MutableDateTime date, long delta)
+            {
+                date.addMonths((int)delta);
+            }
+        },
+        DO_SUB_MONTH
+        {
+            @Override
+            protected void compute(MutableDateTime date, long delta)
+            {
+                date.addMonths(-(int)delta);
+            }
+        },
         DO_ADD
         {
             @Override
@@ -262,20 +279,23 @@ public class MDateAddSub extends TOverloadBase
 
     private static enum SecondType
     {
-//        INTERVAL_MILLIS(// TODO)
-//        {
-//            long toMillis(PValueSource arg)
-//            {
-//                // TODO
-//            }
-//        },
-//        INTERVAL_MONTH(//TODO)
-//        {
-//            long toMillis(PValueSource arg)
-//            {
-//                // TODO
-//            }
-//        },
+        INTERVAL_MILLIS(AkInterval.SECONDS)
+        {
+            @Override
+            protected long toMillis(PValueSource arg)
+            {
+                return arg.getInt64() * 1000;
+            }
+        },
+        INTERVAL_MONTH(AkInterval.MONTHS)
+        {
+            @Override
+            protected long toMillis(PValueSource arg)
+            {
+                // this return the number of months, not millis
+                 return arg.getInt64();
+            }
+        },
         TIME(MDatetimes.TIME)
         {
             @Override
