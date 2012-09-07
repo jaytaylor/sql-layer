@@ -85,11 +85,7 @@ import java.util.TreeSet;
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
 
     // T3RegistryService interface
-
-    public T3RegistryServiceImpl()
-    {
-    }
-
+    
     @Override
     public Iterable<? extends ScalarsGroup> getOverloads(String name) {
         List<ScalarsGroup> result = overloadsByName.get(name.toLowerCase());
