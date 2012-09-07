@@ -36,13 +36,21 @@ import java.util.Arrays;
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable
 {
+    private boolean requireStepIsolation;
+
     public PhysicalUpdate(UpdatePlannable updatePlannable,
-                          DataTypeDescriptor[] parameterTypes) {
+                          DataTypeDescriptor[] parameterTypes,
+                          boolean requireStepIsolation) {
         super(updatePlannable, parameterTypes);
+        this.requireStepIsolation = requireStepIsolation;
     }
 
     public UpdatePlannable getUpdatePlannable() {
         return (UpdatePlannable)getPlannable();
+    }
+
+    public boolean isRequireStepIsolation() {
+        return requireStepIsolation;
     }
 
     @Override
@@ -54,6 +62,8 @@ public class PhysicalUpdate extends BasePlannable
     protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
+        if (requireStepIsolation)
+            str.append("/STEP_ISOLATE");
         return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 

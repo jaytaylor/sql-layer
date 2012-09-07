@@ -90,9 +90,11 @@ public class UpdateStatement extends BaseUpdateStatement
         return v.visitLeave(this);
     }
     
+
     @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + getTargetTable() + updateColumns + ")";
+    protected void fillSummaryString(StringBuilder str) {
+        super.fillSummaryString(str);
+        str.append(updateColumns);
     }
 
     @Override
