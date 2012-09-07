@@ -214,7 +214,7 @@ public class ASTStatementLoader extends BaseRule
                     returningColumns.add(column);
                 }
             }
-            return new InsertStatement(query, targetTable, targetColumns, returningColumns, peekEquivalenceFinder());
+            return new InsertStatement(query, targetTable, targetColumns, peekEquivalenceFinder());
         }
     
         // DELETE
