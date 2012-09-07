@@ -26,6 +26,7 @@
 
 package com.akiban.server;
 
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.SessionService;
@@ -60,13 +61,15 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     public static final String VERSION_STRING = getVersionString();
 
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
-    private static final String AKSERVER_NAME = System.getProperty("akserver.name", "Akiban Server");
+    private static final String AKSERVER_NAME_PROP = "akserver.name";
     private static final String PID_FILE_NAME = System.getProperty("akserver.pidfile");
 
     private final JmxObjectInfo jmxObjectInfo;
+    private final ConfigurationService config;
 
     @Inject
-    public AkServer(Store store, DXLService dxl, SessionService sessionService) {
+    public AkServer(Store store, DXLService dxl, SessionService sessionService, ConfigurationService config) {
+        this.config = config;
         this.jmxObjectInfo = new JmxObjectInfo(
                 "AKSERVER",
                 new ManageMXBeanImpl(store, dxl, sessionService),
@@ -106,7 +109,7 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     @Override
     public String getServerName()
     {
-        return AKSERVER_NAME;
+        return config.getProperty(AKSERVER_NAME_PROP);
     }
 
     @Override
@@ -194,12 +197,14 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     /** Start from procrun.
      * @see <a href="http://commons.apache.org/daemon/procrun.html">Daemon: Procrun</a>
      */
+    @SuppressWarnings("unused") // Called by procrun
     public static void procrunStart(String[] args) throws Exception {
         // Start server and return from this thread.
         // Normal entry does that.
         main(args);
     }
 
+    @SuppressWarnings("unused") // Called by procrun
     public static void procrunStop(String[] args) throws Exception {
         // Stop server from another thread.
         // Need global access to ServiceManager. Can get it via the shutdown bean.

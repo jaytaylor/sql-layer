@@ -65,7 +65,7 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         // Overwrite the query parameters with the call parameters.
-        PostgresLoadablePlan.setParameters(context, args);
+        PostgresLoadablePlan.setParameters(context, args, usesPValues());
         return super.execute(context, maxrows);
     }
 

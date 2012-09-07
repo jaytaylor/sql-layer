@@ -58,13 +58,27 @@ public class SqlLiteralValueFormatter
         return str.toString();
     }
 
+    public static enum DateTimeFormat {
+        // DATETIME isn't legal SQL, but is suitable for explain.
+        // TIMESTAMP does not work for INSERT because of long extractor confusion.
+        DATETIME, TIMESTAMP, NONE
+    }
+
     private Appendable buffer;
     private Formatter formatter;
+    private DateTimeFormat dateTimeFormat = DateTimeFormat.DATETIME;
 
     public SqlLiteralValueFormatter(Appendable buffer) {
         this.buffer = buffer;
     }
     
+    public DateTimeFormat getDateTimeFormat() {
+        return dateTimeFormat;
+    }
+    public void setDateTimeFormat(DateTimeFormat dateTimeFormat) {
+        this.dateTimeFormat = dateTimeFormat;
+    }
+
     public void append(ValueSource source) throws IOException {
         append(source, source.getConversionType());
     }
@@ -212,7 +226,18 @@ public class SqlLiteralValueFormatter
     protected void appendDateTime(long value) throws IOException {
         if (dateExtractor == null)
             dateExtractor = Extractors.getLongExtractor(AkType.DATETIME);
-        buffer.append("TIMESTAMP '");
+        switch (dateTimeFormat) {
+        case DATETIME:
+            buffer.append("DATETIME '");
+            break;
+        case TIMESTAMP:
+            buffer.append("TIMESTAMP '");
+            break;
+        case NONE:
+        default:
+            buffer.append('\'');
+            break;
+        }
         buffer.append(dateExtractor.asString(value));
         buffer.append('\'');
     }

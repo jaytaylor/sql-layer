@@ -52,7 +52,7 @@ public class PostgresExplainStatement implements PostgresStatement
                 maxlen = row.length();
         }
         colName = "OPERATORS";
-        colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(), (short)-1, maxlen,
+        colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID, (short)-1, maxlen,
                                    AkType.VARCHAR, MString.VARCHAR.instance(maxlen));
         this.usePVals = usePVals;
     }

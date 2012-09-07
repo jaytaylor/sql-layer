@@ -285,7 +285,7 @@ public class ProtobufReaderWriterTest {
     }
 
     @Test
-    public void tableAndIndexTreeNames() {
+    public void groupAndIndexTreeNames() {
         final String GROUP_TREENAME = "foo";
         final String PARENT_PK_TREENAME = "bar";
         final String GROUP_INDEX_TREENAME = "zap";
@@ -296,21 +296,15 @@ public class ProtobufReaderWriterTest {
 
         AkibanInformationSchema inAIS = builder.ais();
         UserTable inParent = inAIS.getUserTable(SCHEMA, "parent");
-        UserTable inChild = inAIS.getUserTable(SCHEMA, "child");
-        inParent.getGroup().getGroupTable().setTreeName(GROUP_TREENAME);
+        inParent.getGroup().setTreeName(GROUP_TREENAME);
         inParent.getGroup().getIndex("v_cid").setTreeName(GROUP_INDEX_TREENAME);
-        inParent.setTreeName(GROUP_TREENAME);
         inParent.getIndex("PRIMARY").setTreeName(PARENT_PK_TREENAME);
-        inChild.setTreeName(GROUP_TREENAME);
 
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, true);
 
         UserTable outParent = outAIS.getUserTable(SCHEMA, "parent");
-        UserTable outChild = outAIS.getUserTable(SCHEMA, "child");
-        assertEquals("group table treename", GROUP_TREENAME, outParent.getGroup().getGroupTable().getTreeName());
-        assertEquals("parent table treename", GROUP_TREENAME, outParent.getTreeName());
-        assertEquals("child table treename", GROUP_TREENAME, outChild.getTreeName());
+        assertEquals("group treename", GROUP_TREENAME, outParent.getGroup().getTreeName());
         assertEquals("parent pk treename", PARENT_PK_TREENAME, inParent.getIndex("PRIMARY").getTreeName());
         assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getTreeName());
     }

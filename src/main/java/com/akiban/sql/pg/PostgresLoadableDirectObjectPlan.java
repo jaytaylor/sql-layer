@@ -95,7 +95,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
-        PostgresLoadablePlan.setParameters(context, args);
+        PostgresLoadablePlan.setParameters(context, args, usesPValues());
         try {
             cursor = plan.cursor(context);
             cursor.open();
