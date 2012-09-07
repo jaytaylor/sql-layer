@@ -204,7 +204,17 @@ public class ASTStatementLoader extends BaseRule
                     targetColumns.add(aisColumns.get(i));
                 }
             }
-            return new InsertStatement(query, targetTable, targetColumns, peekEquivalenceFinder());
+            List<Column> returningColumns = null;
+            rcl = insertNode.getReturningList();
+            if (rcl != null) {
+                returningColumns = new ArrayList<Column>(rcl.size());
+                for (ResultColumn resultColumn : rcl) {
+                    Column column = getColumnReferenceColumn(resultColumn.getReference(),
+                                                            "Unsupported returning column");
+                    returningColumns.add(column);
+                }
+            }
+            return new InsertStatement(query, targetTable, targetColumns, returningColumns, peekEquivalenceFinder());
         }
     
         // DELETE
