@@ -245,8 +245,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     continue;     // so just skip checking the arg
 
                 TClass targetType = ovl.inputSetAt(n).targetType();
-                if (targetType != null && !ovl.inputSetAt(n).targetType().equals(common) // neither is ANY
-                        || targetType == null && common != null) // or both are ANY
+                if (targetType != null && !ovl.inputSetAt(n).targetType().equals(common)
+                        || targetType == null && common != null)
                 {
                     same = Boolean.FALSE;
                     break;
