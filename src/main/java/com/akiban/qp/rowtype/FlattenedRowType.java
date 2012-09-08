@@ -31,6 +31,9 @@ import java.util.List;
 
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
 
 public class FlattenedRowType extends CompoundRowType
 {
@@ -49,7 +52,16 @@ public class FlattenedRowType extends CompoundRowType
     {
         return second().hKey();
     }
-    
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer explainer = super.getExplainer(context);
+        explainer.addAttribute(Label.PARENT_TYPE, first().getExplainer(context));
+        explainer.addAttribute(Label.CHILD_TYPE, second().getExplainer(context));
+        return explainer;
+    }
+
     // FlattenedRowType interface
 
     public RowType parentType()

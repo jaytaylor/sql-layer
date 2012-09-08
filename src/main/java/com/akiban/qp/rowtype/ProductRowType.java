@@ -27,6 +27,9 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
@@ -57,6 +60,15 @@ public class ProductRowType extends CompoundRowType
         if (index < first().nFields())
             return first().typeInstanceAt(index);
         return second().typeInstanceAt(index - first().nFields() + branchType.nFields());
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer explainer = super.getExplainer(context);
+        explainer.addAttribute(Label.LEFT_TYPE, first().getExplainer(context));
+        explainer.addAttribute(Label.RIGHT_TYPE, second().getExplainer(context));
+        return explainer;
     }
 
     // ProductRowType interface

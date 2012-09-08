@@ -57,15 +57,6 @@ public class CompoundRowType extends DerivedRowType {
         return second.typeInstanceAt(index - first.nFields());
     }
     
-    @Override
-    public CompoundExplainer getExplainer(ExplainContext context)
-    {
-        CompoundExplainer explainer = super.getExplainer(context);
-        explainer.addAttribute(Label.LEFT_TYPE, first.getExplainer(context));
-        explainer.addAttribute(Label.RIGHT_TYPE, second.getExplainer(context));
-        return explainer;
-    }
-    
     public RowType first() {
         return first;
     }
