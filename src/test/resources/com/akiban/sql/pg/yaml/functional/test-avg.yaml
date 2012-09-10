@@ -13,6 +13,7 @@
 ---
 - Statement: SELECT AVG(real_field) FROM t
 - output: [[Infinity]]
+- t3_output: [[0.0]]
 #Test with no rows => null
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
