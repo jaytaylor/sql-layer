@@ -1,0 +1,27 @@
+---
+- CreateTable: t (id INT NOT NULL PRIMARY KEY, n INT);
+---
+- Statement: INSERT INTO t VALUES(1,1),(2,2);
+---
+- Statement: CREATE INDEX t_n ON t(n);
+---
+- Statement: ALTER TABLE t ALL UPDATE STATISTICS;
+---
+- Statement: BEGIN;
+---
+- Statement: UPDATE t SET n = n + 1 WHERE n > 1;
+---
+- Statement: SELECT * FROM t ORDER BY id;
+- output: [[1,1],[2,3]]
+---
+- Statement: ROLLBACK;
+---
+- Statement: BEGIN;
+---
+- Statement: INSERT INTO t SELECT id + 100, n FROM t;
+---
+- Statement: SELECT * FROM t ORDER BY id;
+- output: [[1,1],[2,2],[101,1],[102,2]]
+---
+- Statement: COMMIT;
+...

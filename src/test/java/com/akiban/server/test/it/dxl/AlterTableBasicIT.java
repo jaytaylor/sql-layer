@@ -52,6 +52,8 @@ import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.error.NotNullViolationException;
 import com.akiban.sql.StandardException;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,6 +67,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class AlterTableBasicIT extends AlterTableITBase {
+    private static final Logger LOG = LoggerFactory.getLogger(AlterTableBasicIT.class.getName());
+
     private int cid;
     private int oid;
     private int iid;
@@ -79,9 +83,13 @@ public class AlterTableBasicIT extends AlterTableITBase {
     }
 
     private void createAndLoadCOI() {
-        cid = createTable(SCHEMA, "c", "id int not null primary key, c1 char(1)");
-        oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, o1 int, grouping foreign key(cid) references c(id)");
-        iid = createTable(SCHEMA, "i", "id int not null primary key, oid int, i1 int, grouping foreign key(oid) references o(id)");
+        createAndLoadCOI(SCHEMA);
+    }
+
+    private void createAndLoadCOI(String schema) {
+        cid = createTable(schema, "c", "id int not null primary key, c1 char(1)");
+        oid = createTable(schema, "o", "id int not null primary key, cid int, o1 int, grouping foreign key(cid) references c(id)");
+        iid = createTable(schema, "i", "id int not null primary key, oid int, i1 int, grouping foreign key(oid) references o(id)");
         writeRows(
                 createNewRow(cid, 1L, "a"),
                     createNewRow(oid, 10L, 1L, 11L),
@@ -93,6 +101,23 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 // no 3L
                     createNewRow(oid, 30L, 3L, 33L),
                         createNewRow(iid, 300L, 30L, 330L)
+        );
+    }
+
+    private IndexRowType indexRowType(Index index) {
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        return schema.indexRowType(index);
+    }
+
+    private void scanAndCheckIndex(IndexRowType type, RowBase... expectedRows) {
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        compareRows(
+                expectedRows,
+                API.cursor(
+                        API.indexScan_Default(type, false, IndexKeyRange.unbounded(type)),
+                        new SimpleQueryContext(adapter)
+                )
         );
     }
 
@@ -948,6 +973,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 "c3 decimal(5,2) default 0.0",
                 "c4 char(1) default 'N'"
         );
+        LOG.warn("Expecting message for NO_CHANGE alter:");
         // First example of the failure in the bug
         runAlter(ChangeLevel.NONE, "ALTER TABLE c ALTER COLUMN cid NOT NULL");
         // Exception from validator due to defaults incorrectly changing
@@ -1068,5 +1094,73 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 createNewRow(id, "3")
         );
         checkIndexesInstead(C_NAME);
+    }
+
+    // bug1046793
+    @Test
+    public void dropColumnAutoDropsGroupIndex() {
+        createAndLoadCOI();
+        createGroupIndex("c", "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE o DROP COLUMN o1");
+        assertEquals("Remaining group indexes", "[]", ddl().getAIS(session()).getGroup("c").getIndexes().toString());
+        checkIndexesInstead(C_NAME, "PRIMARY");
+        checkIndexesInstead(O_NAME, "PRIMARY");
+        checkIndexesInstead(I_NAME, "PRIMARY");
+    }
+
+    // bug1047090
+    @Test
+    public void changeColumnAffectGroupIndexMultiRootTablesSameName() {
+        final String schema1 = "test1";
+        final String schema2 = "test2";
+        createAndLoadCOI(schema1);
+        createAndLoadCOI(schema2);
+        String groupName = getUserTable(schema2, "c").getGroup().getName();
+        createGroupIndex(groupName, "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
+
+        runAlter(ChangeLevel.TABLE, "ALTER TABLE test2.o ALTER COLUMN o1 SET DATA TYPE bigint");
+
+        Index gi = getUserTable(schema2, "c").getGroup().getIndex("c1_01");
+        assertNotNull("GI still exists", gi);
+
+        IndexRowType type = indexRowType(gi);
+        scanAndCheckIndex(type,
+                testRow(type, "a", 11L, 1L, 10L),
+                testRow(type, "a", 12L, 1L, 11L)
+        );
+    }
+
+    public void changeColumnInGICommon(String table, String column, String newType) {
+        String giName = "c1_o1_i1";
+        createAndLoadCOI();
+        String groupName = getUserTable(SCHEMA, table).getGroup().getName();
+        createGroupIndex(groupName, giName, "c.c1,o.o1,i.i1", Index.JoinType.LEFT);
+        runAlter(ChangeLevel.TABLE,
+                 String.format("ALTER TABLE %s ALTER COLUMN %s SET DATA TYPE %s", table, column, newType));
+
+        Index gi = getUserTable(SCHEMA, table).getGroup().getIndex(giName);
+        assertNotNull("GI still exists", gi);
+
+        IndexRowType type = indexRowType(gi);
+        scanAndCheckIndex(type,
+                          testRow(type, "a", 11L, 110L, 1L, 10L, 100L),
+                          testRow(type, "a", 11L, 111L, 1L, 10L, 101L),
+                          testRow(type, "a", 12L, 122L, 1L, 11L, 111L)
+        );
+    }
+
+    @Test
+    public void changeColumnInGroupIndex_C() {
+        changeColumnInGICommon("c", "c1", "char(10)");
+    }
+
+    @Test
+    public void changeColumnInGroupIndex_O() {
+        changeColumnInGICommon("o", "o1", "bigint");
+    }
+
+    @Test
+    public void changeColumnInGroupIndex_I() {
+        changeColumnInGICommon("i", "i1", "bigint");
     }
 }

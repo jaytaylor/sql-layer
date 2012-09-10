@@ -30,7 +30,6 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -42,11 +41,7 @@ import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchSequenceException;
-import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.error.*;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
@@ -54,13 +49,11 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
-import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
@@ -399,6 +392,13 @@ public class PersistitAdapter extends StoreAdapter
         return treeService.getTransaction(getSession());
     }
 
+    public boolean withStepChanging() {
+        return withStepChanging;
+    }
+    public void withStepChanging(boolean withStepChanging) {
+        this.withStepChanging = withStepChanging;
+    }
+
     public int enterUpdateStep()
     {
         return enterUpdateStep(false);
@@ -447,7 +447,6 @@ public class PersistitAdapter extends StoreAdapter
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
         session.put(STORE_ADAPTER_KEY, this);
-        indexRowPool.enablePooling(config.getProperty(PersistitIndexRowPool.INDEX_ROW_POOLING).equalsIgnoreCase("true"));
     }
 
     // For use by this class
@@ -504,6 +503,6 @@ public class PersistitAdapter extends StoreAdapter
     private final TreeService treeService;
     private final Store store;
     private final PersistitStore persistit;
-    private final boolean withStepChanging;
+    private boolean withStepChanging;
     private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 }

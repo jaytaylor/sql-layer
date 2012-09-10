@@ -93,8 +93,8 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
                     if (ts.isNull())
                         return NullValueSource.only();
                     
-                    long millis = ts.getTimestamp();
-                    valueHolder().putLong(millis <= 0L ? 0L : millis);
+                    long secs = ts.getTimestamp();
+                    valueHolder().putLong(secs <= 0L ? 0L : secs);
                     break;
                 case 0: // if called w/o argument, returns the current timestamp (similar to current_timestamp
                     valueHolder().putLong(new DateTime(queryContext().getCurrentDate()).getMillis() / 1000L);

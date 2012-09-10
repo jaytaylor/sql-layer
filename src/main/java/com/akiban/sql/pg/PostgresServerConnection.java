@@ -33,6 +33,7 @@ import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
 import com.akiban.sql.server.ServerStatementCache;
 import com.akiban.sql.server.ServerTransaction;
+import com.akiban.sql.server.ServerValueDecoder;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
@@ -94,6 +95,8 @@ public class PostgresServerConnection extends ServerSessionBase
     
     private String sql;
     
+    private volatile String cancelForKillReason, cancelByUser;
+
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int sessionId, int secret,
                                     ServerServiceRequirements reqs) {
@@ -154,12 +157,20 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void createMessenger() throws IOException {
-        // We flush() when we mean it. 
-        // So, turn off kernel delay, but wrap a buffer so every
-        // message isn't its own packet.
-        socket.setTcpNoDelay(true);
-        messenger = new PostgresMessenger(socket.getInputStream(),
-                                          new BufferedOutputStream(socket.getOutputStream()));
+        messenger = new PostgresMessenger(socket) {
+                @Override
+                public void idle() {
+                    if (cancelForKillReason != null) {
+                        String msg = cancelForKillReason;
+                        cancelForKillReason = null;
+                        if (cancelByUser != null) {
+                            msg += " by " + cancelByUser;
+                            cancelByUser = null;
+                        }
+                        throw new ConnectionTerminatedException(msg);
+                    }
+                }
+            };
     }
 
     protected void topLevel() throws IOException, Exception {
@@ -171,6 +182,12 @@ public class PostgresServerConnection extends ServerSessionBase
                 PostgresMessages type;
                 try {
                     type = messenger.readMessage(startupComplete);
+                } catch (ConnectionTerminatedException ex) {
+                    logError(ErrorLogLevel.DEBUG, "About to terminate", ex);
+                    notifyClient(QueryContext.NotificationLevel.WARNING,
+                                 ex.getCode(), ex.getShortMessage());
+                    stop();
+                    continue;
                 } finally {
                     READ_MESSAGE.out();
                 }
@@ -211,6 +228,9 @@ public class PostgresServerConnection extends ServerSessionBase
                     case EXECUTE_TYPE:
                         processExecute();
                         break;
+                    case FLUSH_TYPE:
+                        processFlush();
+                        break;
                     case CLOSE_TYPE:
                         processClose();
                         break;
@@ -219,8 +239,23 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    logError(ErrorLogLevel.INFO, "Query canceled", ex);
-                    sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                    InvalidOperationException nex = ex;
+                    boolean forKill = false;
+                    if (cancelForKillReason != null) {
+                        nex = new ConnectionTerminatedException(cancelForKillReason);
+                        nex.initCause(ex);
+                        cancelForKillReason = null;
+                        forKill = true;
+                    }
+                    logError(ErrorLogLevel.INFO, "Query canceled", nex);
+                    String msg = nex.getShortMessage();
+                    if (cancelByUser != null) {
+                        if (!forKill) msg = "Query canceled";
+                        msg += " by " + cancelByUser;
+                        cancelByUser = null;
+                    }
+                    sendErrorResponse(type, nex, nex.getCode(), msg);
+                    if (forKill) stop();
                 } catch (ConnectionTerminatedException ex) {
                     logError(ErrorLogLevel.DEBUG, "Query terminated self", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
@@ -364,7 +399,7 @@ public class PostgresServerConnection extends ServerSessionBase
         int secret = messenger.readInt();
         PostgresServerConnection connection = server.getConnection(sessionId);
         if ((connection != null) && (secret == connection.secret)) {
-            connection.cancelQuery();
+            connection.cancelQuery(null, null);
         }
         stop();                 // That's all for this connection.
     }
@@ -401,7 +436,7 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void authenticationOkay(String user) throws IOException {
         Properties status = new Properties();
         // This is enough to make the JDBC driver happy.
-        status.put("client_encoding", properties.getProperty("client_encoding", "UNICODE"));
+        status.put("client_encoding", properties.getProperty("client_encoding", "UTF8"));
         status.put("server_encoding", messenger.getEncoding());
         status.put("server_version", "8.4.7"); // Not sure what the min it'll accept is.
         status.put("session_authorization", user);
@@ -529,9 +564,9 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void processBind() throws IOException {
         String portalName = messenger.readString();
         String stmtName = messenger.readString();
-        Object[] params = null;
+        byte[][] params = null;
+        boolean[] paramsBinary = null;
         {
-            boolean[] paramsBinary = null;
             short nformats = messenger.readShort();
             if (nformats > 0) {
                 paramsBinary = new boolean[nformats];
@@ -540,21 +575,13 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             short nparams = messenger.readShort();
             if (nparams > 0) {
-                params = new Object[nparams];
-                boolean binary = false;
+                params = new byte[nparams][];
                 for (int i = 0; i < nparams; i++) {
-                    if (i < nformats)
-                        binary = paramsBinary[i];
                     int len = messenger.readInt();
                     if (len < 0) continue;      // Null
                     byte[] param = new byte[len];
                     messenger.readFully(param, 0, len);
-                    if (binary) {
-                        params[i] = param;
-                    }
-                    else {
-                        params[i] = new String(param, messenger.getEncoding());
-                    }
+                    params[i] = param;
                 }
             }
         }
@@ -573,8 +600,31 @@ public class PostgresServerConnection extends ServerSessionBase
             }
         }
         PostgresStatement pstmt = preparedStatements.get(stmtName);
-        boundPortals.put(portalName, new PostgresBoundQueryContext(this, pstmt, 
-                                                                   params, resultsBinary, defaultResultsBinary));
+        PostgresBoundQueryContext bound = new PostgresBoundQueryContext(this, pstmt);
+        if (params != null) {
+            ServerValueDecoder decoder = new ServerValueDecoder(messenger.getEncoding());
+            PostgresType[] parameterTypes = null;
+            boolean usePValues = false;
+            if (pstmt instanceof PostgresBaseStatement) {
+                PostgresDMLStatement dml = (PostgresDMLStatement)pstmt;
+                parameterTypes = dml.getParameterTypes();
+                usePValues = dml.usesPValues();
+            }
+            for (int i = 0; i < params.length; i++) {
+                PostgresType pgType = null;
+                if (parameterTypes != null)
+                    pgType = parameterTypes[i];
+                boolean binary = false;
+                if ((paramsBinary != null) && (i < paramsBinary.length))
+                    binary = paramsBinary[i];
+                if (usePValues)
+                    decoder.decodePValue(params[i], pgType, binary, bound, i);
+                else
+                    decoder.decodeValue(params[i], pgType, binary, bound, i);
+            }
+        }
+        bound.setColumnBinary(resultsBinary, defaultResultsBinary);
+        boundPortals.put(portalName, bound);
         messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
@@ -617,6 +667,10 @@ public class PostgresServerConnection extends ServerSessionBase
         }
     }
 
+    protected void processFlush() throws IOException {
+        messenger.flush();
+    }
+
     protected void processClose() throws IOException {
         byte source = messenger.readByte();
         String name = messenger.readString();
@@ -639,7 +693,9 @@ public class PostgresServerConnection extends ServerSessionBase
         stop();
     }
 
-    public void cancelQuery() {
+    public void cancelQuery(String forKillReason, String byUser) {
+        this.cancelForKillReason = forKillReason;
+        this.cancelByUser = byUser;
         // A running query checks session state for query cancelation during Cursor.next() calls. If the
         // query is stuck in a blocking operation, then thread interruption should unstick it. Either way,
         // the query should eventually throw QueryCanceledException which will be caught by topLevel().
@@ -649,9 +705,22 @@ public class PostgresServerConnection extends ServerSessionBase
         if (thread != null) {
             thread.interrupt();
         }
-        if (messenger != null) {
-            messenger.setCancel(true);
+    }
+
+    public void waitAndStop() {
+        // Wait a little bit for the connection to stop itself.
+        for (int i = 0; i < 5; i++) {
+            if (!running) return;
+            try {
+                Thread.sleep(50);
+            }
+            catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
+        // Force stop.
+        stop();
     }
 
     // When the AIS changes, throw everything away, since it might
@@ -771,6 +840,13 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
+        PersistitAdapter persistitAdapter = null;
+        if ((transaction != null) &&
+            // As opposed to WRITE_STEP_ISOLATED.
+            (pstmt.getTransactionMode() == PostgresStatement.TransactionMode.WRITE)) {
+            persistitAdapter = (PersistitAdapter)adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+            persistitAdapter.withStepChanging(false);
+        }
         ServerTransaction localTransaction = beforeExecute(pstmt);
         int rowsProcessed = 0;
         boolean success = false;
@@ -781,6 +857,8 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         finally {
             afterExecute(pstmt, localTransaction, success);
+            if (persistitAdapter != null)
+                persistitAdapter.withStepChanging(true); // Keep conservative default.
             sessionTracer.endEvent();
         }
         return rowsProcessed;
