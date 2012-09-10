@@ -42,6 +42,7 @@
 - Statement: SELECT SIN(double_field), SIN(float_field), SIN(real_field)
     FROM all_types
 - output: [[NaN, NaN, NaN], [NaN, NaN, NaN], [NaN, NaN, NaN]]
+- t3_output: [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
 
 # Literal arg
 ---
