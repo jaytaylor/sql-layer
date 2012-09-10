@@ -288,7 +288,7 @@ public abstract class MArithmetic extends TArithmetic {
                 output.putNull();
             }
             else {
-                BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1));
+                BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
                 BigDecimalWrapper result = getWrapper(context);
                 result.add(numerator);
                 result.divide(divisor, context.outputTInstance().attribute(Attrs.SCALE));
