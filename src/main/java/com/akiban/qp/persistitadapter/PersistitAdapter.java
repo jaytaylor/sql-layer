@@ -310,6 +310,9 @@ public class PersistitAdapter extends StoreAdapter
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             S source = creator.eval(row, i);
 
+            
+/*          This code has been moved to OperatorAssember and calculated as part of the
+ *          insert processing  
             // this is the generated always case. Always override the value in the
             // row
             if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
@@ -325,7 +328,7 @@ public class PersistitAdapter extends StoreAdapter
                 }
                 // TODO: If not an identityGenerator, insert the column default value.
             }
-
+*/
             // TODO: Validate column Check Constraints.
             creator.put(source, niceRow, rowDef.getFieldDef(i), i);
         }

@@ -181,9 +181,9 @@ public class ASTStatementLoader extends BaseRule
             if (query instanceof ResultSet)
                 query = ((ResultSet)query).getInput();
             TableNode targetTable = getTargetTable(insertNode);
-            List<Column> targetColumns;
-            int ncols = insertNode.getResultSetNode().getResultColumns().size();
             ResultColumnList rcl = insertNode.getTargetColumnList();
+            int ncols = insertNode.getResultSetNode().getResultColumns().size();
+            List<Column> targetColumns;
             if (rcl != null) {
                 if (ncols != rcl.size())
                     throw new InsertWrongCountException(rcl.size(), ncols);
@@ -204,6 +204,7 @@ public class ASTStatementLoader extends BaseRule
                     targetColumns.add(aisColumns.get(i));
                 }
             }
+
             List<Column> returningColumns = null;
             rcl = insertNode.getReturningList();
             if (rcl != null) {
@@ -214,7 +215,7 @@ public class ASTStatementLoader extends BaseRule
                     returningColumns.add(column);
                 }
             }
-            return new InsertStatement(query, targetTable, targetColumns, peekEquivalenceFinder());
+            return new InsertStatement(query, targetTable, targetColumns, returningColumns, peekEquivalenceFinder());
         }
     
         // DELETE
@@ -764,7 +765,7 @@ public class ASTStatementLoader extends BaseRule
             Comparison comp = Comparison.EQ;
             ExpressionNode operand = null;
             boolean needOperand = false;
-            ConditionList innerConds = null;
+            //ConditionList innerConds = null;
             switch (subqueryNode.getSubqueryType()) {
             case EXISTS:
                 break;

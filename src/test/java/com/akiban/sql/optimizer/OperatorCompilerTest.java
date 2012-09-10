@@ -53,8 +53,6 @@ import org.junit.runner.RunWith;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.qp.exec.Plannable;
-import com.akiban.server.explain.Explainer;
 
 import org.junit.Before;
 
@@ -65,7 +63,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class OperatorCompilerTest extends NamedParamsTestBase 

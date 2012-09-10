@@ -35,20 +35,32 @@ import java.util.*;
 public class InsertStatement extends BaseUpdateStatement
 {
     private List<Column> targetColumns;
+    private List<Column> returningColumns;
 
     public InsertStatement(PlanNode query, TableNode targetTable,
-                           List<Column> targetColumns, EquivalenceFinder<ColumnExpression> columnEquivalencies) {
+                           List<Column> targetColumns,
+                           List<Column> returningColumns,
+                           EquivalenceFinder<ColumnExpression> columnEquivalencies) {
         super(query, targetTable, columnEquivalencies);
         this.targetColumns = targetColumns;
+        this.returningColumns = returningColumns;
     }
 
     public List<Column> getTargetColumns() {
         return targetColumns;
+    }
+    
+    public List<Column> getReturningColumns() {
+        return returningColumns;
     }
 
     @Override
     protected void fillSummaryString(StringBuilder str) {
         super.fillSummaryString(str);
         str.append(targetColumns);
+        if (returningColumns != null ) {
+            str.append(" RETURNING ");
+            str.append(returningColumns);
+        }
     }
 }
