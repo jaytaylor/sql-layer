@@ -285,7 +285,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             String overloadName = entry.getKey();
             Collection<TValidatedOverload> allOverloads = entry.getValue();
             for (Collection<TValidatedOverload> priorityGroup : scalarsByPriority(allOverloads)) {
-                ScalarsGroup scalarsGroup = new ScalarsGroupImpl(priorityGroup, doFindSameType(priorityGroup));
+                ScalarsGroup scalarsGroup = new ScalarsGroupImpl(priorityGroup);
                 results.put(overloadName, scalarsGroup);
             }
         }
@@ -549,10 +549,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return overloads;
         }
 
-        public ScalarsGroupImpl(Collection<TValidatedOverload> overloads,
-                                BitSet bs) {
+        public ScalarsGroupImpl(Collection<TValidatedOverload> overloads) {
             this.overloads = Collections.unmodifiableCollection(overloads);
-            this.sameType = bs;
+            sameType = doFindSameType(overloads);
         }
 
         @Override
