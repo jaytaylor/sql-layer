@@ -49,6 +49,7 @@ import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.util.StackTracer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PostgresType extends ServerType
 {
-
+final StackTracer tracer = new StackTracer();
     private static Logger logger = LoggerFactory.getLogger(PostgresType.class);
 
     /*** Type OIDs ***/
