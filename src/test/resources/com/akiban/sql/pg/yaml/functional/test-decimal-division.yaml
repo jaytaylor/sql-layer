@@ -9,4 +9,5 @@
 ---
 - Statement: SELECT MAX(decimal_field / 3.0) FROM t
 - output: [[3.333333333]]
+- t3_output: [[3.3333]]
 ...

@@ -69,6 +69,7 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import com.akiban.server.types3.Types3Switch;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -214,6 +215,8 @@ class YamlTester {
             }
         };
 
+    private static final String T3_PREFIX = "t3_";
+
     private final String filename;
     private final Reader in;
     private final Connection connection;
@@ -254,6 +257,7 @@ class YamlTester {
 		Object document = documents.next();
 		List<Object> sequence = nonEmptySequence(document,
 			"command document");
+        types3Overrides(sequence);
 		Entry<Object, Object> firstEntry = firstEntry(sequence.get(0),
 			"first element of the document");
 		commandName = string(firstEntry.getKey(), "command name");
@@ -291,6 +295,34 @@ class YamlTester {
 	    /* Add context */
 	    throw new ContextAssertionError(null, e.toString(), e);
 	}
+    }
+
+    private void types3Overrides(List<Object> commandAndExpecteds) {
+        Map<Object, Map<?,Object>> overridables = new HashMap<Object, Map<?, Object>>();
+        Map<String, Object> overrides = new HashMap<String, Object>();
+        for (Iterator<Object> phraseIterator = commandAndExpecteds.iterator(); phraseIterator.hasNext(); ) {
+            Object phraseRaw = phraseIterator.next();
+            assert phraseRaw instanceof Map;
+            Map<?, ?> phrase = (Map<?, ?>) phraseRaw;
+            assert phrase.size() == 1 : phrase;
+            Entry<?, ?> keyVal = phrase.entrySet().iterator().next();
+            String key = (String) phrase.keySet().iterator().next();
+            if (key.startsWith(T3_PREFIX)) {
+                overrides.put(key, keyVal.getValue());
+                phraseIterator.remove();
+            }
+            else {
+                overridables.put(key, (Map<?,Object>)phrase);
+            }
+        }
+        for (Map.Entry<String, Object> override : overrides.entrySet()) {
+            String overrideKey = override.getKey();
+            Object overrideValue = override.getValue();
+
+            String overridenKey = overrideKey.substring(T3_PREFIX.length());
+            Map<?,Object> overridden = overridables.get(overridenKey);
+            overridden.entrySet().iterator().next().setValue(overrideValue);
+        }
     }
 
     private void bulkloadCommand(Object value, List<Object> sequence) {
