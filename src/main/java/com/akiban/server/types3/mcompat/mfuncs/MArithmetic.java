@@ -389,28 +389,37 @@ public abstract class MArithmetic extends TArithmetic {
                 output.putInt64((long)(inputs.get(0).getDouble() / divisor));
         }   
     };
-   
-    public static final TOverload DIV_DECIMAL = new  DecimalArithmetic("div", "div", false)
-    {
+    //(String overloadName, String infix, boolean associative, TClass inputType, TInstance resultType)
+    public static final TOverload DIV_DECIMAL = new MArithmetic("div", "div", false, MNumeric.DECIMAL, null) {
         @Override
-        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale)
-        {
-            int pre = arg0Precision + arg1Precision;
-            int scale = 0; // integer division
-            return packPrecisionAndScale(pre, scale);
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
+            long rounded = numerator.divide(divisor).round(0).asBigDecimal().longValue();
+            output.putInt64(rounded);
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-        {
-            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
-            
-            if (divisor.isZero())
-                output.putNull();
-            else
-                output.putObject(getWrapper(context)
-                                    .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
-                                    .divideToIntegeralValue(divisor)); // scale is 0
+        public TOverloadResult resultType() {
+            return TOverloadResult.custom(MNumeric.BIGINT.instance(), new TCustomOverloadResult() {
+                @Override
+                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                    TInstance numeratorType = inputs.get(0).instance();
+                    int precision = numeratorType.attribute(Attrs.PRECISION);
+                    int scale = numeratorType.attribute(Attrs.SCALE);
+
+                    // These seem to be MySQL's wonky rules. For instance:
+                    //  DECIMAL(11, 0) -> BIGINT(12)
+                    //  DECIMAL(11, 1) -> BIGINT(12)
+                    //  DECIMAL(11, 2) -> BIGINT(11)
+                    //  DECIMAL(11, 3) -> BIGINT(10) etc
+                    ++precision;
+                    scale = (scale == 0) ? 0 : scale - 1;
+                    TClass tClass = (scale > 11) ? MNumeric.BIGINT : MNumeric.INT;
+                    return tClass.instance(precision - scale);
+                }
+            });
         }
     };
    
