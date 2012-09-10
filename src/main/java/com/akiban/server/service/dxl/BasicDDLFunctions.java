@@ -98,6 +98,7 @@ import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types.AkType;
@@ -448,11 +449,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         ChangeLevel changeLevel;
         boolean rollBackNeeded = false;
-        boolean dropOldGroupTable = false;
+        boolean oldWasRootAndIsNewGroup = false;
         Set<String> savedSchemas = new HashSet<String>();
         Map<TableName,Integer> savedOrdinals = new HashMap<TableName,Integer>();
         List<Index> indexesToDrop = new ArrayList<Index>();
         List<Sequence> sequencesToDrop = new ArrayList<Sequence>();
+        List<IndexName> newIndexTrees = new ArrayList<IndexName>();
 
         savedSchemas.add(tableName.getSchemaName());
         savedSchemas.add(newDefinition.getName().getSchemaName());
@@ -469,9 +471,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
                 UserTable oldTable = origAIS.getUserTable(desc.getOldName());
                 for(Index index : oldTable.getIndexesIncludingInternal()) {
-                    if(desc.getPreserveIndexes().get(index.getIndexName().getName()) == null) {
+                    String indexName = index.getIndexName().getName();
+                    if(!desc.getPreserveIndexes().containsKey(indexName) && !index.isPrimaryKey()) {
                         indexesToDrop.add(index);
+                        newIndexTrees.add(new IndexName(desc.getNewName(), indexName));
                     }
+                }
+            }
+
+            for(TableChange change : indexChanges) {
+                if(change.getChangeType() == TableChange.ChangeType.ADD) {
+                    newIndexTrees.add(new IndexName(newDefinition.getName(), change.getNewName()));
                 }
             }
 
@@ -513,12 +523,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         UserTable oldTable = origAIS.getUserTable(desc.getOldName());
                         Index index = oldTable.getPrimaryKeyIncludingInternal().getIndex();
                         indexesToTruncate.add(index);
-                        indexesToDrop.remove(index);
                         savedSchemas.add(desc.getOldName().getSchemaName());
                         savedOrdinals.put(desc.getOldName(), oldTable.rowDef().getOrdinal());
 
                         if((oldTable == origTable) && oldTable.isRoot() && desc.isNewGroup()) {
-                            dropOldGroupTable = true;
+                            oldWasRootAndIsNewGroup = true;
                         }
                     }
                     store().truncateIndexes(session, indexesToTruncate);
@@ -541,15 +550,39 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 AkibanInformationSchema curAIS = getAIS(session);
                 if(origAIS != curAIS) {
                     schemaManager().rollbackAIS(session, origAIS, savedOrdinals, savedSchemas);
+
+                    // Tree creation is non-transactional in Persistit. They will be empty (entirely rolled back) but
+                    // still present. Remove them (group and index trees) for cleanliness.
+                    // NB: If sequences can ever be added through alter, need to handle those too.
+
+                    // Be extra careful with null checks.. In a failure state, don't know what was created.
+                    List<TreeLink> links = new ArrayList<TreeLink>();
+                    if(oldWasRootAndIsNewGroup) {
+                        UserTable newTable = curAIS.getUserTable(newDefinition.getName());
+                        if(newTable != null) {
+                            links.add(newTable.getGroup());
+                        }
+                    }
+
+                    for(IndexName name : newIndexTrees) {
+                        UserTable table = curAIS.getUserTable(name.getFullTableName());
+                        if(table != null) {
+                            Index index = table.getIndexIncludingInternal(name.getName());
+                            if((index != null) && (index.indexDef() != null)) {
+                                links.add(index.indexDef());
+                            }
+                        }
+                    }
+
+                    store().removeTrees(session, links);
                 }
-                // TODO: rollback new index trees?
             }
         }
 
         // Complete: we can now get rid of any trees that shouldn't be here
         store().deleteIndexes(session, indexesToDrop);
         store().deleteSequences(session, sequencesToDrop);
-        if(dropOldGroupTable) {
+        if(oldWasRootAndIsNewGroup) {
             store().removeTrees(session, Collections.singleton(origTable.getGroup()));
         }
         return changeLevel;
