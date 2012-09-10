@@ -30,6 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -43,6 +44,9 @@ import java.util.List;
 
 public class MConcatWS extends TOverloadBase
 {
+    public static TOverload INSTANCE = new MConcatWS();
+    
+    private MConcatWS() {}
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
