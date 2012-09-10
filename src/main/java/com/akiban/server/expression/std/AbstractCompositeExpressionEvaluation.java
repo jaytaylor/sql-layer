@@ -40,16 +40,18 @@ public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEv
     // ExpressionEvaluation interface
 
     @Override
-    public void of(Row row) {
-        for (ExpressionEvaluation child : children) {
-            child.of(row);
+    public void of(Row row)
+    {
+        for (int i = 0; i < nChildren; i++) {
+            children.get(i).of(row);
         }
     }
 
     @Override
-    public void of(QueryContext context) {
-        for (ExpressionEvaluation child : children) {
-            child.of(context);
+    public void of(QueryContext context)
+    {
+        for (int i = 0; i < nChildren; i++) {
+            children.get(i).of(context);
         }
         this.context = context;
     }
@@ -57,8 +59,8 @@ public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEv
     @Override
     public void destroy()
     {
-        for (ExpressionEvaluation child : children) {
-            child.destroy();
+        for (int i = 0; i < nChildren; i++) {
+            children.get(i).destroy();
         }
     }
 
@@ -66,30 +68,34 @@ public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEv
         this.children = children.isEmpty()
                 ? Collections.<ExpressionEvaluation>emptyList()
                 : Collections.unmodifiableList(new ArrayList<ExpressionEvaluation>(children));
+        this.nChildren = this.children.size();
     }
 
     // Shareable interface
 
     @Override
-    public void acquire() {
-        for (ExpressionEvaluation child : children) {
-            child.acquire();
+    public void acquire()
+    {
+        for (int i = 0; i < nChildren; i++) {
+            children.get(i).acquire();
         }
     }
 
     @Override
-    public boolean isShared() {
-        for (ExpressionEvaluation child : children) {
-            if (child.isShared())
+    public boolean isShared()
+    {
+        for (int i = 0; i < nChildren; i++) {
+            if (children.get(i).isShared()) {
                 return true;
+            }
         }
         return false;
     }
 
     @Override
     public void release() {
-        for (ExpressionEvaluation child : children) {
-            child.release();
+        for (int i = 0; i < nChildren; i++) {
+            children.get(i).release();
         }
     }
 
@@ -111,6 +117,7 @@ public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEv
     // object state
 
     private final List<? extends ExpressionEvaluation> children;
+    private final int nChildren;
     private ValueHolder valueHolder;
-    private QueryContext context;
+    protected QueryContext context;
 }
