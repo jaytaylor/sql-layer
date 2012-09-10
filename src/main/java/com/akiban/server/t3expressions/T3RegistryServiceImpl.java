@@ -201,60 +201,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return local;
     }
 
-    static final Comparator<TValidatedOverload> comparator = new Comparator<TValidatedOverload>()
-    {
-        @Override
-        public int compare(TValidatedOverload t, TValidatedOverload t1)
-        {
-            return nArgsOf(t) - nArgsOf(t1);
-        }
-    };
-
-    private static int nArgsOf(TValidatedOverload ovl)
-    {
-        return ovl.positionalInputs();
-    }
-
-    private static BitSet doFindSameType(Collection<? extends TValidatedOverload> overloads)
-    {
-        List<TValidatedOverload> list = new ArrayList<TValidatedOverload>(overloads.size());
-        list.addAll(overloads);
-        Collections.sort(list,comparator);
-
-        // overload with the longest argument list
-        TValidatedOverload maxOvl = list.get(list.size() -1);
-        int maxArgc = nArgsOf(maxOvl);
-        BitSet bitset = new BitSet(maxArgc);
-        Boolean same;
-
-        for (int n = 0; n < maxArgc; ++n)
-        {
-            same = Boolean.TRUE;
-            TClass common = maxOvl.inputSetAt(n).targetType();
-            for (int m = 0; m < list.size(); ++m)
-            {
-                TValidatedOverload ovl = list.get(m);
-                int curArgc = nArgsOf(ovl);
-                
-                // if the arg is absent === > TRUE
-                if (n >= curArgc) // n is out of range in 'this' overloads' input set
-                    continue;     // so just skip checking the arg
-
-                TClass targetType = ovl.inputSetAt(n).targetType();
-                if (targetType != null && !ovl.inputSetAt(n).targetType().equals(common)
-                        || targetType == null && common != null)
-                {
-                    same = Boolean.FALSE;
-                    break;
-                }
-                
-            }
-            bitset.set(n, same);
-        }
-
-        return bitset;
-    }
-
     private static ListMultimap<String, ScalarsGroup> createScalars(InstanceFinder finder) {
         Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
 
@@ -542,7 +488,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     // inner classes
 
-    private static class ScalarsGroupImpl implements ScalarsGroup {
+    protected static class ScalarsGroupImpl implements ScalarsGroup {
 
         @Override
         public Collection<? extends TValidatedOverload> getOverloads() {
@@ -558,6 +504,76 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         public boolean hasSameTypeAt(int pos)
         {
             return sameType.get(pos);
+        }
+        
+        private static int nArgsOf(TValidatedOverload ovl)
+        {
+            return ovl.positionalInputs() 
+                   + (ovl.varargInputSet() == null ? 0 : 1);
+        }
+
+        private static boolean hasVararg(TValidatedOverload ovl)
+        {
+            return ovl.varargInputSet() != null;
+        }
+
+        protected static BitSet doFindSameType(Collection<? extends TValidatedOverload> overloads)
+        {
+            ArrayList<Integer> nArgs = new ArrayList<Integer>();
+
+            // overload with the longest argument list
+            TValidatedOverload maxOvl = overloads.iterator().next();
+            int maxArgc = nArgsOf(maxOvl);
+            boolean hasVararg = hasVararg(maxOvl);
+            int n = 1;
+
+            for (TValidatedOverload ovl : overloads)
+            {
+                int curArgc = nArgsOf(ovl);
+                nArgs.add(curArgc);
+                
+                if (curArgc > maxArgc
+                        || curArgc == maxArgc 
+                           && hasVararg 
+                           && !hasVararg(ovl))
+                {
+                    hasVararg = hasVararg(ovl);
+                    maxOvl = ovl;
+                    maxArgc = curArgc;
+                }
+                ++n;
+            }
+
+            BitSet bitset = new BitSet(maxArgc);
+            Boolean same;
+
+            for (n = 0; n < maxArgc; ++n)
+            {
+                same = Boolean.TRUE;
+                TClass common = maxOvl.inputSetAt(n).targetType();
+                int index = 0;
+                for (TValidatedOverload ovl : overloads)
+                {
+                    int curArgc = nArgs.get(index++);
+
+                    // if the arg is absent  
+                    // and this overload does not have varargs
+                    // ==> TRUE
+                    if (n >= curArgc && !hasVararg(ovl))
+                        continue;
+
+                    TClass targetType = ovl.inputSetAt(n).targetType();
+                    if (targetType != null && !targetType.equals(common)
+                            || targetType == null && common != null)
+                    {
+                        same = Boolean.FALSE;
+                        break;
+                    }
+                }
+                bitset.set(n, same);
+            }
+
+            return bitset;
         }
         
         private BitSet sameType;
