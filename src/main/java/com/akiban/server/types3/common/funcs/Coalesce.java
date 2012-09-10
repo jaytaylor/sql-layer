@@ -29,6 +29,7 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -38,16 +39,14 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class Coalesce extends TOverloadBase {
-    
-    private final TClass returnType;
 
-    public Coalesce(TClass returnType) {
-        this.returnType = returnType;
-    }
+    public static final TOverload INSTANCE = new Coalesce();
+
+    private Coalesce() {}
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.pickingVararg(returnType);
+        builder.pickingVararg(null, 0);
     }
 
     @Override
