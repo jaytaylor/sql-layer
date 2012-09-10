@@ -299,13 +299,15 @@ public abstract class MArithmetic extends TArithmetic {
        @Override
        protected long precisionAndScale(int p1, int s1, int p2, int s2) 
        {
-           // http://msdn.microsoft.com/en-us/library/ms190476%28v=SQL.90%29.aspx
+           // https://dev.mysql.com/doc/refman/5.5/en/arithmetic-functions.html :
+           //
+           // In division performed with /, the scale of the result when using two exact-value operands is the scale of
+           // the first operand plus the value of the div_precision_increment system variable (which is 4 by default).
+           //
+           // This seems to apply to precision, too.
            
-           //precision: p1 - s1 + s2 + max(6, s1 + p2 + 1) 
-           // scale: max(6, s1 + p2 + 1)
-           
-           int precision = p1 - s1 + p2 + Math.max(6, s1 + p2 + 1);
-           int scale = Math.max(6, s1 + p2 + 1);
+           int precision = p1 + DIV_PRECISION_INCREMENT;
+           int scale = s1 + DIV_PRECISION_INCREMENT;
 
            return packPrecisionAndScale(precision, scale);
        }
@@ -628,4 +630,6 @@ public abstract class MArithmetic extends TArithmetic {
             super(overloadName, infix, associative, MNumeric.DECIMAL, (TInstance) null);
         }
     }
+
+    private static final int DIV_PRECISION_INCREMENT = 4;
 }
