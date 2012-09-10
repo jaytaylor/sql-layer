@@ -90,6 +90,7 @@ public class AlterTableITBase extends ITBase {
         checkedIndexes.clear();
     }
 
+    // Added after bug1047977
     @After
     public void lookForDanglingTrees() throws Exception {
         // Collect all trees Persistit currently has

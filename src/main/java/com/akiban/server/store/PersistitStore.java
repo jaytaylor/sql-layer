@@ -1285,7 +1285,8 @@ public class PersistitStore implements Store, Service {
         }
     }
 
-    private void removeTrees(Session session, Collection<? extends TreeLink> treeLinks) {
+    @Override
+    public void removeTrees(Session session, Collection<? extends TreeLink> treeLinks) {
         Exchange ex = null;
         try {
             for(TreeLink link : treeLinks) {

@@ -448,6 +448,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         ChangeLevel changeLevel;
         boolean rollBackNeeded = false;
+        boolean dropOldGroupTable = false;
         Set<String> savedSchemas = new HashSet<String>();
         Map<TableName,Integer> savedOrdinals = new HashMap<TableName,Integer>();
         List<Index> indexesToDrop = new ArrayList<Index>();
@@ -515,6 +516,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         indexesToDrop.remove(index);
                         savedSchemas.add(desc.getOldName().getSchemaName());
                         savedOrdinals.put(desc.getOldName(), oldTable.rowDef().getOrdinal());
+
+                        if((oldTable == origTable) && oldTable.isRoot() && desc.isNewGroup()) {
+                            dropOldGroupTable = true;
+                        }
                     }
                     store().truncateIndexes(session, indexesToTruncate);
                     doTableChange(session, context, tableName, newDefinition, changedTables, affectedGroupIndexes,
@@ -544,6 +549,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // Complete: we can now get rid of any trees that shouldn't be here
         store().deleteIndexes(session, indexesToDrop);
         store().deleteSequences(session, sequencesToDrop);
+        if(dropOldGroupTable) {
+            store().removeTrees(session, Collections.singleton(origTable.getGroup()));
+        }
         return changeLevel;
     }
 
