@@ -77,5 +77,5 @@ public class Cast_From_Unsigned_Mediumint
     
     public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.MEDIUMINT_UNSIGNED, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromUInt64ToDecimal(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
 }
