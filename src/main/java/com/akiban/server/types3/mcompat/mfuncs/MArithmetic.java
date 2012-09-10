@@ -284,15 +284,16 @@ public abstract class MArithmetic extends TArithmetic {
         {
             BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
             
-            if (divisor.isZero())
+            if (divisor.isZero()) {
                 output.putNull();
-            else
-                output.putObject(getWrapper(context)
-                                    .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
-                                    .divide(divisor,
-                                            context.outputTInstance().
-                                                attribute(MBigDecimal.Attrs.SCALE)));  // get the scale computed
-                                                                                       // during expr generation time
+            }
+            else {
+                BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1));
+                BigDecimalWrapper result = getWrapper(context);
+                result.add(numerator);
+                result.divide(divisor, context.outputTInstance().attribute(Attrs.SCALE));
+                output.putObject(result);
+            }
         }
 
        @Override
