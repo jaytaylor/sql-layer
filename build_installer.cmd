@@ -69,7 +69,7 @@ COPY bin\*.cmd target\isstage\bin
 COPY target\client-tools\bin\*.cmd target\isstage\bin
 COPY windows\%TARGET%\* target\isstage\config
 COPY target\akiban-server-*-jar-with-dependencies.jar target\isstage\lib
-COPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib
+COPY target\client-tools\target\akiban-client-tools-1.3.2.jar target\isstage\lib
 COPY target\client-tools\target\dependency\*.jar target\isstage\lib
 
 CD target\isstage
