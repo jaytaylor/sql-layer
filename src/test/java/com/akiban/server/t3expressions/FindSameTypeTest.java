@@ -23,10 +23,7 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.akiban.server.t3expressions;
 
 import com.akiban.server.types3.LazyList;
@@ -80,7 +77,7 @@ public class FindSameTypeTest
     {
         ParameterizationBuilder p = new ParameterizationBuilder();
 
-        // simpel case
+        // simple case
         test(p,
              getBitSet(true, true, true, true),
              create(CHAR, VARCHAR, INT, BIGINT));
@@ -103,7 +100,7 @@ public class FindSameTypeTest
         
         // FOO(A...) with FOO(B...) // should return [ false... ]
         test(p,
-             getBitSet(false),
+             null,
              create(VARCHAR),
              create(CHAR));
         

@@ -503,7 +503,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         @Override
         public boolean hasSameTypeAt(int pos)
         {
-            return sameType.get(pos);
+            return sameType == null
+                        ? false
+                        :sameType.get(pos);
         }
         
         private static int nArgsOf(TValidatedOverload ovl)
@@ -543,7 +545,10 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 }
                 ++n;
             }
-
+            // all the overloads in the group are vararg
+            if (hasVararg && maxArgc == 1)
+                return null;
+            
             BitSet bitset = new BitSet(maxArgc);
             Boolean same;
 
