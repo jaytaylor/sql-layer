@@ -578,7 +578,8 @@ public class DefaultFormatter
                 append(atts.getAttribute(Label.TABLE_TYPE));
             }
         }
-        else if (name.equals("Insert_Default")) {
+        else if (name.equals("Insert_Default") || 
+                    name.equals("Insert_Returning")) {
             if (atts.containsKey(Label.TABLE_NAME)) {
                 sb.append("INTO ");
                 appendTableName(atts);

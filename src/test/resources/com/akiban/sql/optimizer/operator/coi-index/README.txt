@@ -20,6 +20,10 @@ insert-3: INSERT with explicit columns
 
 insert-4: INSERT from SELECT
 
+insert-5: INSERT RETURNING basic
+
+insert-6: INSERT RETURING with formula
+
 select-0: single column from primary key match
 
 select-1: whole row from root group scan

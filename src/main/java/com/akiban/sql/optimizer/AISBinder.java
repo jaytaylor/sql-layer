@@ -1111,6 +1111,7 @@ public class AISBinder implements Visitor
             } catch (StandardException ex) {
                 throw new SQLParserInternalException(ex);
             }
+            node.setUserData(fromTable);
             
             for (int index = 0; index < rcl.size(); index ++) {
                 ResultColumn rc = rcl.get(index);

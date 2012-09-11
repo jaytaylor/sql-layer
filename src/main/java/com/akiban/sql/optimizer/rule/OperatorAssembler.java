@@ -47,15 +47,12 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
 import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
 import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -621,7 +618,17 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
-            PlanNode planQuery = insertStatement.getQuery();
+            Project project = insertStatement.getReturingProject();
+            
+            RowStream stream = assembleStream(project); 
+            
+            return new PhysicalUpdate(stream.operator, getParameterTypes(), insertStatement.isRequireStepIsolation());
+
+        }
+
+        protected RowStream assembleInsertStatement (InsertStatement insert) {
+            
+            PlanNode planQuery = insert.getQuery();
             List<ExpressionNode> projectFields = null;
             if (planQuery instanceof Project) {
                 Project project = (Project)planQuery;
@@ -630,7 +637,107 @@ public class OperatorAssembler extends BaseRule
             }
             RowStream stream = assembleQuery(planQuery);
             UserTableRowType targetRowType = 
-                tableRowType(insertStatement.getTargetTable());
+                    tableRowType(insert.getTargetTable());
+            
+            stream = assembleProjectTable (stream, projectFields, insert);
+            
+            stream.operator = API.insert_Returning(stream.operator, usePValues);
+            stream.rowType = targetRowType;
+            
+            if (explainContext != null)
+                explainInsertStatement(stream.operator, insert);
+            
+            return stream;
+        }
+        
+        protected RowStream assembleProjectTable (RowStream input, 
+                List<ExpressionNode> projectFields, InsertStatement insert) {
+
+            UserTableRowType targetRowType = 
+                    tableRowType(insert.getTargetTable());
+            UserTable table = insert.getTargetTable().getTable();            
+
+            List<Expression> inserts = null;
+            List<TPreparedExpression> insertsP = null;
+            if (projectFields != null) {
+                // In the common case, we can project into a wider row
+                // of the correct type directly.
+                insertsP = newPartialAssembler.assembleExpressions(projectFields, input.fieldOffsets);
+                inserts = oldPartialAssembler.assembleExpressions(projectFields, input.fieldOffsets);
+            }
+            else {
+                // VALUES just needs each field, which will get rearranged below.
+                int nfields = input.rowType.nFields();
+                if (usePValues) {
+                    insertsP = new ArrayList<TPreparedExpression>(nfields);
+                    for (int i = 0; i < nfields; ++i) {
+                        insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
+                    }
+                }
+                else {
+                    inserts = new ArrayList<Expression>(nfields);
+                    for (int i = 0; i < nfields; i++) {
+                        inserts.add(Expressions.field(input.rowType, i));
+                    }
+                }
+            }
+
+            if (inserts != null) {
+                Expression[] row = new Expression[targetRowType.nFields()];
+
+                // Insert the sequence generator values and default value processing
+                for (int i = 0; i < targetRowType.nFields(); i++) {
+                    Column column = table.getColumnsIncludingInternal().get(i);
+                    if (column.getIdentityGenerator() != null) {
+                        Sequence sequence = table.getColumn(i).getIdentityGenerator();
+                        row[i] = new SequenceNextValueExpression(AkType.LONG, 
+                                new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getSchemaName()),
+                                new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getTableName()));
+                    }
+                    else if (column.getDefaultValue() != null) {
+                        // TODO: Convert the defaultValue string into an Expression
+                        row[i] = LiteralExpression.forNull();
+                    } else {
+                        row[i] = LiteralExpression.forNull();
+                    }
+                }
+                int ncols = inserts.size();
+                for (int i = 0; i < ncols; i++) {
+                    // TODO: If inserts.get() == DEFAULT, skip the replacement of the default value 
+                    Column column = insert.getTargetColumns().get(i);
+                    // If Column is an identity column, 
+                    // DefaultValue == false -> Generated always, override the user setting
+                    // DefaultValue == true -> generated by default, only if user value is null
+                    if (column.getDefaultIdentity() != null) {
+                        if (column.getDefaultIdentity().booleanValue()) { 
+                            List<Expression> expr = new ArrayList<Expression>(2);
+                            expr.add(inserts.get(i));
+                            expr.add(row[column.getPosition()]);
+                            row[column.getPosition()] = new IfNullExpression (expr);
+                        }
+                    } else {
+                        row[column.getPosition()] = inserts.get(i);
+                    }
+                }
+                inserts = Arrays.asList(row);
+            }
+            
+            input.operator = API.project_Table(input.operator, input.rowType,
+                    targetRowType, inserts, insertsP);
+            input.rowType = targetRowType;
+            input.fieldOffsets = new ColumnSourceFieldOffsets(insert.getTable(), targetRowType);
+            return input;
+        }
+        
+        /*        
+            PlanNode planQuery = insertStatement.getQuery();
+            List<ExpressionNode> projectFields = null;
+            if (planQuery instanceof Project) {
+                Project project = (Project)planQuery;
+                projectFields = project.getFields();
+                planQuery = project.getInput();
+            }
+            RowStream stream = assembleQuery(planQuery);
             List<Expression> inserts = null;
             List<TPreparedExpression> insertsP = null;
             if (projectFields != null) {
@@ -655,16 +762,17 @@ public class OperatorAssembler extends BaseRule
                     }
                 }
             }
+            
             // Have a list of expressions in the order specified.
             // Want a list as wide as the target row with NULL
             // literals for the gaps.
             // TODO: That doesn't seem right. How are explicit NULLs
             // to be distinguished from the column's default value?
+            UserTable table = insertStatement.getTargetTable().getTable();
             if (inserts != null) {
                 Expression[] row = new Expression[targetRowType.nFields()];
 
                 // Insert the sequence generator values and default value processing
-                UserTable table = insertStatement.getTargetTable().getTable();
                 for (int i = 0; i < targetRowType.nFields(); i++) {
                     Column column = table.getColumnsIncludingInternal().get(i);
                     if (column.getIdentityGenerator() != null) {
@@ -684,7 +792,7 @@ public class OperatorAssembler extends BaseRule
                 for (int i = 0; i < ncols; i++) {
                     // TODO: If inserts.get() == DEFAULT, skip the replacement of the default value 
                     Column column = insertStatement.getTargetColumns().get(i);
-                    // Column is an identity column, 
+                    // If Column is an identity column, 
                     // DefaultValue == false -> Generated always, override the user setting
                     // DefaultValue == true -> generated by default, only if user value is null
                     if (column.getDefaultIdentity() != null) {
@@ -702,14 +810,35 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 TPreparedExpression[] row = new TPreparedExpression[targetRowType.nFields()];
-                
-                
                 int ncols = insertsP.size();
                 for (int i = 0; i < ncols; i++) {
                     Column column = insertStatement.getTargetColumns().get(i);
                     row[column.getPosition()] = insertsP.get(i);
                 }
                 for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
+/ *
+ *                  I fail to understand why this has to be this complex.                     
+                    TPreparedExpression seqExpr = null;
+                    Column column = table.getColumnsIncludingInternal().get(i);
+                    if (column.getIdentityGenerator() != null) {
+                        Sequence sequence = table.getColumn(i).getIdentityGenerator();
+                        List<ExpressionNode> params = new ArrayList<ExpressionNode>(2);
+                        params.add(new ConstantExpression(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR)));
+                        params.add(new ConstantExpression(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR)));
+                        FunctionExpression seq = new FunctionExpression ("NEXTVAL", params, DataTypeDescriptor.INTEGER, null);
+                        seqExpr = newPartialAssembler.assembleExpression(seq, null);
+                        
+                        if (row[i] != null) {
+                            List<ExpressionNode>params2 = new ArrayList<ExpressionNode>(2);
+                            params.add(row[i]);
+                            params.add(seq);
+                            FunctionExpression ifnull = new FunctionExpression ("IFNULL", params2, null, null);
+                        }
+                    }
+                    if (column.getDefaultIdentity() != null && column.getDefaultIdentity().booleanValue() == false) {
+                        row[i] = seqExpr;
+                    } else
+* /                     
                     if (row[i] == null) {
                         TInstance tinst = targetRowType.typeInstanceAt(i);
                         PUnderlying underlying = tinst.typeClass().underlyingType();
@@ -720,13 +849,20 @@ public class OperatorAssembler extends BaseRule
             }
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, insertsP);
-            UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
+            
+            stream.operator = API.insert_Returning(stream.operator, usePValues);
+            //UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
             if (explainContext != null)
-                explainInsertStatement(plan, insertStatement);
-            return new PhysicalUpdate(plan, getParameterTypes(), insertStatement.isRequireStepIsolation());
-        }
+                explainInsertStatement(stream.operator, insertStatement);
 
-        protected void explainInsertStatement(UpdatePlannable plan, InsertStatement insertStatement) {
+            stream.operator = API.project_Table(stream.operator, 
+                    stream.rowType, targetRowType, returns, returnsP);
+        }
+*/        
+        
+
+
+        protected void explainInsertStatement(Operator plan, InsertStatement insertStatement) {
             Attributes atts = new Attributes();
             TableName tableName = insertStatement.getTargetTable().getTable().getName();
             atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
@@ -818,7 +954,7 @@ public class OperatorAssembler extends BaseRule
                 return assembleAggregateSource((AggregateSource) node);
             else if (node instanceof Distinct)
                 return assembleDistinct((Distinct) node);
-            else if (node instanceof Sort            )
+            else if (node instanceof Sort)
                 return assembleSort((Sort) node);
             else if (node instanceof Limit)
                 return assembleLimit((Limit) node);
@@ -838,6 +974,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleUsingBloomFilter((UsingBloomFilter) node);
             else if (node instanceof BloomFilterFilter)
                 return assembleBloomFilterFilter((BloomFilterFilter) node);
+            else if (node instanceof InsertStatement) 
+                return assembleInsertStatement((InsertStatement)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }

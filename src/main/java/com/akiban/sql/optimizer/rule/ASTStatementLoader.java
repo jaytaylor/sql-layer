@@ -182,6 +182,7 @@ public class ASTStatementLoader extends BaseRule
                 query = ((ResultSet)query).getInput();
             TableNode targetTable = getTargetTable(insertNode);
             ResultColumnList rcl = insertNode.getTargetColumnList();
+            List<ExpressionNode> row = null;
             int ncols = insertNode.getResultSetNode().getResultColumns().size();
             List<Column> targetColumns;
             if (rcl != null) {
@@ -205,17 +206,27 @@ public class ASTStatementLoader extends BaseRule
                 }
             }
 
-            List<Column> returningColumns = null;
+            TableSource table = null; 
             rcl = insertNode.getReturningList();
             if (rcl != null) {
-                returningColumns = new ArrayList<Column>(rcl.size());
+                table = (TableSource)toJoinNode((FromTable)(insertNode.getUserData()), true);
+                row = new ArrayList<ExpressionNode>(rcl.size());
                 for (ResultColumn resultColumn : rcl) {
-                    Column column = getColumnReferenceColumn(resultColumn.getReference(),
-                                                            "Unsupported returning column");
-                    returningColumns.add(column);
+                    row.add(toExpression(resultColumn.getExpression()));
+                }
+            } else {
+                int size = targetTable.getTable().getColumns().size();
+                row = new ArrayList<ExpressionNode>(size);
+                for (int i = 0; i < size; i++) {
+                    row.add(new ConstantExpression(null, AkType.NULL));
                 }
             }
-            return new InsertStatement(query, targetTable, targetColumns, returningColumns, peekEquivalenceFinder());
+
+            InsertStatement insert = new InsertStatement (query, targetTable, 
+                    targetColumns, table, peekEquivalenceFinder());
+            Project project = new Project (insert, row);
+            insert.setReturningProject(project);
+            return insert;
         }
     
         // DELETE

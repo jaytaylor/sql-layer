@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.Operator;
 import com.akiban.server.explain.ExplainContext;
 
 import java.util.Arrays;
@@ -45,6 +46,13 @@ public class PhysicalUpdate extends BasePlannable
         this.requireStepIsolation = requireStepIsolation;
     }
 
+    public PhysicalUpdate (Operator resultsOperator, 
+                            DataTypeDescriptor[] paramterTypes,
+                            boolean requireStepIsolation) {
+        super (resultsOperator, paramterTypes);
+        this.requireStepIsolation = requireStepIsolation;
+    }
+    
     public UpdatePlannable getUpdatePlannable() {
         return (UpdatePlannable)getPlannable();
     }
