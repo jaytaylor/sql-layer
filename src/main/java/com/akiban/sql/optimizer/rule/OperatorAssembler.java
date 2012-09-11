@@ -620,9 +620,15 @@ public class OperatorAssembler extends BaseRule
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
             Project project = insertStatement.getReturingProject();
             
-            RowStream stream = assembleStream(project); 
-            
-            return new PhysicalUpdate(stream.operator, getParameterTypes(), insertStatement.isRequireStepIsolation());
+            RowStream stream = assembleStream(project);
+            // Returning rows, if the table is not null, the insert is returning rows 
+            // which need to be passed to the user. 
+            boolean returning = !(insertStatement.getTable() == null);
+            return new PhysicalUpdate(stream.operator, getParameterTypes(),
+                    stream.rowType,
+                    null,
+                    returning,
+                    insertStatement.isRequireStepIsolation());
 
         }
 

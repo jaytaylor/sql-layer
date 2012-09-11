@@ -55,28 +55,16 @@ public class PhysicalSelect extends BasePlannable
         }
     }
 
-    private List<PhysicalResultColumn> resultColumns;
-    private RowType rowType;
-    
     public PhysicalSelect(Operator resultOperator, RowType rowType,
                           List<PhysicalResultColumn> resultColumns,
                           DataTypeDescriptor[] parameterTypes) {
-        super(resultOperator, parameterTypes);
-        this.rowType = rowType;
-        this.resultColumns = resultColumns;
+        super(resultOperator, parameterTypes, rowType, resultColumns);
     }
 
     public Operator getResultOperator() {
         return (Operator)getPlannable();
     }
 
-    public RowType getResultRowType() {
-        return rowType;
-    }
-
-    public List<PhysicalResultColumn> getResultColumns() {
-        return resultColumns;
-    }
 
     @Override
     public boolean isUpdate() {
@@ -87,7 +75,7 @@ public class PhysicalSelect extends BasePlannable
     protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
-        str.append(resultColumns);
+        str.append(getResultColumns());
         return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
