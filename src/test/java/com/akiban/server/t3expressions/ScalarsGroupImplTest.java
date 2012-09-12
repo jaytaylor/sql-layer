@@ -92,6 +92,23 @@ public final class ScalarsGroupImplTest {
                 "A...")
                 .sameAt(0).sameAt(1).sameAt(100);
 
+        test.overloads(
+                "B...",
+                "B")
+                .sameAt(0).sameAt(1).sameAt(100);
+        
+        test.overloads(
+                "A",
+                "A...",
+                "B...")
+                .differentAt(0).differentAt(1).differentAt(100);
+        
+        test.overloads(
+                "A...",
+                "B",
+                "A, B, A...")
+                .differentAt(0).differentAt(1).sameAt(2).sameAt(100);
+
         // two varargs
 
         test.overloads( // note: this isn't allowed by other types3 components, but let's check it anyway
@@ -103,6 +120,7 @@ public final class ScalarsGroupImplTest {
                 "A...",
                 "B...")
                 .differentAt(0).differentAt(1).differentAt(100);
+
         test.overloads(
                 "A...",
                 "B, B...")

@@ -497,15 +497,20 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         public ScalarsGroupImpl(Collection<TValidatedOverload> overloads) {
             this.overloads = Collections.unmodifiableCollection(overloads);
-            sameType = doFindSameType(overloads);
+            boolean outRange[] = new boolean[1];
+            int argc[] = new int[1];
+            sameType = doFindSameType(overloads, argc, outRange);
+            
+            outOfRangeVal = outRange[0];
+            nArgs = argc[0];
         }
 
         @Override
         public boolean hasSameTypeAt(int pos)
         {
-            return sameType == null
-                        ? false
-                        :sameType.get(pos);
+            return pos >= nArgs         // if pos is out of range
+                        ? outOfRangeVal
+                        : sameType.get(pos); 
         }
         
         private static int nArgsOf(TValidatedOverload ovl)
@@ -519,7 +524,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return ovl.varargInputSet() != null;
         }
 
-        protected static BitSet doFindSameType(Collection<? extends TValidatedOverload> overloads)
+        protected static BitSet doFindSameType(Collection<? extends TValidatedOverload> overloads, int range[], boolean outRange[])
         {
             ArrayList<Integer> nArgs = new ArrayList<Integer>();
 
@@ -528,16 +533,35 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             int maxArgc = nArgsOf(maxOvl);
             boolean hasVararg = hasVararg(maxOvl);
             int n = 1;
-
+            
+            // whether arg that's out of range should be 'same' or 'not same'
+                // false if all overloads in the group have fixed length
+                // true if all overloads with varargs in the group have the same targetType of vararg
+                // false otherwise
+            boolean outOfRange = false; 
+            TClass firstVararg = null;
+            
             for (TValidatedOverload ovl : overloads)
             {
                 int curArgc = nArgsOf(ovl);
                 nArgs.add(curArgc);
+                boolean curHasVar = hasVararg(ovl);
                 
+                if (curHasVar)
+                {
+                    if (firstVararg == null)
+                    {
+                        outOfRange = true;
+                        firstVararg = ovl.varargInputSet().targetType();
+                    }
+                    else
+                        outOfRange = firstVararg.equals(ovl.varargInputSet().targetType());
+                }
+
                 if (curArgc > maxArgc
                         || curArgc == maxArgc 
                            && hasVararg 
-                           && !hasVararg(ovl))
+                           && !curHasVar)
                 {
                     hasVararg = hasVararg(ovl);
                     maxOvl = ovl;
@@ -545,13 +569,21 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 }
                 ++n;
             }
+            
+            outRange[0] = outOfRange;
+            range[0] = maxArgc;
+            
             // all the overloads in the group are vararg
             if (hasVararg && maxArgc == 1)
-                return null;
+            {
+                BitSet ret = new BitSet(1);
+                ret.set(0, outOfRange);
+                return ret;
+            }
             
-            BitSet bitset = new BitSet(maxArgc);
-            Boolean same;
+            BitSet sameType = new BitSet(maxArgc);
 
+            Boolean same;
             for (n = 0; n < maxArgc; ++n)
             {
                 same = Boolean.TRUE;
@@ -560,14 +592,19 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 for (TValidatedOverload ovl : overloads)
                 {
                     int curArgc = nArgs.get(index++);
+                    TClass targetType;
 
                     // if the arg is absent  
-                    // and this overload does not have varargs
-                    // ==> TRUE
-                    if (n >= curArgc && !hasVararg(ovl))
-                        continue;
-
-                    TClass targetType = ovl.inputSetAt(n).targetType();
+                    if (n >= curArgc)
+                    {
+                        if (!hasVararg(ovl))
+                            continue;
+                        else
+                            targetType = ovl.varargInputSet().targetType();
+                    }
+                    else
+                        targetType = ovl.inputSetAt(n).targetType();
+                    
                     if (targetType != null && !targetType.equals(common)
                             || targetType == null && common != null)
                     {
@@ -575,14 +612,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         break;
                     }
                 }
-                bitset.set(n, same);
+                sameType.set(n, same);
             }
-
-            return bitset;
+            
+            return sameType;
         }
-        
-        private BitSet sameType;
-        
+        private final int nArgs;
+        private final boolean outOfRangeVal;
+        private final BitSet sameType;
         private final Collection<? extends TValidatedOverload> overloads;
 
     }
