@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TClass;
@@ -414,7 +415,7 @@ public final class PValueSources {
         return cacher.valueToCache(source, tInstance);
     }
 
-    public static int hash(PValueSource source) {
+    public static int hash(PValueSource source, AkCollator collator) {
         if (source.isNull())
             return 0;
         final long hash;
@@ -447,7 +448,7 @@ public final class PValueSources {
             hash = Arrays.hashCode(source.getBytes());
             break;
         case STRING:
-            hash = source.getString().hashCode();
+            hash = collator.hashCode(source.getString());
             break;
         default:
             throw new AssertionError(source.getUnderlyingType());
