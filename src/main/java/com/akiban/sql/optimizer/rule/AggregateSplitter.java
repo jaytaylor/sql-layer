@@ -88,18 +88,24 @@ public class AggregateSplitter extends BaseRule
         Object[] distinctOrderby = checkDistinctDistinctsAndOrderby(source);
         List<ExpressionNode> fields = source.splitOffProject();
         PlanNode input = source.getInput();
-        PlanNode ninput = new Project(input, fields);
         
         // order-by and distinct cannot exist together for now
         // so it's safe to do this:
         //
         // order by
         List<OrderByExpression> orderBy = (List<OrderByExpression>)distinctOrderby[1];
+        PlanNode ninput;
+        
         if (orderBy != null)
-              ninput = new Sort(ninput, orderBy);
+              ninput = new Sort(input, orderBy);
         // distinct
         else if ((Boolean)distinctOrderby[0])
+        {
+            ninput = new Project(input, fields);
             ninput = new Distinct(ninput);
+        }
+        else
+            ninput = new Project(input, fields);
         
         source.replaceInput(input, ninput);
     }
