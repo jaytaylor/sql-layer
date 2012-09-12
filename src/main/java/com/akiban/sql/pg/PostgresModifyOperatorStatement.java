@@ -130,6 +130,7 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
                 }
                 Row row;
                 while ((row = cursor.next()) != null) {
+                    //LOG.error("RowTypes {} vs {}", row.rowType(), getResultRowType());
                     assert getResultRowType() == null || (row.rowType() == getResultRowType()) : row;
                     if (outputResult) { 
                         outputter.output(row, usesPValues());

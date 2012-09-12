@@ -1,5 +1,5 @@
 PhysicalUpdate
   Project_Default(orders.oid + 1000, orders.order_date + INTERVAL_MILLIS TO DAY(1))
     Insert_Returning(INTO orders(oid, cid, order_date))
-      Project_Default(customers.cid + 1000, customers.cid, CURRENT_DATETIME())
+      Project_Default(CAST(customers.cid + 1000 AS INT), customers.cid, CAST(CURRENT_DATETIME() AS DATE))
         IndexScan_Default(Index(customers.PRIMARY), cid)

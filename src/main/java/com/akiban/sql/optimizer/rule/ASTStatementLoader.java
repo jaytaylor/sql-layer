@@ -206,7 +206,8 @@ public class ASTStatementLoader extends BaseRule
                 }
             }
 
-            TableSource table = null; 
+            TableSource table = null;
+            List<ResultField> results = null;
             rcl = insertNode.getReturningList();
             if (rcl != null) {
                 table = (TableSource)toJoinNode((FromTable)(insertNode.getUserData()), true);
@@ -214,6 +215,7 @@ public class ASTStatementLoader extends BaseRule
                 for (ResultColumn resultColumn : rcl) {
                     row.add(toExpression(resultColumn.getExpression()));
                 }
+                results = resultColumns(rcl);
             } else {
                 int size = targetTable.getTable().getColumns().size();
                 row = new ArrayList<ExpressionNode>(size);
@@ -223,7 +225,7 @@ public class ASTStatementLoader extends BaseRule
             }
 
             InsertStatement insert = new InsertStatement (query, targetTable, 
-                    targetColumns, table, peekEquivalenceFinder());
+                    targetColumns, table, results, peekEquivalenceFinder());
             Project project = new Project (insert, row);
             insert.setReturningProject(project);
             return insert;
@@ -272,16 +274,8 @@ public class ASTStatementLoader extends BaseRule
                 throw new UnsupportedSQLException("Unsupported query", resultSet);
         }
 
-        /** A normal SELECT */
-        protected PlanNode toQueryForSelect(SelectNode selectNode,
-                                            OrderByList orderByList,
-                                            ValueNode offsetClause,
-                                            ValueNode fetchFirstClause)
-                throws StandardException {
-            PlanNode query = toQuery(selectNode);
-
-            ResultColumnList rcl = selectNode.getResultColumns();
-            List<ExpressionNode> projects = new ArrayList<ExpressionNode>(rcl.size());
+        protected List<ResultField> resultColumns(ResultColumnList rcl) 
+                        throws StandardException {
             List<ResultField> results = new ArrayList<ResultField>(rcl.size());
             for (ResultColumn result : rcl) {
                 String name = result.getName();
@@ -291,13 +285,30 @@ public class ASTStatementLoader extends BaseRule
                     (name == ((ColumnReference)result.getExpression()).getColumnName());
                 Column column = null;
                 ExpressionNode expr = toExpression(result.getExpression());
-                projects.add(expr);
                 if (expr instanceof ColumnExpression) {
                     column = ((ColumnExpression)expr).getColumn();
                     if ((column != null) && nameDefaulted)
                         name = column.getName();
                 }
                 results.add(new ResultField(name, type, column));
+            }
+            return results;
+        }
+        /** A normal SELECT */
+        protected PlanNode toQueryForSelect(SelectNode selectNode,
+                                            OrderByList orderByList,
+                                            ValueNode offsetClause,
+                                            ValueNode fetchFirstClause)
+                throws StandardException {
+            PlanNode query = toQuery(selectNode);
+
+            ResultColumnList rcl = selectNode.getResultColumns();
+            List<ResultField> results = resultColumns (rcl);
+            List<ExpressionNode> projects = new ArrayList<ExpressionNode>(rcl.size());
+
+            for (ResultColumn result : rcl) {
+                ExpressionNode expr = toExpression(result.getExpression());
+                projects.add(expr);
             }
 
             List<OrderByExpression> sorts = new ArrayList<OrderByExpression>();

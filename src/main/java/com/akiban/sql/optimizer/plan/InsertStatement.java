@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 
 import java.util.*;
@@ -37,14 +38,17 @@ public class InsertStatement extends BaseUpdateStatement
     private List<Column> targetColumns;
     private Project returningProject;
     private TableSource table;
+    private List<ResultField> results;
 
     public InsertStatement(PlanNode query, TableNode targetTable,
                            List<Column> targetColumns,
                            TableSource table,
+                           List<ResultField> results,
                            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
         super(query, targetTable, columnEquivalencies);
         this.targetColumns = targetColumns;
         this.table = table;
+        this.results = results;
     }
 
     public List<Column> getTargetColumns() {
@@ -57,6 +61,10 @@ public class InsertStatement extends BaseUpdateStatement
 
     public void setReturningProject (Project project) {
         this.returningProject = project;
+    }
+    
+    public List<ResultField> getResultsFields() { 
+        return results;
     }
     
     public Project getReturingProject () {
