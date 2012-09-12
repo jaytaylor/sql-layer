@@ -3,9 +3,15 @@
 - Statement: SELECT 2 WHERE 1 NOT IN (2, 3, 4);
 - output: [['2']]
 ---
-- Statement: SELECT 2 WHERE (1, 2) NOT IN ((2, 3), (4, 5), (6, 7)) IS TRUE
-- output: [['2']]
+- Statement: SELECT 3 WHERE (1) NOT IN (2, 3, 4);
+- output: [['3']]
 ---
-- Statement: SELECT  2 WHERE (1, 2) NOT IN ((1, 2), (3, 4), (5, 6)) IS FALSE
-- output: [['2']]
+- Statement: SELECT 6 WHERE (1) NOT IN (1, 2, 3) IS FALSE;
+- output: [['6']]
+---
+- Statement: SELECT 4 WHERE (1, 2) NOT IN ((2, 3), (4, 5), (6, 7)) IS TRUE
+- output: [['4']]
+---
+- Statement: SELECT  5 WHERE (1, 2) NOT IN ((1, 2), (3, 4), (5, 6)) IS FALSE
+- output: [['5']]
 ...
