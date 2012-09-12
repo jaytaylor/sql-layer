@@ -194,7 +194,7 @@ public final class ScalarsGroupImplTest {
             StringBuilder overloadsDescBuilder = new StringBuilder();
             for (int i = 0; i < overloadDefs.length; i++) {
                 String overloadDef = overloadDefs[i];
-                overloadsDescBuilder.append('(').append(overloadDef).append(')');
+                overloadsDescBuilder.append(FUNC_NAME).append('(').append(overloadDef).append(')');
                 if (i + 1 < overloadDefs.length)
                     overloadsDescBuilder.append(", ");
             }
@@ -203,7 +203,7 @@ public final class ScalarsGroupImplTest {
             for (Map.Entry<Integer, Boolean> expected : expectations.entrySet()) {
                 int pos = expected.getKey();
                 boolean sameTypeAt = expected.getValue();
-                String caseName = String.format("%s at %d", overloadsDescr, pos);
+                String caseName = overloadsDescr + " at " + pos;
                 pb.add(caseName, scalarsGroup, pos, sameTypeAt);
             }
         }
@@ -257,6 +257,7 @@ public final class ScalarsGroupImplTest {
         private String[] overloadDefs;
         private Map<Integer, Boolean> expectations;
     }
-    
+
+    private static final String FUNC_NAME = "FOO";
     private static final TClass RET_TYPE = new T3TestClass("R");
 }
