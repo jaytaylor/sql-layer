@@ -152,9 +152,10 @@ public class ProjectedRow extends AbstractRow
     {
         if (expressions == null)
             return null;
-        List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
-        for (Expression expression : expressions) {
-            ExpressionEvaluation evaluation = expression.evaluation();
+        int n = expressions.size();
+        List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>(n);
+        for (int i = 0; i < n; i++) {
+            ExpressionEvaluation evaluation = expressions.get(i).evaluation();
             evaluation.of(context);
             evaluation.of(row);
             result.add(evaluation);
@@ -166,9 +167,10 @@ public class ProjectedRow extends AbstractRow
                                                              Row row, QueryContext context) {
         if (pExpressions == null)
             return null;
-        List<PValueSource> result = new ArrayList<PValueSource>(pExpressions.size());
-        for (TPreparedExpression expression : pExpressions) {
-            TEvaluatableExpression eval = expression.build();
+        int n = pExpressions.size();
+        List<PValueSource> result = new ArrayList<PValueSource>(n);
+        for (int i = 0; i < n; i++) {
+            TEvaluatableExpression eval = pExpressions.get(i).build();
             eval.with(row);
             eval.with(context);
             eval.evaluate();
@@ -180,9 +182,10 @@ public class ProjectedRow extends AbstractRow
     private List<? extends TInstance> createTInstances(List<? extends TPreparedExpression> pExpressions) {
         if (pExpressions == null)
             return null;
-        List<TInstance> result = new ArrayList<TInstance>(pExpressions.size());
-        for (TPreparedExpression expression : pExpressions) {
-            result.add(expression.resultType());
+        int n = pExpressions.size();
+        List<TInstance> result = new ArrayList<TInstance>(n);
+        for (int i = 0; i < n; i++) {
+            result.add(pExpressions.get(i).resultType());
         }
         return result;
     }
