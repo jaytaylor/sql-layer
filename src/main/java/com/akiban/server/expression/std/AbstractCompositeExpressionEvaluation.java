@@ -119,5 +119,5 @@ public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEv
     private final List<? extends ExpressionEvaluation> children;
     private final int nChildren;
     private ValueHolder valueHolder;
-    protected QueryContext context;
+    private QueryContext context;
 }
