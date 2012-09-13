@@ -182,7 +182,6 @@ public class ASTStatementLoader extends BaseRule
                 query = ((ResultSet)query).getInput();
             TableNode targetTable = getTargetTable(insertNode);
             ResultColumnList rcl = insertNode.getTargetColumnList();
-            List<ExpressionNode> row = null;
             int ncols = insertNode.getResultSetNode().getResultColumns().size();
             List<Column> targetColumns;
             if (rcl != null) {
@@ -206,39 +205,60 @@ public class ASTStatementLoader extends BaseRule
                 }
             }
 
-            TableSource table = null;
-            List<ResultField> results = null;
-            rcl = insertNode.getReturningList();
-            if (rcl != null) {
-                table = (TableSource)toJoinNode((FromTable)(insertNode.getUserData()), true);
-                row = new ArrayList<ExpressionNode>(rcl.size());
-                for (ResultColumn resultColumn : rcl) {
-                    row.add(toExpression(resultColumn.getExpression()));
-                }
-                results = resultColumns(rcl);
-            } else {
-                int size = targetTable.getTable().getColumns().size();
-                row = new ArrayList<ExpressionNode>(size);
-                for (int i = 0; i < size; i++) {
-                    row.add(new ConstantExpression(null, AkType.NULL));
-                }
-            }
-
+            ReturningValues values = calculateReturningValues (insertNode.getReturningList(),
+                                (FromTable)insertNode.getUserData(),
+                                targetTable.getTable().getColumns().size());
+            
             InsertStatement insert = new InsertStatement (query, targetTable, 
-                    targetColumns, table, results, peekEquivalenceFinder());
-            Project project = new Project (insert, row);
+                    targetColumns, values.table, values.results, peekEquivalenceFinder());
+            Project project = new Project (insert, values.row);
             insert.setReturningProject(project);
             return insert;
         }
     
+        
         // DELETE
         protected DeleteStatement toDeleteStatement(DeleteNode deleteNode)
                 throws StandardException {
             PlanNode query = toQuery((SelectNode)deleteNode.getResultSetNode());
             TableNode targetTable = getTargetTable(deleteNode);
-            return new DeleteStatement(query, targetTable, peekEquivalenceFinder());
+            
+            ReturningValues values = calculateReturningValues (deleteNode.getReturningList(), 
+                                        (FromTable)deleteNode.getUserData(),
+                                        targetTable.getTable().getColumns().size());
+            
+            DeleteStatement delete = new DeleteStatement(query, targetTable, values.table, 
+                                values.results, peekEquivalenceFinder());
+            Project project = new Project (delete, values.row);
+            delete.setReturningProject(project);
+            return delete;
+        }
+        
+        private class ReturningValues {
+            public List<ExpressionNode> row = null;
+            public TableSource table = null;
+            public List<ResultField> results = null;
         }
 
+        protected ReturningValues calculateReturningValues (ResultColumnList rcl, FromTable table, int size)
+                throws StandardException {
+            ReturningValues values = new ReturningValues();
+            if (rcl != null) {
+                values.table = (TableSource)toJoinNode(table, true);
+                values.row = new ArrayList<ExpressionNode>(rcl.size());
+                for (ResultColumn resultColumn : rcl) {
+                    values.row.add(toExpression(resultColumn.getExpression()));
+                }
+                values.results = resultColumns(rcl);
+            } else {
+                values.row = new ArrayList<ExpressionNode>(size);
+                for (int i = 0; i < size; i++) {
+                    values.row.add(new ConstantExpression(null, AkType.NULL));
+                }
+            }
+            return values;
+        }
+        
         /** The query part of SELECT / INSERT, which might be VALUES / UNION */
         protected PlanNode toQueryForSelect(ResultSetNode resultSet,
                                             OrderByList orderByList,

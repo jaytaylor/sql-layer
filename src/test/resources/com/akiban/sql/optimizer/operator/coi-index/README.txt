@@ -12,6 +12,12 @@ delete-1: DELETE by primary key
 
 delete-2: DELETE by general condition
 
+delete-3: DELETE RETURNING basic
+
+delete-4: DELETE RETURNING with formula
+
+delete-5: DELETE RETURING *
+
 insert-1: INSERT single row VALUES
 
 insert-2: INSERT multiple row VALUES

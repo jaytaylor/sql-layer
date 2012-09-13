@@ -61,7 +61,7 @@ public class UpdateStatement extends BaseUpdateStatement
     public UpdateStatement(PlanNode query, TableNode targetTable,
                            List<UpdateColumn> updateColumns,
                            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, columnEquivalencies);
+        super(query, targetTable, null, null, columnEquivalencies);
         this.updateColumns = updateColumns;
     }
 

@@ -568,7 +568,8 @@ public class DefaultFormatter
     }
 
     protected void appendDUIOperator(String name, Attributes atts) {
-        if (name.equals("Delete_Default")) {
+        if (name.equals("Delete_Default")||
+                name.equals("Delete_Returning")) {
             if (atts.containsKey(Label.TABLE_NAME)) {
                 sb.append("FROM ");
                 appendTableName(atts);

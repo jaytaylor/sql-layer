@@ -26,6 +26,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import java.util.List;
+
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 
 /** A SQL DELETE statement.
@@ -33,7 +36,9 @@ import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 public class DeleteStatement extends BaseUpdateStatement
 {
     public DeleteStatement(PlanNode query, TableNode targetTable,
+                            TableSource table,
+                            List<ResultField> results,
                            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, columnEquivalencies);
+        super(query, targetTable, table, results, columnEquivalencies);
     }
 }

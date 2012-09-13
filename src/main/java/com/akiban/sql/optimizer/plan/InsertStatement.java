@@ -36,39 +36,18 @@ import java.util.*;
 public class InsertStatement extends BaseUpdateStatement
 {
     private List<Column> targetColumns;
-    private Project returningProject;
-    private TableSource table;
-    private List<ResultField> results;
 
     public InsertStatement(PlanNode query, TableNode targetTable,
                            List<Column> targetColumns,
                            TableSource table,
                            List<ResultField> results,
                            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, columnEquivalencies);
+        super(query, targetTable, table, results, columnEquivalencies);
         this.targetColumns = targetColumns;
-        this.table = table;
-        this.results = results;
     }
 
     public List<Column> getTargetColumns() {
         return targetColumns;
-    }
-    
-    public TableSource getTable() { 
-        return table;
-    }
-
-    public void setReturningProject (Project project) {
-        this.returningProject = project;
-    }
-    
-    public List<ResultField> getResultsFields() { 
-        return results;
-    }
-    
-    public Project getReturingProject () {
-        return returningProject;
     }
     
     @Override
