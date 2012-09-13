@@ -35,7 +35,7 @@ platform=$1
 bzr_revno=`bzr revno`
 
 # Handle file preparation for release target
-if [ -z "${AKIBAN_CE_FLAG}" ]; then
+if [ -z "${AKIBAN_DE_FLAG}" ]; then
     target='enterprise'
 else
     target='developer'
