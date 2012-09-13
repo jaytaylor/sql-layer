@@ -34,8 +34,8 @@ IF NOT DEFINED AKIBAN_CE_FLAG (
   SET TARGET=enterprise
   SET LICENSE=LICENSE-EE.txt
 ) ELSE (
-  SET TARGET=community
-  SET LICENSE=LICENSE-CE.txt
+  SET TARGET=developer
+  SET LICENSE=LICENSE-DE.txt
 )
 
 IF NOT DEFINED CERT_FILE SET CERT_FILE=%~dp0\windows\testcert\testcert.pfx
