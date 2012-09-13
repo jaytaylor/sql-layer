@@ -204,16 +204,22 @@ public final class CastUtils
      */
     public static String truncateNonDigits(String st, TExecutionContext context)
     {
+        final int max = st.length();
+        if (max == 0)
+            return "0";
         final int firstChar = (st.charAt(0) == '-') ? 1 : 0;
-        int truncatedLength = firstChar;
-        boolean needsRoundingUp = false;
-        for(int max=st.length(); truncatedLength < max; ++truncatedLength) {
+        boolean needsRoundingUp = false; // whether the number ends in "\.[5-9]"
+        int truncatedLength;
+        for(truncatedLength = firstChar; truncatedLength < max; ++truncatedLength) {
             char c = st.charAt(truncatedLength);
             if (!Character.isDigit(c)) {
                 needsRoundingUp = (c == '.') && isFiveOrHigher(st, truncatedLength + 1);
                 break;
             }
         }
+        if (truncatedLength == firstChar)
+            return "0"; // no digits
+
         String ret;
         if (needsRoundingUp) {
             StringBuilder sb = new StringBuilder(truncatedLength+2); // 1 for '-', 1 for the carry digit

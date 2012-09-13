@@ -64,6 +64,26 @@ public final class CastUtilsTest {
         testTruncate("-2.5", "-3");
     }
 
+    @Test
+    public void truncate7() {
+        testTruncate("", "0");
+    }
+
+    @Test
+    public void truncate8() {
+        testTruncate("a", "0");
+    }
+
+    @Test
+    public void truncate9() {
+        testTruncate("-", "0");
+    }
+
+    @Test
+    public void truncate10() {
+        testTruncate(".", "0");
+    }
+
     private static void testTruncate(String input, String expected) {
         TExecutionContext context = new TExecutionContext(null, null, null, null,
                 ErrorHandlingMode.IGNORE, ErrorHandlingMode.IGNORE, ErrorHandlingMode.IGNORE);
