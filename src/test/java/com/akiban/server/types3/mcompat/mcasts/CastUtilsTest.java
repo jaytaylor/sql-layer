@@ -26,68 +26,54 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.Parameterization;
+import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types3.ErrorHandlingMode;
 import com.akiban.server.types3.TExecutionContext;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(NamedParameterizedRunner.class)
 public final class CastUtilsTest {
+    
+    @NamedParameterizedRunner.TestParameters
+    public static Collection<Parameterization> params() {
+        ParameterizationBuilder pb = new ParameterizationBuilder();
+        param(pb, "2.0", "2");
+        param(pb, "-2.0", "-2");
+        param(pb, "2.b", "2");
+        param(pb, "2.4", "2");
+        param(pb, "2.5", "3");
+        param(pb, "-2.5", "-3");
+        param(pb, "", "0");
+        param(pb, "a", "0");
+        param(pb, "-", "0");
+        param(pb, ".", "0");
+        return pb.asList();
+    }
 
-    @Test
-    public void truncate1() {
-        testTruncate("2.0", "2");
+    private static void param(ParameterizationBuilder pb, String input, String expected) {
+        pb.add(input.length() == 0 ? "<empty>" : input, input, expected);
     }
 
     @Test
-    public void truncate2() {
-        testTruncate("-2.0", "-2");
-    }
-
-    @Test
-    public void truncate3() {
-        testTruncate("2.b", "2");
-    }
-
-    @Test
-    public void truncate4() {
-        testTruncate("2.4", "2");
-    }
-
-    @Test
-    public void truncate5() {
-        testTruncate("2.5", "3");
-    }
-
-    @Test
-    public void truncate6() {
-        testTruncate("-2.5", "-3");
-    }
-
-    @Test
-    public void truncate7() {
-        testTruncate("", "0");
-    }
-
-    @Test
-    public void truncate8() {
-        testTruncate("a", "0");
-    }
-
-    @Test
-    public void truncate9() {
-        testTruncate("-", "0");
-    }
-
-    @Test
-    public void truncate10() {
-        testTruncate(".", "0");
-    }
-
-    private static void testTruncate(String input, String expected) {
+    public void testTruncate() {
         TExecutionContext context = new TExecutionContext(null, null, null, null,
                 ErrorHandlingMode.IGNORE, ErrorHandlingMode.IGNORE, ErrorHandlingMode.IGNORE);
         String actual = CastUtils.truncateNonDigits(input, context);
         assertEquals(input, expected, actual);
     }
+
+    public CastUtilsTest(String input, String expected) {
+        this.input = input;
+        this.expected = expected;
+    }
+
+    private final String input;
+    private final String expected;
 }
