@@ -57,6 +57,13 @@ public final class ScalarsGroupImplTest {
     public static Collection<Parameterization> params() {
         Cases test = new Cases();
 
+         // "Sandwiched" overloads:
+        test.overloads(
+                "A, B...",
+                "C, D...",
+                "E, B...")
+                .differentAt(0).differentAt(1).differentAt(100);
+        
         // fixed arity
         test.overloads(
                 "A")

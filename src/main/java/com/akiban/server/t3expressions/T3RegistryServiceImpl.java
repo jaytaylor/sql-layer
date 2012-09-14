@@ -555,7 +555,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         firstVararg = ovl.varargInputSet().targetType();
                     }
                     else
-                        outOfRange = firstVararg.equals(ovl.varargInputSet().targetType());
+                        outOfRange &= firstVararg.equals(ovl.varargInputSet().targetType());
                 }
 
                 if (curArgc > maxArgc
