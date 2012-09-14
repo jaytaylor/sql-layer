@@ -149,4 +149,4 @@ class PersistitIndexCursor implements Cursor
     private final IndexScanSelector selector;
     private boolean idle;
     private boolean destroyed = false;
-    }
+}

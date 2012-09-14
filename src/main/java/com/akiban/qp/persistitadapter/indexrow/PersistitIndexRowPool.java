@@ -28,50 +28,41 @@ package com.akiban.qp.persistitadapter.indexrow;
 
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.IndexRowType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-// TODO: EXPERIMENTAL
 
 public class PersistitIndexRowPool
 {
     // PersistitIndexRowPool interface
 
-    public synchronized PersistitIndexRow takeIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    public PersistitIndexRow takeIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
-        return
-            poolingEnabled
-            ? adapterPool(adapter).takeIndexRow(indexRowType)
-            : newIndexRow(adapter, indexRowType);
+        PersistitIndexRow persistitIndexRow = adapterPool(adapter).takeIndexRow(indexRowType);
+        // new RuntimeException("take " + persistitIndexRow.hashCode()).printStackTrace();
+        return persistitIndexRow;
     }
 
-    public synchronized void returnIndexRow(PersistitAdapter adapter,
-                                            IndexRowType indexRowType,
-                                            PersistitIndexRow indexRow)
+    public void returnIndexRow(PersistitAdapter adapter, IndexRowType indexRowType, PersistitIndexRow indexRow)
     {
-        if (poolingEnabled) {
-            adapterPool(adapter).returnIndexRow(indexRowType, indexRow);
-        }
+        // new RuntimeException("return " + indexRow.hashCode()).printStackTrace();
+        adapterPool(adapter).returnIndexRow(indexRowType, indexRow);
     }
 
-    public synchronized void enablePooling(boolean newPoolingEnabled)
+    public PersistitIndexRowPool()
     {
-        if (this.poolingEnabled && !newPoolingEnabled) {
-            // Disabling
-            adapterPools.clear();
-        }
-        this.poolingEnabled = newPoolingEnabled;
     }
 
     // For use by this class
 
     private AdapterPool adapterPool(PersistitAdapter adapter)
     {
-        AdapterPool pool = adapterPools.get(adapter.id());
+        LinkedHashMap<Long, AdapterPool> adapterPool = threadAdapterPools.get();
+        AdapterPool pool = adapterPool.get(adapter.id());
         if (pool == null) {
             pool = new AdapterPool(adapter);
-            adapterPools.put(adapter.id(), pool);
+            adapterPool.put(adapter.id(), pool);
         }
         return pool;
     }
@@ -86,20 +77,25 @@ public class PersistitIndexRowPool
 
     // Class state
 
-    public static final String INDEX_ROW_POOLING = "akserver.indexRowPooling";
-    private static final int CAPACITY = 100;
+    private static final int CAPACITY_PER_THREAD = 10;
     private static final float LOAD_FACTOR = 0.7f;
 
     // Object state
 
-    private boolean poolingEnabled = true;
-    private final LinkedHashMap<Long, AdapterPool> adapterPools =
-        new LinkedHashMap<Long, AdapterPool>(CAPACITY, LOAD_FACTOR, true /* access order for LRU */)
+    private final ThreadLocal<LinkedHashMap<Long, AdapterPool>> threadAdapterPools =
+        new ThreadLocal<LinkedHashMap<Long, AdapterPool>>()
         {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<Long, AdapterPool> eldest)
+            protected LinkedHashMap<Long, AdapterPool> initialValue()
             {
-                return size() > CAPACITY;
+                return new LinkedHashMap<Long, AdapterPool>(CAPACITY_PER_THREAD, LOAD_FACTOR, true /* access order for LRU */)
+                {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry<Long, AdapterPool> eldest)
+                    {
+                        return size() > CAPACITY_PER_THREAD;
+                    }
+                };
             }
         };
 
@@ -128,6 +124,7 @@ public class PersistitIndexRowPool
                 indexRows = new ArrayDeque<PersistitIndexRow>();
                 indexRowCache.put(indexRowType, indexRows);
             }
+            assert !indexRows.contains(indexRow);
             indexRows.addLast(indexRow);
         }
 

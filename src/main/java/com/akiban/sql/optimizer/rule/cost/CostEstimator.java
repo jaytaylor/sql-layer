@@ -905,7 +905,7 @@ public abstract class CostEstimator implements TableRowCounts
         long nrows = 0;
         double cost = 0.0;
         UserTable root = null;
-        for (UserTable table : group.getGroupTable().getAIS().getUserTables().values()) {
+        for (UserTable table : group.getRoot().getAIS().getUserTables().values()) {
             if (table.getGroup() == group) {
                 if (table.getParentJoin() == null)
                     root = table;

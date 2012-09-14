@@ -27,15 +27,9 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
-
-import static com.akiban.qp.persistitadapter.indexcursor.IndexCursor.SORT_TRAVERSE;
 
 class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSegment<S, E>
 {

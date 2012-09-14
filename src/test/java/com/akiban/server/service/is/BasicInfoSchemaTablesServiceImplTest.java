@@ -242,13 +242,13 @@ public class BasicInfoSchemaTablesServiceImplTest {
         // Add all roots
         for(UserTable userTable : holder.getAis().getUserTables().values()) {
             if(userTable.isRoot()) {
+                userTable.getGroup().setTreeName(userTable.getName().getTableName() + "_tree");
                 remainingTables.add(userTable);
             }
         }
         while(!remainingTables.isEmpty()) {
             UserTable userTable = remainingTables.remove(remainingTables.size()-1);
             ordinalMap.put(userTable, 0);
-            userTable.setTreeName(userTable.getName().getTableName() + "_tree");
             for(Index index : userTable.getIndexesIncludingInternal()) {
                 index.computeFieldAssociations(ordinalMap);
                 index.setTreeName(index.getIndexName().getName() + "_tree");
@@ -381,19 +381,19 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "gco", "a", "TABLE", LONG, "a_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "b", "TABLE", LONG, "b_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "m", "TABLE", LONG, "m_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "a", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "b", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "m", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "gco", "r", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "w", "TABLE", LONG, "w_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "gco", "x", "TABLE", LONG, "x_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "w", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "x", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "bar", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "test", "bar2", "TABLE", LONG, "bar2_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "foo", "TABLE", LONG, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "seq-table", "TABLE", LONG, "seq-table_tree", I_S, VARCHAR, I_S, VARCHAR, LONG}, 
                 { "zap", "pow", "TABLE", LONG, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "zzz", "zzz1", "TABLE", LONG, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
-                { "zzz", "zzz2", "TABLE", LONG, "zzz2_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zzz", "zzz2", "TABLE", LONG, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "voo", "VIEW", null, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);

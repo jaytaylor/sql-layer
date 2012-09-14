@@ -687,7 +687,7 @@ public class OperatorAssembler extends BaseRule
             UpdatePlannable plan = API.insert_Default(stream.operator, usePValues);
             if (explainContext != null)
                 explainInsertStatement(plan, insertStatement);
-            return new PhysicalUpdate(plan, getParameterTypes());
+            return new PhysicalUpdate(plan, getParameterTypes(), insertStatement.isRequireStepIsolation());
         }
 
         protected void explainInsertStatement(UpdatePlannable plan, InsertStatement insertStatement) {
@@ -716,7 +716,7 @@ public class OperatorAssembler extends BaseRule
             UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
             if (explainContext != null)
                 explainUpdateStatement(plan, updateStatement, updateColumns, updates, updatesP);
-            return new PhysicalUpdate(plan, getParameterTypes());
+            return new PhysicalUpdate(plan, getParameterTypes(), updateStatement.isRequireStepIsolation());
         }
 
         protected void explainUpdateStatement(UpdatePlannable plan, UpdateStatement updateStatement, List<UpdateColumn> updateColumns, List<Expression> updates, List<TPreparedExpression> updatesP) {
@@ -740,7 +740,7 @@ public class OperatorAssembler extends BaseRule
             UpdatePlannable plan = API.delete_Default(stream.operator, usePValues);
             if (explainContext != null)
                 explainDeleteStatement(plan, deleteStatement);
-            return new PhysicalUpdate(plan, getParameterTypes());
+            return new PhysicalUpdate(plan, getParameterTypes(), deleteStatement.isRequireStepIsolation());
         }
 
         protected void explainDeleteStatement(UpdatePlannable plan, DeleteStatement deleteStatement) {

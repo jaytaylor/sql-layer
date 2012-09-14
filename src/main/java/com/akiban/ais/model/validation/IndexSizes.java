@@ -28,8 +28,8 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
@@ -92,8 +92,8 @@ class IndexSizes implements AISValidation {
             }
         }
         
-        for (GroupTable table : ais.getGroupTables().values()) {
-            for (GroupIndex index : table.getGroupIndexes()) {
+        for (Group group : ais.getGroups().values()) {
+            for (GroupIndex index : group.getIndexes()) {
                 long hkeySize = validateHKeySize(index.leafMostTable(), output);
                 long fullKeySize = hkeySize;
                 for(IndexColumn iColumn : index.getKeyColumns()) {
@@ -112,7 +112,7 @@ class IndexSizes implements AISValidation {
                 }
                 if (fullKeySize > MAX_INDEX_STORAGE_SIZE) {
                     output.reportFailure(new AISValidationFailure(
-                            new UnsupportedIndexSizeException (table.getName(), index.getIndexName().getName())));
+                            new UnsupportedIndexSizeException (group.getRoot().getName(), index.getIndexName().getName())));
                 }
             }
         }

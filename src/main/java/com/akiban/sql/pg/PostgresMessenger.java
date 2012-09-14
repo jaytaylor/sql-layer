@@ -31,6 +31,7 @@ import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
+import java.net.*;
 import java.io.*;
 import java.nio.charset.Charset;
 
@@ -58,19 +59,26 @@ public class PostgresMessenger implements DataInput, DataOutput
     private final static InOutTap recvTap = Tap.createTimer("sql: msg: recv");
     private final static InOutTap xmitTap = Tap.createTimer("sql: msg: xmit");
 
-    private InputStream inputStream;
-    private OutputStream outputStream;
-    private DataInputStream dataInput;
+    private static final int IDLE_INTERVAL = 100;
+
+    private final Socket socket;
+    private final InputStream inputStream;
+    private final OutputStream outputStream;
+    private final DataInputStream dataInput;
     private DataInputStream messageInput;
     private ByteArrayOutputStream byteOutput;
     private DataOutputStream messageOutput;
     private String encoding = "UTF-8";
-    private boolean cancel = false;
 
-    public PostgresMessenger(InputStream inputStream, OutputStream outputStream) {
-        this.inputStream = inputStream;
-        this.outputStream = outputStream;
-        this.dataInput = new DataInputStream(inputStream);
+    public PostgresMessenger(Socket socket) throws SocketException, IOException {
+        this.socket = socket;
+        // We flush() when we mean it. 
+        // So, turn off kernel delay, but wrap a buffer so every
+        // message isn't its own packet.
+        socket.setTcpNoDelay(true);
+        inputStream = socket.getInputStream();
+        dataInput = new DataInputStream(inputStream);
+        outputStream = new BufferedOutputStream(socket.getOutputStream());
     }
 
     InputStream getInputStream() {
@@ -101,16 +109,6 @@ public class PostgresMessenger implements DataInput, DataOutput
         this.encoding = newEncoding;
     }
 
-    /** Has a cancel been sent? */
-    public synchronized boolean isCancel() {
-        return cancel;
-    }
-    /** Mark as cancelled. Cleared at the start of results. 
-     * Usually set from a thread running a request just for that purpose. */
-    public synchronized void setCancel(boolean cancel) {
-        this.cancel = cancel;
-    }
-
     /** Read the next message from the stream, without any type opcode. */
     protected PostgresMessages readMessage() throws IOException {
         return readMessage(true);
@@ -122,13 +120,24 @@ public class PostgresMessenger implements DataInput, DataOutput
         if (hasType) {
             try {
                 waitTap.in();
-                code = dataInput.read();
-                if (!PostgresMessages.readTypeCorrect(code)) {
-                    throw new IOException ("Bad protocol read message: " + (char)code);
+                socket.setSoTimeout(IDLE_INTERVAL);
+                while (true) {
+                    try {
+                        code = dataInput.read();
+                    }
+                    catch (SocketTimeoutException ex) {
+                        idle();
+                        continue;
+                    }
+                    if (!PostgresMessages.readTypeCorrect(code)) {
+                        throw new IOException ("Bad protocol read message: " + (char)code);
+                    }
+                    type = PostgresMessages.messageType(code);
+                    break;
                 }
-                type = PostgresMessages.messageType(code);
             }
             finally {
+                socket.setSoTimeout(0);
                 waitTap.out();
             }
         }
@@ -327,6 +336,12 @@ public class PostgresMessenger implements DataInput, DataOutput
     }
     public void writeUTF(String s) throws IOException {
         messageOutput.writeUTF(s);
+    }
+
+    /** Called every <code>IDLE_INTERVAL</code> ms. while waiting for a message.
+     * Overridden to allow insertion of asynch notifications.
+     */
+    public void idle() {
     }
 
 }

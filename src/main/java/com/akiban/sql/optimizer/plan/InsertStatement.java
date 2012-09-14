@@ -47,7 +47,8 @@ public class InsertStatement extends BaseUpdateStatement
     }
 
     @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + getTargetTable() + targetColumns + ")";
+    protected void fillSummaryString(StringBuilder str) {
+        super.fillSummaryString(str);
+        str.append(targetColumns);
     }
 }

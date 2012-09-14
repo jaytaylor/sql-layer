@@ -64,9 +64,12 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         Row next = null;
         if (exchange() != null) {
             try {
-                SORT_TRAVERSE.hit();
+                INDEX_TRAVERSE.hit();
                 if (exchange().traverse(keyComparison, true)) {
                     next = row();
+                    // Guard against bug 1046053
+                    assert next != startKey;
+                    assert next != endKey;
                     // If we're scanning a unique key index, then the row format has the declared key in the
                     // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
                     // restrict the entire declared key and leading hkeys fields. If this happens, then the first
