@@ -655,7 +655,9 @@ public class ProtobufReader {
 
     private static void hasRequiredFields(AISProtobuf.PendingOSChange pbChange) {
         requireAllFieldsExcept(
-                pbChange
+                pbChange,
+                AISProtobuf.PendingOSChange.OLDNAME_FIELD_NUMBER,
+                AISProtobuf.PendingOSChange.NEWNAME_FIELD_NUMBER
         );
     }
 

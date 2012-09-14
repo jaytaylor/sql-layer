@@ -57,4 +57,9 @@ public class PendingOSC
     public List<TableChange> getIndexChanges() {
         return indexChanges;
     }
+
+    @Override
+    public String toString() {
+        return originalName + columnChanges + indexChanges;
+    }    
 }
