@@ -71,16 +71,18 @@ public abstract class SubString extends TOverloadBase
     }
     
     protected abstract int getLength (LazyList<? extends PValueSource> inputs);
-
+    
+    private final TClass strType;
+    private final TClass intType;
+    private final int covering[];
+    
     private SubString(TClass strType, TClass intType, int covering[])
     {
         this.strType = strType;
         this.intType = intType;
         this.covering = covering;
     }
-    private final TClass strType;
-    private final TClass intType;
-    private final int covering[];
+
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
@@ -91,14 +93,10 @@ public abstract class SubString extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String st = getSubstr(inputs.get(0).getString(),
-                              (int)inputs.get(1).getInt64(),
-                              getLength(inputs));
-        
-        if (st == null)
-            output.putNull();
-        else
-            output.putString(st, null);
+        output.putString(getSubstr(inputs.get(0).getString(),
+                                   (int)inputs.get(1).getInt64(),
+                                   getLength(inputs)),
+                         null);
     }
 
     @Override
@@ -123,7 +121,7 @@ public abstract class SubString extends TOverloadBase
             {
                 int strLength = inputs.get(0).instance().attribute(StringAttribute.LENGTH);
 
-                // SUBSTR (<STRING> , <OFFSET>, <LENGTH>
+                // SUBSTR (<STRING> , <OFFSET>[, <LENGTH>]
                 
                 // check if <LENGTH> is available
                 int length = strLength;
@@ -139,10 +137,11 @@ public abstract class SubString extends TOverloadBase
     
     private static String getSubstr(String st, int from, int length)
     {
-        // if str is empty or <from> is outside of reasonable index
-        // (note negative index is acceptable, but its absolute value has
+        // if str is empty or <from> and <length> is outside of reasonable index
+        // 
+        // Note negative index is acceptable for <from>, but its absolute value has
         // to be within [1, str.length] (mysql index starts at 1)
-        if (st.isEmpty() || from == 0 || Math.abs(from) > st.length())
+        if (st.isEmpty() || from == 0 || Math.abs(from) > st.length() || length <= 0)
             return "";
         
         // if from is negative, start from the end,

@@ -2,8 +2,6 @@
 ---
 - Include: all-types-schema.yaml
 ---
-- Statement: SET newtypes to 'true'
----
 - Statement: INSERT INTO all_types(varchar_field, integer_field, double_field) VALUES ('quadratically', 3, 5.0), ('Sakila', -3, -5.0);
 --- # test SUBSTRINNG in SELECT clause, with 3 args
 - Statement: SELECT SUBSTRING(varchar_field, 5, LENGTH(varchar_field) - 4) from all_types;
