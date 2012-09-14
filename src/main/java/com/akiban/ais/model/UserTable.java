@@ -28,6 +28,7 @@ package com.akiban.ais.model;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.ais.pt.PendingOSC;
 
 import java.util.*;
 
@@ -574,6 +575,14 @@ public class UserTable extends Table
         return declaredIndexes;
     }
 
+    public PendingOSC getPendingOSC() {
+        return pendingOSC;
+    }
+
+    public void setPendingOSC(PendingOSC pendingOSC) {
+        this.pendingOSC = pendingOSC;
+    }
+
     // State
 
     private final List<Join> candidateParentJoins = new ArrayList<Join>();
@@ -590,6 +599,7 @@ public class UserTable extends Table
     private volatile List<UserTable> ancestors;
     private MemoryTableFactory tableFactory;
     private Integer version;
+    private PendingOSC pendingOSC;
 
     // consts
 
