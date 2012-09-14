@@ -45,14 +45,14 @@ import java.net.URL;
 import java.util.Calendar;
 import java.util.Map;
 
-public class EmbeddedJDBCResultSet implements ResultSet
+public class JDBCResultSet implements ResultSet
 {
     private Statement statement;
     private Cursor cursor;
     private Row row;
     private boolean wasNull;
     
-    public EmbeddedJDBCResultSet(Statement statement, Cursor cursor) {
+    public JDBCResultSet(Statement statement, Cursor cursor) {
         this.statement = statement;
         this.cursor = cursor;
     }
@@ -418,7 +418,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
             if (wasNull)
                 return null;
             else if (value.getConversionType() == AkType.RESULT_SET) {
-                return new EmbeddedJDBCResultSet(statement, value.getResultSet());
+                return new JDBCResultSet(statement, value.getResultSet());
             }
             else
                 return new ToObjectValueTarget().convertFromSource(value);

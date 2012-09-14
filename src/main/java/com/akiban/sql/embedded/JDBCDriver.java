@@ -34,14 +34,14 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.*;
 
-public class EmbeddedJDBCDriver implements Driver {
+public class JDBCDriver implements Driver {
     public static final String URL = "jdbc:default:connection";
 
     private final ServerServiceRequirements reqs;
 
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCDriver.class);
+    private static final Logger logger = LoggerFactory.getLogger(JDBCDriver.class);
 
-    public EmbeddedJDBCDriver(ServerServiceRequirements reqs) {
+    public JDBCDriver(ServerServiceRequirements reqs) {
         this.reqs = reqs;
     }
 
@@ -58,7 +58,7 @@ public class EmbeddedJDBCDriver implements Driver {
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
         if (!url.equals(URL)) return null;
-        return new EmbeddedJDBCConnection(reqs, info);
+        return new JDBCConnection(reqs, info);
     }
 
     @Override

@@ -35,7 +35,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Executor;
 
-public class EmbeddedJDBCConnection implements Connection {
+public class JDBCConnection implements Connection {
     private final ServerServiceRequirements reqs;
     private final Properties info;
     private boolean closed, autoCommit, readOnly;
@@ -43,9 +43,9 @@ public class EmbeddedJDBCConnection implements Connection {
     private Properties clientInfo = new Properties();
     private String schema;
     
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCConnection.class);
+    private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
 
-    public EmbeddedJDBCConnection(ServerServiceRequirements reqs, Properties info) {
+    public JDBCConnection(ServerServiceRequirements reqs, Properties info) {
         this.reqs = reqs;
         this.info = info;
     }

@@ -46,29 +46,29 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import java.sql.SQLException;
 
-public class EmbeddedJDBCService implements Service {
+public class JDBCService implements Service {
     private final ServerServiceRequirements reqs;
-    private EmbeddedJDBCDriver driver;
+    private JDBCDriver driver;
 
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCService.class);
+    private static final Logger logger = LoggerFactory.getLogger(JDBCService.class);
 
     @Inject
-    public EmbeddedJDBCService(ConfigurationService config,
-                               DXLService dxlService,
-                               InstrumentationService instrumentation,
-                               SessionService sessionService,
-                               Store store,
-                               TreeService treeService,
-                               FunctionsRegistry functionsRegistry,
-                               IndexStatisticsService indexStatisticsService,
-                               OverloadResolutionService overloadResolutionService) {
+    public JDBCService(ConfigurationService config,
+                       DXLService dxlService,
+                       InstrumentationService instrumentation,
+                       SessionService sessionService,
+                       Store store,
+                       TreeService treeService,
+                       FunctionsRegistry functionsRegistry,
+                       IndexStatisticsService indexStatisticsService,
+                       OverloadResolutionService overloadResolutionService) {
         reqs = new ServerServiceRequirements(dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
                 config, indexStatisticsService, overloadResolutionService);
     }
 
     public void start() {
-        driver = new EmbeddedJDBCDriver(reqs);
+        driver = new JDBCDriver(reqs);
         try {
             driver.register();
         }
