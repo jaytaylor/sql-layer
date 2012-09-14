@@ -49,7 +49,7 @@ import java.util.TreeMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public final class T3RegistryImplTest {
+public final class T3RegistryServiceImplTest {
     private final TClass CLASS_A = new T3TestClass("A");
     private final TClass CLASS_B = new T3TestClass("B");
     private final TClass CLASS_C = new T3TestClass("C");

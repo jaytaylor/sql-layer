@@ -147,6 +147,11 @@ public abstract class TOverloadBase implements TOverload {
         return new TPreptimeValue(execContext.outputTInstance(), outputValue);
     }
 
+    @Override
+    public int[] getPriorities() {
+        return new int[1];
+    }
+
     protected abstract void buildInputSets(TInputSetBuilder builder);
 
     protected abstract void doEvaluate(TExecutionContext context,
