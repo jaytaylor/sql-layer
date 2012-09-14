@@ -465,7 +465,10 @@ public class ProtobufReader {
         loadPendingOSChanges(columnChanges, pbPendingOSC.getColumnChangesList());
         List<TableChange> indexChanges = new ArrayList<TableChange>();
         loadPendingOSChanges(indexChanges, pbPendingOSC.getIndexChangesList());
-        return new PendingOSC(pbPendingOSC.getOriginalName(), columnChanges, indexChanges);
+        PendingOSC osc = new PendingOSC(pbPendingOSC.getOriginalName(), columnChanges, indexChanges);
+        if (pbPendingOSC.hasCurrentName())
+            osc.setCurrentName(pbPendingOSC.getCurrentName());
+        return osc;
     }
     
     private void loadPendingOSChanges(Collection<TableChange> changes, Collection<AISProtobuf.PendingOSChange> pbChanges) {
@@ -649,7 +652,8 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbPendingOSC,
                 AISProtobuf.PendingOSC.COLUMNCHANGES_FIELD_NUMBER,
-                AISProtobuf.PendingOSC.INDEXCHANGES_FIELD_NUMBER
+                AISProtobuf.PendingOSC.INDEXCHANGES_FIELD_NUMBER,
+                AISProtobuf.PendingOSC.CURRENTNAME_FIELD_NUMBER
         );
     }
 

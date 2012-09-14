@@ -526,6 +526,8 @@ public class ProtobufWriter {
         for (TableChange indexChange : pendingOSC.getIndexChanges()) {
             oscBuilder.addIndexChanges(writePendingOSChange(indexChange));
         }
+        if (pendingOSC.getCurrentName() != null)
+            oscBuilder.setCurrentName(pendingOSC.getCurrentName());
         tableBuilder.setPendingOSC(oscBuilder.build());
     }
 

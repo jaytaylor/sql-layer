@@ -163,9 +163,10 @@ message Schema {
 }
 
 message PendingOSC {
-    optional string originalName           = 1; // name of the original name this copied
+    optional string originalName           = 1; // name of the original that this copied
     repeated PendingOSChange columnChanges = 2; // column changes to be done
     repeated PendingOSChange indexChanges  = 3; // index changes to be done
+    optional string currentName            = 4; // name original has been renamed to
 }
 
 enum PendingOSChangeType {

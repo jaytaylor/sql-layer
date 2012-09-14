@@ -37,7 +37,7 @@ import java.util.List;
  */
 public class PendingOSC
 {
-    private String originalName;
+    private String originalName, currentName;
     private List<TableChange> columnChanges, indexChanges;
 
     public PendingOSC(String originalName, List<TableChange> columnChanges, List<TableChange> indexChanges) {
@@ -50,6 +50,14 @@ public class PendingOSC
         return originalName;
     }
 
+    public String getCurrentName() {
+        return currentName;
+    }
+
+    public void setCurrentName(String currentName) {
+        this.currentName = currentName;
+    }
+
     public List<TableChange> getColumnChanges() {
         return columnChanges;
     }
@@ -60,6 +68,10 @@ public class PendingOSC
 
     @Override
     public String toString() {
-        return originalName + columnChanges + indexChanges;
+        StringBuilder str = new StringBuilder(originalName);
+        if (currentName != null)
+            str.append("=").append(currentName);
+        str.append(columnChanges).append(indexChanges);
+        return str.toString();
     }    
 }
