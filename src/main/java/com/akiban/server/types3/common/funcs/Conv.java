@@ -35,6 +35,7 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -56,35 +57,36 @@ public class Conv extends TOverloadBase
     private static final BigInteger N64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
     
     private final TClass stringType;
-    private final TClass intType;
+    private final TClass bigIntType;
 
-    public Conv(TClass stringType, TClass intType)
+    public Conv(TClass stringType, TClass bigIntType)
     {
-        // TODO:
-        // check that stringType is actually a string class
-        // dito for intType
+        assert bigIntType.underlyingType() == PUnderlying.INT_64;
+        assert stringType.underlyingType() == PUnderlying.STRING;
+
         this.stringType = stringType;
-        this.intType = intType;
+        this.bigIntType = bigIntType;
     }
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(stringType, 0).covers(intType, 1, 2);
+        builder.covers(stringType, 0).covers(bigIntType, 1, 2);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         String st = inputs.get(0).getString();
-        int fromBase = inputs.get(1).getInt32();
-        int toBase = inputs.get(2).getInt32();
-        
-        if (!isInRange(fromBase, MIN_BASE, MAX_BASE) 
+        int fromBase = (int) inputs.get(1).getInt64();
+        int toBase = (int) inputs.get(2).getInt64();
+
+        if (st.isEmpty()
+                || !isInRange(fromBase, MIN_BASE, MAX_BASE) 
                 || !isInRange(Math.abs(toBase), MIN_BASE, MAX_BASE)) // toBase can be negative
             output.putNull();
         else
-            output.putString(doConvert(truncateNonDigits(st),fromBase, toBase), null);
+            output.putString(doConvert(st, fromBase, toBase), null);
     }
 
     @Override
@@ -106,15 +108,15 @@ public class Conv extends TOverloadBase
                 
                 int strPre = context.createExecutionContext()
                            .inputTInstanceAt(0).attribute(StringAttribute.LENGTH);
-                
+
                 // if toBase and fromBase are not available yet,
                 // use the default value of ratio
                 if (isNull(fromBase) || isNull(toBase))
                     return stringType.instance((int)(strPre * MAX_RATIO + 1));
 
                 // compute the exact length of the converted string
-                strPre = (int)(strPre * Math.log(toBase.value().getInt32()) 
-                                        / Math.log(fromBase.value().getInt32()));
+                strPre = (int)(strPre * Math.log(toBase.value().getInt64()) 
+                                        / Math.log(fromBase.value().getInt64()));
                 return stringType.instance(strPre);
             }
             
@@ -148,6 +150,7 @@ public class Conv extends TOverloadBase
      * 
      * @param st: numeric string
      * @return a string representing the value in st in toBase.
+     *         "0" if the input string is invalid in the given base
      * 
      * if toBase is unsigned, the value contained in st would
      * be interpreted as an unsigned value
@@ -155,22 +158,37 @@ public class Conv extends TOverloadBase
      */
     private static String doConvert(String st, int fromBase, int toBase)
     {
-        if (st.isEmpty()) return "";
+        // truncate whatever is after the decimal piont
+        for (int n = 0; n < st.length(); ++n)
+            if (st.charAt(n) == '.')
+            {
+                if (n == 0)
+                    return "0";
+                st = st.substring(0, n);
+                break;
+            }
+
         boolean signed = toBase < 0;
         if (signed)
             toBase = -toBase;
 
-        BigInteger num = new BigInteger(st, fromBase);
+        try
+        {
+            BigInteger num = new BigInteger(st, fromBase);
+            // if the number is signed and the toBase value is unsigned
+            // interpret the number as unsigned
+            if (!signed && num.signum() < 0)
+                num = num.abs().xor(N64).add(BigInteger.ONE);
 
-        // if the number is signed and the toBase value is unsigned
-        // interpret the number as unsigned
-        if (!signed && num.signum() < 0)
-            num = num.abs().xor(N64).add(BigInteger.ONE);
+            // cap the output to <= N64
+            if (num.compareTo(N64) > 0)
+                num = N64;
 
-        // cap the output to <= N64
-        if (num.compareTo(N64) > 0)
-            num = N64;
-        
-        return num.toString(toBase).toUpperCase();
+            return num.toString(toBase).toUpperCase();
+        }
+        catch (NumberFormatException e)
+        {
+            return "0";
+        }
      }
 }

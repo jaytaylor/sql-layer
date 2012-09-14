@@ -33,5 +33,5 @@ import com.akiban.server.types3.common.funcs.Conv;
 
 public class AkConv
 {
-    public static final TOverload INSTANCE = new Conv(AkString.VARCHAR, AkNumeric.INT);
+    public static final TOverload INSTANCE = new Conv(AkString.VARCHAR, AkNumeric.BIGINT);
 }
