@@ -27,6 +27,16 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.sql.server.ServerServiceRequirements;
+import com.akiban.sql.server.ServerSessionBase;
+
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.server.error.ErrorCode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +45,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Executor;
 
-public class JDBCConnection implements Connection {
-    private final ServerServiceRequirements reqs;
-    private final Properties info;
+public class JDBCConnection extends ServerSessionBase implements Connection {
     private boolean closed, autoCommit, readOnly;
     private SQLWarning warnings;
     private Properties clientInfo = new Properties();
@@ -46,8 +54,37 @@ public class JDBCConnection implements Connection {
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
 
     public JDBCConnection(ServerServiceRequirements reqs, Properties info) {
-        this.reqs = reqs;
-        this.info = info;
+        super(reqs);
+        setProperties(info);
+    }
+
+    @Override
+    protected void sessionChanged() {
+    }
+
+    @Override
+    public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) {
+        if (level.ordinal() <= maxNotificationLevel.ordinal()) {
+            SQLWarning warning = new SQLWarning(message, errorCode.getFormattedValue());
+            if (warnings == null)
+                warnings = warning;
+            else
+                warnings.setNextWarning(warning);
+        }        
+    }
+
+    @Override
+    public LoadablePlan<?> loadablePlan(String planName)
+    {
+        return null;
+    }
+    
+    @Override
+    public StoreAdapter getStore(final UserTable table) {
+        if (table.hasMemoryTableFactory()) {
+            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
+        }
+        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
     /* Wrapper */

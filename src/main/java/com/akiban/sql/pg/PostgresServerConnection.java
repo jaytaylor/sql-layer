@@ -810,6 +810,7 @@ public class PostgresServerConnection extends ServerSessionBase
         return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
+    @Override
     protected void sessionChanged() {
         if (parsedGenerators == null) return; // setAttribute() from generator's ctor.
         for (PostgresStatementParser parser : unparsedGenerators) {
