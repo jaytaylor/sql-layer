@@ -811,7 +811,7 @@ public class MDatetimes
 
     public static boolean isValidDayMonth(long ymd[])
     {
-        if (ymd[MONTH_INDEX] == 0)
+        if (ymd[MONTH_INDEX] == 0 || ymd[DAY_INDEX] <= 0)
             return false;
         long last = getLastDay(ymd);
         return last > 0 && ymd[DAY_INDEX] <= last;
