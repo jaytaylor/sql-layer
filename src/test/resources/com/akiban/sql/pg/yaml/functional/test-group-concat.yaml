@@ -29,7 +29,7 @@
 - output: [['aa*bb*cc*dd']]
 --- # test ORDER BY
 - Statement: SELECT GROUP_CONCAT(varchar_field, varchar_field order by varchar_field desc) from all_types;
-- output: [['aa,bb,cc,dd, dd']]
+- output: [['dd,dd,cc,bb,aa']]
 #--- not supported yet (use of both DISTINCT and ORDER-BY)
 #- Statement: SELECT GROUP_CONCAT(distinct varchar_field, varchar_field order by varchar_field desc) from all_types;
 #- output: [['dd, cc, bb, aa']]

@@ -97,7 +97,10 @@ public class AggregateSplitter extends BaseRule
         PlanNode ninput;
         
         if (orderBy != null)
-              ninput = new Sort(input, orderBy);
+        {
+            ninput = new Sort(input, orderBy);
+            ninput = new Project(ninput, fields);
+        }
         // distinct
         else if ((Boolean)distinctOrderby[0])
         {
