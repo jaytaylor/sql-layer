@@ -74,8 +74,8 @@ public abstract class Locate extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String str = inputs.get(0).getString();
-        String substr = inputs.get(1).getString();
+        String str = inputs.get(1).getString();
+        String substr = inputs.get(0).getString();
 
         int index = 0;
         if (inputs.size() == 3)
