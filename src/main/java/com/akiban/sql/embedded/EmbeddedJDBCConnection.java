@@ -52,90 +52,112 @@ public class EmbeddedJDBCConnection implements Connection {
 
     /* Wrapper */
 
-    public <T> T unwrap(java.lang.Class<T> iface) throws SQLException {
+    @Override
+    public <T> T unwrap(Class<T> iface) throws SQLException {
         throw new SQLException("Not supported");
     }
     
-    public boolean isWrapperFor(java.lang.Class<?> iface) throws java.sql.SQLException {
+    @Override
+    public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
     }
 
     /* Connection */
 
+    @Override
     public Statement createStatement() throws SQLException {
         return null;
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
         return null;
     }
 
+    @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
         return null;
     }
 
+    @Override
     public String nativeSQL(String sql) throws SQLException {
         return sql;
     }
 
+    @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
         this.autoCommit = autoCommit;
     }
 
+    @Override
     public boolean getAutoCommit() throws SQLException {
         return autoCommit;
     }
 
+    @Override
     public void commit() throws SQLException {
     }
 
+    @Override
     public void rollback() throws SQLException {
     }
 
+    @Override
     public void close() throws SQLException {
         this.closed = true;
     }
 
+    @Override
     public boolean isClosed() throws SQLException {
         return closed;
     }
 
+    @Override
     public DatabaseMetaData getMetaData() throws SQLException {
         return null;
     }
 
+    @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
         this.readOnly = readOnly;
     }
 
+    @Override
     public boolean isReadOnly() throws SQLException {
         return readOnly;
     }
 
+    @Override
     public void setCatalog(String catalog) throws SQLException {
     }
 
+    @Override
     public String getCatalog() throws SQLException {
         return null;
     }
 
+    @Override
     public void setTransactionIsolation(int level) throws SQLException {
         if (level != TRANSACTION_SERIALIZABLE)
             throw new SQLException("Only TRANSACTION_SERIALIZABLE supported");
     }
 
+    @Override
     public int getTransactionIsolation() throws SQLException {
         return TRANSACTION_SERIALIZABLE;
     }
 
+    @Override
     public SQLWarning getWarnings() throws SQLException {
         return warnings;
     }
 
+    @Override
     public void clearWarnings() throws SQLException {
         warnings = null;
     }
 
+    @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency)
             throws SQLException {
         if ((resultSetType != ResultSet.TYPE_FORWARD_ONLY) ||
@@ -144,6 +166,7 @@ public class EmbeddedJDBCConnection implements Connection {
         return createStatement();
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
                                               int resultSetConcurrency)
             throws SQLException {
@@ -153,6 +176,7 @@ public class EmbeddedJDBCConnection implements Connection {
         return prepareStatement(sql);
     }
 
+    @Override
     public CallableStatement prepareCall(String sql, int resultSetType,
                                          int resultSetConcurrency) throws SQLException {
         if ((resultSetType != ResultSet.TYPE_FORWARD_ONLY) ||
@@ -161,68 +185,48 @@ public class EmbeddedJDBCConnection implements Connection {
         return prepareCall(sql);
     }
 
+    @Override
     public Map<String,Class<?>> getTypeMap() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    /**
-     * Installs the given <code>TypeMap</code> object as the type map for
-     * this <code>Connection</code> object.  The type map will be used for the
-     * custom mapping of SQL structured types and distinct types.
-     *<p>
-     * You must set the the values for the <code>TypeMap</code> prior to
-     * callng <code>setMap</code> as a JDBC driver may create an internal copy
-     * of the <code>TypeMap</code>:
-     * <p>
-     * <pre>
-     *      Map myMap&lt;String,Class&lt;?&gt;&gt; = new HashMap&lt;String,Class&lt;?&gt;&gt;();
-     *      myMap.put("mySchemaName.ATHLETES", Athletes.class);
-     *      con.setTypeMap(myMap);
-     * </pre>
-     * @param map the <code>java.util.Map</code> object to install
-     *        as the replacement for this <code>Connection</code>
-     *        object's default type map
-     * @exception SQLException if a database access error occurs, this
-     * method is called on a closed connection or
-     *        the given parameter is not a <code>java.util.Map</code>
-     *        object
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
-     * this method
-     * @since 1.2
-     * @see #getTypeMap
-     */
+    @Override
     public void setTypeMap(java.util.Map<String,Class<?>> map) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
-    
-    //--------------------------JDBC 3.0-----------------------------
 
-
+    @Override
     public void setHoldability(int holdability) throws SQLException {
         if (holdability != ResultSet.CLOSE_CURSORS_AT_COMMIT)
             throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public int getHoldability() throws SQLException {
         return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
 
+    @Override
     public Savepoint setSavepoint() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Savepoint setSavepoint(String name) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void rollback(Savepoint savepoint) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency,
                                      int resultSetHoldability) throws SQLException {
         if ((resultSetType != ResultSet.TYPE_FORWARD_ONLY) ||
@@ -232,6 +236,7 @@ public class EmbeddedJDBCConnection implements Connection {
         return createStatement();
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType,
                                               int resultSetConcurrency, int resultSetHoldability)
             throws SQLException {
@@ -242,6 +247,7 @@ public class EmbeddedJDBCConnection implements Connection {
         return prepareStatement(sql);
     }
 
+    @Override
     public CallableStatement prepareCall(String sql, int resultSetType,
                                          int resultSetConcurrency,
                                          int resultSetHoldability) throws SQLException {
@@ -252,6 +258,7 @@ public class EmbeddedJDBCConnection implements Connection {
         return prepareCall(sql);
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
             throws SQLException {
         if (autoGeneratedKeys != Statement.NO_GENERATED_KEYS)
@@ -259,77 +266,94 @@ public class EmbeddedJDBCConnection implements Connection {
         return prepareStatement(sql);
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int columnIndexes[])
             throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, String columnNames[])
             throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Clob createClob() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Blob createBlob() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public NClob createNClob() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public SQLXML createSQLXML() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public boolean isValid(int timeout) throws SQLException {
         return !closed;
     }
 
+    @Override
     public void setClientInfo(String name, String value) throws SQLClientInfoException {
         clientInfo.put(name, value);
     }
 
+    @Override
     public void setClientInfo(Properties properties) throws SQLClientInfoException {
         clientInfo.putAll(properties);
     }
 
+    @Override
     public String getClientInfo(String name) throws SQLException {
         return clientInfo.getProperty(name);
     }
 
+    @Override
     public Properties getClientInfo() throws SQLException {
         return clientInfo;
     }
 
+    @Override
     public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setSchema(String schema) throws SQLException {
         this.schema = schema;
     }
 
+    @Override
     public String getSchema() throws SQLException {
         return schema;
     }
 
+    @Override
     public void abort(Executor executor) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
+    @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-
+    @Override
     public int getNetworkTimeout() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
