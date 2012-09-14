@@ -28,6 +28,13 @@ package com.akiban.sql.embedded;
 
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.ByteSource;
 
 import java.sql.*;
 
@@ -40,10 +47,30 @@ import java.util.Map;
 
 public class EmbeddedJDBCResultSet implements ResultSet
 {
+    private Statement statement;
     private Cursor cursor;
     private Row row;
     private boolean wasNull;
     
+    public EmbeddedJDBCResultSet(Statement statement, Cursor cursor) {
+        this.statement = statement;
+        this.cursor = cursor;
+    }
+
+    protected ValueSource value(int columnIndex) throws SQLException {
+        if (row == null) {
+            if (cursor == null)
+                throw new SQLException("Already closed.");
+            else
+                throw new SQLException("Past end.");
+        }
+        if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
+            throw new SQLException("Column index out of bounds");
+        ValueSource value = row.eval(columnIndex - 1);
+        wasNull = value.isNull();
+        return value;
+    }
+
     /* Wrapper */
 
     @Override
@@ -87,67 +114,184 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return null;
+            else
+                return Extractors.getStringExtractor().getObject(value);
+        }
     }
 
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return false;
+            else
+                return Extractors.getBooleanExtractor().getBoolean(value, false);
+        }
     }
 
     @Override
     public byte getByte(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return 0;
+            else
+                return (byte)Extractors.getLongExtractor(AkType.INT).getLong(value);
+        }
     }
 
     @Override
     public short getShort(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return 0;
+            else
+                return (short)Extractors.getLongExtractor(AkType.INT).getLong(value);
+        }
     }
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return 0;
+            else
+                return (int)Extractors.getLongExtractor(AkType.INT).getLong(value);
+        }
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return 0;
+            else
+                return Extractors.getLongExtractor(AkType.LONG).getLong(value);
+        }
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return 0.0f;
+            else
+                return (float)Extractors.getDoubleExtractor().getDouble(value);
+        }
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return 0.0;
+            else
+                return Extractors.getDoubleExtractor().getDouble(value);
+        }
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return null;
+            else
+                return Extractors.getDecimalExtractor().getObject(value);
+        }
     }
 
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return null;
+            else
+                return Extractors.getByteSourceExtractor().getObject(value).toByteSubarray();
+        }
     }
 
     @Override
     public Date getDate(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return null;
+            else
+                return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+        }
     }
 
     @Override
     public Time getTime(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return null;
+            else
+                return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+        }
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return null;
+            else
+                return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+        }
     }
 
     @Override
@@ -167,97 +311,96 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getString(findColumn(columnLabel));
     }
 
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBoolean(findColumn(columnLabel));
     }
 
     @Override
     public byte getByte(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getByte(findColumn(columnLabel));
     }
 
     @Override
     public short getShort(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getShort(findColumn(columnLabel));
     }
 
     @Override
     public int getInt(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getInt(findColumn(columnLabel));
     }
 
     @Override
     public long getLong(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getLong(findColumn(columnLabel));
     }
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getFloat(findColumn(columnLabel));
     }
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getDouble(findColumn(columnLabel));
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBigDecimal(findColumn(columnLabel), scale);
     }
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBytes(findColumn(columnLabel));
     }
 
     @Override
     public Date getDate(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getDate(findColumn(columnLabel));
     }
 
     @Override
     public Time getTime(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getTime(findColumn(columnLabel));
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getTimestamp(findColumn(columnLabel));
     }
 
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getAsciiStream(findColumn(columnLabel));
     }
 
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getUnicodeStream(findColumn(columnLabel));
     }
 
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBinaryStream(findColumn(columnLabel));
     }
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        throw null;
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public String getCursorName() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        throw null;
     }
 
     @Override
@@ -267,12 +410,24 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (Types3Switch.ON) {
+            throw new SQLFeatureNotSupportedException();
+        }
+        else {
+            ValueSource value = value(columnIndex);
+            if (wasNull)
+                return null;
+            else if (value.getConversionType() == AkType.RESULT_SET) {
+                return new EmbeddedJDBCResultSet(statement, value.getResultSet());
+            }
+            else
+                return new ToObjectValueTarget().convertFromSource(value);
+        }
     }
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getObject(findColumn(columnLabel));
     }
 
     @Override
@@ -287,7 +442,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getCharacterStream(findColumn(columnLabel));
     }
 
     @Override
@@ -297,7 +452,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBigDecimal(findColumn(columnLabel));
     }
 
     @Override
@@ -362,32 +517,32 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void setFetchDirection(int direction) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        if (direction != FETCH_FORWARD)
+            throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public int getFetchDirection() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return FETCH_FORWARD;
     }
 
     @Override
     public void setFetchSize(int rows) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public int getFetchSize() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return 1;
     }
 
     @Override
     public int getType() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return TYPE_FORWARD_ONLY;
     }
 
     @Override
     public int getConcurrency() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return CONCUR_READ_ONLY;
     }
 
     @Override
@@ -502,97 +657,97 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateNull(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateNull(findColumn(columnLabel));
     }
 
     @Override
     public void updateBoolean(String columnLabel, boolean x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBoolean(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateByte(String columnLabel, byte x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateByte(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateShort(String columnLabel, short x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateShort(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateInt(String columnLabel, int x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateInt(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateLong(String columnLabel, long x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateLong(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateFloat(String columnLabel, float x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateFloat(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateDouble(String columnLabel, double x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateDouble(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateBigDecimal(String columnLabel, BigDecimal x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBigDecimal(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateString(String columnLabel, String x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateString(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateBytes(String columnLabel, byte x[]) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBytes(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateDate(String columnLabel, Date x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateDate(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateTime(String columnLabel, Time x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateTime(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateTimestamp(String columnLabel, Timestamp x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateTimestamp(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateAsciiStream(String columnLabel, InputStream x, int length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateAsciiStream(findColumn(columnLabel), x, length);
     }
 
     @Override
     public void updateBinaryStream(String columnLabel, InputStream x, int length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBinaryStream(findColumn(columnLabel), x, length);
     }
 
     @Override
     public void updateCharacterStream(String columnLabel, Reader reader, int length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateCharacterStream(findColumn(columnLabel), reader, length);
     }
 
     @Override
     public void updateObject(String columnLabel, Object x, int scaleOrLength) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateObject(findColumn(columnLabel), x, scaleOrLength);
     }
 
     @Override
     public void updateObject(String columnLabel, Object x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateObject(findColumn(columnLabel), x);
     }
 
     @Override
@@ -632,7 +787,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public Statement getStatement() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return statement;
     }
 
     @Override
@@ -662,57 +817,57 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public Object getObject(String columnLabel, Map<String,Class<?>> map) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getObject(findColumn(columnLabel), map);
     }
 
     @Override
     public Ref getRef(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getRef(findColumn(columnLabel));
     }
 
     @Override
     public Blob getBlob(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getBlob(findColumn(columnLabel));
     }
 
     @Override
     public Clob getClob(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getClob(findColumn(columnLabel));
     }
 
     @Override
     public Array getArray(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getArray(findColumn(columnLabel));
     }
 
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getDate(columnIndex);
     }
 
     @Override
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getDate(findColumn(columnLabel), cal);
     }
 
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getTime(columnIndex);
     }
 
     @Override
     public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getTime(findColumn(columnLabel), cal);
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getTimestamp(columnIndex);
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getTimestamp(findColumn(columnLabel), cal);
     }
 
     @Override
@@ -722,7 +877,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public URL getURL(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getURL(findColumn(columnLabel));
     }
 
     @Override
@@ -732,7 +887,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateRef(String columnLabel, Ref x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateRef(findColumn(columnLabel), x);
     }
 
     @Override
@@ -742,7 +897,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateBlob(String columnLabel, Blob x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBlob(findColumn(columnLabel), x);
     }
 
     @Override
@@ -752,7 +907,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateClob(String columnLabel, Clob x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateClob(findColumn(columnLabel), x);
     }
 
     @Override
@@ -762,7 +917,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateArray(String columnLabel, Array x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateArray(findColumn(columnLabel), x);
     }
 
     @Override
@@ -772,7 +927,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public RowId getRowId(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getRowId(findColumn(columnLabel));
     }
 
     @Override
@@ -782,17 +937,17 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateRowId(String columnLabel, RowId x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateRowId(findColumn(columnLabel), x);
     }
 
     @Override
     public int getHoldability() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return CLOSE_CURSORS_AT_COMMIT;
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return (cursor == null);
     }
 
     @Override
@@ -802,7 +957,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateNString(String columnLabel, String nString) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateNString(findColumn(columnLabel), nString);
     }
 
     @Override
@@ -812,7 +967,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateNClob(String columnLabel, NClob nClob) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateNClob(findColumn(columnLabel), nClob);
     }
 
     @Override
@@ -822,7 +977,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public NClob getNClob(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getNClob(findColumn(columnLabel));
     }
 
     @Override
@@ -832,7 +987,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public SQLXML getSQLXML(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getSQLXML(findColumn(columnLabel));
     }
 
     @Override
@@ -842,7 +997,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateSQLXML(findColumn(columnLabel), xmlObject);
     }
 
     @Override
@@ -852,7 +1007,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public String getNString(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getNString(findColumn(columnLabel));
     }
 
     @Override
@@ -862,7 +1017,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getNCharacterStream(findColumn(columnLabel));
     }
 
     @Override
@@ -872,7 +1027,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateNCharacterStream(String columnLabel, Reader reader, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateNCharacterStream(findColumn(columnLabel), reader, length);
     }
 
     @Override
@@ -892,17 +1047,17 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateAsciiStream(String columnLabel, InputStream x, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateAsciiStream(findColumn(columnLabel), x, length);
     }
 
     @Override
     public void updateBinaryStream(String columnLabel, InputStream x, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBinaryStream(findColumn(columnLabel), x, length);
     }
 
     @Override
     public void updateCharacterStream(String columnLabel, Reader reader, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateCharacterStream(findColumn(columnLabel), reader, length);
     }
 
     @Override
@@ -912,7 +1067,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateBlob(String columnLabel, InputStream inputStream, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBlob(findColumn(columnLabel), inputStream, length);
     }
 
     @Override
@@ -922,7 +1077,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateClob(String columnLabel,  Reader reader, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateClob(findColumn(columnLabel), reader, length);
     }
 
     @Override
@@ -932,7 +1087,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateNClob(String columnLabel,  Reader reader, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateNClob(findColumn(columnLabel), reader, length);
     }
 
     @Override
@@ -942,7 +1097,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateNCharacterStream(findColumn(columnLabel), reader);
     }
 
     @Override
@@ -962,17 +1117,17 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateAsciiStream(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBinaryStream(findColumn(columnLabel), x);
     }
 
     @Override
     public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateCharacterStream(findColumn(columnLabel), reader);
     }
 
     @Override
@@ -982,7 +1137,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateBlob(findColumn(columnLabel), inputStream);
     }
 
     @Override
@@ -992,7 +1147,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateClob(String columnLabel,  Reader reader) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateClob(findColumn(columnLabel), reader);
     }
 
     @Override
@@ -1002,7 +1157,7 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public void updateNClob(String columnLabel,  Reader reader) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateNClob(findColumn(columnLabel), reader);
     }
 
     @Override
@@ -1012,6 +1167,6 @@ public class EmbeddedJDBCResultSet implements ResultSet
 
     @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getObject(findColumn(columnLabel), type);
     }
 }
