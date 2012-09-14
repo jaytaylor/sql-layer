@@ -33,6 +33,9 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.AggregateSource.Implementation;
 
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.akiban.sql.parser.OrderByColumn;
+import com.akiban.sql.parser.OrderByList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,16 +84,32 @@ public class AggregateSplitter extends BaseRule
                 }
             }
         }
-        boolean distinct = checkDistinctDistincts(source);
-        // Another way to do this would be to have a different class
-        // for AggregateSource in the split-off state. Doing that
-        // would require replacing expression references to the old
-        // one as a ColumnSource.
+        
+        Object[] distinctOrderby = checkDistinctDistinctsAndOrderby(source);
         List<ExpressionNode> fields = source.splitOffProject();
         PlanNode input = source.getInput();
-        PlanNode ninput = new Project(input, fields);
-        if (distinct)
+        
+        // order-by and distinct cannot exist together for now
+        // so it's safe to do this:
+        //
+        // order by
+        List<OrderByExpression> orderBy = (List<OrderByExpression>)distinctOrderby[1];
+        PlanNode ninput;
+        
+        if (orderBy != null)
+        {
+            ninput = new Sort(input, orderBy);
+            ninput = new Project(ninput, fields);
+        }
+        // distinct
+        else if ((Boolean)distinctOrderby[0])
+        {
+            ninput = new Project(input, fields);
             ninput = new Distinct(ninput);
+        }
+        else
+            ninput = new Project(input, fields);
+        
         source.replaceInput(input, ninput);
     }
 
@@ -99,7 +118,12 @@ public class AggregateSplitter extends BaseRule
      * non-<code>DISTINCT</code> unless they are for the same
      * expression and unaffected by it.
      */
-    protected boolean checkDistinctDistincts(AggregateSource source) {
+    protected Object[] checkDistinctDistinctsAndOrderby(AggregateSource source) {
+      //  boolean orderBy = false;
+        boolean distinct = true;
+        
+        List<OrderByExpression> ret = null;
+        
         ExpressionNode operand = null;
         for (AggregateFunctionExpression aggregate : source.getAggregates()) {
             if (aggregate.isDistinct()) {
@@ -110,21 +134,32 @@ public class AggregateSplitter extends BaseRule
                     throw new UnsupportedSQLException("More than one DISTINCT",
                                                       other.getSQLsource());
             }
+            List<OrderByExpression> cur = aggregate.getOrderBy();
+            if (ret == null)
+                ret = cur;
+            else if (cur != null && !cur.equals(ret))
+                 throw new UnsupportedSQLException("Mix of ORDERY-BY ",
+                                                   aggregate.getSQLsource());
         }
         if (operand == null)
-            return false;
-        for (AggregateFunctionExpression aggregate : source.getAggregates()) {
-            if (!aggregate.isDistinct()) {
-                ExpressionNode other = aggregate.getOperand();
-                if (!operand.equals(other))
-                    throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
-                                                      operand.getSQLsource());
-                else if (!distinctDoesNotMatter(aggregate.getFunction()))
-                    throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
-                                                      other.getSQLsource());
+            distinct = false;
+        else
+            for (AggregateFunctionExpression aggregate : source.getAggregates()) {
+                if (!aggregate.isDistinct()) {
+                    ExpressionNode other = aggregate.getOperand();
+                    if (!operand.equals(other))
+                        throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
+                                                          operand.getSQLsource());
+                    else if (!distinctDoesNotMatter(aggregate.getFunction()))
+                        throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
+                                                          other.getSQLsource());
+                }
             }
-        }
-        return true;
+       
+        // both distinct and order-by are used, throw an error for now
+        if (ret != null && distinct)
+            throw new UnsupportedSQLException("Use of BOTH DISTINCT and ORDER-BY is not supported yet in" + source.getName());
+        return new Object[]{distinct, ret};
     }
 
     protected boolean distinctDoesNotMatter(String aggregateFunction) {

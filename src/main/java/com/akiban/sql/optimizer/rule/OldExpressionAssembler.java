@@ -209,13 +209,14 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     }
 
     @Override
-    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names) {
+    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names, List<Object> options) {
         return API.aggregate_Partial(
                 inputOperator,
                 rowType,
                 nkeys,
                 functionsRegistry,
-                names);
+                names,
+                options);
     }
 
     @Override

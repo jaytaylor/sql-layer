@@ -1274,10 +1274,38 @@ public class ASTStatementLoader extends BaseRule
                                                           aggregateNode);
                     }
                 }
-                return new AggregateFunctionExpression(function,
+                
+                if (aggregateNode instanceof GroupConcatNode)
+                {
+                    GroupConcatNode groupConcat = (GroupConcatNode) aggregateNode;
+                    List<OrderByExpression> sorts = null;
+                    OrderByList orderByList = groupConcat.getOrderBy();
+                    
+                    if (orderByList != null)
+                    {
+                        sorts = new ArrayList<OrderByExpression>();
+                        for (OrderByColumn orderByColumn : orderByList)
+                        {
+                            ExpressionNode expression = toOrderGroupBy(orderByColumn.getExpression(), projects, "ORDER");
+                            sorts.add(new OrderByExpression(expression,
+                                                            orderByColumn.isAscending()));
+                        }
+                    }
+                    
+                    return new AggregateFunctionExpression(function,
                                                        operand,
                                                        aggregateNode.isDistinct(),
-                                                       type, valueNode);
+                                                       type, valueNode,
+                                                       groupConcat.getSeparator(),
+                                                       sorts);
+                }
+                else
+                    return new AggregateFunctionExpression(function,
+                                                           operand,
+                                                           aggregateNode.isDistinct(),
+                                                           type, valueNode,
+                                                           null,
+                                                           null);
             }
             else if (isConditionExpression(valueNode)) {
                 return toCondition(valueNode, projects);
@@ -1453,7 +1481,9 @@ public class ASTStatementLoader extends BaseRule
                         throw new WrongExpressionArityException(2, operands.size());
                     return new AggregateFunctionExpression(methodCall.getMethodName(),
                                                            operands.get(0), false,
-                                                           valueNode.getType(), valueNode);
+                                                           valueNode.getType(), valueNode,
+                                                           null,  // *supposed* separator
+                                                           null); // order by list
                 }
                 else
                     return new FunctionExpression(methodCall.getMethodName(),
