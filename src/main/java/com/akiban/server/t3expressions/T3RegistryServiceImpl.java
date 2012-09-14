@@ -475,7 +475,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
     private volatile ListMultimap<String, ScalarsGroup> overloadsByName;
     private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
-    private volatile Map<String, BitSet> sameType;
+
     private volatile Collection<? extends TClass> tClasses;
     private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {
         @Override
