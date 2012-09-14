@@ -32,6 +32,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
 import com.akiban.message.MessageRequiredServices;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.session.Session;
 
 import java.util.List;
@@ -91,7 +92,32 @@ public class OSCRenameTableHook
     }
 
     protected boolean beforeNew(Session session, TableName oldName, TableName newName) {
-        return true;
+        AkibanInformationSchema ais = requiredServices.schemaManager().getAis(session);
+        DDLFunctions ddl = requiredServices.dxl().ddlFunctions();
+        UserTable tempTable = ais.getUserTable(oldName);
+        if (tempTable == null) return true;
+        PendingOSC osc = tempTable.getPendingOSC();
+        if ((osc == null) ||
+            (osc.getCurrentName() == null))
+            return true;
+        TableName currentName = new TableName(oldName.getSchemaName(), osc.getCurrentName());
+        if (ais.getUserTable(currentName) == null)
+            return true;
+        
+        // Undo the first rename. So far that is the only change to real data that has
+        // been made. If we fail now because of grouping constraints, we are in as good
+        // shape as is possible under those circumstances.
+        TableName origName = new TableName(oldName.getSchemaName(), osc.getOriginalName());
+        ddl.renameTable(session, currentName, origName);
+        
+        doAlter(session, origName, oldName, osc);
+
+        // Rename the temp table to the name that OSC will DROP.
+        ddl.renameTable(session, oldName, currentName);
+        return false;
     }
 
+    protected void doAlter(Session session, TableName realName, TableName alteredName, PendingOSC changes) {
+
+    }
 }
