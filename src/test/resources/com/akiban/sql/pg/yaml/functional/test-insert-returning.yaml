@@ -112,4 +112,9 @@
 ---
 - Statement: Insert into t4 (c1, c2) select c1, c2 from t3 returning c1
 - output: [[1], [2], [3], [4]]
+---
+- Statement: Delete from t4;
+---
+- Statement: Insert into t4 (c1, c2) select c1 + 100, c2 from t3 returning c1
+- output: [[101], [102], [103], [104]]
 ... 
