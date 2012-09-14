@@ -29,9 +29,9 @@ package com.akiban.server.types3.aksql.akfuncs;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.aksql.aktypes.AkString;
-import com.akiban.server.types3.common.funcs.Substring;
+import com.akiban.server.types3.common.funcs.SubString;
 
 public class AkSubstring {
-    public static final TOverload INSTANCES[] = Substring.create(AkString.VARCHAR, AkNumeric.INT);
+    public static final TOverload INSTANCES[] = SubString.create(AkString.VARCHAR, AkNumeric.BIGINT);
 
 }
