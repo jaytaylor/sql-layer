@@ -221,7 +221,7 @@ public class AkInterval extends TClassBase {
             AkIntervalMonthsFormat.values());
 
     /**
-     * <p>A SECONDS interval, whose value 64-bit value does <em>not</em> necessarily represent number of seconds.
+     * <p>A MICRO interval, whose value 64-bit value does <em>not</em> necessarily represent number of seconds.
      * In fact, it almost definitely is not number of seconds; instead, the value is in some private unit. That said,
      * it will still be a unit of time, so you can work with it intuitively. For instance, adding two values of
      * the raw form will result in a number in the same unit that represents the sum of the two durations, and
@@ -233,11 +233,11 @@ public class AkInterval extends TClassBase {
      * overloads, specifying the units you want. Units will truncate (not round) their values, as is standard in the
      * JDK's TimeUnit implementation.</p>
      *
-     * <p>If you have a value in some format, and want to convert it to the SECONDS raw format, use
+     * <p>If you have a value in some format, and want to convert it to the MICRO raw format, use
      * {@linkplain #secondsRawFrom(long, TimeUnit)} or {@linkplain #secondsRawFromFractionalSeconds(long)}.
-     * The resulting value can be added to other raw SECONDS values intuitively, as explained above.</p>
+     * The resulting value can be added to other raw MICRO values intuitively, as explained above.</p>
      */
-    public static final AkInterval SECONDS = new AkInterval(
+    public static final AkInterval MICRO = new AkInterval(
             AkBundle.INSTANCE.id(),
             "interval seconds",
             AkCategory.DATE_TIME,
@@ -252,7 +252,7 @@ public class AkInterval extends TClassBase {
     );
 
     /**
-     * Gets the interval from a source, which should correspond to an AkInterval.SECONDS value, in some unit.
+     * Gets the interval from a source, which should correspond to an AkInterval.MICRO value, in some unit.
      * @param source the source
      * @param as the desired unit
      * @return the source's value in the requested unit
@@ -262,7 +262,7 @@ public class AkInterval extends TClassBase {
     }
 
     /**
-     * Gets the interval from a raw long, which should correspond to an AkInterval.SECONDS value, in some unit
+     * Gets the interval from a raw long, which should correspond to an AkInterval.MICRO value, in some unit
      * @param secondsIntervalRaw the raw form of the seconds value
      * @param as the desired unit
      * @return the raw value, translated to the requested unit
@@ -272,7 +272,7 @@ public class AkInterval extends TClassBase {
     }
 
     /**
-     * Gets a raw SECONDS value from an interval specified in some unit.
+     * Gets a raw MICRO value from an interval specified in some unit.
      * @param source the interval to translate to the raw form
      * @param sourceUnit the incoming interval's unit
      * @return the raw form
@@ -282,7 +282,7 @@ public class AkInterval extends TClassBase {
     }
 
     /**
-     * <p>Gets the raw SECONDS value from a number that represents fractions of a second. For instance, 1 would
+     * <p>Gets the raw MICRO value from a number that represents fractions of a second. For instance, 1 would
      * represent a tenth of a second; 123 would represent 123 milliseconds, etc. Values representing a greater
      * precision than the raw form supports will be truncated. The raw form won't be more precise than nanoseconds.</p>
      *

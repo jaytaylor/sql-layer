@@ -35,6 +35,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkInterval;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -112,7 +113,7 @@ public class MDateAddSub extends TOverloadBase
             switch (stType)
             {
                 case MDatetimes.DATE_ST:
-                    dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
+                    dt = MDatetimes.toJodaDatetime(ymd, "UTC");
                     helper.compute(dt, millis);
                     output.putString(dt.toString("YYYY-MM-dd"), null);
                     break;
@@ -279,12 +280,12 @@ public class MDateAddSub extends TOverloadBase
 
     private static enum SecondType
     {
-        INTERVAL_MILLIS(AkInterval.SECONDS)
+        INTERVAL_MILLIS(AkInterval.MICRO)
         {
             @Override
             protected long toMillis(PValueSource arg)
             {
-                return arg.getInt64() * 1000;
+                return arg.getInt64() / 1000;
             }
         },
         INTERVAL_MONTH(AkInterval.MONTHS)
@@ -334,12 +335,12 @@ public class MDateAddSub extends TOverloadBase
                 return arg.getInt64() * 1000L;
             }
         },
-        DAY(MNumeric.BIGINT)
+        DAY(MApproximateNumber.DOUBLE)
         {
             @Override
             protected long toMillis(PValueSource arg)
             {
-                return arg.getInt64() * MILLS_PER_DAY;
+                return Math.round(arg.getDouble()) * MILLS_PER_DAY;
             }
         };
 
@@ -379,8 +380,8 @@ public class MDateAddSub extends TOverloadBase
         }
         else
         {
-            MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
-            helper.compute(dt, secondArg.toMillis(inputs.get(1)));
+            MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, "UTC"); // calculations should be done
+            helper.compute(dt, secondArg.toMillis(inputs.get(1)));      // in UTC (to avoid daylight-saving side effects)
             firstArg.putResult(output, dt, context);
         }
     }
