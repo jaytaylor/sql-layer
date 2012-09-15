@@ -34,8 +34,6 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.service.session.Session;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import java.util.*;
 
 /** Hook for <code>RenameTableRequest</code>.
@@ -140,12 +138,12 @@ public class OSCRenameTableHook
         UserTable origTable = ais.getUserTable(origName);
         UserTable tempTable = ais.getUserTable(tempName);
         Set<Column> droppedColumns = new HashSet<Column>();
-        BiMap<Column,Column> modifiedColumns = HashBiMap.<Column,Column>create();
+        Map<Column,Column> modifiedColumns = new HashMap<Column,Column>();
         Set<Column> addedColumns = new HashSet<Column>();
         getColumnChanges(origTable, tempTable, changes.getColumnChanges(), 
                          droppedColumns, modifiedColumns, addedColumns);
         Set<TableIndex> droppedIndexes = new HashSet<TableIndex>();
-        BiMap<TableIndex,TableIndex> modifiedIndexes = HashBiMap.<TableIndex,TableIndex>create();
+        Map<TableIndex,TableIndex> modifiedIndexes = new HashMap<TableIndex,TableIndex>();
         Set<TableIndex> addedIndexes = new HashSet<TableIndex>();
         getIndexChanges(origTable, tempTable, changes.getIndexChanges(), 
                         droppedIndexes, modifiedIndexes, addedIndexes);
