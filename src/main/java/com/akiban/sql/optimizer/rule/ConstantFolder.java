@@ -972,9 +972,12 @@ public class ConstantFolder extends BaseRule
             if (!(cond instanceof ComparisonCondition))
                 return null;
             ComparisonCondition comp = (ComparisonCondition)cond;
-            if (!(comp.getRight().isColumn() &&
+            ExpressionNode rhs = comp.getRight();
+            if (rhs instanceof CastExpression)
+                rhs = ((CastExpression)rhs).getOperand();
+            if (!(rhs.isColumn() &&
                   (comp.getOperation() == Comparison.EQ) &&
-                  (((ColumnExpression)comp.getRight()).getTable() == expressions)))
+                  (((ColumnExpression) rhs).getTable() == expressions)))
                 return null;
             List<List<ExpressionNode>> rows = expressions.getExpressions();
             if (!(rows.isEmpty() ||
