@@ -38,6 +38,16 @@ import com.akiban.server.service.session.Session;
 import java.util.List;
 import java.util.Map;
 
+/** Hook for <code>RenameTableRequest</code>.
+ * The single statement <code>RENAME TABLE xxx TO _xxx_old, _xxx_new TO xxx</code>
+ * arrives from the adapter as two requests. For simplicity, and since
+ * rename is cheap, the first is allowed to proceed, but the target name is noted.
+ * The second is where all the work this has been leading up to happens: the
+ * alter is performed on <code>xxx</code> and new is renamed to old.
+ * In this way, at the end of the atomic rename, the client sees the tables that
+ * it expects with the shape that it expects. But not arrived at in
+ * the way it orchestrated.
+ */
 public class OSCRenameTableHook
 {
     private final MessageRequiredServices requiredServices;
@@ -60,11 +70,12 @@ public class OSCRenameTableHook
         return true;            // Allow rename to continue.
     }
 
+    /** Handle first rename.
+     * We are being told to rename <code>xxx</code> to <code>_xxx_old</code>.
+     * If this is OSC, there is an <code>_xxx_new</code> that points to <code>xxx</code>.
+     * Except that either one of those _ names might have multiple _'s for uniqueness.
+     */
     protected boolean beforeOld(Session session, TableName oldName, TableName newName) {
-        // We are being told to rename xxx to _xxx_old.
-        // If this is OSC, there is an _xxx_new that points to xxx.
-        // Except that either one of those _ names might have multiple _'s.
-        
         AkibanInformationSchema ais = requiredServices.schemaManager().getAis(session);
         String schemaName = oldName.getSchemaName();
         String tableName = oldName.getTableName();
@@ -91,6 +102,13 @@ public class OSCRenameTableHook
         return true;
     }
 
+    /** Handle second rename.
+     * Undo the first rename. So far that is the only change to real data that has
+     * been made. If we fail now because of grouping constraints, we are in as good
+     * shape as is possible under those circumstances.
+     * Then do the alter on the original table.
+     * Then rename the temp table to the name that OSC will DROP.
+     */
     protected boolean beforeNew(Session session, TableName oldName, TableName newName) {
         AkibanInformationSchema ais = requiredServices.schemaManager().getAis(session);
         DDLFunctions ddl = requiredServices.dxl().ddlFunctions();
@@ -104,20 +122,25 @@ public class OSCRenameTableHook
         if (ais.getUserTable(currentName) == null)
             return true;
         
-        // Undo the first rename. So far that is the only change to real data that has
-        // been made. If we fail now because of grouping constraints, we are in as good
-        // shape as is possible under those circumstances.
         TableName origName = new TableName(oldName.getSchemaName(), osc.getOriginalName());
         ddl.renameTable(session, currentName, origName);
         
         doAlter(session, origName, oldName, osc);
 
-        // Rename the temp table to the name that OSC will DROP.
         ddl.renameTable(session, oldName, currentName);
         return false;
     }
 
+    /** Do the actual alter, corresponding to what was done previously
+     * on a temporary copy of the table. Because we have this copy as
+     * a template, not very much information needs to be remembered
+     * about the earlier alter.
+     */
     protected void doAlter(Session session, TableName realName, TableName alteredName, PendingOSC changes) {
-
+        AkibanInformationSchema ais = requiredServices.schemaManager().getAis(session);
+        DDLFunctions ddl = requiredServices.dxl().ddlFunctions();
+        UserTable realTable = ais.getUserTable(realName);
+        UserTable tempTable = ais.getUserTable(alteredName);
+        
     }
 }

@@ -36,6 +36,11 @@ import com.akiban.server.service.session.Session;
 
 import java.util.List;
 
+/** Hook for <code>AlterTableRequest</code>.
+ * When told to <code>ALTER TABLE _xxx_new ...</code>, if the table currently
+ * matches table <code>xxx</code> in the same schema, tag it with information about
+ * the alter for later.
+ */
 public class OSCAlterTableHook
 {
     public static final String PROPERTY = "akserver.pt.osc.hook";
