@@ -34,6 +34,9 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.service.session.Session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Hook for <code>RenameTableRequest</code>.
@@ -49,6 +52,8 @@ import java.util.*;
 public class OSCRenameTableHook
 {
     private final MessageRequiredServices requiredServices;
+
+    private static final Logger logger = LoggerFactory.getLogger(OSCRenameTableHook.class);
 
     public OSCRenameTableHook(MessageRequiredServices requiredServices) {
         this.requiredServices = requiredServices;
@@ -155,6 +160,7 @@ public class OSCRenameTableHook
                        droppedIndexes, modifiedIndexes, addedIndexes);
         rebuildGroup(aisCopy, copyTable);
         copyTable.endTable();
+        logger.info("Pending OSC ALTER TABLE " + origName + " being done now");
         ddl().alterTable(session, origName, copyTable, 
                          changes.getColumnChanges(), changes.getIndexChanges(), null);
     }
@@ -288,12 +294,18 @@ public class OSCRenameTableHook
                 parentJoin = rebuildJoin(ais, parentJoin, table, false);
                 table.addCandidateParentJoin(parentJoin);
             }
+            else {
+                logger.info("Join " + parentJoin + " no longer valid; group split.");
+            }
         }
         for (Join childJoin : table.getChildJoins()) {
             table.removeCandidateChildJoin(parentJoin);
             if (joinStillValid(childJoin, table, true)) {
                 childJoin = rebuildJoin(ais, childJoin, table, true);
                 table.addCandidateChildJoin(childJoin);
+            }
+            else {
+                logger.info("Join " + childJoin + " no longer valid; group split.");
             }
         }
     }

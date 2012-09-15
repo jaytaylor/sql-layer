@@ -34,6 +34,9 @@ import com.akiban.ais.util.TableChange;
 import com.akiban.message.MessageRequiredServices;
 import com.akiban.server.service.session.Session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 
 /** Hook for <code>AlterTableRequest</code>.
@@ -45,8 +48,10 @@ public class OSCAlterTableHook
 {
     public static final String PROPERTY = "akserver.pt.osc.hook";
 
-    private final MessageRequiredServices requiredServices;
+    private static final Logger logger = LoggerFactory.getLogger(OSCAlterTableHook.class);
 
+    private final MessageRequiredServices requiredServices;
+    
     public OSCAlterTableHook(MessageRequiredServices requiredServices) {
         this.requiredServices = requiredServices;
     }
@@ -71,6 +76,7 @@ public class OSCAlterTableHook
             if ((origDefinition != null) && 
                 hasSameColumns(oldDefinition, origDefinition)) {
                 definition.setPendingOSC(new PendingOSC(origName, columnChanges, indexChanges));
+                logger.info("Change by OSC detected: ALTER TABLE " + origName + " pending");
                 return;
             }
         }
