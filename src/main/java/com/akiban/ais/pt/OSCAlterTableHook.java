@@ -76,7 +76,8 @@ public class OSCAlterTableHook
             if ((origDefinition != null) && 
                 hasSameColumns(oldDefinition, origDefinition)) {
                 definition.setPendingOSC(new PendingOSC(origName, columnChanges, indexChanges));
-                logger.info("Change by OSC detected: ALTER TABLE " + origName + " pending");
+                logger.info("Change by OSC detected: ALTER TABLE {}{}{} pending",
+                            new Object[] { origName, columnChanges, indexChanges });
                 return;
             }
         }

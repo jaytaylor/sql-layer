@@ -160,7 +160,7 @@ public class OSCRenameTableHook
                        droppedIndexes, modifiedIndexes, addedIndexes);
         rebuildGroup(aisCopy, copyTable);
         copyTable.endTable();
-        logger.info("Pending OSC ALTER TABLE " + origName + " being done now");
+        logger.info("Pending OSC ALTER TABLE {} being done now", origName);
         ddl().alterTable(session, origName, copyTable, 
                          changes.getColumnChanges(), changes.getIndexChanges(), null);
     }
@@ -274,12 +274,15 @@ public class OSCRenameTableHook
         for (IndexColumn indexColumn : fromIndex.getKeyColumns()) {
             Column copyColumn = copyTable.getColumn(indexColumn.getColumn().getName());
             if (copyColumn == null)
-                // This assumes that index implicitly dropped by
-                // removing all its columns was included in
-                // indexChanges passed from adapter.
-                throw new InvalidAlterException(origTable.getName(), "Could not find index column " + indexColumn);
+                // An index implicitly dropped / modified by removing
+                // its columns is not included in indexChanges passed
+                // from adapter. Silently shorten it.
+                continue;
             IndexColumn.create(copyIndex, copyColumn, indexColumn, idxpos++);
         }
+        if (idxpos == 0)
+            // Nothing was left. Remove index.
+            copyTable.removeIndexes(Collections.singletonList(copyIndex));
     }
 
     // This assumes that OSC was not used to deliberately affect the group, by changing
@@ -296,7 +299,7 @@ public class OSCRenameTableHook
                 assert (table.getParentJoin() == parentJoin);
             }
             else {
-                logger.info("Join " + parentJoin + " no longer valid; group split.");
+                logger.info("Join {} no longer valid; group split.", parentJoin);
             }
         }
         for (Join childJoin : table.getChildJoins()) {
@@ -306,7 +309,7 @@ public class OSCRenameTableHook
                 childJoin = rebuildJoin(ais, childJoin, table, true);
             }
             else {
-                logger.info("Join " + childJoin + " no longer valid; group split.");
+                logger.info("Join {} no longer valid; group split.", childJoin);
             }
         }
     }
