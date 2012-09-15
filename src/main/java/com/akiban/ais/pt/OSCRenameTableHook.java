@@ -26,17 +26,32 @@
 
 package com.akiban.ais.pt;
 
+import com.akiban.ais.AISCloner;
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
 import com.akiban.message.MessageRequiredServices;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.InvalidAlterException;
 import com.akiban.server.service.session.Session;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import java.util.Collection;
 import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /** Hook for <code>RenameTableRequest</code>.
  * The single statement <code>RENAME TABLE xxx TO _xxx_old, _xxx_new TO xxx</code>
@@ -76,7 +91,7 @@ public class OSCRenameTableHook
      * Except that either one of those _ names might have multiple _'s for uniqueness.
      */
     protected boolean beforeOld(Session session, TableName oldName, TableName newName) {
-        AkibanInformationSchema ais = requiredServices.schemaManager().getAis(session);
+        AkibanInformationSchema ais = ais(session);
         String schemaName = oldName.getSchemaName();
         String tableName = oldName.getTableName();
 
@@ -110,8 +125,7 @@ public class OSCRenameTableHook
      * Then rename the temp table to the name that OSC will DROP.
      */
     protected boolean beforeNew(Session session, TableName oldName, TableName newName) {
-        AkibanInformationSchema ais = requiredServices.schemaManager().getAis(session);
-        DDLFunctions ddl = requiredServices.dxl().ddlFunctions();
+        AkibanInformationSchema ais = ais(session);
         UserTable tempTable = ais.getUserTable(oldName);
         if (tempTable == null) return true;
         PendingOSC osc = tempTable.getPendingOSC();
@@ -123,11 +137,11 @@ public class OSCRenameTableHook
             return true;
         
         TableName origName = new TableName(oldName.getSchemaName(), osc.getOriginalName());
-        ddl.renameTable(session, currentName, origName);
+        ddl().renameTable(session, currentName, origName);
         
         doAlter(session, origName, oldName, osc);
 
-        ddl.renameTable(session, oldName, currentName);
+        ddl().renameTable(session, oldName, currentName);
         return false;
     }
 
@@ -136,11 +150,166 @@ public class OSCRenameTableHook
      * a template, not very much information needs to be remembered
      * about the earlier alter.
      */
-    protected void doAlter(Session session, TableName realName, TableName alteredName, PendingOSC changes) {
-        AkibanInformationSchema ais = requiredServices.schemaManager().getAis(session);
-        DDLFunctions ddl = requiredServices.dxl().ddlFunctions();
-        UserTable realTable = ais.getUserTable(realName);
-        UserTable tempTable = ais.getUserTable(alteredName);
-        
+    protected void doAlter(Session session, TableName origName, TableName tempName, PendingOSC changes) {
+        AkibanInformationSchema ais = ais(session);
+        UserTable origTable = ais.getUserTable(origName);
+        UserTable tempTable = ais.getUserTable(tempName);
+        Set<Column> droppedColumns = new HashSet<Column>();
+        BiMap<Column,Column> modifiedColumns = HashBiMap.<Column,Column>create();
+        Set<Column> addedColumns = new HashSet<Column>();
+        getColumnChanges(origTable, tempTable, changes.getColumnChanges(), 
+                         droppedColumns, modifiedColumns, addedColumns);
+        Set<TableIndex> droppedIndexes = new HashSet<TableIndex>();
+        BiMap<TableIndex,TableIndex> modifiedIndexes = HashBiMap.<TableIndex,TableIndex>create();
+        Set<TableIndex> addedIndexes = new HashSet<TableIndex>();
+        getIndexChanges(origTable, tempTable, changes.getIndexChanges(), 
+                        droppedIndexes, modifiedIndexes, addedIndexes);
+        AkibanInformationSchema aisCopy = AISCloner.clone(ais, new GroupSelector(origTable.getGroup()));
+        UserTable copyTable = aisCopy.getUserTable(origName);
+        rebuildColumns(origTable, copyTable,
+                       droppedColumns, modifiedColumns, addedColumns);
+        rebuildIndexes(origTable, copyTable,
+                       droppedIndexes, modifiedIndexes, addedIndexes);
+        copyTable.endTable();
+        ddl().alterTable(session, origName, copyTable, 
+                         changes.getColumnChanges(), changes.getIndexChanges(), null);
+    }
+
+    private void getColumnChanges(UserTable origTable, UserTable tempTable, Collection<TableChange> changes,
+                                  Set<Column> droppedColumns, Map<Column,Column> modifiedColumns, Set<Column> addedColumns) {
+        for (TableChange  columnChange : changes) {
+            switch (columnChange.getChangeType()) {
+            case DROP:
+                {
+                    Column oldColumn = origTable.getColumn(columnChange.getOldName());
+                    if (oldColumn == null)
+                        throw new InvalidAlterException(origTable.getName(), "Could not find dropped column " + columnChange);
+                    droppedColumns.add(oldColumn);
+                }
+                break;
+            case MODIFY:
+                {
+                    Column oldColumn = origTable.getColumn(columnChange.getOldName());
+                    Column newColumn = tempTable.getColumn(columnChange.getNewName());
+                    if ((oldColumn == null) || (newColumn == null))
+                        throw new InvalidAlterException(origTable.getName(), "Could not find modified column " + columnChange);
+                    modifiedColumns.put(oldColumn, newColumn);
+                }
+                break;
+            case ADD:
+                {
+                    Column newColumn = tempTable.getColumn(columnChange.getNewName());
+                    if (newColumn == null)
+                        throw new InvalidAlterException(origTable.getName(), "Could not find added column " + columnChange);
+                    addedColumns.add(newColumn);
+                }
+                break;
+            }
+        }
+    }
+
+    private void rebuildColumns(UserTable origTable, UserTable copyTable,
+                                Set<Column> droppedColumns, Map<Column,Column> modifiedColumns, Set<Column> addedColumns) {
+        copyTable.dropColumns();
+        int colpos = 0;
+        for (Column origColumn : origTable.getColumns()) {
+            if (droppedColumns.contains(origColumn)) 
+                continue;
+            Column fromColumn = origColumn;
+            Column newColumn = modifiedColumns.get(origColumn);
+            if (newColumn != null) 
+                fromColumn = newColumn;
+            // Note that dropping columns can still cause otherwise
+            // unchanged ones to move.
+            Column.create(copyTable, fromColumn, null, colpos++);
+        }
+        for (Column newColumn : addedColumns) {
+            Column.create(copyTable, newColumn, null, colpos++);
+        }
+    }
+
+    private void getIndexChanges(UserTable origTable, UserTable tempTable, Collection<TableChange> changes,
+                                 Set<TableIndex> droppedIndexes, Map<TableIndex,TableIndex> modifiedIndexes, Set<TableIndex> addedIndexes) {
+        for (TableChange indexChange : changes) {
+            switch (indexChange.getChangeType()) {
+            case DROP:
+                {
+                    TableIndex oldIndex = origTable.getIndex(indexChange.getOldName());
+                    if (oldIndex == null)
+                        throw new InvalidAlterException(origTable.getName(), "Could not find dropped index " + indexChange);
+                    droppedIndexes.add(oldIndex);
+                }
+                break;
+            case MODIFY:
+                {
+                    TableIndex oldIndex = origTable.getIndex(indexChange.getOldName());
+                    TableIndex newIndex = tempTable.getIndex(indexChange.getNewName());
+                    if ((oldIndex == null) || (newIndex == null))
+                        throw new InvalidAlterException(origTable.getName(), "Could not find modified index " + indexChange);
+                    modifiedIndexes.put(oldIndex, newIndex);
+                }
+                break;
+            case ADD:
+                {
+                    TableIndex newIndex = tempTable.getIndex(indexChange.getNewName());
+                    if (newIndex == null)
+                        throw new InvalidAlterException(origTable.getName(), "Could not find added index " + indexChange);
+                    addedIndexes.add(newIndex);
+                }
+                break;
+            }
+        }
+    }
+
+    private void rebuildIndexes(UserTable origTable, UserTable copyTable,
+                                Set<TableIndex> droppedIndexes, Map<TableIndex,TableIndex> modifiedIndexes, Set<TableIndex> addedIndexes) {
+        copyTable.removeIndexes(copyTable.getIndexesIncludingInternal());
+        for (TableIndex origIndex : origTable.getIndexes()) {
+            if (droppedIndexes.contains(origIndex)) 
+                continue;
+            TableIndex fromIndex = origIndex;
+            TableIndex newIndex = modifiedIndexes.get(origIndex);
+            if (newIndex != null) 
+                fromIndex = newIndex;
+            rebuildIndex(origTable, copyTable, fromIndex);
+        }
+        for (TableIndex newIndex : addedIndexes) {
+            rebuildIndex(origTable, copyTable, newIndex);
+        }
+    }
+
+    private void rebuildIndex(UserTable origTable, UserTable copyTable, TableIndex fromIndex) {
+        TableIndex copyIndex = TableIndex.create(copyTable, fromIndex);
+        int idxpos = 0;
+        for (IndexColumn indexColumn : fromIndex.getKeyColumns()) {
+            Column copyColumn = copyTable.getColumn(indexColumn.getColumn().getName());
+            if (copyColumn == null)
+                // This assumes that index implicitly dropped by
+                // removing all its columns was included in
+                // indexChanges passed from adapter.
+                throw new InvalidAlterException(origTable.getName(), "Could not find index column " + indexColumn);
+            IndexColumn.create(copyIndex, copyColumn, indexColumn, idxpos++);
+        }
+    }
+
+    private static class GroupSelector extends com.akiban.ais.protobuf.ProtobufWriter.TableSelector {
+        private final Group group;
+
+        public GroupSelector(Group group) {
+            this.group = group;
+        }
+
+        @Override
+        public boolean isSelected(Columnar columnar) {
+            return columnar.isTable() && ((Table)columnar).getGroup() == group;
+        }
+    }
+
+    private AkibanInformationSchema ais(Session session) {
+        return requiredServices.schemaManager().getAis(session);
+    }
+
+    private DDLFunctions ddl() {
+        return requiredServices.dxl().ddlFunctions();
     }
 }
