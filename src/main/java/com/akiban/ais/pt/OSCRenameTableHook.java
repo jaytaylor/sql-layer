@@ -290,9 +290,10 @@ public class OSCRenameTableHook
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             table.removeCandidateParentJoin(parentJoin);
+            parentJoin.getParent().removeCandidateChildJoin(parentJoin);
             if (joinStillValid(parentJoin, table, false)) {
                 parentJoin = rebuildJoin(ais, parentJoin, table, false);
-                table.addCandidateParentJoin(parentJoin);
+                assert (table.getParentJoin() == parentJoin);
             }
             else {
                 logger.info("Join " + parentJoin + " no longer valid; group split.");
@@ -300,9 +301,9 @@ public class OSCRenameTableHook
         }
         for (Join childJoin : table.getChildJoins()) {
             table.removeCandidateChildJoin(parentJoin);
+            childJoin.getChild().removeCandidateParentJoin(childJoin);
             if (joinStillValid(childJoin, table, true)) {
                 childJoin = rebuildJoin(ais, childJoin, table, true);
-                table.addCandidateChildJoin(childJoin);
             }
             else {
                 logger.info("Join " + childJoin + " no longer valid; group split.");
@@ -357,6 +358,7 @@ public class OSCRenameTableHook
     
     private Join rebuildJoin(AkibanInformationSchema ais, Join oldJoin, UserTable table, boolean asParent) {
         Join newJoin = Join.create(ais, oldJoin.getName(), oldJoin.getParent(), oldJoin.getChild());
+        newJoin.setGroup(oldJoin.getGroup());
         for (JoinColumn joinColumn : oldJoin.getJoinColumns()) {
             Column parent = joinColumn.getParent();
             Column child = joinColumn.getChild();
