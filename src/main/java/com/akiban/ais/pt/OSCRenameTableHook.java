@@ -27,18 +27,7 @@
 package com.akiban.ais.pt;
 
 import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.ais.util.TableChange;
 import com.akiban.message.MessageRequiredServices;
 import com.akiban.server.api.DDLFunctions;
@@ -47,13 +36,7 @@ import com.akiban.server.service.session.Session;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /** Hook for <code>RenameTableRequest</code>.
  * The single statement <code>RENAME TABLE xxx TO _xxx_old, _xxx_new TO xxx</code>
@@ -299,6 +282,25 @@ public class OSCRenameTableHook
     // grouping constraints, say, since the group structure is not on the master.
     // So it only deals with unintended consequences.
     private void rebuildGroup(AkibanInformationSchema ais, UserTable table) {
+        rebuildGroupIndexes(ais, table);
+        Join parentJoin = table.getParentJoin();
+        if (parentJoin != null) {
+            table.removeCandidateParentJoin(parentJoin);
+            if (joinStillValid(parentJoin, table, false)) {
+                parentJoin = rebuildJoin(ais, parentJoin, table, false);
+                table.addCandidateParentJoin(parentJoin);
+            }
+        }
+        for (Join childJoin : table.getChildJoins()) {
+            table.removeCandidateChildJoin(parentJoin);
+            if (joinStillValid(childJoin, table, true)) {
+                childJoin = rebuildJoin(ais, childJoin, table, true);
+                table.addCandidateChildJoin(childJoin);
+            }
+        }
+    }
+
+    private void rebuildGroupIndexes(AkibanInformationSchema ais, UserTable table) {
         Group group = table.getGroup();
         List<GroupIndex> dropIndexes = new ArrayList<GroupIndex>();
         List<GroupIndex> copyIndexes = new ArrayList<GroupIndex>();
@@ -331,6 +333,30 @@ public class OSCRenameTableHook
                 IndexColumn.create(newIndex, column, indexColumn, idxpos++);
             }
         }
+    }
+
+    private boolean joinStillValid(Join join, UserTable table, boolean asParent) {
+        for (JoinColumn joinColumn : join.getJoinColumns()) {
+            Column column = (asParent) ? joinColumn.getParent() : joinColumn.getChild();
+            assert (column.getTable() == table);
+            if (table.getColumn(column.getName()) == null)
+                return false;
+        }
+        return true;
+    }
+    
+    private Join rebuildJoin(AkibanInformationSchema ais, Join oldJoin, UserTable table, boolean asParent) {
+        Join newJoin = Join.create(ais, oldJoin.getName(), oldJoin.getParent(), oldJoin.getChild());
+        for (JoinColumn joinColumn : oldJoin.getJoinColumns()) {
+            Column parent = joinColumn.getParent();
+            Column child = joinColumn.getChild();
+            if (asParent)
+                parent = table.getColumn(parent.getName());
+            else
+                child = table.getColumn(child.getName());
+            newJoin.addJoinColumn(parent, child);
+        }
+        return newJoin;
     }
 
     private static class GroupSelector extends com.akiban.ais.protobuf.ProtobufWriter.TableSelector {
