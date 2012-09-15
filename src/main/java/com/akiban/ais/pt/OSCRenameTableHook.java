@@ -32,6 +32,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
@@ -46,6 +47,7 @@ import com.akiban.server.service.session.Session;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.HashMap;
@@ -170,6 +172,7 @@ public class OSCRenameTableHook
                        droppedColumns, modifiedColumns, addedColumns);
         rebuildIndexes(origTable, copyTable,
                        droppedIndexes, modifiedIndexes, addedIndexes);
+        rebuildGroup(aisCopy, copyTable);
         copyTable.endTable();
         ddl().alterTable(session, origName, copyTable, 
                          changes.getColumnChanges(), changes.getIndexChanges(), null);
@@ -289,6 +292,44 @@ public class OSCRenameTableHook
                 // indexChanges passed from adapter.
                 throw new InvalidAlterException(origTable.getName(), "Could not find index column " + indexColumn);
             IndexColumn.create(copyIndex, copyColumn, indexColumn, idxpos++);
+        }
+    }
+
+    // This assumes that OSC was not used to deliberately affect the group, by changing
+    // grouping constraints, say, since the group structure is not on the master.
+    // So it only deals with unintended consequences.
+    private void rebuildGroup(AkibanInformationSchema ais, UserTable table) {
+        Group group = table.getGroup();
+        List<GroupIndex> dropIndexes = new ArrayList<GroupIndex>();
+        List<GroupIndex> copyIndexes = new ArrayList<GroupIndex>();
+        for (GroupIndex groupIndex : group.getIndexes()) {
+            boolean found = false, drop = false;
+            for (IndexColumn indexColumn : groupIndex.getKeyColumns()) {
+                if (indexColumn.getColumn().getTable() == table) {
+                    found = true;
+                    if (table.getColumn(indexColumn.getColumn().getName()) == null) {
+                        drop = true;
+                    }
+                }
+            }
+            if (found) {
+                if (drop)
+                    dropIndexes.add(groupIndex);
+                else
+                    copyIndexes.add(groupIndex);
+            }
+        }
+        group.removeIndexes(dropIndexes);
+        group.removeIndexes(copyIndexes);
+        for (GroupIndex oldIndex : copyIndexes) {
+            GroupIndex newIndex = GroupIndex.create(ais, group, oldIndex);
+            int idxpos = 0;
+            for (IndexColumn indexColumn : oldIndex.getKeyColumns()) {
+                Column column = indexColumn.getColumn();
+                if (column.getTable() == table)
+                    column = table.getColumn(column.getName());
+                IndexColumn.create(newIndex, column, indexColumn, idxpos++);
+            }
         }
     }
 
