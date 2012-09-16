@@ -65,21 +65,31 @@ public class OSCHooksIT extends AlterTableITBase {
     private static final TableName _O_NEW_NAME = new TableName(SCHEMA, _O_NEW_TABLE);
     private static final String _O_OLD_TABLE = "_o_old";
     private static final TableName _O_OLD_NAME = new TableName(SCHEMA, _O_OLD_TABLE);
-
+    
     @Before
     public void createCOI() {
+        String o_cols = "oid int not null primary key, cid int, order_date date, extra smallint";
         createTable(C_NAME, "cid int not null primary key, name varchar(128)");
-        createTable(O_NAME, "oid int not null primary key, cid int, order_date date," + 
-                    akibanFK("cid", "c", "cid"));
+        createTable(O_NAME, o_cols + "," + akibanFK("cid", "c", "cid"));
         createTable(I_NAME, "iid int not null primary key, oid int, sku varchar(10)," + 
                     akibanFK("oid", "o", "oid"));
         
-        createTable(_O_NEW_NAME, "oid int not null primary key, cid int, order_date date");
+        createTable(_O_NEW_NAME, o_cols);
     }
 
     @Test
     public void testAddCol() {
         runAlter("ALTER TABLE \"_o_new\" ADD COLUMN s2 VARCHAR(16)");
+        ddlForAlter().renameTable(session(), O_NAME, _O_OLD_NAME);
+        ddlForAlter().renameTable(session(), _O_NEW_NAME, O_NAME);
+        assertEquals("same columns", tableColumns(_O_OLD_NAME), tableColumns(O_NAME));
+        assertEquals("C-O same group", tableGroup(C_NAME), tableGroup(O_NAME));
+        assertEquals("O-I same group", tableGroup(O_NAME), tableGroup(I_NAME));
+    }
+
+    @Test
+    public void testDropCol() {
+        runAlter("ALTER TABLE \"_o_new\" DROP COLUMN extra");
         ddlForAlter().renameTable(session(), O_NAME, _O_OLD_NAME);
         ddlForAlter().renameTable(session(), _O_NEW_NAME, O_NAME);
         assertEquals("same columns", tableColumns(_O_OLD_NAME), tableColumns(O_NAME));
