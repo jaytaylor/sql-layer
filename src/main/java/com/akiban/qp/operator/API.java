@@ -57,7 +57,8 @@ public class API
                                                      RowType rowType,
                                                      int inputsIndex,
                                                      AggregatorRegistry registry,
-                                                     List<String> aggregatorNames)
+                                                     List<String> aggregatorNames,
+                                                     List<Object> options)
     {
         return new Aggregate_Partial(
                 inputOperator, rowType,
@@ -65,7 +66,8 @@ public class API
                 Aggregators.factories(
                         registry,
                         Aggregators.aggregatorIds(aggregatorNames, rowType, inputsIndex)
-                )
+                ),
+                options
         );
     }
 
@@ -73,10 +75,11 @@ public class API
                                              RowType rowType,
                                              int inputsIndex,
                                              List<? extends TAggregator> aggregatorFactories,
-                                             List<? extends TInstance> aggregatorTypes
+                                             List<? extends TInstance> aggregatorTypes,
+                                             List<Object> options
                                              )
     {
-        return new Aggregate_Partial(inputOperator, rowType, inputsIndex, aggregatorFactories, aggregatorTypes);
+        return new Aggregate_Partial(inputOperator, rowType, inputsIndex, aggregatorFactories, aggregatorTypes, options);
     }
 
     // Project
