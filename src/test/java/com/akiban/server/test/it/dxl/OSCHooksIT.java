@@ -97,6 +97,16 @@ public class OSCHooksIT extends AlterTableITBase {
         assertEquals("O-I same group", tableGroup(O_NAME), tableGroup(I_NAME));
     }
 
+    @Test
+    public void testDropFK() {
+        runAlter("ALTER TABLE \"_o_new\" DROP COLUMN cid");
+        ddlForAlter().renameTable(session(), O_NAME, _O_OLD_NAME);
+        ddlForAlter().renameTable(session(), _O_NEW_NAME, O_NAME);
+        assertEquals("same columns", tableColumns(_O_OLD_NAME), tableColumns(O_NAME));
+        assertFalse("C-O split group", tableGroup(C_NAME).equals(tableGroup(O_NAME)));
+        assertEquals("O-I same group", tableGroup(O_NAME), tableGroup(I_NAME));
+    }
+
     private Group tableGroup(TableName name) {
         return ais().getUserTable(name).getGroup();
     }
