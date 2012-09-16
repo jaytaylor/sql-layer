@@ -88,6 +88,16 @@ public class OSCHooksIT extends AlterTableITBase {
     }
 
     @Test
+    public void testModifyCol() {
+        runAlter("ALTER TABLE \"_o_new\" ALTER COLUMN order_date SET DATA TYPE timestamp");
+        ddlForAlter().renameTable(session(), O_NAME, _O_OLD_NAME);
+        ddlForAlter().renameTable(session(), _O_NEW_NAME, O_NAME);
+        assertEquals("same columns", tableColumns(_O_OLD_NAME), tableColumns(O_NAME));
+        assertEquals("C-O same group", tableGroup(C_NAME), tableGroup(O_NAME));
+        assertEquals("O-I same group", tableGroup(O_NAME), tableGroup(I_NAME));
+    }
+
+    @Test
     public void testDropCol() {
         runAlter("ALTER TABLE \"_o_new\" DROP COLUMN extra");
         ddlForAlter().renameTable(session(), O_NAME, _O_OLD_NAME);
