@@ -417,11 +417,21 @@ public class JDBCResultSet implements ResultSet
             ValueSource value = value(columnIndex);
             if (wasNull)
                 return null;
-            else if (value.getConversionType() == AkType.RESULT_SET) {
-                return new JDBCResultSet(statement, value.getResultSet());
+            else {
+                switch (value.getConversionType()) {
+                case DATE:
+                    return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                case TIME:
+                    return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                case DATETIME:
+                case TIMESTAMP:
+                    return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                case RESULT_SET:
+                    return new JDBCResultSet(statement, value.getResultSet());
+                default:
+                    return new ToObjectValueTarget().convertFromSource(value);
+                }
             }
-            else
-                return new ToObjectValueTarget().convertFromSource(value);
         }
     }
 
