@@ -31,9 +31,9 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkString;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -166,29 +166,30 @@ public class NoArgFuncs
             target.putInt64(MDatetimes.encodeDatetime(new Date().getTime(), context.getCurrentTimezone()));
         }
     };
-    
-    public static final TOverload CUR_USER = new NoArgExpression("CURRENT_USER", true)
-    {
 
-        @Override
-        public TInstance tInstance()
-        {
-            return AkString.VARCHAR.instance(USER_NAME_LENGTH);
-        }
+    public static final TOverload CUR_USER;
 
-        @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
-        {
-            target.putString(context.getCurrentUser(), null);
-        }
-    };
-    
+    static {
+        CUR_USER = new NoArgExpression("CURRENT_USER", true) {
+
+            @Override
+            public TInstance tInstance() {
+                return MString.VARCHAR.instance(USER_NAME_LENGTH);
+            }
+
+            @Override
+            public void evaluate(TExecutionContext context, PValueTarget target) {
+                target.putString(context.getCurrentUser(), null);
+            }
+        };
+    }
+
     public static final TOverload SESSION_USER = new NoArgExpression("SESSION_USER", true)
     {
         @Override
         public TInstance tInstance()
         {
-            return AkString.VARCHAR.instance(USER_NAME_LENGTH);
+            return MString.VARCHAR.instance(USER_NAME_LENGTH);
         }
 
         @Override
@@ -203,7 +204,7 @@ public class NoArgFuncs
         @Override
         public TInstance tInstance()
         {
-            return AkString.VARCHAR.instance(USER_NAME_LENGTH);
+            return MString.VARCHAR.instance(USER_NAME_LENGTH);
         }
 
         @Override
