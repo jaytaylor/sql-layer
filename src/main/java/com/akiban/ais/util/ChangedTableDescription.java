@@ -36,7 +36,7 @@ import java.util.Map;
 /**
  * Information describing the state of an altered table
  */
-public class ChangedTableDescription{
+public class ChangedTableDescription {
     public static enum ParentChange { NONE, UPDATE, ADD, DROP }
 
     private final TableName tableName;
