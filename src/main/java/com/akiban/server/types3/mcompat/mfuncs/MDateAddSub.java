@@ -292,9 +292,9 @@ public class MDateAddSub extends TOverloadBase
         abstract long[] decode (PValueSource val, TExecutionContext context);
         protected abstract void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context);
         
-        FirstType adjustFirstArg(TClass ins)
+        FirstType adjustFirstArg(TClass ins) // to be overriden in DATE
         {
-            // only needs adjusted if <first arg> is DATE
+            // only needs adjusting if <first arg> is DATE
             return this;
         }
         protected final TInstance type;
