@@ -228,11 +228,13 @@ public class TableChangeValidator {
             List<Column> remainingCols = new ArrayList<Column>();
             for(IndexColumn iCol : index.getKeyColumns()) {
                 Column column = iCol.getColumn();
-                if(keepTables.contains(column.getUserTable())) {
-                    if((column.getTable() != oldTable) || (findNewName(columnChanges, column.getName()) != null)) {
-                        remainingCols.add(column);
-                        hadChange = true;
-                    }
+                if(!keepTables.contains(column.getUserTable())) {
+                    remainingCols.clear();
+                    break;
+                }
+                if((column.getTable() != oldTable) || (findNewName(columnChanges, column.getName()) != null)) {
+                    remainingCols.add(column);
+                    hadChange = true;
                 }
             }
             if(remainingCols.size() <= 1) {

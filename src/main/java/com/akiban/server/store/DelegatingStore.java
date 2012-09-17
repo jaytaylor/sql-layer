@@ -39,6 +39,7 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeLink;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
@@ -169,5 +170,10 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         delegate.truncateIndexes(session, indexes);
+    }
+
+    @Override
+    public void removeTrees(Session session, Collection<? extends TreeLink> treeLinks) {
+        delegate.removeTrees(session, treeLinks);
     }
 }
