@@ -61,8 +61,8 @@ public class Conv extends TOverloadBase
 
     public Conv(TClass stringType, TClass bigIntType)
     {
-        assert bigIntType.underlyingType() == PUnderlying.INT_64;
-        assert stringType.underlyingType() == PUnderlying.STRING;
+        assert bigIntType.underlyingType() == PUnderlying.INT_32 : "expecting INT_32";
+        assert stringType.underlyingType() == PUnderlying.STRING : "expecting STRING";
 
         this.stringType = stringType;
         this.bigIntType = bigIntType;
@@ -78,8 +78,8 @@ public class Conv extends TOverloadBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         String st = inputs.get(0).getString();
-        int fromBase = (int) inputs.get(1).getInt64();
-        int toBase = (int) inputs.get(2).getInt64();
+        int fromBase = inputs.get(1).getInt32();
+        int toBase = inputs.get(2).getInt32();
 
         if (st.isEmpty()
                 || !isInRange(fromBase, MIN_BASE, MAX_BASE) 
@@ -115,8 +115,8 @@ public class Conv extends TOverloadBase
                     return stringType.instance((int)(strPre * MAX_RATIO + 1));
 
                 // compute the exact length of the converted string
-                strPre = (int)(strPre * Math.log(toBase.value().getInt64()) 
-                                        / Math.log(fromBase.value().getInt64()));
+                strPre = (int)(strPre * Math.log(toBase.value().getInt32()) 
+                                        / Math.log(fromBase.value().getInt32()));
                 return stringType.instance(strPre);
             }
             

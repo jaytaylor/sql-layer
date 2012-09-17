@@ -33,5 +33,5 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public class MConv
 {
-    public static final TOverload INSTANCE = new Conv(MString.VARCHAR, MNumeric.BIGINT);
+    public static final TOverload INSTANCE = new Conv(MString.VARCHAR, MNumeric.INT);
 }

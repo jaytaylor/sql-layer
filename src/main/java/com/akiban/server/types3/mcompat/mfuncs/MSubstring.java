@@ -27,10 +27,10 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.common.funcs.SubString;
+import com.akiban.server.types3.common.funcs.Substring;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public class MSubstring {
-    public static final TOverload INSTANCES[] = SubString.create(MString.VARCHAR, MNumeric.BIGINT);
+    public static final TOverload INSTANCES[] = Substring.create(MString.VARCHAR, MNumeric.INT);
 }

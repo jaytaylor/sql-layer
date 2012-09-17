@@ -43,13 +43,13 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
 
-public abstract class SubString extends TOverloadBase
+public abstract class Substring extends TOverloadBase
 {
     public static TOverload[] create(TClass strType, TClass intType)
     {
         return new TOverload[]
         {
-            new SubString(strType, intType, new int[] {1}) // 2 args: SUBSTR(<STRING>, <OFFSET>)
+            new Substring(strType, intType, new int[] {1}) // 2 args: SUBSTR(<STRING>, <OFFSET>)
             {
                 @Override
                 protected int getLength(LazyList<? extends PValueSource> inputs)
@@ -58,12 +58,12 @@ public abstract class SubString extends TOverloadBase
                     return inputs.get(0).getString().length();
                 }   
             },
-            new SubString(strType, intType, new int[] {1, 2}) // 3 args: SUBSTR(<STRING>, <OFFSET>, <LENGTH>)
+            new Substring(strType, intType, new int[] {1, 2}) // 3 args: SUBSTR(<STRING>, <OFFSET>, <LENGTH>)
             {
                 @Override
                 protected int getLength(LazyList<? extends PValueSource> inputs)
                 {
-                    return (int) inputs.get(2).getInt64();
+                    return inputs.get(2).getInt32();
                 }   
             },
             
@@ -76,7 +76,7 @@ public abstract class SubString extends TOverloadBase
     private final TClass intType;
     private final int covering[];
     
-    private SubString(TClass strType, TClass intType, int covering[])
+    private Substring(TClass strType, TClass intType, int covering[])
     {
         this.strType = strType;
         this.intType = intType;
@@ -94,7 +94,7 @@ public abstract class SubString extends TOverloadBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         output.putString(getSubstr(inputs.get(0).getString(),
-                                   (int)inputs.get(1).getInt64(),
+                                   inputs.get(1).getInt32(),
                                    getLength(inputs)),
                          null);
     }
@@ -128,7 +128,7 @@ public abstract class SubString extends TOverloadBase
                 PValueSource lenArg;
                 if (inputs.size() == 3 && (lenArg = inputs.get(2).value()) != null
                                        && !lenArg.isNull())
-                    length = (int) lenArg.getInt64();
+                    length = lenArg.getInt32();
                 
                 return MString.VARCHAR.instance(length > strLength ? strLength : length);
             }
