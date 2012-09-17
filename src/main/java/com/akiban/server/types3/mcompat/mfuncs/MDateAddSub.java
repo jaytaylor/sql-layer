@@ -37,6 +37,7 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -93,7 +94,7 @@ public class MDateAddSub extends TOverloadBase
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
             long ymd[] = new long[6];
-            int stType;
+            StringType stType;
             long millis;
             String arg0 = inputs.get(0).getString();
             try
@@ -111,17 +112,17 @@ public class MDateAddSub extends TOverloadBase
             MutableDateTime dt;
             switch (stType)
             {
-                case MDatetimes.DATE_ST:
+                case DATE_ST:
                     dt = MDatetimes.toJodaDatetime(ymd, "UTC");
                     helper.compute(dt, millis);
                     output.putString(dt.toString("YYYY-MM-dd"), null);
                     break;
-                case MDatetimes.DATETIME_ST:
+                case DATETIME_ST:
                     dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
                     helper.compute(dt, millis);
                     output.putString(dt.toString("YYYY-MM-dd hh:mm:ss"), null);
                     break;
-                case MDatetimes.TIME_ST:
+                case TIME_ST:
                     long arg0Millis = timeToMillis(ymd);
                     
                     long ret = helper == Helper.DO_ADD ? arg0Millis + millis: arg0Millis - millis;
@@ -315,11 +316,11 @@ public class MDateAddSub extends TOverloadBase
             {
                 String st = arg.getString();
                 long hms[] = new long[6];
-                int stType = MDatetimes.parseDateOrTime(st, hms);
+                StringType stType = MDatetimes.parseDateOrTime(st, hms);
                 
                 switch(stType)
                 {
-                    case MDatetimes.TIME_ST:
+                    case TIME_ST:
                         return timeToMillis(hms);
                     default:
                         throw new InvalidDateFormatException("TIME", st);

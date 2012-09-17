@@ -26,13 +26,14 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import com.akiban.server.error.InvalidDateFormatException;
 import java.util.ArrayList;
 import java.util.List;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import org.junit.Test;
 
-import static com.akiban.server.types3.mcompat.mtypes.MDatetimes.*;
+import static com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType.*;
 import static org.junit.Assert.*;
 
 
@@ -49,13 +50,13 @@ public class MParseDateTimeTest
                         0, 0, 0, 12, 30, 10);
     }
     
-    private static void doTest(int expectedType, String st, long...expected)
+    private static void doTest(StringType expectedType, String st, long...expected)
     {
         long actual[] = new long[6];
-        int actualType = MDatetimes.parseDateOrTime(st, actual);
+        StringType actualType = MDatetimes.parseDateOrTime(st, actual);
         
-        assertEquals("Type: ", name(expectedType),
-                               name(actualType));
+        assertEquals("Type: ", expectedType,
+                               actualType);
         
         // convert to lists for a nice error msg, if any
         assertEquals(toList(expected),
@@ -119,16 +120,5 @@ public class MParseDateTimeTest
             list.add(val);
         
         return list;
-    }
-    
-    private static String name(int type)
-    {
-        switch(type)
-        {
-            case DATETIME_ST:    return "DATETIME_ST";
-            case DATE_ST:        return "DATE_ST";
-            case TIME_ST:        return "TIME_ST";
-            default:             return "UNKNOWN";
-        }
     }
 }

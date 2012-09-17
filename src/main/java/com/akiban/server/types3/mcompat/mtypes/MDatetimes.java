@@ -353,7 +353,7 @@ public class MDatetimes
      *      TIME_ST:        time string
      *      DATETIME_ST:    datetime string
      */
-    public static int parseDateOrTime(String st, long ymd[])
+    public static StringType parseDateOrTime(String st, long ymd[])
     {        
         st = st.trim();
 
@@ -371,14 +371,14 @@ public class MDatetimes
         datetime = DATE_PATTERN.matcher(st.trim());
         if (datetime.matches())
         {
-            int ret = DATE_ST;
+            StringType ret = StringType.DATE_ST;
             year = datetime.group(DATE_YEAR_GROUP);
             month = datetime.group(DATE_MONTH_GROUP);
             day = datetime.group(DATE_DAY_GROUP);
             
             if (datetime.group(TIME_GROUP) != null)
             {
-                ret = DATETIME_ST;
+                ret = StringType.DATETIME_ST;
                 hour = datetime.group(TIME_HOUR_GROUP);
                 minute = datetime.group(TIME_MINUTE_GROUP);
                 seconds = datetime.group(TIME_SECOND_GROUP);
@@ -411,7 +411,7 @@ public class MDatetimes
                     ymd[DAY_INDEX] *= (sign = -1);
                 ymd[HOUR_INDEX] = sign * (ymd[HOUR_INDEX] += ymd[DAY_INDEX] * 24);
                 ymd[DAY_INDEX] = 0;
-                return TIME_ST;
+                return StringType.TIME_ST;
             }
         }
         else if ((timeNoday = TIME_WITHOUT_DAY_PATTERN.matcher(st)).matches())
@@ -425,7 +425,7 @@ public class MDatetimes
                     year, month, day,
                     hour, minute, seconds);
             if (MDatetimes.isValidHrMinSec(ymd, false))
-                return TIME_ST;
+                return StringType.TIME_ST;
         }
 
         // anything else is an error
@@ -925,8 +925,10 @@ public class MDatetimes
     public static final int TIME_MAX = 8385959;
     public static final int TIME_MIN = -8385959;
     
-    public static final int DATE_ST = 0;
-    public static final int DATETIME_ST = 1;
-    public static final int TIME_ST = 2;
+    
+    public static enum StringType
+    {
+        DATE_ST, DATETIME_ST, TIME_ST;
+    }
 }
 
