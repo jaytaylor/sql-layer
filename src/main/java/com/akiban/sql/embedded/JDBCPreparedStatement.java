@@ -36,9 +36,14 @@ import java.net.URL;
 
 public class JDBCPreparedStatement extends JDBCStatement implements PreparedStatement
 {
-    public JDBCPreparedStatement(JDBCConnection connection) {
+    protected JDBCPreparedStatement(JDBCConnection connection) {
         super(connection);
     }
+
+    protected void prepare(String sql) throws SQLException {
+    }
+
+    /* PreparedStatement */
 
     @Override
     public ResultSet executeQuery() throws SQLException {

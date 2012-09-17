@@ -41,7 +41,7 @@ import java.util.List;
 
 public class JDBCResultSetMetaData implements ResultSetMetaData
 {
-    public static class JDBCResultColumn extends PhysicalResultColumn {
+    protected static class JDBCResultColumn extends PhysicalResultColumn {
         private int jdbcType;
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
@@ -120,7 +120,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     private List<JDBCResultColumn> columns;
 
-    public JDBCResultSetMetaData(List<JDBCResultColumn> columns) {
+    protected JDBCResultSetMetaData(List<JDBCResultColumn> columns) {
         this.columns = columns;
     }
 

@@ -53,7 +53,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
 
-    public JDBCConnection(ServerServiceRequirements reqs, Properties info) {
+    protected JDBCConnection(ServerServiceRequirements reqs, Properties info) {
         super(reqs);
         setProperties(info);
     }
@@ -103,12 +103,14 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public Statement createStatement() throws SQLException {
-        return null;
+        return new JDBCStatement(this);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return null;
+        JDBCPreparedStatement pstmt = new JDBCPreparedStatement(this);
+        pstmt.prepare(sql);
+        return pstmt;
     }
 
     @Override

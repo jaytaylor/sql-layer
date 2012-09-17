@@ -41,7 +41,7 @@ public class JDBCDriver implements Driver {
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCDriver.class);
 
-    public JDBCDriver(ServerServiceRequirements reqs) {
+    protected JDBCDriver(ServerServiceRequirements reqs) {
         this.reqs = reqs;
     }
 

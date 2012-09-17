@@ -34,7 +34,7 @@ public class JDBCStatement implements Statement
     private boolean closed;
     private SQLWarning warnings;
 
-    public JDBCStatement(JDBCConnection connection) {
+    protected JDBCStatement(JDBCConnection connection) {
         this.connection = connection;
     }
 

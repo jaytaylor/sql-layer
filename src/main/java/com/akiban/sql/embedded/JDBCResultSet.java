@@ -52,7 +52,7 @@ public class JDBCResultSet implements ResultSet
     private Row row;
     private boolean wasNull;
     
-    public JDBCResultSet(Statement statement, Cursor cursor) {
+    protected JDBCResultSet(Statement statement, Cursor cursor) {
         this.statement = statement;
         this.cursor = cursor;
     }

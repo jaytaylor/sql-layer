@@ -54,7 +54,7 @@ public class JDBCOperatorCompiler extends ServerOperatorCompiler
     protected JDBCOperatorCompiler() {
     }
 
-    public static JDBCOperatorCompiler create(JDBCConnection connection) {
+    protected static JDBCOperatorCompiler create(JDBCConnection connection) {
         JDBCOperatorCompiler compiler = new JDBCOperatorCompiler();
         compiler.initServer(connection);
         compiler.initDone();
