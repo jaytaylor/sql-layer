@@ -485,6 +485,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
 
+            for(Map.Entry<IndexName, List<Column>> entry : affectedGroupIndexes.entrySet()) {
+                if(entry.getValue().isEmpty()) {
+                    indexesToDrop.add(origTable.getGroup().getIndex(entry.getKey().getName()));
+                }
+            }
+
             switch(changeLevel) {
                 case NONE:
                     AlterMadeNoChangeException error = new AlterMadeNoChangeException(tableName);
