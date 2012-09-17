@@ -53,6 +53,10 @@ public class IndexName implements Comparable<IndexName>
         return tableName.getTableName();
     }
 
+    public TableName getFullTableName() {
+        return tableName;
+    }
+
     public String getName()
     {
         return indexName;

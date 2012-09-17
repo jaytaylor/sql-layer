@@ -62,4 +62,5 @@ public interface TOverload extends HasId {
     void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
     String toString(List<? extends TPreparedExpression> inputs, TInstance resultType);
     CompoundExplainer getExplainer(ExplainContext context, List<? extends TPreparedExpression> inputs, TInstance resultType);
+    int[] getPriorities();
 }

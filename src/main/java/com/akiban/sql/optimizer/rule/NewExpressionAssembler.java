@@ -206,7 +206,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     }
 
     @Override
-    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names) {
+    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names, List<Object> options) {
         int naggrs = names.size();
         List<TAggregator> aggregators = new ArrayList<TAggregator>(naggrs);
         List<TInstance> outputInstances = new ArrayList<TInstance>(naggrs);
@@ -224,7 +224,8 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
                 rowType,
                 nkeys,
                 aggregators,
-                outputInstances);
+                outputInstances,
+                options);
     }
 
     @Override
