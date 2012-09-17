@@ -65,18 +65,31 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     public static class JsonResultColumn extends PhysicalResultColumn {
+        private DataTypeDescriptor sqlType;
         private AkType akType;
+        private PostgresType pgType;
         private List<JsonResultColumn> nestedResultColumns;
         
-        public JsonResultColumn(String name, AkType akType, 
+        public JsonResultColumn(String name, DataTypeDescriptor sqlType, 
+                                AkType akType, PostgresType pgType, 
                                 List<JsonResultColumn> nestedResultColumns) {
             super(name);
+            this.sqlType = sqlType;
             this.akType = akType;
+            this.pgType = pgType;
             this.nestedResultColumns = nestedResultColumns;
+        }
+
+        public DataTypeDescriptor getSqlType() {
+            return sqlType;
         }
 
         public AkType getAkType() {
             return akType;
+        }
+
+        public PostgresType getPostgresType() {
+            return pgType;
         }
 
         public List<JsonResultColumn> getNestedResultColumns() {
@@ -92,6 +105,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     protected JsonResultColumn getJsonResultColumn(String name, 
                                                    DataTypeDescriptor sqlType) {
         AkType akType;
+        PostgresType pgType = null;
         List<JsonResultColumn> nestedResultColumns = null;
         if (sqlType == null)
             akType = AkType.VARCHAR;
@@ -106,9 +120,12 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             }
             akType = AkType.RESULT_SET;
         }
-        else
+        else {
             akType = TypesTranslation.sqlTypeToAkType(sqlType);
-        return new JsonResultColumn(name, akType, nestedResultColumns);
+            if (sqlType != null)
+                pgType = PostgresType.fromDerby(sqlType, null);
+        }
+        return new JsonResultColumn(name, sqlType, akType, pgType, nestedResultColumns);
     }
 
     @Override
