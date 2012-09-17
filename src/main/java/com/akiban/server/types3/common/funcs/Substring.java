@@ -23,171 +23,135 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.*;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCustomOverloadResult;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
 
-public abstract class Substring extends TOverloadBase {
-
-    public static TOverload[] create(TClass stringType, TClass numericType) {
-        TOverload twoArgs =
-                new Substring(stringType, numericType) {
-
-                    @Override
-                    protected void buildInputSets(TInputSetBuilder builder) {
-                        builder.covers(stringType, 0);
-                        builder.covers(numericType, 1);
-                    }
-
-                    @Override
-                    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                        String str = inputs.get(0).getString();
-                        int from = adjustIndex(str, inputs.get(1).getInt32());
-
-                        if (from == -1) {
-                            output.putString("", null);
-                        } else {
-                            output.putString(getSubstring(str.length() - 1, from, str), null);
-                        }
-                    }
-
-                    @Override
-                    public TOverloadResult resultType() {
-                        return TOverloadResult.custom(new TCustomOverloadResult() {
-
-                            @Override
-                            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                                TPreptimeValue preptimeValue = inputs.get(0);
-                                int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
-                                int stringCharsetId = preptimeValue.instance().attribute(StringAttribute.CHARSET);
-
-                                final int offset, calculatedLength;
-                                TPreptimeValue offsetValue = inputs.get(1);
-                                if (offsetValue.value() == null) {
-                                    offset = 0; // assume string starts at beginning
-                                } else {
-                                    offset = offsetValue.value().getInt32();
-                                }
-
-                                calculatedLength = calculateCharLength(stringLength, offset, Integer.MAX_VALUE);
-                                return stringType.instance(calculatedLength, stringCharsetId);
-                            }
-                        });
-                    }
-                };
-        TOverload threeArgs =
-                new Substring(stringType, numericType) {
-
-            @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
-                builder.covers(stringType, 0);
-                builder.covers(numericType, 1, 2);
-            }
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String str = inputs.get(0).getString();
-                int length = str.length();
-                int from = adjustIndex(str, inputs.get(1).getInt32());
-
-                if (from == -1) {
-                    output.putString("", null);
-                } else {
-                    output.putString(getSubstring(from + inputs.get(2).getInt32() - 1, from, str), null);
-                }
-            }
-
-            @Override
-            public TOverloadResult resultType() {
-                return TOverloadResult.custom(new TCustomOverloadResult() {
-
-                    @Override
-                    public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                        TPreptimeValue preptimeValue = inputs.get(0);
-                        int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
-                        int stringCharsetId = preptimeValue.instance().attribute(StringAttribute.CHARSET);
-
-                        final int offset, substringLength, calculatedLength;
-                        TPreptimeValue offsetValue = inputs.get(1);
-                        if (offsetValue.value() == null) {
-                            offset = 0; // assume string starts at beginning
-                        } else {
-                            offset = offsetValue.value().getInt32();
-                        }
-
-                        TPreptimeValue substringLengthValue = inputs.get(2);
-                        if (substringLengthValue.value() == null) {
-                            substringLength = Integer.MAX_VALUE; // assume string is unbounded
-                        } else {
-                            substringLength = substringLengthValue.value().getInt32();
-                        }
-
-                        calculatedLength = calculateCharLength(stringLength, offset, substringLength);
-                        return stringType.instance(calculatedLength, stringCharsetId);
-                    }
-                });
-            }
+public abstract class Substring extends TOverloadBase
+{
+    public static TOverload[] create(TClass strType, TClass intType)
+    {
+        return new TOverload[]
+        {
+            new Substring(strType, intType, new int[] {1}) // 2 args: SUBSTR(<STRING>, <OFFSET>)
+            {
+                @Override
+                protected int getLength(LazyList<? extends PValueSource> inputs)
+                {
+                    // length is this string's lenght
+                    return inputs.get(0).getString().length();
+                }   
+            },
+            new Substring(strType, intType, new int[] {1, 2}) // 3 args: SUBSTR(<STRING>, <OFFSET>, <LENGTH>)
+            {
+                @Override
+                protected int getLength(LazyList<? extends PValueSource> inputs)
+                {
+                    return inputs.get(2).getInt32();
+                }   
+            },
+            
         };
-        return new TOverload[]{twoArgs, threeArgs};
     }
-    protected final TClass stringType;
-    protected final TClass numericType;
+    
+    protected abstract int getLength (LazyList<? extends PValueSource> inputs);
+    
+    private final TClass strType;
+    private final TClass intType;
+    private final int covering[];
+    
+    private Substring(TClass strType, TClass intType, int covering[])
+    {
+        this.strType = strType;
+        this.intType = intType;
+        this.covering = covering;
+    }
 
-    private Substring(TClass stringType, TClass numericType) {
-        this.stringType = stringType;
-        this.numericType = numericType;
+    
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(strType, 0).covers(intType, covering);
     }
 
     @Override
-    public String displayName() {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+        output.putString(getSubstr(inputs.get(0).getString(),
+                                   inputs.get(1).getInt32(),
+                                   getLength(inputs)),
+                         null);
+    }
+
+    @Override
+    public String displayName()
+    {
         return "SUBSTRING";
     }
 
     @Override
     public String[] registeredNames()
     {
-        return new String[]{"substring", "substr"};
+        return new String[] {"SUBSTRING", "SUBSTR"};
     }
+    
+    @Override
+    public TOverloadResult resultType()
+    {
+        return TOverloadResult.custom(new TCustomOverloadResult()
+        {
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
+            {
+                int strLength = inputs.get(0).instance().attribute(StringAttribute.LENGTH);
 
-    protected int adjustIndex(String str, int index) {
-        // String operand
-        if (str.equals("")) {
-            return -1;
-        }
-
-        // if from is negative or zero, start from the end, and adjust
-        // index by 1 since index in sql starts at 1 NOT 0
-        index += (index < 0 ? str.length() : -1);
-
-        // if from is still neg, return -1
-        if (index < 0) {
-            return -1;
-        }
-
-        return index;
+                // SUBSTR (<STRING> , <OFFSET>[, <LENGTH>]
+                
+                // check if <LENGTH> is available
+                int length = strLength;
+                PValueSource lenArg;
+                if (inputs.size() == 3 && (lenArg = inputs.get(2).value()) != null
+                                       && !lenArg.isNull())
+                    length = lenArg.getInt32();
+                
+                return MString.VARCHAR.instance(length > strLength ? strLength : length);
+            }
+        });
     }
-
-    protected String getSubstring(int to, int from, String str) {
-        // if to <= fr => return empty
-        if (to < from || from >= str.length()) {
+    
+    private static String getSubstr(String st, int from, int length)
+    {
+        // if str is empty or <from> and <length> is outside of reasonable index
+        // 
+        // Note negative index is acceptable for <from>, but its absolute value has
+        // to be within [1, str.length] (mysql index starts at 1)
+        if (st.isEmpty() || from == 0 || Math.abs(from) > st.length() || length <= 0)
             return "";
-        }
-
-        to = (to > str.length() - 1 ? str.length() - 1 : to);
-        return str.substring(from, to + 1);
-    }
-
-    protected int calculateCharLength(int stringLength, int offset, int substringLength) {
-        if (stringLength < Math.abs(offset) || substringLength <= 0) {
-            return 0;
-        }
-        int ret = offset > 0 ? stringLength - offset + 1 : offset * -1;
-        return Math.min(ret, substringLength);
+        
+        // if from is negative, start from the end,
+        // and adjust the index by 1
+        from += (from < 0 ? st.length() : -1);
+       
+        // TO operand
+        int to = from + length;
+        to = (to <= st.length() ? to : st.length());
+        
+        return st.substring(from, to);
     }
 }
