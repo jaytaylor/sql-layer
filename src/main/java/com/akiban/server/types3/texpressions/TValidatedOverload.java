@@ -94,6 +94,11 @@ public final class TValidatedOverload implements TOverload {
         return overload.id();
     }
 
+    @Override
+    public int[] getPriorities() {
+        return overload.getPriorities();
+    }
+
     // TOverload methods (cached)
 
     @Override

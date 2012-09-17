@@ -36,7 +36,7 @@ import java.util.Set;
 
 public interface T3RegistryService {
     Collection<? extends TAggregator> getAggregates(String name);
-    Collection<? extends TValidatedOverload> getOverloads(String name);
+    Iterable<? extends ScalarsGroup> getOverloads(String name);
 
     /**
      * Find the registered cast going from source to taret.

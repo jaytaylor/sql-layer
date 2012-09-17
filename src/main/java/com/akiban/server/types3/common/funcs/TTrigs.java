@@ -44,7 +44,19 @@ public class TTrigs extends TOverloadBase
         TTrigs ret[] = new TTrigs[values.length];
         
         for (int n = 0; n < ret.length; ++n)
-            ret[n] = new TTrigs(values[n], ins);
+        {
+            TrigType trig = values[n];
+            if (trig == TrigType.ATAN2)
+                ret[n] = new TTrigs(values[n], ins)
+                {
+                    public String[] registedNames()
+                    {
+                        return new String[] {"ATAN", "ATAN2"};
+                    }
+                };
+            else
+                ret[n] = new TTrigs(values[n], ins);
+        }
         return ret;
     }
 
@@ -118,12 +130,12 @@ public class TTrigs extends TOverloadBase
                 return Math.atan(1 / var);
             }
         }, 
-        ATAN(TWO_ARGS)
+        ATAN(ONE_ARG)
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
             {
-                return Math.atan2(inputs.get(0).getDouble(),inputs.get(1).getDouble());
+                return Math.atan(inputs.get(0).getDouble());
             }
         },
         ATAN2(TWO_ARGS)

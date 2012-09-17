@@ -1,0 +1,7 @@
+# bug 1035119 - DML against information_schema not rejected
+---
+- Statement: insert into information_schema.index_statistics (table_id, index_id, 
+          analysis_timestamp, row_count, sampled_count) 
+          VALUES (1, 1, now(), 0, 0)
+- error: [50002]          
+...          

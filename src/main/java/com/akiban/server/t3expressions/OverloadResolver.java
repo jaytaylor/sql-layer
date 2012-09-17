@@ -148,15 +148,11 @@ public final class OverloadResolver {
     }
 
     public OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
-        Collection<? extends TValidatedOverload> namedOverloads = registry.getOverloads(name);
-        if (namedOverloads == null || namedOverloads.isEmpty()) {
+        Iterable<? extends ScalarsGroup> scalarsGroup = registry.getOverloads(name);
+        if (scalarsGroup == null) {
             throw new NoSuchFunctionException(name);
         }
-        if (namedOverloads.size() == 1) {
-            return defaultResolution(inputs, namedOverloads);
-        } else {
-            return inputBasedResolution(name, inputs, namedOverloads);
-        }
+        return inputBasedResolution(name, inputs, scalarsGroup);
     }
 
     public TAggregator getAggregation(String name, TClass inputType) {
@@ -198,27 +194,45 @@ public final class OverloadResolver {
     }
 
     private OverloadResult inputBasedResolution(String name, List<? extends TPreptimeValue> inputs,
-                                                Collection<? extends TValidatedOverload> namedOverloads) {
-        List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
-        for (TValidatedOverload overload : namedOverloads) {
-            if (isCandidate(overload, inputs)) {
-                candidates.add(overload);
+                                                Iterable<? extends ScalarsGroup> scalarGroupsByPriority)
+    {
+
+        TValidatedOverload mostSpecific = null;
+        boolean sawRightArity = false;
+        for (ScalarsGroup scalarsGroup : scalarGroupsByPriority) {
+            Collection<? extends TValidatedOverload> namedOverloads = scalarsGroup.getOverloads();
+            List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
+            for (TValidatedOverload overload : namedOverloads) {
+                if (!overload.coversNInputs(inputs.size()))
+                    continue;
+                sawRightArity = true;
+                if (isCandidate(overload, inputs, scalarsGroup)) {
+                    candidates.add(overload);
+                }
+            }
+            if (candidates.isEmpty())
+                continue; // try next priority group of namedOverloads
+            if (candidates.size() == 1) {
+                mostSpecific = candidates.get(0);
+                break; // found one!
+            } else {
+                List<List<TValidatedOverload>> groups = reduceToMinimalCastGroups(candidates);
+                if (groups.size() == 1 && groups.get(0).size() == 1) {
+                    mostSpecific = groups.get(0).get(0);
+                    break; // found one!
+                }
+                else {
+                    // this priority group had too many candidates; this is an error
+                    throw overloadException(name, inputs);
+                }
             }
         }
-        if (candidates.isEmpty())
-            throw overloadException(name, inputs);
-        TValidatedOverload mostSpecific = null;
-        if (candidates.size() == 1) {
-            mostSpecific = candidates.get(0);
-        } else {
-            List<List<TValidatedOverload>> groups = reduceToMinimalCastGroups(candidates);
-            if (groups.size() == 1 && groups.get(0).size() == 1)
-                mostSpecific = groups.get(0).get(0);
-            // else: 0 or >1 candidates
-            // TODO: Throw or let registry handle it?
+        if (mostSpecific == null) {
+            // no priority group had any candidates; this is an error
+            if (sawRightArity)
+                throw overloadException(name, inputs);
+            throw new WrongExpressionArityException(-1, inputs.size()); // TODO on expected inputs!
         }
-        if (mostSpecific == null)
-            throw overloadException(name, inputs);
         return buildResult(mostSpecific, inputs);
     }
 
@@ -244,16 +258,6 @@ public final class OverloadResolver {
         return new OverloadException(sb.toString());
     }
 
-    private OverloadResult defaultResolution(List<? extends TPreptimeValue> inputs,
-                                             Collection<? extends TValidatedOverload> namedOverloads) {
-        int nInputs = inputs.size();
-        TValidatedOverload resolvedOverload = namedOverloads.iterator().next();
-        // throwing an exception here isn't strictly required, but it gives the user a more specific error
-        if (!resolvedOverload.coversNInputs(nInputs))
-            throw new WrongExpressionArityException(resolvedOverload.positionalInputs(), nInputs);
-        return buildResult(resolvedOverload, inputs);
-    }
-
     private boolean isMostSpecific(TClass candidate, Set<? extends TClass> castGroup) {
         for (TClass inner : castGroup) {
             if (candidate.equals(inner))
@@ -269,10 +273,18 @@ public final class OverloadResolver {
         return isStrong(registry.cast(source, target));
     }
 
-    private boolean isCandidate(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
+    private boolean isCandidate(TValidatedOverload overload,
+                                List<? extends TPreptimeValue> inputs,
+                                ScalarsGroup scalarGroups) {
         if (!overload.coversNInputs(inputs.size()))
             return false;
+
         for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
+            // alow this input if
+            // all overloads of this name have the same at this position
+            if (scalarGroups.hasSameTypeAt(i))
+                continue;
+            
             TInstance inputInstance = inputs.get(i).instance();
             // allow this input if...
             // ... input's type it NULL or ?
