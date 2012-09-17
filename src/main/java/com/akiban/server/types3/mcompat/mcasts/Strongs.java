@@ -29,12 +29,25 @@ package com.akiban.server.types3.mcompat.mcasts;
 import com.akiban.server.types3.TStrongCasts;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public final class Strongs {
     public static final TStrongCasts fromVarchar = TStrongCasts.from(MString.VARCHAR).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromChar = TStrongCasts.from(MString.CHAR).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromTinytext = TStrongCasts.from(MString.TINYTEXT).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromText = TStrongCasts.from(MString.TEXT).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromMediumtext = TStrongCasts.from(MString.MEDIUMTEXT).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromLongtext = TStrongCasts.from(MString.LONGTEXT).toAll(MBundle.INSTANCE.id());
+    
+    public static final TStrongCasts fromVarbinary = TStrongCasts.from(MBinary.VARBINARY).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromBinary = TStrongCasts.from(MBinary.BINARY).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromTinyblob = TStrongCasts.from(MBinary.TINYBLOB).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromblob = TStrongCasts.from(MBinary.BLOB).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromMediumblob = TStrongCasts.from(MBinary.MEDIUMBLOB).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts fromLongblob = TStrongCasts.from(MBinary.LONGBLOB).toAll(MBundle.INSTANCE.id());
 
     public static final TStrongCasts fromTinyint = TStrongCasts.from(MNumeric.TINYINT).to(
             MNumeric.SMALLINT,
