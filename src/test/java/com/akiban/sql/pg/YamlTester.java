@@ -1503,10 +1503,10 @@ class YamlTester {
 				+ "\nGot: " + constructObject(keyNode));
 		    }
 		    String key = ((ScalarNode) keyNode).getValue();
-            if (NEWTYPES_ENGINE.equals(key) && Types3Switch.ON) {
-                matchingKey = key;
-                result = constructObject(tuple.getValueNode());
-            }
+		    if (NEWTYPES_ENGINE.equals(key) && Types3Switch.ON) {
+		        matchingKey = key;
+		        result = constructObject(tuple.getValueNode());
+		    }
 		    else if (IT_ENGINE.equals(key)
 			    || (matchingKey == null && ALL_ENGINE.equals(key))) {
 			matchingKey = key;
