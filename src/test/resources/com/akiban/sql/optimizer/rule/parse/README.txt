@@ -54,7 +54,13 @@ in-l1: IN with one literal
 
 in-l2: IN with two literals
 
+in-l2n: NOT IN
+
 in-l3: IN with three literals
+
+in-l101n: NOT IN with 101 literals
+
+in-lr: IN with row literals
 
 in-2: IN with subquery
 
