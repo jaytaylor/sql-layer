@@ -356,7 +356,7 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
             oid = TypeOid.INTERVAL_TYPE_OID;
             akType = AkType.INTERVAL_MILLIS;
-            if (tInstance == null) tInstance = AkInterval.MICRO.tInstanceFrom(type);
+            if (tInstance == null) tInstance = AkInterval.SECONDS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
             oid = TypeOid.INTERVAL_TYPE_OID;

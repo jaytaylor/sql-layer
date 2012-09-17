@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class Cast_From_AkIntervalSeconds {
     
-    public static TCast TO_DOUBLE = new TCastBase(AkInterval.MICRO, MApproximateNumber.DOUBLE) {
+    public static TCast TO_DOUBLE = new TCastBase(AkInterval.SECONDS, MApproximateNumber.DOUBLE) {
         @Override
         protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             long raw = source.getInt64();

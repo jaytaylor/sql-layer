@@ -44,6 +44,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.concurrent.TimeUnit;
 import org.joda.time.MutableDateTime;
 
 public class MDateAddSub extends TOverloadBase
@@ -280,12 +281,12 @@ public class MDateAddSub extends TOverloadBase
 
     private static enum SecondType
     {
-        INTERVAL_MILLIS(AkInterval.MICRO)
+        INTERVAL_MILLIS(AkInterval.SECONDS)
         {
             @Override
             protected long toMillis(PValueSource arg)
             {
-                return arg.getInt64() / 1000;
+                return AkInterval.secondsIntervalAs(arg, TimeUnit.MILLISECONDS);
             }
         },
         INTERVAL_MONTH(AkInterval.MONTHS)
