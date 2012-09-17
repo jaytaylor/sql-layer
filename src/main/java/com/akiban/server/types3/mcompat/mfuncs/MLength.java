@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
@@ -39,8 +40,6 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -75,7 +74,7 @@ public abstract class MLength extends TOverloadBase
             }
             catch (UnsupportedEncodingException ex) // impossible to happen
             {
-                Logger.getLogger(MLength.class.getName()).log(Level.WARNING, null, ex);
+                context.warnClient(new InvalidParameterValueException("Unknown CHARSET: " + charset));
                 output.putNull();
             }
         }
@@ -86,8 +85,28 @@ public abstract class MLength extends TOverloadBase
         }
     };
 
+    public static final TOverload BIT_LENGTH = new MLength("bit_length")
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+             
+            int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
+            String charset = (StringFactory.Charset.values())[charsetId].name();
+            try
+            {
+                output.putInt32((inputs.get(0).getString()).getBytes(charset).length * 8);
+            }
+            catch (UnsupportedEncodingException ex) // impossible to happen
+            {
+                context.warnClient(new InvalidParameterValueException("Unknown CHARSET: " + charset));
+                output.putNull();
+            }
+        }
+    };
+    
     private final String name;
-    MLength (String name)
+    private MLength (String name)
     {
         this.name = name;
     }
@@ -109,6 +128,6 @@ public abstract class MLength extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT.instance());
+        return TOverloadResult.fixed(MNumeric.INT.instance(10));
     }
 }
