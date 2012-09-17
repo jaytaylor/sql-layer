@@ -47,8 +47,9 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
         private Column aisColumn;
         private TInstance tInstance;
 
-        public JDBCResultColumn(String name, int jdbcType, DataTypeDescriptor sqlType, 
-                                Column aisColumn, TInstance tInstance) {
+        protected JDBCResultColumn(String name, 
+                                   int jdbcType, DataTypeDescriptor sqlType, 
+                                   Column aisColumn, TInstance tInstance) {
             super(name);
             this.jdbcType = jdbcType;
             this.sqlType = sqlType;
@@ -115,6 +116,58 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
             if (sqlType != null)
                 return sqlType.getMaximumWidth();
             return 1024;
+        }
+    }
+
+    protected static boolean isTypeSigned(AkType akType) {
+        switch (akType) {
+        case DECIMAL:
+        case DOUBLE:
+        case FLOAT:
+        case INT:
+        case LONG:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    protected static String getTypeClassName(AkType akType) {
+        switch (akType) {
+        case DATE:
+            return "java.sql.Date";
+        case TIMESTAMP:
+        case DATETIME:
+            return "java.sql.Timestamp";
+        case DECIMAL:
+            return "java.math.BigDecimal";
+        case DOUBLE:
+        case U_DOUBLE:
+            return "java.lang.Double";
+        case FLOAT:
+        case U_FLOAT:
+            return "java.lang.Float";
+        case INT:
+        case YEAR:
+            return "java.lang.Integer";
+        case LONG:
+        case U_INT:
+            return "java.lang.Long";
+        case VARCHAR:
+        case TEXT:
+            return "java.lang.String";
+        case TIME:
+            return "java.sql.Time";
+        case U_BIGINT:
+            return "java.math.BigInteger";
+        case VARBINARY:
+            return "java.lang.byte[]";
+        case BOOL:
+            return "java.lang.Boolean";
+        case RESULT_SET:
+            return JDBCResultSet.class.getName();
+        default:
+            return "java.lang.Object";
         }
     }
 
@@ -186,16 +239,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     @Override
     public boolean isSigned(int column) throws SQLException {
-        switch (getColumn(column).getAkType()) {
-        case DECIMAL:
-        case DOUBLE:
-        case FLOAT:
-        case INT:
-        case LONG:
-            return true;
-        default:
-            return false;
-        }
+        return isTypeSigned(getColumn(column).getAkType());
     }
 
     @Override
@@ -275,41 +319,6 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     @Override
     public String getColumnClassName(int column) throws SQLException {
-        switch (getColumn(column).getAkType()) {
-        case DATE:
-            return "java.sql.Date";
-        case TIMESTAMP:
-        case DATETIME:
-            return "java.sql.Timestamp";
-        case DECIMAL:
-            return "java.math.BigDecimal";
-        case DOUBLE:
-        case U_DOUBLE:
-            return "java.lang.Double";
-        case FLOAT:
-        case U_FLOAT:
-            return "java.lang.Float";
-        case INT:
-        case YEAR:
-            return "java.lang.Integer";
-        case LONG:
-        case U_INT:
-            return "java.lang.Long";
-        case VARCHAR:
-        case TEXT:
-            return "java.lang.String";
-        case TIME:
-            return "java.sql.Time";
-        case U_BIGINT:
-            return "java.math.BigInteger";
-        case VARBINARY:
-            return "java.lang.byte[]";
-        case BOOL:
-            return "java.lang.Boolean";
-        case RESULT_SET:
-            return JDBCResultSet.class.getName();
-        default:
-            return "java.lang.Object";
-        }
+        return getTypeClassName(getColumn(column).getAkType());
     }
 }
