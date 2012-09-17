@@ -129,7 +129,13 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) MDatetimes.getLastDay(ymd);
+                ymd[2] = MDatetimes.getLastDay(ymd);
+                return MDatetimes.encodeDate(ymd);
+            }
+
+            @Override
+            public TOverloadResult resultType() {
+                return TOverloadResult.fixed(MDatetimes.DATE);
             }
         },
         new MExtractField("DAYOFYEAR", MDatetimes.DATE, Decoder.DATE)
