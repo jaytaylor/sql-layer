@@ -30,10 +30,13 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
@@ -44,6 +47,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.joda.time.MutableDateTime;
 
@@ -205,6 +209,18 @@ public class MDateAddSub extends TOverloadBase
         DATE(MDatetimes.DATE)
         {
             @Override
+            FirstType adjustFirstArg(TClass ins)
+            {
+                if (ins != null
+                    && ins instanceof AkInterval
+                    && ((AkInterval) ins).isTime())
+                    return FirstType.DATETIME;
+                else
+                    return this;
+
+            }
+            
+            @Override
             long[] decode(PValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeDate(val.getInt32());
@@ -276,6 +292,11 @@ public class MDateAddSub extends TOverloadBase
         abstract long[] decode (PValueSource val, TExecutionContext context);
         protected abstract void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context);
         
+        FirstType adjustFirstArg(TClass ins)
+        {
+            // only needs adjusted if <first arg> is DATE
+            return this;
+        }
         protected final TInstance type;
     }
 
@@ -383,7 +404,7 @@ public class MDateAddSub extends TOverloadBase
         {
             MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, "UTC"); // calculations should be done
             helper.compute(dt, secondArg.toMillis(inputs.get(1)));      // in UTC (to avoid daylight-saving side effects)
-            firstArg.putResult(output, dt, context);
+            firstArg.adjustFirstArg(context.inputTInstanceAt(1).typeClass()).putResult(output, dt, context);
         }
     }
 
@@ -408,8 +429,16 @@ public class MDateAddSub extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(firstArg.type);
+        return TOverloadResult.custom(new TCustomOverloadResult()
+        {
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
+            {
+                return firstArg.adjustFirstArg(inputs.get(1).instance().typeClass()).type;
+            }
+        });
     }
+    
     
     static long timeToMillis(long ymd[])
     {
