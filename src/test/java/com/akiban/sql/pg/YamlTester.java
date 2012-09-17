@@ -206,6 +206,8 @@ class YamlTester {
     private static final String ALL_ENGINE = "all";
     /** Matches the IT engine. */
     private static final String IT_ENGINE = "it";
+    /** Matches the newtypes "engine." */
+    private static final String NEWTYPES_ENGINE = "newtypes";
 
     /** Compare toString values of arguments, ignoring case. */
     private static final Comparator<? super Object> COMPARE_IGNORE_CASE =
@@ -214,8 +216,6 @@ class YamlTester {
                 return String.valueOf(x).compareToIgnoreCase(String.valueOf(y));
             }
         };
-
-    private static final String T3_PREFIX = "t3_";
 
     private final String filename;
     private final Reader in;
@@ -257,7 +257,6 @@ class YamlTester {
 		Object document = documents.next();
 		List<Object> sequence = nonEmptySequence(document,
 			"command document");
-        types3Overrides(sequence);
 		Entry<Object, Object> firstEntry = firstEntry(sequence.get(0),
 			"first element of the document");
 		commandName = string(firstEntry.getKey(), "command name");
@@ -295,34 +294,6 @@ class YamlTester {
 	    /* Add context */
 	    throw new ContextAssertionError(null, e.toString(), e);
 	}
-    }
-
-    private void types3Overrides(List<Object> commandAndExpecteds) {
-        Map<Object, Map<?,Object>> overridables = new HashMap<Object, Map<?, Object>>();
-        Map<String, Object> overrides = new HashMap<String, Object>();
-        for (Iterator<Object> phraseIterator = commandAndExpecteds.iterator(); phraseIterator.hasNext(); ) {
-            Object phraseRaw = phraseIterator.next();
-            assert phraseRaw instanceof Map;
-            Map<?, ?> phrase = (Map<?, ?>) phraseRaw;
-            assert phrase.size() == 1 : phrase;
-            Entry<?, ?> keyVal = phrase.entrySet().iterator().next();
-            String key = (String) phrase.keySet().iterator().next();
-            if (key.startsWith(T3_PREFIX)) {
-                overrides.put(key, keyVal.getValue());
-                phraseIterator.remove();
-            }
-            else {
-                overridables.put(key, (Map<?,Object>)phrase);
-            }
-        }
-        for (Map.Entry<String, Object> override : overrides.entrySet()) {
-            String overrideKey = override.getKey();
-            Object overrideValue = override.getValue();
-
-            String overridenKey = overrideKey.substring(T3_PREFIX.length());
-            Map<?,Object> overridden = overridables.get(overridenKey);
-            overridden.entrySet().iterator().next().setValue(overrideValue);
-        }
     }
 
     private void bulkloadCommand(Object value, List<Object> sequence) {
@@ -1532,7 +1503,11 @@ class YamlTester {
 				+ "\nGot: " + constructObject(keyNode));
 		    }
 		    String key = ((ScalarNode) keyNode).getValue();
-		    if (IT_ENGINE.equals(key)
+		    if (NEWTYPES_ENGINE.equals(key) && Types3Switch.ON) {
+		        matchingKey = key;
+		        result = constructObject(tuple.getValueNode());
+		    }
+		    else if (IT_ENGINE.equals(key)
 			    || (matchingKey == null && ALL_ENGINE.equals(key))) {
 			matchingKey = key;
 			result = constructObject(tuple.getValueNode());

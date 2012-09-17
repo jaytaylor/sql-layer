@@ -35,17 +35,17 @@ platform=$1
 bzr_revno=`bzr revno`
 
 # Handle file preparation for release target
-if [ -z "${AKIBAN_CE_FLAG}" ]; then
+if [ -z "${AKIBAN_DE_FLAG}" ]; then
     target='enterprise'
 else
-    target='community'
+    target='developer'
 fi
 echo "Building Akiban Server for ##### ${target} #####"
 
 # Select the correct license. Handled as a special case to keep LICENSE*.txt files in the top level
 case "${target}" in
     'enterprise') license=LICENSE-EE.txt;;
-    'community')  license=LICENSE-CE.txt;;
+    'developer')  license=LICENSE-DE.txt;;
     *) echo "fatal: Invalid release type (name: [{$target}]). Check that \
      the script is handling condition flags correctly."
         exit 1

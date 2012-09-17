@@ -196,7 +196,8 @@ public class AggregatePT extends ApiTestBase {
         rowType = plan.rowType();
         plan = API.aggregate_Partial(plan, rowType, 
                                      1, functions,
-                                     Arrays.asList("count", "sum", "sum"));
+                                     Arrays.asList("count", "sum", "sum"),
+                                     new ArrayList<Object>(3));
         return plan;
     }
 

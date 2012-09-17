@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.StringFactory;
@@ -43,6 +44,10 @@ import java.util.zip.CRC32;
 
 public class MCRC32 extends TOverloadBase
 {
+    public static final TOverload INSTANCE = new MCRC32();
+    
+    private MCRC32() {}
+
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {

@@ -37,6 +37,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeLink;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -164,6 +165,13 @@ public interface Store {
      * @throws Exception 
      */
     void removeTrees(Session session, Table table);
+
+    /**
+     * Low level operation. Removes the given trees and <i>only</i> the given trees.
+     * To ensure metadata and other state is updated, check if another method for
+     * specific entities is more appropriate (e.g. {@link #deleteIndexes(Session, Collection)}).
+     */
+    void removeTrees(Session session, Collection<? extends TreeLink> treeLinks);
 
     /** Get the underlying {@link PersistitStore}. */
     public PersistitStore getPersistitStore();

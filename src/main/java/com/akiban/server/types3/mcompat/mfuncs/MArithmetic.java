@@ -152,6 +152,15 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
     
+    public static final TOverload ADD_DOUBLE = new MArithmetic("plus", "+", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putDouble(inputs.get(0).getDouble() + inputs.get(1).getDouble());
+        }
+    };
+    
     // Subtract functions
     public static final TOverload SUBTRACT_TINYINT = new MArithmetic("minus", "-", false, MNumeric.TINYINT, MNumeric.INT.instance(5)) {
         @Override
@@ -212,6 +221,14 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
     
+    public static final TOverload SUBSTRACT_DOUBLE = new MArithmetic("minus", "-", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putDouble(inputs.get(0).getDouble() - inputs.get(1).getDouble());
+        }
+    };
     // (Regular) Divide functions
     public static final TOverload DIVIDE_TINYINT = new MArithmetic("divide", "/", false, MNumeric.TINYINT, MApproximateNumber.DOUBLE.instance())
     {

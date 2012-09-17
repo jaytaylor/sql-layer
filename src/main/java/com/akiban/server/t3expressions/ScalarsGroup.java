@@ -23,13 +23,14 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.server.t3expressions;
 
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 
-public interface OverloadGroup {
+import java.util.Collection;
 
-    int size();
-
-    TValidatedOverload getOnly();
+public interface ScalarsGroup {
+    Collection<? extends TValidatedOverload> getOverloads();
+    boolean hasSameTypeAt(int pos);
 }

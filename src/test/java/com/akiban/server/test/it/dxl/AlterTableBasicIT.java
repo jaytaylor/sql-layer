@@ -449,25 +449,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         Index index = ais.getGroup("c").getIndex("c1_o1_i1");
         assertNull("Index should not exist on c group", index);
         index = ais.getGroup("o").getIndex("c1_o1_i1");
-        assertNotNull("Index should exist on o group", index);
-        assertEquals("Index column count", 2, index.getKeyColumns().size());
-
-        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        IndexRowType indexRowType = schema.indexRowType(index);
-
-        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
-        compareRows(
-                new RowBase[] {
-                        testRow(indexRowType, 11L, 110L, 10L, 100L),
-                        testRow(indexRowType, 11L, 111L, 10L, 101L),
-                        testRow(indexRowType, 12L, 122L, 11L, 111L),
-                        testRow(indexRowType, 33L, 330L, 30L, 300L),
-                },
-                API.cursor(
-                        API.indexScan_Default(indexRowType, false, IndexKeyRange.unbounded(indexRowType)),
-                        new SimpleQueryContext(adapter)
-                )
-        );
+        assertNull("Index should not exist on o group", index);
     }
 
     @Test

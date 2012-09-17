@@ -687,6 +687,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public void rollbackAIS(Session session, AkibanInformationSchema replaceAIS,
                             Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames) {
         Transaction txn = treeService.getTransaction(session);
+        if(txn.isActive() && !txn.isRollbackPending()) {
+            txn.rollback();
+        }
         txn.end();
         try {
             txn.begin();
