@@ -46,6 +46,8 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.pt.PendingOSC;
+import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.protobuf.AbstractMessage;
@@ -239,9 +241,12 @@ public class ProtobufReader {
             }
             loadColumns(userTable, pbTable.getColumnsList());
             loadTableIndexes(userTable, pbTable.getIndexesList());
+            if (pbTable.hasPendingOSC()) {
+                userTable.setPendingOSC(loadPendingOSC(pbTable.getPendingOSC()));
+            }
         }
     }
-    
+
     private void loadSequences (String schema, Collection<AISProtobuf.Sequence> pbSequences) {
         for (AISProtobuf.Sequence pbSequence : pbSequences) {
             hasRequiredFields(pbSequence);
@@ -454,6 +459,39 @@ public class ProtobufReader {
         return Index.KEY_CONSTRAINT;
     }
 
+    private PendingOSC loadPendingOSC(AISProtobuf.PendingOSC pbPendingOSC) {
+        hasRequiredFields(pbPendingOSC);
+        List<TableChange> columnChanges = new ArrayList<TableChange>();
+        loadPendingOSChanges(columnChanges, pbPendingOSC.getColumnChangesList());
+        List<TableChange> indexChanges = new ArrayList<TableChange>();
+        loadPendingOSChanges(indexChanges, pbPendingOSC.getIndexChangesList());
+        PendingOSC osc = new PendingOSC(pbPendingOSC.getOriginalName(), columnChanges, indexChanges);
+        if (pbPendingOSC.hasCurrentName())
+            osc.setCurrentName(pbPendingOSC.getCurrentName());
+        return osc;
+    }
+    
+    private void loadPendingOSChanges(Collection<TableChange> changes, Collection<AISProtobuf.PendingOSChange> pbChanges) {
+        for (AISProtobuf.PendingOSChange pbChange : pbChanges) {
+            hasRequiredFields(pbChange);
+            TableChange.ChangeType changeType;
+            switch (pbChange.getType()) {
+            case ADD:
+                changes.add(TableChange.createAdd(pbChange.getNewName()));
+                break;
+            case DROP:
+                changes.add(TableChange.createDrop(pbChange.getOldName()));
+                break;
+            case MODIFY:
+                changes.add(TableChange.createModify(pbChange.getOldName(), pbChange.getNewName()));
+                break;
+            default:
+                throw new ProtobufReadException(AISProtobuf.PendingOSChange.getDescriptor().getFullName(),
+                                                "Unknown change type " + pbChange);
+            }
+        }
+    }
+
     private static CharsetAndCollation getCharColl(boolean isValid, AISProtobuf.CharCollation pbCharAndCol) {
         if(isValid) {
             hasRequiredFields(pbCharAndCol);
@@ -528,7 +566,8 @@ public class ProtobufReader {
                 AISProtobuf.Table.PARENTTABLE_FIELD_NUMBER,
                 AISProtobuf.Table.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Table.PROTECTED_FIELD_NUMBER,
-                AISProtobuf.Table.VERSION_FIELD_NUMBER
+                AISProtobuf.Table.VERSION_FIELD_NUMBER,
+                AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER
         );
     }
 
@@ -606,6 +645,23 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbReference,
                 AISProtobuf.ColumnReference.COLUMNS_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.PendingOSC pbPendingOSC) {
+        requireAllFieldsExcept(
+                pbPendingOSC,
+                AISProtobuf.PendingOSC.COLUMNCHANGES_FIELD_NUMBER,
+                AISProtobuf.PendingOSC.INDEXCHANGES_FIELD_NUMBER,
+                AISProtobuf.PendingOSC.CURRENTNAME_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.PendingOSChange pbChange) {
+        requireAllFieldsExcept(
+                pbChange,
+                AISProtobuf.PendingOSChange.OLDNAME_FIELD_NUMBER,
+                AISProtobuf.PendingOSChange.NEWNAME_FIELD_NUMBER
         );
     }
 
