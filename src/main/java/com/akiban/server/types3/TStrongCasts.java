@@ -56,8 +56,8 @@ public abstract class TStrongCasts {
             return new ExplicitStrongCasts(ids);
         }
 
-        public TStrongCasts toAll(TBundleID inBundle) {
-            return new ToAllCastsBuilder(source, inBundle);
+        public TStrongCasts toAll(TBundleID inBundle, TClassPredicate... additionalPredicates) {
+            return new ToAllCastsBuilder(source, inBundle, additionalPredicates);
         }
 
         private TStrongCastsBuilder(TClass source) {
@@ -66,6 +66,8 @@ public abstract class TStrongCasts {
 
         private final TClass source;
     }
+
+    public interface TClassPredicate extends Predicate<TClass> {}
 
     private static class ExplicitStrongCasts extends TStrongCasts {
 
@@ -85,12 +87,17 @@ public abstract class TStrongCasts {
 
         @Override
         public Iterable<TCastIdentifier> get(Iterable<? extends TClass> knownClasses) {
+            Iterable<? extends TClass> filtered = Iterables.filter(knownClasses, inBundle);
+            for (TClassPredicate predicate : additionalPredicates)
+                filtered = Iterables.filter(filtered, predicate);
             return Iterables.transform(
-                    Iterables.filter(knownClasses, inBundle),
+                    filtered,
                     castIdentifier);
         }
 
-        private ToAllCastsBuilder(final TClass source, final TBundleID targetBundle) {
+        private ToAllCastsBuilder(final TClass source, final TBundleID targetBundle,
+                                  TClassPredicate[] additionalPredicates)
+        {
             this.inBundle = new Predicate<TClass>() {
                 @Override
                 public boolean apply( TClass input) {
@@ -103,9 +110,11 @@ public abstract class TStrongCasts {
                     return new TCastIdentifier(source, input);
                 }
             };
+            this.additionalPredicates = additionalPredicates;
         }
 
         private final Predicate<TClass> inBundle;
+        private final TClassPredicate[] additionalPredicates;
         private final Function<TClass,TCastIdentifier> castIdentifier;
     }
 
