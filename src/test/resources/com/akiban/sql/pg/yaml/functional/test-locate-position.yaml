@@ -6,9 +6,7 @@
 ---
 - Statement: INSERT INTO all_types (varchar_field, double_field, bigint_field, date_field) 
             VALUES ('foobarbar', 5.5, 1, '2012-01-01'), ('foobar', 2.5, 2, '2012-02-02');
-            
----
-- Statement: SET newtypes to 'true'
+
 ## Test with literals
 ---
 - Statement: SELECT LOCATE ('bar' IN 'foobarbar') from all_types WHERE bigint_field = 1;
