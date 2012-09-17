@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.AISCloner;
+import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -39,6 +40,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.sql.StandardException;
@@ -55,6 +57,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
@@ -62,6 +66,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class AlterTableITBase extends ITBase {
+    private final static String EXPECTED_VOLUME_NAME = "akiban_data";
+
     protected static final String SCHEMA = "test";
     protected static final String X_TABLE = "x";
     protected static final String C_TABLE = "c";
@@ -82,6 +88,24 @@ public class AlterTableITBase extends ITBase {
             expectIndexes(entry.getKey(), value.toArray(new String[value.size()]));
         }
         checkedIndexes.clear();
+    }
+
+    // Added after bug1047977
+    @After
+    public void lookForDanglingTrees() throws Exception {
+        // Collect all trees Persistit currently has
+        Set<String> storageTrees = new TreeSet<String>();
+        storageTrees.addAll(Arrays.asList(treeService().getDb().getVolume(EXPECTED_VOLUME_NAME).getTreeNames()));
+
+        // Collect all trees in AIS
+        Set<String> knownTrees = AISMerge.computeTreeNames(ddl().getAIS(session()));
+        knownTrees.add(TreeService.SCHEMA_TREE_NAME); // Used by SchemaManager
+
+        // Any difference is an error
+        Set<String> difference = new TreeSet<String>(storageTrees);
+        difference.removeAll(knownTrees);
+
+        assertEquals("Found orphaned trees", "[]", difference.toString());
     }
 
     protected void checkIndexesInstead(TableName name, String... indexNames) {

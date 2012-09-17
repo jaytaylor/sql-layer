@@ -8,6 +8,5 @@
 - output: [[10]]
 ---
 - Statement: SELECT MAX(decimal_field / 3.0) FROM t
-- output: [[3.333333333]]
-- t3_output: [[3.3333]]
+- output: !select-engine {it: [[3.333333333]], newtypes: [[3.3333]] }
 ...

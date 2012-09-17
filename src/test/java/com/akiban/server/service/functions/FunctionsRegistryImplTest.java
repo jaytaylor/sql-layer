@@ -174,6 +174,12 @@ public final class FunctionsRegistryImplTest {
         public AkType outputType() {
             return AkType.NULL;
         }
+
+        @Override
+        public Aggregator get(Object obj)
+        {
+            return get();
+        }
     };
 
     // nested classes

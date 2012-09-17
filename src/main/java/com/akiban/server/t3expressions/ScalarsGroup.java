@@ -24,14 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.aksql.aktypes.AkString;
-import com.akiban.server.types3.common.funcs.Conv;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 
-public class AkConv
-{
-    public static final TOverload INSTANCE = new Conv(AkString.VARCHAR, AkNumeric.INT);
+import java.util.Collection;
+
+public interface ScalarsGroup {
+    Collection<? extends TValidatedOverload> getOverloads();
+    boolean hasSameTypeAt(int pos);
 }

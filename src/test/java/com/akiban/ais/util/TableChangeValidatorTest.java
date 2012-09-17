@@ -580,7 +580,7 @@ public class TableChangeValidatorTest {
                 asList(changeDesc(TABLE_NAME, TABLE_NAME, true, ParentChange.DROP), changeDesc(iName, iName, true, ParentChange.UPDATE)),
                 true,
                 false,
-                "{.p.x_y=[], .p.x_y_z=[i.z, t.y]}",
+                "{.p.x_y=[], .p.x_y_z=[]}",
                 false
         );
     }
