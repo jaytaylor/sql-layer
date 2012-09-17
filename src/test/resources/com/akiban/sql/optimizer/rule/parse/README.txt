@@ -62,6 +62,8 @@ in-l101n: NOT IN with 101 literals
 
 in-lr: IN with row literals
 
+in-lrn: NOT IN
+
 in-2: IN with subquery
 
 in-2l: IN with subquery with LIMIT
