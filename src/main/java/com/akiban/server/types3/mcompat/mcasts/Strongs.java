@@ -47,7 +47,6 @@ public final class Strongs {
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromSmallint = TStrongCasts.from(MNumeric.SMALLINT).to(
@@ -59,37 +58,27 @@ public final class Strongs {
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromMediumint = TStrongCasts.from(MNumeric.MEDIUMINT).to(
             MNumeric.INT,
             MNumeric.BIGINT,
-            MNumeric.SMALLINT_UNSIGNED,
             MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromInt = TStrongCasts.from(MNumeric.INT).to(
             MNumeric.BIGINT,
-            MNumeric.SMALLINT_UNSIGNED,
-            MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromBigint = TStrongCasts.from(MNumeric.BIGINT).to(
-            MNumeric.SMALLINT_UNSIGNED,
-            MNumeric.MEDIUMINT_UNSIGNED,
-            MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
 
@@ -99,6 +88,7 @@ public final class Strongs {
             MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
             MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
@@ -106,17 +96,20 @@ public final class Strongs {
             MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
             MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromMediumintUnsigned = TStrongCasts.from(MNumeric.MEDIUMINT_UNSIGNED).to(
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
             MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromIntUnsigned = TStrongCasts.from(MNumeric.INT_UNSIGNED).to(
             MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
             MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
@@ -127,6 +120,18 @@ public final class Strongs {
     );
 
     public static final TStrongCasts fromDatetime = TStrongCasts.from(MDatetimes.DATETIME).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromDate = TStrongCasts.from(MDatetimes.DATE).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromTime = TStrongCasts.from(MDatetimes.TIME).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromYear = TStrongCasts.from(MDatetimes.YEAR).to(
             MApproximateNumber.DOUBLE
     );
 
@@ -144,6 +149,14 @@ public final class Strongs {
     );
 
     public static final TStrongCasts fromFloat = TStrongCasts.from(MApproximateNumber.FLOAT).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromFloatUnsigned = TStrongCasts.from(MApproximateNumber.FLOAT_UNSIGNED).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromDoubleUnsigned = TStrongCasts.from(MApproximateNumber.DOUBLE_UNSIGNED).to(
             MApproximateNumber.DOUBLE
     );
 }
