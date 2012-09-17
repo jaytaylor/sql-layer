@@ -63,7 +63,8 @@ public abstract class MExtractField extends TOverloadBase
 
                 // special case
                 // month of zero and a sensible value for day (in the range [0, 31] )
-                if (ymd[MDatetimes.MONTH_INDEX] == 0L
+                if (ymd != null
+                        && ymd[MDatetimes.MONTH_INDEX] == 0L
                         && ymd[MDatetimes.DAY_INDEX] >= 0L
                         && ymd[MDatetimes.DAY_INDEX] <= 31L)
                     output.putInt32(0);

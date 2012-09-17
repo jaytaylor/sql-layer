@@ -514,10 +514,10 @@ public class AkInterval extends TClassBase {
         SECOND("S+u", TypeId.INTERVAL_SECOND_ID, true),
         DAY_HOUR("D+ H+", TypeId.INTERVAL_DAY_HOUR_ID),
         DAY_MINUTE("D+ H?:MM", TypeId.INTERVAL_DAY_MINUTE_ID),
-        DAY_SECOND("D+ H?:MM:SSu", TypeId.INTERVAL_DAY_SECOND_ID),
+        DAY_SECOND("D+ H?:MM:S?u", TypeId.INTERVAL_DAY_SECOND_ID),
         HOUR_MINUTE("H+:MM", TypeId.INTERVAL_HOUR_MINUTE_ID),
-        HOUR_SECOND("H+:MM:SSu", TypeId.INTERVAL_HOUR_SECOND_ID),
-        MINUTE_SECOND("M+:SSu", TypeId.INTERVAL_MINUTE_SECOND_ID)
+        HOUR_SECOND("H+:MM:S?u", TypeId.INTERVAL_HOUR_SECOND_ID),
+        MINUTE_SECOND("M+:S?u", TypeId.INTERVAL_MINUTE_SECOND_ID)
         ;
 
         static TimeUnit UNDERLYING_UNIT = TimeUnit.MICROSECONDS;
