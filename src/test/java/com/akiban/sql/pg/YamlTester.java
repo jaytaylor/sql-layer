@@ -69,6 +69,7 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import com.akiban.server.types3.Types3Switch;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -205,6 +206,8 @@ class YamlTester {
     private static final String ALL_ENGINE = "all";
     /** Matches the IT engine. */
     private static final String IT_ENGINE = "it";
+    /** Matches the newtypes "engine." */
+    private static final String NEWTYPES_ENGINE = "newtypes";
 
     /** Compare toString values of arguments, ignoring case. */
     private static final Comparator<? super Object> COMPARE_IGNORE_CASE =
@@ -1500,7 +1503,11 @@ class YamlTester {
 				+ "\nGot: " + constructObject(keyNode));
 		    }
 		    String key = ((ScalarNode) keyNode).getValue();
-		    if (IT_ENGINE.equals(key)
+		    if (NEWTYPES_ENGINE.equals(key) && Types3Switch.ON) {
+		        matchingKey = key;
+		        result = constructObject(tuple.getValueNode());
+		    }
+		    else if (IT_ENGINE.equals(key)
 			    || (matchingKey == null && ALL_ENGINE.equals(key))) {
 			matchingKey = key;
 			result = constructObject(tuple.getValueNode());

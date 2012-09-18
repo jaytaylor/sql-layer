@@ -40,7 +40,7 @@ public abstract class Locate extends TOverloadBase
 {
     public static TOverload create2ArgOverload(final TClass stringType, final TClass intType, String name)
     {
-        return new Locate(stringType, intType, name)
+        return new Locate(intType, name)
         {
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
@@ -52,7 +52,7 @@ public abstract class Locate extends TOverloadBase
     
     public static TOverload create3ArgOverload(final TClass stringType, final TClass intType, String name)
     {
-        return new Locate(stringType, intType, name)
+        return new Locate(intType, name)
         {
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
@@ -62,13 +62,11 @@ public abstract class Locate extends TOverloadBase
         };
     }
     
-    private final TClass stringType;
     private final TClass intType;
     private final String name;
     
-    Locate(TClass stringType, TClass intType, String name)
+    Locate(TClass intType, String name)
     {
-        this.stringType = stringType;
         this.intType = intType;
         this.name = name;
     }
@@ -76,14 +74,13 @@ public abstract class Locate extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        String str = inputs.get(0).getString();
-        String substr = inputs.get(1).getString();
+        String str = inputs.get(1).getString();
+        String substr = inputs.get(0).getString();
 
         int index = 0;
         if (inputs.size() == 3)
         {
             index = inputs.get(2).getInt32() - 1; // mysql uses 1-based indexing
-            
             // invalid index => return 0 as the result
             if (index < 0 || index > str.length())
             {
