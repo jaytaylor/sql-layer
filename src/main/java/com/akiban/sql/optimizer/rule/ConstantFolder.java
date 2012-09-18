@@ -691,29 +691,16 @@ public class ConstantFolder extends BaseRule
             InCondition in = InCondition.of(cond);
             if (in != null) {
                 in.dedup(isTopLevelCondition(cond));
+                if (!in.compareConstants(this))
+                    return new BooleanConstantExpression(null, 
+                                                         cond.getSQLtype(), 
+                                                         cond.getSQLsource());
                 if (in.isEmpty())
                     return new BooleanConstantExpression(Boolean.FALSE,
                                                          cond.getSQLtype(), 
                                                          cond.getSQLsource());
-                else if (in.isSingleton()) {
-                    List<ExpressionNode> values = in.getSingleton();
-                    List<ComparisonCondition> comps = in.getConditions();
-                    ConditionExpression conds = null;
-                    for (int i = 0; i < values.size(); i++) {
-                        ComparisonCondition comp = comps.get(i);
-                        comp.setRight(values.get(i));
-                        if (conds == null)
-                            conds = comp;
-                        else {
-                            List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
-                        
-                            operands.add(conds);
-                            operands.add(comp);
-                            conds = new LogicalFunctionCondition("and", operands,
-                                                                 comp.getSQLtype(), null);
-                        }
-                    }
-                    return conds;
+                if (in.isSingleton()) {
+                    return in.buildCondition(in.getSingleton());
                 }
             }
             return cond;
@@ -951,13 +938,19 @@ public class ConstantFolder extends BaseRule
 
     // Recognize and improve IN conditions with a list (or VALUES).
     protected static class InCondition implements Comparator<List<ExpressionNode>> {
+        private AnyCondition any;
         private ExpressionsSource expressions;
         private List<ComparisonCondition> comparisons;
+        private Project project;
 
-        private InCondition(ExpressionsSource expressions,
-                            List<ComparisonCondition> comparisons) {
+        private InCondition(AnyCondition any,
+                            ExpressionsSource expressions,
+                            List<ComparisonCondition> comparisons,
+                            Project project) {
+            this.any = any;
             this.expressions = expressions;
             this.comparisons = comparisons;
+            this.project = project;
         }
 
         public boolean isEmpty() {
@@ -999,7 +992,7 @@ public class ConstantFolder extends BaseRule
             if (!(rows.isEmpty() ||
                   (rows.get(0).size() == comps.size())))
                 return null;
-            return new InCondition(expressions, comps);
+            return new InCondition(any, expressions, comps, project);
         }
 
         private static boolean getAnyConditions(List<ComparisonCondition> comps,
@@ -1096,6 +1089,75 @@ public class ConstantFolder extends BaseRule
             else
                 distinct = DistinctState.DISTINCT;
             expressions.setDistinctState(distinct);
+        }
+
+        public boolean compareConstants(Folder folder) {
+            List<List<ExpressionNode>> rows = expressions.getExpressions();
+            boolean changed = false;
+            int i = 0;
+            while (i < comparisons.size()) {
+                ComparisonCondition cond = comparisons.get(i);
+                ExpressionNode left = cond.getLeft();
+                switch (folder.isConstant(left)) {
+                case NULL:
+                    return false;
+                case CONSTANT:
+                    {
+                        boolean allChecked = true;
+                        Iterator<List<ExpressionNode>> riter = rows.iterator();
+                        while (riter.hasNext()) {
+                            ExpressionNode right = riter.next().get(i);
+                            if (folder.isConstant(right) == Folder.Constantness.CONSTANT) {
+                                if (!left.equals(right)) {
+                                    riter.remove();
+                                }
+                            }
+                            else {
+                                allChecked = false;
+                            }
+                        }
+                        if (allChecked) {
+                            // Don't need this comparison any more.
+                            comparisons.remove(i);
+                            riter = rows.iterator();
+                            while (riter.hasNext()) {
+                                riter.next().remove(i);
+                            }
+                            changed = true;
+                            continue;
+                        }
+                    }
+                }
+                i++;
+            }
+            if (changed) {
+                project.getFields().set(0, buildCondition(null));
+            }
+            return true;
+        }
+
+        public ConditionExpression buildCondition(List<ExpressionNode> values) {
+            ConditionExpression result = null;
+            for (int i = 0; i < comparisons.size(); i++) {
+                ComparisonCondition comp = comparisons.get(i);
+                if (values != null)
+                    comp.setRight(values.get(i));
+                if (result == null)
+                    result = comp;
+                else {
+                    List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                        
+                    operands.add(result);
+                    operands.add(comp);
+                    result = new LogicalFunctionCondition("and", operands,
+                                                          comp.getSQLtype(), null);
+                }
+            }
+            if (result == null)
+                result = new BooleanConstantExpression(Boolean.TRUE,
+                                                       any.getSQLtype(), 
+                                                       any.getSQLsource());
+            return result;
         }
 
         public int compare(List<ExpressionNode> r1, List<ExpressionNode> r2) {

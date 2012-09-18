@@ -45,6 +45,10 @@ in-singleton: IN list with single value after folding.
 
 in-singleton-row: IN list with single row value.
 
+in-constant: IN with some constants
+
+in-constant-row: IN row value with some constants
+
 is-conditions: IS TRUE / FALSE / NULL.
 
 logical-functions: NOT TRUE is FALSE, TRUE AND X is X, FALSE AND X is FALSE, 
