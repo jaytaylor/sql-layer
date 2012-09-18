@@ -27,7 +27,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -109,13 +108,9 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             String[] columnNames = typeId.getColumnNames();
             DataTypeDescriptor[] columnTypes = typeId.getColumnTypes();
             nestedResultColumns = new ArrayList<JsonResultColumn>(columnNames.length);
-            boolean calculateTInstance = Types3Switch.ON;
             for (int i = 0; i < columnNames.length; i++) {
-                TInstance nestedTInstance = calculateTInstance
-                        ? TypesTranslation.toTInstance(columnTypes[i])
-                        : null;
                 nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i],
-                        nestedTInstance));
+                        TypesTranslation.toTInstance(columnTypes[i])));
             }
             akType = AkType.RESULT_SET;
         }
