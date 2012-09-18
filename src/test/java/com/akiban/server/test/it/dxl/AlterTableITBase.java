@@ -39,6 +39,7 @@ import com.akiban.ais.util.TableChange;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.test.it.ITBase;
@@ -120,6 +121,10 @@ public class AlterTableITBase extends ITBase {
         return ChangeLevel.TABLE;
     }
 
+    protected DDLFunctions ddlForAlter() {
+        return ddl();
+    }
+
     protected void runAlter(String sql) {
         runAlter(getDefaultChangeLevel(), sql);
     }
@@ -133,7 +138,7 @@ public class AlterTableITBase extends ITBase {
             throw new RuntimeException(e);
         }
         assertTrue("is alter node", node instanceof AlterTableNode);
-        ChangeLevel level = AlterTableDDL.alterTable(ddl(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
+        ChangeLevel level = AlterTableDDL.alterTable(ddlForAlter(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
         assertEquals("ChangeLevel", expectedChangeLevel, level);
         updateAISGeneration();
     }
