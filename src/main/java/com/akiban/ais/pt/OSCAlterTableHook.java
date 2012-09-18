@@ -33,6 +33,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
 import com.akiban.message.MessageRequiredServices;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.types3.Types3Switch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +93,9 @@ public class OSCAlterTableHook
             Column col1 = cols1.get(i);
             Column col2 = cols2.get(i);
             if (!(col1.getName().equals(col2.getName()) &&
-                  col1.getType().equals(col2.getType())))
+                  (Types3Switch.ON ?
+                   col1.tInstance().equals(col2.tInstance()) :
+                   col1.getType().equals(col2.getType()))))
                 return false;
         }
         return true;
