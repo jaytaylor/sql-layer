@@ -12,7 +12,7 @@
 - Statement: INSERT INTO t VALUES ('Infinity')
 ---
 - Statement: SELECT AVG(real_field) FROM t
-- output: !select-engine {it: [[Infinity]], newtypes: [[0.0]] }
+- output: !select-engine {all: [[Infinity]], newtypes: [[0.0]] }
 #Test with no rows => null
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
