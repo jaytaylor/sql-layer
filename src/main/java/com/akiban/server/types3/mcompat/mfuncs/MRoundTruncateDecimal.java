@@ -39,7 +39,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class M2ArgRoundBase extends TOverloadBase {
+public class MRoundTruncateDecimal extends TOverloadBase {
 
     public static final Collection<TOverload> overloads = createAll();
 
@@ -142,8 +142,8 @@ public class M2ArgRoundBase extends TOverloadBase {
         return roundingStrategy.name();
     }
 
-    protected M2ArgRoundBase(SignatureStrategy signatureStrategy,
-                             RoundingStrategy roundingStrategy)
+    protected MRoundTruncateDecimal(SignatureStrategy signatureStrategy,
+                                    RoundingStrategy roundingStrategy)
     {
         this.signatureStrategy = signatureStrategy;
         this.roundingStrategy = roundingStrategy;
@@ -153,7 +153,7 @@ public class M2ArgRoundBase extends TOverloadBase {
         List<TOverload> results = new ArrayList<TOverload>();
         for (SignatureStrategy signature : SignatureStrategy.values()) {
             for (RoundingStrategy rounding : RoundingStrategy.values()) {
-                results.add(new M2ArgRoundBase(signature, rounding));
+                results.add(new MRoundTruncateDecimal(signature, rounding));
             }
         }
         return Collections.unmodifiableCollection(results);
