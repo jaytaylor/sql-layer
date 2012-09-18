@@ -1022,19 +1022,35 @@ public class ConstantFolder extends BaseRule
 
             List<List<ExpressionNode>> rows = expressions.getExpressions();
             List<List<ExpressionNode>> constants = new ArrayList<List<ExpressionNode>>();
-            List<ExpressionNode> constantNull = null;
             List<List<ExpressionNode>> parameters = null;
             List<List<ExpressionNode>> others = null;
+            boolean anyNull = false;
             for (List<ExpressionNode> row : rows) {
-                ExpressionNode col = row.get(0);
-                if (col instanceof ConstantExpression) {
-                    ConstantExpression constant = (ConstantExpression)col;
-                    if (constant.getValue() == null)
-                        constantNull = row;
-                    else
-                        constants.add(row);
+                boolean allConstant = true, allConstOrParam = true, hasNull = false;
+                for (ExpressionNode col : row) {
+                    if (col instanceof ConstantExpression) {
+                        ConstantExpression constant = (ConstantExpression)col;
+                        if (constant.getValue() == null) {
+                            anyNull = hasNull = true;
+                        }
+                    }
+                    else {
+                        allConstant = false;
+                        if (!(col instanceof ParameterExpression)) {
+                            allConstOrParam = false;
+                        }
+                    }
                 }
-                else if (col instanceof ParameterExpression) {
+                if (hasNull && topLevel) {
+                    // A top-level condition does not need to worry about the
+                    // difference between false and unknown and so can discard
+                    // NULL elements.
+                    continue;
+                }
+                if (allConstant) {
+                    constants.add(row);
+                }
+                else if (allConstOrParam) {
                     if (parameters == null)
                         parameters = new ArrayList<List<ExpressionNode>>();
                     parameters.add(row);
@@ -1056,13 +1072,6 @@ public class ConstantFolder extends BaseRule
                     lastRow = row;
                 }
             }
-            // A top-level condition does not need to worry about the
-            // difference between false and unknown and so can discard
-            // NULL elements.
-            if (topLevel)
-                constantNull = null;
-            if (constantNull != null)
-                rows.add(constantNull);
             if (parameters != null)
                 rows.addAll(parameters);
             if (others != null)
@@ -1073,7 +1082,7 @@ public class ConstantFolder extends BaseRule
                 distinct = DistinctState.HAS_EXPRESSSIONS;
             else if (parameters != null)
                 distinct = DistinctState.HAS_PARAMETERS;
-            else if (constantNull != null)
+            else if (anyNull)
                 distinct = DistinctState.DISTINCT_WITH_NULL;
             else
                 distinct = DistinctState.DISTINCT;
@@ -1081,9 +1090,23 @@ public class ConstantFolder extends BaseRule
         }
 
         public int compare(List<ExpressionNode> r1, List<ExpressionNode> r2) {
-            Comparable o1 = (Comparable)((ConstantExpression)r1.get(0)).getValue();
-            Comparable o2 = (Comparable)((ConstantExpression)r2.get(0)).getValue();
-            return o1.compareTo(o2);
+            for (int i = 0; i < r1.size(); i++) {
+                Comparable o1 = (Comparable)((ConstantExpression)r1.get(i)).getValue();
+                Comparable o2 = (Comparable)((ConstantExpression)r2.get(i)).getValue();
+                if (o1 == null) {
+                    if (o2 != null) {
+                        return -1;
+                    }
+                }
+                else if (o2 == null) {
+                    return +1;
+                }
+                else {
+                    int c = o1.compareTo(o2);
+                    if (c != 0) return c;
+                }
+            }
+            return 0;
         }
 
     }
