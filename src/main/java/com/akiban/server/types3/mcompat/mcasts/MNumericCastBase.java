@@ -33,6 +33,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
+import com.google.common.primitives.UnsignedLongs;
 
 public class MNumericCastBase
 {
@@ -675,19 +676,35 @@ public class MNumericCastBase
             target.putDouble(source.getInt64());
         }
     }
-    
+
     static class FromInt64ToDecimal extends TCastBase
     {
         public FromInt64ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.BYTES), c);
+                    checkType(target, PUnderlying.BYTES), c);
         }
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt64()));
+        }
+    }
+
+    static class FromUInt64ToDecimal extends TCastBase
+    {
+        public FromUInt64ToDecimal(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.INT_64),
+                    checkType(target, PUnderlying.BYTES), c);
+        }
+
+        @Override
+        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            String asString = UnsignedLongs.toString(source.getInt64());
+            target.putObject(new MBigDecimalWrapper(asString));
         }
     }
     

@@ -122,7 +122,7 @@ public class MBinaryBit extends TOverloadBase {
             long evaluate(long a0, long a1)
             {
                 // doEvaluate method overrides this
-                return -1;
+                throw new AssertionError();
             }
         },
         BIT_COUNT
@@ -137,7 +137,7 @@ public class MBinaryBit extends TOverloadBase {
             long evaluate(long a0, long a1)
             {
                 // doEvaluate method overrides this
-                return -1;
+                throw new AssertionError();
             }
         };
 
