@@ -33,41 +33,69 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
-public abstract class M2ArgRoundBase extends TOverloadBase {
+public class M2ArgRoundBase extends TOverloadBase {
 
-    public static final M2ArgRoundBase ROUND = new M2ArgRoundBase() {
-        @Override
-        protected void doRounding(BigDecimalWrapper io, int scale) {
-            io.truncate(scale);
-        }
+    public static final Collection<TOverload> overloads = createAll();
 
-        @Override
-        public String displayName() {
-            return "ROUND";
-        }
-    };
+    private enum RoundingStrategy {
+        ROUND {
+            @Override
+            protected void doRounding(BigDecimalWrapper io, int scale) {
+                io.round(scale);
+            }
+        },
+        TRUNCATE {
+            @Override
+            protected void doRounding(BigDecimalWrapper io, int scale) {
+                io.truncate(scale);
+            }
+        };
 
-    public static final M2ArgRoundBase TRUNCATE = new M2ArgRoundBase() {
-        @Override
-        protected void doRounding(BigDecimalWrapper io, int scale) {
-            io.truncate(scale);
-        }
+        protected abstract void doRounding(BigDecimalWrapper io, int scale);
+    }
 
-        @Override
-        public String displayName() {
-            return "TRUNCATE";
-        }
-    };
+    private enum SignatureStrategy {
+        ONE_ARG {
+            @Override
+            protected int roundToPrecision(LazyList<? extends PValueSource> inputs) {
+                return 0;
+            }
 
-    protected abstract void doRounding(BigDecimalWrapper io, int scale);
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+                builder.covers(MNumeric.DECIMAL, 0).covers(MNumeric.INT, 1);
+            }
+        },
+        TWO_ARGS {
+            @Override
+            protected int roundToPrecision(LazyList<? extends PValueSource> inputs) {
+                return inputs.get(1).getInt32();
+            }
+
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+                builder.covers(MNumeric.DECIMAL, 0);
+            }
+        };
+
+
+        protected abstract int roundToPrecision(LazyList<? extends PValueSource> inputs);
+        protected abstract void buildInputSets(TInputSetBuilder builder);
+
+    }
+
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
-        int scale = (int) Math.round(inputs.get(1).getDouble());
-        doRounding(result, scale);
+        int scale = (int) Math.round(inputs.get(1).getInt32());
+        roundingStrategy.doRounding(result, scale);
         output.putObject(result);
     }
 
@@ -106,8 +134,31 @@ public abstract class M2ArgRoundBase extends TOverloadBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.DECIMAL, 0).covers(MNumeric.INT, 1);
+        signatureStrategy.buildInputSets(builder);
     }
 
-    private M2ArgRoundBase() {}
+    @Override
+    public String displayName() {
+        return roundingStrategy.name();
+    }
+
+    protected M2ArgRoundBase(SignatureStrategy signatureStrategy,
+                             RoundingStrategy roundingStrategy)
+    {
+        this.signatureStrategy = signatureStrategy;
+        this.roundingStrategy = roundingStrategy;
+    }
+
+    private static Collection<TOverload> createAll() {
+        List<TOverload> results = new ArrayList<TOverload>();
+        for (SignatureStrategy signature : SignatureStrategy.values()) {
+            for (RoundingStrategy rounding : RoundingStrategy.values()) {
+                results.add(new M2ArgRoundBase(signature, rounding));
+            }
+        }
+        return Collections.unmodifiableCollection(results);
+    }
+
+    private final SignatureStrategy signatureStrategy;
+    private final RoundingStrategy roundingStrategy;
 }
