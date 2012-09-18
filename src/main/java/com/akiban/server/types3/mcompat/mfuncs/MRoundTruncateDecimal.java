@@ -46,25 +46,25 @@ public class MRoundTruncateDecimal extends TOverloadBase {
     private enum RoundingStrategy {
         ROUND {
             @Override
-            protected void doRounding(BigDecimalWrapper io, int scale) {
+            protected void apply(BigDecimalWrapper io, int scale) {
                 io.round(scale);
             }
         },
         TRUNCATE {
             @Override
-            protected void doRounding(BigDecimalWrapper io, int scale) {
+            protected void apply(BigDecimalWrapper io, int scale) {
                 io.truncate(scale);
             }
         };
 
-        protected abstract void doRounding(BigDecimalWrapper io, int scale);
+        protected abstract void apply(BigDecimalWrapper io, int scale);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
         int scale = signatureStrategy.roundToPrecision(inputs);
-        roundingStrategy.doRounding(result, scale);
+        roundingStrategy.apply(result, scale);
         output.putObject(result);
     }
 
