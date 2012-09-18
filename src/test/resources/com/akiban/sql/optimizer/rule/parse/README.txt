@@ -64,6 +64,8 @@ in-lr: IN with row literals
 
 in-lrn: NOT IN
 
+in-lrr: IN with nested row literals
+
 in-2: IN with subquery
 
 in-2l: IN with subquery with LIMIT
