@@ -687,9 +687,24 @@ public class ConstantFolder extends BaseRule
                                                          cond.getSQLtype(), 
                                                          cond.getSQLsource());
                 else if (in.isSingleton()) {
-                    ComparisonCondition comp = in.getCondition();
-                    comp.setRight(in.getSingleton());
-                    return comp;
+                    List<ExpressionNode> values = in.getSingleton();
+                    List<ComparisonCondition> comps = in.getConditions();
+                    ConditionExpression conds = null;
+                    for (int i = 0; i < values.size(); i++) {
+                        ComparisonCondition comp = comps.get(i);
+                        comp.setRight(values.get(i));
+                        if (conds == null)
+                            conds = comp;
+                        else {
+                            List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                        
+                            operands.add(conds);
+                            operands.add(comp);
+                            conds = new LogicalFunctionCondition("and", operands,
+                                                                 comp.getSQLtype(), null);
+                        }
+                    }
+                    return conds;
                 }
             }
             return cond;
@@ -926,17 +941,14 @@ public class ConstantFolder extends BaseRule
     }
 
     // Recognize and improve IN conditions with a list (or VALUES).
-    // This currently only recognizes the one operand LHS version, but
-    // is easily extended to the row constructor form once the parser
-    // supports that.
     protected static class InCondition implements Comparator<List<ExpressionNode>> {
         private ExpressionsSource expressions;
-        private ComparisonCondition comparison;
+        private List<ComparisonCondition> comparisons;
 
         private InCondition(ExpressionsSource expressions,
-                            ComparisonCondition comparison) {
+                            List<ComparisonCondition> comparisons) {
             this.expressions = expressions;
-            this.comparison = comparison;
+            this.comparisons = comparisons;
         }
 
         public boolean isEmpty() {
@@ -947,12 +959,12 @@ public class ConstantFolder extends BaseRule
             return (expressions.getExpressions().size() == 1);
         }
         
-        public ExpressionNode getSingleton() {
-            return expressions.getExpressions().get(0).get(0);
+        public List<ExpressionNode> getSingleton() {
+            return expressions.getExpressions().get(0);
         }
 
-        public ComparisonCondition getCondition() {
-            return comparison;
+        public List<ComparisonCondition> getConditions() {
+            return comparisons;
         }
 
         // Recognize the form of IN we support improving.
@@ -969,18 +981,39 @@ public class ConstantFolder extends BaseRule
             if (project.getFields().size() != 1)
                 return null;
             ExpressionNode cond = project.getFields().get(0);
-            if (!(cond instanceof ComparisonCondition))
+            if (!(cond instanceof ConditionExpression))
                 return null;
-            ComparisonCondition comp = (ComparisonCondition)cond;
-            if (!(comp.getRight().isColumn() &&
-                  (comp.getOperation() == Comparison.EQ) &&
-                  (((ColumnExpression)comp.getRight()).getTable() == expressions)))
+            List<ComparisonCondition> comps = new ArrayList<ComparisonCondition>();
+            if (!getAnyConditions(comps, (ConditionExpression)cond, expressions))
                 return null;
             List<List<ExpressionNode>> rows = expressions.getExpressions();
             if (!(rows.isEmpty() ||
-                  (rows.get(0).size() == 1)))
+                  (rows.get(0).size() == comps.size())))
                 return null;
-            return new InCondition(expressions, comp);
+            return new InCondition(expressions, comps);
+        }
+
+        private static boolean getAnyConditions(List<ComparisonCondition> comps,
+                                                ConditionExpression cond,
+                                                ExpressionsSource expressions) {
+            if (cond instanceof ComparisonCondition) {
+                ComparisonCondition comp = (ComparisonCondition)cond;
+                if (!(comp.getRight().isColumn() &&
+                      (comp.getOperation() == Comparison.EQ) &&
+                      (((ColumnExpression)comp.getRight()).getTable() == expressions) &&
+                      (((ColumnExpression)comp.getRight()).getPosition() == comps.size())))
+                    return false;
+                comps.add((ComparisonCondition)cond);
+                return true;
+            }
+            else if (cond instanceof LogicalFunctionCondition) {
+                LogicalFunctionCondition lcond = (LogicalFunctionCondition)cond;
+                return (getAnyConditions(comps, lcond.getLeft(), expressions) &&
+                        getAnyConditions(comps, lcond.getRight(), expressions));
+            }
+            else {
+                return false;
+            }
         }
 
         public void dedup(boolean topLevel) {
