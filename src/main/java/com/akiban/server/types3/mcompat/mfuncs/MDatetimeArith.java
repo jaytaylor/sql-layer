@@ -149,8 +149,12 @@ public abstract class MDatetimeArith extends TOverloadBase {
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
-            int time = (int) MDatetimes.encodeTime(MDatetimes.fromJodaDatetime(datetime));
-            output.putInt32(time);
+            long[] val = MDatetimes.fromJodaDatetime(datetime);
+            val[0] = 0;
+            val[1] = 0;
+            val[2] = 0;
+            long time = MDatetimes.encodeDatetime(val);
+            output.putInt64(time);
         }
         
         @Override
