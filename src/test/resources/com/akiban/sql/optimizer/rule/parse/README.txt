@@ -72,6 +72,8 @@ in-2l: IN with subquery with LIMIT
 
 in-3: IN with aggregate subquery
 
+in-4: IN with row value subquery
+
 insert-1: from VALUES
 
 insert-2: from SELECT
