@@ -691,10 +691,16 @@ public class ConstantFolder extends BaseRule
             InCondition in = InCondition.of(cond);
             if (in != null) {
                 in.dedup(isTopLevelCondition(cond));
-                if (!in.compareConstants(this))
+                switch (in.compareConstants(this)) {
+                case COMPARE_NULL:
                     return new BooleanConstantExpression(null, 
                                                          cond.getSQLtype(), 
                                                          cond.getSQLsource());
+                case ROW_EQUALS:
+                    return new BooleanConstantExpression(Boolean.TRUE,
+                                                         cond.getSQLtype(), 
+                                                         cond.getSQLsource());
+                }
                 if (in.isEmpty())
                     return new BooleanConstantExpression(Boolean.FALSE,
                                                          cond.getSQLtype(), 
@@ -1091,49 +1097,76 @@ public class ConstantFolder extends BaseRule
             expressions.setDistinctState(distinct);
         }
 
-        public boolean compareConstants(Folder folder) {
+        public enum CompareConstants { NORMAL, COMPARE_NULL, ROW_EQUALS };
+
+        // If some of the values in the LHS row and RHS rows are constants, 
+        // can compare them now, and either eliminate a LHS value that always matches
+        // or a row that never matches or find a row that always matches, which is
+        // the answer.
+        public CompareConstants compareConstants(Folder folder) {
             List<List<ExpressionNode>> rows = expressions.getExpressions();
-            boolean changed = false;
+            BitSet matching = new BitSet(rows.size());
+            matching.set(0, rows.size());
+            boolean removedRow = false, removedComparison = false;
             int i = 0;
             while (i < comparisons.size()) {
                 ComparisonCondition cond = comparisons.get(i);
                 ExpressionNode left = cond.getLeft();
                 switch (folder.isConstant(left)) {
                 case NULL:
-                    return false;
+                    return CompareConstants.COMPARE_NULL;
                 case CONSTANT:
                     {
-                        boolean allChecked = true;
-                        Iterator<List<ExpressionNode>> riter = rows.iterator();
-                        while (riter.hasNext()) {
-                            ExpressionNode right = riter.next().get(i);
+                        boolean verticalMatch = true;
+                        for (int j = 0; j < rows.size(); j++) {
+                            List<ExpressionNode> row = rows.get(j);
+                            if (row == null) continue;
+                            ExpressionNode right = row.get(i);
                             if (folder.isConstant(right) == Folder.Constantness.CONSTANT) {
                                 if (!left.equals(right)) {
-                                    riter.remove();
+                                    // Definitely not equal, can remove row.
+                                    rows.set(j, null);
+                                    removedRow = true;
+                                    matching.clear(j);
                                 }
+                                continue; // Definitely equal.
                             }
-                            else {
-                                allChecked = false;
-                            }
+                            // Neither this row nor this column known compare equal.
+                            verticalMatch = false;
+                            matching.clear(j);
                         }
-                        if (allChecked) {
-                            // Don't need this comparison any more.
+                        if (verticalMatch) {
+                            // Matched every row: don't need this comparison any more,
                             comparisons.remove(i);
-                            riter = rows.iterator();
-                            while (riter.hasNext()) {
-                                riter.next().remove(i);
+                            for (int j = 0; j < rows.size(); j++) {
+                                List<ExpressionNode> row = rows.get(j);
+                                if (row == null) continue;
+                                row.remove(i);
                             }
-                            changed = true;
+                            removedComparison = true;
                             continue;
                         }
                     }
+                    break;
+                default:
+                    matching.clear();
                 }
                 i++;
             }
-            if (changed) {
-                project.getFields().set(0, buildCondition(null));
+            if (!matching.isEmpty())
+                return CompareConstants.ROW_EQUALS;
+            if (removedRow) {
+                int j = 0;
+                while (j < rows.size()) {
+                    if (rows.get(j) == null)
+                        rows.remove(j);
+                    else
+                        j++;
+                }
             }
-            return true;
+            if (removedComparison)
+                project.getFields().set(0, buildCondition(null));
+            return CompareConstants.NORMAL;
         }
 
         public ConditionExpression buildCondition(List<ExpressionNode> values) {

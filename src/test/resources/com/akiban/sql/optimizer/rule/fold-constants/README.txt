@@ -49,6 +49,8 @@ in-constant: IN with some constants
 
 in-constant-row: IN row value with some constants
 
+in-constant-equals: IN with some constants that are equal
+
 is-conditions: IS TRUE / FALSE / NULL.
 
 logical-functions: NOT TRUE is FALSE, TRUE AND X is X, FALSE AND X is FALSE, 
