@@ -37,6 +37,9 @@ import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+
 import java.util.*;
 
 /** Hook for <code>RenameTableRequest</code>.
@@ -95,13 +98,14 @@ public class OSCRenameTableHook
         // Try harder.
         for (Map.Entry<String,UserTable> entry : ais.getSchema(schemaName).getUserTables().entrySet()) {
             if (entry.getKey().contains(tableName) &&
-                (table.getPendingOSC() != null) &&
-                (table.getPendingOSC().getOriginalName().equals(tableName))) {
-                table.getPendingOSC().setCurrentName(newName.getTableName());
+                (entry.getValue().getPendingOSC() != null) &&
+                (entry.getValue().getPendingOSC().getOriginalName().equals(tableName))) {
+                entry.getValue().getPendingOSC().setCurrentName(newName.getTableName());
                 return true;
             }
         }
-
+        // Still allow the rename to happen. Not having set the current name will
+        // change how beforeNew works below.
         return true;
     }
 
@@ -143,18 +147,18 @@ public class OSCRenameTableHook
         UserTable origTable = ais.getUserTable(origName);
         UserTable tempTable = ais.getUserTable(tempName);
         Set<Column> droppedColumns = new HashSet<Column>();
-        Map<Column,Column> modifiedColumns = new HashMap<Column,Column>();
+        BiMap<Column,Column> modifiedColumns = HashBiMap.create();
         Set<Column> addedColumns = new HashSet<Column>();
         getColumnChanges(origTable, tempTable, changes.getColumnChanges(), 
                          droppedColumns, modifiedColumns, addedColumns);
         Set<TableIndex> droppedIndexes = new HashSet<TableIndex>();
-        Map<TableIndex,TableIndex> modifiedIndexes = new HashMap<TableIndex,TableIndex>();
+        BiMap<TableIndex,TableIndex> modifiedIndexes = HashBiMap.create();
         Set<TableIndex> addedIndexes = new HashSet<TableIndex>();
         getIndexChanges(origTable, tempTable, changes.getIndexChanges(), 
                         droppedIndexes, modifiedIndexes, addedIndexes);
         AkibanInformationSchema aisCopy = AISCloner.clone(ais, new GroupSelector(origTable.getGroup()));
         UserTable copyTable = aisCopy.getUserTable(origName);
-        rebuildColumns(origTable, copyTable,
+        rebuildColumns(origTable, tempTable, copyTable,
                        droppedColumns, modifiedColumns, addedColumns);
         rebuildIndexes(origTable, copyTable,
                        droppedIndexes, modifiedIndexes, addedIndexes);
@@ -198,23 +202,20 @@ public class OSCRenameTableHook
         }
     }
 
-    private void rebuildColumns(UserTable origTable, UserTable copyTable,
-                                Set<Column> droppedColumns, Map<Column,Column> modifiedColumns, Set<Column> addedColumns) {
+    private void rebuildColumns(UserTable origTable, UserTable tempTable, UserTable copyTable,
+                                Set<Column> droppedColumns, BiMap<Column,Column> modifiedColumns, Set<Column> addedColumns) {
         copyTable.dropColumns();
-        int colpos = 0;
-        for (Column origColumn : origTable.getColumns()) {
-            if (droppedColumns.contains(origColumn)) 
-                continue;
-            Column fromColumn = origColumn;
-            Column newColumn = modifiedColumns.get(origColumn);
-            if (newColumn != null) 
-                fromColumn = newColumn;
-            // Note that dropping columns can still cause otherwise
-            // unchanged ones to move.
+        int colpos = 0;         // Respect column order of copy.
+        for (Column tempColumn : tempTable.getColumns()) {
+            Column fromColumn = tempColumn;
+            // If neither added nor modified, try to find the original column.
+            if (!addedColumns.contains(tempColumn) &&
+                !modifiedColumns.containsValue(tempColumn)) {
+                Column origColumn = origTable.getColumn(tempColumn.getName());
+                if (origColumn != null)
+                    fromColumn = origColumn;
+            }
             Column.create(copyTable, fromColumn, null, colpos++);
-        }
-        for (Column newColumn : addedColumns) {
-            Column.create(copyTable, newColumn, null, colpos++);
         }
     }
 
