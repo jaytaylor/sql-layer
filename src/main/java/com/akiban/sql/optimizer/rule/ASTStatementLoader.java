@@ -59,7 +59,6 @@ import com.akiban.server.error.OrderGroupByNonIntegerConstant;
 import com.akiban.server.error.OrderGroupByIntegerOutOfRange;
 import com.akiban.server.error.WrongExpressionArityException;
 
-import com.akiban.sql.optimizer.plan.BooleanOperationExpression.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -678,12 +677,13 @@ public class ASTStatementLoader extends BaseRule
                             result = equalNode;
                         else
                         {
-                            ConditionExpression andNode = new BooleanOperationExpression(Operation.AND,
-                                                                                         result, equalNode,
-                                                                                         left.getType(), left); // TODO: wrong!
-                            result = andNode;
-                        }
+                            List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
                         
+                            operands.add(result);
+                            operands.add(equalNode);
+                            result = new LogicalFunctionCondition("and", operands,
+                                                                  equalNode.getSQLtype(), null);
+                        }
                     }
                     return result;
                 }
