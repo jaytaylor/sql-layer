@@ -29,9 +29,7 @@ import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
@@ -61,48 +59,6 @@ public class MRoundTruncateDecimal extends TOverloadBase {
 
         protected abstract void doRounding(BigDecimalWrapper io, int scale);
     }
-
-    private enum SignatureStrategy {
-        ONE_ARG {
-            @Override
-            protected int roundToPrecision(LazyList<? extends PValueSource> inputs) {
-                return 0;
-            }
-
-            @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
-                builder.covers(MNumeric.DECIMAL, 0).covers(MNumeric.INT, 1);
-            }
-
-            @Override
-            protected PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs) {
-                return ZERO;
-            }
-
-            private final PValueSource ZERO = new PValue(0);
-        },
-        TWO_ARGS {
-            @Override
-            protected int roundToPrecision(LazyList<? extends PValueSource> inputs) {
-                return inputs.get(1).getInt32();
-            }
-
-            @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
-                builder.covers(MNumeric.DECIMAL, 0);
-            }
-
-            @Override
-            protected PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs) {
-                return inputs.get(1).value();
-            }
-        };
-
-        protected abstract int roundToPrecision(LazyList<? extends PValueSource> inputs);
-        protected abstract void buildInputSets(TInputSetBuilder builder);
-        protected abstract PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs);
-    }
-
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -154,7 +110,7 @@ public class MRoundTruncateDecimal extends TOverloadBase {
         return roundingStrategy.name();
     }
 
-    protected MRoundTruncateDecimal(SignatureStrategy signatureStrategy,
+    protected MRoundTruncateDecimal(RoundingOverloadSignature signatureStrategy,
                                     RoundingStrategy roundingStrategy)
     {
         this.signatureStrategy = signatureStrategy;
@@ -163,7 +119,7 @@ public class MRoundTruncateDecimal extends TOverloadBase {
 
     private static Collection<TOverload> createAll() {
         List<TOverload> results = new ArrayList<TOverload>();
-        for (SignatureStrategy signature : SignatureStrategy.values()) {
+        for (RoundingOverloadSignature signature : RoundingOverloadSignature.values()) {
             for (RoundingStrategy rounding : RoundingStrategy.values()) {
                 results.add(new MRoundTruncateDecimal(signature, rounding));
             }
@@ -171,6 +127,6 @@ public class MRoundTruncateDecimal extends TOverloadBase {
         return Collections.unmodifiableCollection(results);
     }
 
-    private final SignatureStrategy signatureStrategy;
+    private final RoundingOverloadSignature signatureStrategy;
     private final RoundingStrategy roundingStrategy;
 }
