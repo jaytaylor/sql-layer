@@ -87,6 +87,7 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
             cursor = API.cursor(resultOperator, context);
             cursor.open();
             PostgresOutputter<Row> outputter = getRowOutputter(context);
+            outputter.beforeData();
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
@@ -95,6 +96,7 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
             }
+            outputter.afterData();
         }
         catch (IOException e) {
             exceptionDuringExecution = e;

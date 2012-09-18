@@ -37,4 +37,9 @@ public interface PostgresServerSession extends ServerSession
     /** Return the messenger used to communicate with client. */
     public PostgresMessenger getMessenger();
 
+    public enum OutputFormat { TABLE, JSON, JSON_WITH_META_DATA };
+
+    /** Get the output format. */
+    public OutputFormat getOutputFormat();
+
 }
