@@ -29,7 +29,9 @@ import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
@@ -71,6 +73,13 @@ public class MRoundTruncateDecimal extends TOverloadBase {
             protected void buildInputSets(TInputSetBuilder builder) {
                 builder.covers(MNumeric.DECIMAL, 0).covers(MNumeric.INT, 1);
             }
+
+            @Override
+            protected PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs) {
+                return ZERO;
+            }
+
+            private final PValueSource ZERO = new PValue(0);
         },
         TWO_ARGS {
             @Override
@@ -82,19 +91,23 @@ public class MRoundTruncateDecimal extends TOverloadBase {
             protected void buildInputSets(TInputSetBuilder builder) {
                 builder.covers(MNumeric.DECIMAL, 0);
             }
-        };
 
+            @Override
+            protected PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs) {
+                return inputs.get(1).value();
+            }
+        };
 
         protected abstract int roundToPrecision(LazyList<? extends PValueSource> inputs);
         protected abstract void buildInputSets(TInputSetBuilder builder);
-
+        protected abstract PValueSource getScaleOperand(List<? extends TPreptimeValue> inputs);
     }
 
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
-        int scale = (int) Math.round(inputs.get(1).getInt32());
+        int scale = signatureStrategy.roundToPrecision(inputs);
         roundingStrategy.doRounding(result, scale);
         output.putObject(result);
     }
@@ -105,7 +118,7 @@ public class MRoundTruncateDecimal extends TOverloadBase {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 TPreptimeValue valueToRound = inputs.get(0);
-                PValueSource roundToPVal = inputs.get(1).value();
+                PValueSource roundToPVal = signatureStrategy.getScaleOperand(inputs);
                 int precision, scale;
                 if (roundToPVal == null) {
                     precision = 17;
@@ -113,8 +126,7 @@ public class MRoundTruncateDecimal extends TOverloadBase {
                     if (incomingScale > 1)
                         precision += (incomingScale - 1);
                     scale = incomingScale;
-                }
-                else {
+                } else {
                     scale = roundToPVal.getInt32();
 
                     TInstance incomingInstance = valueToRound.instance();
