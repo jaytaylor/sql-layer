@@ -25,47 +25,56 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TCustomOverloadResult;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.common.types.DoubleAttribute;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class MRoundTruncateDecimal extends TOverloadBase {
+public class MRoundTruncateDouble extends TOverloadBase {
 
     public static final Collection<TOverload> overloads = createAll();
 
     private enum RoundingStrategy {
-        ROUND {
-            @Override
-            protected void apply(BigDecimalWrapper io, int scale) {
-                io.round(scale);
-            }
-        },
-        TRUNCATE {
-            @Override
-            protected void apply(BigDecimalWrapper io, int scale) {
-                io.truncate(scale);
-            }
-        };
+        ROUND(RoundingMode.HALF_UP),
+        TRUNCATE(RoundingMode.DOWN)
+        ;
 
-        protected abstract void apply(BigDecimalWrapper io, int scale);
+        public double apply(double input, int scale) {
+            BigDecimal asDecimal = BigDecimal.valueOf(input);
+            asDecimal = asDecimal.setScale(scale, roundingMode);
+            return asDecimal.doubleValue();
+        }
+
+        private RoundingStrategy(RoundingMode roundingMode) {
+            this.roundingMode = roundingMode;
+        }
+
+        private final RoundingMode roundingMode;
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+        double input = inputs.get(0).getDouble();
         int scale = signatureStrategy.roundToScale(inputs);
-        roundingStrategy.apply(result, scale);
-        output.putObject(result);
+        double result = roundingStrategy.apply(input, scale);
+        output.putDouble(result);
     }
 
     @Override
@@ -73,36 +82,19 @@ public class MRoundTruncateDecimal extends TOverloadBase {
         return TOverloadResult.custom(new TCustomOverloadResult() {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                TPreptimeValue valueToRound = inputs.get(0);
-                PValueSource roundToPVal = signatureStrategy.getScaleOperand(inputs);
-                int precision, scale;
-                if (roundToPVal == null) {
-                    precision = 17;
-                    int incomingScale = valueToRound.instance().attribute(MBigDecimal.Attrs.SCALE);
-                    if (incomingScale > 1)
-                        precision += (incomingScale - 1);
-                    scale = incomingScale;
-                } else {
-                    scale = roundToPVal.getInt32();
-
-                    TInstance incomingInstance = valueToRound.instance();
-                    int incomingPrecision = incomingInstance.attribute(MBigDecimal.Attrs.PRECISION);
-                    int incomingScale = incomingInstance.attribute(MBigDecimal.Attrs.SCALE);
-
-                    precision = incomingPrecision;
-                    if (incomingScale > 1)
-                        precision -= (incomingScale - 1);
-                    precision += scale;
-
-                }
-                return MNumeric.DECIMAL.instance(precision, scale);
+                PValueSource incomingScale = signatureStrategy.getScaleOperand(inputs);
+                int resultScale = (incomingScale == null)
+                        ? inputs.get(0).instance().attribute(DoubleAttribute.SCALE)
+                        : incomingScale.getInt32();
+                int resultPrecision = 17 + resultScale;
+                return MApproximateNumber.DOUBLE.instance(resultPrecision, resultScale);
             }
         });
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        signatureStrategy.buildInputSets(MNumeric.DECIMAL, builder);
+        signatureStrategy.buildInputSets(MApproximateNumber.DOUBLE, builder);
     }
 
     @Override
@@ -110,8 +102,8 @@ public class MRoundTruncateDecimal extends TOverloadBase {
         return roundingStrategy.name();
     }
 
-    protected MRoundTruncateDecimal(RoundingOverloadSignature signatureStrategy,
-                                    RoundingStrategy roundingStrategy)
+    protected MRoundTruncateDouble(RoundingOverloadSignature signatureStrategy,
+                                   RoundingStrategy roundingStrategy)
     {
         this.signatureStrategy = signatureStrategy;
         this.roundingStrategy = roundingStrategy;
@@ -121,7 +113,7 @@ public class MRoundTruncateDecimal extends TOverloadBase {
         List<TOverload> results = new ArrayList<TOverload>();
         for (RoundingOverloadSignature signature : RoundingOverloadSignature.values()) {
             for (RoundingStrategy rounding : RoundingStrategy.values()) {
-                results.add(new MRoundTruncateDecimal(signature, rounding));
+                results.add(new MRoundTruncateDouble(signature, rounding));
             }
         }
         return Collections.unmodifiableCollection(results);
