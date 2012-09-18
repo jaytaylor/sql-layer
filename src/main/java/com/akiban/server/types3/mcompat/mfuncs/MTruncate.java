@@ -32,7 +32,4 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MTruncate {
     public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.TRUNCATE);
-    
-    public static final TOverload TWO_ARG = new M2ArgRoundBase(M2ArgRoundBase.RoundType.TRUNCATE,
-            MApproximateNumber.DOUBLE, DoubleAttribute.PRECISION, DoubleAttribute.SCALE);
 }

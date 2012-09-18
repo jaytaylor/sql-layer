@@ -25,7 +25,6 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
@@ -36,83 +35,79 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
 
-public class M2ArgRoundBase extends TOverloadBase {
+public abstract class M2ArgRoundBase extends TOverloadBase {
 
-    M2ArgRoundBase(RoundType roundType, TClass numericType, Attribute precisionAttr, Attribute scaleAttr) {
-        this.roundType = roundType;
-        this.numericType = numericType;
-        this.precisionAttr = precisionAttr;
-        this.scaleAttr = scaleAttr;
-    }
+    public static final M2ArgRoundBase ROUND = new M2ArgRoundBase() {
+        @Override
+        protected void doRounding(BigDecimalWrapper io, int scale) {
+            io.truncate(scale);
+        }
 
-    static enum RoundType {
+        @Override
+        public String displayName() {
+            return "ROUND";
+        }
+    };
 
-        TRUNCATE() {
+    public static final M2ArgRoundBase TRUNCATE = new M2ArgRoundBase() {
+        @Override
+        protected void doRounding(BigDecimalWrapper io, int scale) {
+            io.truncate(scale);
+        }
 
-            @Override
-            BigDecimalWrapper evaluate(BigDecimalWrapper result, int scale) {
-                return result.truncate(scale);
-            }
-        },
-        ROUND() {
+        @Override
+        public String displayName() {
+            return "TRUNCATE";
+        }
+    };
 
-            @Override
-            BigDecimalWrapper evaluate(BigDecimalWrapper result, int scale) {
-                return result.round(scale);
-            }
-        };
-
-        abstract BigDecimalWrapper evaluate(BigDecimalWrapper result, int scale);
-    }
+    protected abstract void doRounding(BigDecimalWrapper io, int scale);
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
         int scale = (int) Math.round(inputs.get(1).getDouble());
-        output.putObject(roundType.evaluate(result, scale));
+        doRounding(result, scale);
+        output.putObject(result);
     }
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.custom(numericType.instance(), new TCustomOverloadResult() {
+        return TOverloadResult.custom(new TCustomOverloadResult() {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                TPreptimeValue preptimeValue = inputs.get(0);
-                int precision = preptimeValue.instance().attribute(precisionAttr);
-                int scale = preptimeValue.instance().attribute(scaleAttr);
+                TPreptimeValue valueToRound = inputs.get(0);
+                PValueSource roundToPVal = inputs.get(1).value();
+                int precision, scale;
+                if (roundToPVal == null) {
+                    precision = 17;
+                    int incomingScale = valueToRound.instance().attribute(MBigDecimal.Attrs.SCALE);
+                    if (incomingScale > 1)
+                        precision += (incomingScale - 1);
+                    scale = incomingScale;
+                }
+                else {
+                    scale = roundToPVal.getInt32();
 
-                PValueSource roundToVal = inputs.get(1).value();
-                if (roundToVal != null) {
-                    int leftOfDecimal = precision - scale;
-                    long roundToIntL = roundToVal.getInt64();
-                    int roundToInt = (int) roundToIntL;
-                    if (roundToInt != roundToIntL)
-                        throw new OutOfRangeException(roundToIntL + " not an int");
-                    if (roundToInt < 0) {
-                        precision = leftOfDecimal;
-                        scale = 0;
-                    } else {
-                        precision = leftOfDecimal + roundToInt;
-                        scale = 0;
-                    }
+                    TInstance incomingInstance = valueToRound.instance();
+                    int incomingPrecision = incomingInstance.attribute(MBigDecimal.Attrs.PRECISION);
+                    int incomingScale = incomingInstance.attribute(MBigDecimal.Attrs.SCALE);
+
+                    precision = incomingPrecision;
+                    if (incomingScale > 1)
+                        precision -= (incomingScale - 1);
+                    precision += scale;
+
                 }
                 return MNumeric.DECIMAL.instance(precision, scale);
             }
         });
     }
 
-    private final TClass numericType;
-    private final RoundType roundType;
-    private final Attribute precisionAttr;
-    private final Attribute scaleAttr;
-
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(numericType, 0).covers(MNumeric.BIGINT, 1);
+        builder.covers(MNumeric.DECIMAL, 0).covers(MNumeric.INT, 1);
     }
 
-    @Override
-    public String displayName() {
-        return roundType.name();
-    }
+    private M2ArgRoundBase() {}
 }
