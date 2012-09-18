@@ -288,8 +288,9 @@ public final class OverloadResolver {
             // all overloads of this name have the same at this position
             if (scalarGroups.hasSameTypeAt(i))
                 continue;
-            
-            TInstance inputInstance = inputs.get(i).instance();
+
+            TPreptimeValue inputTpv = inputs.get(i);
+            TInstance inputInstance = (inputTpv == null) ? null : inputTpv.instance();
             // allow this input if...
             // ... input's type it NULL or ?
             if (inputInstance == null)       // input
@@ -299,9 +300,15 @@ public final class OverloadResolver {
             if (inputSet.targetType() == null)
                 continue;
             // ... input can be strongly cast to input set
-            TCast cast = registry.cast(inputInstance.typeClass(), inputSet.targetType());
-            if (isStrong(cast))
-                continue;
+            if (inputSet.isExact()) {
+                if (inputInstance.typeClass() == inputSet.targetType())
+                    continue;
+            }
+            else {
+                TCast cast = registry.cast(inputInstance.typeClass(), inputSet.targetType());
+                if (isStrong(cast))
+                    continue;
+            }
             // This input precludes the use of the overload
             return false;
         }
