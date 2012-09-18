@@ -25,6 +25,7 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
@@ -37,9 +38,11 @@ import java.util.List;
 
 public class M2ArgRoundBase extends TOverloadBase {
 
-    public M2ArgRoundBase(RoundType roundType, TClass numericType) {
+    M2ArgRoundBase(RoundType roundType, TClass numericType, Attribute precisionAttr, Attribute scaleAttr) {
         this.roundType = roundType;
         this.numericType = numericType;
+        this.precisionAttr = precisionAttr;
+        this.scaleAttr = scaleAttr;
     }
 
     static enum RoundType {
@@ -72,17 +75,19 @@ public class M2ArgRoundBase extends TOverloadBase {
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.custom(numericType.instance(), new TCustomOverloadResult() {
-            
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 TPreptimeValue preptimeValue = inputs.get(0);
-                int precision = preptimeValue.instance().attribute(MBigDecimal.Attrs.PRECISION);
-                int scale = preptimeValue.instance().attribute(MBigDecimal.Attrs.SCALE);
+                int precision = preptimeValue.instance().attribute(precisionAttr);
+                int scale = preptimeValue.instance().attribute(scaleAttr);
 
                 PValueSource roundToVal = inputs.get(1).value();
                 if (roundToVal != null) {
                     int leftOfDecimal = precision - scale;
-                    int roundToInt = roundToVal.getInt32();
+                    long roundToIntL = roundToVal.getInt64();
+                    int roundToInt = (int) roundToIntL;
+                    if (roundToInt != roundToIntL)
+                        throw new OutOfRangeException(roundToIntL + " not an int");
                     if (roundToInt < 0) {
                         precision = leftOfDecimal;
                         scale = 0;
@@ -95,12 +100,15 @@ public class M2ArgRoundBase extends TOverloadBase {
             }
         });
     }
+
     private final TClass numericType;
     private final RoundType roundType;
+    private final Attribute precisionAttr;
+    private final Attribute scaleAttr;
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(numericType, 0, 1);
+        builder.covers(numericType, 0).covers(MNumeric.BIGINT, 1);
     }
 
     @Override

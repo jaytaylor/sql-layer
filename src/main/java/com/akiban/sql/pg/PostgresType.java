@@ -58,7 +58,6 @@ import org.slf4j.LoggerFactory;
  */
 public class PostgresType extends ServerType
 {
-
     private static Logger logger = LoggerFactory.getLogger(PostgresType.class);
 
     /*** Type OIDs ***/

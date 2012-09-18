@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types3.TInstance;
 import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -65,18 +66,24 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     public static class JsonResultColumn extends PhysicalResultColumn {
+        private TInstance tInstance;
         private AkType akType;
         private List<JsonResultColumn> nestedResultColumns;
         
-        public JsonResultColumn(String name, AkType akType, 
+        public JsonResultColumn(String name, AkType akType, TInstance tInstance,
                                 List<JsonResultColumn> nestedResultColumns) {
             super(name);
             this.akType = akType;
+            this.tInstance = tInstance;
             this.nestedResultColumns = nestedResultColumns;
         }
 
         public AkType getAkType() {
             return akType;
+        }
+
+        public TInstance getTInstance() {
+            return tInstance;
         }
 
         public List<JsonResultColumn> getNestedResultColumns() {
@@ -86,11 +93,11 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
     @Override
     public PhysicalResultColumn getResultColumn(ResultField field) {
-        return getJsonResultColumn(field.getName(), field.getSQLtype());
+        return getJsonResultColumn(field.getName(), field.getSQLtype(), field.getTInstance());
     }
 
     protected JsonResultColumn getJsonResultColumn(String name, 
-                                                   DataTypeDescriptor sqlType) {
+                                                   DataTypeDescriptor sqlType, TInstance tInstance) {
         AkType akType;
         List<JsonResultColumn> nestedResultColumns = null;
         if (sqlType == null)
@@ -102,20 +109,21 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             DataTypeDescriptor[] columnTypes = typeId.getColumnTypes();
             nestedResultColumns = new ArrayList<JsonResultColumn>(columnNames.length);
             for (int i = 0; i < columnNames.length; i++) {
-                nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i]));
+                nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i],
+                        TypesTranslation.toTInstance(columnTypes[i])));
             }
             akType = AkType.RESULT_SET;
         }
         else
             akType = TypesTranslation.sqlTypeToAkType(sqlType);
-        return new JsonResultColumn(name, akType, nestedResultColumns);
+        return new JsonResultColumn(name, akType, tInstance, nestedResultColumns);
     }
 
     @Override
     protected PostgresStatement generateSelect(PhysicalSelect select,
                                                PostgresType[] parameterTypes) {
         int ncols = select.getResultColumns().size();
-        List<JsonResultColumn> resultColumns = new ArrayList<JsonResultColumn>();
+        List<JsonResultColumn> resultColumns = new ArrayList<JsonResultColumn>(ncols);
         for (PhysicalResultColumn physColumn : select.getResultColumns()) {
             JsonResultColumn resultColumn = (JsonResultColumn)physColumn;
             resultColumns.add(resultColumn);

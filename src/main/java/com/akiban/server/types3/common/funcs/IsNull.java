@@ -23,57 +23,48 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class Coalesce extends TOverloadBase {
+public final class IsNull extends TOverloadBase {
 
-    public static final TOverload INSTANCE = new Coalesce();
+    public static final TOverload INSTANCE = new IsNull();
 
-    private Coalesce() {}
-    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.pickingVararg(null, 0);
+        builder.covers(null, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        for (int i = 0; i < inputs.size(); ++i) {
-            if (!inputs.get(i).isNull()) {
-                PValueTargets.copyFrom(inputs.get(i), output);
-                return;
-            }
-        }
-        output.putNull();
+        PValueSource arg = inputs.get(0);
+        output.putBool(arg.isNull());
     }
 
     @Override
     public String displayName() {
-        return "COALESCE";
+        return "isnull";
     }
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.picking();
+        return TOverloadResult.fixed(AkBool.INSTANCE.instance());
     }
 
     @Override
-    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
-        if (preptimeValue == null)
-            return Constantness.NOT_CONST;
-        return preptimeValue.isNull() ? Constantness.UNKNOWN : Constantness.CONST;
+    protected boolean nullContaminates(int inputIndex) {
+        return false;
     }
+
+    private IsNull() {}
 }

@@ -31,6 +31,7 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.pg.PostgresType;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -322,7 +323,10 @@ public final class TypesTranslation {
         }
     }
 
-    public static TInstance toTInstance(DataTypeDescriptor descriptor) {
+    public static TInstance toTInstance(DataTypeDescriptor descriptor)
+    {
+        if (!Types3Switch.ON)
+            return null;
         TInstance result = PostgresType.fromDerby(descriptor, null).getInstance();
         assert result != null : "no TInstance created for " + descriptor;
         return result;
