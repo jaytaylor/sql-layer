@@ -547,6 +547,15 @@ public class ConstantFolder extends BaseRule
                 }
                 else if (isFalseOrUnknown(condition))
                     return false;
+                else if (condition instanceof LogicalFunctionCondition) {
+                    // A complex boolean may have been reduced to a top-level AND.
+                    LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
+                    if ("and".equals(lcond.getFunction())) {
+                        conditions.remove(i);
+                        conditions.add(i++, lcond.getLeft());
+                        conditions.add(i, lcond.getRight());
+                    }
+                }
                 i++;
             }
             return true;
@@ -1095,11 +1104,11 @@ public class ConstantFolder extends BaseRule
                 Comparable o2 = (Comparable)((ConstantExpression)r2.get(i)).getValue();
                 if (o1 == null) {
                     if (o2 != null) {
-                        return -1;
+                        return +1;
                     }
                 }
                 else if (o2 == null) {
-                    return +1;
+                    return -1;
                 }
                 else {
                     int c = o1.compareTo(o2);
