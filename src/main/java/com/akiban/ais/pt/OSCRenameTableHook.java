@@ -291,7 +291,6 @@ public class OSCRenameTableHook
     // So it only deals with unintended consequences.
     private void rebuildGroup(AkibanInformationSchema ais, UserTable table,
                               Collection<TableChange> columnChanges) {
-        rebuildGroupIndexes(ais, table);
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             table.removeCandidateParentJoin(parentJoin);
@@ -312,41 +311,6 @@ public class OSCRenameTableHook
             }
             else {
                 logger.info("Join {} no longer valid; group split.", childJoin);
-            }
-        }
-    }
-
-    private void rebuildGroupIndexes(AkibanInformationSchema ais, UserTable table) {
-        Group group = table.getGroup();
-        List<GroupIndex> dropIndexes = new ArrayList<GroupIndex>();
-        List<GroupIndex> copyIndexes = new ArrayList<GroupIndex>();
-        for (GroupIndex groupIndex : group.getIndexes()) {
-            boolean found = false, drop = false;
-            for (IndexColumn indexColumn : groupIndex.getKeyColumns()) {
-                if (indexColumn.getColumn().getTable() == table) {
-                    found = true;
-                    if (table.getColumn(indexColumn.getColumn().getName()) == null) {
-                        drop = true;
-                    }
-                }
-            }
-            if (found) {
-                if (drop)
-                    dropIndexes.add(groupIndex);
-                else
-                    copyIndexes.add(groupIndex);
-            }
-        }
-        group.removeIndexes(dropIndexes);
-        group.removeIndexes(copyIndexes);
-        for (GroupIndex oldIndex : copyIndexes) {
-            GroupIndex newIndex = GroupIndex.create(ais, group, oldIndex);
-            int idxpos = 0;
-            for (IndexColumn indexColumn : oldIndex.getKeyColumns()) {
-                Column column = indexColumn.getColumn();
-                if (column.getTable() == table)
-                    column = table.getColumn(column.getName());
-                IndexColumn.create(newIndex, column, indexColumn, idxpos++);
             }
         }
     }
@@ -388,6 +352,7 @@ public class OSCRenameTableHook
                 }
             case MODIFY:
                 if (change.getOldName().equals(columnName)) {
+                    if (true) return null; // TODO: Any change by alter breaks group today.
                     columnName = change.getNewName();
                     break;
                 }
