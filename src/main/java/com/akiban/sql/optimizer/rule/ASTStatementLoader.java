@@ -587,7 +587,6 @@ public class ASTStatementLoader extends BaseRule
             conditions.add(new ComparisonCondition(Comparison.GE, left, right1, type, null));
             conditions.add(new ComparisonCondition(Comparison.LE, left, right2, type, null));
         }
-
         
         protected void addInCondition(List<ConditionExpression> conditions,
                                       List<ExpressionNode> projects,
@@ -606,39 +605,28 @@ public class ASTStatementLoader extends BaseRule
                 List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
                 for (ValueNode rightOperand : rightOperandList) {
                     List<ExpressionNode> row = new ArrayList<ExpressionNode>(1);
-                    if (rightOperand instanceof RowConstructorNode) {
-                        for (ValueNode rcol : ((RowConstructorNode)rightOperand).getNodeList()) {
-                            row.add(toExpression(rcol, projects));
-                        }
-                    }
-                    else {
-                        row.add(toExpression(rightOperand, projects));
-                    }
+                    flattenInSameShape(row, rightOperand, lhs, projects);
                     rows.add(row);
                 }
                 ExpressionsSource source = new ExpressionsSource(rows);
-                ConditionExpression conds = null;
-                for (int i = 0; i < leftOperandList.size(); i++) {
-                    ExpressionNode left = toExpression(leftOperandList.get(i), projects);
-                    ConditionExpression cond =
-                        new ComparisonCondition(Comparison.EQ,
-                                                left,
-                                                new ColumnExpression(source, i, left.getSQLtype(), null),
-                                                in.getType(),
-                                                null);
-                    if (i == 0)
-                        conds = cond;
+                List<ConditionExpression> conds = new ArrayList<ConditionExpression>();
+                flattenAnyComparisons(conds, leftOperandList, source, projects, in.getType());
+                ConditionExpression combined = null;
+                for (ConditionExpression cond : conds) {
+                    if (combined == null)
+                        combined = cond;
                     else {
                         List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
                         
-                        operands.add(conds);
+                        operands.add(combined);
                         operands.add(cond);
-                        conds = new LogicalFunctionCondition("and", operands,
-                                                             cond.getSQLtype(), null);
+                        combined = new LogicalFunctionCondition("and", operands,
+                                                                cond.getSQLtype(), null);
                     }
+                    
                 }
                 List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
-                fields.add(conds);
+                fields.add(combined);
                 PlanNode subquery = new Project(source, fields);
                 inCondition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in);
             }
@@ -735,6 +723,50 @@ public class ASTStatementLoader extends BaseRule
             return result;
         }
         
+        private void flattenInSameShape(List<ExpressionNode> row,
+                                        ValueNode rightOperand, ValueNode leftOperand,
+                                        List<ExpressionNode> projects)
+                throws StandardException {
+            if (rightOperand instanceof RowConstructorNode) {
+                if (!(leftOperand instanceof RowConstructorNode))
+                    throw new IllegalArgumentException("Row value given where single expected");
+                ValueNodeList leftList = ((RowConstructorNode)leftOperand).getNodeList();
+                ValueNodeList rightList = ((RowConstructorNode)rightOperand).getNodeList();
+                if (leftList.size() != rightList.size())
+                    throw new IllegalArgumentException("mismatched columns count in IN " 
+                                                       + "left : " + leftList.size() + ", right: " + rightList.size());
+                for (int i = 0; i < leftList.size(); i++) {
+                    flattenInSameShape(row, rightList.get(i), leftList.get(i), projects);
+                }
+            }
+            else {
+                if ((leftOperand instanceof RowConstructorNode) &&
+                    (((RowConstructorNode)leftOperand).getNodeList().size() != 1))
+                    throw new IllegalArgumentException("Single value given where row expected");
+                row.add(toExpression(rightOperand, projects));
+            }
+        }
+
+
+        private void flattenAnyComparisons(List<ConditionExpression> conds, ValueNodeList leftOperandList, ExpressionsSource source, 
+                                           List<ExpressionNode> projects, DataTypeDescriptor sqlType) throws StandardException {
+            for (ValueNode leftOperand : leftOperandList) {
+                if (leftOperand instanceof RowConstructorNode) {
+                    flattenAnyComparisons(conds, ((RowConstructorNode)leftOperand).getNodeList(), source,
+                                          projects, sqlType);
+                }
+                else {
+                    ExpressionNode left = toExpression(leftOperand, projects);
+                    ConditionExpression cond = 
+                        new ComparisonCondition(Comparison.EQ,
+                                                left,
+                                                new ColumnExpression(source, conds.size(), left.getSQLtype(), null),
+                                                sqlType, null);
+                    conds.add(cond);
+                }
+            }
+        }
+
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
                                             List<ExpressionNode> projects,
                                             SubqueryNode subqueryNode)
