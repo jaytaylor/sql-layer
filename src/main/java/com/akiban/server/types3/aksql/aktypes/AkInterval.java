@@ -405,6 +405,17 @@ public class AkInterval extends TClassBase {
 
     }
 
+    public boolean isDate()
+    {
+        return formatters[0] instanceof AkIntervalMonthsFormat
+                || formatters[0] == AkIntervalSecondsFormat.DAY;
+    }
+    
+    public boolean isTime()
+    {
+        return !isDate();
+    }
+
     private final IntervalFormat[] formatters;
     private final Attribute formatAttribute;
     private final Map<TypeId,IntervalFormat> typeIdToFormat;

@@ -123,11 +123,10 @@ public class NumericFormatter {
         BYTES {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-                int charsetId = instance.attribute(StringAttribute.CHARSET);
-                String charsetName = (StringFactory.Charset.values())[charsetId].name();
-                
+                String charsetName = StringFactory.DEFAULT_CHARSET.name();
                 Charset charset = Charset.forName(charsetName);
-                out.append(new String(source.getBytes(), charset));
+                String str = new String(source.getBytes(), charset);
+                out.append(str);
             }
 
             @Override

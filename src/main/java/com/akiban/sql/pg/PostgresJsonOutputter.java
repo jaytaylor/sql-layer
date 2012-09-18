@@ -33,6 +33,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.Quote;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -95,7 +96,8 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
                 else {
                     // TODO: No Quote support for new types.
                     encoder.appendString("\"");
-                    encoder.appendPValue(value, valueType, false);
+                    TInstance columnTInstance = resultColumn.getTInstance();
+                    columnTInstance.format(value, appender);
                     encoder.appendString("\"");
                 }
             }
