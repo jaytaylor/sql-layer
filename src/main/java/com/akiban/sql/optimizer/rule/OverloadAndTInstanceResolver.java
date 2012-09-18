@@ -329,9 +329,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
                 TInstance targetType = resolutionResult.getTypeClass(i);
-                assert targetType != null;
-                ExpressionNode operand = castTo(operands.get(i), targetType, folder);
-                operands.set(i, operand);
+                if (targetType != null) {
+                    ExpressionNode operand = castTo(operands.get(i), targetType, folder);
+                    operands.set(i, operand);
+                }
             }
 
             TValidatedOverload overload = resolutionResult.getOverload();

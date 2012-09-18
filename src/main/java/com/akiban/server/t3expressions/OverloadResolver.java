@@ -65,9 +65,10 @@ public final class OverloadResolver {
 
         public TInstance getTypeClass(int inputIndex) {
             TInputSet tInputSet = overload.inputSetAt(inputIndex);
-            if (tInputSet.targetType() == null && tInputSet.isPicking())
-                return pickedInstance;
-            return tInputSet.targetType().instance();
+            TClass targetClass = tInputSet.targetType();
+            if (targetClass == null)
+                return tInputSet.isPicking() ? pickedInstance : null;
+            return targetClass.instance();
         }
     }
 
