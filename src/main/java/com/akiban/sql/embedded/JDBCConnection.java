@@ -36,7 +36,9 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ErrorCode;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +52,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     private SQLWarning warnings;
     private Properties clientInfo = new Properties();
     private String schema;
+    private JDBCOperatorCompiler compiler;
     
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
 
@@ -85,6 +88,43 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }
         return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+    }
+
+    protected void updateAIS(JDBCQueryContext context) {
+        boolean locked = false;
+        try {
+            context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
+            locked = true;
+            DDLFunctions ddl = reqs.dxl().ddlFunctions();
+            long currentTimestamp = ddl.getTimestamp();
+            if (aisTimestamp == currentTimestamp) 
+                return;             // Unchanged.
+            aisTimestamp = currentTimestamp;
+            ais = ddl.getAIS(session);
+        }
+        finally {
+            if (locked) {
+                context.unlock(DXLFunction.UNSPECIFIED_DDL_READ);
+            }
+        }
+        rebuildCompiler();
+    }
+
+    protected void rebuildCompiler() {
+        initParser();
+        compiler = JDBCOperatorCompiler.create(this);
+        
+        // TODO: Common base class?
+        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
+                     new PersistitAdapter(compiler.getSchema(),
+                                          reqs.store(),
+                                          reqs.treeService(),
+                                          session,
+                                          reqs.config()));
+        adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
+                     new MemoryAdapter(compiler.getSchema(),
+                                       session,
+                                       reqs.config()));
     }
 
     /* Wrapper */
