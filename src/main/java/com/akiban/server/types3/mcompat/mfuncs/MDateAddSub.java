@@ -41,7 +41,6 @@ import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -354,12 +353,12 @@ public class MDateAddSub extends TOverloadBase
                 }
             }
         },
-        SECOND(MNumeric.BIGINT)
+        SECOND(MApproximateNumber.DOUBLE)
         {
             @Override
             protected long toMillis(PValueSource arg)
             {
-                return arg.getInt64() * 1000L;
+                return Math.round(arg.getDouble()) * 1000L;
             }
         },
         DAY(MApproximateNumber.DOUBLE)
