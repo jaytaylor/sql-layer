@@ -110,6 +110,11 @@ public class SparseArray<T> {
         return definedElements.get(index);
     }
     
+    public void clear() {
+        Arrays.fill(internalArray, null);
+        definedElements.clear();
+    }
+
     public String describeElements() {
         StringBuilder sb = new StringBuilder();
         sb.append('[');
