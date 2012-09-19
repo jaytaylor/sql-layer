@@ -784,6 +784,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         // If we have something like CAST( (VALUE[n] of ExpressionsSource) to FOO ),
         // refactor it to VALUE[n] of ExpressionsSource2, where ExpressionsSource2 has columns at n cast to FOO.
         ExpressionNode inner = castNode.getOperand();
+        ExpressionNode result = castNode;
         if (inner instanceof ColumnExpression) {
             ColumnExpression columnNode = (ColumnExpression) inner;
             ColumnSource source = columnNode.getTable();
@@ -798,9 +799,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     targetColumn = castTo(targetColumn, castType, folder);
                     row.set(pos, targetColumn);
                 }
+                result = columnNode;
+                result.setPreptimeValue(castNode.getPreptimeValue());
+                expressionsTable.getFieldTInstances()[pos] = castType;
             }
         }
-        return inner;
+        return result;
     }
 
     private static TClass tclass(ExpressionNode operand) {
