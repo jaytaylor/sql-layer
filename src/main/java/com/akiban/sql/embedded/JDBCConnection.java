@@ -90,6 +90,10 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
+    protected InternalStatement compile(String sql) {
+        return null;
+    }
+
     protected void updateAIS(JDBCQueryContext context) {
         boolean locked = false;
         try {
@@ -148,9 +152,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        JDBCPreparedStatement pstmt = new JDBCPreparedStatement(this);
-        pstmt.prepare(sql);
-        return pstmt;
+        return new JDBCPreparedStatement(this, compile(sql));
     }
 
     @Override

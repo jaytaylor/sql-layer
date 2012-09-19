@@ -36,11 +36,14 @@ import java.net.URL;
 
 public class JDBCPreparedStatement extends JDBCStatement implements PreparedStatement
 {
-    protected JDBCPreparedStatement(JDBCConnection connection) {
-        super(connection);
-    }
+    private InternalStatement internalStatement;
+    private JDBCQueryContext context;
 
-    protected void prepare(String sql) throws SQLException {
+    protected JDBCPreparedStatement(JDBCConnection connection, 
+                                    InternalStatement internalStatement) {
+        super(connection);
+        this.internalStatement = internalStatement;
+        context = new JDBCQueryContext(connection);
     }
 
     /* PreparedStatement */

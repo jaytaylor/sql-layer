@@ -26,8 +26,10 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -48,13 +50,20 @@ import java.util.Map;
 public class JDBCResultSet implements ResultSet
 {
     private Statement statement;
+    private InternalStatement internalStatement;
     private Cursor cursor;
+    private RowType rowType;
     private Row row;
     private boolean wasNull;
     
-    protected JDBCResultSet(Statement statement, Cursor cursor) {
+    protected JDBCResultSet(Statement statement, InternalStatement internalStatement) {
         this.statement = statement;
-        this.cursor = cursor;
+        this.internalStatement = internalStatement;
+    }
+
+    protected void open(JDBCQueryContext context) {
+        cursor = API.cursor(internalStatement.getResultOperator(), context);
+        rowType = internalStatement.getResultRowType();
     }
 
     protected ValueSource value(int columnIndex) throws SQLException {
@@ -96,6 +105,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public boolean next() throws SQLException {
         row = cursor.next();
+        assert ((row == null) || (row.rowType() == rowType));
         return (row != null);
     }
 
@@ -405,7 +415,7 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return internalStatement.getResultSetMetaData();
     }
 
     @Override
