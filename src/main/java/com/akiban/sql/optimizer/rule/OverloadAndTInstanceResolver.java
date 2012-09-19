@@ -771,7 +771,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         if (targetInstance.equalsExcludingNullable(tinst(expression)))
             return expression;
-        targetInstance.setNullable(expression.getSQLtype().isNullable());
+        DataTypeDescriptor sqlType = expression.getSQLtype();
+        targetInstance.setNullable(sqlType == null || sqlType.isNullable());
         ExpressionNode result
                 = new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
         result.setPreptimeValue(new TPreptimeValue(targetInstance));
