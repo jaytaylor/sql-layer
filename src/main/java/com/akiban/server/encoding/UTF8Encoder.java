@@ -44,10 +44,7 @@ public class UTF8Encoder extends VariableWidthEncoding {
         int size = fieldDef.getPrefixSize();
         if (value != null) {
             String str;
-            if (value instanceof String) {
-                str = (String) value;
-            }
-            else if (value instanceof byte[]) {
+            if (value instanceof byte[]) {
                 try {
                     str = new String((byte[]) value, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
@@ -55,7 +52,7 @@ public class UTF8Encoder extends VariableWidthEncoding {
                 }
             }
             else {
-                throw new UnsupportedOperationException("can't decode object " + value);
+                str = value.toString();
             }
             for (int i = 0; i < str.length(); i++) {
                 int ch = str.charAt(i);
