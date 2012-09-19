@@ -6,8 +6,6 @@
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 ---
-- Statement: SET newtypes to 'true'
----
 # '2000-12-31 23:59:59' minus '2000-12-30 23:59:58' ===> interval 1 day and 1 second
 - Statement: SELECT DATE_ADD('2000-12-31 23:59:59', DATETIME('2000-12-31 23:59:59') -'2000-12-30 23:59:58') from all_types;
 - output: [[!re '2001-01-02 00:00:00([.]0)?']] 
