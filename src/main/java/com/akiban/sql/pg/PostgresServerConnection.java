@@ -40,9 +40,7 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -763,19 +761,9 @@ public class PostgresServerConnection extends ServerSessionBase
             compiler = PostgresJsonCompiler.create(this); 
         else
             throw new InvalidParameterValueException(format);
-        
-        // Add the Persisitit Adapter - default for most tables
-        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
-                new PersistitAdapter(compiler.getSchema(),
-                                       reqs.store(),
-                                       reqs.treeService(),
-                                       session,
-                                       reqs.config()));
-        // Add the Memory Adapter - for the in memory tables
-        adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
-                new MemoryAdapter(compiler.getSchema(),
-                                session,
-                                reqs.config()));
+
+        initAdapters(compiler);
+
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
@@ -800,14 +788,6 @@ public class PostgresServerConnection extends ServerSessionBase
                                                       getBooleanProperty("cbo", true),
                                                       getBooleanProperty("newtypes", false)),
                                         aisTimestamp);
-    }
-
-    @Override
-    public StoreAdapter getStore(final UserTable table) {
-        if (table.hasMemoryTableFactory()) {
-            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
-        }
-        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
     @Override
