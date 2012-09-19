@@ -74,8 +74,6 @@ public final class TInputSet {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (isExact)
-            sb.append("EXACT ");
         boolean coversAny = ! covering.isEmpty();
         if (coversAny) {
             sb.append("POS(");
@@ -93,6 +91,8 @@ public final class TInputSet {
         if (sb.length() == 0)
             sb.append("<none>"); // malformed input set, but still want a decent toString
         Object displayTargetType = (targetType == null) ? "*" : targetType;
+        if (isExact)
+            sb.append(" EXACT");
         sb.append(" <- ").append(displayTargetType);
         return sb.toString();
     }
