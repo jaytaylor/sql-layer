@@ -24,17 +24,56 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.mcompat.aggr;
 
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TAggregatorBase;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.util.HasId;
 
-public interface TAggregator extends HasId {
-    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object option);
-    void emptyValue(PValueTarget state);
-    TInstance resultType(TPreptimeValue value);
-    TClass getTypeClass();
-    String name();
+public class MGroupConcat extends TAggregatorBase
+{
+    public static final TAggregator INSTANCE = new MGroupConcat();
+
+    private MGroupConcat() {}
+
+    @Override
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object del)
+    {
+        // cache a StringBuilder instead?
+        state.putString((state.hasAnyValue()
+                            ? state.getString() + (String)del
+                            : "") 
+                            + source.getString(),
+                        null);
+    }
+
+    @Override
+    public void emptyValue(PValueTarget state)
+    {
+        state.putNull();
+    }
+
+    @Override
+    public TInstance resultType(TPreptimeValue value)
+    {
+        return MString.TEXT.instance();
+    }
+
+    @Override
+    public TClass getTypeClass()
+    {
+        return MString.TEXT;
+    }
+
+    @Override
+    public String name()
+    {
+        return "group_concat";
+    }
 }
