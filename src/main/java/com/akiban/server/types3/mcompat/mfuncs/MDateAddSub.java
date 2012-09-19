@@ -85,6 +85,8 @@ public class MDateAddSub extends TOverloadBase
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME_STRING, "SUBTIME")
     };
 
     private static class AddSubWithVarchar extends MDateAddSub
