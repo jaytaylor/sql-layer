@@ -315,7 +315,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             DataTypeDescriptor dtd = expression.getSQLtype();
             TInstance instance = TypesTranslation.toTInstance(dtd);
             expression.setPreptimeValue(new TPreptimeValue(instance));
-            return expression;
+            return finishCast(expression, folder);
         }
 
         ExpressionNode handleFunctionExpression(FunctionExpression expression) {
@@ -772,10 +772,38 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         if (targetInstance.equalsExcludingNullable(tinst(expression)))
             return expression;
         targetInstance.setNullable(expression.getSQLtype().isNullable());
-        ExpressionNode result
+        CastExpression castExpression
                 = new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
-        result.setPreptimeValue(new TPreptimeValue(targetInstance));
+        castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
+        ExpressionNode result = finishCast(castExpression, folder);
         result = folder.foldConstants(result);
+        return result;
+    }
+
+    private static ExpressionNode finishCast(CastExpression castNode, NewFolder folder) {
+        // If we have something like CAST( (VALUE[n] of ExpressionsSource) to FOO ),
+        // refactor it to VALUE[n] of ExpressionsSource2, where ExpressionsSource2 has columns at n cast to FOO.
+        ExpressionNode inner = castNode.getOperand();
+        ExpressionNode result = castNode;
+        if (inner instanceof ColumnExpression) {
+            ColumnExpression columnNode = (ColumnExpression) inner;
+            ColumnSource source = columnNode.getTable();
+            if (source instanceof ExpressionsSource) {
+                ExpressionsSource expressionsTable = (ExpressionsSource) source;
+                List<List<ExpressionNode>> rows = expressionsTable.getExpressions();
+                int pos = columnNode.getPosition();
+                TInstance castType = castNode.getPreptimeValue().instance();
+                for (int i = 0, nrows = rows.size(); i < nrows; ++i) {
+                    List<ExpressionNode> row = rows.get(i);
+                    ExpressionNode targetColumn = row.get(pos);
+                    targetColumn = castTo(targetColumn, castType, folder);
+                    row.set(pos, targetColumn);
+                }
+                result = columnNode;
+                result.setPreptimeValue(castNode.getPreptimeValue());
+                expressionsTable.getFieldTInstances()[pos] = castType;
+            }
+        }
         return result;
     }
 
