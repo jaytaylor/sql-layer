@@ -40,6 +40,11 @@ import com.akiban.sql.optimizer.rule.PlanContext;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
+
+import com.akiban.ais.model.Column;
+import com.akiban.server.types3.TInstance;
+import com.akiban.sql.optimizer.TypesTranslation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,13 +68,27 @@ public class JDBCOperatorCompiler extends ServerOperatorCompiler
 
     @Override
     public PhysicalResultColumn getResultColumn(ResultField field) {
-        int jdbcType = Types.OTHER;
-        DataTypeDescriptor sqlType = field.getSQLtype();
-        if (sqlType != null)
-            jdbcType = sqlType.getJDBCTypeId();
-        return new JDBCResultColumn(field.getName(), 
-                                    jdbcType, sqlType,
-                                    field.getAIScolumn(), field.getTInstance());
+        return getJDBCResultColumn(field.getName(), field.getSQLtype(), field.getAIScolumn(), field.getTInstance());
     }
 
+    protected JDBCResultColumn getJDBCResultColumn(String name, DataTypeDescriptor sqlType, 
+                                                   Column aisColumn, TInstance tInstance) {
+        int jdbcType = Types.OTHER;
+        JDBCResultSetMetaData nestedResultSet = null;
+        if (sqlType != null) {
+            jdbcType = sqlType.getJDBCTypeId();
+            if (sqlType.getTypeId().isRowMultiSet()) {
+                TypeId.RowMultiSetTypeId typeId = 
+                    (TypeId.RowMultiSetTypeId)sqlType.getTypeId();
+                String[] columnNames = typeId.getColumnNames();
+                DataTypeDescriptor[] columnTypes = typeId.getColumnTypes();
+                List<JDBCResultColumn> nestedResultColumns = new ArrayList<JDBCResultColumn>(columnNames.length);
+                for (int i = 0; i < columnNames.length; i++) {
+                    nestedResultColumns.add(getJDBCResultColumn(columnNames[i], columnTypes[i], null, TypesTranslation.toTInstance(columnTypes[i])));
+                }
+                nestedResultSet = new JDBCResultSetMetaData(nestedResultColumns);
+            }
+        }
+        return new JDBCResultColumn(name, jdbcType, sqlType, aisColumn, tInstance, nestedResultSet);
+    }
 }

@@ -46,14 +46,17 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
         private TInstance tInstance;
+        private JDBCResultSetMetaData nestedResultSet;
 
         protected JDBCResultColumn(String name, 
                                    int jdbcType, DataTypeDescriptor sqlType, 
-                                   Column aisColumn, TInstance tInstance) {
+                                   Column aisColumn, TInstance tInstance,
+                                   JDBCResultSetMetaData nestedResultSet) {
             super(name);
             this.jdbcType = jdbcType;
             this.sqlType = sqlType;
             this.tInstance = tInstance;
+            this.nestedResultSet = nestedResultSet;
         }
 
         public int getJDBCType() {
@@ -116,6 +119,10 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
             if (sqlType != null)
                 return sqlType.getMaximumWidth();
             return 1024;
+        }
+
+        public JDBCResultSetMetaData getNestedResultSet() {
+            return nestedResultSet;
         }
     }
 
@@ -320,5 +327,10 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
     @Override
     public String getColumnClassName(int column) throws SQLException {
         return getTypeClassName(getColumn(column).getAkType());
+    }
+
+
+    public JDBCResultSetMetaData getNestedResultSet(int column) {
+        return getColumn(column).getNestedResultSet();
     }
 }
