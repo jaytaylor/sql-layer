@@ -52,5 +52,9 @@ public abstract class PostgresOutputter<T>
                                          server.getZeroDateTimeBehavior());
     }
 
+    public void beforeData() throws IOException {}
+
+    public void afterData() throws IOException {}
+
     public abstract void output(T row, boolean usePVals) throws IOException;
 }

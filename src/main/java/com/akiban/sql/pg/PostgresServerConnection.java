@@ -79,6 +79,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private boolean running = false, ignoreUntilSync = false;
     private Socket socket;
     private PostgresMessenger messenger;
+    private OutputFormat outputFormat = OutputFormat.TABLE;
     private int sessionId, secret;
     private int version;
     private Map<String,PostgresStatement> preparedStatements =
@@ -756,11 +757,23 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
         if (format.equals("table"))
-            compiler = PostgresOperatorCompiler.create(this);
+            outputFormat = OutputFormat.TABLE;
         else if (format.equals("json"))
-            compiler = PostgresJsonCompiler.create(this); 
+            outputFormat = OutputFormat.JSON;
+        else if (format.equals("json_with_meta_data"))
+            outputFormat = OutputFormat.JSON_WITH_META_DATA;
         else
             throw new InvalidParameterValueException(format);
+        switch (outputFormat) {
+        case TABLE:
+        default:
+            compiler = PostgresOperatorCompiler.create(this);
+            break;
+        case JSON:
+        case JSON_WITH_META_DATA:
+            compiler = PostgresJsonCompiler.create(this);
+            break;
+        }
 
         initAdapters(compiler);
 
@@ -901,6 +914,11 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     public PostgresMessenger getMessenger() {
         return messenger;
+    }
+
+    @Override
+    public OutputFormat getOutputFormat() {
+        return outputFormat;
     }
 
     @Override
