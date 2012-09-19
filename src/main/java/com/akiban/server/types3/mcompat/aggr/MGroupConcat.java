@@ -45,6 +45,10 @@ public class MGroupConcat extends TAggregatorBase
     @Override
     public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object del)
     {
+        // skip all NULL rows
+        if (source.isNull())
+            return;
+
         // cache a StringBuilder instead?
         state.putString((state.hasAnyValue()
                             ? state.getString() + (String)del
