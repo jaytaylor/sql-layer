@@ -44,7 +44,7 @@ public class EmbeddedJDBCIT extends ITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-            .bind(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class);
+            .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class);
     }
 
     @Override
