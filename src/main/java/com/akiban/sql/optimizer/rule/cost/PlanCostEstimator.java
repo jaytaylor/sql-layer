@@ -1,3 +1,4 @@
+
 /**
  * END USER LICENSE AGREEMENT (“EULA”)
  *
@@ -211,7 +212,11 @@ public class PlanCostEstimator
                                 : costEstimate.union(zScanCost);
                         }
                     }
+                } else {
+                    throw new AkibanInternalException("Unexpected operands for spatial index: " + func);
                 }
+            } else {
+                throw new AkibanInternalException("Unexpected function for spatial index: " + func);
             }
             index.setScanCostEstimate(costEstimate);
             long totalRows = costEstimate.getRowCount();
