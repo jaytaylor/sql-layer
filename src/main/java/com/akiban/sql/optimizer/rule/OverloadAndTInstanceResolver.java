@@ -281,7 +281,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         needCasts.set(field);
 
                     Boolean topIsNullable = (instances[field] == null) ? null : instances[field].nullability();
-                    Boolean botIsNullable = (botInstance == null) ? null : botInstance.nullability();
+                    Boolean botIsNullable = botInstance.nullability();
                     if (topClass != common){
                         TInstance instance = (botClass == common) ? botInstance : common.instance();
                         instances[field] = instance;
