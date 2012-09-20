@@ -606,6 +606,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 // TODO eventually we'll probably want to ignore this completely, and do all the type inference
                 // from within the types3 framework. For now, use what we have.
                 TInstance tinst = TypesTranslation.toTInstance(sqlType);
+                tinst.setNullable(true);
                 expression.setPreptimeValue(new TPreptimeValue(tinst));
             }
             return expression;

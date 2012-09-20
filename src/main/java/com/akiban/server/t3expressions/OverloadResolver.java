@@ -39,20 +39,80 @@ import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public final class OverloadResolver {
 
-    public static class OverloadResult {
+    public class OverloadResult {
         private TValidatedOverload overload;
+        private Map<TInputSet, TInstance> instances;
 
-        private TInstance pickedInstance;
-        public OverloadResult(TValidatedOverload overload, TInstance pickedInstance) {
+        private OverloadResult(TValidatedOverload overload, TInstance pickedInstance,
+                               List<? extends TPreptimeValue> inputs)
+        {
             this.overload = overload;
-            this.pickedInstance = pickedInstance;
+            List<TInputSet> inputSets = overload.inputSets();
+            this.instances = new HashMap<TInputSet, TInstance>(inputSets.size());
+            for (TInputSet inputSet : inputSets) {
+                final TInstance instance;
+                if (inputSet.isPicking()) {
+                    instance = pickedInstance;
+                }
+                else {
+                    TClass targetTClass = inputSet.targetType();
+                    if (targetTClass == null)
+                        targetTClass = findCommon(overload, inputSet, inputs);
+                    instance = targetTClass.instance();
+                }
+                boolean nullable = nullable(overload,  inputSet, inputs);
+                instance.setNullable(nullable);
+                instances.put(inputSet, instance);
+            }
+        }
+
+        private boolean nullable(TValidatedOverload overload, TInputSet inputSet,
+                                 List<? extends TPreptimeValue> inputs)
+        {
+            for (int i = 0, size = inputs.size(); i < size; ++i) {
+                if (overload.inputSetAt(i) != inputSet)
+                    continue;
+                TPreptimeValue input = inputs.get(i);
+                if (input.isNullable())
+                    return true;
+            }
+            return false;
+        }
+
+        private TClass findCommon(TValidatedOverload overload, TInputSet inputSet,
+                                  List<? extends TPreptimeValue> inputs)
+        {
+            assert inputSet.targetType() == null : inputSet; // so we have to look at inputs
+            TClass common = null;
+            for (int i = 0, size = inputs.size(); i < size; ++i) {
+                if (overload.inputSetAt(i) != inputSet)
+                    continue;
+                TInstance inputInstance = inputs.get(i).instance();
+                if (inputInstance == null) {
+                    // unknown type, like a NULL literal or parameter
+                    continue;
+                }
+                TClass inputClass = inputInstance.typeClass();
+                if (common == null) {
+                    common = inputClass;
+                }
+                else {
+                    common = commonTClass(common, inputClass);
+                    if (common == null)
+                        throw new OverloadException(overload + ": couldn't find common types for " + inputSet
+                            + " with " + inputs);
+                }
+            }
+            return common;
         }
 
         public TValidatedOverload getOverload() {
@@ -60,15 +120,12 @@ public final class OverloadResolver {
         }
 
         public TInstance getPickedInstance() {
-            return pickedInstance;
+            return instances.get(overload.pickingInputSet());
         }
 
         public TInstance getTypeClass(int inputIndex) {
             TInputSet tInputSet = overload.inputSetAt(inputIndex);
-            TClass targetClass = tInputSet.targetType();
-            if (targetClass == null)
-                return tInputSet.isPicking() ? pickedInstance : null;
-            return targetClass.instance();
+            return instances.get(tInputSet);
         }
     }
 
@@ -318,7 +375,7 @@ public final class OverloadResolver {
 
     private OverloadResult buildResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
         TInstance pickingInstance = pickingInstance(overload, inputs);
-        return new OverloadResult(overload, pickingInstance);
+        return new OverloadResult(overload, pickingInstance, inputs);
     }
 
     private TInstance pickingInstance(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
