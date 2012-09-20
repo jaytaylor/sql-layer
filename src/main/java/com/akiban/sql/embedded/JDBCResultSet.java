@@ -48,16 +48,27 @@ import java.util.Map;
 
 public class JDBCResultSet implements ResultSet
 {
-    private Statement statement;
-    private Cursor cursor;
+    private JDBCStatement statement;
     private JDBCResultSetMetaData metaData;
+    private Cursor cursor;
     private Row row;
     private boolean wasNull;
     
-    protected JDBCResultSet(Statement statement, Cursor cursor, JDBCResultSetMetaData metaData) {
+    protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData) {
         this.statement = statement;
-        this.cursor = cursor;
         this.metaData = metaData;
+    }
+
+    protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData,
+                            Cursor cursor) {
+        this.statement = statement;
+        this.metaData = metaData;
+        this.cursor = cursor;
+        statement.openingResultSet(this);
+    }
+
+    protected void open(Cursor cursor) {
+        this.cursor = cursor;
     }
 
     protected ValueSource value(int columnIndex) throws SQLException {
@@ -114,6 +125,7 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void close() throws SQLException {
+        statement.closingResultSet(this);
         try {
             if (cursor != null) {
                 cursor.destroy();
@@ -511,7 +523,7 @@ public class JDBCResultSet implements ResultSet
                     case TIMESTAMP:
                         return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
                     case RESULT_SET:
-                        return new JDBCResultSet(statement, value.getResultSet(), metaData.getNestedResultSet(columnIndex));
+                        return new JDBCResultSet(statement, metaData.getNestedResultSet(columnIndex), value.getResultSet());
                     default:
                         return new ToObjectValueTarget().convertFromSource(value);
                     }

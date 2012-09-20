@@ -44,6 +44,7 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.SQLParseException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -57,12 +58,13 @@ import java.util.*;
 import java.util.concurrent.Executor;
 
 public class JDBCConnection extends ServerSessionBase implements Connection {
-    private boolean closed, autoCommit, readOnly;
+    private boolean closed, autoCommit;
     private JDBCWarning warnings;
     private Properties clientInfo = new Properties();
     private String schema;
     private EmbeddedOperatorCompiler compiler;
-    
+    private List<JDBCResultSet> openResultSets = new ArrayList<JDBCResultSet>();
+
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
 
     protected JDBCConnection(ServerServiceRequirements reqs, Properties info) {
@@ -145,6 +147,20 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         initAdapters(compiler);
     }
 
+    protected void openingResultSet(JDBCResultSet resultSet) {
+        if (!isTransactionActive()) {
+            beginTransaction();
+        }
+        openResultSets.add(resultSet);
+    }
+
+    protected void closingResultSet(JDBCResultSet resultSet) {
+        openResultSets.remove(resultSet);
+        if (autoCommit && openResultSets.isEmpty()) {
+            commitTransaction();
+        }
+    }
+
     /* Wrapper */
 
     @Override
@@ -181,7 +197,11 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-        this.autoCommit = autoCommit;
+        if (this.autoCommit != autoCommit) {
+            if (transaction != null) 
+                commit();
+            this.autoCommit = autoCommit;
+        }
     }
 
     @Override
@@ -191,14 +211,35 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void commit() throws SQLException {
+        if (autoCommit)
+            throw new JDBCException("Not allowed in auto-commit mode");
+        try {
+            commitTransaction();
+        }
+        catch (InvalidOperationException ex) {
+            throw new JDBCException(ex);
+        }
     }
 
     @Override
     public void rollback() throws SQLException {
+        if (autoCommit)
+            throw new JDBCException("Not allowed in auto-commit mode");
+        try {
+            rollbackTransaction();
+        }
+        catch (InvalidOperationException ex) {
+            throw new JDBCException(ex);
+        }
     }
 
     @Override
     public void close() throws SQLException {
+        if (isTransactionActive())
+            rollback();
+        while (!openResultSets.isEmpty()) {
+            openResultSets.get(0).close();
+        }
         this.closed = true;
     }
 
@@ -214,12 +255,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-        this.readOnly = readOnly;
+        this.transactionDefaultReadOnly = transactionDefaultReadOnly;
     }
 
     @Override
     public boolean isReadOnly() throws SQLException {
-        return readOnly;
+        return transactionDefaultReadOnly;
     }
 
     @Override

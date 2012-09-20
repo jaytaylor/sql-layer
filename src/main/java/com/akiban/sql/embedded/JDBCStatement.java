@@ -50,13 +50,20 @@ public class JDBCStatement implements Statement
                 throw new JDBCException("Statement required parameters; must prepare");
             context = new EmbeddedQueryContext(connection, this);
         }
+        JDBCResultSet resultSet = new JDBCResultSet(this, stmt.getResultSetMetaData());
+        boolean success = false;
         try {
-            currentResultSet = new JDBCResultSet(this,
-                                                 API.cursor(stmt.getResultOperator(), context),
-                                                 stmt.getResultSetMetaData());
+            connection.openingResultSet(resultSet);
+            resultSet.open(API.cursor(stmt.getResultOperator(), context));
+            currentResultSet = resultSet;
+            success = true;
         }
         catch (InvalidOperationException ex) {
             throw new JDBCException(ex);
+        }
+        finally {
+            if (!success)
+                connection.closingResultSet(resultSet);
         }
         return true;
     }
@@ -80,6 +87,17 @@ public class JDBCStatement implements Statement
             warnings = warning;
         else
             warnings.setNextWarning(warning);
+    }
+
+    protected void openingResultSet(JDBCResultSet resultSet) {
+        connection.openingResultSet(resultSet);
+    }
+
+    protected void closingResultSet(JDBCResultSet resultSet) {
+        if (currentResultSet == resultSet) {
+            currentResultSet = null;
+        }
+        connection.closingResultSet(resultSet);
     }
 
     /* Wrapper */
@@ -108,6 +126,9 @@ public class JDBCStatement implements Statement
 
     @Override
     public void close() throws SQLException {
+        if (currentResultSet != null) {
+            currentResultSet.close(); // Which will call thru us to connection.
+        }
         closed = true;
     }
 
