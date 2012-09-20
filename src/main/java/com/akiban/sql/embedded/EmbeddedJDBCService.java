@@ -26,70 +26,9 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.server.t3expressions.OverloadResolutionService;
-import com.akiban.sql.server.ServerServiceRequirements;
+import java.sql.Driver;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.InstrumentationService;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.Store;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-import java.sql.SQLException;
-
-public class EmbeddedJDBCService implements Service {
-    private final ServerServiceRequirements reqs;
-    private JDBCDriver driver;
-
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCService.class);
-
-    @Inject
-    public EmbeddedJDBCService(ConfigurationService config,
-                               DXLService dxlService,
-                               InstrumentationService instrumentation,
-                               SessionService sessionService,
-                               Store store,
-                               TreeService treeService,
-                               FunctionsRegistry functionsRegistry,
-                               IndexStatisticsService indexStatisticsService,
-                               OverloadResolutionService overloadResolutionService) {
-        reqs = new ServerServiceRequirements(dxlService, instrumentation, 
-                sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, overloadResolutionService);
-    }
-
-    public void start() {
-        driver = new JDBCDriver(reqs);
-        try {
-            driver.register();
-        }
-        catch (SQLException ex) {
-            throw new AkibanInternalException("Cannot register with JDBC", ex);
-        }
-    }
-
-    public void stop() {
-        if (driver != null) {
-            try {
-                driver.deregister();
-            }
-            catch (SQLException ex) {
-                logger.warn("Cannot deregister with JDBC", ex);
-            }
-            driver = null;
-        }
-    }
-
-    public void crash() {
-        stop();
-    }
+public interface EmbeddedJDBCService
+{
+    public Driver getDriver();
 }

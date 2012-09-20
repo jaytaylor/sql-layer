@@ -24,82 +24,82 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.embedded;
 
 import com.akiban.server.t3expressions.OverloadResolutionService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
-import com.akiban.server.error.ServiceStartupException;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.InstrumentationService;
-import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
+import java.sql.Driver;
+import java.sql.SQLException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.inject.Inject;
 
-/** The PostgreSQL server service.
- * @see PostgresServer
-*/
-public class PostgresServerManager implements PostgresService, Service, JmxManageable {
+public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
     private final ServerServiceRequirements reqs;
-    private PostgresServer server = null;
+    private JDBCDriver driver;
+
+    private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCService.class);
 
     @Inject
-    public PostgresServerManager(ConfigurationService config,
-                                 DXLService dxlService,
-                                 InstrumentationService instrumentation,
-                                 SessionService sessionService,
-                                 Store store,
-                                 TreeService treeService,
-                                 FunctionsRegistry functionsRegistry,
-                                 IndexStatisticsService indexStatisticsService,
-                                 OverloadResolutionService overloadResolutionService) {
+    public EmbeddedJDBCServiceImpl(ConfigurationService config,
+                                   DXLService dxlService,
+                                   InstrumentationService instrumentation,
+                                   SessionService sessionService,
+                                   Store store,
+                                   TreeService treeService,
+                                   FunctionsRegistry functionsRegistry,
+                                   IndexStatisticsService indexStatisticsService,
+                                   OverloadResolutionService overloadResolutionService) {
         reqs = new ServerServiceRequirements(dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
                 config, indexStatisticsService, overloadResolutionService);
     }
 
     @Override
-    public void start() throws ServiceStartupException {
-        server = new PostgresServer(reqs);
-        server.start();
+    public Driver getDriver() {
+        return driver;
+    }
+
+    @Override
+    public void start() {
+        driver = new JDBCDriver(reqs);
+        try {
+            driver.register();
+        }
+        catch (SQLException ex) {
+            throw new AkibanInternalException("Cannot register with JDBC", ex);
+        }
     }
 
     @Override
     public void stop() {
-        if (server != null) {
-            server.stop();
-            server = null;
+        if (driver != null) {
+            try {
+                driver.deregister();
+            }
+            catch (SQLException ex) {
+                logger.warn("Cannot deregister with JDBC", ex);
+            }
+            driver = null;
         }
     }
 
     @Override
     public void crash() {
         stop();
-    }
-
-    /*** PostgresService ***/
-
-    @Override
-    public int getPort() {
-        return server.getPort();
-    }
-    
-    @Override
-    public PostgresServer getServer() {
-        return server;
-    }
-
-    /*** JmxManageable ***/
-    
-    @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("PostgresServer", server, PostgresMXBean.class);
     }
 }
