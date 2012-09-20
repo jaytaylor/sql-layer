@@ -77,7 +77,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             }
         }
         catch (InvalidOperationException ex) {
-            throw new SQLException(ex);
+            throw new JDBCException(ex);
         }
     }
 
@@ -177,7 +177,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             value = new String(b, 0, l, "ASCII");
         }
         catch (IOException ex) {
-            throw new SQLException(ex);
+            throw new JDBCException(ex);
         }
         setParameter(parameterIndex, value, AkType.VARCHAR);
     }
@@ -191,7 +191,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             value = new String(b, 0, l, "UTF-8");
         }
         catch (IOException ex) {
-            throw new SQLException(ex);
+            throw new JDBCException(ex);
         }
         setParameter(parameterIndex, value, AkType.VARCHAR);
     }
@@ -205,7 +205,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             value = new WrappingByteSource().wrap(b, 0, l);
         }
         catch (IOException ex) {
-            throw new SQLException(ex);
+            throw new JDBCException(ex);
         }
         setParameter(parameterIndex, value, AkType.VARBINARY);
     }
@@ -244,7 +244,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             value = new String(c, 0, l);
         }
         catch (IOException ex) {
-            throw new SQLException(ex);
+            throw new JDBCException(ex);
         }
         setParameter(parameterIndex, value, AkType.VARCHAR);
     }
@@ -384,7 +384,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             value = new String(ostr.toByteArray(), "ASCII");
         }
         catch (IOException ex) {
-            throw new SQLException(ex);
+            throw new JDBCException(ex);
         }
         setParameter(parameterIndex, value, AkType.VARCHAR);
     }
@@ -403,7 +403,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             value = new WrappingByteSource(ostr.toByteArray());
         }
         catch (IOException ex) {
-            throw new SQLException(ex);
+            throw new JDBCException(ex);
         }
         setParameter(parameterIndex, value, AkType.VARBINARY);
     }
@@ -422,7 +422,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             value = ostr.toString();
         }
         catch (IOException ex) {
-            throw new SQLException(ex);
+            throw new JDBCException(ex);
         }
         setParameter(parameterIndex, value, AkType.VARCHAR);
     }

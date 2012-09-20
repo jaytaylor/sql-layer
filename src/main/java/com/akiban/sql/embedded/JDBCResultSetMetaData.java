@@ -184,6 +184,10 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
         this.columns = columns;
     }
 
+    protected List<JDBCResultColumn> getColumns() {
+        return columns;
+    }
+
     protected JDBCResultColumn getColumn(int column) {
         return columns.get(column - 1);
     }
