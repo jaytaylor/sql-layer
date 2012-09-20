@@ -58,7 +58,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         ODBC_LO_TYPE_QUERY("select oid, typbasetype from pg_type where typname = 'lo'"),
         // SEQUEL 3.33.0 (http://sequel.rubyforge.org/) sends this when opening a new connection
         SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'"),
-        // Npgsql sends this at startup.
+        // Npgsql (http://npgsql.projects.postgresql.org/) sends this at startup.
         NPGSQL_TYPE_QUERY("SELECT typname, oid FROM pg_type WHERE typname IN \\((.+)\\)", true),
         // PSQL \dn
         PSQL_LIST_SCHEMAS("SELECT n.nspname AS \"Name\",\\s*" +
@@ -398,7 +398,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int sequelBTypeQuery(PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-    	for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
+        for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
             if (pgtype.getType() == PostgresType.TypeOid.TypType.BASE) {
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(2); // 2 columns for this query
@@ -420,7 +420,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         List<String> types = new ArrayList<String>();
-    	for (String type : groups.get(1).split(",")) {
+        for (String type : groups.get(1).split(",")) {
             if ((type.charAt(0) == '\'') && (type.charAt(type.length()-1) == '\''))
                 type = type.substring(1, type.length()-1);
             types.add(type);
@@ -462,7 +462,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 iter.remove();
         }
         Collections.sort(names);
-    	for (String name : names) {
+        for (String name : names) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(2); // 2 columns for this query
             writeColumn(messenger, encoder, usePVals, 
@@ -509,7 +509,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 iter.remove();
         }
         Collections.sort(names);
-    	for (TableName name : names) {
+        for (TableName name : names) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(4); // 4 columns for this query
             writeColumn(messenger, encoder, usePVals, 
@@ -555,7 +555,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 iter.remove();
         }
         Collections.sort(names);
-    	for (TableName name : names) {
+        for (TableName name : names) {
             int id;
             Columnar table = ais.getColumnar(name);
             if (table.isTable())
