@@ -244,7 +244,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private void doMetadataChange(Session session, QueryContext context, UserTable origTable, UserTable newDefinition,
                                   Collection<ChangedTableDescription> changedTables, boolean nullChange,
                                   AlterTableHelper helper) {
-        helper.dropAffectedGroupIndexes(session, this, origTable);
+        helper.dropAffectedGroupIndexes(session, this, origTable, false);
         if(nullChange) {
             // Check new definition
             final ConstraintChecker checker = new UserTableRowChecker(newDefinition);
@@ -275,17 +275,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().alterTableDefinitions(session, changedTables);
 
         UserTable newTable = getUserTable(session, newDefinition.getName());
-        helper.createAffectedGroupIndexes(session, this, origTable, newTable);
+        helper.createAffectedGroupIndexes(session, this, origTable, newTable, false);
     }
 
     private void doIndexChange(Session session, UserTable origTable, UserTable newDefinition,
                                Collection<ChangedTableDescription> changedTables, AlterTableHelper helper) {
-        helper.dropAffectedGroupIndexes(session, this, origTable);
+        helper.dropAffectedGroupIndexes(session, this, origTable, false);
         schemaManager().alterTableDefinitions(session, changedTables);
         UserTable newTable = getUserTable(session, newDefinition.getName());
         List<Index> indexes = helper.findNewIndexesToBuild(newTable);
         store().buildIndexes(session, indexes, DEFER_INDEX_BUILDING);
-        helper.createAffectedGroupIndexes(session, this, origTable, newTable);
+        helper.createAffectedGroupIndexes(session, this, origTable, newTable, false);
     }
 
     private void doTableChange(Session session, QueryContext context, TableName tableName, UserTable newDefinition,
@@ -297,7 +297,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = origAIS.getUserTable(tableName);
 
-        helper.dropAffectedGroupIndexes(session, this, origTable);
+        helper.dropAffectedGroupIndexes(session, this, origTable, true);
 
         // Save previous state so it can be scanned
         final Schema origSchema = SchemaCache.globalSchema(origAIS);
@@ -412,7 +412,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             // Now rebuild any group indexes, leaving out empty ones
             adapter.enterUpdateStep();
-            helper.createAffectedGroupIndexes(session, this, origTable, newTable);
+            helper.createAffectedGroupIndexes(session, this, origTable, newTable, true);
         } finally {
             adapter.leaveUpdateStep(step);
             cursor.close();

@@ -109,7 +109,7 @@ public class AlterTableHelper {
         return indexes;
     }
 
-    public void dropAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable) {
+    public void dropAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable, boolean dataChange) {
         // Drop definition and rebuild later, probably better than doing each entry individually
         if(affectedGroupIndexes.isEmpty()) {
             return;
@@ -118,11 +118,13 @@ public class AlterTableHelper {
         for(IndexName name : affectedGroupIndexes.keySet()) {
             groupIndexes.add(origTable.getGroup().getIndex(name.getName()));
         }
-        ddl.store().truncateIndexes(session, groupIndexes);
+        if(dataChange) {
+            ddl.store().truncateIndexes(session, groupIndexes);
+        }
         ddl.schemaManager().dropIndexes(session, groupIndexes);
     }
 
-    public void createAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable, UserTable newTable) {
+    public void createAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable, UserTable newTable, boolean dataChange) {
         // Ideally only would copy the Group, but that is vulnerable to changing group names. Even if we handle that
         // by looking up the new name, index creation in PSSM requires index.getName().getTableName() match the actual.
         AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS());
@@ -147,6 +149,10 @@ public class AlterTableHelper {
             indexesToBuild.add(tempIndex);
         }
 
-        ddl.createIndexes(session, indexesToBuild);
+        if(dataChange) {
+            ddl.createIndexes(session, indexesToBuild);
+        } else {
+            ddl.schemaManager().createIndexes(session, indexesToBuild);
+        }
     }
 }
