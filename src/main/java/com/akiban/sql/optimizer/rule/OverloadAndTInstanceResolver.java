@@ -32,6 +32,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types3.ErrorHandlingMode;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TAggregator;
@@ -430,13 +431,30 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TInstance thenType = tinst(thenExpr);
             TInstance elseType = tinst(elseExpr);
 
-            TClass commonClass = resolver.commonTClass(thenType.typeClass(), elseType.typeClass());
-            if (commonClass == null)
-                throw error("couldn't determine a type for CASE expression");
-            thenExpr = castTo(thenExpr, commonClass, folder);
-            elseExpr = castTo(elseExpr, commonClass, folder);
-            TInstance resultInstance = commonClass.pickInstance(tinst(thenExpr), tinst(elseExpr));
-            expression.setPreptimeValue(new TPreptimeValue(resultInstance));
+            TInstance commonInstance;
+            if (thenType == null && elseType == null) { // both types are unknown, so result is unknown
+                return new ConstantExpression(null, AkType.NULL);
+            }
+            else if (thenType == null) {
+                commonInstance = elseType;
+            }
+            else if (elseExpr == null) {
+                commonInstance = thenType;
+            }
+            else {
+                TClass commonClass = resolver.commonTClass(thenType.typeClass(), elseType.typeClass());
+                if (commonClass == null)
+                    throw error("couldn't determine a type for CASE expression");
+                commonInstance = commonClass.instance();
+            }
+
+            thenExpr = castTo(thenExpr, commonInstance, folder);
+            elseExpr = castTo(elseExpr, commonInstance, folder);
+
+            expression.setThenExpression(thenExpr);
+            expression.setElseExpression(elseExpr);
+
+            expression.setPreptimeValue(new TPreptimeValue(commonInstance));
             return expression;
         }
 
