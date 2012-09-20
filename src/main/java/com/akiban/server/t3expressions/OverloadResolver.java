@@ -82,7 +82,7 @@ public final class OverloadResolver {
                 if (overload.inputSetAt(i) != inputSet)
                     continue;
                 TPreptimeValue input = inputs.get(i);
-                if (input.isNullable())
+                if (input == null || input.isNullable())
                     return true;
             }
             return false;
