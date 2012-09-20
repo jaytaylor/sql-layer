@@ -255,7 +255,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 assert row.size() == nfields : "jagged rows: " + node;
                 for (int field = 0; field < nfields; ++field) {
                     TInstance botInstance = tinst(row.get(field));
-
+                    if (botInstance == null) {
+                        // type is unknown (parameter or literal NULL), so it doesn't participate in determining a
+                        // type, but a cast is needed.
+                        needCasts.set(field);
+                        continue;
+                    }
                     // If the two are the same, we know we don't need to cast them.
                     // This logic also handles the case where both are null, which is not a valid argument
                     // to resolver.commonTClass.
