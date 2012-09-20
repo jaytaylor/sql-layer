@@ -27,13 +27,15 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.sql.embedded.JDBCResultSetMetaData.JDBCResultColumn;
+import com.akiban.sql.embedded.JDBCParameterMetaData.JDBCParameterType;
 
 import com.akiban.sql.server.ServerOperatorCompiler;
 import com.akiban.sql.server.ServerPlanContext;
 
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.BasePlannable;
-import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.PlanContext;
@@ -43,8 +45,9 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
+import com.akiban.qp.operator.Operator;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types3.TInstance;
-import com.akiban.sql.optimizer.TypesTranslation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,5 +93,27 @@ public class JDBCOperatorCompiler extends ServerOperatorCompiler
             }
         }
         return new JDBCResultColumn(name, jdbcType, sqlType, aisColumn, tInstance, nestedResultSet);
+    }
+
+    public InternalStatement compileXxx(JDBCConnection conn, DMLStatementNode sqlStmt, List<ParameterNode> sqlParams) {
+        PlanContext planContext = new ServerPlanContext(this, new JDBCQueryContext(conn));
+        BasePlannable result = compile(sqlStmt, sqlParams, planContext);
+        if (!(result instanceof PhysicalSelect))
+            throw new UnsupportedSQLException("Not SELECT", sqlStmt);
+        PhysicalSelect select = (PhysicalSelect)result;
+        Operator operator = select.getResultOperator();
+        List<JDBCResultColumn> columns = new ArrayList<JDBCResultColumn>();
+        for (PhysicalResultColumn column : select.getResultColumns())
+            columns.add((JDBCResultColumn)column);
+        JDBCResultSetMetaData resultSetMetaData = new JDBCResultSetMetaData(columns);
+        JDBCParameterMetaData parameterMetaData = null;
+        if (result.getParameterTypes() != null) {
+            List<JDBCParameterType> jdbcParams = new ArrayList<JDBCParameterType>();
+            for (DataTypeDescriptor sqlType : result.getParameterTypes()) {
+                jdbcParams.add(new JDBCParameterType(sqlType));
+            }
+            parameterMetaData = new JDBCParameterMetaData(jdbcParams);
+        }
+        return new InternalStatement(operator, resultSetMetaData, parameterMetaData);
     }
 }

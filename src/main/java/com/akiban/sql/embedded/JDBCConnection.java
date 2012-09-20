@@ -29,6 +29,12 @@ package com.akiban.sql.embedded;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 
+import com.akiban.sql.StandardException;
+import com.akiban.sql.parser.DMLStatementNode;
+import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.parser.SQLParserException;
+import com.akiban.sql.parser.StatementNode;
+
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
@@ -38,6 +44,9 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.SQLParseException;
+import com.akiban.server.error.SQLParserInternalException;
+import com.akiban.server.error.UnsupportedSQLException;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import org.slf4j.Logger;
@@ -90,8 +99,21 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
-    protected InternalStatement compile(String sql) {
-        return null;
+    protected InternalStatement compileXxx(String sql) {
+        StatementNode sqlStmt;
+        SQLParser parser = getParser();
+        try {
+            sqlStmt = parser.parseStatement(sql);
+        } 
+        catch (SQLParserException ex) {
+            throw new SQLParseException(ex);
+        }
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }
+        if (sqlStmt instanceof DMLStatementNode)
+            return compiler.compileXxx(this, (DMLStatementNode)sqlStmt, parser.getParameterList());
+        throw new UnsupportedSQLException("Not DML: ", sqlStmt);
     }
 
     protected void updateAIS(JDBCQueryContext context) {
@@ -152,7 +174,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return new JDBCPreparedStatement(this, compile(sql));
+        return new JDBCPreparedStatement(this, compileXxx(sql));
     }
 
     @Override

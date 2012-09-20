@@ -39,31 +39,34 @@ import java.util.List;
 public class JDBCParameterMetaData implements ParameterMetaData
 {
     protected static class JDBCParameterType {
-        private int jdbcType;
         private DataTypeDescriptor sqlType;
+        private int jdbcType;
+        private AkType akType;
         private TInstance tInstance;
 
-        protected JDBCParameterType(int jdbcType, DataTypeDescriptor sqlType, 
-                                    TInstance tInstance) {
-            this.jdbcType = jdbcType;
+        protected JDBCParameterType(DataTypeDescriptor sqlType) {
             this.sqlType = sqlType;
-            this.tInstance = tInstance;
-        }
-
-        public int getJDBCType() {
-            return jdbcType;
+            if (sqlType != null) {
+                jdbcType = sqlType.getJDBCTypeId();
+                akType = TypesTranslation.sqlTypeToAkType(sqlType);
+                tInstance = TypesTranslation.toTInstance(sqlType);
+            }
         }
 
         public DataTypeDescriptor getSQLType() {
             return sqlType;
         }
 
-        public TInstance getTInstance() {
-            return tInstance;
+        public int getJDBCType() {
+            return jdbcType;
         }
 
         public AkType getAkType() {
-            return TypesTranslation.sqlTypeToAkType(sqlType);
+            return akType;
+        }
+
+        public TInstance getTInstance() {
+            return tInstance;
         }
 
         public int getScale() {

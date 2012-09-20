@@ -29,29 +29,22 @@ package com.akiban.sql.embedded;
 import com.akiban.sql.server.ServerStatement;
 
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.RowType;
 
 class InternalStatement implements ServerStatement
 {
     private Operator resultOperator;
-    private RowType resultRowType;
     private JDBCResultSetMetaData resultSetMetaData;
     private JDBCParameterMetaData parameterMetaData;
     
-    protected InternalStatement(Operator resultOperator, RowType resultRowType,
+    protected InternalStatement(Operator resultOperator,
                                 JDBCResultSetMetaData resultSetMetaData, JDBCParameterMetaData parameterMetaData) {
         this.resultOperator = resultOperator;
-        this.resultRowType = resultRowType;
         this.resultSetMetaData = resultSetMetaData;
         this.parameterMetaData = parameterMetaData;
     }
     
     public Operator getResultOperator() {
         return resultOperator;
-    }
-
-    public RowType getResultRowType() {
-        return resultRowType;
     }
 
     public JDBCResultSetMetaData getResultSetMetaData() {

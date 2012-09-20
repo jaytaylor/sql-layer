@@ -38,6 +38,21 @@ public class JDBCStatement implements Statement
         this.connection = connection;
     }
 
+    public boolean executeInternal(InternalStatement stmt, JDBCQueryContext context) 
+            throws SQLException {
+        return false;
+    }
+
+    public ResultSet executeQueryInternal(InternalStatement stmt, JDBCQueryContext context) 
+            throws SQLException {
+        return null;
+    }
+
+    public int executeUpdateInternal(InternalStatement stmt, JDBCQueryContext context) 
+            throws SQLException {
+        return 0;
+    }
+    
     /* Wrapper */
 
     @Override
@@ -54,12 +69,12 @@ public class JDBCStatement implements Statement
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        return null;
+        return executeQueryInternal(connection.compileXxx(sql), null);
     }
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        return 0;
+        return executeUpdateInternal(connection.compileXxx(sql), null);
     }
 
     @Override
@@ -118,7 +133,7 @@ public class JDBCStatement implements Statement
 
     @Override
     public boolean execute(String sql) throws SQLException {
-        return false;
+        return executeInternal(connection.compileXxx(sql), null);
     }
 
     @Override

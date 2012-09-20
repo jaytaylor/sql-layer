@@ -85,12 +85,12 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public ResultSet executeQuery() throws SQLException {
-        return null;
+        return executeQueryInternal(internalStatement, context);
     }
 
     @Override
     public int executeUpdate() throws SQLException {
-        return 0;
+        return executeUpdateInternal(internalStatement, context);
     }
 
     @Override
@@ -227,7 +227,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public boolean execute() throws SQLException {
-        return false;
+        return executeInternal(internalStatement, context);
     }
 
     @Override
