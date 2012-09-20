@@ -40,7 +40,6 @@ import java.util.regex.Pattern;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
@@ -120,6 +119,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
+import static com.akiban.ais.util.TableChangeValidator.TableColumnNames;
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.util.Exceptions.throwAlways;
@@ -241,15 +241,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         checkCursorsForDDLModification(session, table);
     }
 
-    private void doMetadataChange(Session session, QueryContext context, UserTable newDefinition,
-                                  Collection<ChangedTableDescription> changedTables, boolean nullChange) {
+    private void doMetadataChange(Session session, QueryContext context, UserTable origTable, UserTable newDefinition,
+                                  Collection<ChangedTableDescription> changedTables, boolean nullChange,
+                                  AlterTableHelper helper) {
+        helper.dropAffectedGroupIndexes(session, this, origTable);
         if(nullChange) {
             // Check new definition
             final ConstraintChecker checker = new UserTableRowChecker(newDefinition);
 
             // But scan old
             final AkibanInformationSchema origAIS = getAIS(session);
-            final UserTable origTable = origAIS.getUserTable(changedTables.iterator().next().getOldName());
             final Schema oldSchema = SchemaCache.globalSchema(origAIS);
             final RowType oldSourceType = oldSchema.userTableRowType(origTable);
             final PersistitAdapter adapter = new PersistitAdapter(oldSchema, store().getPersistitStore(), treeService(), session, configService);
@@ -271,21 +272,24 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 cursor.close();
             }
         }
-
         schemaManager().alterTableDefinitions(session, changedTables);
+
+        UserTable newTable = getUserTable(session, newDefinition.getName());
+        helper.createAffectedGroupIndexes(session, this, origTable, newTable);
     }
 
-    private void doIndexChange(Session session, UserTable newDefinition,
+    private void doIndexChange(Session session, UserTable origTable, UserTable newDefinition,
                                Collection<ChangedTableDescription> changedTables, AlterTableHelper helper) {
+        helper.dropAffectedGroupIndexes(session, this, origTable);
         schemaManager().alterTableDefinitions(session, changedTables);
-        AkibanInformationSchema newAIS = getAIS(session);
-        UserTable newTable = newAIS.getUserTable(newDefinition.getName());
+        UserTable newTable = getUserTable(session, newDefinition.getName());
         List<Index> indexes = helper.findNewIndexesToBuild(newTable);
         store().buildIndexes(session, indexes, DEFER_INDEX_BUILDING);
+        helper.createAffectedGroupIndexes(session, this, origTable, newTable);
     }
 
     private void doTableChange(Session session, QueryContext context, TableName tableName, UserTable newDefinition,
-                               Collection<ChangedTableDescription> changedTables, Map<IndexName, List<Column>> affectedGroupIndexes,
+                               Collection<ChangedTableDescription> changedTables,
                                AlterTableHelper helper, boolean groupChange) {
 
         final boolean usePValues = Types3Switch.ON;
@@ -293,15 +297,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = origAIS.getUserTable(tableName);
 
-        // Drop definition and rebuild later, probably better than doing each entry individually
-        if(!affectedGroupIndexes.isEmpty()) {
-            List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
-            for(IndexName name : affectedGroupIndexes.keySet()) {
-                groupIndexes.add(origTable.getGroup().getIndex(name.getName()));
-            }
-            store().truncateIndexes(session, groupIndexes);
-            schemaManager().dropIndexes(session, groupIndexes);
-        }
+        helper.dropAffectedGroupIndexes(session, this, origTable);
 
         // Save previous state so it can be scanned
         final Schema origSchema = SchemaCache.globalSchema(origAIS);
@@ -415,13 +411,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
 
             // Now rebuild any group indexes, leaving out empty ones
-            List<Index> gisToBuild = new ArrayList<Index>();
             adapter.enterUpdateStep();
-            helper.recreateAffectedGroupIndexes(origTable, newTable, gisToBuild, affectedGroupIndexes);
-            if(!gisToBuild.isEmpty()) {
-                adapter.enterUpdateStep();
-                createIndexes(session, gisToBuild);
-            }
+            helper.createAffectedGroupIndexes(session, this, origTable, newTable);
         } finally {
             adapter.leaveUpdateStep(step);
             cursor.close();
@@ -459,11 +450,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         savedSchemas.add(tableName.getSchemaName());
         savedSchemas.add(newDefinition.getName().getSchemaName());
         try {
-            AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges);
-
             changeLevel = validator.getFinalChangeLevel();
-            Map<IndexName, List<Column>> affectedGroupIndexes = validator.getAffectedGroupIndexes();
+            Map<IndexName, List<TableColumnNames>> affectedGroupIndexes = validator.getAffectedGroupIndexes();
             Collection<ChangedTableDescription> changedTables = validator.getAllChangedTables();
+
+            // Any GroupIndex changes are entirely derived, ignore any that happen to be passed.
+            if(newDefinition.getGroup() != null) {
+                newDefinition.getGroup().removeIndexes(newDefinition.getGroup().getIndexes());
+            }
+
+            AlterTableHelper helper = new AlterTableHelper(columnChanges, indexChanges, affectedGroupIndexes);
 
             for(ChangedTableDescription desc : changedTables) {
                 for(TableName name : desc.getDroppedSequences()) {
@@ -485,7 +481,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
 
-            for(Map.Entry<IndexName, List<Column>> entry : affectedGroupIndexes.entrySet()) {
+            for(Map.Entry<IndexName, List<TableColumnNames>> entry : affectedGroupIndexes.entrySet()) {
                 if(entry.getValue().isEmpty()) {
                     indexesToDrop.add(origTable.getGroup().getIndex(entry.getKey().getName()));
                 }
@@ -493,6 +489,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             switch(changeLevel) {
                 case NONE:
+                    assert affectedGroupIndexes.isEmpty() : affectedGroupIndexes;
                     AlterMadeNoChangeException error = new AlterMadeNoChangeException(tableName);
                     if(context != null) {
                         context.warnClient(error);
@@ -502,23 +499,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 break;
 
                 case METADATA:
-                    assert affectedGroupIndexes.isEmpty() : affectedGroupIndexes;
-                    doMetadataChange(session, context, newDefinition, changedTables, false);
+                    doMetadataChange(session, context, origTable, newDefinition, changedTables, false, helper);
                 break;
 
                 case METADATA_NOT_NULL:
-                    assert affectedGroupIndexes.isEmpty() : affectedGroupIndexes;
-                    doMetadataChange(session, context, newDefinition, changedTables, true);
+                    doMetadataChange(session, context, origTable, newDefinition, changedTables, true, helper);
                 break;
 
                 case INDEX:
-                    assert affectedGroupIndexes.isEmpty() : affectedGroupIndexes;
-                    doIndexChange(session, newDefinition, changedTables, helper);
+                    doIndexChange(session, origTable, newDefinition, changedTables, helper);
                 break;
 
                 case TABLE:
-                    doTableChange(session, context, tableName, newDefinition, changedTables, affectedGroupIndexes,
-                                  helper, false);
+                    doTableChange(session, context, tableName, newDefinition, changedTables, helper, false);
                 break;
 
                 case GROUP:
@@ -537,8 +530,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         }
                     }
                     store().truncateIndexes(session, indexesToTruncate);
-                    doTableChange(session, context, tableName, newDefinition, changedTables, affectedGroupIndexes,
-                                  helper, true);
+                    doTableChange(session, context, tableName, newDefinition, changedTables, helper, true);
                 break;
 
                 default:
