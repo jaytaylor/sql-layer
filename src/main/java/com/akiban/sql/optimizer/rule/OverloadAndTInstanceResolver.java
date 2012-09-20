@@ -305,7 +305,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             if (!needCasts.isEmpty()) {
                 for (List<ExpressionNode> row : rows) {
                     for (int field = 0; field < nfields; ++field) {
-                        if (needCasts.get(field)) {
+                        if (needCasts.get(field) && instances[field] != null) {
                             ExpressionNode orig = row.get(field);
                             ExpressionNode cast = castTo(orig, instances[field], folder);
                             row.set(field, cast);
