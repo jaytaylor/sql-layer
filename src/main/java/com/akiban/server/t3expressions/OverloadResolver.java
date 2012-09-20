@@ -67,10 +67,12 @@ public final class OverloadResolver {
                     TClass targetTClass = inputSet.targetType();
                     if (targetTClass == null)
                         targetTClass = findCommon(overload, inputSet, inputs);
-                    instance = targetTClass.instance();
+                    instance = (targetTClass == null) ? null : targetTClass.instance();
                 }
-                boolean nullable = nullable(overload,  inputSet, inputs);
-                instance.setNullable(nullable);
+                if (instance != null) {
+                    boolean nullable = nullable(overload,  inputSet, inputs);
+                    instance.setNullable(nullable);
+                }
                 instances.put(inputSet, instance);
             }
         }
