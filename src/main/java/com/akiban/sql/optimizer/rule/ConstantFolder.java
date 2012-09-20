@@ -182,12 +182,12 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode comparisonCondition(ComparisonCondition cond) {
             Constantness lc = isConstant(cond.getLeft());
             Constantness rc = isConstant(cond.getRight());
-            if ((lc != Constantness.VARIABLE) && (rc != Constantness.VARIABLE))
-                return evalNow(cond);
             if ((lc == Constantness.NULL) || (rc == Constantness.NULL))
                 return new BooleanConstantExpression(null, 
                                                      cond.getSQLtype(), 
                                                      cond.getSQLsource());
+            if ((lc != Constantness.VARIABLE) && (rc != Constantness.VARIABLE))
+                return evalNow(cond);
             if (isIdempotentEquality(cond)) {
                 if ((cond.getLeft().getSQLtype() != null) &&
                     !cond.getLeft().getSQLtype().isNullable()) {
