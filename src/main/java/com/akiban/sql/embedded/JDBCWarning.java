@@ -26,33 +26,14 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.sql.server.ServerQueryContext;
+import java.sql.SQLWarning;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.ErrorCode;
 
-public class EmbeddedQueryContext extends ServerQueryContext<JDBCConnection>
+public class JDBCWarning extends SQLWarning
 {
-    private JDBCStatement statement;
-
-    protected EmbeddedQueryContext(JDBCConnection connection) {
-        super(connection);
+    public JDBCWarning(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) {
+        super(message, errorCode.getFormattedValue());
     }
-
-    protected EmbeddedQueryContext(JDBCConnection connection, JDBCStatement statement) {
-        super(connection);
-        this.statement = statement;
-    }
-
-    @Override
-    public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
-        if (getServer().shouldNotify(level)) {
-            JDBCWarning warning = new JDBCWarning(level, errorCode, message);
-            // If we are associated with a particular statement, direct warning there.
-            if (statement != null)
-                statement.addWarning(warning);
-            else
-                getServer().addWarning(warning);
-        }
-    }
-
 }

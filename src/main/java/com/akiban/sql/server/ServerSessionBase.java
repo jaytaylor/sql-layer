@@ -366,4 +366,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         }
     }
 
+    public boolean shouldNotify(QueryContext.NotificationLevel level) {
+        return (level.ordinal() <= maxNotificationLevel.ordinal());
+    }
+
 }

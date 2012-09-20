@@ -876,7 +876,7 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) 
             throws IOException {
-        if (level.ordinal() <= maxNotificationLevel.ordinal()) {
+        if (shouldNotify(level)) {
             Object state = messenger.suspendMessage();
             messenger.beginMessage(PostgresMessages.NOTICE_RESPONSE_TYPE.code());
             messenger.write('S');

@@ -58,7 +58,7 @@ import java.util.concurrent.Executor;
 
 public class JDBCConnection extends ServerSessionBase implements Connection {
     private boolean closed, autoCommit, readOnly;
-    private SQLWarning warnings;
+    private JDBCWarning warnings;
     private Properties clientInfo = new Properties();
     private String schema;
     private EmbeddedOperatorCompiler compiler;
@@ -76,13 +76,16 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) {
-        if (level.ordinal() <= maxNotificationLevel.ordinal()) {
-            SQLWarning warning = new SQLWarning(message, errorCode.getFormattedValue());
-            if (warnings == null)
-                warnings = warning;
-            else
-                warnings.setNextWarning(warning);
-        }        
+        if (shouldNotify(level)) {
+            addWarning(new JDBCWarning(level, errorCode, message));
+        }
+    }
+
+    protected void addWarning(JDBCWarning warning) {
+        if (warnings == null)
+            warnings = warning;
+        else
+            warnings.setNextWarning(warning);
     }
 
     @Override

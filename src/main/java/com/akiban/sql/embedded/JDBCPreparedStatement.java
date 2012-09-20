@@ -54,7 +54,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
                                     InternalStatement internalStatement) {
         super(connection);
         this.internalStatement = internalStatement;
-        context = new EmbeddedQueryContext(connection);
+        context = new EmbeddedQueryContext(connection, this);
     }
 
     protected void setParameter(int parameterIndex, Object value, AkType sourceType) throws SQLException {

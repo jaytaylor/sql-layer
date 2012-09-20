@@ -92,6 +92,10 @@ public class JDBCParameterMetaData implements ParameterMetaData
         this.params = params;
     }
 
+    protected List<JDBCParameterType> getParameters() {
+        return params;
+    }
+
     protected JDBCParameterType getParameter(int param) {
         return params.get(param - 1);
     }

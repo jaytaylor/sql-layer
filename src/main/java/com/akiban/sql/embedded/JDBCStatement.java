@@ -26,13 +26,18 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.qp.operator.API;
+import com.akiban.server.error.InvalidOperationException;
+
 import java.sql.*;
 
 public class JDBCStatement implements Statement
 {
     private JDBCConnection connection;
     private boolean closed;
-    private SQLWarning warnings;
+    private JDBCWarning warnings;
+    private JDBCResultSet currentResultSet;
+    private int currentUpdateCount;
 
     protected JDBCStatement(JDBCConnection connection) {
         this.connection = connection;
@@ -40,19 +45,43 @@ public class JDBCStatement implements Statement
 
     public boolean executeInternal(InternalStatement stmt, EmbeddedQueryContext context) 
             throws SQLException {
-        return false;
+        if (context == null) {
+            if (stmt.getParameterMetaData() != null)
+                throw new JDBCException("Statement required parameters; must prepare");
+            context = new EmbeddedQueryContext(connection, this);
+        }
+        try {
+            currentResultSet = new JDBCResultSet(this,
+                                                 API.cursor(stmt.getResultOperator(), context),
+                                                 stmt.getResultSetMetaData());
+        }
+        catch (InvalidOperationException ex) {
+            throw new JDBCException(ex);
+        }
+        return true;
     }
 
     public ResultSet executeQueryInternal(InternalStatement stmt, EmbeddedQueryContext context) 
             throws SQLException {
-        return null;
+        boolean hasResultSet = executeInternal(stmt, context);
+        if (!hasResultSet) throw new JDBCException("Statement is not SELECT");
+        return getResultSet();
     }
 
     public int executeUpdateInternal(InternalStatement stmt, EmbeddedQueryContext context) 
             throws SQLException {
-        return 0;
+        boolean hasResultSet = executeInternal(stmt, context);
+        if (hasResultSet) throw new JDBCException("Statement is SELECT");
+        return getUpdateCount();
     }
     
+    protected void addWarning(JDBCWarning warning) {
+        if (warnings == null)
+            warnings = warning;
+        else
+            warnings.setNextWarning(warning);
+    }
+
     /* Wrapper */
 
     @Override
@@ -138,16 +167,17 @@ public class JDBCStatement implements Statement
 
     @Override
     public ResultSet getResultSet() throws SQLException {
-        return null;
+        return currentResultSet;
     }
 
     @Override
     public int getUpdateCount() throws SQLException {
-        return 0;
+        return currentUpdateCount;
     }
 
     @Override
     public boolean getMoreResults() throws SQLException {
+        currentResultSet = null;
         return false;
     }
 

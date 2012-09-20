@@ -26,7 +26,6 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.error.InvalidOperationException;
@@ -475,7 +474,7 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        throw null;
+        throw null;             // None at this level.
     }
 
     @Override
@@ -531,7 +530,7 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-        for (int i = 1; i <= metaData.getColumns().size(); i++) {
+        for (int i = 1; i <= metaData.getColumnCount(); i++) {
             if (columnLabel.equalsIgnoreCase(metaData.getColumn(i).getName())) {
                 return i;
             }
