@@ -28,9 +28,9 @@ package com.akiban.sql.embedded;
 
 import com.akiban.sql.server.ServerQueryContext;
 
-public class JDBCQueryContext extends ServerQueryContext<JDBCConnection>
+public class EmbeddedQueryContext extends ServerQueryContext<JDBCConnection>
 {
-    protected JDBCQueryContext(JDBCConnection connection) {
+    protected EmbeddedQueryContext(JDBCConnection connection) {
         super(connection);
     }
 }

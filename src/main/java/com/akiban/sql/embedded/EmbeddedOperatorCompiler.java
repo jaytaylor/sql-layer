@@ -55,15 +55,15 @@ import org.slf4j.LoggerFactory;
 import java.sql.Types;
 import java.util.*;
 
-public class JDBCOperatorCompiler extends ServerOperatorCompiler
+public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
 {
-    private static final Logger logger = LoggerFactory.getLogger(JDBCOperatorCompiler.class);
+    private static final Logger logger = LoggerFactory.getLogger(EmbeddedQueryContext.class);
 
-    protected JDBCOperatorCompiler() {
+    protected EmbeddedOperatorCompiler() {
     }
 
-    protected static JDBCOperatorCompiler create(JDBCConnection connection) {
-        JDBCOperatorCompiler compiler = new JDBCOperatorCompiler();
+    protected static EmbeddedOperatorCompiler create(JDBCConnection connection) {
+        EmbeddedOperatorCompiler compiler = new EmbeddedOperatorCompiler();
         compiler.initServer(connection);
         compiler.initDone();
         return compiler;
@@ -96,7 +96,7 @@ public class JDBCOperatorCompiler extends ServerOperatorCompiler
     }
 
     public InternalStatement compileXxx(JDBCConnection conn, DMLStatementNode sqlStmt, List<ParameterNode> sqlParams) {
-        PlanContext planContext = new ServerPlanContext(this, new JDBCQueryContext(conn));
+        PlanContext planContext = new ServerPlanContext(this, new EmbeddedQueryContext(conn));
         BasePlannable result = compile(sqlStmt, sqlParams, planContext);
         if (!(result instanceof PhysicalSelect))
             throw new UnsupportedSQLException("Not SELECT", sqlStmt);

@@ -47,14 +47,14 @@ import java.util.*;
 public class JDBCPreparedStatement extends JDBCStatement implements PreparedStatement
 {
     private InternalStatement internalStatement;
-    private JDBCQueryContext context;
+    private EmbeddedQueryContext context;
     private FromObjectValueSource objectSource;
 
     protected JDBCPreparedStatement(JDBCConnection connection, 
                                     InternalStatement internalStatement) {
         super(connection);
         this.internalStatement = internalStatement;
-        context = new JDBCQueryContext(connection);
+        context = new EmbeddedQueryContext(connection);
     }
 
     protected void setParameter(int parameterIndex, Object value, AkType sourceType) throws SQLException {

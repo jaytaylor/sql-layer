@@ -61,7 +61,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     private SQLWarning warnings;
     private Properties clientInfo = new Properties();
     private String schema;
-    private JDBCOperatorCompiler compiler;
+    private EmbeddedOperatorCompiler compiler;
     
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
 
@@ -116,7 +116,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         throw new UnsupportedSQLException("Not DML: ", sqlStmt);
     }
 
-    protected void updateAIS(JDBCQueryContext context) {
+    protected void updateAIS(EmbeddedQueryContext context) {
         boolean locked = false;
         try {
             context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
@@ -138,19 +138,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     protected void rebuildCompiler() {
         initParser();
-        compiler = JDBCOperatorCompiler.create(this);
-        
-        // TODO: Common base class?
-        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
-                     new PersistitAdapter(compiler.getSchema(),
-                                          reqs.store(),
-                                          reqs.treeService(),
-                                          session,
-                                          reqs.config()));
-        adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
-                     new MemoryAdapter(compiler.getSchema(),
-                                       session,
-                                       reqs.config()));
+        compiler = EmbeddedOperatorCompiler.create(this);
+        initAdapters(compiler);
     }
 
     /* Wrapper */

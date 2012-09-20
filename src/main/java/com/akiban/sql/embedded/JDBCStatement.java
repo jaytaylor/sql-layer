@@ -38,17 +38,17 @@ public class JDBCStatement implements Statement
         this.connection = connection;
     }
 
-    public boolean executeInternal(InternalStatement stmt, JDBCQueryContext context) 
+    public boolean executeInternal(InternalStatement stmt, EmbeddedQueryContext context) 
             throws SQLException {
         return false;
     }
 
-    public ResultSet executeQueryInternal(InternalStatement stmt, JDBCQueryContext context) 
+    public ResultSet executeQueryInternal(InternalStatement stmt, EmbeddedQueryContext context) 
             throws SQLException {
         return null;
     }
 
-    public int executeUpdateInternal(InternalStatement stmt, JDBCQueryContext context) 
+    public int executeUpdateInternal(InternalStatement stmt, EmbeddedQueryContext context) 
             throws SQLException {
         return 0;
     }
