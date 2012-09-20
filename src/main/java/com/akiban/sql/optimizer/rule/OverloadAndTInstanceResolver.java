@@ -345,7 +345,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 TPreptimeValue preptimeValue = operand.getPreptimeValue();
                 operandValues.add(preptimeValue);
                 operandInstances.add(preptimeValue.instance());
-                if (Boolean.TRUE.equals(preptimeValue.instance().nullability()))
+                if (Boolean.TRUE.equals(preptimeValue.isNullable()))
                     anyOperandsNullable = true;
             }
 

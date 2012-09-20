@@ -38,6 +38,10 @@ public final class TPreptimeValue {
         this.tInstance = tInstance;
     }
 
+    public boolean isNullable() {
+        return tInstance == null || tInstance.nullability();
+    }
+
     public TInstance instance() {
         return tInstance;
     }
