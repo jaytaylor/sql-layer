@@ -725,11 +725,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             for (int i = 0, ncols = row.size(); i < ncols; ++i) {
                 Column target = targetColumns.get(i).getColumn();
                 ExpressionNode column = row.get(i);
-                ExpressionNode casted = castTo(column, target.tInstance().typeClass(), folder);
-                if (column != casted) {
-                    row.set(i, casted);
-                    plan.setTypeAt(i, casted.getPreptimeValue());
-                }
+                ExpressionNode casted = castTo(column, target.tInstance(), folder);
+                row.set(i, casted);
+                plan.setTypeAt(i, casted.getPreptimeValue());
             }
         }
 
