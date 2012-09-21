@@ -26,8 +26,11 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
@@ -181,6 +184,14 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
     
     @Override
+    public StoreAdapter getStore(UserTable table) {
+        if (table.hasMemoryTableFactory()) {
+            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
+        }
+        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+    }
+
+    @Override
     public TreeService getTreeService() {
         return reqs.treeService();
     }
@@ -271,6 +282,21 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         return new ServerCostEstimator(this, reqs, compiler, keyCreator);
     }
 
+    protected void initAdapters(ServerOperatorCompiler compiler) {
+        // Add the Persisitit Adapter - default for most tables
+        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
+                     new PersistitAdapter(compiler.getSchema(),
+                                          reqs.store(),
+                                          reqs.treeService(),
+                                          session,
+                                          reqs.config()));
+        // Add the Memory Adapter - for the in memory tables
+        adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
+                     new MemoryAdapter(compiler.getSchema(),
+                                       session,
+                                       reqs.config()));
+    }
+
     /** Prepare to execute given statement.
      * Uses current global transaction or makes a new local one.
      * Returns any local transaction that should be committed / rolled back immediately.
@@ -338,6 +364,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 break;
             }
         }
+    }
+
+    public boolean shouldNotify(QueryContext.NotificationLevel level) {
+        return (level.ordinal() <= maxNotificationLevel.ordinal());
     }
 
 }
