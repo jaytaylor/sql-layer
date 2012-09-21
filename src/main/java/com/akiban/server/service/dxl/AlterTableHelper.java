@@ -29,32 +29,33 @@ package com.akiban.server.service.dxl;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.TableChange;
+import com.akiban.server.service.session.Session;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.akiban.ais.util.TableChangeValidator.TableColumnNames;
 
 public class AlterTableHelper {
     final List<TableChange> columnChanges;
     final List<TableChange> indexChanges;
+    final Map<IndexName, List<TableColumnNames>> affectedGroupIndexes;
 
-    public AlterTableHelper(List<TableChange> columnChanges, List<TableChange> indexChanges) {
+    public AlterTableHelper(List<TableChange> columnChanges, List<TableChange> indexChanges,
+                            Map<IndexName, List<TableColumnNames>> affectedGroupIndexes) {
         checkChangeTypes(columnChanges);
         checkChangeTypes(indexChanges);
         this.columnChanges = columnChanges;
         this.indexChanges = indexChanges;
+        this.affectedGroupIndexes = affectedGroupIndexes;
     }
 
     private static void checkChangeTypes(List<TableChange> changes) {
@@ -108,29 +109,50 @@ public class AlterTableHelper {
         return indexes;
     }
 
-    public void recreateAffectedGroupIndexes(UserTable origTable, final UserTable newTable, List<Index> indexesToBuild,
-                                             Map<IndexName, List<Column>> affectedGroupIndexes) {
+    public void dropAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable, boolean dataChange) {
+        // Drop definition and rebuild later, probably better than doing each entry individually
+        if(affectedGroupIndexes.isEmpty()) {
+            return;
+        }
+        List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
+        for(IndexName name : affectedGroupIndexes.keySet()) {
+            groupIndexes.add(origTable.getGroup().getIndex(name.getName()));
+        }
+        if(dataChange) {
+            ddl.store().truncateIndexes(session, groupIndexes);
+        }
+        ddl.schemaManager().dropIndexes(session, groupIndexes);
+    }
+
+    public void createAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable, UserTable newTable, boolean dataChange) {
         // Ideally only would copy the Group, but that is vulnerable to changing group names. Even if we handle that
         // by looking up the new name, index creation in PSSM requires index.getName().getTableName() match the actual.
         AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS());
 
+        List<Index> indexesToBuild = new ArrayList<Index>();
         Group origGroup = origTable.getGroup();
         Group tempGroup = tempAIS.getGroup(newTable.getGroup().getName());
-        for(Map.Entry<IndexName, List<Column>> entry : affectedGroupIndexes.entrySet()) {
+        for(Map.Entry<IndexName, List<TableColumnNames>> entry : affectedGroupIndexes.entrySet()) {
             GroupIndex origIndex = origGroup.getIndex(entry.getKey().getName());
-            List<Column> columns = entry.getValue();
+            List<TableColumnNames> columns = entry.getValue();
             // TableChangeValidator returns the index with no remaining columns
             if(columns.isEmpty()) {
                 continue;
             }
             GroupIndex tempIndex = GroupIndex.create(tempAIS, tempGroup, origIndex);
             for(int i = 0; i < columns.size(); ++i) {
-                Column column = columns.get(i);
-                UserTable tempTable = tempAIS.getUserTable(column.getTable().getName());
-                Column tempColumn = tempTable.getColumn(column.getName());
+                TableColumnNames tcn = columns.get(i);
+                UserTable tempTable = tempAIS.getUserTable(tcn.tableName);
+                Column tempColumn = tempTable.getColumn(tcn.newColumnName);
                 IndexColumn.create(tempIndex,  tempColumn, i, true, null);
             }
             indexesToBuild.add(tempIndex);
+        }
+
+        if(dataChange) {
+            ddl.createIndexes(session, indexesToBuild);
+        } else {
+            ddl.schemaManager().createIndexes(session, indexesToBuild);
         }
     }
 }
