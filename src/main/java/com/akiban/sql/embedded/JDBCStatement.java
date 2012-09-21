@@ -116,12 +116,12 @@ public class JDBCStatement implements Statement
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        return executeQueryInternal(connection.compileXxx(sql), null);
+        return executeQueryInternal(connection.compileInternalStatement(sql), null);
     }
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        return executeUpdateInternal(connection.compileXxx(sql), null);
+        return executeUpdateInternal(connection.compileInternalStatement(sql), null);
     }
 
     @Override
@@ -183,7 +183,7 @@ public class JDBCStatement implements Statement
 
     @Override
     public boolean execute(String sql) throws SQLException {
-        return executeInternal(connection.compileXxx(sql), null);
+        return executeInternal(connection.compileInternalStatement(sql), null);
     }
 
     @Override

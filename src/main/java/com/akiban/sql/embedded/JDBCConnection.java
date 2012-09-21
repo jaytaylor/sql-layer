@@ -107,7 +107,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
-    protected InternalStatement compileXxx(String sql) {
+    protected InternalStatement compileInternalStatement(String sql) {
+        logger.debug("Compile: {}");
         EmbeddedQueryContext context = new EmbeddedQueryContext(this);
         updateAIS(context);
         StatementNode sqlStmt;
@@ -122,7 +123,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             throw new SQLParserInternalException(ex);
         }
         if (sqlStmt instanceof DMLStatementNode)
-            return compiler.compileXxx(this, (DMLStatementNode)sqlStmt, parser.getParameterList(), context);
+            return compiler.compileInternalStatement(this, (DMLStatementNode)sqlStmt, parser.getParameterList(), context);
         throw new UnsupportedSQLException("Not DML: ", sqlStmt);
     }
 
@@ -154,6 +155,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     protected void openingResultSet(JDBCResultSet resultSet) {
         if (!isTransactionActive()) {
+            logger.debug("BEGIN TRANSACTION");
             beginTransaction();
         }
         openResultSets.add(resultSet);
@@ -163,6 +165,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         openResultSets.remove(resultSet);
         if (autoCommit && openResultSets.isEmpty()) {
             commitTransaction();
+            logger.debug("COMMIT TRANSACTION");
         }
     }
 
@@ -187,7 +190,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return new JDBCPreparedStatement(this, compileXxx(sql));
+        return new JDBCPreparedStatement(this, compileInternalStatement(sql));
     }
 
     @Override

@@ -95,7 +95,7 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
         return new JDBCResultColumn(name, jdbcType, sqlType, aisColumn, tInstance, nestedResultSet);
     }
 
-    public InternalStatement compileXxx(JDBCConnection conn, DMLStatementNode sqlStmt, List<ParameterNode> sqlParams, EmbeddedQueryContext context) {
+    public InternalStatement compileInternalStatement(JDBCConnection conn, DMLStatementNode sqlStmt, List<ParameterNode> sqlParams, EmbeddedQueryContext context) {
         PlanContext planContext = new ServerPlanContext(this, context);
         BasePlannable result = compile(sqlStmt, sqlParams, planContext);
         if (!(result instanceof PhysicalSelect))
