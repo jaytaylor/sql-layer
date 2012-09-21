@@ -1136,7 +1136,13 @@ public class ConstantFolder extends BaseRule
                             matching.clear(j);
                         }
                         if (verticalMatch) {
-                            // Matched every row: don't need this comparison any more,
+                            // Column was all constants: every row
+                            // matched or was eliminated; don't need this comparison
+                            // any more,
+                            // This cannot introduce any duplicates, because all the
+                            // rows that remain have the same value in the column
+                            // being removed and thus would have already been
+                            // duplicates.
                             comparisons.remove(i);
                             for (int j = 0; j < rows.size(); j++) {
                                 List<ExpressionNode> row = rows.get(j);
