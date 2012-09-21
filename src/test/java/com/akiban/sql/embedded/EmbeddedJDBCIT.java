@@ -67,6 +67,7 @@ public class EmbeddedJDBCIT extends ITBase
                               "order_date date not null");
         writeRow(cid, 1, "Smith");
         writeRow(oid, 101, 1, 2012 * 512 + 1 * 32 + 31);
+        writeRow(oid, 102, 1, 2012 * 512 + 2 * 32 + 1);
         writeRow(cid, 2, "Jones");
         writeRow(oid, 201, 2, 2012 * 512 + 4 * 32 + 1);
     }
@@ -78,6 +79,32 @@ public class EmbeddedJDBCIT extends ITBase
         ResultSet rs = stmt.executeQuery("SELECT name FROM c WHERE cid = 1");
         assertTrue("has first row", rs.next());
         assertEquals("result value", "Smith", rs.getString(1));
+        assertFalse("has more rows", rs.next());
+        rs.close();
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
+    public void testPrepared() throws Exception {
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        PreparedStatement stmt = conn.prepareStatement("SELECT name, order_date FROM c INNER JOIN o USING(cid) WHERE c.cid = ?");
+        stmt.setInt(1, 2);
+        assertTrue("has result set", stmt.execute());
+        ResultSet rs = stmt.getResultSet();
+        assertTrue("has first row", rs.next());
+        assertEquals("result value", "Jones", rs.getString(1));
+        assertEquals("result value", "2012-04-01", rs.getDate(2).toString());
+        assertFalse("has more rows", rs.next());
+        rs.close();
+        stmt.setInt(1, 1);
+        rs = stmt.executeQuery();
+        assertTrue("has first row", rs.next());
+        assertEquals("result value", "Smith", rs.getString(1));
+        assertEquals("result value", "2012-01-31", rs.getString(2));
+        assertTrue("has next row", rs.next());
+        assertEquals("result value", "Smith", rs.getString(1));
+        assertEquals("result value", "2012-02-01 00:00:00.0", rs.getTimestamp(2).toString());
         assertFalse("has more rows", rs.next());
         rs.close();
         stmt.close();

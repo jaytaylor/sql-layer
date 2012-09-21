@@ -69,6 +69,7 @@ public class JDBCResultSet implements ResultSet
 
     protected void open(Cursor cursor) {
         this.cursor = cursor;
+        cursor.open();
     }
 
     protected ValueSource value(int columnIndex) throws SQLException {
@@ -343,7 +344,7 @@ public class JDBCResultSet implements ResultSet
                 if (wasNull)
                     return null;
                 else
-                    return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                    return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
             }
         }
         catch (InvalidOperationException ex) {
@@ -362,7 +363,7 @@ public class JDBCResultSet implements ResultSet
                 if (wasNull)
                     return null;
                 else
-                    return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                    return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
             }
         }
         catch (InvalidOperationException ex) {
@@ -381,7 +382,7 @@ public class JDBCResultSet implements ResultSet
                 if (wasNull)
                     return null;
                 else
-                    return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                    return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
             }
         }
         catch (InvalidOperationException ex) {
@@ -516,12 +517,12 @@ public class JDBCResultSet implements ResultSet
                 else {
                     switch (value.getConversionType()) {
                     case DATE:
-                        return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                        return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
                     case TIME:
-                        return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                        return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
                     case DATETIME:
                     case TIMESTAMP:
-                        return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value));
+                        return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
                     case RESULT_SET:
                         return new JDBCResultSet(statement, metaData.getNestedResultSet(columnIndex), value.getResultSet());
                     default:
