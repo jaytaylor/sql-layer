@@ -215,11 +215,13 @@ public class TableChangeValidator {
             oldIndexes.put(index.getIndexName().getName(), index);
         }
 
-        // Look for incompatible spatial changes, not required to be declared
-        for(TableIndex oldIndex : oldTable.getIndexes()) {
-            TableIndex newIndex = newTable.getIndex(findNewName(indexChanges, oldIndex.getIndexName().getName()));
-            if((newIndex != null) && oldIndex.isSpatial() && !Index.isSpatialCompatible(newIndex)) {
-                newTable.removeIndexes(Collections.singleton(newIndex));
+        if(autoChanges) {
+            // Look for incompatible spatial changes
+            for(TableIndex oldIndex : oldTable.getIndexes()) {
+                TableIndex newIndex = newTable.getIndex(findNewName(indexChanges, oldIndex.getIndexName().getName()));
+                if((newIndex != null) && oldIndex.isSpatial() && !Index.isSpatialCompatible(newIndex)) {
+                    newTable.removeIndexes(Collections.singleton(newIndex));
+                }
             }
         }
 
@@ -330,7 +332,9 @@ public class TableChangeValidator {
                     T oldVal = oldMap.get(oldName);
                     T newVal = newMap.get(newName);
                     if((oldVal == null) || (newVal == null)) {
-                        modifyNotPresent(isIndex, change);
+                        if(!doAutoChanges) {
+                            modifyNotPresent(isIndex, change);
+                        }
                     } else {
                         ChangeLevel curChange = compare(oldVal, newVal);
                         if(curChange == ChangeLevel.NONE) {
