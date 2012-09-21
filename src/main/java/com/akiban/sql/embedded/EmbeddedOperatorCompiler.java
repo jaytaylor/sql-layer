@@ -32,6 +32,7 @@ import com.akiban.sql.embedded.JDBCParameterMetaData.JDBCParameterType;
 import com.akiban.sql.server.ServerOperatorCompiler;
 import com.akiban.sql.server.ServerPlanContext;
 
+import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -44,9 +45,11 @@ import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.qp.operator.Operator;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types3.TInstance;
 
 import org.slf4j.Logger;
@@ -115,5 +118,17 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
             parameterMetaData = new JDBCParameterMetaData(jdbcParams);
         }
         return new InternalStatement(operator, resultSetMetaData, parameterMetaData);
+    }
+
+    @Override
+    protected void initAIS(AkibanInformationSchema ais, String defaultSchemaName) {
+        super.initAIS(ais, defaultSchemaName);
+        binder.setAllowSubqueryMultipleColumns(true);
+    }
+
+    @Override
+    protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
+        super.initFunctionsRegistry(functionsRegistry);
+        typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
     }
 }

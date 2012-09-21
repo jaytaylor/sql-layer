@@ -111,4 +111,26 @@ public class EmbeddedJDBCIT extends ITBase
         conn.close();
     }
 
+    @Test
+    public void testNested() throws Exception {
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT name, (SELECT oid,order_date FROM o WHERE o.cid = c.cid) FROM c WHERE cid = 1");
+        assertTrue("has first row", rs.next());
+        assertEquals("result value", "Smith", rs.getString(1));
+        ResultSet nrs = (ResultSet)rs.getObject(2);
+        assertTrue("nested first row", nrs.next());
+        assertEquals("result value", 101, nrs.getInt(1));
+        assertEquals("result value", "2012-01-31", nrs.getString(2).toString());
+        assertTrue("nested second row", nrs.next());
+        assertEquals("result value", 102, nrs.getInt(1));
+        assertEquals("result value", "2012-02-01", nrs.getString(2).toString());
+        assertFalse("nested third row", nrs.next());
+        nrs.close();
+        assertFalse("has more rows", rs.next());
+        rs.close();
+        stmt.close();
+        conn.close();
+    }
+
 }

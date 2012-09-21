@@ -30,6 +30,8 @@ import com.akiban.qp.operator.API;
 import com.akiban.server.error.InvalidOperationException;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JDBCStatement implements Statement
 {
@@ -38,6 +40,7 @@ public class JDBCStatement implements Statement
     private JDBCWarning warnings;
     private JDBCResultSet currentResultSet;
     private int currentUpdateCount;
+    private List<JDBCResultSet> secondaryResultSets; // For instance, nested.
 
     protected JDBCStatement(JDBCConnection connection) {
         this.connection = connection;
@@ -90,13 +93,17 @@ public class JDBCStatement implements Statement
     }
 
     protected void openingResultSet(JDBCResultSet resultSet) {
+        if (secondaryResultSets == null)
+            secondaryResultSets = new ArrayList<JDBCResultSet>();
+        secondaryResultSets.add(resultSet);
         connection.openingResultSet(resultSet);
     }
 
     protected void closingResultSet(JDBCResultSet resultSet) {
-        if (currentResultSet == resultSet) {
+        if (currentResultSet == resultSet)
             currentResultSet = null;
-        }
+        if (secondaryResultSets != null)
+            secondaryResultSets.remove(resultSet);
         connection.closingResultSet(resultSet);
     }
 
@@ -128,6 +135,11 @@ public class JDBCStatement implements Statement
     public void close() throws SQLException {
         if (currentResultSet != null) {
             currentResultSet.close(); // Which will call thru us to connection.
+        }
+        if (secondaryResultSets != null) {
+            while (!secondaryResultSets.isEmpty()) {
+                secondaryResultSets.get(0).close();
+            }
         }
         closed = true;
     }
