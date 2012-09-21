@@ -32,6 +32,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
 import com.persistit.Tree;
 
 import java.util.*;
@@ -356,6 +357,22 @@ public abstract class Index implements Traversable
                     akCollators = localAkCollators;
                 }
             }
+        }
+    }
+
+    public static boolean isSpatialCompatible(Index index) {
+        List<com.akiban.ais.model.IndexColumn> indexColumns = index.getKeyColumns();
+        return (indexColumns.size() == 2) &&
+                isFixedDecimal(indexColumns.get(0).getColumn()) &&
+                isFixedDecimal(indexColumns.get(1).getColumn());
+    }
+
+    private static boolean isFixedDecimal(Column column) {
+        if (Types3Switch.ON) {
+            throw new IllegalStateException("Types3 not implemented");
+        } else {
+            AkType type = column.getType().akType();
+            return type == AkType.DECIMAL;
         }
     }
 

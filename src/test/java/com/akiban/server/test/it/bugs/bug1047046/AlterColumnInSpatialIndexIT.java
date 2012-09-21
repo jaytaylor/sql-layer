@@ -52,6 +52,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
         assertEquals("Is spatial", true, index.isSpatial());
     }
 
+    // From bug report
     @Test
     public void alterToIncompatible() {
         createAndLoadTable();

@@ -333,18 +333,7 @@ public class AlterTableDDL {
                 ChangeType change = findOldName(columnChanges, indexColumn.getColumn().getName());
                 if(change != ChangeType.DROP) {
                     IndexColumn.create(indexCopy, tableCopy.getColumn(indexColumn.getColumn().getName()), indexColumn, pos++);
-                } else {
-                    didModify = true;
                 }
-            }
-
-            // Automatically mark indexes for drop or modification
-            if(indexCopy.getKeyColumns().isEmpty()) {
-                indexesToDrop.add(indexCopy);
-                indexChanges.add(TableChange.createDrop(indexCopy.getIndexName().getName()));
-            } else if(didModify && (indexChange == null)) {
-                String indexName = indexCopy.getIndexName().getName();
-                indexChanges.add(TableChange.createModify(indexName, indexName));
             }
         }
 

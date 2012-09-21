@@ -35,6 +35,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.types3.Types3Switch;
@@ -208,14 +209,24 @@ public class TableChangeValidator {
     }
 
     private void compareIndexes(boolean autoChanges) {
-        Map<String,Index> oldIndexes = new HashMap<String,Index>();
-        Map<String,Index> newIndexes = new HashMap<String,Index>();
-        for(Index index : oldTable.getIndexes()) {
+        Map<String,TableIndex> oldIndexes = new HashMap<String,TableIndex>();
+        Map<String,TableIndex> newIndexes = new HashMap<String,TableIndex>();
+        for(TableIndex index : oldTable.getIndexes()) {
             oldIndexes.put(index.getIndexName().getName(), index);
         }
-        for(Index index : newTable.getIndexes()) {
+
+        // Look for incompatible spatial changes, not required to be declared
+        for(TableIndex oldIndex : oldTable.getIndexes()) {
+            TableIndex newIndex = newTable.getIndex(findNewName(indexChanges, oldIndex.getIndexName().getName()));
+            if((newIndex != null) && oldIndex.isSpatial() && !Index.isSpatialCompatible(newIndex)) {
+                newTable.removeIndexes(Collections.singleton(newIndex));
+            }
+        }
+
+        for(TableIndex index : newTable.getIndexes()) {
             newIndexes.put(index.getIndexName().getName(), index);
         }
+
         checkChanges(ChangeLevel.INDEX, indexChanges, oldIndexes, newIndexes, autoChanges);
     }
 
