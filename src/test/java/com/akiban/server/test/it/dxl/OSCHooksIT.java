@@ -118,7 +118,7 @@ public class OSCHooksIT extends AlterTableITBase {
         assertEquals("O-I same group", tableGroup(O_NAME), tableGroup(I_NAME));
     }
 
-    @Test @Ignore
+    @Test
     public void testRenameFK() {
         runRenameColumn(_O_NEW_NAME, "cid", "pid");
         ddlForAlter().renameTable(session(), O_NAME, _O_OLD_NAME);

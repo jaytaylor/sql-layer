@@ -145,7 +145,7 @@ public class AlterTableITBase extends ITBase {
 
     protected void runAlter(ChangeLevel expectedChangeLevel, TableName name, UserTable newDefinition,
                             List<TableChange> columnChanges, List<TableChange> indexChanges) {
-        ChangeLevel actual = ddl().alterTable(session(), name, newDefinition, columnChanges, indexChanges, queryContext());
+        ChangeLevel actual = ddlForAlter().alterTable(session(), name, newDefinition, columnChanges, indexChanges, queryContext());
         assertEquals("ChangeLevel", expectedChangeLevel, actual);
         updateAISGeneration();
     }
