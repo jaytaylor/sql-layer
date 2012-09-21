@@ -69,6 +69,18 @@ public class TableChangeValidator {
         GROUP
     }
 
+    public static class TableColumnNames {
+        public final TableName tableName;
+        public final String oldColumnName;
+        public final String newColumnName;
+
+        public TableColumnNames(TableName tableName, String oldColumnName, String newColumnName) {
+            this.tableName = tableName;
+            this.oldColumnName = oldColumnName;
+            this.newColumnName = newColumnName;
+        }
+    }
+
     private final UserTable oldTable;
     private final UserTable newTable;
     private final List<TableChange> columnChanges;
@@ -76,7 +88,7 @@ public class TableChangeValidator {
     private final List<RuntimeException> errors;
     private final List<RuntimeException> unmodifiedChanges;
     private final Collection<ChangedTableDescription> changedTables;
-    private final Map<IndexName,List<Column>> affectedGroupIndexes;
+    private final Map<IndexName, List<TableColumnNames>> affectedGroupIndexes;
     private final boolean automaticIndexChanges;
     private ChangeLevel finalChangeLevel;
     private ChangedTableDescription.ParentChange parentChange;
@@ -97,7 +109,7 @@ public class TableChangeValidator {
         this.unmodifiedChanges = new ArrayList<RuntimeException>();
         this.errors = new ArrayList<RuntimeException>();
         this.changedTables = new ArrayList<ChangedTableDescription>();
-        this.affectedGroupIndexes = new TreeMap<IndexName, List<Column>>();
+        this.affectedGroupIndexes = new TreeMap<IndexName, List<TableColumnNames>>();
         this.automaticIndexChanges = automaticIndexChanges;
         this.finalChangeLevel = ChangeLevel.NONE;
         this.parentChange = ParentChange.NONE;
@@ -111,7 +123,7 @@ public class TableChangeValidator {
         return changedTables;
     }
 
-    public Map<IndexName, List<Column>> getAffectedGroupIndexes() {
+    public Map<IndexName, List<TableColumnNames>> getAffectedGroupIndexes() {
         return affectedGroupIndexes;
     }
 
@@ -225,15 +237,18 @@ public class TableChangeValidator {
 
         for(GroupIndex index : oldTable.getGroupIndexes()) {
             boolean hadChange = (finalChangeLevel == ChangeLevel.GROUP);
-            List<Column> remainingCols = new ArrayList<Column>();
+            List<TableColumnNames> remainingCols = new ArrayList<TableColumnNames>();
             for(IndexColumn iCol : index.getKeyColumns()) {
                 Column column = iCol.getColumn();
                 if(!keepTables.contains(column.getUserTable())) {
                     remainingCols.clear();
                     break;
                 }
-                if((column.getTable() != oldTable) || (findNewName(columnChanges, column.getName()) != null)) {
-                    remainingCols.add(column);
+                String oldName = column.getName();
+                String newName = (column.getTable() != oldTable) ? oldName : findNewName(columnChanges, oldName);
+                if(newName != null) {
+                    remainingCols.add(new TableColumnNames(column.getTable().getName(), oldName, newName));
+                } else {
                     hadChange = true;
                 }
             }
@@ -242,13 +257,15 @@ public class TableChangeValidator {
                 affectedGroupIndexes.put(index.getIndexName(), remainingCols);
             } else {
                 // Check if any from this table were changed, not affected if not
-                for(Column column : remainingCols) {
-                    if(column.getTable() == oldTable) {
-                        Column newColumn = newTable.getColumn(findNewName(columnChanges, column.getName()));
-                        if(compare(column, newColumn) == ChangeLevel.TABLE) {
-                            hadChange = true;
-                            break;
-                        }
+                for(TableColumnNames tcn : remainingCols) {
+                    if(hadChange) {
+                        break;
+                    }
+                    if(tcn.tableName.equals(oldTable.getName())) {
+                        Column oldColumn = oldTable.getColumn(tcn.oldColumnName);
+                        Column newColumn = newTable.getColumn(tcn.newColumnName);
+                        hadChange = !tcn.oldColumnName.equals(tcn.newColumnName) ||
+                                    (compare(oldColumn, newColumn) == ChangeLevel.TABLE);
                     }
                 }
                 if(hadChange) {
