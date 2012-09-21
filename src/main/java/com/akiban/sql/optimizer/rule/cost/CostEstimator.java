@@ -358,6 +358,8 @@ public abstract class CostEstimator implements TableRowCounts
         boolean before = (loBytes != null);
         long rowCount = 0;
         byte[] entryStartBytes, entryEndBytes = null;
+        HistogramEntry firstEntry = histogram.getEntries().get(0);
+        boolean bothBoundsInFirstEntry = false;
         for (HistogramEntry entry : histogram.getEntries()) {
             entryStartBytes = entryEndBytes;
             entryEndBytes = entry.getKeyBytes();
@@ -394,12 +396,18 @@ public abstract class CostEstimator implements TableRowCounts
                                                entryEndBytes, 
                                                hiBytes,
                                                entry.getLessCount()) - portionStart;
+                    bothBoundsInFirstEntry = entry == firstEntry;
                     break;
                 }
             }
             rowCount += entry.getLessCount() + entry.getEqualCount() - portionStart;
         }
-        return ((double) Math.max(rowCount, 1)) / indexStats.getSampledCount();
+        double selectivity = ((double) Math.max(rowCount, 1)) / indexStats.getSampledCount();
+        // Workaround for bug 1052606
+        if (selectivity < 0.001 && bothBoundsInFirstEntry) {
+            selectivity = 0.05;
+        }
+        return selectivity;
     }
 
 
