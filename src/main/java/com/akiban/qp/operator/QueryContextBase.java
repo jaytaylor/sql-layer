@@ -181,6 +181,11 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
+    public void clear() {
+        bindings.clear();
+    }
+
+    @Override
     public Date getCurrentDate() {
         return new Date();
     }
