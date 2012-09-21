@@ -44,7 +44,7 @@ import java.util.List;
 
 public class MConcatWS extends TOverloadBase
 {
-    public static TOverload INSTANCE = new MConcatWS();
+    public static final TOverload INSTANCE = new MConcatWS();
     
     private MConcatWS() {}
     @Override

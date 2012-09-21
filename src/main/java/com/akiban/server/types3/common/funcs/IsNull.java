@@ -23,18 +23,48 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.types3.common.funcs;
 
-package com.akiban.server.types3;
-
-import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.util.HasId;
+import com.akiban.server.types3.texpressions.Constantness;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public interface TAggregator extends HasId {
-    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object option);
-    void emptyValue(PValueTarget state);
-    TInstance resultType(TPreptimeValue value);
-    TClass getTypeClass();
-    String name();
+public final class IsNull extends TOverloadBase {
+
+    public static final TOverload INSTANCE = new IsNull();
+
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(null, 0);
+    }
+
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        PValueSource arg = inputs.get(0);
+        output.putBool(arg.isNull());
+    }
+
+    @Override
+    public String displayName() {
+        return "isnull";
+    }
+
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(AkBool.INSTANCE.instance());
+    }
+
+    @Override
+    protected boolean nullContaminates(int inputIndex) {
+        return false;
+    }
+
+    private IsNull() {}
 }

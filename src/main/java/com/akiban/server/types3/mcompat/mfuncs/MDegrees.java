@@ -26,13 +26,43 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.common.types.DoubleAttribute;
+import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class MRound {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.ROUND);
+public class MDegrees extends TOverloadBase
+{
+    public static final TOverload INSTANCE = new MDegrees();
+
+    private MDegrees() {}
     
-    public static final TOverload TWO_ARG = new M2ArgRoundBase(M2ArgRoundBase.RoundType.ROUND,
-            MApproximateNumber.DOUBLE, DoubleAttribute.PRECISION, DoubleAttribute.SCALE);
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(MApproximateNumber.DOUBLE, 0);
+    }
+
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+        output.putDouble(Math.toDegrees(inputs.get(0).getDouble()));
+    }
+
+    @Override
+    public String displayName()
+    {
+        return "DEGREES";
+    }
+
+    @Override
+    public TOverloadResult resultType()
+    {
+        return TOverloadResult.fixed(MApproximateNumber.DOUBLE.instance());
+    }
 }

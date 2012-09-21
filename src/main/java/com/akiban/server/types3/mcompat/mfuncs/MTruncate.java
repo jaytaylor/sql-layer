@@ -27,10 +27,12 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.types.DoubleAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MTruncate {
     public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.TRUNCATE);
     
-    public static final TOverload TWO_ARG = new M2ArgRoundBase(M2ArgRoundBase.RoundType.TRUNCATE, MApproximateNumber.DOUBLE);
+    public static final TOverload TWO_ARG = new M2ArgRoundBase(M2ArgRoundBase.RoundType.TRUNCATE,
+            MApproximateNumber.DOUBLE, DoubleAttribute.PRECISION, DoubleAttribute.SCALE);
 }

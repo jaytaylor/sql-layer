@@ -349,17 +349,28 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             TOverloadResult overloadResultStrategy = overload.resultStrategy();
             TInstance resultInstance;
+            TInstance castTo;
 
             TPreptimeContext context = new TPreptimeContext(operandInstances, queryContext);
             switch (overloadResultStrategy.category()) {
             case CUSTOM:
-                resultInstance = overloadResultStrategy.customRule().resultInstance(operandValues, context);
+                TInstance castSource = overloadResultStrategy.customRuleCastSource();
+                if (castSource == null) {
+                    castTo = null;
+                    resultInstance = overloadResultStrategy.customRule().resultInstance(operandValues, context);
+                }
+                else {
+                    castTo = overloadResultStrategy.customRule().resultInstance(operandValues, context);
+                    resultInstance = castSource;
+                }
                 break;
             case FIXED:
                 resultInstance = overloadResultStrategy.fixed();
+                castTo = null;
                 break;
             case PICKING:
                 resultInstance = resolutionResult.getPickedInstance();
+                castTo = null;
                 break;
             default:
                 throw new AssertionError(overloadResultStrategy.category());
@@ -390,7 +401,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         : resultInstance + " != " + preptimeValue.instance();
 
             expression.setPreptimeValue(preptimeValue);
-            return expression;
+            if (castTo == null) {
+                return expression;
+            }
+            else {
+                return castTo(expression, castTo, folder);
+            }
         }
 
         ExpressionNode handleIfElseExpression(IfElseExpression expression) {
@@ -488,12 +504,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         if (constToCol != null) {
                             TCast colToConst = resolver.getTCast(columnType, constType);
                             if (colToConst != null) {
-                                PValueSource asColType = castValue(constToCol, right.getPreptimeValue(), columnType);
+                                TPreptimeValue constValue = right.getPreptimeValue();
+                                PValueSource asColType = castValue(constToCol, constValue, columnType);
                                 TPreptimeValue asColTypeTpv = (asColType == null)
                                         ? null
                                         : new TPreptimeValue(columnType, asColType);
                                 PValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
-                                if (PValueSources.areEqual(asColType, backToConstType)) {
+                                if (PValueSources.areEqual(constValue.value(), backToConstType)) {
                                     TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
                                     ConstantExpression constCasted = new ConstantExpression(constTpv);
                                     expression.setRight(constCasted);
