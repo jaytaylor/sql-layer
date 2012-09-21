@@ -352,7 +352,6 @@ public class OSCRenameTableHook
                 }
             case MODIFY:
                 if (change.getOldName().equals(columnName)) {
-                    if (true) return null; // TODO: Any change by alter breaks group today.
                     columnName = change.getNewName();
                     break;
                 }
