@@ -218,7 +218,8 @@ public class TableChangeValidator {
         if(autoChanges) {
             // Look for incompatible spatial changes
             for(TableIndex oldIndex : oldTable.getIndexes()) {
-                TableIndex newIndex = newTable.getIndex(findNewName(indexChanges, oldIndex.getIndexName().getName()));
+                String newName = findNewName(indexChanges, oldIndex.getIndexName().getName());
+                TableIndex newIndex = (newName != null) ? (TableIndex)newTable.getIndexIncludingInternal(newName) : null;
                 if((newIndex != null) && oldIndex.isSpatial() && !Index.isSpatialCompatible(newIndex)) {
                     newTable.removeIndexes(Collections.singleton(newIndex));
                 }
