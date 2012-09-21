@@ -28,6 +28,7 @@ package com.akiban.sql.embedded;
 
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
+import com.akiban.sql.server.ServerSessionTracer;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -70,6 +71,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     protected JDBCConnection(ServerServiceRequirements reqs, Properties info) {
         super(reqs);
         setProperties(info);
+        session = reqs.sessionService().createSession();
+        sessionTracer = new ServerSessionTracer(0, false);
     }
 
     @Override
@@ -105,6 +108,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     }
 
     protected InternalStatement compileXxx(String sql) {
+        EmbeddedQueryContext context = new EmbeddedQueryContext(this);
+        updateAIS(context);
         StatementNode sqlStmt;
         SQLParser parser = getParser();
         try {
@@ -117,7 +122,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             throw new SQLParserInternalException(ex);
         }
         if (sqlStmt instanceof DMLStatementNode)
-            return compiler.compileXxx(this, (DMLStatementNode)sqlStmt, parser.getParameterList());
+            return compiler.compileXxx(this, (DMLStatementNode)sqlStmt, parser.getParameterList(), context);
         throw new UnsupportedSQLException("Not DML: ", sqlStmt);
     }
 
