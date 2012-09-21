@@ -1276,12 +1276,12 @@ public class JDBCResultSet implements ResultSet
         updateNClob(findColumn(columnLabel), reader);
     }
 
-    @Override
+    //@Override // JDK 1.7
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    @Override
+    //@Override // JDK 1.7
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         return getObject(findColumn(columnLabel), type);
     }
