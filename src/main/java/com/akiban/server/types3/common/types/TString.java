@@ -29,6 +29,7 @@ package com.akiban.server.types3.common.types;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types3.TBundle;
@@ -204,9 +205,32 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1)
+    protected TInstance doPickInstance(TInstance instanceA, TInstance instanceB)
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        final int pickLen, pickCharset, pickCollation;
+
+        int aCharset = instanceA.attribute(StringAttribute.CHARSET);
+        int bCharset = instanceB.attribute(StringAttribute.CHARSET);
+        if (aCharset == bCharset)
+            pickCharset = aCharset;
+        else
+            throw new InvalidArgumentTypeException("can't combine strings " + instanceA + " and " + instanceB);
+        int aCollation = instanceA.attribute(StringAttribute.COLLATION);
+        int bCollation = instanceB.attribute(StringAttribute.COLLATION);
+        if (aCollation == bCollation) {
+            pickCollation = aCollation;
+        }
+        else {
+            CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
+            CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
+            AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
+            pickCollation = (collator == null) ? -1 : collator.getCollationId();
+        }
+        pickLen = Math.max(
+                instanceA.attribute(StringAttribute.LENGTH),
+                instanceB.attribute(StringAttribute.LENGTH)
+        );
+        return instance(pickLen, pickCharset, pickCollation);
     }
 
     @Override
