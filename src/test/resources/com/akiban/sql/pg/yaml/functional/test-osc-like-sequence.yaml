@@ -46,7 +46,11 @@
 - output: [[10, 1], [50, 5]]
 
 ---
+- Statement: DROP TABLE "_addresses_old";
+---
+- Statement: DROP TABLE "addresses";
+---
 - Statement: DROP TABLE "_customers_old";
 ---
-- Statement: DROP TABLE "_addresses_old";
+- Statement: DROP TABLE "customers";
 
