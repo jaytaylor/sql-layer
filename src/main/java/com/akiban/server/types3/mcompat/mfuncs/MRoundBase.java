@@ -61,28 +61,6 @@ public abstract class MRoundBase extends TOverloadBase {
             double evaluate(double result) {
                 return Math.floor(result);
             }
-        },
-        TRUNCATE() {
-            @Override
-            BigDecimalWrapper evaluate(BigDecimalWrapper result) {
-                return result.truncate(0);
-            }
-            
-            @Override
-            double evaluate(double result) {
-                return (double)(int) result;
-            }
-        },
-        ROUND() {
-            @Override
-            BigDecimalWrapper evaluate(BigDecimalWrapper result) {
-                return result.round(0);
-            }
-            
-            @Override
-            double evaluate(double result) {
-                return Math.round(result);
-            }
         };
         
         abstract double evaluate(double result);
@@ -91,16 +69,25 @@ public abstract class MRoundBase extends TOverloadBase {
     
     public static TOverload[] create(final RoundType roundType) {
         TOverload exactType = new MRoundBase(roundType, MNumeric.DECIMAL) {
+                    
+            private final int RET_TYPE_INDEX = 0;
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
-                output.putObject(roundType.evaluate(result));
+                TClass cached = (TClass) context.objectAt(RET_TYPE_INDEX);
+                BigDecimalWrapper result = roundType.evaluate(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
+                
+                if (cached == null || cached == MNumeric.DECIMAL)
+                    output.putObject(result);
+                else if (cached == MNumeric.BIGINT)
+                   output.putInt64(result.asBigDecimal().longValue());
+                else // INT
+                    output.putInt32(result.asBigDecimal().intValue());
             }
 
             @Override
             public TOverloadResult resultType() {
-                return TOverloadResult.custom(numericType.instance(), new TCustomOverloadResult() {
+                return TOverloadResult.custom(new TCustomOverloadResult() {
 
                     private final int ZERO_DEFAULT = 13;
                     private final int BIGINT_DEFAULT = 17;
@@ -114,16 +101,20 @@ public abstract class MRoundBase extends TOverloadBase {
 
                         // Special case: DECIMAL(0,0)
                         if (precision + scale == 0) {
+                            context.set(RET_TYPE_INDEX, MNumeric.BIGINT);
                             return MNumeric.BIGINT.instance(ZERO_DEFAULT);
                         }
-
                         int length = precision - scale;
                         if (length >= 0 && length < 9) {
+                            context.set(RET_TYPE_INDEX, MNumeric.INT);
                             return MNumeric.INT.instance(length + 3);
                         }
                         if (length >= 9 && length < 14) {
+                            context.set(RET_TYPE_INDEX, MNumeric.BIGINT);
                             return MNumeric.BIGINT.instance(BIGINT_DEFAULT);
                         }
+
+                        context.set(RET_TYPE_INDEX, MNumeric.DECIMAL);
                         return MNumeric.DECIMAL.instance(DECIMAL_DEFAULT, 0);
                     }
                 });
