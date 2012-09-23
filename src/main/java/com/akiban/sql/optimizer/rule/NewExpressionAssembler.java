@@ -67,7 +67,6 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.types.CharacterTypeAttributes;
-import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
