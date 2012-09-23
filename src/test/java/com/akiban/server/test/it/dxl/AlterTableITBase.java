@@ -86,7 +86,7 @@ public class AlterTableITBase extends ITBase {
 
     // Workaround for bug1052594 (Persistit brings trees back to life, this deletes data dir)
     @Override
-    public Collection<Property> startupConfigProperties() {
+    protected Collection<Property> startupConfigProperties() {
         return uniqueStartupConfigProperties(AlterTableITBase.class);
     }
 
