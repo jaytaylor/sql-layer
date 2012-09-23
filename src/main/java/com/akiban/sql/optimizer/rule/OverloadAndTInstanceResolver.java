@@ -328,7 +328,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
-                TClass targetType = resolutionResult.getTypeClass(i);
+                TInstance targetType = resolutionResult.getTypeClass(i);
                 if (targetType != null) {
                     ExpressionNode operand = castTo(operands.get(i), targetType, folder);
                     operands.set(i, operand);
