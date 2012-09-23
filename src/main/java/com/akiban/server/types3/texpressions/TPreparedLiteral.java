@@ -74,7 +74,7 @@ public final class TPreparedLiteral implements TPreparedExpression {
     }
 
     public TPreparedLiteral(TInstance tInstance, PValueSource value) {
-        if (value == null || value.isNull()) {
+        if (tInstance == null) {
             this.tInstance = null;
             this.value = PValueSources.getNullSource(null);
         }
