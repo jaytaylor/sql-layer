@@ -26,6 +26,11 @@
 - Statement: SELECT ** FROM customers WHERE cid = 1;
 - output: [['{"cid":1,"name":"Smith","test.addresses":[{"aid":101,"cid":1,"state":"MA","city":"Boston"}],"test.orders":[{"oid":101,"cid":1,"order_date":"2011-03-01","test.items":[{"iid":1011,"oid":101,"sku":"1234","quan":100},{"iid":1012,"oid":101,"sku":"4567","quan":50}]},{"oid":102,"cid":1,"order_date":"2011-03-02","test.items":[]}]}']]
 ---
+- Statement: SET OutputFormat TO 'json_with_meta_data';
+---
+- Statement: SELECT ** FROM customers WHERE FALSE;
+- output: [['[{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"name","oid":1043,"type":"VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL","length":32},{"name":"test.addresses","columns":[{"name":"aid","oid":23,"type":"INTEGER NOT NULL"},{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"state","oid":1042,"type":"CHAR(2) CHARACTER SET utf8 COLLATE utf8_bin","length":2},{"name":"city","oid":1043,"type":"VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_bin","length":100}]},{"name":"test.orders","columns":[{"name":"oid","oid":23,"type":"INTEGER NOT NULL"},{"name":"cid","oid":23,"type":"INTEGER NOT NULL"},{"name":"order_date","oid":1082,"type":"DATE NOT NULL"},{"name":"test.items","columns":[{"name":"iid","oid":23,"type":"INTEGER NOT NULL"},{"name":"oid","oid":23,"type":"INTEGER NOT NULL"},{"name":"sku","oid":1043,"type":"VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL","length":32},{"name":"quan","oid":23,"type":"INTEGER NOT NULL"}]}]}]']]
+---
 - Statement: SET OutputFormat TO DEFAULT;
 ---
 - Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE; 
