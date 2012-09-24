@@ -84,7 +84,8 @@ public final class TInputSet {
         }
         if (sb.length() == 0)
             sb.append("<none>"); // malformed input set, but still want a decent toString
-        sb.append(" <- ").append(targetType);
+        Object displayTargetType = (targetType == null) ? "*" : targetType;
+        sb.append(" <- ").append(displayTargetType);
         return sb.toString();
     }
 
