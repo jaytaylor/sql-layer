@@ -24,11 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.funcs;
+package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -36,59 +36,29 @@ import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class Elt extends TOverloadBase
-{
-
-    private final TClass stringType;
-    private final TClass intType;
-    
-    public Elt(TClass intType, TClass stringType)
-    {
-        this.intType = intType;
-        this.stringType = stringType;
-    }
-    
+public final class MUnaryPlus extends TOverloadBase {
     @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        // ELT(<INT>, <T> ....)
-        // argc >= 2
-        builder.covers(intType, 0).pickingVararg(stringType, 1);
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.pickingCovers(null, 0);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        int index = inputs.get(0).getInt32();
-        int nvarargs = inputs.size() - 1;
-        if (index < 1 || index > nvarargs)
-            output.putNull();
-        else
-            PValueTargets.copyFrom(inputs.get(index + 1), output);
-    }
-       
-     
-    @Override
-    protected boolean constnessMatters(int inputIndex) 
-    {
-        return false;
-    }
-    
-    @Override
-    protected boolean nullContaminates(int inputIndex) 
-    {
-        return false;
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        PValueTargets.copyFrom(inputs.get(0), output);
     }
 
     @Override
-    public String displayName()
-    {
-        return "ELT";
+    public String displayName() {
+        return "plus";
     }
 
     @Override
-    public TOverloadResult resultType()
-    {
+    public TOverloadResult resultType() {
         return TOverloadResult.picking();
+    }
+
+    public static final TOverload instance = new MUnaryPlus();
+
+    private MUnaryPlus() {
     }
 }

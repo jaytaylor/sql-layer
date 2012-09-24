@@ -783,7 +783,7 @@ public class MDatetimes
 
     public static boolean isValidDatetime (long ymdhms[])
     {
-        return isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms, true);
+        return ymdhms != null && isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms, true);
     }
     
     public static boolean isValidHrMinSec (long ymdhms[], boolean shortTime)

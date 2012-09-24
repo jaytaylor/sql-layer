@@ -26,7 +26,10 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.FieldDef;
+
+import java.io.UnsupportedEncodingException;
 
 /** Single byte encoding. */
 public class UTF8Encoder extends VariableWidthEncoding {
@@ -40,7 +43,17 @@ public class UTF8Encoder extends VariableWidthEncoding {
     public int widthFromObject(final FieldDef fieldDef, final Object value) {
         int size = fieldDef.getPrefixSize();
         if (value != null) {
-            String str = value.toString();
+            String str;
+            if (value instanceof byte[]) {
+                try {
+                    str = new String((byte[]) value, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new AkibanInternalException("while decoding binary", e);
+                }
+            }
+            else {
+                str = value.toString();
+            }
             for (int i = 0; i < str.length(); i++) {
                 int ch = str.charAt(i);
                 // Assumes consumers want standard UTF8 (e.g. String, nio.charset), not modified
