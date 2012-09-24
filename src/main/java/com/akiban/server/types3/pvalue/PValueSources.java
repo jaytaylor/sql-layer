@@ -412,13 +412,6 @@ public final class PValueSources {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T getCached(PValueSource source, TInstance tInstance, PValueCacher<? extends T> cacher) {
-        if (source.hasCacheValue())
-            return (T) source.getObject();
-        return cacher.valueToCache(source, tInstance);
-    }
-
     public static int hash(PValueSource source) {
         if (source.isNull())
             return 0;
