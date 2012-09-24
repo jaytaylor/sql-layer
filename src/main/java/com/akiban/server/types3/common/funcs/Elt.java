@@ -60,24 +60,24 @@ public class Elt extends TOverloadBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         int index = inputs.get(0).getInt32();
-        int nvarargs = inputs.size() - 1;
-        if (index < 1 || index > nvarargs)
+        int nvarargs = inputs.size();
+        if (index < 1 || index >= nvarargs)
             output.putNull();
         else
-            PValueTargets.copyFrom(inputs.get(index + 1), output);
+            PValueTargets.copyFrom(inputs.get(index), output);
     }
        
      
     @Override
     protected boolean constnessMatters(int inputIndex) 
     {
-        return false;
+        return true;
     }
     
     @Override
     protected boolean nullContaminates(int inputIndex) 
     {
-        return false;
+        return inputIndex == 0;
     }
 
     @Override
