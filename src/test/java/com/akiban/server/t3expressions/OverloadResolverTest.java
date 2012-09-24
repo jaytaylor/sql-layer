@@ -35,6 +35,7 @@ import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
@@ -229,7 +230,11 @@ public class OverloadResolverTest {
     }
 
     private static TPreptimeValue prepVal(TClass tClass) {
-        return (tClass != null) ? new TPreptimeValue(tClass.instance()) : new TPreptimeValue();
+        TPreptimeValue tpv = (tClass != null) ? new TPreptimeValue(tClass.instance()) : new TPreptimeValue();
+        TInstance tInstance = tpv.instance();
+        if (tInstance != null)
+            tInstance.setNullable(true);
+        return tpv;
     }
 
     private static List<TPreptimeValue> prepVals(TClass... tClasses) {
