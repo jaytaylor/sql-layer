@@ -276,8 +276,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     TClass topClass = tclass(instances[field]);
                     TClass botClass = tclass(botInstance);
 
-                    TClass common = resolver.commonTClass(topClass, botClass);
-                    if (common == null) {
+                    TClass commonTClass = resolver.commonTClass(topClass, botClass);
+                    if (commonTClass == null) {
                         throw new AkibanInternalException("no common type found found between row " + (rownum-1)
                         + " and " + rownum + " at field " + field);
                     }
@@ -288,9 +288,20 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
                     Boolean topIsNullable = (instances[field] == null) ? null : instances[field].nullability();
                     Boolean botIsNullable = botInstance.nullability();
-                    if (topClass != common){
-                        TInstance instance = (botClass == common) ? botInstance : common.instance();
-                        instances[field] = instance;
+                    // need to set a new instances[field]. Rules:
+                    // - if topClass and botClass are the same as common, use picking algorithm
+                    // - else, if one of them == commonTClass, use topInstance or botInstance (whichever is == common)
+                    // - else, use commonTClass.instance()
+                    boolean topIsCommon = (topClass == commonTClass);
+                    boolean botIsCommon = (botClass == commonTClass);
+                    if (topIsCommon && botIsCommon) {
+                        instances[field] = topClass.pickInstance(instances[field], botInstance);
+                    }
+                    else if (botIsCommon) {
+                        instances[field] = botInstance;
+                    }
+                    else if (!topIsCommon) { // this of this as "else if (topIsBottom) { <noop> } else { ..."
+                        instances[field] = commonTClass.instance();
                     }
 
                     // See if the top instance is not nullable but should be
