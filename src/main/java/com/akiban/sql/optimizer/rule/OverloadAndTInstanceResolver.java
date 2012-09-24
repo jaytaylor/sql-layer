@@ -524,7 +524,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                                         ? null
                                         : new TPreptimeValue(columnType, asColType);
                                 PValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
-                                if (PValueSources.areEqual(constValue.value(), backToConstType)) {
+                                if (PValueSources.areEqual(constValue.value(), backToConstType, constType)) {
                                     TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
                                     ConstantExpression constCasted = new ConstantExpression(constTpv);
                                     expression.setRight(constCasted);

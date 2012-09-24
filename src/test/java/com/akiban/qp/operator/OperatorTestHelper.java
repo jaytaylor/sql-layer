@@ -38,6 +38,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -51,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public final class OperatorTestHelper {
 
@@ -107,8 +109,12 @@ public final class OperatorTestHelper {
     private static void checkRowInstance(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {   
         PValueSource actualSource = actual.pvalue(i);
         PValueSource expectedSource = expected.pvalue(i);
+        TInstance actualType = actual.rowType().typeInstanceAt(i);
+        TInstance expectedType = expected.rowType().typeInstanceAt(i);
+        assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
+
         
-        if(!PValueSources.areEqual(actualSource, expectedSource)) {
+        if(!PValueSources.areEqual(actualSource, expectedSource, expectedType)) {
             Assert.assertEquals(
                     String.format("row[%d] field[%d]", rowCount, i),
                     str(expecteds),

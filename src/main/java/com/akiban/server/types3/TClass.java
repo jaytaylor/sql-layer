@@ -104,9 +104,8 @@ public abstract class TClass {
                 return comparableA.compareTo(sourceB.getObject());
             }
         }
-        PValueCacher cacher = cacher();
-        ensureRawValue(sourceA, instanceA, cacher);
-        ensureRawValue(sourceB, instanceB, cacher);
+        ensureRawValue(sourceA, instanceA);
+        ensureRawValue(sourceB, instanceB);
         switch (sourceA.getUnderlyingType()) {
         case BOOL:
             return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
@@ -347,10 +346,11 @@ public abstract class TClass {
 
      }
 
-    private void ensureRawValue(PValueSource source, TInstance instance, PValueCacher cacher) {
+    public static void ensureRawValue(PValueSource source, TInstance instance) {
         if (!source.hasAnyValue())
             throw new IllegalStateException("no value set");
         if (!source.hasRawValue()) {
+            PValueCacher cacher = instance.typeClass().cacher();
             if (cacher == null)
                 throw new IllegalArgumentException("no cacher for " + instance + " with value " + source);
             if (source instanceof PValue) {

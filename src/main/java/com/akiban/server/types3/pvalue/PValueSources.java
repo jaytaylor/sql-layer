@@ -378,7 +378,7 @@ public final class PValueSources {
         }
     }
 
-    public static boolean areEqual(PValueSource one, PValueSource two) {
+    public static boolean areEqual(PValueSource one, PValueSource two, TInstance instance) {
         PUnderlying underlyingType = one.getUnderlyingType();
         if (underlyingType != two.getUnderlyingType())
             return false;
@@ -386,6 +386,10 @@ public final class PValueSources {
             return two.isNull();
         if (two.isNull())
             return false;
+        if (one.hasCacheValue() && two.hasCacheValue())
+            return one.getObject().equals(two.getObject());
+        TClass.ensureRawValue(one, instance);
+        TClass.ensureRawValue(two, instance);
         switch (underlyingType) {
         case BOOL:
             return one.getBoolean() == two.getBoolean();
