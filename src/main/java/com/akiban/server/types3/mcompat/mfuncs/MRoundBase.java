@@ -77,12 +77,19 @@ public abstract class MRoundBase extends TOverloadBase {
                 TClass cached = (TClass) context.objectAt(RET_TYPE_INDEX);
                 BigDecimalWrapper result = roundType.evaluate(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
                 
-                if (cached == null || cached == MNumeric.DECIMAL)
+                TClass outT = context.outputTInstance().typeClass();
+                if (cached != null && cached != outT)
+                    throw new AssertionError(String.format("Mismatched type! cached: [%s] != output: [%s]",
+                                                           cached,
+                                                           outT));
+                else if (outT == MNumeric.DECIMAL)
                     output.putObject(result);
-                else if (cached == MNumeric.BIGINT)
+                else if (outT == MNumeric.BIGINT)
                    output.putInt64(result.asBigDecimal().longValue());
-                else // INT
+                else if (outT == MNumeric.INT) // INT
                     output.putInt32(result.asBigDecimal().intValue());
+                else
+                    throw new AssertionError("Unexpected output type: " + outT);
             }
 
             @Override
