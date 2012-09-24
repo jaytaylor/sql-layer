@@ -501,9 +501,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         ExpressionNode handleComparisonCondition(ComparisonCondition expression) {
             ExpressionNode left = expression.getLeft();
             ExpressionNode right = expression.getRight();
-            TClass leftTClass = tclass(left);
-            TClass rightTClass = tclass(right);
-            if (leftTClass != rightTClass) {
+            TInstance leftTInst = tinst(left);
+            TInstance rightTInst = tinst(right);
+            if (TClass.comparisonNeedsCasting(leftTInst, rightTInst)) {
                 boolean needCasts = true;
                 if ( (left.getClass() == ColumnExpression.class)&& (right.getClass() == ConstantExpression.class)) {
                     // Left is a Column, right is a Constant. Ideally, we'd like to keep the Column as a Column,
@@ -511,7 +511,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     // So, try to cast the const to the column's type. To do this, CAST(Const -> Column) must be
                     // indexFriendly, *and* casting this result back to the original Const type must equal the same
                     // const.
-                    if (resolver.getRegistry().isIndexFriendly(leftTClass, rightTClass)) {
+                    if (resolver.getRegistry().isIndexFriendly(tclass(leftTInst), tclass(rightTInst))) {
                         TInstance columnType = tinst(left);
                         TInstance constType = tinst(right);
                         TCast constToCol = resolver.getTCast(constType, columnType);

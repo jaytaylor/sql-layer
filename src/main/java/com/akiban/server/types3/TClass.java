@@ -60,18 +60,29 @@ public abstract class TClass {
                          TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
         PValueTargets.copyFrom(source, target);
     }
-    
+
+    public boolean normalizeInstancesBeforeComparison() {
+        return false;
+    }
+
+    public static boolean comparisonNeedsCasting(TInstance left, TInstance right) {
+        if (left == null || right == null)
+            return true;
+        TClass leftClass = left.typeClass();
+        TClass rightClass = right.typeClass();
+        return  (leftClass != rightClass)
+                || (leftClass.normalizeInstancesBeforeComparison() && (!left.equalsExcludingNullable(right)));
+    }
+
     public static int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
-        TClass classA = instanceA.typeClass();
-        TClass classB = instanceB.typeClass();
-        if (classA != classB)
+        if (comparisonNeedsCasting(instanceA, instanceB))
             throw new IllegalArgumentException("can't compare " + instanceA + " and " + instanceB);
 
         if (sourceA.isNull())
             return sourceB.isNull() ? 0 : -1;
         if (sourceB.isNull())
             return 1;
-        return classA.doCompare(instanceA, sourceA, instanceB, sourceB);
+        return instanceA.typeClass().doCompare(instanceA, sourceA, instanceB, sourceB);
     }
 
     /**
