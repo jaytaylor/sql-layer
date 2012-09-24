@@ -153,13 +153,37 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        // Determine precision of TInstance
-        /*switch (mode) {
-            case COMBINE:
-            case CHOOSE:
-        }*/
-        throw new UnsupportedOperationException("Not supported yet.");
+    protected TInstance doPickInstance(TInstance instanceL, TInstance instanceR) {
+        int scaleL = instanceL.attribute(Attrs.SCALE);
+        int scaleR = instanceL.attribute(Attrs.SCALE);
+
+        int precisionL = instanceL.attribute(Attrs.PRECISION);
+        int precisionR = instanceR.attribute(Attrs.PRECISION);
+
+        int resultPrecision, resultScale;
+
+        if (scaleL == scaleR) {
+            resultScale = scaleL;
+            resultPrecision = Math.max(precisionL, precisionR);
+        }
+        else {
+            int precisionOfSmallerScale, precisionOfLargerScale;
+            if (scaleL > scaleR) {
+                resultScale = scaleL;
+                resultPrecision = scaleL; // might be swapped later
+                precisionOfSmallerScale = precisionR;
+            }
+            else {
+                resultScale = scaleR;
+                resultPrecision = scaleR; // might be swapped later
+                precisionOfSmallerScale = precisionL;
+            }
+            // Whatever the precision was of the DECIMAL of smaller scale, widen it so that we can have this DECIMAL
+            // have the big scale
+            precisionOfSmallerScale += Math.abs(scaleL - scaleR);
+            resultPrecision = Math.max(precisionOfSmallerScale, resultPrecision);
+        }
+        return MNumeric.DECIMAL.instance(resultPrecision, resultScale);
     }
 
     public static final PValueCacher<BigDecimalWrapper> cacher = new PValueCacher<BigDecimalWrapper>() {

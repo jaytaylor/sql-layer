@@ -27,7 +27,6 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.aksql.aktypes.AkBigDecimalWrapper;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression.Operation;
