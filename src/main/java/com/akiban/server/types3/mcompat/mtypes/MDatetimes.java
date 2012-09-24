@@ -48,6 +48,7 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.IllegalFieldValueException;
 import org.joda.time.MutableDateTime;
 
 public class MDatetimes
@@ -724,6 +725,10 @@ public class MDatetimes
                                        DateTimeZone.forID(tz)
                                       ).getMillis();
             return (int)CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
+        }
+        catch (IllegalFieldValueException e)
+        {
+            return 0; // e.g. SELECT UNIX_TIMESTAMP('1920-21-01 00:00:00') -> 0
         }
         catch (NumberFormatException ex)
         {
