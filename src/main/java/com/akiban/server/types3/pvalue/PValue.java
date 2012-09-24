@@ -28,6 +28,7 @@ package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.TInstance;
+import com.akiban.util.StackTracer;
 
 public final class PValue implements PValueSource, PValueTarget {
     // PValue interface
@@ -319,7 +320,7 @@ public final class PValue implements PValueSource, PValueTarget {
             throw new AssertionError(state);
         }
     }
-
+final StackTracer tracer = new StackTracer();
     private void checkUnderlying(PUnderlying expected) {
         if (underlying != expected) {
             String underlyingToString = (underlying == null) ? "unspecified" : underlying.name();

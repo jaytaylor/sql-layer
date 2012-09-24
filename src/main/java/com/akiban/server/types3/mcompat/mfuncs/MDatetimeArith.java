@@ -130,7 +130,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
-            output.putInt32((int) (datetime.getMillis() / DAY_FACTOR));
+            output.putInt64((int) (datetime.getMillis() / DAY_FACTOR));
         }
 
         @Override
