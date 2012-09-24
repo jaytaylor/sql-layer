@@ -28,8 +28,8 @@ package com.akiban.server.types3;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueCacher;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -104,8 +104,8 @@ public abstract class TClass {
                 return comparableA.compareTo(sourceB.getObject());
             }
         }
-        ensureRawValue(sourceA, instanceA);
-        ensureRawValue(sourceB, instanceB);
+        PValueSources.ensureRawValue(sourceA, instanceA);
+        PValueSources.ensureRawValue(sourceB, instanceB);
         switch (sourceA.getUnderlyingType()) {
         case BOOL:
             return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
@@ -345,21 +345,6 @@ public abstract class TClass {
                 pUnderlying);
 
      }
-
-    public static void ensureRawValue(PValueSource source, TInstance instance) {
-        if (!source.hasAnyValue())
-            throw new IllegalStateException("no value set");
-        if (!source.hasRawValue()) {
-            PValueCacher cacher = instance.typeClass().cacher();
-            if (cacher == null)
-                throw new IllegalArgumentException("no cacher for " + instance + " with value " + source);
-            if (source instanceof PValue) {
-                ((PValue)source).ensureRaw(cacher, instance);
-            }
-            else
-                throw new IllegalArgumentException("can't update value of type " + source.getClass());
-        }
-    }
 
     private final TName name;
     private final Class<?> enumClass;

@@ -388,8 +388,8 @@ public final class PValueSources {
             return false;
         if (one.hasCacheValue() && two.hasCacheValue())
             return one.getObject().equals(two.getObject());
-        TClass.ensureRawValue(one, instance);
-        TClass.ensureRawValue(two, instance);
+        ensureRawValue(one, instance);
+        ensureRawValue(two, instance);
         switch (underlyingType) {
         case BOOL:
             return one.getBoolean() == two.getBoolean();
@@ -549,6 +549,21 @@ public final class PValueSources {
         StringBuilder sb = new StringBuilder();
         toStringSimple(source, sb);
         return sb.toString();
+    }
+
+    public static void ensureRawValue(PValueSource source, TInstance instance) {
+        if (!source.hasAnyValue())
+            throw new IllegalStateException("no value set");
+        if (!source.hasRawValue()) {
+            PValueCacher cacher = instance.typeClass().cacher();
+            if (cacher == null)
+                throw new IllegalArgumentException("no cacher for " + instance + " with value " + source);
+            if (source instanceof PValue) {
+                ((PValue)source).ensureRaw(cacher, instance);
+            }
+            else
+                throw new IllegalArgumentException("can't update value of type " + source.getClass());
+        }
     }
 
     public static abstract class ValueSourceConverter<T> {
