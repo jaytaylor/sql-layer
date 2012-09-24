@@ -129,7 +129,7 @@ public final class PValueSources {
             tInstance = MNumeric.TINYINT.instance(1);
             break;
         case NULL:
-            tInstance = MBinary.VARBINARY.instance(0);
+            tInstance = null;
             break;
         case INTERVAL_MONTH:
         case RESULT_SET:
@@ -159,8 +159,13 @@ public final class PValueSources {
             if (akType == null)
                 throw new UnsupportedOperationException("can't infer type of null object");
             tInstance = fromAkType(akType, 0);
-            value = new PValue(tInstance.typeClass().underlyingType());
-            value.putNull();
+            if (tInstance == null) {
+                value = null;
+            }
+            else {
+                value = new PValue(tInstance.typeClass().underlyingType());
+                value.putNull();
+            }
         }
         else if (object instanceof Integer) {
             tInstance = MNumeric.INT.instance();
@@ -456,7 +461,7 @@ public final class PValueSources {
     }
 
     public static PValueSource getNullSource(PUnderlying underlying) {
-        PValueSource source = NULL_SOURCES[underlying.ordinal()];
+        PValueSource source = (underlying == null) ? NULL_UNKNOWN : NULL_SOURCES[underlying.ordinal()];
         assert source.isNull() : source;
         return source;
     }
@@ -464,6 +469,7 @@ public final class PValueSources {
     private PValueSources() {}
 
     private static final PValueSource[] NULL_SOURCES = createNullSources();
+    private static final PValueSource NULL_UNKNOWN = createNullUnknown();
 
     private static PValueSource[] createNullSources() {
         PUnderlying[] vals = PUnderlying.values();
@@ -474,6 +480,12 @@ public final class PValueSources {
             arr[i] = pval;
         }
         return arr;
+    }
+
+    private static PValueSource createNullUnknown() {
+        PValue result = new PValue();
+        result.putNull();
+        return result;
     }
 
     public static PValueSource fromValueSource(ValueSource source, TInstance tInstance) {

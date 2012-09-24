@@ -36,22 +36,22 @@ import java.util.List;
 public final class TInputSetBuilder {
 
     public TInputSetBuilder covers(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, false));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, false, exact));
         return this;
     }
 
     public TInputSetBuilder pickingCovers(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, true));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, true, exact));
         return this;
     }
     
     public TInputSetBuilder vararg(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, false));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, false, exact));
         return this;
     }
 
     public TInputSetBuilder pickingVararg(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, true));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, true, exact));
         return this;
     }
 
@@ -60,9 +60,15 @@ public final class TInputSetBuilder {
         return this;
     }
 
+    public TInputSetBuilder setExact(boolean exact) {
+        this.exact = exact;
+        return this;
+    }
+
     List<TInputSet> toList() {
         return new ArrayList<TInputSet>(inputSets);
     }
 
+    private boolean exact;
     private List<TInputSet> inputSets = new ArrayList<TInputSet>(4);
 }
