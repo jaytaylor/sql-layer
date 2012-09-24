@@ -143,6 +143,13 @@ public class MDatetimes
                 out.append(datetimeToString(source.getInt64()));
                 out.append("'");
             }
+        };
+
+        @Override
+        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            out.append('"');
+            format(instance, source, out);
+            out.append('"');
         }
     }
     

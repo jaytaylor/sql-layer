@@ -90,15 +90,9 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
                 if (false) {
                     // TODO: No getResultSet() yet.
                 }
-                else if (value.isNull()) {
-                    encoder.appendString("null");
-                }
                 else {
-                    // TODO: No Quote support for new types.
-                    encoder.appendString("\"");
                     TInstance columnTInstance = resultColumn.getTInstance();
-                    columnTInstance.format(value, appender);
-                    encoder.appendString("\"");
+                    columnTInstance.formatAsJson(value, appender);
                 }
             }
             else {

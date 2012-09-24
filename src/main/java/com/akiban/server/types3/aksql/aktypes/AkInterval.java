@@ -106,6 +106,12 @@ public class AkInterval extends TClassBase {
                 out.append(lo);
             }
         }
+
+        @Override
+        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            long months = source.getInt64();
+            out.append(Long.toString(months));
+        }
     };
 
     private static TClassFormatter secondsFormatter = new TClassFormatter() {
@@ -201,6 +207,15 @@ public class AkInterval extends TClassBase {
                 out.append(" TO ");
                 out.append(lo);
             }
+        }
+
+        @Override
+        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            long value = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
+            long secs = value / 1000000;
+            long micros = value % 1000000;
+            Formatter formatter = new Formatter(out.getAppendable());
+            formatter.format("%d.%06d", secs, micros);
         }
     };
 

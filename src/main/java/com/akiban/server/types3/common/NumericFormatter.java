@@ -35,6 +35,7 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 import com.google.common.primitives.UnsignedLongs;
+import org.apache.commons.codec.binary.Base64;
 
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -70,21 +71,11 @@ public class NumericFormatter {
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Byte.toString(source.getInt8()));
             }
-
-            @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
-                format(instance, source, out);
-            }
         },
         INT_16 {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Short.toString(source.getInt16()));
-            }
-
-            @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
-                format(instance, source, out);
             }
         },
         INT_32 {
@@ -92,32 +83,17 @@ public class NumericFormatter {
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Integer.toString(source.getInt32()));
             }
-
-            @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
-                format(instance, source, out);
-            }
         },
         INT_64 {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(Long.toString(source.getInt64()));
             }
-
-            @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
-                format(instance, source, out);
-            }
         },
         UINT_64 {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(UnsignedLongs.toString(source.getInt64()));
-            }
-
-            @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
-                format(instance, source, out);
             }
         },
         BYTES {
@@ -147,6 +123,15 @@ public class NumericFormatter {
                 else
                     return (char)('A' + n - 10);
             }
+
+            @Override
+            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+                // There is no strong precedent for how to encode
+                // arbitrary bytes in JSON.
+                out.append('"');
+                out.append(Base64.encodeBase64String(source.getBytes()));
+                out.append('"');
+            }
         },
         BIGDECIMAL{
             @Override
@@ -163,9 +148,25 @@ public class NumericFormatter {
             }
 
             @Override
-            public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+                // The JSON spec just has one kind of number, so we could output with
+                // quotes and reserve scientific notation for floats. But almost every
+                // library interprets decimal point as floating point,
+                // so stick with string.
+                out.append('"');
                 format(instance, source, out);
+                out.append('"');
             }
+        };
+
+        @Override
+        public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+            format(instance, source, out);
+        }
+        
+        @Override
+        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            format(instance, source, out);
         }
     }
 }
