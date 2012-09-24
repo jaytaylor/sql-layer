@@ -45,12 +45,10 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     private DirectObjectPlan.OutputMode outputMode;
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
+                                               List<String> columnNames, List<PostgresType> columnTypes, 
                                                Object[] args, boolean usePVals)
     {
-        super(loadablePlan.columnNames(),
-              loadablePlan.columnTypes(),
-              null,
-              usePVals);
+        super(columnNames, columnTypes, null, usePVals);
         this.args = args;
 
         plan = loadablePlan.plan();

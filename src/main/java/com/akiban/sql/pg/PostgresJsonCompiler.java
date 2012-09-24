@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.types3.TInstance;
 import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -37,6 +36,7 @@ import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.service.functions.FunctionsRegistry;
 
 import java.util.*;
@@ -131,7 +131,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
         else {
             akType = TypesTranslation.sqlTypeToAkType(sqlType);
             if (sqlType != null)
-                pgType = PostgresType.fromDerby(sqlType, null);
+                pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
         }
         return new JsonResultColumn(name, sqlType, akType, tInstance, pgType, nestedResultColumns);
     }
