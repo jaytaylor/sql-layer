@@ -274,9 +274,19 @@ public class MDatetimes
         
         try
         {
-            return Integer.parseInt(tks[0]) * 512
-                    + Integer.parseInt(tks[1]) * 32
-                    + Integer.parseInt(CastUtils.truncateNonDigits(tks[2], context));
+            int ret[] = new int[]
+            {
+                Integer.parseInt(tks[0]),
+                Integer.parseInt(tks[1]),
+                Integer.parseInt(CastUtils.truncateNonDigits(tks[2], context))
+            };
+            
+            if (!isValidDayMonth(ret[0], ret[1], ret[2]))
+                throw new InvalidDateFormatException("date", st);
+            else
+                return ret[0] * 512
+                        + ret[1] * 32
+                        + ret[2];
         }
         catch (NumberFormatException ex)
         {
@@ -476,12 +486,25 @@ public class MDatetimes
 
         try
         {
-            return Long.parseLong(year) * DATETIME_YEAR_SCALE
-                    + Long.parseLong(month) * DATETIME_MONTH_SCALE
-                    + Long.parseLong(day) * DATETIME_DAY_SCALE
-                    + Long.parseLong(hour) * DATETIME_HOUR_SCALE
-                    + Long.parseLong(minute) * DATETIME_MIN_SCALE
-                    + Long.parseLong(seconds);
+            long ret[] = new long[]
+            {
+                Long.parseLong(year),
+                Long.parseLong(month),
+                Long.parseLong(day),
+                Long.parseLong(hour),
+                Long.parseLong(minute),
+                Long.parseLong(seconds)
+            };
+            
+            if (!isValidDatetime(ret))
+                throw new InvalidDateFormatException("datetime", st);
+            else
+                return ret[0] * DATETIME_YEAR_SCALE
+                       + ret[1] * DATETIME_MONTH_SCALE
+                       + ret[2] * DATETIME_DAY_SCALE
+                       + ret[3] * DATETIME_HOUR_SCALE
+                       + ret[4] * DATETIME_MIN_SCALE
+                       + ret[5];
         }
         catch (NumberFormatException ex)
         {
