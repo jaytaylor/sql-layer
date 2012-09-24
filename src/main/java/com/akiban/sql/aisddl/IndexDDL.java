@@ -36,6 +36,7 @@ import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.error.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -273,9 +274,7 @@ public class IndexDDL
     private static boolean isFixedDecimal(Column column)
     {
         if (Types3Switch.ON) {
-            // ???
-            assert false : "Not implemented yet";
-            return true;
+            return column.tInstance().typeClass() instanceof MBigDecimal;
         } else {
             AkType type = column.getType().akType();
             return type == AkType.DECIMAL;
