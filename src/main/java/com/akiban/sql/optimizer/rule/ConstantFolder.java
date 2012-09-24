@@ -182,12 +182,12 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode comparisonCondition(ComparisonCondition cond) {
             Constantness lc = isConstant(cond.getLeft());
             Constantness rc = isConstant(cond.getRight());
-            if ((lc != Constantness.VARIABLE) && (rc != Constantness.VARIABLE))
-                return evalNow(cond);
             if ((lc == Constantness.NULL) || (rc == Constantness.NULL))
                 return new BooleanConstantExpression(null, 
                                                      cond.getSQLtype(), 
                                                      cond.getSQLsource());
+            if ((lc != Constantness.VARIABLE) && (rc != Constantness.VARIABLE))
+                return evalNow(cond);
             if (isIdempotentEquality(cond)) {
                 if ((cond.getLeft().getSQLtype() != null) &&
                     !cond.getLeft().getSQLtype().isNullable()) {
@@ -916,7 +916,12 @@ public class ConstantFolder extends BaseRule
 
         @Override
         protected Constantness isConstant(ExpressionNode expr) {
-            PValueSource value = expr.getPreptimeValue().value();
+            TPreptimeValue tpv = expr.getPreptimeValue();
+            PValueSource value = tpv.value();
+            if (tpv.instance() == null) {
+                assert value == null || value.isNull() : value;
+                return Constantness.NULL;
+            }
             if (value == null)
                 return Constantness.VARIABLE;
             return value.isNull()

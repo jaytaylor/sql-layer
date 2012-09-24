@@ -31,6 +31,7 @@ import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.io.IOException;
+import java.util.List;
 
 public class PostgresLoadableOperator extends PostgresOperatorStatement
 {
@@ -39,14 +40,11 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
 
     private Object[] args;
 
-    protected PostgresLoadableOperator(LoadableOperator loadableOperator, Object[] args, boolean usePVals)
+    protected PostgresLoadableOperator(LoadableOperator loadableOperator, 
+                                       List<String> columnNames, List<PostgresType> columnTypes, 
+                                       Object[] args, boolean usePVals)
     {
-        super(loadableOperator.plan(),
-              null,
-              loadableOperator.columnNames(),
-              loadableOperator.columnTypes(),
-              null,
-              usePVals);
+        super(loadableOperator.plan(), null, columnNames, columnTypes, null, usePVals);
         this.args = args;
     }
     
