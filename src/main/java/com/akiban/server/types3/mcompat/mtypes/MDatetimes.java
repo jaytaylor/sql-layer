@@ -664,12 +664,19 @@ public class MDatetimes
     }
     public static long[] decodeTime(long val)
     {
+        int sign;
+        
+        if (val < 0)
+            val *= sign = -1;
+        else
+            sign = 1;
+
         return new long[]
         {
             1970,
             1,
             1,
-            val / DATETIME_HOUR_SCALE,
+            sign * val / DATETIME_HOUR_SCALE,
             val / DATETIME_MIN_SCALE % 100,
             val % 100
         };
