@@ -107,7 +107,7 @@ public final class CastUtils
             // compute the max value:
             meta = new BigDecimalWrapper[2];
             meta[MBigDecimal.MAX_INDEX] = new MBigDecimalWrapper(getNum(expectedScale, expectedPre));
-            meta[MBigDecimal.MIN_INDEX] = meta[MBigDecimal.MAX_INDEX].negate();
+            meta[MBigDecimal.MIN_INDEX] = new MBigDecimalWrapper(meta[MBigDecimal.MAX_INDEX].asBigDecimal().negate());
 
             context.outputTInstance().setMetaData(meta);
         }

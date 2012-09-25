@@ -607,6 +607,13 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE c ADD PRIMARY KEY(c1)");
     }
 
+    //bug1047037
+    @Test(expected=DuplicateIndexException.class)
+    public void cannotAddNamedConstraintPrimaryKeyAnotherPK() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("c1", false).pk("c1");
+        parseAndRun("ALTER TABLE c ADD CONSTRAINT break PRIMARY KEY(c1)");
+    }
+
     @Test
     public void addPrimaryKeySingleTableGroupNoPK() throws StandardException {
         builder.userTable(C_NAME).colBigInt("c1", false);

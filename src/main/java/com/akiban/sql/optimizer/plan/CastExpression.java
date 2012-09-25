@@ -27,6 +27,8 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -88,7 +90,16 @@ public class CastExpression extends BaseExpression
 
     @Override
     public String toString() {
-        return "Cast(" + inner + " AS " + getSQLtype() + ")";
+        Object typeDescriptor;
+        TPreptimeValue tpv = getPreptimeValue();
+        if (tpv != null) {
+            TInstance instance = tpv.instance();
+            typeDescriptor = instance == null ? "<unknown>" : instance;
+        }
+        else {
+            typeDescriptor = getSQLtype();
+        }
+        return "Cast(" + inner + " AS " + typeDescriptor + ")";
     }
 
     @Override
