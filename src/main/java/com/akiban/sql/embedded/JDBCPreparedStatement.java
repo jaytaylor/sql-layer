@@ -46,9 +46,9 @@ import java.util.*;
 
 public class JDBCPreparedStatement extends JDBCStatement implements PreparedStatement
 {
-    private InternalStatement internalStatement;
-    private EmbeddedQueryContext context;
-    private FromObjectValueSource objectSource;
+    protected InternalStatement internalStatement;
+    protected EmbeddedQueryContext context;
+    protected FromObjectValueSource objectSource;
 
     protected JDBCPreparedStatement(JDBCConnection connection, 
                                     InternalStatement internalStatement) {

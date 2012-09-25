@@ -33,6 +33,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ByteSource;
@@ -81,14 +82,25 @@ public class JDBCResultSet implements ResultSet
         }
         if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
             throw new JDBCException("Column index out of bounds");
-        try {
-            ValueSource value = row.eval(columnIndex - 1);
-            wasNull = value.isNull();
-            return value;
+
+        ValueSource value = row.eval(columnIndex - 1);
+        wasNull = value.isNull();
+        return value;
+    }
+
+    protected PValueSource pvalue(int columnIndex) throws SQLException {
+        if (row == null) {
+            if (cursor == null)
+                throw new JDBCException("Already closed.");
+            else
+                throw new JDBCException("Past end.");
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
-        }
+        if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
+            throw new JDBCException("Column index out of bounds");
+
+        PValueSource value = row.pvalue(columnIndex - 1);
+        wasNull = value.isNull();
+        return value;
     }
 
     /* Wrapper */
@@ -297,21 +309,7 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-        try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return Extractors.getDecimalExtractor().getObject(value);
-            }
-        }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
-        }
+        return getBigDecimal(columnIndex).setScale(scale);
     }
 
     @Override
@@ -563,7 +561,21 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            if (Types3Switch.ON) {
+                throw new SQLFeatureNotSupportedException();
+            }
+            else {
+                ValueSource value = value(columnIndex);
+                if (wasNull)
+                    return null;
+                else
+                    return Extractors.getDecimalExtractor().getObject(value);
+            }
+        }
+        catch (InvalidOperationException ex) {
+            throw new JDBCException(ex);
+        }
     }
 
     @Override

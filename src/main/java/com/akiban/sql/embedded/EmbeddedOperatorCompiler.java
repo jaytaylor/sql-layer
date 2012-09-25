@@ -26,8 +26,8 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.sql.embedded.JDBCResultSetMetaData.JDBCResultColumn;
-import com.akiban.sql.embedded.JDBCParameterMetaData.JDBCParameterType;
+import com.akiban.sql.embedded.JDBCResultSetMetaData.ResultColumn;
+import com.akiban.sql.embedded.JDBCParameterMetaData.ParameterType;
 
 import com.akiban.sql.server.ServerOperatorCompiler;
 import com.akiban.sql.server.ServerPlanContext;
@@ -77,8 +77,8 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
         return getJDBCResultColumn(field.getName(), field.getSQLtype(), field.getAIScolumn(), field.getTInstance());
     }
 
-    protected JDBCResultColumn getJDBCResultColumn(String name, DataTypeDescriptor sqlType, 
-                                                   Column aisColumn, TInstance tInstance) {
+    protected ResultColumn getJDBCResultColumn(String name, DataTypeDescriptor sqlType, 
+                                               Column aisColumn, TInstance tInstance) {
         int jdbcType = Types.OTHER;
         JDBCResultSetMetaData nestedResultSet = null;
         if (sqlType != null) {
@@ -88,14 +88,14 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
                     (TypeId.RowMultiSetTypeId)sqlType.getTypeId();
                 String[] columnNames = typeId.getColumnNames();
                 DataTypeDescriptor[] columnTypes = typeId.getColumnTypes();
-                List<JDBCResultColumn> nestedResultColumns = new ArrayList<JDBCResultColumn>(columnNames.length);
+                List<ResultColumn> nestedResultColumns = new ArrayList<ResultColumn>(columnNames.length);
                 for (int i = 0; i < columnNames.length; i++) {
                     nestedResultColumns.add(getJDBCResultColumn(columnNames[i], columnTypes[i], null, TypesTranslation.toTInstance(columnTypes[i])));
                 }
                 nestedResultSet = new JDBCResultSetMetaData(nestedResultColumns);
             }
         }
-        return new JDBCResultColumn(name, jdbcType, sqlType, aisColumn, tInstance, nestedResultSet);
+        return new ResultColumn(name, jdbcType, sqlType, aisColumn, tInstance, nestedResultSet);
     }
 
     public InternalStatement compileInternalStatement(JDBCConnection conn, DMLStatementNode sqlStmt, List<ParameterNode> sqlParams, EmbeddedQueryContext context) {
@@ -105,15 +105,15 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
             throw new UnsupportedSQLException("Not SELECT", sqlStmt);
         PhysicalSelect select = (PhysicalSelect)result;
         Operator operator = select.getResultOperator();
-        List<JDBCResultColumn> columns = new ArrayList<JDBCResultColumn>();
+        List<ResultColumn> columns = new ArrayList<ResultColumn>();
         for (PhysicalResultColumn column : select.getResultColumns())
-            columns.add((JDBCResultColumn)column);
+            columns.add((ResultColumn)column);
         JDBCResultSetMetaData resultSetMetaData = new JDBCResultSetMetaData(columns);
         JDBCParameterMetaData parameterMetaData = null;
         if (result.getParameterTypes() != null) {
-            List<JDBCParameterType> jdbcParams = new ArrayList<JDBCParameterType>();
+            List<ParameterType> jdbcParams = new ArrayList<ParameterType>();
             for (DataTypeDescriptor sqlType : result.getParameterTypes()) {
-                jdbcParams.add(new JDBCParameterType(sqlType));
+                jdbcParams.add(new ParameterType(sqlType));
             }
             parameterMetaData = new JDBCParameterMetaData(jdbcParams);
         }

@@ -38,19 +38,29 @@ import java.util.List;
 
 public class JDBCParameterMetaData implements ParameterMetaData
 {
-    protected static class JDBCParameterType {
+    protected static class ParameterType {
+        private String name;    // null for ordinary (non-CALL) prepared statements
         private DataTypeDescriptor sqlType;
         private int jdbcType;
         private AkType akType;
         private TInstance tInstance;
 
-        protected JDBCParameterType(DataTypeDescriptor sqlType) {
+        protected ParameterType(String name, DataTypeDescriptor sqlType) {
+            this(sqlType);
+            this.name = name;
+        }
+
+        protected ParameterType(DataTypeDescriptor sqlType) {
             this.sqlType = sqlType;
             if (sqlType != null) {
                 jdbcType = sqlType.getJDBCTypeId();
                 akType = TypesTranslation.sqlTypeToAkType(sqlType);
                 tInstance = TypesTranslation.toTInstance(sqlType);
             }
+        }
+
+        public String getName() {
+            return name;
         }
 
         public DataTypeDescriptor getSQLType() {
@@ -86,17 +96,17 @@ public class JDBCParameterMetaData implements ParameterMetaData
         }
     }
     
-    private List<JDBCParameterType> params;
+    private List<ParameterType> params;
 
-    protected JDBCParameterMetaData(List<JDBCParameterType> params) {
+    protected JDBCParameterMetaData(List<ParameterType> params) {
         this.params = params;
     }
 
-    protected List<JDBCParameterType> getParameters() {
+    protected List<ParameterType> getParameters() {
         return params;
     }
 
-    protected JDBCParameterType getParameter(int param) {
+    protected ParameterType getParameter(int param) {
         return params.get(param - 1);
     }
 

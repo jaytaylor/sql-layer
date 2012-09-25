@@ -196,7 +196,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-        return null;
+        return new JDBCCallableStatement(this, compileInternalStatement(sql));
     }
 
     @Override

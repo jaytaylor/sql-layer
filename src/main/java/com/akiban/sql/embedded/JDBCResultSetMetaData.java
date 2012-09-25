@@ -41,17 +41,17 @@ import java.util.List;
 
 public class JDBCResultSetMetaData implements ResultSetMetaData
 {
-    protected static class JDBCResultColumn extends PhysicalResultColumn {
+    protected static class ResultColumn extends PhysicalResultColumn {
         private int jdbcType;
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
         private TInstance tInstance;
         private JDBCResultSetMetaData nestedResultSet;
 
-        protected JDBCResultColumn(String name, 
-                                   int jdbcType, DataTypeDescriptor sqlType, 
-                                   Column aisColumn, TInstance tInstance,
-                                   JDBCResultSetMetaData nestedResultSet) {
+        protected ResultColumn(String name, 
+                               int jdbcType, DataTypeDescriptor sqlType, 
+                               Column aisColumn, TInstance tInstance,
+                               JDBCResultSetMetaData nestedResultSet) {
             super(name);
             this.jdbcType = jdbcType;
             this.sqlType = sqlType;
@@ -178,17 +178,17 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
         }
     }
 
-    private List<JDBCResultColumn> columns;
+    private List<ResultColumn> columns;
 
-    protected JDBCResultSetMetaData(List<JDBCResultColumn> columns) {
+    protected JDBCResultSetMetaData(List<ResultColumn> columns) {
         this.columns = columns;
     }
 
-    protected List<JDBCResultColumn> getColumns() {
+    protected List<ResultColumn> getColumns() {
         return columns;
     }
 
-    protected JDBCResultColumn getColumn(int column) {
+    protected ResultColumn getColumn(int column) {
         return columns.get(column - 1);
     }
 
@@ -265,7 +265,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     @Override
     public String getColumnName(int column) throws SQLException {
-        JDBCResultColumn jdbcColumn = getColumn(column);
+        ResultColumn jdbcColumn = getColumn(column);
         Column aisColumn = jdbcColumn.getAISColumn();
         if (aisColumn != null)
             return aisColumn.getName();
