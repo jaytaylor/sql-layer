@@ -256,10 +256,7 @@ public class IndexDDL
         if (index.getColumnList() instanceof SpecialIndexFuncNode) {
             switch (((SpecialIndexFuncNode)index.getColumnList()).getFunctionType()) {
             case Z_ORDER_LAT_LON:
-                List<com.akiban.ais.model.IndexColumn> indexColumns = tableIndex.getKeyColumns();
-                assert indexColumns.size() == 2 : indexName; // Parser checks this
-                if (!isFixedDecimal(indexColumns.get(0).getColumn()) ||
-                    !isFixedDecimal(indexColumns.get(1).getColumn())) {
+                if (!Index.isSpatialCompatible(tableIndex)) {
                     throw new BadSpatialIndexException(indexName, index);
                 }
                 tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
@@ -271,16 +268,6 @@ public class IndexDDL
         return tableIndex;
     }
 
-    private static boolean isFixedDecimal(Column column)
-    {
-        if (Types3Switch.ON) {
-            return column.tInstance().typeClass() instanceof MBigDecimal;
-        } else {
-            AkType type = column.getType().akType();
-            return type == AkType.DECIMAL;
-        }
-    }
-    
     private static Index buildGroupIndex (AkibanInformationSchema ais, TableName tableName, CreateIndexNode index) {
         final String indexName = index.getObjectName().getTableName();
         

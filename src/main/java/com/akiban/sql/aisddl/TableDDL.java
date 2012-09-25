@@ -303,18 +303,24 @@ public class TableDDL
             final String schemaName, final String tableName)  {
 
         NameGenerator namer = new DefaultNameGenerator();
-        String constraint = null;
-        
+
+        // We don't (yet) have a constraint representation so override any provided
+        final String constraint;
+        String indexName = cdn.getName();
+
         if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.CHECK) {
             throw new UnsupportedCheckConstraintException ();
         }
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.PRIMARY_KEY) {
-            constraint = Index.PRIMARY_KEY_CONSTRAINT;
+            indexName = constraint = Index.PRIMARY_KEY_CONSTRAINT;
         }
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.UNIQUE) {
             constraint = Index.UNIQUE_KEY_CONSTRAINT;
         }
-        String indexName = cdn.getName();
+        else {
+            constraint = Index.KEY_CONSTRAINT;
+        }
+
         if(indexName == null) {
             indexName = namer.generateIndexName(null, cdn.getColumnList().get(0).getName(), constraint);
         }
