@@ -39,8 +39,7 @@ import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.sql.parser.StatementType;
-import com.akiban.sql.pg.PostgresQueryContext;
-
+import com.akiban.qp.operator.QueryContext;
 
 public class SchemaDDL {
     private SchemaDDL () {
@@ -49,7 +48,7 @@ public class SchemaDDL {
     public static void createSchema (AkibanInformationSchema ais,
                                    String defaultSchemaName,
                                    CreateSchemaNode createSchema,
-                                   PostgresQueryContext context)
+                                   QueryContext context)
     {
         final String schemaName = createSchema.getSchemaName();
         ExistenceCheck condition = createSchema.getExistenceCheck();
@@ -76,7 +75,7 @@ public class SchemaDDL {
     public static void dropSchema (DDLFunctions ddlFunctions,
             Session session,
             DropSchemaNode dropSchema,
-            PostgresQueryContext context)
+            QueryContext context)
     {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         final String schemaName = dropSchema.getSchemaName();

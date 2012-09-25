@@ -54,7 +54,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.sql.pg.PostgresQueryContext;
+import com.akiban.qp.operator.QueryContext;
 
 /** DDL operations on Indices */
 public class IndexDDL
@@ -63,7 +63,7 @@ public class IndexDDL
     private IndexDDL() {
     }
 
-    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error, PostgresQueryContext context)
+    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error, QueryContext context)
     {
         switch(condition)
         {
@@ -82,7 +82,7 @@ public class IndexDDL
                                     Session session,
                                     String defaultSchemaName,
                                     DropIndexNode dropIndex,
-                                    PostgresQueryContext context) {
+                                    QueryContext context) {
         String groupName = null;
         TableName tableName = null;
         ExistenceCheck condition = dropIndex.getExistenceCheck();

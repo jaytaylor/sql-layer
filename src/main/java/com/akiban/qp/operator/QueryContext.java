@@ -115,6 +115,11 @@ public interface QueryContext
     public void setBloomFilter(int index, BloomFilter filter);
 
     /**
+     * Clear all bindings.
+     */
+    public void clear();
+
+    /**
      * Get the store associated with this query.
      */
     public StoreAdapter getStore();
