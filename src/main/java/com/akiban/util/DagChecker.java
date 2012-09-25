@@ -113,26 +113,4 @@ public abstract class DagChecker<T> {
         private Object from;
         private Object to;
     }
-
-//    private boolean checkFrom(T starting, int size) {
-//        badNodes = new ArrayDeque<T>(size);
-//        return checkFrom(starting, new HashSet<T>(size));
-//    }
-//
-//    private boolean checkFrom(T starting, Set<T> seen) {
-//        badNodes.addLast(starting);
-//        if (!seen.add(starting)) {
-//            return false;
-//        }
-//        for (T endpoint : nodesFrom(starting)) {
-//            if (!checkFrom(endpoint, seen))
-//                return false;
-//        }
-//        T removed = badNodes.removeLast();
-//        assert removed == starting : "expected " + starting + " but saw " + removed;
-//        seen.remove(starting);
-//        return true;
-//    }
-//
-//    private Deque<T> badNodes;
 }
