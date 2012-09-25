@@ -26,14 +26,16 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
+import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.aksql.AkCategory;
-import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -43,7 +45,7 @@ import com.akiban.util.AkibanAppender;
 
 import java.util.List;
 
-public class AkResultSet extends NoAttrTClass {
+public class AkResultSet extends TClassBase {
     public static class Column {
         private final String name;
         private final TInstance type;
@@ -89,25 +91,23 @@ public class AkResultSet extends NoAttrTClass {
     /**
      * A result set instance, which does not obey all of the scalar type protocol.
      */
-    public static final AkResultSet INSTANCE = new AkResultSet(
-            AkBundle.INSTANCE.id(),
-            "result set",
-            AkCategory.RECORD,
-            NO_FORMATTER,
-            1,
-            1,
-            0,
-            null, // PUnderlying.XXX
-            NO_PARSER,
-            null); // TypeId.XXX
+    public static final AkResultSet INSTANCE = new AkResultSet();
 
-    private AkResultSet(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, int internalRepVersion,
-                        int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
-        super(bundle, name, category, formatter, internalRepVersion, serializationVersion, serializationSize, pUnderlying, parser, typeId);
+    private AkResultSet() {
+        super(AkBundle.INSTANCE.id(),
+              "result set",
+              AkCategory.RECORD,
+              Attribute.NONE.class,
+              NO_FORMATTER,
+              1,
+              1,
+              0,
+              null, // PUnderlying.XXX
+              NO_PARSER);
     }
 
     public TInstance instance(List<Column> columns) {
-        TInstance instance = instance();
+        TInstance instance = createInstanceNoArgs();
         instance.setMetaData(columns);
         return instance;
     }
@@ -126,4 +126,30 @@ public class AkResultSet extends NoAttrTClass {
         return new DataTypeDescriptor(typeId, isNullable);
     }
 
+    @Override
+    public TInstance instance() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected void validate(TInstance instance) {
+    }
+
+    @Override
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TFactory factory() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void putSafety(TExecutionContext context, 
+                          TInstance sourceInstance,
+                          PValueSource sourceValue,
+                          TInstance targetInstance,
+                          PValueTarget targetValue) {
+    }
 }
