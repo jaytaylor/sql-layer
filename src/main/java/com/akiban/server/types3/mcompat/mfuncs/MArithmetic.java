@@ -35,16 +35,21 @@ import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.google.common.primitives.Doubles;
 
 import java.util.List;
 
@@ -54,11 +59,19 @@ public abstract class MArithmetic extends TArithmetic {
     
     private final String infix;
     private final boolean associative;
-    
-    private MArithmetic(String overloadName, String infix, boolean associative, TClass inputType, TInstance resultType) {
-        super(overloadName, inputType, resultType);
+
+    private MArithmetic(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1,
+                        TInstance resultType)
+    {
+        super(overloadName, operand0, operand1, resultType);
         this.infix = infix;
         this.associative = associative;
+    }
+
+    private MArithmetic(String overloadName, String infix, boolean associative, TClass operand,
+                        TInstance resultType)
+    {
+        this(overloadName, infix, associative, operand, operand, resultType);
     }
 
     @Override
@@ -160,6 +173,14 @@ public abstract class MArithmetic extends TArithmetic {
             output.putDouble(inputs.get(0).getDouble() + inputs.get(1).getDouble());
         }
     };
+
+    public static final TOverload[] ADD_ALWAYS_NULL_= new TOverload[] {
+            new AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS),
+            new AlwaysNull("plus", "+", true, AkInterval.MONTHS, MDatetimes.TIME),
+
+            new AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.SECONDS),
+            new AlwaysNull("plus", "+", true, AkInterval.SECONDS, MDatetimes.TIME),
+    };
     
     // Subtract functions
     public static final TOverload SUBTRACT_TINYINT = new MArithmetic("minus", "-", false, MNumeric.TINYINT, MNumeric.INT.instance(5)) {
@@ -229,6 +250,15 @@ public abstract class MArithmetic extends TArithmetic {
             output.putDouble(inputs.get(0).getDouble() - inputs.get(1).getDouble());
         }
     };
+
+    public static final TOverload[] SUBTRACT_ALWAYS_NULL_= new TOverload[] {
+            new AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS),
+            new AlwaysNull("minus", "-", true, AkInterval.MONTHS, MDatetimes.TIME),
+            
+            new AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.SECONDS),
+            new AlwaysNull("minus", "-", true, AkInterval.SECONDS, MDatetimes.TIME),
+    };
+
     // (Regular) Divide functions
     public static final TOverload DIVIDE_TINYINT = new MArithmetic("divide", "/", false, MNumeric.TINYINT, MApproximateNumber.DOUBLE.instance())
     {
@@ -488,6 +518,23 @@ public abstract class MArithmetic extends TArithmetic {
             output.putInt64(a0 * a1);
         }
     };
+
+    public static final TOverload MULTIPLY_DOUBLE = new MArithmetic("times", "*", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE.instance()) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            double result = inputs.get(0).getDouble() * inputs.get(1).getDouble();
+            if (Doubles.isFinite(result))
+                output.putNull();
+            else
+                output.putDouble(result);
+        }
+
+        @Override
+        public int[] getPriorities() {
+            return new int[] { 1, 2 };
+        }
+    };
     
     public static final TOverload MULTIPLY_DECIMAL = new DecimalArithmetic("times", "*", true)
     {
@@ -653,6 +700,37 @@ public abstract class MArithmetic extends TArithmetic {
         protected DecimalArithmetic(String overloadName, String infix, boolean associative) {
             super(overloadName, infix, associative, MNumeric.DECIMAL, (TInstance) null);
         }
+    }
+
+    /**
+     * Implementation for arithmetic which always results in a NULL VARCHAR(29). Odd as it may seem, such things do
+     * seem to exist. For instance, {@code &lt;time&gt; + INTERVAL N MONTH}.
+     */
+    private static class AlwaysNull extends MArithmetic {
+
+        private AlwaysNull(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1) {
+            super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR.instance(29));
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            output.putNull();
+        }
+
+        @Override
+        protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+            return Constantness.CONST;
+        }
+
+        @Override
+        protected boolean nullContaminates(int inputIndex) {
+            // We return false here so that TOverloadBase never tries to look at the inputs as part of evaluating
+            // a const, to see if they're null. If it did, a non-const input would cause an exception during const
+            // evaluation. Returning false here means we'll always get to doEvaluate, which will then putNull.
+            return false;
+        }
+
     }
 
     private static final int DIV_PRECISION_INCREMENT = 4;
