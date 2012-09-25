@@ -489,18 +489,25 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
     
-    public static final TOverload MULTIPLY_DECIMAL = new DecimalArithmetic("times", "*", true) { // TODO --> What's the status of this TODO? (08/14/12)
+    public static final TOverload MULTIPLY_DECIMAL = new DecimalArithmetic("times", "*", true)
+    {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long a0 = inputs.get(0).getInt64();
-            long a1 = inputs.get(1).getInt64();
-            output.putInt64(a0 * a1);
+        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale)
+        {
+            //TODO:
+            // for now, just sum up the precisions and scales
+            return  packPrecisionAndScale(arg0Precision + arg1Precision,
+                                          arg0Scale + arg1Scale);
         }
 
-       @Override
-       protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
-           return packPrecisionAndScale(arg0Precision + arg1Precision, arg0Scale + arg1Scale);
-       }
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            BigDecimalWrapper arg0 = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+            BigDecimalWrapper arg1 = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
+            
+            output.putObject(arg0.multiply(arg1));
+        }
     };
 
     public static final TOverload MOD_TINYTINT = new MArithmetic("mod", "mod", false, MNumeric.TINYINT, MNumeric.INT.instance(4))
