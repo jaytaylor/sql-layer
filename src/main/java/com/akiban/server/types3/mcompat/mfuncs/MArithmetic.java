@@ -50,6 +50,9 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Ints;
+import org.joda.time.DurationFieldType;
+import org.joda.time.MutableDateTime;
 
 import java.util.List;
 
@@ -174,6 +177,29 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
 
+    public static final TOverload ADD_DATE_AND_MONTHS = new MArithmetic("plus", "+", true, AkInterval.MONTHS, MDatetimes.DATE, MDatetimes.DATE.instance()) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output)
+        {
+            int dateInt = inputs.get(0).getInt32();
+            int months;
+            try {
+                months = Ints.checkedCast(inputs.get(1).getInt64());
+            }
+            catch (IllegalArgumentException e) {
+                output.putNull();
+                return;
+            }
+
+            long[] ymd = MDatetimes.decodeDate(dateInt);
+            MutableDateTime dateTime = MDatetimes.toJodaDatetime(ymd, "UTC");
+            dateTime.add(DurationFieldType.months(), months);
+            long result = MDatetimes.encodeDatetime(dateTime);
+            output.putInt64(result);
+        }
+    };
+
     public static final TOverload[] ADD_ALWAYS_NULL_= new TOverload[] {
             new AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS),
             new AlwaysNull("plus", "+", true, AkInterval.MONTHS, MDatetimes.TIME),
@@ -254,7 +280,7 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TOverload[] SUBTRACT_ALWAYS_NULL_= new TOverload[] {
             new AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS),
             new AlwaysNull("minus", "-", true, AkInterval.MONTHS, MDatetimes.TIME),
-            
+
             new AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.SECONDS),
             new AlwaysNull("minus", "-", true, AkInterval.SECONDS, MDatetimes.TIME),
     };

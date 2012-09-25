@@ -50,6 +50,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.IllegalFieldValueException;
 import org.joda.time.MutableDateTime;
+import org.joda.time.base.BaseDateTime;
 
 public class MDatetimes
 {
@@ -490,7 +491,7 @@ public class MDatetimes
         }
     }
     
-    public static long encodeDatetime(DateTime dt)
+    public static long encodeDatetime(BaseDateTime dt)
     {
         return dt.getYear() * DATETIME_YEAR_SCALE
                 + dt.getMonthOfYear() * DATETIME_MONTH_SCALE
