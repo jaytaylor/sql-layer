@@ -1,5 +1,6 @@
 PhysicalUpdate
-  Update_Default(customers SET name = 'Smyth')
-    Filter_Default(customers)
-      Select_HKeyOrdered(customers.name == 'Smith')
-        GroupScan_Default(customers)
+  Project_Default(NULL, NULL)
+    Update_Returning()
+      Filter_Default(customers)
+        Select_HKeyOrdered(customers.name == 'Smith')
+          GroupScan_Default(customers)

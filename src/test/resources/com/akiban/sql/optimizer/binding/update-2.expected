@@ -1,0 +1,130 @@
+com.akiban.sql.parser.UpdateNode@c7056d5
+statementType: UPDATE
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@2e39d325
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@565539d8
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@7548c02f
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.BinaryArithmeticOperatorNode@7b4189d0
+			operator: +
+			methodName: plus
+			type: null
+			leftOperand: 				
+				com.akiban.sql.parser.ColumnReference@bbef5e8
+				columnName: x
+				tableName: null
+				type: null
+				userData: t1.x from com.akiban.sql.parser.FromBaseTable@139ba1d8
+			rightOperand: 				
+				com.akiban.sql.parser.NumericConstantNode@2602585e
+				value: 1
+				type: INTEGER NOT NULL
+		reference: 			
+			com.akiban.sql.parser.ColumnReference@63f796d0
+			columnName: x
+			tableName: null
+			type: null
+			userData: t1.x
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@13ce64f6
+		exposedName: y
+		name: y
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.CharConstantNode@53465ca2
+			value: foo
+			type: CHAR(3) NOT NULL
+		reference: 			
+			com.akiban.sql.parser.ColumnReference@306bba64
+			columnName: y
+			tableName: null
+			type: null
+			userData: t1.y
+	fromList: 		
+		com.akiban.sql.parser.FromList@709a1411
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@139ba1d8
+		tableName: t1
+		updateOrDelete: UPDATE
+		null
+		correlation Name: null
+		null
+		userData: test.t1
+	whereClause: 		
+		com.akiban.sql.parser.BinaryRelationalOperatorNode@4e9e75f6
+		operator: >
+		methodName: greaterThan
+		type: null
+		leftOperand: 			
+			com.akiban.sql.parser.ColumnReference@55291cd
+			columnName: z
+			tableName: null
+			type: null
+			userData: t1.z from com.akiban.sql.parser.FromBaseTable@139ba1d8
+		rightOperand: 			
+			com.akiban.sql.parser.NumericConstantNode@6fe22c75
+			value: 100
+			type: INTEGER NOT NULL
+targetTableName: 	
+	com.akiban.sql.parser.TableName@e3d
+	t1
+	userData: test.t1
+returningList: 	
+	com.akiban.sql.parser.ResultColumnList@2354c054
+
+	[0]:	
+	com.akiban.sql.parser.ResultColumn@111edceb
+	exposedName: _SQL_COL_1
+	name: _SQL_COL_1
+	tableName: null
+	isDefaultColumn: false
+	type: null
+	expression: 		
+		com.akiban.sql.parser.BinaryArithmeticOperatorNode@139d115
+		operator: -
+		methodName: minus
+		type: null
+		leftOperand: 			
+			com.akiban.sql.parser.ColumnReference@7acdba53
+			columnName: x
+			tableName: null
+			type: null
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@69d4eeb5
+		rightOperand: 			
+			com.akiban.sql.parser.NumericConstantNode@5883de21
+			value: 1
+			type: INTEGER NOT NULL
+	[1]:	
+	com.akiban.sql.parser.ResultColumn@396c75ed
+	exposedName: z
+	name: z
+	tableName: null
+	isDefaultColumn: false
+	type: null
+	expression: 		
+		com.akiban.sql.parser.BinaryArithmeticOperatorNode@7fb2380e
+		operator: *
+		methodName: times
+		type: null
+		leftOperand: 			
+			com.akiban.sql.parser.ColumnReference@d7e60a1
+			columnName: z
+			tableName: null
+			type: null
+			userData: t1.z from com.akiban.sql.parser.FromBaseTable@69d4eeb5
+		rightOperand: 			
+			com.akiban.sql.parser.NumericConstantNode@63f9f0f2
+			value: 100
+			type: INTEGER NOT NULL

@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.ColumnContainer;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 
 import java.util.*;
@@ -61,9 +62,18 @@ public class UpdateStatement extends BaseUpdateStatement
     public UpdateStatement(PlanNode query, TableNode targetTable,
                            List<UpdateColumn> updateColumns,
                            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, columnEquivalencies);
+        super(query, targetTable, null, null, columnEquivalencies);
         this.updateColumns = updateColumns;
     }
+    public UpdateStatement(PlanNode query, TableNode targetTable,
+            List<UpdateColumn> updateColumns,
+                           TableSource table,
+                           List<ResultField> results,
+            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
+        super(query, targetTable, table, results, columnEquivalencies);
+        this.updateColumns = updateColumns;
+    }
+
 
     public List<UpdateColumn> getUpdateColumns() {
         return updateColumns;

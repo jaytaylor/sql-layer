@@ -28,58 +28,18 @@ package com.akiban.qp.row;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.FlattenedRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.ShareHolder;
 
-public class FlattenedRow extends AbstractRow
+public class FlattenedRow extends CompoundRow
 {
     // Object interface
 
     @Override
     public String toString()
     {
-        return String.format("%s, %s", parenth, childh);
+        return String.format("%s, %s", first(), second());
     }
 
     // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        ValueSource source;
-        if (i < nParentFields) {
-            source = parenth.isEmpty() ? NullValueSource.only() : parenth.get().eval(i);
-        } else {
-            source = childh.isEmpty() ? NullValueSource.only() : childh.get().eval(i - nParentFields);
-        }
-        return source;
-    }
-
-    @Override
-    public PValueSource pvalue(int i) {
-        PValueSource source;
-        if (i < nParentFields) {
-            source = parenth.isEmpty() ? nullPValue(i) : parenth.get().pvalue(i);
-        } else {
-            source = childh.isEmpty() ? nullPValue(i) : childh.get().pvalue(i - nParentFields);
-        }
-        return source;
-    }
-
-    private PValueSource nullPValue(int i) {
-        PUnderlying underlying = rowType.typeInstanceAt(i).typeClass().underlyingType();
-        return PValueSources.getNullSource(underlying);
-    }
 
     @Override
     public HKey hKey()
@@ -88,30 +48,12 @@ public class FlattenedRow extends AbstractRow
     }
 
     @Override
-    public Row subRow(RowType subRowType)
-    {
-        Row subRow;
-        if (subRowType == rowType.parentType()) {
-            subRow = parenth.get();
-        } else if (subRowType == rowType.childType()) {
-            subRow = childh.get();
-        } else {
-            // If the subRowType doesn't match leftType or rightType, then it might be buried deeper.
-            subRow = parenth.get().subRow(subRowType);
-            if (subRow == null) {
-                subRow = childh.get().subRow(subRowType);
-            }
-        }
-        return subRow;
-    }
-
-    @Override
     public boolean containsRealRowOf(UserTable userTable)
     {
-        return     (parenth.isHolding() && parenth.get().rowType().hasUserTable() && parenth.get().rowType().userTable() == userTable)
-                   || (childh.isHolding() && childh.get().rowType().hasUserTable() && childh.get().rowType().userTable() == userTable)
-                   || (parenth.isHolding() && parenth.get().containsRealRowOf(userTable))
-                   || (childh.isHolding() && childh.get().containsRealRowOf(userTable))
+        return     (first().isHolding() && first().get().rowType().hasUserTable() && first().get().rowType().userTable() == userTable)
+                   || (second().isHolding() && second().get().rowType().hasUserTable() && second().get().rowType().userTable() == userTable)
+                   || (first().isHolding() && first().get().containsRealRowOf(userTable))
+                   || (second().isHolding() && second().get().containsRealRowOf(userTable))
             ;
     }
 
@@ -119,10 +61,7 @@ public class FlattenedRow extends AbstractRow
 
     public FlattenedRow(FlattenedRowType rowType, Row parent, Row child, HKey hKey)
     {
-        this.rowType = rowType;
-        this.parenth.hold(parent);
-        this.childh.hold(child);
-        this.nParentFields = rowType.parentType().nFields();
+        super (rowType, parent, child);
         this.hKey = hKey;
         if (parent != null && child != null) {
             // assert parent.runId() == child.runId();
@@ -134,9 +73,5 @@ public class FlattenedRow extends AbstractRow
 
     // Object state
 
-    private final FlattenedRowType rowType;
-    private final ShareHolder<Row> parenth = new ShareHolder<Row>();
-    private final ShareHolder<Row> childh = new ShareHolder<Row>();
-    private final int nParentFields;
     private final HKey hKey;
 }

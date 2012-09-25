@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 
 import java.util.*;
@@ -37,15 +38,18 @@ public class InsertStatement extends BaseUpdateStatement
     private List<Column> targetColumns;
 
     public InsertStatement(PlanNode query, TableNode targetTable,
-                           List<Column> targetColumns, EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, columnEquivalencies);
+                           List<Column> targetColumns,
+                           TableSource table,
+                           List<ResultField> results,
+                           EquivalenceFinder<ColumnExpression> columnEquivalencies) {
+        super(query, targetTable, table, results, columnEquivalencies);
         this.targetColumns = targetColumns;
     }
 
     public List<Column> getTargetColumns() {
         return targetColumns;
     }
-
+    
     @Override
     protected void fillSummaryString(StringBuilder str) {
         super.fillSummaryString(str);

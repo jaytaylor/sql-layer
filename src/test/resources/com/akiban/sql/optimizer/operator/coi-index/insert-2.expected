@@ -1,4 +1,5 @@
 PhysicalUpdate
-  Insert_Default(INTO customers(cid, name))
-    Project_Default(Field(0), Field(1))
-      ValuesScan_Default([1, 'Smith'], [2, 'Jones'], [3, 'Brown'])
+  Project_Default(NULL, NULL)
+    Insert_Returning(INTO customers(cid, name))
+      Project_Default(CAST(Field(0) AS INT), Field(1))
+        ValuesScan_Default([1, 'Smith'], [2, 'Jones'], [3, 'Brown'])

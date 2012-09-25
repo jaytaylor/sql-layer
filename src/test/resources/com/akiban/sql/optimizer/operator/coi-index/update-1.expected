@@ -1,4 +1,5 @@
 PhysicalUpdate/STEP_ISOLATE
-  Update_Default(customers SET name = 'Smyth')
-    AncestorLookup_Default(Index(customers.name) -> customers)
-      IndexScan_Default(Index(customers.name), name = 'Smith')
+  Project_Default(NULL, NULL)
+    Update_Returning()
+      AncestorLookup_Default(Index(customers.name) -> customers)
+        IndexScan_Default(Index(customers.name), name = 'Smith')
