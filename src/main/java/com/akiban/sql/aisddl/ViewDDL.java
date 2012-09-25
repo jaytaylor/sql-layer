@@ -46,7 +46,7 @@ import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.View;
 
-import com.akiban.sql.pg.PostgresQueryContext;
+import com.akiban.qp.operator.QueryContext;
 import java.util.Collection;
 import java.util.Map;
 
@@ -61,7 +61,7 @@ public class ViewDDL
                                   String defaultSchemaName,
                                   CreateViewNode createView,
                                   AISBinderContext binderContext,
-                                  PostgresQueryContext context) {
+                                  QueryContext context) {
         com.akiban.sql.parser.TableName parserName = createView.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String viewName = parserName.getTableName();
@@ -106,7 +106,7 @@ public class ViewDDL
                                  String defaultSchemaName,
                                  DropViewNode dropView,
                                  AISBinderContext binderContext,
-                                 PostgresQueryContext context) {
+                                 QueryContext context) {
         com.akiban.sql.parser.TableName parserName = dropView.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName viewName = TableName.create(schemaName, parserName.getTableName());
