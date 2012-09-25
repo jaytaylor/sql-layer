@@ -464,6 +464,7 @@ public final class TypesTranslation {
                 }
                 tInstance = AkResultSet.INSTANCE.instance(columns);
             }
+            break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
                 String name = typeId.getSQLTypeName();

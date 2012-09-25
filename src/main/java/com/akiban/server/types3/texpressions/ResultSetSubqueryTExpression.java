@@ -33,6 +33,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.aksql.aktypes.AkResultSet;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
@@ -83,17 +84,19 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
         private Row outerRow;
     }
 
-    public ResultSetSubqueryTExpression(Operator subquery,
+    public ResultSetSubqueryTExpression(Operator subquery, TInstance tInstance,
                                         RowType outerRowType, RowType innerRowType, 
                                         int bindingPosition)
     {
         super(subquery, outerRowType, innerRowType, bindingPosition);
+        assert (tInstance.typeClass() instanceof AkResultSet) : tInstance;
+        this.tInstance = tInstance;
     }
 
     @Override
     public TInstance resultType()
     {
-        throw new UnsupportedOperationException();
+        return tInstance;
     }
 
     @Override
@@ -101,4 +104,6 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
     {
         return new InnerEvaluation(subquery(), outerRowType(), bindingPosition());
     }
+
+    private final TInstance tInstance;
 }

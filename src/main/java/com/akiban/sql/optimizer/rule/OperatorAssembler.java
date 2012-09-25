@@ -46,6 +46,7 @@ import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -296,7 +297,9 @@ public class OperatorAssembler extends BaseRule
                                                           RowType outerRowType,
                                                           RowType innerRowType,
                                                           int bindingPosition);
-            protected abstract T resultSetSubqueryExpression(Operator operator, RowType outerRowType,
+            protected abstract T resultSetSubqueryExpression(Operator operator,
+                                                             TPreptimeValue preptimeValue,
+                                                             RowType outerRowType,
                                                              RowType innerRowType,
                                                              int bindingPosition);
             protected abstract T nullExpression(RowType rowType, int i);
@@ -367,8 +370,9 @@ public class OperatorAssembler extends BaseRule
                                                     outerRowType, innerRowType,
                                                     bindingPosition);
                 else if (sexpr instanceof SubqueryResultSetExpression)
-                    return resultSetSubqueryExpression(operator, outerRowType,
-                                                       innerRowType, bindingPosition);
+                    return resultSetSubqueryExpression(operator, sexpr.getPreptimeValue(),
+                                                       outerRowType, innerRowType, 
+                                                       bindingPosition);
                 else
                     throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
             }
@@ -444,8 +448,8 @@ public class OperatorAssembler extends BaseRule
             }
 
             @Override
-            protected Expression resultSetSubqueryExpression(Operator operator, RowType outerRowType,
-                                                             RowType innerRowType,
+            protected Expression resultSetSubqueryExpression(Operator operator, TPreptimeValue preptimeValue,
+                                                             RowType outerRowType, RowType innerRowType,
                                                              int bindingPosition) {
                 return new ResultSetSubqueryExpression(operator, outerRowType, innerRowType, bindingPosition);
             }
@@ -519,9 +523,9 @@ public class OperatorAssembler extends BaseRule
             }
 
             @Override
-            protected TPreparedExpression resultSetSubqueryExpression(Operator operator, RowType outerRowType,
-                                                                      RowType innerRowType, int bindingPosition) {
-                return new ResultSetSubqueryTExpression(operator, outerRowType, innerRowType, bindingPosition);
+            protected TPreparedExpression resultSetSubqueryExpression(Operator operator, TPreptimeValue preptimeValue,
+                                                                      RowType outerRowType, RowType innerRowType, int bindingPosition) {
+                return new ResultSetSubqueryTExpression(operator, preptimeValue.instance(), outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
