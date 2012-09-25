@@ -26,15 +26,16 @@
 
 package com.akiban.util;
 
-import com.google.common.collect.Sets;
 import org.jgrapht.EdgeFactory;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.junit.Test;
 
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,7 +55,18 @@ public final class DagCheckerTest {
 
     @Test
     public void circle() {
-        new GraphFactory().connect("a", "b").connect("b", "a").notDag("a", "b");
+        new GraphFactory().connect("a", "b").connect("b", "a").notDag("a", "b", "a");
+    }
+
+    @Test
+    public void circlePlusShortCircuit() {
+        new GraphFactory()
+                .connect("a", "b")
+                .connect("b", "c")
+                .connect("c", "d")
+                .connect("b", "d")
+                .connect("d", "a")
+                .notDag("a", "b", "c", "d", "a");
     }
 
     @Test
@@ -83,19 +95,20 @@ public final class DagCheckerTest {
         public void notDag(String... vertices) {
             DagChecker<String> checker = getChecker();
             assertFalse("expected non-DAG for " + graph, checker.isDag());
-
+            List<String> expectedList = Arrays.asList(vertices);
+            assertEquals("cycle path", expectedList, checker.getBadNodePath());
         }
 
         private DagChecker<String> getChecker() {
             return new DagChecker<String>() {
                 @Override
                 protected Set<? extends String> initialNodes() {
-                    return graph.vertexSet();
+                    return new TreeSet<String>(graph.vertexSet());
                 }
 
                 @Override
                 protected Set<? extends String> nodesFrom(String starting) {
-                    Set<String> candidates = new HashSet<String>(graph.vertexSet());
+                    Set<String> candidates = new TreeSet<String>(graph.vertexSet());
                     for (Iterator<String> iter = candidates.iterator(); iter.hasNext(); ) {
                         String vertex = iter.next();
                         if (vertex.equals(starting) || (!graph.containsEdge(starting, vertex)))
