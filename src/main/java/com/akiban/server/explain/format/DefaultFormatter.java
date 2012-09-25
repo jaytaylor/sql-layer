@@ -599,7 +599,8 @@ public class DefaultFormatter
                 }
             }
         }
-        else if (name.equals("Update_Default")) {
+        else if (name.equals("Update_Default") || 
+                    name.equals("Update_Returning")) {
             if (atts.containsKey(Label.TABLE_NAME)) {
                 appendTableName(atts);
             }
