@@ -41,7 +41,6 @@ import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -86,6 +85,8 @@ public class MDateAddSub extends TOverloadBase
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME_STRING, "SUBTIME")
     };
 
     private static class AddSubWithVarchar extends MDateAddSub
@@ -354,12 +355,12 @@ public class MDateAddSub extends TOverloadBase
                 }
             }
         },
-        SECOND(MNumeric.BIGINT)
+        SECOND(MApproximateNumber.DOUBLE)
         {
             @Override
             protected long toMillis(PValueSource arg)
             {
-                return arg.getInt64() * 1000L;
+                return Math.round(arg.getDouble()) * 1000L;
             }
         },
         DAY(MApproximateNumber.DOUBLE)
