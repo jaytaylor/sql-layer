@@ -51,6 +51,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
 import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
+import com.akiban.server.types3.texpressions.ResultSetSubqueryTExpression;
 import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -520,7 +521,7 @@ public class OperatorAssembler extends BaseRule
             @Override
             protected TPreparedExpression resultSetSubqueryExpression(Operator operator, RowType outerRowType,
                                                                       RowType innerRowType, int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ResultSetSubqueryTExpression(operator, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
