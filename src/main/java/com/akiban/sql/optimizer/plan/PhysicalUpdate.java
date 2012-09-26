@@ -43,14 +43,6 @@ public class PhysicalUpdate extends BasePlannable
     private boolean requireStepIsolation;
     private boolean returning;
 
-    public PhysicalUpdate(UpdatePlannable updatePlannable,
-                          DataTypeDescriptor[] parameterTypes,
-                          boolean requireStepIsolation) {
-        super(updatePlannable, parameterTypes, null, null);
-        this.requireStepIsolation = requireStepIsolation;
-        returning = false;
-    }
-
     public PhysicalUpdate (Operator resultsOperator, 
                             DataTypeDescriptor[] paramterTypes,
                             RowType rowType, 

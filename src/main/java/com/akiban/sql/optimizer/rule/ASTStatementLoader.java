@@ -175,8 +175,10 @@ public class ASTStatementLoader extends BaseRule
             UpdateStatement update = new UpdateStatement(query, targetTable, 
                         updateColumns, values.table, values.results, peekEquivalenceFinder()); 
 
-            Project project = new Project (update, values.row);
-            update.setReturningProject(project);
+            if (values.row != null) {
+                Project project = new Project (update, values.row);
+                update.setReturningProject(project);
+            }
             return update;
 
             //return new UpdateStatement(query, targetTable, updateColumns, peekEquivalenceFinder());
@@ -222,8 +224,10 @@ public class ASTStatementLoader extends BaseRule
             
             InsertStatement insert = new InsertStatement (query, targetTable, 
                     targetColumns, values.table, values.results, peekEquivalenceFinder());
-            Project project = new Project (insert, values.row);
-            insert.setReturningProject(project);
+            if (values.row != null) {
+                Project project = new Project (insert, values.row);
+                insert.setReturningProject(project);
+            }
             return insert;
         }
     
@@ -240,8 +244,10 @@ public class ASTStatementLoader extends BaseRule
             
             DeleteStatement delete = new DeleteStatement(query, targetTable, values.table, 
                                 values.results, peekEquivalenceFinder());
-            Project project = new Project (delete, values.row);
-            delete.setReturningProject(project);
+            if (values.row != null) {
+                Project project = new Project (delete, values.row);
+                delete.setReturningProject(project);
+            }
             return delete;
         }
         
@@ -262,10 +268,10 @@ public class ASTStatementLoader extends BaseRule
                 }
                 values.results = resultColumns(rcl);
             } else {
-                values.row = new ArrayList<ExpressionNode>(size);
-                for (int i = 0; i < size; i++) {
-                    values.row.add(new ConstantExpression(null, AkType.NULL));
-                }
+                //values.row = new ArrayList<ExpressionNode>(size);
+                //for (int i = 0; i < size; i++) {
+                //    values.row.add(new ConstantExpression(null, AkType.NULL));
+                //}
             }
             return values;
         }
@@ -880,6 +886,9 @@ public class ASTStatementLoader extends BaseRule
                 comp = Comparison.GT;
                 needOperand = true;
                 break;
+            case FROM:
+            default:
+                assert false;
             }
             boolean distinct = false;
             // TODO: This may not be right for c IN (SELECT x ... UNION SELECT y ...).
@@ -1694,5 +1703,4 @@ public class ASTStatementLoader extends BaseRule
         }
 
     }
-
 }

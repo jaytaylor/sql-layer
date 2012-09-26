@@ -1,5 +1,4 @@
 PhysicalUpdate
-  Project_Default(NULL, NULL, NULL, NULL)
-    Update_Returning(items SET quan = items.quan, sku = 42)
-      Filter_Default(items)
-        GroupScan_Default(customers)
+  Update_Returning(items SET quan = items.quan, sku = 42)
+    Filter_Default(items)
+      GroupScan_Default(customers)

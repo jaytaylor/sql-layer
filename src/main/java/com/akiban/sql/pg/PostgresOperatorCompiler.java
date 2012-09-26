@@ -199,7 +199,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                             parameterTypes,
                             usesPValues(),
                             update.isRequireStepIsolation());
-        } else if (update.getPlannable() instanceof Operator) {
+        } else { 
             return new PostgresModifyOperatorStatement(statementType,
                     (Operator)update.getPlannable(),
                     parameterTypes,
@@ -207,11 +207,6 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                     update.isRequireStepIsolation());
             
         }
-        return new PostgresModifyOperatorStatement(statementType,
-                update.getUpdatePlannable(),
-                parameterTypes,
-                usesPValues(),
-                update.isRequireStepIsolation());
     }
 
     protected PostgresStatement generateSelect(PhysicalSelect select,
@@ -230,5 +225,4 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                                              parameterTypes,
                                              usesPValues());
     }
-
 }

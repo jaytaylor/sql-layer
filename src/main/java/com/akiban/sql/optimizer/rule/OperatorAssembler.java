@@ -68,7 +68,6 @@ import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
 
-import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.Operator;
@@ -620,8 +619,12 @@ public class OperatorAssembler extends BaseRule
         protected PhysicalUpdate dmlStatement (BaseUpdateStatement statement) {
             Project project = statement.getReturingProject();
             
-            RowStream stream = assembleStream(project);
-            
+            RowStream stream = null;
+            if (project != null) {
+                stream = assembleStream(project);
+            } else {
+                stream = assembleStream (statement);
+            }
             
             //If we're returning results we need the resultColumns,
             // including names and types for returning to the user.

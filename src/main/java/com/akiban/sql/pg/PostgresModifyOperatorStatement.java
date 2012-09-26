@@ -26,8 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -51,14 +49,15 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
 {
     private String statementType;
     private Operator resultOperator;
-    private UpdatePlannable updater;
+    //private UpdatePlannable updater;
     private boolean requireStepIsolation;
     private boolean outputResult;
 
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
-        
+
+    /*
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
                                            PostgresType[] parameterTypes,
@@ -70,6 +69,7 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
         this.requireStepIsolation = requireStepIsolation;
         outputResult = false;
     }
+    */
     
     public PostgresModifyOperatorStatement (String statementType,
                                     Operator resultsOperator, 
@@ -163,7 +163,7 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
                     throw exceptionDuringCleanup;
                 }
             }
-
+/*
         } else {
             final UpdateResult updateResult;
             try {
@@ -176,6 +176,7 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
                 unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
             }
             LOG.debug("Statement: {}, result: {}", statementType, updateResult);
+*/            
         }
         
         messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
