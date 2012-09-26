@@ -44,6 +44,7 @@ import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
@@ -86,7 +87,11 @@ public class MDateAddSub extends TOverloadBase
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
-        new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME_STRING, "SUBTIME")
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME_STRING, "SUBTIME"),
+        new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS),
+        new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.SECONDS),
+        new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS),
+        new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.SECONDS),
     };
 
     private static class AddSubWithVarchar extends MDateAddSub

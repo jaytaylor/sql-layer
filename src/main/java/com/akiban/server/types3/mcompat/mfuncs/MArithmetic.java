@@ -35,7 +35,6 @@ import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
@@ -176,37 +175,6 @@ public abstract class MArithmetic extends TArithmetic {
             output.putDouble(inputs.get(0).getDouble() + inputs.get(1).getDouble());
         }
     };
-
-    public static final TOverload ADD_DATE_AND_MONTHS = new MArithmetic("plus", "+", true, AkInterval.MONTHS, MDatetimes.DATE, MDatetimes.DATE.instance()) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                  PValueTarget output)
-        {
-            int dateInt = inputs.get(0).getInt32();
-            int months;
-            try {
-                months = Ints.checkedCast(inputs.get(1).getInt64());
-            }
-            catch (IllegalArgumentException e) {
-                output.putNull();
-                return;
-            }
-
-            long[] ymd = MDatetimes.decodeDate(dateInt);
-            MutableDateTime dateTime = MDatetimes.toJodaDatetime(ymd, "UTC");
-            dateTime.add(DurationFieldType.months(), months);
-            long result = MDatetimes.encodeDatetime(dateTime);
-            output.putInt64(result);
-        }
-    };
-
-    public static final TOverload[] ADD_ALWAYS_NULL_= new TOverload[] {
-            new AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS),
-            new AlwaysNull("plus", "+", true, AkInterval.MONTHS, MDatetimes.TIME),
-
-            new AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.SECONDS),
-            new AlwaysNull("plus", "+", true, AkInterval.SECONDS, MDatetimes.TIME),
-    };
     
     // Subtract functions
     public static final TOverload SUBTRACT_TINYINT = new MArithmetic("minus", "-", false, MNumeric.TINYINT, MNumeric.INT.instance(5)) {
@@ -275,14 +243,6 @@ public abstract class MArithmetic extends TArithmetic {
         {
             output.putDouble(inputs.get(0).getDouble() - inputs.get(1).getDouble());
         }
-    };
-
-    public static final TOverload[] SUBTRACT_ALWAYS_NULL_= new TOverload[] {
-            new AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS),
-            new AlwaysNull("minus", "-", true, AkInterval.MONTHS, MDatetimes.TIME),
-
-            new AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.SECONDS),
-            new AlwaysNull("minus", "-", true, AkInterval.SECONDS, MDatetimes.TIME),
     };
 
     // (Regular) Divide functions
@@ -732,9 +692,9 @@ public abstract class MArithmetic extends TArithmetic {
      * Implementation for arithmetic which always results in a NULL VARCHAR(29). Odd as it may seem, such things do
      * seem to exist. For instance, {@code &lt;time&gt; + INTERVAL N MONTH}.
      */
-    private static class AlwaysNull extends MArithmetic {
+    static class AlwaysNull extends MArithmetic {
 
-        private AlwaysNull(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1) {
+        AlwaysNull(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1) {
             super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR.instance(29));
         }
 
