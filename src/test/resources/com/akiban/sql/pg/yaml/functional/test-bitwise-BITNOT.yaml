@@ -2,6 +2,9 @@
 # Bug(s) 928418: Overflow due to composeType's implementation
 # Status: partially fixed
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, 'Level 1');

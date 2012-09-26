@@ -1,4 +1,7 @@
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - Statement: SET cbo TO 'true'
 ---  # based on files in server /src/test/resources/com/akiban/sql/pg/select
 - Include: all-schema.yaml
