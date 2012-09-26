@@ -38,6 +38,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkInterval;
+import com.akiban.server.types3.aksql.aktypes.AkResultSet;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
@@ -49,6 +50,8 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Yet another translator between type regimes. */
 public final class TypesTranslation {
@@ -447,6 +450,20 @@ public final class TypesTranslation {
             break;
         case TypeId.FormatIds.XML_TYPE_ID:
             tInstance = charTInstance(sqlType, MString.TEXT);
+            break;
+        case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
+            {
+                TypeId.RowMultiSetTypeId rmsTypeId = 
+                    (TypeId.RowMultiSetTypeId)typeId;
+                String[] columnNames = rmsTypeId.getColumnNames();
+                DataTypeDescriptor[] columnTypes = rmsTypeId.getColumnTypes();
+                List<AkResultSet.Column> columns = new ArrayList<AkResultSet.Column>(columnNames.length);
+                for (int i = 0; i < columnNames.length; i++) {
+                    columns.add(new AkResultSet.Column(columnNames[i],
+                                                       toTInstance(columnTypes[i])));
+                }
+                tInstance = AkResultSet.INSTANCE.instance(columns);
+            }
             break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
