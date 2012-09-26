@@ -40,6 +40,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -237,6 +238,8 @@ public class PlanCostEstimator
         }
         if (!(expr instanceof ConstantExpression)) return null;
         Object obj = ((ConstantExpression)expr).getValue();
+        if (obj instanceof BigDecimalWrapper)
+            obj = ((BigDecimalWrapper)obj).asBigDecimal();
         if (obj instanceof BigDecimal)
             return (BigDecimal)obj;
         else if (obj instanceof Number)
