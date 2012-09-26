@@ -63,7 +63,7 @@ public class NumericFormatter {
 
             @Override
             public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
-                new Formatter(out.getAppendable()).format("%e", source.getFloat());
+                new Formatter(out.getAppendable()).format("%e", source.getDouble());
             }
         },
         INT_8 {
