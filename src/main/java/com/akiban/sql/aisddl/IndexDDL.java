@@ -34,8 +34,6 @@ import java.util.List;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.error.*;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.Types3Switch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +54,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.sql.pg.PostgresQueryContext;
+import com.akiban.qp.operator.QueryContext;
 
 /** DDL operations on Indices */
 public class IndexDDL
@@ -65,7 +63,7 @@ public class IndexDDL
     private IndexDDL() {
     }
 
-    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error, PostgresQueryContext context)
+    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error, QueryContext context)
     {
         switch(condition)
         {
@@ -84,7 +82,7 @@ public class IndexDDL
                                     Session session,
                                     String defaultSchemaName,
                                     DropIndexNode dropIndex,
-                                    PostgresQueryContext context) {
+                                    QueryContext context) {
         String groupName = null;
         TableName tableName = null;
         ExistenceCheck condition = dropIndex.getExistenceCheck();
@@ -255,10 +253,7 @@ public class IndexDDL
         if (index.getColumnList() instanceof SpecialIndexFuncNode) {
             switch (((SpecialIndexFuncNode)index.getColumnList()).getFunctionType()) {
             case Z_ORDER_LAT_LON:
-                List<com.akiban.ais.model.IndexColumn> indexColumns = tableIndex.getKeyColumns();
-                assert indexColumns.size() == 2 : indexName; // Parser checks this
-                if (!isFixedDecimal(indexColumns.get(0).getColumn()) ||
-                    !isFixedDecimal(indexColumns.get(1).getColumn())) {
+                if (!Index.isSpatialCompatible(tableIndex)) {
                     throw new BadSpatialIndexException(indexName, index);
                 }
                 tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
@@ -270,18 +265,6 @@ public class IndexDDL
         return tableIndex;
     }
 
-    private static boolean isFixedDecimal(Column column)
-    {
-        if (Types3Switch.ON) {
-            // ???
-            assert false : "Not implemented yet";
-            return true;
-        } else {
-            AkType type = column.getType().akType();
-            return type == AkType.DECIMAL;
-        }
-    }
-    
     private static Index buildGroupIndex (AkibanInformationSchema ais, TableName tableName, CreateIndexNode index) {
         final String indexName = index.getObjectName().getTableName();
         

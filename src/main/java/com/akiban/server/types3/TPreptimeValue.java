@@ -38,6 +38,10 @@ public final class TPreptimeValue {
         this.tInstance = tInstance;
     }
 
+    public boolean isNullable() {
+        return tInstance == null || tInstance.nullability();
+    }
+
     public TInstance instance() {
         return tInstance;
     }
@@ -63,12 +67,16 @@ public final class TPreptimeValue {
         this.tInstance = tInstance;
         this.value = value;
         this.mutable = false;
-        if (value != null)
+        if (tInstance == null)
+            ArgumentValidation.isNull("value", value);
+        else if (value != null)
             tInstance.setNullable(value.isNull());
     }
 
     @Override
     public String toString() {
+        if (tInstance == null)
+            return "NULL";
         String result = tInstance.toString();
         if (value != null)
             result = result + '=' + value;

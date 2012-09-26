@@ -54,7 +54,7 @@ public final class MBinary extends SimpleDtdTClass {
     private static final TParser parser = new BinaryParser();
 
     public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
-    public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "varbinary", -1);
+    public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "binary", -1);
     public static final TClass TINYBLOB = new MBinary(TypeId.BLOB_ID, "tinyblob", 256);
     public static final TClass MEDIUMBLOB = new MBinary(TypeId.BLOB_ID, "mediumblob", 65535);
     public static final TClass BLOB = new MBinary(TypeId.BLOB_ID, "blob", 16777215);

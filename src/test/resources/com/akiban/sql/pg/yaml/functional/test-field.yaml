@@ -24,7 +24,7 @@
 - output: [[3]]
 ---
 - Statement: SELECT FIELD (TIME('12:30:10') - TIME('12:30:09'), 1000.2, '00:00:01');
-- output: [[2]]
+- output: !select-engine {all: [[2]], newtypes: [[0]]}
 ---
 - Statement: SELECT FIELD (TIME('12:30:10') - TIME('12:30:09'), 1000.2, '00:00:02');
 - output: [[0]]
@@ -42,7 +42,7 @@
 ---
 - Statement: SELECT FIELD (?, 20110411, '2006-11-07', DATE('2012-04-11'), 20120310);
 - params: [['2012-04-11']]
-- output: [[3]]
+- output: !select-engine {all: [[3]], newtypes: [[0]]}
 ---
 - Statement: SELECT FIELD(123, null, '123.1', 123);
 - output: [[3]]

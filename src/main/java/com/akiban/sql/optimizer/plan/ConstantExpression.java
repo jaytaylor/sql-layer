@@ -96,7 +96,7 @@ public class ConstantExpression extends BaseExpression
     public Object getValue() {
         if (value == null && preptimeValue != null) {
             PValueSource pValueSource = preptimeValue.value();
-            if (pValueSource.isNull())
+            if (pValueSource == null || pValueSource.isNull())
                 return null;
             value = PValueSources.toObject(pValueSource, getAkType());
         }
@@ -140,7 +140,7 @@ public class ConstantExpression extends BaseExpression
     public String toString() {
         if (preptimeValue != null) {
             PValueSource valueSource = preptimeValue.value();
-            if (valueSource.isNull())
+            if (valueSource == null || valueSource.isNull())
                 return "NULL";
             TInstance tInstance = preptimeValue.instance();
             StringBuilder sb = new StringBuilder();

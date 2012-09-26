@@ -39,13 +39,13 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 public class Elt extends TOverloadBase
 {
 
-    private final TClass type;
+    private final TClass stringType;
     private final TClass intType;
     
-    public Elt(TClass type, TClass intType)
+    public Elt(TClass intType, TClass stringType)
     {
-        this.type = type;
         this.intType = intType;
+        this.stringType = stringType;
     }
     
     @Override
@@ -53,7 +53,7 @@ public class Elt extends TOverloadBase
     {
         // ELT(<INT>, <T> ....)
         // argc >= 2
-        builder.covers(intType, 0).pickingVararg(type, 1);
+        builder.covers(intType, 0).pickingVararg(stringType, 1);
     }
 
     @Override

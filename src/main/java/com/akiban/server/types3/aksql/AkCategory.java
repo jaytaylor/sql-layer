@@ -33,5 +33,6 @@ public enum AkCategory {
     FLOATING,
     STRING_BINARY,
     STRING_CHAR,
-    DATE_TIME
+    DATE_TIME,
+    RECORD
 }

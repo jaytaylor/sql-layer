@@ -1,0 +1,11 @@
+SelectQuery@44282c90
+  ResultSet@2985c4e5[order_date, sku, quan]
+    MapJoin@49f4acf()
+      ExpressionsSource@1d696397([[Adams, 6666], [Jones, 4567], [Smith, 1234]])
+      Project@d41abaf[orders.order_date, items.sku, items.quan]
+        Select@526e74f5[]
+          Flatten@2b938c68(orders INNER items)
+            AncestorLookup@1c85a5a5(items -> [orders, items])
+              SingleIndexScan@a3e0244(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =VALUES[0], =VALUES[1], rows = 1, cost = 109.654)
+              TableSource@22a4bea0(orders - TableGroupJoin@2e412d4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@5a5f11a2(items - TableGroupJoin@4b901dc7(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

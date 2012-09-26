@@ -41,6 +41,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.service.config.Property;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
@@ -53,6 +54,7 @@ import org.junit.After;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -81,6 +83,12 @@ public class AlterTableITBase extends ITBase {
     protected static final List<TableChange> NO_CHANGES = Collections.emptyList();
 
     protected Map<Integer,List<String>> checkedIndexes = new HashMap<Integer, List<String>>();
+
+    // Workaround for bug1052594 (Persistit brings trees back to life, this deletes data dir)
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        return uniqueStartupConfigProperties(AlterTableITBase.class);
+    }
 
     @After
     public void lookForCheckedIndexes() {

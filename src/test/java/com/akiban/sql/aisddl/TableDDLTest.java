@@ -285,6 +285,15 @@ public class TableDDLTest {
         assertTrue(stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
+
+    //bug1047037
+    @Test (expected=DuplicateIndexException.class)
+    public void namedPKConstraint() throws StandardException {
+        String sql = "CREATE TABLE t1 (c1 INT NOT NULL PRIMARY KEY, CONSTRAINT co1 PRIMARY KEY (c1))";
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue(stmt instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
     
     public static class DDLFunctionsMock extends DDLFunctionsMockBase {
         private final AkibanInformationSchema internalAIS;

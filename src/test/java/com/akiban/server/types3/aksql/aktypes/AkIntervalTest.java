@@ -140,6 +140,8 @@ public final class AkIntervalTest {
         new TimeBuilder(14, TimeUnit.MINUTES).add(52, TimeUnit.SECONDS)
                 .checkParse(AkIntervalSecondsFormat.MINUTE_SECOND, "14:52")
                 .badParse(AkIntervalSecondsFormat.MINUTE_SECOND, "2");
+        new TimeBuilder(61, TimeUnit.SECONDS)
+                .checkParse(AkIntervalSecondsFormat.MINUTE_SECOND, "1:1");
     }
 
     @Test
