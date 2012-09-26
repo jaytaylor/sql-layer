@@ -468,6 +468,11 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionTracer.setCurrentStatement(sql);
         logger.info("Query: {}", sql);
 
+        if (sql.length() == 0) {
+            emptyQuery();
+            return;
+        }
+
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
 
@@ -856,6 +861,12 @@ public class PostgresServerConnection extends ServerSessionBase
             sessionTracer.endEvent();
         }
         return rowsProcessed;
+    }
+
+    protected void emptyQuery() throws IOException {
+        messenger.beginMessage(PostgresMessages.EMPTY_QUERY_RESPONSE_TYPE.code());
+        messenger.sendMessage();
+        readyForQuery();
     }
 
     @Override

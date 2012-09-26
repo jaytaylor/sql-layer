@@ -204,10 +204,18 @@ public class AISBinder implements Visitor
         ResultColumnList resultColumns = resultSet.getResultColumns();
         // The parser does not enforce the fact that a subquery can only
         // return a single column, so we must check here.
-        if ((resultColumns.size() != 1) &&
-            (!allowSubqueryMultipleColumns ||
-             (subqueryNode.getLeftOperand() != null))) {
-            throw new SubqueryOneColumnException();
+        if (resultColumns.size() != 1) {
+            switch (subqueryNode.getSubqueryType()) {
+            case IN:
+            case NOT_IN:
+                break;
+            case EXPRESSION:
+                if (allowSubqueryMultipleColumns)
+                    break;
+                /* else falls through */
+            default:
+                throw new SubqueryOneColumnException();
+            }
         }
 
         SubqueryNode.SubqueryType subqueryType = subqueryNode.getSubqueryType();

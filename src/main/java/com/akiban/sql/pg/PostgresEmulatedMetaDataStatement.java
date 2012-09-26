@@ -58,6 +58,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         ODBC_LO_TYPE_QUERY("select oid, typbasetype from pg_type where typname = 'lo'"),
         // SEQUEL 3.33.0 (http://sequel.rubyforge.org/) sends this when opening a new connection
         SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'"),
+        // Npgsql (http://npgsql.projects.postgresql.org/) sends this at startup.
+        NPGSQL_TYPE_QUERY("SELECT typname, oid FROM pg_type WHERE typname IN \\((.+)\\)", true),
         // PSQL \dn
         PSQL_LIST_SCHEMAS("SELECT n.nspname AS \"Name\",\\s*" +
                           "(?:pg_catalog.pg_get_userbyid\\(n.nspowner\\)|u.usename) AS \"Owner\"\\s+" +
@@ -219,6 +221,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names = new String[] { "oid", "typname" };
             types = new PostgresType[] { OID_PG_TYPE, TYPNAME_PG_TYPE };
             break;
+        case NPGSQL_TYPE_QUERY:
+            ncols = 2;
+            names = new String[] { "typname", "oid" };
+            types = new PostgresType[] { TYPNAME_PG_TYPE, OID_PG_TYPE };
+            break;
         case PSQL_LIST_SCHEMAS:
             ncols = 2;
             names = new String[] { "Name", "Owner" };
@@ -325,6 +332,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case SEQUEL_B_TYPE_QUERY:
             nrows = sequelBTypeQuery(messenger, maxrows, usePVals);
             break;
+        case NPGSQL_TYPE_QUERY:
+            nrows = npgsqlTypeQuery(messenger, maxrows, usePVals);
+            break;
         case PSQL_LIST_SCHEMAS:
             nrows = psqlListSchemasQuery(server, messenger, maxrows, usePVals);
             break;
@@ -388,7 +398,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int sequelBTypeQuery(PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-    	for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
+        for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
             if (pgtype.getType() == PostgresType.TypeOid.TypType.BASE) {
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(2); // 2 columns for this query
@@ -396,6 +406,33 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                             pgtype.getOid(), OID_PG_TYPE);
                 writeColumn(messenger, encoder, usePVals, 
                             pgtype.getName(), TYPNAME_PG_TYPE);
+                messenger.sendMessage();
+                nrows++;
+                if ((maxrows > 0) && (nrows >= maxrows)) {
+                    break;
+                }
+            }
+        }
+        return nrows;
+    }
+
+    private int npgsqlTypeQuery(PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        List<String> types = new ArrayList<String>();
+        for (String type : groups.get(1).split(",")) {
+            if ((type.charAt(0) == '\'') && (type.charAt(type.length()-1) == '\''))
+                type = type.substring(1, type.length()-1);
+            types.add(type);
+        }
+        for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
+            if (types.contains(pgtype.getName())) {
+                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+                messenger.writeShort(2); // 2 columns for this query
+                writeColumn(messenger, encoder, usePVals, 
+                            pgtype.getName(), TYPNAME_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            pgtype.getOid(), OID_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -425,7 +462,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 iter.remove();
         }
         Collections.sort(names);
-    	for (String name : names) {
+        for (String name : names) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(2); // 2 columns for this query
             writeColumn(messenger, encoder, usePVals, 
@@ -472,7 +509,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 iter.remove();
         }
         Collections.sort(names);
-    	for (TableName name : names) {
+        for (TableName name : names) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(4); // 4 columns for this query
             writeColumn(messenger, encoder, usePVals, 
@@ -518,7 +555,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 iter.remove();
         }
         Collections.sort(names);
-    	for (TableName name : names) {
+        for (TableName name : names) {
             int id;
             Columnar table = ais.getColumnar(name);
             if (table.isTable())
