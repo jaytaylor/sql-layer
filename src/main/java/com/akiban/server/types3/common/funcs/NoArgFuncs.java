@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.common.funcs;
 
+import com.akiban.server.AkServer;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
@@ -45,6 +46,22 @@ public class NoArgFuncs
 {
     static final int USER_NAME_LENGTH = 77;
 
+    public static final TOverload SERVER_VERSION = new NoArgExpression("version", true)
+    {
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putString(AkServer.VERSION_STRING, null);
+        }
+
+        @Override
+        protected TInstance tInstance()
+        {
+            return MString.VARCHAR.instance(AkServer.VERSION_STRING.length());
+        }
+        
+    };
+    
     public static final TOverload PI = new TOverloadBase()
     {
         @Override
