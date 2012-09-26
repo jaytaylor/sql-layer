@@ -1,6 +1,5 @@
 PhysicalUpdate@5d89635d
-  Project_Default(NULL, NULL, NULL)
-    Delete_Returning()
-      Select_HKeyOrdered(Field(2) == 'Fred')
-        Filter_Default(test.child)
-          GroupScan_Default(test.parent)
+  Delete_Returning()
+    Select_HKeyOrdered(Field(2) == 'Fred')
+      Filter_Default(test.child)
+        GroupScan_Default(test.parent)

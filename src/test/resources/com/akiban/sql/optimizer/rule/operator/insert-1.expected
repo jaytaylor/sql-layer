@@ -1,5 +1,4 @@
 PhysicalUpdate@377f4fbb
-  Project_Default(NULL, NULL, NULL)
-    Insert_Returning(INTO test.child)
-      Project_Default(CAST(Field(1) AS INT), CAST(Field(0) AS INT), Field(2))
-        ValuesScan_Default([1, 1, 'Judy'], [1, 2, 'Elroy'])
+  Insert_Returning(INTO test.child)
+    Project_Default(CAST(Field(1) AS INT), CAST(Field(0) AS INT), Field(2))
+      ValuesScan_Default([1, 1, 'Judy'], [1, 2, 'Elroy'])
