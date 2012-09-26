@@ -44,6 +44,10 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -1504,10 +1508,15 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
-        if (right.getAkType() != AkType.DECIMAL)
-            right = new CastExpression(right, 
-                                       new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12),
-                                       right.getSQLsource());
+        if (right.getAkType() != AkType.DECIMAL) {
+            DataTypeDescriptor sqlType = 
+                new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12);
+            right = new CastExpression(right, sqlType, right.getSQLsource());
+            if (Types3Switch.ON) {
+                TInstance instance = TypesTranslation.toTInstance(sqlType);
+                right.setPreptimeValue(new TPreptimeValue(instance));
+            }
+        }
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
             return new FunctionExpression("_center_radius",
