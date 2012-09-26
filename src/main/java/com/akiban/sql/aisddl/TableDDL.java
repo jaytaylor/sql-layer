@@ -65,7 +65,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.sql.pg.PostgresQueryContext;
+import com.akiban.qp.operator.QueryContext;
 
 import static com.akiban.sql.aisddl.DDLHelper.convertName;
 
@@ -80,7 +80,7 @@ public class TableDDL
                                   Session session, 
                                   String defaultSchemaName,
                                   DropTableNode dropTable,
-                                  PostgresQueryContext context) {
+                                  QueryContext context) {
         TableName tableName = convertName(defaultSchemaName, dropTable.getObjectName());
         ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
 
@@ -103,7 +103,7 @@ public class TableDDL
                                     Session session,
                                     String defaultSchemaName,
                                     DropGroupNode dropGroup,
-                                    PostgresQueryContext context)
+                                    QueryContext context)
     {
         TableName tableName = convertName(defaultSchemaName, dropGroup.getObjectName());
         ExistenceCheck existenceCheck = dropGroup.getExistenceCheck();
@@ -144,7 +144,7 @@ public class TableDDL
                                    Session session,
                                    String defaultSchemaName,
                                    CreateTableNode createTable,
-                                   PostgresQueryContext context) {
+                                   QueryContext context) {
         if (createTable.getQueryExpression() != null)
             throw new UnsupportedCreateSelectException();
 

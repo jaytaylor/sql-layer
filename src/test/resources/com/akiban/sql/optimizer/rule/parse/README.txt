@@ -54,13 +54,25 @@ in-l1: IN with one literal
 
 in-l2: IN with two literals
 
+in-l2n: NOT IN
+
 in-l3: IN with three literals
+
+in-l101n: NOT IN with 101 literals
+
+in-lr: IN with row literals
+
+in-lrn: NOT IN
+
+in-lrr: IN with nested row literals
 
 in-2: IN with subquery
 
 in-2l: IN with subquery with LIMIT
 
 in-3: IN with aggregate subquery
+
+in-4: IN with row value subquery
 
 insert-1: from VALUES
 

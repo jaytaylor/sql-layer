@@ -44,6 +44,11 @@ public class TFormatter {
             public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(source.getBoolean() ? "TRUE" : "FALSE");
             }
+
+            @Override
+            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+                format(instance, source, out);
+            }
         }
     }
 }

@@ -59,7 +59,6 @@ import com.akiban.server.error.OrderGroupByNonIntegerConstant;
 import com.akiban.server.error.OrderGroupByIntegerOutOfRange;
 import com.akiban.server.error.WrongExpressionArityException;
 
-import com.akiban.sql.optimizer.plan.BooleanOperationExpression.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -657,7 +656,6 @@ public class ASTStatementLoader extends BaseRule
             conditions.add(new ComparisonCondition(Comparison.GE, left, right1, type, null));
             conditions.add(new ComparisonCondition(Comparison.LE, left, right2, type, null));
         }
-
         
         protected void addInCondition(List<ConditionExpression> conditions,
                                       List<ExpressionNode> projects,
@@ -666,67 +664,35 @@ public class ASTStatementLoader extends BaseRule
         {
             RowConstructorNode lhs = in.getLeftOperand();
             RowConstructorNode rhs = in.getRightOperandList();
-
-            // if the list on the LHS has only 1 element
-            // it's the regular case of IN (ie., not actually involving nested tuples/row constructors)
-            if (lhs.getNodeList().size() == 1)
-            {
-                ExpressionNode left = toExpression(lhs.getNodeList().get(0));
-                ValueNodeList rightOperandList = rhs.getNodeList();
-                if (rightOperandList.size() <= getInToOrMaxCount())
-                {
-                    ConditionExpression conds = null;
-                    for (ValueNode rightOperand : rightOperandList)
-                    {
-                        // expecting the rhs to be a list of scalar, not a nested tuple
-                        if (rightOperand instanceof RowConstructorNode)
-                            throw new IllegalArgumentException("Operand should have 1 colunm");
-                        
-                        ExpressionNode right = toExpression(rightOperand, projects);
-                        ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left, right, 
-                                                                           in.getType(), in);
-
-                        if (conds == null)
-                        {
-                            conds = cond;
-                            continue;
-                        }
-                        
-                        List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
-                        operands.add(conds);
-                        operands.add(cond);
-                        conds = new LogicalFunctionCondition("or", operands, in.getType(), in);
-                    }
-                    conditions.add(conds);
-                    return;
-                }
-                
+            ValueNodeList leftOperandList = lhs.getNodeList();
+            ValueNodeList rightOperandList = rhs.getNodeList();
+            ConditionExpression inCondition;
+            if (rightOperandList.size() <= getInToOrMaxCount()) {
+                inCondition = buildInConditionNested(in, projects);
+            }
+            else {
                 List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
-                for (ValueNode rightOperand : rightOperandList)
-                {
+                for (ValueNode rightOperand : rightOperandList) {
                     List<ExpressionNode> row = new ArrayList<ExpressionNode>(1);
-                    
-                     // expecting the rhs to be a list of scalar, not a nested tuple    
-                    if (rightOperand instanceof RowConstructorNode)
-                        throw new IllegalArgumentException("Operand should have 1 colunm");
-                    
-                    row.add(toExpression(rightOperand, projects));
+                    flattenInSameShape(row, rightOperand, lhs, projects);
                     rows.add(row);
                 }
                 ExpressionsSource source = new ExpressionsSource(rows);
-                ConditionExpression cond
-                        = new ComparisonCondition(Comparison.EQ,
-                                                  left,
-                                                  new ColumnExpression(source, 0, left.getSQLtype(), null),
-                                                  in.getType(),
-                                                  null);
+                List<ConditionExpression> conds = new ArrayList<ConditionExpression>();
+                flattenAnyComparisons(conds, leftOperandList, source, projects, in.getType());
+                ConditionExpression combined = null;
+                for (ConditionExpression cond : conds) {
+                    combined = andConditions(combined, cond);
+                }
                 List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
-                fields.add(cond);
+                fields.add(combined);
                 PlanNode subquery = new Project(source, fields);
-                conditions.add(new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in));
+                inCondition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in);
             }
-            else
-                buildInConditionNested(conditions, projects, in);
+            if (in.isNegated()) {
+                inCondition = negateCondition(inCondition, in);
+            }
+            conditions.add(inCondition);
         }
 
         protected ConditionExpression getEqual(InListOperatorNode in, 
@@ -750,17 +716,7 @@ public class ASTStatementLoader extends BaseRule
                         ConditionExpression equalNode = getEqual(in,
                                                        projects,
                                                        leftList.get(n), rightList.get(n));
-                        
-                        if (result == null)
-                            result = equalNode;
-                        else
-                        {
-                            ConditionExpression andNode = new BooleanOperationExpression(Operation.AND,
-                                                                                         result, equalNode,
-                                                                                         left.getType(), left); // TODO: wrong!
-                            result = andNode;
-                        }
-                        
+                        result = andConditions(result, equalNode);
                     }
                     return result;
                 }
@@ -769,8 +725,12 @@ public class ASTStatementLoader extends BaseRule
             }
             else
             {
-                if (left instanceof RowConstructorNode)
-                    throw new IllegalArgumentException("mismatch columns count in IN");
+                if (left instanceof RowConstructorNode) {
+                    ValueNodeList leftList = ((RowConstructorNode)left).getNodeList();
+                    if (leftList.size() != 1)
+                        throw new IllegalArgumentException("mismatch columns count in IN");
+                    left = leftList.get(0);
+                }
                 
                 ExpressionNode rightExp = toExpression(right, projects);
                 ExpressionNode leftExp = toExpression(left, projects);
@@ -781,9 +741,8 @@ public class ASTStatementLoader extends BaseRule
             }
         }
         
-        protected void buildInConditionNested(List<ConditionExpression> conditions,
-                                              List<ExpressionNode> projects,
-                                              InListOperatorNode in) throws StandardException
+        protected ConditionExpression buildInConditionNested(InListOperatorNode in,
+                                                             List<ExpressionNode> projects) throws StandardException
         {
             RowConstructorNode leftRow = in.getLeftOperand();
             RowConstructorNode rightRow = in.getRightOperandList();
@@ -806,10 +765,53 @@ public class ASTStatementLoader extends BaseRule
                     result = new LogicalFunctionCondition("or", operands, in.getType(), in);
                 }
             }
-            conditions.add(result);
-            return;
+            return result;
         }
         
+        private void flattenInSameShape(List<ExpressionNode> row,
+                                        ValueNode rightOperand, ValueNode leftOperand,
+                                        List<ExpressionNode> projects)
+                throws StandardException {
+            if (rightOperand instanceof RowConstructorNode) {
+                if (!(leftOperand instanceof RowConstructorNode))
+                    throw new IllegalArgumentException("Row value given where single expected");
+                ValueNodeList leftList = ((RowConstructorNode)leftOperand).getNodeList();
+                ValueNodeList rightList = ((RowConstructorNode)rightOperand).getNodeList();
+                if (leftList.size() != rightList.size())
+                    throw new IllegalArgumentException("mismatched columns count in IN " 
+                                                       + "left : " + leftList.size() + ", right: " + rightList.size());
+                for (int i = 0; i < leftList.size(); i++) {
+                    flattenInSameShape(row, rightList.get(i), leftList.get(i), projects);
+                }
+            }
+            else {
+                if ((leftOperand instanceof RowConstructorNode) &&
+                    (((RowConstructorNode)leftOperand).getNodeList().size() != 1))
+                    throw new IllegalArgumentException("Single value given where row expected");
+                row.add(toExpression(rightOperand, projects));
+            }
+        }
+
+
+        private void flattenAnyComparisons(List<ConditionExpression> conds, ValueNodeList leftOperandList, ExpressionsSource source, 
+                                           List<ExpressionNode> projects, DataTypeDescriptor sqlType) throws StandardException {
+            for (ValueNode leftOperand : leftOperandList) {
+                if (leftOperand instanceof RowConstructorNode) {
+                    flattenAnyComparisons(conds, ((RowConstructorNode)leftOperand).getNodeList(), source,
+                                          projects, sqlType);
+                }
+                else {
+                    ExpressionNode left = toExpression(leftOperand, projects);
+                    ConditionExpression cond = 
+                        new ComparisonCondition(Comparison.EQ,
+                                                left,
+                                                new ColumnExpression(source, conds.size(), left.getSQLtype(), null),
+                                                sqlType, null);
+                    conds.add(cond);
+                }
+            }
+        }
+
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
                                             List<ExpressionNode> projects,
                                             SubqueryNode subqueryNode)
@@ -822,8 +824,9 @@ public class ASTStatementLoader extends BaseRule
                 subquery = ((ResultSet)subquery).getInput();
             boolean negate = false;
             Comparison comp = Comparison.EQ;
+            List<ExpressionNode> operands = null;
             ExpressionNode operand = null;
-            boolean needOperand = false;
+            boolean needOperand = false, multipleOperands = false;
             //ConditionList innerConds = null;
             switch (subqueryNode.getSubqueryType()) {
             case EXISTS:
@@ -832,6 +835,8 @@ public class ASTStatementLoader extends BaseRule
                 negate = true;
                 break;
             case IN:
+                multipleOperands = true;
+                /* falls through */
             case EQ_ANY: 
                 needOperand = true;
                 break;
@@ -845,9 +850,10 @@ public class ASTStatementLoader extends BaseRule
                 needOperand = true;
                 break;
             case NOT_IN: 
+                multipleOperands = true;
+                /* falls through */
             case NE_ALL: 
                 negate = true;
-                comp = Comparison.EQ;
                 needOperand = true;
                 break;
             case GT_ANY: 
@@ -903,7 +909,8 @@ public class ASTStatementLoader extends BaseRule
                     if (plan instanceof Project) {
                         Project project = (Project)plan;
                         if (needOperand) {
-                            if (project.getFields().size() != 1)
+                            operands = project.getFields();
+                            if (!multipleOperands && (operands.size() != 1))
                                 throw new UnsupportedSQLException("Subquery must have exactly one column", subqueryNode);
                             operand = project.getFields().get(0);
                         }
@@ -926,10 +933,34 @@ public class ASTStatementLoader extends BaseRule
             ConditionExpression condition;
             if (needOperand) {
                 assert (operand != null);
-                ExpressionNode left = toExpression(subqueryNode.getLeftOperand(), projects);
-                ConditionExpression inner = new ComparisonCondition(comp, left, operand,
-                                                                    subqueryNode.getType(), 
-                                                                    subqueryNode);
+                ValueNode leftOperand = subqueryNode.getLeftOperand();
+                ConditionExpression inner = null;
+                if (multipleOperands) {
+                    if (leftOperand instanceof RowConstructorNode) {
+                        ValueNodeList leftOperands = ((RowConstructorNode)leftOperand).getNodeList();
+                        if (operands.size() != leftOperands.size())
+                            throw new IllegalArgumentException("mismatched columns count in IN " 
+                                                               + "left : " + leftOperands.size() + ", right: " + operands.size());
+                        for (int i = 0; i < leftOperands.size(); i++) {
+                            ExpressionNode left = toExpression(leftOperands.get(i)
+, projects);
+                            ConditionExpression cond = new ComparisonCondition(comp, left, operands.get(i),
+                                                                               subqueryNode.getType(), null);
+                            inner = andConditions(inner, cond);
+                        }
+                    }
+                    else {
+                        if (operands.size() != 1)
+                            throw new IllegalArgumentException("Subquery must have exactly one column");
+                        multipleOperands = false;
+                    }
+                }
+                if (!multipleOperands) {
+                    ExpressionNode left = toExpression(leftOperand, projects);
+                    inner = new ComparisonCondition(comp, left, operand,
+                                                    subqueryNode.getType(), 
+                                                    subqueryNode);
+                }
                 // We take this condition back off from the top of the
                 // physical plan and move it to the expression, but it's
                 // easier to think about the scoping as evaluated at the
@@ -948,12 +979,7 @@ public class ASTStatementLoader extends BaseRule
                                                 subqueryNode.getType(), subqueryNode);
             }
             if (negate) {
-                List<ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
-                operands.add(condition);
-                condition = new LogicalFunctionCondition("not", 
-                                                         operands,
-                                                         subqueryNode.getType(), 
-                                                         subqueryNode);
+                condition = negateCondition(condition, subqueryNode);
             }
             conditions.add(condition);
         }
@@ -1010,13 +1036,10 @@ public class ASTStatementLoader extends BaseRule
                 function = "isNull";
                 negated = true;
             }
-            FunctionCondition cond = new FunctionCondition(function, operands,
-                                                           isNull.getType(), isNull);
+            ConditionExpression cond = new FunctionCondition(function, operands,
+                                                             isNull.getType(), isNull);
             if (negated) {
-                List<ConditionExpression> noperands = new ArrayList<ConditionExpression>(1);
-                noperands.add(cond);
-                cond = new LogicalFunctionCondition("not", noperands,
-                                                    isNull.getType(), isNull);
+                cond = negateCondition(cond, isNull);
             }
             conditions.add(cond);
         }
@@ -1035,13 +1058,10 @@ public class ASTStatementLoader extends BaseRule
                 function = "isTrue";
             else
                 function = "isFalse";
-            FunctionCondition cond = new FunctionCondition(function, operands,
-                                                           is.getType(), is);
+            ConditionExpression cond = new FunctionCondition(function, operands,
+                                                             is.getType(), is);
             if (is.isNegated()) {
-                List<ConditionExpression> noperands = new ArrayList<ConditionExpression>(1);
-                noperands.add(cond);
-                cond = new LogicalFunctionCondition("not", noperands,
-                                                    is.getType(), is);
+                cond = negateCondition(cond, is);
             }
             conditions.add(cond);
         }
@@ -1142,22 +1162,36 @@ public class ASTStatementLoader extends BaseRule
             default:
                 {
                     // Make calls to binary AND function.
-                    Collections.reverse(conditions);
                     ConditionExpression rhs = null;
                     for (ConditionExpression lhs : conditions) {
-                        if (rhs == null) {
-                            rhs = lhs;
-                            continue;
-                        }
-                        List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
-                        operands.add(lhs);
-                        operands.add(rhs);
-                        rhs = new LogicalFunctionCondition("and", operands,
-                                                           condition.getType(), null);
+                        rhs = andConditions(rhs, lhs);
                     }
                     return rhs;
                 }
             }
+        }
+
+        /** Combine AND of conditions (or <code>null</code>) with another one. */
+        protected ConditionExpression andConditions(ConditionExpression conds,
+                                                    ConditionExpression cond) {
+            if (conds == null)
+                return cond;
+            else {
+                List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                
+                operands.add(conds);
+                operands.add(cond);
+                return new LogicalFunctionCondition("and", operands,
+                                                    cond.getSQLtype(), null);
+            }
+        }
+
+        /** Negate boolean condition. */
+        protected ConditionExpression negateCondition(ConditionExpression cond,
+                                                      ValueNode sql) {
+            List<ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
+            operands.add(cond);
+            return new LogicalFunctionCondition("not", operands, sql.getType(), sql);
         }
 
         /** SELECT DISTINCT with sorting sorts by an input Project and

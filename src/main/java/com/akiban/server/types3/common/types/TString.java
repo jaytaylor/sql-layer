@@ -81,19 +81,29 @@ public abstract class TString extends TClass
 
             @Override
             public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
+                formatQuoted(source, out, '\'', '\'');
+            }
+
+            @Override
+            public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+                formatQuoted(source, out, '"', '\\');
+            }
+
+            protected void formatQuoted(PValueSource source, AkibanAppender out,
+                                        char quote, char escape) {
                 String value = source.getString();
-                out.append('\'');
-                if (value.indexOf('\'') < 0)
+                out.append(quote);
+                if (value.indexOf(quote) < 0)
                     out.append(value);
                 else {
                     for (int i = 0; i < value.length(); i++) {
                         int ch = value.charAt(i);
-                        if (ch == '\'')
-                            out.append('\'');
+                        if (ch == quote)
+                            out.append(escape);
                         out.append((char)ch);
                     }
                 }
-                out.append('\'');
+                out.append(quote);
             }
         }
     }

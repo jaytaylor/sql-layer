@@ -53,7 +53,10 @@ public final class TPreparedLiteral implements TPreparedExpression {
     {
         CompoundExplainer ex = new TExpressionExplainer(Type.LITERAL, "Literal", context);
         StringBuilder sql = new StringBuilder();
-        tInstance.formatAsLiteral(value, AkibanAppender.of(sql));
+        if (tInstance == null)
+            sql.append("NULL");
+        else
+            tInstance.formatAsLiteral(value, AkibanAppender.of(sql));
         ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sql.toString()));
         return ex;
     }

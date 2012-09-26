@@ -30,6 +30,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.sql.server.ServerOperatorCompiler;
 import com.akiban.sql.server.ServerPlanContext;
 
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -44,6 +45,8 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.error.SQLParseException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.service.EventTypes;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,7 +117,10 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             pgType = PostgresType.fromAIS(field.getAIScolumn());
         }
         else if (field.getSQLtype() != null) {
-            pgType = PostgresType.fromDerby(field.getSQLtype(), field.getTInstance());
+            DataTypeDescriptor sqlType = field.getSQLtype();
+            AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
+            TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+            pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
         }
         else {
             pgType = new PostgresType(PostgresType.TypeOid.UNKNOWN_TYPE_OID,
@@ -151,8 +157,11 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             for (int i = 0; i < nparams; i++) {
                 PostgresType pgType = null;
                 DataTypeDescriptor sqlType = sqlTypes[i];
-                if (sqlType != null)
-                    pgType = PostgresType.fromDerby(sqlType, null);
+                if (sqlType != null) {
+                    AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
+                    TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+                    pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+                }
                 if ((paramTypes != null) && (i < paramTypes.length)) {
                     // Make a type that has the target that the query wants, with the
                     // OID that the client proposed to send so that we
