@@ -148,20 +148,6 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
                     throw exceptionDuringCleanup;
                 }
             }
-/*
-        } else {
-            final UpdateResult updateResult;
-            try {
-                lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
-                lockSuccess = true;
-                updateResult = updater.run(context);
-                rowsModified = updateResult.rowsModified();
-            } 
-            finally {
-                unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
-            }
-            LOG.debug("Statement: {}, result: {}", statementType, updateResult);
-*/            
         }
         
         messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
