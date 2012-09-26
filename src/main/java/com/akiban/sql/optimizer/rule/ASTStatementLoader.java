@@ -266,11 +266,6 @@ public class ASTStatementLoader extends BaseRule
                     values.row.add(toExpression(resultColumn.getExpression()));
                 }
                 values.results = resultColumns(rcl);
-            } else {
-                //values.row = new ArrayList<ExpressionNode>(size);
-                //for (int i = 0; i < size; i++) {
-                //    values.row.add(new ConstantExpression(null, AkType.NULL));
-                //}
             }
             return values;
         }
