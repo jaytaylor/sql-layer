@@ -183,18 +183,10 @@ public class PlanCostEstimator
                 nscans = 2;     // One in each direction.
                 costEstimate = costEstimator.costIndexScan(index.getIndex(), null, null, true, null, true);
             } else if ("_center_radius".equals(func.getFunction())) {
-                ExpressionNode latExpression = operands.get(0);
-                ExpressionNode lonExpression = operands.get(1);
-                ExpressionNode rExpression = operands.get(2);
-                if ((latExpression instanceof ConstantExpression) &&
-                    (latExpression.getAkType() == AkType.DECIMAL) &&
-                    (lonExpression instanceof ConstantExpression) &&
-                    (lonExpression.getAkType() == AkType.DECIMAL) &&
-                    (rExpression instanceof ConstantExpression) &&
-                    (rExpression.getAkType() == AkType.DECIMAL)) {
-                    BigDecimal lat = (BigDecimal)((ConstantExpression)latExpression).getValue();
-                    BigDecimal lon = (BigDecimal)((ConstantExpression)lonExpression).getValue();
-                    BigDecimal r = (BigDecimal)((ConstantExpression)rExpression).getValue();
+                BigDecimal lat = decimalConstant(operands.get(0));
+                BigDecimal lon = decimalConstant(operands.get(1));
+                BigDecimal r = decimalConstant(operands.get(2));
+                if ((lat != null) && (lon != null) && (r != null)) {
                     BoxLatLon box = BoxLatLon.newBox(lat.subtract(r), lat.add(r), lon.subtract(r), lon.add(r));
                     long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
                     space.decompose(box, zValues);
@@ -212,7 +204,7 @@ public class PlanCostEstimator
                         }
                     }
                 } else {
-                    throw new AkibanInternalException("Unexpected operands for spatial index: " + func);
+                    throw new AkibanInternalException("Operands for spatial index must all be constant numbers: " + func);
                 }
             } else {
                 throw new AkibanInternalException("Unexpected function for spatial index: " + func);
@@ -234,6 +226,23 @@ public class PlanCostEstimator
                                             setupCost * nscans +
                                             scanCost * nrows / totalRows);
         }
+    }
+
+    protected static BigDecimal decimalConstant(ExpressionNode expr) {
+        // Because the distance_lat_lon function returns a double, the radius
+        // may be one for comparison.
+        // Also numbers may accidentally be given as integers due to formatting.
+        while (expr instanceof CastExpression) {
+            expr = ((CastExpression)expr).getOperand();
+        }
+        if (!(expr instanceof ConstantExpression)) return null;
+        Object obj = ((ConstantExpression)expr).getValue();
+        if (obj instanceof BigDecimal)
+            return (BigDecimal)obj;
+        else if (obj instanceof Number)
+            return BigDecimal.valueOf((long)(((Number)obj).doubleValue() * 1.0e6), 6);
+        else
+            return null;
     }
 
     protected class FlattenEstimator extends PlanEstimator {

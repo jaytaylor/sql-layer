@@ -43,6 +43,9 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.types.AkType;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.google.common.base.Function;
 import org.slf4j.Logger;
@@ -1501,6 +1504,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
+        if (right.getAkType() != AkType.DECIMAL)
+            right = new CastExpression(right, 
+                                       new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12),
+                                       right.getSQLsource());
         if (col1.equals(op1) && col2.equals(op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
             return new FunctionExpression("_center_radius",
