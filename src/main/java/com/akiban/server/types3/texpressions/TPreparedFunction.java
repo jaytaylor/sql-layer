@@ -51,7 +51,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
     @Override
     public TPreptimeValue evaluateConstant(final QueryContext queryContext) {
-        return overload.evaluateConstant(preptimeContext, new LazyListBase<TPreptimeValue>() {
+        LazyList<TPreptimeValue> lazyInputs = new LazyListBase<TPreptimeValue>() {
             @Override
             public TPreptimeValue get(int i) {
                 return inputs.get(i).evaluateConstant(queryContext);
@@ -61,7 +61,8 @@ public final class TPreparedFunction implements TPreparedExpression {
             public int size() {
                 return inputs.size();
             }
-        });
+        };
+        return overload.evaluateConstant(preptimeContext, overload.filterInputs(lazyInputs));
     }
 
     @Override
@@ -142,7 +143,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
         public TEvaluatableFunction(TValidatedOverload overload,
                                     TInstance resultType,
-                                    List<? extends TEvaluatableExpression> inputs,
+                                    final List<? extends TEvaluatableExpression> inputs,
                                     TExecutionContext context)
         {
             this.overload = overload;
@@ -150,6 +151,24 @@ public final class TPreparedFunction implements TPreparedExpression {
             this.inputValues = new PValueSource[inputs.size()];
             this.context = context;
             resultValue = new PValue(resultType.typeClass().underlyingType());
+            this.evaluations = overload.filterInputs(new LazyListBase<PValueSource>() {
+                @Override
+                public PValueSource get(int i) {
+                    PValueSource value = inputValues[i];
+                    if (value == null) {
+                        TEvaluatableExpression inputExpr = inputs.get(i);
+                        inputExpr.evaluate();
+                        value = inputExpr.resultValue();
+                        inputValues[i] = value;
+                    }
+                    return value;
+                }
+
+                @Override
+                public int size() {
+                    return inputValues.length;
+                }
+            });
         }
 
         private final TValidatedOverload overload;
@@ -157,24 +176,6 @@ public final class TPreparedFunction implements TPreparedExpression {
         private final List<? extends TEvaluatableExpression> inputs;
         private final PValue resultValue;
         private final TExecutionContext context;
-
-        private final LazyList<PValueSource> evaluations = new LazyListBase<PValueSource>() {
-            @Override
-            public PValueSource get(int i) {
-                PValueSource value = inputValues[i];
-                if (value == null) {
-                    TEvaluatableExpression inputExpr = inputs.get(i);
-                    inputExpr.evaluate();
-                    value = inputExpr.resultValue();
-                    inputValues[i] = value;
-                }
-                return value;
-            }
-
-            @Override
-            public int size() {
-                return inputValues.length;
-            }
-        };
+        private final LazyList<? extends PValueSource> evaluations;
     }
 }

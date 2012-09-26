@@ -30,6 +30,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCommutativeOverloads;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
@@ -44,7 +45,6 @@ import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
@@ -53,7 +53,7 @@ import org.joda.time.MutableDateTime;
 
 public class MDateAddSub extends TOverloadBase
 {
-    public static final TOverload[] INSTANCES = new TOverload[]
+    public static final TOverload[] COMMUTATIVE = new TOverload[]
     {
         //ADDDATE
         new MDateAddSub(Helper.DO_ADD, FirstType.DATE, SecondType.DAY, "ADDDATE"),
@@ -82,17 +82,23 @@ public class MDateAddSub extends TOverloadBase
         new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
         
         // ADDTIME
-        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.TIME, "TIME_ADD", "ADDTIME"),
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
-        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
-        new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME_STRING, "SUBTIME"),
         new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS),
         new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.SECONDS),
         new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS),
         new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.SECONDS),
     };
+
+    public static final TOverload[] NON_COMMUTATIVE = new TOverload[]
+    {
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.TIME, "TIME_ADD", "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME_STRING, "SUBTIME"),
+    };
+
+    public static final TCommutativeOverloads COMMUTED = TCommutativeOverloads.createFrom(COMMUTATIVE);
 
     private static class AddSubWithVarchar extends MDateAddSub
     {
