@@ -1508,13 +1508,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             right = new CastExpression(right, 
                                        new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12),
                                        right.getSQLsource());
-        if (col1.equals(op1) && col2.equals(op2) &&
+        if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op3, op4, right),
                                           null, null);
         }
-        if (col1.equals(op3) && col2.equals(op4) &&
+        if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2)) {
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op1, op2, right),
@@ -1538,17 +1538,23 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
-        if (col1.equals(op1) && col2.equals(op2) &&
+        if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4))
             return new FunctionExpression("_center",
                                           Arrays.asList(op3, op4),
                                           null, null);
-        if (col1.equals(op3) && col2.equals(op4) &&
+        if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2))
             return new FunctionExpression("_center",
                                           Arrays.asList(op1, op2),
                                           null, null);
         return null;
+    }
+
+    private static boolean columnMatches(ExpressionNode col, ExpressionNode op) {
+        if (op instanceof CastExpression)
+            op = ((CastExpression)op).getOperand();
+        return col.equals(op);
     }
 
     public CostEstimate estimateCostSpatial(SingleIndexScan index) {
