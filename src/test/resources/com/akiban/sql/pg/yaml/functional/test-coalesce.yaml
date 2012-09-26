@@ -5,7 +5,7 @@
 # Test empty list
 ---
 - Statement: SELECT COALESCE() FROM all_types
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
 
 # Test mixed types
 ---
@@ -152,7 +152,7 @@
 
 # clob
 ---
-- CreateTable: clobs (x clob, y clob)
+- CreateTable: !select-engine: { all: "clobs (x clob, y clob)", sys-mysql: "clobs (x text, y text)" } 
 ---
 - Statement: INSERT INTO clobs VALUES (null, null)
 ---

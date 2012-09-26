@@ -52,5 +52,5 @@
 - output: [[''], ['']]
 --- # test wrong arity: excessive arguments
 - Statement: SELECT SUBSTRING('ABC', 1, 2, 3) from all_types;
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1064] } 
 ...

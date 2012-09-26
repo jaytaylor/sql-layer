@@ -5,7 +5,7 @@
 # Test insert with wrong number of values
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1, 2)
-- error: [42512]
+- error: !select-engine { all: [42512], sys-mysql: [1136] }  
 
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (0), (1), (-1),

@@ -1,5 +1,7 @@
 # Smallest test case reproducing bug1053073: Duplicate table ID from create, alter, and renames
-
+---
+- Properties: sys-mysql
+- suppressed: true
 ---
 - Statement: CREATE TABLE "customers" (cid INT NOT NULL PRIMARY KEY);
 ---
