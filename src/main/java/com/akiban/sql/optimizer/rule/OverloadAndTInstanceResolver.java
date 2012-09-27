@@ -505,7 +505,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleSubqueryResultSetExpression(SubqueryResultSetExpression expression) {
-            return boolExpr(expression);
+            TPreptimeValue tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
+            expression.setPreptimeValue(tpv);
+            return expression;
         }
 
         ExpressionNode handleAnyCondition(AnyCondition expression) {
