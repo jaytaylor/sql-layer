@@ -71,6 +71,8 @@ public class ResultSet extends BasePlanWithInput
 
         public void setTInstance(TInstance TInstance) {
             this.TInstance = TInstance;
+            if (sqlType == null)
+                sqlType = tInstance.dataTypeDescriptor();
         }
 
         @Override
