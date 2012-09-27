@@ -138,7 +138,7 @@ public final class OverloadResolver {
                 }
                 else if (inputClass == common) {
                     // saw the same TClass as before, so pick it
-                    commonInst = common.pickInstance(commonInst, inputInstance);
+                    commonInst = (commonInst == null) ? inputInstance : common.pickInstance(commonInst, inputInstance);
                 }
                 else {
                     // Saw a different TCLass as before, so need to cast one of them. We'll get the new common type,
@@ -159,12 +159,16 @@ public final class OverloadResolver {
                     }
                     else if (newCommon != common) { // case #3
                         common = newCommon;
-                        commonInst = common.instance();
+                        commonInst = null;
                     }
                     // else if (newCommon = common), we don't need this because there's nothing to do in this case
                 }
             }
-            return commonInst;
+            if (common == null)
+                throw new OverloadException("couldn't resolve type for " + inputSet + " with " + inputs);
+            return (commonInst == null)
+                ? common.instance()
+                : commonInst;
         }
 
         public TValidatedOverload getOverload() {
