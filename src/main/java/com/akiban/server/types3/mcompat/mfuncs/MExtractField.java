@@ -166,7 +166,8 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) ymd[MDatetimes.HOUR_INDEX];
+                // select hour('-10:10:10') should just return 10
+                return Math.abs((int) ymd[MDatetimes.HOUR_INDEX]);
             }
         },
         new MExtractField("MINUTE", MDatetimes.TIME, Decoder.TIME)

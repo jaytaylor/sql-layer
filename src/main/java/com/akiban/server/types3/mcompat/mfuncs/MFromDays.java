@@ -36,6 +36,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 public class MFromDays extends TOverloadBase
 {
@@ -43,8 +45,8 @@ public class MFromDays extends TOverloadBase
     
     private MFromDays(){};
 
-    private static final long BEGINNING = MDatetimes.getTimestamp(new long[]{0, 1, 1, 0, 0, 0},
-                                                                  "UTC");
+    private static final long BEGINNING = new DateTime(0, 1, 1,
+                                                       0, 0, 0, DateTimeZone.UTC).getMillis();
     private  static final long FACTOR = 3600L * 1000 * 24;
 
     @Override
@@ -59,7 +61,7 @@ public class MFromDays extends TOverloadBase
         long val = inputs.get(0).getInt64();
         output.putInt32( val < 366
                 ? 0
-                : MDatetimes.encodeDate(val * FACTOR + BEGINNING, context.getCurrentTimezone()));
+                : MDatetimes.encodeDate(val * FACTOR + BEGINNING, "UTC"));
     }
 
     @Override

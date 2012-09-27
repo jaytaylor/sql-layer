@@ -276,8 +276,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     TClass topClass = tclass(instances[field]);
                     TClass botClass = tclass(botInstance);
 
-                    TClass common = resolver.commonTClass(topClass, botClass);
-                    if (common == null) {
+                    TClass commonTClass = resolver.commonTClass(topClass, botClass);
+                    if (commonTClass == null) {
                         throw new AkibanInternalException("no common type found found between row " + (rownum-1)
                         + " and " + rownum + " at field " + field);
                     }
@@ -288,9 +288,20 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
                     Boolean topIsNullable = (instances[field] == null) ? null : instances[field].nullability();
                     Boolean botIsNullable = botInstance.nullability();
-                    if (topClass != common){
-                        TInstance instance = (botClass == common) ? botInstance : common.instance();
-                        instances[field] = instance;
+                    // need to set a new instances[field]. Rules:
+                    // - if topClass and botClass are the same as common, use picking algorithm
+                    // - else, if one of them == commonTClass, use topInstance or botInstance (whichever is == common)
+                    // - else, use commonTClass.instance()
+                    boolean topIsCommon = (topClass == commonTClass);
+                    boolean botIsCommon = (botClass == commonTClass);
+                    if (topIsCommon && botIsCommon) {
+                        instances[field] = topClass.pickInstance(instances[field], botInstance);
+                    }
+                    else if (botIsCommon) {
+                        instances[field] = botInstance;
+                    }
+                    else if (!topIsCommon) { // this of this as "else if (topIsBottom) { <noop> } else { ..."
+                        instances[field] = commonTClass.instance();
                     }
 
                     // See if the top instance is not nullable but should be
@@ -503,9 +514,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         ExpressionNode handleComparisonCondition(ComparisonCondition expression) {
             ExpressionNode left = expression.getLeft();
             ExpressionNode right = expression.getRight();
-            TClass leftTClass = tclass(left);
-            TClass rightTClass = tclass(right);
-            if (leftTClass != rightTClass) {
+            TInstance leftTInst = tinst(left);
+            TInstance rightTInst = tinst(right);
+            if (TClass.comparisonNeedsCasting(leftTInst, rightTInst)) {
                 boolean needCasts = true;
                 if ( (left.getClass() == ColumnExpression.class)&& (right.getClass() == ConstantExpression.class)) {
                     // Left is a Column, right is a Constant. Ideally, we'd like to keep the Column as a Column,
@@ -513,7 +524,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     // So, try to cast the const to the column's type. To do this, CAST(Const -> Column) must be
                     // indexFriendly, *and* casting this result back to the original Const type must equal the same
                     // const.
-                    if (resolver.getRegistry().isIndexFriendly(leftTClass, rightTClass)) {
+                    if (resolver.getRegistry().isIndexFriendly(tclass(leftTInst), tclass(rightTInst))) {
                         TInstance columnType = tinst(left);
                         TInstance constType = tinst(right);
                         TCast constToCol = resolver.getTCast(constType, columnType);
@@ -526,7 +537,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                                         ? null
                                         : new TPreptimeValue(columnType, asColType);
                                 PValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
-                                if (PValueSources.areEqual(constValue.value(), backToConstType)) {
+                                if (PValueSources.areEqual(constValue.value(), backToConstType, constType)) {
                                     TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
                                     ConstantExpression constCasted = new ConstantExpression(constTpv);
                                     expression.setRight(constCasted);
