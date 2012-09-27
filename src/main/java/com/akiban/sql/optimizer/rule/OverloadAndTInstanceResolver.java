@@ -88,6 +88,8 @@ import com.akiban.sql.optimizer.plan.TypedPlan;
 import com.akiban.sql.optimizer.plan.UpdateStatement;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
+import com.akiban.sql.optimizer.rule.PlanContext.WhiteboardMarker;
+import com.akiban.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.util.SparseArray;
 import com.google.common.base.Objects;
@@ -111,9 +113,17 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     public void apply(PlanContext plan) {
         NewFolder folder = new NewFolder(plan);
         ResolvingVistor resolvingVistor = new ResolvingVistor(plan, folder);
+        plan.putWhiteboard(RESOLVER_MARKER, resolvingVistor);
         resolvingVistor.resolve(plan.getPlan());
         new TopLevelCastingVistor(folder, resolvingVistor.parametersSync).apply(plan.getPlan());
         plan.getPlan().accept(ParameterCastInliner.instance);
+    }
+
+    public static final WhiteboardMarker<ExpressionRewriteVisitor> RESOLVER_MARKER = 
+        new DefaultWhiteboardMarker<ExpressionRewriteVisitor>();
+
+    public static ExpressionRewriteVisitor getResolver(PlanContext plan) {
+        return plan.getWhiteboard(RESOLVER_MARKER);
     }
 
     static class ResolvingVistor implements PlanVisitor, ExpressionRewriteVisitor {
