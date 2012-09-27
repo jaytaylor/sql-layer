@@ -42,7 +42,7 @@ public class InsertStatement extends BaseUpdateStatement
                            TableSource table,
                            List<ResultField> results,
                            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, table, results, columnEquivalencies);
+        super(query, StatementType.INSERT, targetTable, table, results, columnEquivalencies);
         this.targetColumns = targetColumns;
     }
 

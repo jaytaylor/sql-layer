@@ -60,17 +60,11 @@ public class UpdateStatement extends BaseUpdateStatement
     private List<UpdateColumn> updateColumns;
 
     public UpdateStatement(PlanNode query, TableNode targetTable,
-                           List<UpdateColumn> updateColumns,
-                           EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, null, null, columnEquivalencies);
-        this.updateColumns = updateColumns;
-    }
-    public UpdateStatement(PlanNode query, TableNode targetTable,
             List<UpdateColumn> updateColumns,
                            TableSource table,
                            List<ResultField> results,
             EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, table, results, columnEquivalencies);
+        super(query, StatementType.UPDATE, targetTable, table, results, columnEquivalencies);
         this.updateColumns = updateColumns;
     }
 

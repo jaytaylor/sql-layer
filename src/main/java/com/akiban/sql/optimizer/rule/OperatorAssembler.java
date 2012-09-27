@@ -592,15 +592,8 @@ public class OperatorAssembler extends BaseRule
             if (plan instanceof SelectQuery) {
                 SELECT_COUNT.hit();
                 return selectQuery((SelectQuery)plan);
-            } else if (plan instanceof InsertStatement) {
-                INSERT_COUNT.hit();
-                return dmlStatement((InsertStatement)plan);
-            } else if (plan instanceof UpdateStatement) {
-                UPDATE_COUNT.hit();
-                return dmlStatement((UpdateStatement)plan);
-            } else if (plan instanceof DeleteStatement) {
-                DELETE_COUNT.hit();
-                return dmlStatement((DeleteStatement)plan);
+            } else if (plan instanceof BaseUpdateStatement) {
+                return dmlStatement ((BaseUpdateStatement)plan);
             } else
                 throw new UnsupportedSQLException("Cannot assemble plan: " + plan, null);
         }
@@ -622,14 +615,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected PhysicalUpdate dmlStatement (BaseUpdateStatement statement) {
-            Project project = statement.getReturingProject();
             
-            RowStream stream = null;
-            if (project != null) {
-                stream = assembleStream(project);
-            } else {
-                stream = assembleStream (statement);
-            }
+            PlanNode planQuery = statement.getQuery();
+            RowStream stream = assembleStream(planQuery);
             
             //If we're returning results we need the resultColumns,
             // including names and types for returning to the user.

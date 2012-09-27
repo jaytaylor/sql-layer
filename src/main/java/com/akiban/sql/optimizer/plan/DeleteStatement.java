@@ -39,6 +39,6 @@ public class DeleteStatement extends BaseUpdateStatement
                             TableSource table,
                             List<ResultField> results,
                            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, table, results, columnEquivalencies);
+        super(query, StatementType.DELETE, targetTable, table, results, columnEquivalencies);
     }
 }

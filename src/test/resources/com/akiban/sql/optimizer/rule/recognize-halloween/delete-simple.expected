@@ -1,6 +1,7 @@
-DeleteStatement@1da781d1(t)
-  Select@603bcf8c[]
-    Flatten@3ccda037(t)
-      AncestorLookup@5fd19a10(t -> [t])
-        SingleIndexScan@39d9c195(Index(test.t.t_n[IndexColumn(n)]), NONE, <100, rows = 1, cost = 12.2006)
-        TableSource@4b387a81(t - TableGroup@7343adf(t))
+BaseUpdateStatement@1013efba(t)
+  DeleteStatement@cdfa495(t)
+    Select@2eae38cd[]
+      Flatten@2b2f12e5(t)
+        AncestorLookup@1f818e89(t -> [t])
+          SingleIndexScan@72b4d487(Index(test.t.t_n[IndexColumn(n)]), NONE, <100, rows = 1, cost = 12.2006)
+          TableSource@69753c17(t - TableGroup@3ded25e6(t))

@@ -62,30 +62,40 @@ public class HalloweenRecognizer extends BaseRule
             TableNode targetTable = stmt.getTargetTable();
             boolean requireStepIsolation = false;
             Set<Column> updateColumns = new HashSet<Column>();
-            update:
-            if (stmt instanceof UpdateStatement) {
-                for (UpdateStatement.UpdateColumn updateColumn : ((UpdateStatement)stmt).getUpdateColumns()) {
-                    updateColumns.add(updateColumn.getColumn());
-                }
-                for (Column pkColumn : targetTable.getTable().getPrimaryKeyIncludingInternal().getColumns()) {
-                    if (updateColumns.contains(pkColumn)) {
-                        requireStepIsolation = true;
-                        break update;
+            
+            if (stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
+                BasePlanWithInput node = stmt;
+                do {
+                    node = (BasePlanWithInput) node.getInput();
+                } while (node != null && !(node instanceof UpdateStatement));
+                assert node != null;
+                
+                UpdateStatement updateStmt = (UpdateStatement)node;
+                
+                update: { 
+                    for (UpdateStatement.UpdateColumn updateColumn : updateStmt.getUpdateColumns()) {
+                        updateColumns.add(updateColumn.getColumn());
                     }
-                }
-                Join parentJoin = targetTable.getTable().getParentJoin();
-                if (parentJoin != null) {
-                    for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
-                        if (updateColumns.contains(joinColumn.getChild())) {
+                    for (Column pkColumn : targetTable.getTable().getPrimaryKeyIncludingInternal().getColumns()) {
+                        if (updateColumns.contains(pkColumn)) {
                             requireStepIsolation = true;
                             break update;
+                        }
+                    }
+                    Join parentJoin = targetTable.getTable().getParentJoin();
+                    if (parentJoin != null) {
+                        for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
+                            if (updateColumns.contains(joinColumn.getChild())) {
+                                requireStepIsolation = true;
+                                break update;
+                            }
                         }
                     }
                 }
             }
             if (!requireStepIsolation) {
                 Checker checker = new Checker(targetTable,
-                                              (stmt instanceof InsertStatement) ? 0 : 1,
+                                              (stmt.getType() == BaseUpdateStatement.StatementType.INSERT) ? 0 : 1,
                                               updateColumns);
                 requireStepIsolation = checker.check(stmt.getQuery());
             }

@@ -154,7 +154,7 @@ public class ASTStatementLoader extends BaseRule
         }
 
         // UPDATE
-        protected UpdateStatement toUpdateStatement(UpdateNode updateNode)
+        protected BaseUpdateStatement toUpdateStatement(UpdateNode updateNode)
                 throws StandardException {
             ResultSetNode rs = updateNode.getResultSetNode();
             PlanNode query = toQuery((SelectNode)rs);
@@ -171,20 +171,17 @@ public class ASTStatementLoader extends BaseRule
             ReturningValues values = calculateReturningValues (updateNode.getReturningList(),
                         (FromTable)updateNode.getUserData(),
                         targetTable.getTable().getColumns().size());
-            UpdateStatement update = new UpdateStatement(query, targetTable, 
+            query = new UpdateStatement(query, targetTable, 
                         updateColumns, values.table, values.results, peekEquivalenceFinder()); 
 
             if (values.row != null) {
-                Project project = new Project (update, values.row);
-                update.setReturningProject(project);
+                query = new Project (query, values.row);
             }
-            return update;
-
-            //return new UpdateStatement(query, targetTable, updateColumns, peekEquivalenceFinder());
+            return new BaseUpdateStatement (query, BaseUpdateStatement.StatementType.UPDATE, targetTable, values.table, values.results, peekEquivalenceFinder());
         }
 
         // INSERT
-        protected InsertStatement toInsertStatement(InsertNode insertNode)
+        protected BaseUpdateStatement toInsertStatement(InsertNode insertNode)
                 throws StandardException {
             PlanNode query = toQueryForSelect(insertNode.getResultSetNode(),
                                               insertNode.getOrderByList(),
@@ -221,18 +218,17 @@ public class ASTStatementLoader extends BaseRule
                                 (FromTable)insertNode.getUserData(),
                                 targetTable.getTable().getColumns().size());
             
-            InsertStatement insert = new InsertStatement (query, targetTable, 
+            query = new InsertStatement (query, targetTable, 
                     targetColumns, values.table, values.results, peekEquivalenceFinder());
             if (values.row != null) {
-                Project project = new Project (insert, values.row);
-                insert.setReturningProject(project);
+                query = new Project (query, values.row);
             }
-            return insert;
+            return new BaseUpdateStatement (query, BaseUpdateStatement.StatementType.INSERT, targetTable, values.table, values.results, peekEquivalenceFinder());
         }
     
         
         // DELETE
-        protected DeleteStatement toDeleteStatement(DeleteNode deleteNode)
+        protected BaseUpdateStatement toDeleteStatement(DeleteNode deleteNode)
                 throws StandardException {
             PlanNode query = toQuery((SelectNode)deleteNode.getResultSetNode());
             TableNode targetTable = getTargetTable(deleteNode);
@@ -241,13 +237,12 @@ public class ASTStatementLoader extends BaseRule
                                         (FromTable)deleteNode.getUserData(),
                                         targetTable.getTable().getColumns().size());
             
-            DeleteStatement delete = new DeleteStatement(query, targetTable, values.table, 
+            query = new DeleteStatement(query, targetTable, values.table, 
                                 values.results, peekEquivalenceFinder());
             if (values.row != null) {
-                Project project = new Project (delete, values.row);
-                delete.setReturningProject(project);
+                query = new Project (query, values.row);
             }
-            return delete;
+            return new BaseUpdateStatement(query, BaseUpdateStatement.StatementType.DELETE, targetTable, values.table, values.results, peekEquivalenceFinder());
         }
         
         private class ReturningValues {

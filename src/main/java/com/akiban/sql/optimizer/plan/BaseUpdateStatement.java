@@ -35,17 +35,25 @@ import com.akiban.sql.optimizer.rule.EquivalenceFinder;
  */
 public class BaseUpdateStatement extends BaseStatement
 {
+    public enum StatementType {
+        DELETE,
+        INSERT,
+        UPDATE
+    }
+    
     private TableNode targetTable;
     private boolean requireStepIsolation;
     private Project returningProject;
     private List<ResultField> results;
     private TableSource table;
-
-    protected BaseUpdateStatement(PlanNode query, TableNode targetTable,
+    private final StatementType type;
+    
+    public BaseUpdateStatement(PlanNode query, StatementType type, TableNode targetTable,
                                     TableSource table,
                                     List<ResultField> results,
                                     EquivalenceFinder<ColumnExpression> columnEquivalencies) {
         super(query, columnEquivalencies);
+        this.type = type;
         this.targetTable = targetTable;
         this.table = table;
         this.results = results;
@@ -78,6 +86,9 @@ public class BaseUpdateStatement extends BaseStatement
         return table;
     }
 
+    public StatementType getType() {
+        return type;
+    }
 
     @Override
     public String summaryString() {

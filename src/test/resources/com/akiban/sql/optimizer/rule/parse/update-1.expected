@@ -1,3 +1,4 @@
-UpdateStatement@2830ae41(items[items.sku = ABCX])
-  Select@14004204[items.sku == ABCD]
-    TableSource@1cee1ede(items)
+BaseUpdateStatement@6391b24a(items)
+  UpdateStatement@72504b57(items[items.sku = ABCX])
+    Select@75827762[items.sku == ABCD]
+      TableSource@486bff33(items)

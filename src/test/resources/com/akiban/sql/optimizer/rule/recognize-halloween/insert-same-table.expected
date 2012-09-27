@@ -1,4 +1,5 @@
-InsertStatement@4b5e61da(t[t.id, t.n], HALLOWEEN)
-  Project@216a55de[plus(t.id,100), t.n]
-    Select@4c2b72f5[]
-      SingleIndexScan@7ab72e51(Index(test.t.t_n[IndexColumn(n)]), covering/NONE, rows = 1, cost = 6.02560)
+BaseUpdateStatement@675f99d2(t, HALLOWEEN)
+  InsertStatement@356bdf03(t[t.id, t.n])
+    Project@3cfe595b[plus(t.id,100), t.n]
+      Select@5e9c84a5[]
+        SingleIndexScan@584a34d0(Index(test.t.t_n[IndexColumn(n)]), covering/NONE, rows = 1, cost = 6.02560)

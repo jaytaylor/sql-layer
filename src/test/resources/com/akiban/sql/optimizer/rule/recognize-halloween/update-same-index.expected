@@ -1,6 +1,7 @@
-UpdateStatement@621a2deb(t[t.n = plus(t.n,1)], HALLOWEEN)
-  Select@24bcd19e[]
-    Flatten@45fd2247(t)
-      AncestorLookup@6dd58736(t -> [t])
-        SingleIndexScan@5da0228f(Index(test.t.t_n[IndexColumn(n)]), NONE, >1, rows = 1, cost = 12.2006)
-        TableSource@30fcba4c(t - TableGroup@3c3d0a4e(t))
+BaseUpdateStatement@2db2822c(t, HALLOWEEN)
+  UpdateStatement@22802e24(t[t.n = plus(t.n,1)])
+    Select@d554f2e[]
+      Flatten@27d49732(t)
+        AncestorLookup@7612680b(t -> [t])
+          SingleIndexScan@326ce6bc(Index(test.t.t_n[IndexColumn(n)]), NONE, >1, rows = 1, cost = 12.2006)
+          TableSource@4e762a52(t - TableGroup@ba05a81(t))

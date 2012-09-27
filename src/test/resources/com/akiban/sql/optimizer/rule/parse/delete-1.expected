@@ -1,3 +1,4 @@
-DeleteStatement@6a969c29(child)
-  Select@45e67e6a[]
-    TableSource@1f758500(child)
+BaseUpdateStatement@31802376(child)
+  DeleteStatement@5398315d(child)
+    Select@2cd0fb8b[]
+      TableSource@4c3279a9(child)
