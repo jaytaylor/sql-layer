@@ -26,7 +26,6 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.rule.BaseRule;
@@ -43,9 +42,10 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserContext;
 
-import com.akiban.server.error.SQLParserInternalException;
-
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.error.SQLParserInternalException;
+import com.akiban.server.service.functions.FunctionsRegistry;
+import com.akiban.server.t3expressions.OverloadResolver;
 
 import java.util.List;
 
@@ -57,7 +57,7 @@ public class OperatorCompiler extends SchemaRulesContext
     protected SQLParserContext parserContext;
     protected NodeFactory nodeFactory;
     protected AISBinder binder;
-    protected AISTypeComputer typeComputer;
+    protected FunctionsTypeComputer typeComputer;
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
     protected DistinctEliminator distinctEliminator;
@@ -82,6 +82,12 @@ public class OperatorCompiler extends SchemaRulesContext
     protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
         super.initFunctionsRegistry(functionsRegistry);
         typeComputer = new FunctionsTypeComputer(functionsRegistry);
+    }
+
+    @Override
+    protected void initOverloadResolver(OverloadResolver overloadResolver) {
+        super.initOverloadResolver(overloadResolver);
+        typeComputer.setUseComposers(false);
     }
 
     @Override
