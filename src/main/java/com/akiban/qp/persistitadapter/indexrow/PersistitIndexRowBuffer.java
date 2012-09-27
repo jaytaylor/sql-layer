@@ -350,9 +350,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     protected void attach(PersistitKeyPValueSource source, int position, PUnderlying type)
     {
-        if (index.isSpatial()) {
-            throw new UnsupportedOperationException("Spatial indexes don't implement types3 yet");
-        }
         if (position < pKeyFields) {
             source.attach(pKey, position, type);
         } else {

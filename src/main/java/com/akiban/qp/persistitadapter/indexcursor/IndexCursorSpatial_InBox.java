@@ -45,6 +45,10 @@ import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -106,13 +110,24 @@ class IndexCursorSpatial_InBox extends IndexCursor
         zOrdering.append(Expressions.field(keyRange.indexRowType().physicalRowType(), 0), true);
         for (IndexKeyRange zKeyRange : zKeyRanges(context, keyRange)) {
             IndexScanRowState rowState = new IndexScanRowState(adapter, keyRange.indexRowType());
-            IndexCursorUnidirectional<ValueSource> zIntervalCursor =
-                new IndexCursorUnidirectional<ValueSource>(context,
-                                                           rowState,
-                                                           zKeyRange,
-                                                           zOrdering,
-                                                           OldExpressionsSortKeyAdapter.INSTANCE);
-            multiCursor.addCursor(zIntervalCursor);
+            if (Types3Switch.ON) {
+                IndexCursorUnidirectional<PValueSource> zIntervalCursor =
+                    new IndexCursorUnidirectional<PValueSource>(context,
+                                                                rowState,
+                                                                zKeyRange,
+                                                                zOrdering,
+                                                                PValueSortKeyAdapter.INSTANCE);
+                multiCursor.addCursor(zIntervalCursor);
+            }
+            else {
+                IndexCursorUnidirectional<ValueSource> zIntervalCursor =
+                    new IndexCursorUnidirectional<ValueSource>(context,
+                                                               rowState,
+                                                               zKeyRange,
+                                                               zOrdering,
+                                                               OldExpressionsSortKeyAdapter.INSTANCE);
+                multiCursor.addCursor(zIntervalCursor);
+            }
         }
     }
 
@@ -126,10 +141,21 @@ class IndexCursorSpatial_InBox extends IndexCursor
         BoundExpressions hiExpressions = hiBound.boundExpressions(context);
         SpaceLatLon space = (SpaceLatLon) ((TableIndex)index).space();
         // Only 2d, lat/lon supported for now
-        BigDecimal xLo = loExpressions.eval(0).getDecimal();
-        BigDecimal xHi = hiExpressions.eval(0).getDecimal();
-        BigDecimal yLo = loExpressions.eval(1).getDecimal();
-        BigDecimal yHi = hiExpressions.eval(1).getDecimal();
+        BigDecimal xLo, xHi, yLo, yHi;
+        if (Types3Switch.ON) {
+            // This assumes that value is always cached. If not, would need a TInstance
+            // of DECIMAL(10,6) or something to pass to MBigDecimal.getWrapper().
+            xLo = ((BigDecimalWrapper)loExpressions.pvalue(0).getObject()).asBigDecimal();
+            xHi = ((BigDecimalWrapper)hiExpressions.pvalue(0).getObject()).asBigDecimal();
+            yLo = ((BigDecimalWrapper)loExpressions.pvalue(1).getObject()).asBigDecimal();
+            yHi = ((BigDecimalWrapper)hiExpressions.pvalue(1).getObject()).asBigDecimal();
+        }
+        else {
+            xLo = loExpressions.eval(0).getDecimal();
+            xHi = hiExpressions.eval(0).getDecimal();
+            yLo = loExpressions.eval(1).getDecimal();
+            yHi = hiExpressions.eval(1).getDecimal();
+        }
         BoxLatLon box = BoxLatLon.newBox(xLo, xHi, yLo, yHi);
         long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
         space.decompose(box, zValues);
@@ -138,14 +164,26 @@ class IndexCursorSpatial_InBox extends IndexCursor
             if (z != -1L) {
                 IndexRowType physicalRowType = keyRange.indexRowType().physicalRowType();
                 // lo bound of z
-                ValuesHolderRow zLoRow = new ValuesHolderRow(physicalRowType, false);
-                zLoRow.holderAt(0).expectType(AkType.LONG);
-                zLoRow.holderAt(0).putLong(space.zLo(z));
+                ValuesHolderRow zLoRow = new ValuesHolderRow(physicalRowType, Types3Switch.ON);
+                if (Types3Switch.ON) {
+                    zLoRow.pvalueAt(0).underlying(PUnderlying.INT_64);
+                    zLoRow.pvalueAt(0).putInt64(space.zLo(z));
+                }
+                else {
+                    zLoRow.holderAt(0).expectType(AkType.LONG);
+                    zLoRow.holderAt(0).putLong(space.zLo(z));
+                }
                 IndexBound zLo = new IndexBound(zLoRow, Z_SELECTOR);
                 // hi bound of z
-                ValuesHolderRow zHiRow = new ValuesHolderRow(physicalRowType, false);
-                zHiRow.holderAt(0).expectType(AkType.LONG);
-                zHiRow.holderAt(0).putLong(space.zHi(z));
+                ValuesHolderRow zHiRow = new ValuesHolderRow(physicalRowType, Types3Switch.ON);
+                if (Types3Switch.ON) {
+                    zHiRow.pvalueAt(0).underlying(PUnderlying.INT_64);
+                    zHiRow.pvalueAt(0).putInt64(space.zHi(z));
+                }
+                else {
+                    zHiRow.holderAt(0).expectType(AkType.LONG);
+                    zHiRow.holderAt(0).putLong(space.zHi(z));
+                }
                 IndexBound zHi = new IndexBound(zHiRow, Z_SELECTOR);
                 IndexKeyRange zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);
                 zKeyRanges.add(zKeyRange);

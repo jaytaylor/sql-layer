@@ -40,6 +40,8 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
@@ -422,10 +424,14 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         if (keyRange.indexRowType().index().isSpatial()) {
             // This is a cursor created on behalf of a spatial index. There should be only one key column,
             // a z-value of type long.
-            // TODO: types3
             if (startBoundColumns == 1) {
-                types[0] = AkType.LONG;
-                collators[0] = null;
+                if (Types3Switch.ON) {
+                    tInstances[0] = MNumeric.BIGINT.instance();
+                }
+                else {
+                    types[0] = AkType.LONG;
+                    collators[0] = null;
+                }
             } else {
                 // Unbounded scan of spatial index
                 assert startBoundColumns == 0;
