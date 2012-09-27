@@ -75,7 +75,23 @@ public final class MBinary extends SimpleDtdTClass {
             out.putNull();
             return;
         }
-        byte[] bytes = in.getBytes();
+        
+        byte[] bytes;
+        PUnderlying underlying = in.getUnderlyingType();
+        if (underlying == PUnderlying.BYTES) {
+            bytes = in.getBytes();
+        }
+        else if (underlying == PUnderlying.STRING) {
+            try {
+                bytes = in.getString().getBytes("utf8");
+            } catch (UnsupportedEncodingException e) {
+                throw new AkibanInternalException("while converting to bytes: " + in.getString(), e);
+            }
+        }
+        else {
+            throw new AkibanInternalException("couldn't convert to byte[]: " + in);
+        }
+
         int expectedLength = context.outputTInstance().attribute(Attrs.LENGTH);
         if (bytes.length > expectedLength)
         {

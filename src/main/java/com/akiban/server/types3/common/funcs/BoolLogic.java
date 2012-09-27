@@ -35,6 +35,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -126,8 +127,9 @@ public class BoolLogic extends TOverloadBase
     }
 
     @Override
-    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
+    protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
         // For non-const inputs, only the second arg can make the whole exprsesion NOT_CONST.
+        PValueSource preptimeValue = constSource(values, inputIndex);
         if (preptimeValue == null)
             return (inputIndex == 0) ? Constantness.UNKNOWN : Constantness.NOT_CONST;
         Boolean arg = getBoolean(preptimeValue);

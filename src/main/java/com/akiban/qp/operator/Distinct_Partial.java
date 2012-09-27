@@ -273,7 +273,7 @@ class Distinct_Partial extends Operator
                         currentRow.release();
                 }
                 PValueSource inputValue = inputRow.pvalue(i);
-                if (!PValueSources.areEqual(currentPValues[i], inputValue)) {
+                if (!PValueSources.areEqual(currentPValues[i], inputValue, rowType().typeInstanceAt(i))) {
                     PValueTargets.copyFrom(inputValue, currentPValues[i]);
                     nvalid = i + 1;
                     if (i < nfields - 1)
