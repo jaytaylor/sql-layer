@@ -66,8 +66,9 @@ public final class OverloadResolver {
                 else {
                     TClass targetTClass = inputSet.targetType();
                     if (targetTClass == null)
-                        targetTClass = findCommon(overload, inputSet, inputs);
-                    instance = (targetTClass == null) ? null : targetTClass.instance();
+                        instance = findCommon(overload, inputSet, inputs);
+                    else
+                        instance = findInstance(overload, inputSet, inputs);
                 }
                 if (instance != null) {
                     boolean nullable = nullable(overload,  inputSet, inputs);
@@ -90,11 +91,35 @@ public final class OverloadResolver {
             return false;
         }
 
-        private TClass findCommon(TValidatedOverload overload, TInputSet inputSet,
+        private TInstance findInstance(TValidatedOverload overload, TInputSet inputSet,
+                                       List<? extends TPreptimeValue> inputs)
+        {
+            final TClass targetTClass = inputSet.targetType();
+            assert targetTClass != null;
+
+            TInstance result = null;
+            for (int i = 0, size = inputs.size(); i < size; ++i) {
+                if (overload.inputSetAt(i) != inputSet)
+                    continue;
+                TInstance inputInstance = inputs.get(i).instance();
+                TClass inputClass = (inputInstance == null) ? null : inputInstance.typeClass();
+                if (inputClass == targetTClass) {
+                    result = (result == null)
+                            ? inputInstance
+                            : targetTClass.pickInstance(result, inputInstance);
+                }
+            }
+            if (result == null)
+                result = targetTClass.instance();
+            return result;
+        }
+
+        private TInstance findCommon(TValidatedOverload overload, TInputSet inputSet,
                                   List<? extends TPreptimeValue> inputs)
         {
             assert inputSet.targetType() == null : inputSet; // so we have to look at inputs
             TClass common = null;
+            TInstance commonInst = null;
             for (int i = 0, size = inputs.size(); i < size; ++i) {
                 if (overload.inputSetAt(i) != inputSet)
                     continue;
@@ -105,16 +130,39 @@ public final class OverloadResolver {
                 }
                 TClass inputClass = inputInstance.typeClass();
                 if (common == null) {
+                    // First input we've seen, so just use it.
                     common = inputClass;
+                    commonInst = inputInstance;
+                }
+                else if (inputClass == common) {
+                    // saw the same TClass as before, so pick it
+                    commonInst = common.pickInstance(commonInst, inputInstance);
                 }
                 else {
-                    common = commonTClass(common, inputClass);
-                    if (common == null)
+                    // Saw a different TCLass as before, so need to cast one of them. We'll get the new common type,
+                    // at which point we have exactly one of three possibilities:
+                    //   1) newCommon == [old] common, in which case we'll keep the old TInstance
+                    //   2) newCommon == inputClass, in which case we'll use the inputInstance
+                    //   3) newCommon is neither, in which case we'll generate a new TInstance
+                    // We know that we can't have both #1 and #2, because that would imply [old] common == inputClass,
+                    // which has already been handled.
+                    TClass newCommon = commonTClass(common, inputClass);
+                    if (newCommon == null)
                         throw new OverloadException(overload + ": couldn't find common types for " + inputSet
                             + " with " + inputs);
+
+                    if (newCommon == inputClass) { // case #2
+                        common = newCommon;
+                        commonInst = inputInstance;
+                    }
+                    else if (newCommon != common) { // case #3
+                        common = newCommon;
+                        commonInst = common.instance();
+                    }
+                    // else if (newCommon = common), we don't need this because there's nothing to do in this case
                 }
             }
-            return common;
+            return commonInst;
         }
 
         public TValidatedOverload getOverload() {
