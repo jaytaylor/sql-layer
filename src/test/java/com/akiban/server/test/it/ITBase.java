@@ -105,7 +105,7 @@ public abstract class ITBase extends ApiTestBase {
                 TInstance expectedType = expected.rowType().typeInstanceAt(i);
                 TInstance actualType = actual.rowType().typeInstanceAt(i);
                 assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
-                if (PValueSources.areEqual(expectedField, actualField, expectedType))
+                if (!PValueSources.areEqual(expectedField, actualField, expectedType))
                     return false;
             }
             return true;
