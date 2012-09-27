@@ -71,6 +71,11 @@ public class Coalesce extends TOverloadBase {
     }
 
     @Override
+    protected boolean nullContaminates(int inputIndex) {
+        return false;
+    }
+
+    @Override
     protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
         PValueSource preptimeValue = constSource(values, inputIndex);
         if (preptimeValue == null)
