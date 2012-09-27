@@ -64,9 +64,16 @@ public class MConvertTZ extends TOverloadBase
             output.putNull();
         else
         {
-            DateTimeZone fromTz = adjustTz(inputs.get(1).getString());
-            DateTimeZone toTz = adjustTz(inputs.get(2).getString());
-
+            DateTimeZone fromTz;
+            DateTimeZone toTz;
+            try {
+                fromTz = adjustTz(inputs.get(1).getString());
+                toTz = adjustTz(inputs.get(2).getString());
+            }
+            catch (IllegalArgumentException e) {
+                output.putNull();
+                return;
+            }
             DateTime date = new DateTime((int) ymd[YEAR_INDEX],
                                          (int) ymd[MONTH_INDEX],
                                          (int) ymd[DAY_INDEX],
@@ -103,7 +110,7 @@ public class MConvertTZ extends TOverloadBase
      * @param st
      * @return 
      */
-    static DateTimeZone adjustTz(String st)
+    private static DateTimeZone adjustTz(String st)
     {
         for ( int n = 0; n < st.length(); ++n)
         {

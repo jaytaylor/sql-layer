@@ -595,7 +595,7 @@ final class Aggregate_Partial extends Operator
                     for (int i = 0; i < keyPValues.size(); ++i) {
                         PValue key = keyPValues.get(i);
                         PValueSource input = givenInput.pvalue(i);
-                        if (!PValueSources.areEqual(key, input)) {
+                        if (!PValueSources.areEqual(key, input, inputRowType.typeInstanceAt(i))) {
                             cursorState = CursorState.OPENING;
                             return true;
                         }

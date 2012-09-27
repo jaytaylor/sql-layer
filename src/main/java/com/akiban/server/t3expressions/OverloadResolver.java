@@ -385,7 +385,9 @@ public final class OverloadResolver {
         if (pickingSet == null) {
             return null;
         }
-        TClass common = null; // TODO change to TInstance, so we can more precisely pick instances
+        TClass common = pickingSet.targetType(); // TODO change to TInstance, so we can more precisely pick instances
+        if (common != null)
+            return common.instance();
         for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i+1)) {
             TInstance instance = inputs.get(i).instance();
             if (instance != null) {
