@@ -144,6 +144,10 @@ public final class TValidatedOverload implements TOverload {
         return varargs;
     }
 
+    public boolean isVararg() {
+        return varargs != null;
+    }
+
     public TInputSet inputSetAt(int index) {
         if(index >= inputSetsByPos.size()) {
             if(varargs == null) {

@@ -52,24 +52,18 @@ public final class OverloadResolver {
         private TValidatedOverload overload;
         private Map<TInputSet, TInstance> instances;
 
-        private OverloadResult(TValidatedOverload overload, TInstance pickedInstance,
-                               List<? extends TPreptimeValue> inputs)
+        private OverloadResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs)
         {
             this.overload = overload;
             List<TInputSet> inputSets = overload.inputSets();
             this.instances = new HashMap<TInputSet, TInstance>(inputSets.size());
             for (TInputSet inputSet : inputSets) {
                 final TInstance instance;
-                if (inputSet.isPicking()) {
-                    instance = pickedInstance;
-                }
-                else {
-                    TClass targetTClass = inputSet.targetType();
-                    if (targetTClass == null)
-                        instance = findCommon(overload, inputSet, inputs);
-                    else
-                        instance = findInstance(overload, inputSet, inputs);
-                }
+                TClass targetTClass = inputSet.targetType();
+                if (targetTClass == null)
+                    instance = findCommon(overload, inputSet, inputs);
+                else
+                    instance = findInstance(overload, inputSet, inputs);
                 if (instance != null) {
                     boolean nullable = nullable(overload,  inputSet, inputs);
                     instance.setNullable(nullable);
@@ -120,9 +114,13 @@ public final class OverloadResolver {
             assert inputSet.targetType() == null : inputSet; // so we have to look at inputs
             TClass common = null;
             TInstance commonInst = null;
+            int lastPositionalInput = overload.positionalInputs();
+            boolean notVararg = ! overload.isVararg();
             for (int i = 0, size = inputs.size(); i < size; ++i) {
                 if (overload.inputSetAt(i) != inputSet)
                     continue;
+                if (notVararg && (i >= lastPositionalInput))
+                    break;
                 TInstance inputInstance = inputs.get(i).instance();
                 if (inputInstance == null) {
                     // unknown type, like a NULL literal or parameter
@@ -424,39 +422,7 @@ public final class OverloadResolver {
     }
 
     private OverloadResult buildResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
-        TInstance pickingInstance = pickingInstance(overload, inputs);
-        return new OverloadResult(overload, pickingInstance, inputs);
-    }
-
-    private TInstance pickingInstance(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
-        TInputSet pickingSet = overload.pickingInputSet();
-        if (pickingSet == null) {
-            return null;
-        }
-        TClass common = pickingSet.targetType(); // TODO change to TInstance, so we can more precisely pick instances
-        if (common != null)
-            return common.instance();
-        for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i+1)) {
-            TInstance instance = inputs.get(i).instance();
-            if (instance != null) {
-                common = commonTClass(common, instance.typeClass());
-                if (common == null)
-                    throw new OverloadException(overload.displayName());
-            }
-        }
-        if (pickingSet.coversRemaining()) {
-            for (int i = overload.firstVarargInput(), last = inputs.size(); i < last; ++i) {
-                TInstance instance = inputs.get(i).instance();
-                if (instance != null) {
-                    common = commonTClass(common, instance.typeClass());
-                    if (common == null)
-                        throw new OverloadException(overload.displayName());
-                }
-            }
-        }
-        if (common == null)
-            throw new OverloadException(overload.displayName());
-        return common.instance();
+        return new OverloadResult(overload, inputs);
     }
 
     /*
