@@ -53,7 +53,6 @@ import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
-
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -562,7 +561,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                             d == 0
                             ? SpaceLatLon.scaleLat(rowDataValueSource.getDecimal())
                             : SpaceLatLon.scaleLon(rowDataValueSource.getDecimal());
-                            break;
+                        break;
                     default:
                         assert false : fieldDefs[d].column();
                         break;
