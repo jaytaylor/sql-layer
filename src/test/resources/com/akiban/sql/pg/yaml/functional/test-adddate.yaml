@@ -8,7 +8,7 @@
 - output: [[!re '2008-02-02 00:00:00([.]0)?']]
 ---
 - Statement: select ADDDATE(DATE('2008-01-02'), 31.5) from all_types;
-- output: [[!re '2008-02-02 12:00:00([.]0)?']]
+- output: !select-engine { all: [[!re '2008-02-02 12:00:00([.]0)?']], newtypes: [['2008-02-03 00:00:00.0']] }
 ---
 - Statement: SELECT ADDDATE(DATE('2008-01-02'), 31) from all_types;
 - output: [['2008-02-02']]
