@@ -1,4 +1,4 @@
-BaseUpdateStatement@6248fe00(items)
+DMLStatement@53720a2(items)
   UpdateStatement@261be469(items[items.quan = Subquery@7130bd0a])
     Select@36cb1594[]
       TableSource@4ef5c3a6(items)

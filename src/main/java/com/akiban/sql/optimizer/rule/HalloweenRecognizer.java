@@ -57,8 +57,8 @@ public class HalloweenRecognizer extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        if (plan.getPlan() instanceof BaseUpdateStatement) {
-            BaseUpdateStatement stmt = (BaseUpdateStatement)plan.getPlan();
+        if (plan.getPlan() instanceof DMLStatement) {
+            DMLStatement stmt = (DMLStatement)plan.getPlan();
             TableNode targetTable = stmt.getTargetTable();
             boolean requireStepIsolation = false;
             Set<Column> updateColumns = new HashSet<Column>();

@@ -154,7 +154,7 @@ public class ASTStatementLoader extends BaseRule
         }
 
         // UPDATE
-        protected BaseUpdateStatement toUpdateStatement(UpdateNode updateNode)
+        protected DMLStatement toUpdateStatement(UpdateNode updateNode)
                 throws StandardException {
             ResultSetNode rs = updateNode.getResultSetNode();
             PlanNode query = toQuery((SelectNode)rs);
@@ -172,16 +172,17 @@ public class ASTStatementLoader extends BaseRule
                         (FromTable)updateNode.getUserData(),
                         targetTable.getTable().getColumns().size());
             query = new UpdateStatement(query, targetTable, 
-                        updateColumns, values.table, values.results, peekEquivalenceFinder()); 
+                        updateColumns, values.table); 
 
             if (values.row != null) {
                 query = new Project (query, values.row);
             }
-            return new BaseUpdateStatement (query, BaseUpdateStatement.StatementType.UPDATE, targetTable, values.table, values.results, peekEquivalenceFinder());
+            return new DMLStatement (query, BaseUpdateStatement.StatementType.UPDATE, 
+                    values.results, values.table, targetTable, peekEquivalenceFinder());
         }
 
         // INSERT
-        protected BaseUpdateStatement toInsertStatement(InsertNode insertNode)
+        protected DMLStatement toInsertStatement(InsertNode insertNode)
                 throws StandardException {
             PlanNode query = toQueryForSelect(insertNode.getResultSetNode(),
                                               insertNode.getOrderByList(),
@@ -219,16 +220,17 @@ public class ASTStatementLoader extends BaseRule
                                 targetTable.getTable().getColumns().size());
             
             query = new InsertStatement (query, targetTable, 
-                    targetColumns, values.table, values.results, peekEquivalenceFinder());
+                    targetColumns, values.table);
             if (values.row != null) {
                 query = new Project (query, values.row);
             }
-            return new BaseUpdateStatement (query, BaseUpdateStatement.StatementType.INSERT, targetTable, values.table, values.results, peekEquivalenceFinder());
+            return new DMLStatement (query, BaseUpdateStatement.StatementType.INSERT, 
+                    values.results, values.table, targetTable, peekEquivalenceFinder());
         }
     
         
         // DELETE
-        protected BaseUpdateStatement toDeleteStatement(DeleteNode deleteNode)
+        protected DMLStatement toDeleteStatement(DeleteNode deleteNode)
                 throws StandardException {
             PlanNode query = toQuery((SelectNode)deleteNode.getResultSetNode());
             TableNode targetTable = getTargetTable(deleteNode);
@@ -237,12 +239,12 @@ public class ASTStatementLoader extends BaseRule
                                         (FromTable)deleteNode.getUserData(),
                                         targetTable.getTable().getColumns().size());
             
-            query = new DeleteStatement(query, targetTable, values.table, 
-                                values.results, peekEquivalenceFinder());
+            query = new DeleteStatement(query, targetTable, values.table);
             if (values.row != null) {
                 query = new Project (query, values.row);
             }
-            return new BaseUpdateStatement(query, BaseUpdateStatement.StatementType.DELETE, targetTable, values.table, values.results, peekEquivalenceFinder());
+            return new DMLStatement(query, BaseUpdateStatement.StatementType.DELETE, 
+                    values.results, values.table, targetTable, peekEquivalenceFinder());
         }
         
         private class ReturningValues {

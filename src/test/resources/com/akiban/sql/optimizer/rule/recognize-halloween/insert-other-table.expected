@@ -1,4 +1,4 @@
-BaseUpdateStatement@6f2cc65e(t)
+DMLStatement@40959106(t)
   InsertStatement@64937e57(t[t.id, t.n])
     Project@f4bb557[t2.id, charLength(t2.s)]
       Select@336e6a99[]

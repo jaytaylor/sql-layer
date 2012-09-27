@@ -26,14 +26,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.List;
-
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-
-/** A statement that modifies the database and returns row counts.
+/** A statement that modifies the database.
  */
-public class BaseUpdateStatement extends BaseStatement
+public class BaseUpdateStatement extends BasePlanWithInput
 {
     public enum StatementType {
         DELETE,
@@ -42,45 +37,21 @@ public class BaseUpdateStatement extends BaseStatement
     }
     
     private TableNode targetTable;
-    private boolean requireStepIsolation;
-    private Project returningProject;
-    private List<ResultField> results;
     private TableSource table;
     private final StatementType type;
     
-    public BaseUpdateStatement(PlanNode query, StatementType type, TableNode targetTable,
-                                    TableSource table,
-                                    List<ResultField> results,
-                                    EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, columnEquivalencies);
+    protected BaseUpdateStatement(PlanNode query, StatementType type, TableNode targetTable,
+                                    TableSource table) {
+        super(query);
         this.type = type;
         this.targetTable = targetTable;
         this.table = table;
-        this.results = results;
     }
 
     public TableNode getTargetTable() {
         return targetTable;
     }
 
-    public boolean isRequireStepIsolation() {
-        return requireStepIsolation;
-    }
-    public void setRequireStepIsolation(boolean requireStepIsolation) {
-        this.requireStepIsolation = requireStepIsolation;
-    }
-
-    public void setReturningProject (Project project) {
-        this.returningProject = project;
-    }
-
-    public Project getReturingProject () {
-        return returningProject;
-    }
-
-    public List<ResultField> getResultsFields() { 
-        return results;
-    }
 
     public TableSource getTable() { 
         return table;
@@ -95,8 +66,8 @@ public class BaseUpdateStatement extends BaseStatement
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append('(');
         fillSummaryString(str);
-        if (requireStepIsolation)
-            str.append(", HALLOWEEN");
+        //if (requireStepIsolation)
+        //    str.append(", HALLOWEEN");
         str.append(')');
         return str.toString();
     }
@@ -110,5 +81,4 @@ public class BaseUpdateStatement extends BaseStatement
         super.deepCopy(map);
         targetTable = map.duplicate(targetTable);
     }
-
 }

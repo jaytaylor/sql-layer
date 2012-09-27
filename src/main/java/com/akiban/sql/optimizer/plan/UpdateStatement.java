@@ -26,12 +26,10 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import java.util.List;
+
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.ColumnContainer;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-
-import java.util.*;
 
 /** A SQL UPDATE statement. */
 public class UpdateStatement extends BaseUpdateStatement
@@ -61,10 +59,8 @@ public class UpdateStatement extends BaseUpdateStatement
 
     public UpdateStatement(PlanNode query, TableNode targetTable,
             List<UpdateColumn> updateColumns,
-                           TableSource table,
-                           List<ResultField> results,
-            EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, StatementType.UPDATE, targetTable, table, results, columnEquivalencies);
+                           TableSource table) {
+        super(query, StatementType.UPDATE, targetTable, table);
         this.updateColumns = updateColumns;
     }
 

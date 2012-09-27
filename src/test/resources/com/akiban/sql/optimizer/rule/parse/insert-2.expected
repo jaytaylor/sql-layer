@@ -1,4 +1,4 @@
-BaseUpdateStatement@3b27c5f5(child)
+DMLStatement@435d6df6(child)
   InsertStatement@3035762a(child[child.pid, child.name])
     Project@5e0d820[parent.id, parent.name]
       Select@6c8d1fe3[like(parent.name,X%)]

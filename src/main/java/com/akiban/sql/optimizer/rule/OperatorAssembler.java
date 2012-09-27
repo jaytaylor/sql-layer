@@ -592,8 +592,8 @@ public class OperatorAssembler extends BaseRule
             if (plan instanceof SelectQuery) {
                 SELECT_COUNT.hit();
                 return selectQuery((SelectQuery)plan);
-            } else if (plan instanceof BaseUpdateStatement) {
-                return dmlStatement ((BaseUpdateStatement)plan);
+            } else if (plan instanceof DMLStatement) {
+                return dmlStatement ((DMLStatement)plan);
             } else
                 throw new UnsupportedSQLException("Cannot assemble plan: " + plan, null);
         }
@@ -614,16 +614,16 @@ public class OperatorAssembler extends BaseRule
                                       getParameterTypes());
         }
 
-        protected PhysicalUpdate dmlStatement (BaseUpdateStatement statement) {
+        protected PhysicalUpdate dmlStatement (DMLStatement statement) {
             
-            PlanNode planQuery = statement.getQuery();
+            PlanNode planQuery = statement.getInput();
             RowStream stream = assembleStream(planQuery);
             
             //If we're returning results we need the resultColumns,
             // including names and types for returning to the user.
             List<PhysicalResultColumn> resultColumns = null;
-            if (statement.getResultsFields() != null) {
-                resultColumns = getResultColumns(statement.getResultsFields());
+            if (statement.getResultField() != null) {
+                resultColumns = getResultColumns(statement.getResultField());
             }
             // Returning rows, if the table is not null, the insert is returning rows 
             // which need to be passed to the user. 
@@ -636,8 +636,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleInsertStatement (InsertStatement insert) {
+            INSERT_COUNT.hit();
             
-            PlanNode planQuery = insert.getQuery();
+            PlanNode planQuery = insert.getInput();
             List<ExpressionNode> projectFields = null;
             if (planQuery instanceof Project) {
                 Project project = (Project)planQuery;
@@ -798,7 +799,8 @@ public class OperatorAssembler extends BaseRule
         }
         
         protected RowStream assembleUpdateStatement (UpdateStatement updateStatement) {
-            RowStream stream = assembleQuery (updateStatement.getQuery());
+            UPDATE_COUNT.hit();
+            RowStream stream = assembleQuery (updateStatement.getInput());
             UserTableRowType targetRowType = tableRowType(updateStatement.getTargetTable());
             assert (stream.rowType == targetRowType);
 
@@ -851,7 +853,8 @@ public class OperatorAssembler extends BaseRule
         }
       
         protected RowStream assembleDeleteStatement (DeleteStatement delete) {
-            RowStream stream = assembleQuery(delete.getQuery());
+            DELETE_COUNT.hit();
+            RowStream stream = assembleQuery(delete.getInput());
             
             //stream = assembleDeleteProjectTable (stream, projectFields, delete);
             UserTableRowType targetRowType = tableRowType(delete.getTargetTable());

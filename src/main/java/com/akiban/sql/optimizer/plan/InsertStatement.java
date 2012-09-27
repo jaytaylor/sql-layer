@@ -26,11 +26,9 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Column;
-import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import java.util.List;
 
-import java.util.*;
+import com.akiban.ais.model.Column;
 
 /** A SQL INSERT statement. */
 public class InsertStatement extends BaseUpdateStatement
@@ -39,10 +37,8 @@ public class InsertStatement extends BaseUpdateStatement
 
     public InsertStatement(PlanNode query, TableNode targetTable,
                            List<Column> targetColumns,
-                           TableSource table,
-                           List<ResultField> results,
-                           EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, StatementType.INSERT, targetTable, table, results, columnEquivalencies);
+                           TableSource table) {
+        super(query, StatementType.INSERT, targetTable, table);
         this.targetColumns = targetColumns;
     }
 

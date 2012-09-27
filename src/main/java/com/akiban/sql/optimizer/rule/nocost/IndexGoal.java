@@ -148,8 +148,8 @@ public class IndexGoal implements Comparator<IndexScan>
             }
         }
         
-        if (query instanceof BaseUpdateStatement) {
-            BaseUpdateStatement stmt = (BaseUpdateStatement) query;
+        if (query instanceof DMLStatement) {
+            DMLStatement stmt = (DMLStatement) query;
             if (stmt.getType() == BaseUpdateStatement.StatementType.DELETE ||
                     stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
                 updateTarget = stmt.getTargetTable();
