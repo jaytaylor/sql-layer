@@ -430,6 +430,10 @@ public final class SchemaManagerIT extends ITBase {
 
         AkibanInformationSchema ais = schemaManager.getAis(session());
         assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        System.out.println("BEFORE");
+        for (UserTable table : ais.getUserTables().values()) {
+                System.out.println(String.format("    %s", table));
+        }
         assertEquals("group tables count before", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
@@ -438,6 +442,10 @@ public final class SchemaManagerIT extends ITBase {
         assertNotNull(ais);
 
         assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
+        System.out.println("AFTER");
+        for (UserTable table : ais.getUserTables().values()) {
+            System.out.println(String.format("    %s", table));
+        }
         assertEquals("group tables count after", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
     }
