@@ -154,6 +154,8 @@ public class OperatorAssembler extends BaseRule
                               InputPreservationOption inputPreservation);
 
         API.Ordering createOrdering();
+
+        ExpressionNode resolveAddedExpression(ExpressionNode expr, PlanContext planContext);
     }
 
     private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Explainable>() {
@@ -226,6 +228,11 @@ public class OperatorAssembler extends BaseRule
         @Override
         public Explainable field(RowType rowType, int position) {
             return null;
+        }
+
+        @Override
+        public ExpressionNode resolveAddedExpression(ExpressionNode expr, PlanContext planContext) {
+            return expr;
         }
     };
 
@@ -403,6 +410,12 @@ public class OperatorAssembler extends BaseRule
             }
 
             protected abstract T[] array(int size);
+
+            @Override
+            public ExpressionNode resolveAddedExpression(ExpressionNode expr,
+                                                         PlanContext planContext) {
+                return expr;
+            }
         }
 
         private class OldPartialAssembler extends BasePartialAssembler<Expression> {
@@ -552,6 +565,13 @@ public class OperatorAssembler extends BaseRule
             @Override
             public API.Ordering createOrdering() {
                 return API.ordering(true);
+            }
+
+            @Override
+            public ExpressionNode resolveAddedExpression(ExpressionNode expr,
+                                                         PlanContext planContext) {
+                ExpressionRewriteVisitor visitor = OverloadAndTInstanceResolver.getResolver(planContext);
+                return expr.accept(visitor);
             }
         }
 
@@ -1777,6 +1797,10 @@ public class OperatorAssembler extends BaseRule
                 ExpressionNode right = new FunctionExpression("plus",
                                                               Arrays.asList(centerX, radius),
                                                               null, null);
+                bottom = newPartialAssembler.resolveAddedExpression(bottom, planContext);
+                left = newPartialAssembler.resolveAddedExpression(left, planContext);
+                top = newPartialAssembler.resolveAddedExpression(top, planContext);
+                right = newPartialAssembler.resolveAddedExpression(right, planContext);
                 return IndexKeyRange.spatial(indexRowType,
                                              assembleSpatialIndexPoint(index, bottom, left, fieldOffsets),
                                              assembleSpatialIndexPoint(index, top, right, fieldOffsets));

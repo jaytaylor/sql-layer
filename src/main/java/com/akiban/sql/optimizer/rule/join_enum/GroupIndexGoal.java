@@ -43,6 +43,13 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.sql.optimizer.TypesTranslation;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.google.common.base.Function;
 import org.slf4j.Logger;
@@ -1501,49 +1508,28 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
-        // TODO: Do we want to keep this once DECIMAL is working?
-        // DISTANCE_LAT_LON is defined on DECIMAL. If we have an INT, it will be cast.
-        // At that time, the other operands will also be DECIMAL and
-        // need to be cast the other way.
-        boolean cast1 = false, cast2 = false, cast3 = false, cast4 = false;
-        if (op1 instanceof CastExpression) {
-            op1 = ((CastExpression)op1).getOperand();
-            cast1 = true;
+        if (right.getAkType() != AkType.DECIMAL) {
+            DataTypeDescriptor sqlType = 
+                new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12);
+            right = new CastExpression(right, sqlType, right.getSQLsource());
+            if (Types3Switch.ON) {
+                TInstance instance = TypesTranslation.toTInstance(sqlType);
+                right.setPreptimeValue(new TPreptimeValue(instance));
+            }
         }
-        if (op2 instanceof CastExpression) {
-            op2 = ((CastExpression)op2).getOperand();
-            cast2 = true;
-        }
-        if (op3 instanceof CastExpression) {
-            op3 = ((CastExpression)op3).getOperand();
-            cast3 = true;
-        }
-        if (op4 instanceof CastExpression) {
-            op4 = ((CastExpression)op4).getOperand();
-            cast4 = true;
-        }
-        if (col1.equals(op1) && col2.equals(op2) &&
+        if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
-            if (cast1) op3 = castBack(op3, op1);
-            if (cast2) op4 = castBack(op4, op2);
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op3, op4, right),
                                           null, null);
         }
-        if (col1.equals(op3) && col2.equals(op4) &&
+        if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2)) {
-            if (cast3) op1 = castBack(op1, op3);
-            if (cast4) op2 = castBack(op2, op4);
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op1, op2, right),
                                           null, null);
         }
         return null;
-    }
-
-    private ExpressionNode castBack(ExpressionNode from, ExpressionNode to) {
-        return new CastExpression(from, 
-                                  to.getSQLtype(), to.getAkType(), to.getSQLsource());
     }
 
     private ExpressionNode matchZnear(List<ExpressionNode> indexExpressions, 
@@ -1561,17 +1547,23 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
-        if (col1.equals(op1) && col2.equals(op2) &&
+        if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4))
             return new FunctionExpression("_center",
                                           Arrays.asList(op3, op4),
                                           null, null);
-        if (col1.equals(op3) && col2.equals(op4) &&
+        if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2))
             return new FunctionExpression("_center",
                                           Arrays.asList(op1, op2),
                                           null, null);
         return null;
+    }
+
+    private static boolean columnMatches(ExpressionNode col, ExpressionNode op) {
+        if (op instanceof CastExpression)
+            op = ((CastExpression)op).getOperand();
+        return col.equals(op);
     }
 
     public CostEstimate estimateCostSpatial(SingleIndexScan index) {
