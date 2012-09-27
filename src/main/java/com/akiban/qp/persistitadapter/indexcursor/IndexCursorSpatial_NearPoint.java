@@ -44,6 +44,10 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -146,8 +150,17 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         Index index = keyRange.indexRowType().index();
         SpaceLatLon space = (SpaceLatLon) ((TableIndex)index).space();
         assert (space.dimensions() == 2);
-        BigDecimal xLo = loExpressions.eval(0).getDecimal();
-        BigDecimal yLo = loExpressions.eval(1).getDecimal();
+        BigDecimal xLo, yLo;
+        if (Types3Switch.ON) {
+            // This assumes that value is always cached. If not, would need a TInstance
+            // of DECIMAL(10,6) or something to pass to MBigDecimal.getWrapper().
+            xLo = ((BigDecimalWrapper)loExpressions.pvalue(0).getObject()).asBigDecimal();
+            yLo = ((BigDecimalWrapper)loExpressions.pvalue(1).getObject()).asBigDecimal();
+        }
+        else {
+            xLo = loExpressions.eval(0).getDecimal();
+            yLo = loExpressions.eval(1).getDecimal();
+        }
         zStart = space.shuffle(xLo, yLo);        
         UnboundExpressions zLoRow =
             new RowBasedUnboundExpressions(physicalIndexRowType,
@@ -157,11 +170,20 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         IndexScanRowState geRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
         API.Ordering upOrdering = new API.Ordering();
         upOrdering.append(Expressions.field(physicalIndexRowType, 0), true);
-        geCursor = new IndexCursorUnidirectional<ValueSource>(context,
-                                                              geRowState,
-                                                              geKeyRange,
-                                                              upOrdering,
-                                                              OldExpressionsSortKeyAdapter.INSTANCE);
+        if (Types3Switch.ON) {
+            geCursor = new IndexCursorUnidirectional<PValueSource>(context,
+                                                                   geRowState,
+                                                                   geKeyRange,
+                                                                   upOrdering,
+                                                                   PValueSortKeyAdapter.INSTANCE);
+        }
+        else {
+            geCursor = new IndexCursorUnidirectional<ValueSource>(context,
+                                                                  geRowState,
+                                                                  geKeyRange,
+                                                                  upOrdering,
+                                                                  OldExpressionsSortKeyAdapter.INSTANCE);
+        }
         // Cursor going backward from starting z value (exclusive)
         UnboundExpressions zMinRow =
             new RowBasedUnboundExpressions(physicalIndexRowType,
@@ -171,11 +193,20 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         IndexScanRowState ltRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
         API.Ordering downOrdering = new API.Ordering();
         downOrdering.append(Expressions.field(physicalIndexRowType, 0), false);
-        ltCursor = new IndexCursorUnidirectional<ValueSource>(context,
-                                                              ltRowState,
-                                                              ltKeyRange,
-                                                              downOrdering,
-                                                              OldExpressionsSortKeyAdapter.INSTANCE);
+        if (Types3Switch.ON) {
+            ltCursor = new IndexCursorUnidirectional<PValueSource>(context,
+                                                                   ltRowState,
+                                                                   ltKeyRange,
+                                                                   downOrdering,
+                                                                   PValueSortKeyAdapter.INSTANCE);
+        }
+        else {
+            ltCursor = new IndexCursorUnidirectional<ValueSource>(context,
+                                                                  ltRowState,
+                                                                  ltKeyRange,
+                                                                  downOrdering,
+                                                                  OldExpressionsSortKeyAdapter.INSTANCE);
+        }
     }
 
     // For use by this class
