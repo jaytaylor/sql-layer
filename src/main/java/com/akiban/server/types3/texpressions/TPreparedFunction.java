@@ -37,6 +37,7 @@ import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.SparseArray;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,6 +93,15 @@ public final class TPreparedFunction implements TPreparedExpression {
                              List<? extends TPreparedExpression> inputs,
                              QueryContext queryContext)
     {
+        this(overload, resultType, inputs, queryContext, null);
+    }
+
+    public TPreparedFunction(TValidatedOverload overload,
+                             TInstance resultType,
+                             List<? extends TPreparedExpression> inputs,
+                             QueryContext queryContext,
+                             SparseArray<Object> preptimeValues)
+    {
         this.overload = overload;
         this.resultType = resultType;
         TInstance[] localInputTypes = new TInstance[inputs.size()];
@@ -100,7 +110,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             localInputTypes[i] = input.resultType();
         }
         this.inputs = inputs;
-        this.preptimeContext = new TPreptimeContext(Arrays.asList(localInputTypes), resultType, queryContext);
+        this.preptimeContext = new TPreptimeContext(Arrays.asList(localInputTypes), resultType, queryContext, preptimeValues);
     }
 
     private final TValidatedOverload overload;

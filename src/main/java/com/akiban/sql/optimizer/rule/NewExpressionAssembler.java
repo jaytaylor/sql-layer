@@ -67,6 +67,7 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.types.CharacterTypeAttributes;
+import com.akiban.util.SparseArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,9 +97,11 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
         List<TPreparedExpression> arguments = assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
         TValidatedOverload overload;
+        SparseArray<Object> preptimeValues = null;
         if (functionNode instanceof FunctionExpression) {
             FunctionExpression fexpr = (FunctionExpression) functionNode;
             overload = fexpr.getOverload();
+            preptimeValues = fexpr.getPreptimeValues();
         }
         else if (functionNode instanceof BooleanOperationExpression) {
             List<TPreptimeValue> inputPreptimeValues = new ArrayList<TPreptimeValue>(argumentNodes.size());
@@ -115,7 +118,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             throw new AssertionError(functionNode);
         }
          TInstance resultInstance = functionNode.getPreptimeValue().instance();
-        return new TPreparedFunction(overload, resultInstance, arguments, queryContext);
+         return new TPreparedFunction(overload, resultInstance, arguments, queryContext, preptimeValues);
     }
 
     @Override
