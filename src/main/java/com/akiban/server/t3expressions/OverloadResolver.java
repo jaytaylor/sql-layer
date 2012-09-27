@@ -92,9 +92,13 @@ public final class OverloadResolver {
             assert targetTClass != null;
 
             TInstance result = null;
+            int lastPositionalInput = overload.positionalInputs();
+            boolean notVararg = ! overload.isVararg();
             for (int i = 0, size = inputs.size(); i < size; ++i) {
                 if (overload.inputSetAt(i) != inputSet)
                     continue;
+                if (notVararg && (i >= lastPositionalInput))
+                    break;
                 TInstance inputInstance = inputs.get(i).instance();
                 TClass inputClass = (inputInstance == null) ? null : inputInstance.typeClass();
                 if (inputClass == targetTClass) {
