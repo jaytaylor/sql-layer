@@ -55,7 +55,7 @@ public final class Cast_From_Decimal {
     public static final TCast TO_DECIMAL_UNSIGNED = new TCastBase(MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED) {
         @Override
         protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            MBigDecimal.adjustAttrsAsNeeded(context, context.inputTInstanceAt(0), source, context.outputTInstance(), target);
+            MBigDecimal.adjustAttrsAsNeeded(context, source, context.outputTInstance(), target);
         }
     };
 

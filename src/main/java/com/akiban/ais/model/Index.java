@@ -32,9 +32,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.persistit.Tree;
 
 import java.util.*;
@@ -371,11 +369,10 @@ public abstract class Index implements Traversable
 
     private static boolean isFixedDecimal(Column column) {
         if (Types3Switch.ON) {
-            TInstance instance = column.tInstance();
-            return (instance.typeClass() instanceof MBigDecimal);
+            throw new IllegalStateException("Types3 not implemented");
         } else {
             AkType type = column.getType().akType();
-            return (type == AkType.DECIMAL);
+            return type == AkType.DECIMAL;
         }
     }
 
