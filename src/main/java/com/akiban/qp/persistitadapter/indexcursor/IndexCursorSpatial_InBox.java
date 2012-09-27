@@ -45,8 +45,9 @@ import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
@@ -143,12 +144,12 @@ class IndexCursorSpatial_InBox extends IndexCursor
         // Only 2d, lat/lon supported for now
         BigDecimal xLo, xHi, yLo, yHi;
         if (Types3Switch.ON) {
-            // This assumes that value is always cached. If not, would need a TInstance
-            // of DECIMAL(10,6) or something to pass to MBigDecimal.getWrapper().
-            xLo = ((BigDecimalWrapper)loExpressions.pvalue(0).getObject()).asBigDecimal();
-            xHi = ((BigDecimalWrapper)hiExpressions.pvalue(0).getObject()).asBigDecimal();
-            yLo = ((BigDecimalWrapper)loExpressions.pvalue(1).getObject()).asBigDecimal();
-            yHi = ((BigDecimalWrapper)hiExpressions.pvalue(1).getObject()).asBigDecimal();
+            TInstance xinst = index.getAllColumns().get(0).getColumn().tInstance();
+            TInstance yinst = index.getAllColumns().get(1).getColumn().tInstance();
+            xLo = MBigDecimal.getWrapper(loExpressions.pvalue(0), xinst).asBigDecimal();
+            xHi = MBigDecimal.getWrapper(hiExpressions.pvalue(0), xinst).asBigDecimal();
+            yLo = MBigDecimal.getWrapper(loExpressions.pvalue(1), yinst).asBigDecimal();
+            yHi = MBigDecimal.getWrapper(hiExpressions.pvalue(1), yinst).asBigDecimal();
         }
         else {
             xLo = loExpressions.eval(0).getDecimal();
