@@ -67,15 +67,5 @@ public class AISCloner {
         AISBuilder builder = new AISBuilder(destAIS);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        for(Group oldGroup : srcAIS.getGroups().values()) {
-            Group newGroup = destAIS.getGroup(oldGroup.getName());
-            if(newGroup != null) {
-                GroupTable oldTable = oldGroup.getGroupTable();
-                GroupTable newTable = newGroup.getGroupTable();
-                if(oldTable != null && newTable != null) {
-                    newTable.setTableId(oldTable.getTableId());
-                }
-            }
-        }
     }
 }

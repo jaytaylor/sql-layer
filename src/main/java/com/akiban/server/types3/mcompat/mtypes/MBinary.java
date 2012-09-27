@@ -54,7 +54,7 @@ public final class MBinary extends SimpleDtdTClass {
     private static final TParser parser = new BinaryParser();
 
     public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
-    public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "varbinary", -1);
+    public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "binary", -1);
     public static final TClass TINYBLOB = new MBinary(TypeId.BLOB_ID, "tinyblob", 256);
     public static final TClass MEDIUMBLOB = new MBinary(TypeId.BLOB_ID, "mediumblob", 65535);
     public static final TClass BLOB = new MBinary(TypeId.BLOB_ID, "blob", 16777215);
@@ -75,7 +75,23 @@ public final class MBinary extends SimpleDtdTClass {
             out.putNull();
             return;
         }
-        byte[] bytes = in.getBytes();
+        
+        byte[] bytes;
+        PUnderlying underlying = in.getUnderlyingType();
+        if (underlying == PUnderlying.BYTES) {
+            bytes = in.getBytes();
+        }
+        else if (underlying == PUnderlying.STRING) {
+            try {
+                bytes = in.getString().getBytes("utf8");
+            } catch (UnsupportedEncodingException e) {
+                throw new AkibanInternalException("while converting to bytes: " + in.getString(), e);
+            }
+        }
+        else {
+            throw new AkibanInternalException("couldn't convert to byte[]: " + in);
+        }
+
         int expectedLength = context.outputTInstance().attribute(Attrs.LENGTH);
         if (bytes.length > expectedLength)
         {

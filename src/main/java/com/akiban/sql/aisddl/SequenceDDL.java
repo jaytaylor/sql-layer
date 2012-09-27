@@ -34,7 +34,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.DropSequenceNode;
 import com.akiban.sql.parser.ExistenceCheck;
-import com.akiban.sql.pg.PostgresQueryContext;
+import com.akiban.qp.operator.QueryContext;
 
 public class SequenceDDL {
     private SequenceDDL() { }
@@ -63,7 +63,7 @@ public class SequenceDDL {
                                         Session session,
                                         String defaultSchemaName,
                                         DropSequenceNode dropSequence,
-                                        PostgresQueryContext context) {
+                                        QueryContext context) {
         final TableName sequenceName = DDLHelper.convertName(defaultSchemaName, dropSequence.getObjectName());
         final ExistenceCheck existenceCheck = dropSequence.getExistenceCheck();
 

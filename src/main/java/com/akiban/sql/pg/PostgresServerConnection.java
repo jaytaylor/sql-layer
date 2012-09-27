@@ -40,9 +40,7 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -81,6 +79,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private boolean running = false, ignoreUntilSync = false;
     private Socket socket;
     private PostgresMessenger messenger;
+    private OutputFormat outputFormat = OutputFormat.TABLE;
     private int sessionId, secret;
     private int version;
     private Map<String,PostgresStatement> preparedStatements =
@@ -469,6 +468,11 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionTracer.setCurrentStatement(sql);
         logger.info("Query: {}", sql);
 
+        if (sql.length() == 0) {
+            emptyQuery();
+            return;
+        }
+
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
 
@@ -758,24 +762,26 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
         if (format.equals("table"))
-            compiler = PostgresOperatorCompiler.create(this);
+            outputFormat = OutputFormat.TABLE;
         else if (format.equals("json"))
-            compiler = PostgresJsonCompiler.create(this); 
+            outputFormat = OutputFormat.JSON;
+        else if (format.equals("json_with_meta_data"))
+            outputFormat = OutputFormat.JSON_WITH_META_DATA;
         else
             throw new InvalidParameterValueException(format);
-        
-        // Add the Persisitit Adapter - default for most tables
-        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
-                new PersistitAdapter(compiler.getSchema(),
-                                       reqs.store(),
-                                       reqs.treeService(),
-                                       session,
-                                       reqs.config()));
-        // Add the Memory Adapter - for the in memory tables
-        adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
-                new MemoryAdapter(compiler.getSchema(),
-                                session,
-                                reqs.config()));
+        switch (outputFormat) {
+        case TABLE:
+        default:
+            compiler = PostgresOperatorCompiler.create(this);
+            break;
+        case JSON:
+        case JSON_WITH_META_DATA:
+            compiler = PostgresJsonCompiler.create(this);
+            break;
+        }
+
+        initAdapters(compiler);
+
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
@@ -803,13 +809,6 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public StoreAdapter getStore(final UserTable table) {
-        if (table.hasMemoryTableFactory()) {
-            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
-        }
-        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
-    }
-
     protected void sessionChanged() {
         if (parsedGenerators == null) return; // setAttribute() from generator's ctor.
         for (PostgresStatementParser parser : unparsedGenerators) {
@@ -864,6 +863,12 @@ public class PostgresServerConnection extends ServerSessionBase
         return rowsProcessed;
     }
 
+    protected void emptyQuery() throws IOException {
+        messenger.beginMessage(PostgresMessages.EMPTY_QUERY_RESPONSE_TYPE.code());
+        messenger.sendMessage();
+        readyForQuery();
+    }
+
     @Override
     public LoadablePlan<?> loadablePlan(String planName)
     {
@@ -882,7 +887,7 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) 
             throws IOException {
-        if (level.ordinal() <= maxNotificationLevel.ordinal()) {
+        if (shouldNotify(level)) {
             Object state = messenger.suspendMessage();
             messenger.beginMessage(PostgresMessages.NOTICE_RESPONSE_TYPE.code());
             messenger.write('S');
@@ -920,6 +925,11 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     public PostgresMessenger getMessenger() {
         return messenger;
+    }
+
+    @Override
+    public OutputFormat getOutputFormat() {
+        return outputFormat;
     }
 
     @Override

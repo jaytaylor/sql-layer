@@ -27,6 +27,7 @@
 package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types3.TInstance;
 
 public final class PValue implements PValueSource, PValueTarget {
     // PValue interface
@@ -38,6 +39,26 @@ public final class PValue implements PValueSource, PValueTarget {
 
     public void unset() {
         this.state = State.UNSET;
+    }
+
+    public void ensureRaw(PValueCacher cacher, TInstance tInstance) {
+        switch (state) {
+        case UNSET:
+            throw new IllegalStateException("no value set");
+        case CACHE_ONLY:
+            Object oCacheSave = this.oCache;
+            cacher.cacheToValue(oCacheSave, tInstance, this);
+            assert state == State.VAL_ONLY;
+            this.oCache = oCacheSave;
+            state = State.VAL_AND_CACHE;
+            break;
+        case NULL:
+        case VAL_ONLY:
+        case VAL_AND_CACHE:
+            break;
+        default:
+            throw new AssertionError(state);
+        }
     }
     
     // PValueTarget interface

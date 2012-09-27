@@ -358,6 +358,7 @@ public abstract class CostEstimator implements TableRowCounts
         boolean before = (loBytes != null);
         long rowCount = 0;
         byte[] entryStartBytes, entryEndBytes = null;
+        HistogramEntry firstEntry = histogram.getEntries().get(0);
         for (HistogramEntry entry : histogram.getEntries()) {
             entryStartBytes = entryEndBytes;
             entryEndBytes = entry.getKeyBytes();

@@ -52,6 +52,7 @@ import com.akiban.server.service.session.Session;
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -114,6 +115,16 @@ public class OSCHooksIT extends AlterTableITBase {
         ddlForAlter().renameTable(session(), _O_NEW_NAME, O_NAME);
         assertEquals("same columns", tableColumns(_O_OLD_NAME), tableColumns(O_NAME));
         assertFalse("C-O split group", tableGroup(C_NAME).equals(tableGroup(O_NAME)));
+        assertEquals("O-I same group", tableGroup(O_NAME), tableGroup(I_NAME));
+    }
+
+    @Test
+    public void testRenameFK() {
+        runRenameColumn(_O_NEW_NAME, "cid", "pid");
+        ddlForAlter().renameTable(session(), O_NAME, _O_OLD_NAME);
+        ddlForAlter().renameTable(session(), _O_NEW_NAME, O_NAME);
+        assertEquals("same columns", tableColumns(_O_OLD_NAME), tableColumns(O_NAME));
+        assertEquals("C-O same group", tableGroup(C_NAME), tableGroup(O_NAME));
         assertEquals("O-I same group", tableGroup(O_NAME), tableGroup(I_NAME));
     }
 

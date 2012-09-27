@@ -129,7 +129,7 @@ public final class PValueSources {
             tInstance = MNumeric.TINYINT.instance(1);
             break;
         case NULL:
-            tInstance = MBinary.VARBINARY.instance(0);
+            tInstance = null;
             break;
         case INTERVAL_MONTH:
         case RESULT_SET:
@@ -159,8 +159,13 @@ public final class PValueSources {
             if (akType == null)
                 throw new UnsupportedOperationException("can't infer type of null object");
             tInstance = fromAkType(akType, 0);
-            value = new PValue(tInstance.typeClass().underlyingType());
-            value.putNull();
+            if (tInstance == null) {
+                value = null;
+            }
+            else {
+                value = new PValue(tInstance.typeClass().underlyingType());
+                value.putNull();
+            }
         }
         else if (object instanceof Integer) {
             tInstance = MNumeric.INT.instance();
@@ -373,7 +378,7 @@ public final class PValueSources {
         }
     }
 
-    public static boolean areEqual(PValueSource one, PValueSource two) {
+    public static boolean areEqual(PValueSource one, PValueSource two, TInstance instance) {
         PUnderlying underlyingType = one.getUnderlyingType();
         if (underlyingType != two.getUnderlyingType())
             return false;
@@ -381,6 +386,10 @@ public final class PValueSources {
             return two.isNull();
         if (two.isNull())
             return false;
+        if (one.hasCacheValue() && two.hasCacheValue())
+            return one.getObject().equals(two.getObject());
+        ensureRawValue(one, instance);
+        ensureRawValue(two, instance);
         switch (underlyingType) {
         case BOOL:
             return one.getBoolean() == two.getBoolean();
@@ -405,13 +414,6 @@ public final class PValueSources {
         default:
             throw new AssertionError(underlyingType);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T getCached(PValueSource source, TInstance tInstance, PValueCacher<? extends T> cacher) {
-        if (source.hasCacheValue())
-            return (T) source.getObject();
-        return cacher.valueToCache(source, tInstance);
     }
 
     public static int hash(PValueSource source) {
@@ -456,7 +458,7 @@ public final class PValueSources {
     }
 
     public static PValueSource getNullSource(PUnderlying underlying) {
-        PValueSource source = NULL_SOURCES[underlying.ordinal()];
+        PValueSource source = (underlying == null) ? NULL_UNKNOWN : NULL_SOURCES[underlying.ordinal()];
         assert source.isNull() : source;
         return source;
     }
@@ -464,6 +466,7 @@ public final class PValueSources {
     private PValueSources() {}
 
     private static final PValueSource[] NULL_SOURCES = createNullSources();
+    private static final PValueSource NULL_UNKNOWN = createNullUnknown();
 
     private static PValueSource[] createNullSources() {
         PUnderlying[] vals = PUnderlying.values();
@@ -474,6 +477,12 @@ public final class PValueSources {
             arr[i] = pval;
         }
         return arr;
+    }
+
+    private static PValueSource createNullUnknown() {
+        PValue result = new PValue();
+        result.putNull();
+        return result;
     }
 
     public static PValueSource fromValueSource(ValueSource source, TInstance tInstance) {
@@ -540,6 +549,21 @@ public final class PValueSources {
         StringBuilder sb = new StringBuilder();
         toStringSimple(source, sb);
         return sb.toString();
+    }
+
+    public static void ensureRawValue(PValueSource source, TInstance instance) {
+        if (!source.hasAnyValue())
+            throw new IllegalStateException("no value set");
+        if (!source.hasRawValue()) {
+            PValueCacher cacher = instance.typeClass().cacher();
+            if (cacher == null)
+                throw new IllegalArgumentException("no cacher for " + instance + " with value " + source);
+            if (source instanceof PValue) {
+                ((PValue)source).ensureRaw(cacher, instance);
+            }
+            else
+                throw new IllegalArgumentException("can't update value of type " + source.getClass());
+        }
     }
 
     public static abstract class ValueSourceConverter<T> {

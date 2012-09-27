@@ -27,7 +27,6 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.error.InvalidDateFormatException;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;

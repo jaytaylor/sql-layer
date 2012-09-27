@@ -34,6 +34,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
 
 public final class TPreparedLiteral implements TPreparedExpression {
@@ -52,7 +53,10 @@ public final class TPreparedLiteral implements TPreparedExpression {
     {
         CompoundExplainer ex = new TExpressionExplainer(Type.LITERAL, "Literal", context);
         StringBuilder sql = new StringBuilder();
-        tInstance.formatAsLiteral(value, AkibanAppender.of(sql));
+        if (tInstance == null)
+            sql.append("NULL");
+        else
+            tInstance.formatAsLiteral(value, AkibanAppender.of(sql));
         ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sql.toString()));
         return ex;
     }
@@ -64,6 +68,8 @@ public final class TPreparedLiteral implements TPreparedExpression {
 
     @Override
     public String toString() {
+        if (tInstance == null)
+            return "LiteralNull";
         StringBuilder sb = new StringBuilder("Literal(");
         tInstance.format(value, AkibanAppender.of(sb));
         sb.append(')');
@@ -71,8 +77,14 @@ public final class TPreparedLiteral implements TPreparedExpression {
     }
 
     public TPreparedLiteral(TInstance tInstance, PValueSource value) {
-        this.tInstance = tInstance;
-        this.value = value;
+        if (tInstance == null) {
+            this.tInstance = null;
+            this.value = PValueSources.getNullSource(null);
+        }
+        else {
+            this.tInstance = tInstance;
+            this.value = value;
+        }
     }
 
     private final TInstance tInstance;

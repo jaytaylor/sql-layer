@@ -352,7 +352,7 @@ final class Aggregate_Partial extends Operator
     private final List<AggregatorFactory> aggregatorFactories;
     private final List<? extends TInstance> pAggrTypes;
     private final List<? extends TAggregator> pAggrs;
-    private final List<Object> options;
+    private final List<Object> options; // currently only used by GROUP_CONCAT, meaning the optional SEPARATOR string
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -491,7 +491,7 @@ final class Aggregate_Partial extends Operator
                     int inputIndex = i + inputsIndex;
                     TInstance inputType = input.rowType().typeInstanceAt(inputIndex);
                     PValueSource inputSource = input.pvalue(inputIndex);
-                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i));
+                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i), options.get(i));
                 }
 
             }
@@ -595,7 +595,7 @@ final class Aggregate_Partial extends Operator
                     for (int i = 0; i < keyPValues.size(); ++i) {
                         PValue key = keyPValues.get(i);
                         PValueSource input = givenInput.pvalue(i);
-                        if (!PValueSources.areEqual(key, input)) {
+                        if (!PValueSources.areEqual(key, input, inputRowType.typeInstanceAt(i))) {
                             cursorState = CursorState.OPENING;
                             return true;
                         }

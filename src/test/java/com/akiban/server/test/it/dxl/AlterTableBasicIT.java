@@ -1112,13 +1112,13 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
     }
 
-    public void changeColumnInGICommon(String table, String column, String newType) {
+    public void changeColumnInGICommon(String table, Runnable alterRunnable) {
         String giName = "c1_o1_i1";
         createAndLoadCOI();
         String groupName = getUserTable(SCHEMA, table).getGroup().getName();
         createGroupIndex(groupName, giName, "c.c1,o.o1,i.i1", Index.JoinType.LEFT);
-        runAlter(ChangeLevel.TABLE,
-                 String.format("ALTER TABLE %s ALTER COLUMN %s SET DATA TYPE %s", table, column, newType));
+
+        alterRunnable.run();
 
         Index gi = getUserTable(SCHEMA, table).getGroup().getIndex(giName);
         assertNotNull("GI still exists", gi);
@@ -1131,18 +1131,52 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
     }
 
-    @Test
-    public void changeColumnInGroupIndex_C() {
-        changeColumnInGICommon("c", "c1", "char(10)");
+    public void changeColumnTypeInGI(final String table, final String column, final String newType) {
+        changeColumnInGICommon(table, new Runnable() {
+            @Override
+            public void run() {
+                runAlter(ChangeLevel.TABLE,
+                         String.format("ALTER TABLE %s ALTER COLUMN %s SET DATA TYPE %s", table, column, newType));
+            }
+        });
+    }
+
+    public void changeColumnNameInGI(final String table, final String column, final String newName) {
+        changeColumnInGICommon(table, new Runnable() {
+            @Override
+            public void run() {
+                runRenameColumn(new TableName(SCHEMA, table), column, newName);
+            }
+        });
     }
 
     @Test
-    public void changeColumnInGroupIndex_O() {
-        changeColumnInGICommon("o", "o1", "bigint");
+    public void changeColumnTypeInGI_C() {
+        changeColumnTypeInGI("c", "c1", "char(10)");
     }
 
     @Test
-    public void changeColumnInGroupIndex_I() {
-        changeColumnInGICommon("i", "i1", "bigint");
+    public void changeColumnTypeInGI_O() {
+        changeColumnTypeInGI("o", "o1", "bigint");
+    }
+
+    @Test
+    public void changeColumnTypeInGI_I() {
+        changeColumnTypeInGI("i", "i1", "bigint");
+    }
+
+    @Test
+    public void changeColumnNameInGI_C() {
+        changeColumnNameInGI("c", "c1", "c1_new");
+    }
+
+    @Test
+    public void changeColumnNameInGI_O() {
+        changeColumnNameInGI("o", "o1", "o1_new");
+    }
+
+    @Test
+    public void changeColumnNameInGI_I() {
+        changeColumnNameInGI("i", "i1", "i1_new");
     }
 }

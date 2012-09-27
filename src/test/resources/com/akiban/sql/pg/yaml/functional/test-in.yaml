@@ -241,7 +241,7 @@
 ---
 - Statement: SELECT double_field FROM all_types
     WHERE double_field IN (0.0)
-- output: [[0.0]]
+- output: !select-engine { all: [[0.0]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
 ---
 - Statement: SELECT double_field FROM all_types
     WHERE double_field IN (1.0, -1.0)
@@ -253,7 +253,7 @@
 ---
 - Statement: SELECT double_field FROM all_types
     WHERE double_field IN ('Infinity', 'NaN')
-- output: [[Infinity], [NaN]]
+- output: !select-engine { all: [[Infinity], [NaN]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
 ---
 - Statement: SELECT double_field FROM all_types
     WHERE double_field IN (varchar_field)
@@ -285,7 +285,7 @@
     VALUES ('Infinity', '4.0'), ('-Infinity', '5.0'), ('NaN', '6.0')
 ---
 - Statement: SELECT float_field FROM all_types WHERE float_field IN (0.0)
-- output: [[0.0]]
+- output: !select-engine { all: [[0.0]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
 ---
 - Statement: SELECT float_field FROM all_types WHERE float_field IN (1.0, -1.0)
 - output: [[1.0], [-1.0]]
@@ -296,7 +296,7 @@
 ---
 - Statement: SELECT float_field FROM all_types
     WHERE float_field IN ('Infinity', 'NaN')
-- output: [[Infinity], [NaN]]
+- output: !select-engine { all: [[Infinity], [NaN]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
 ---
 - Statement: SELECT float_field FROM all_types
     WHERE float_field IN (double_field)
@@ -397,7 +397,7 @@
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN (0.0)
-- output: [[0.0]]
+- output: !select-engine { all: [[0.0]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN (1.0, -1.0)
@@ -411,7 +411,7 @@
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN ('Infinity', 'NaN')
-- output: [[Infinity], [NaN]]
+- output: !select-engine { all: [[Infinity], [NaN]], newtypes: [[0.0], [0.0], [0.0], [0.0]] }
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN (float_field)

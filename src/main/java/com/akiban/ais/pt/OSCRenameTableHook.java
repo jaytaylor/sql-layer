@@ -37,6 +37,9 @@ import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+
 import java.util.*;
 
 /** Hook for <code>RenameTableRequest</code>.
@@ -95,13 +98,14 @@ public class OSCRenameTableHook
         // Try harder.
         for (Map.Entry<String,UserTable> entry : ais.getSchema(schemaName).getUserTables().entrySet()) {
             if (entry.getKey().contains(tableName) &&
-                (table.getPendingOSC() != null) &&
-                (table.getPendingOSC().getOriginalName().equals(tableName))) {
-                table.getPendingOSC().setCurrentName(newName.getTableName());
+                (entry.getValue().getPendingOSC() != null) &&
+                (entry.getValue().getPendingOSC().getOriginalName().equals(tableName))) {
+                entry.getValue().getPendingOSC().setCurrentName(newName.getTableName());
                 return true;
             }
         }
-
+        // Still allow the rename to happen. Not having set the current name will
+        // change how beforeNew works below.
         return true;
     }
 
@@ -143,22 +147,22 @@ public class OSCRenameTableHook
         UserTable origTable = ais.getUserTable(origName);
         UserTable tempTable = ais.getUserTable(tempName);
         Set<Column> droppedColumns = new HashSet<Column>();
-        Map<Column,Column> modifiedColumns = new HashMap<Column,Column>();
+        BiMap<Column,Column> modifiedColumns = HashBiMap.create();
         Set<Column> addedColumns = new HashSet<Column>();
         getColumnChanges(origTable, tempTable, changes.getColumnChanges(), 
                          droppedColumns, modifiedColumns, addedColumns);
         Set<TableIndex> droppedIndexes = new HashSet<TableIndex>();
-        Map<TableIndex,TableIndex> modifiedIndexes = new HashMap<TableIndex,TableIndex>();
+        BiMap<TableIndex,TableIndex> modifiedIndexes = HashBiMap.create();
         Set<TableIndex> addedIndexes = new HashSet<TableIndex>();
         getIndexChanges(origTable, tempTable, changes.getIndexChanges(), 
                         droppedIndexes, modifiedIndexes, addedIndexes);
         AkibanInformationSchema aisCopy = AISCloner.clone(ais, new GroupSelector(origTable.getGroup()));
         UserTable copyTable = aisCopy.getUserTable(origName);
-        rebuildColumns(origTable, copyTable,
+        rebuildColumns(origTable, tempTable, copyTable,
                        droppedColumns, modifiedColumns, addedColumns);
         rebuildIndexes(origTable, copyTable,
                        droppedIndexes, modifiedIndexes, addedIndexes);
-        rebuildGroup(aisCopy, copyTable);
+        rebuildGroup(aisCopy, copyTable, changes.getColumnChanges());
         copyTable.endTable();
         logger.info("Pending OSC ALTER TABLE {} being done now", origName);
         ddl().alterTable(session, origName, copyTable, 
@@ -198,23 +202,20 @@ public class OSCRenameTableHook
         }
     }
 
-    private void rebuildColumns(UserTable origTable, UserTable copyTable,
-                                Set<Column> droppedColumns, Map<Column,Column> modifiedColumns, Set<Column> addedColumns) {
+    private void rebuildColumns(UserTable origTable, UserTable tempTable, UserTable copyTable,
+                                Set<Column> droppedColumns, BiMap<Column,Column> modifiedColumns, Set<Column> addedColumns) {
         copyTable.dropColumns();
-        int colpos = 0;
-        for (Column origColumn : origTable.getColumns()) {
-            if (droppedColumns.contains(origColumn)) 
-                continue;
-            Column fromColumn = origColumn;
-            Column newColumn = modifiedColumns.get(origColumn);
-            if (newColumn != null) 
-                fromColumn = newColumn;
-            // Note that dropping columns can still cause otherwise
-            // unchanged ones to move.
+        int colpos = 0;         // Respect column order of copy.
+        for (Column tempColumn : tempTable.getColumns()) {
+            Column fromColumn = tempColumn;
+            // If neither added nor modified, try to find the original column.
+            if (!addedColumns.contains(tempColumn) &&
+                !modifiedColumns.containsValue(tempColumn)) {
+                Column origColumn = origTable.getColumn(tempColumn.getName());
+                if (origColumn != null)
+                    fromColumn = origColumn;
+            }
             Column.create(copyTable, fromColumn, null, colpos++);
-        }
-        for (Column newColumn : addedColumns) {
-            Column.create(copyTable, newColumn, null, colpos++);
         }
     }
 
@@ -288,14 +289,14 @@ public class OSCRenameTableHook
     // This assumes that OSC was not used to deliberately affect the group, by changing
     // grouping constraints, say, since the group structure is not on the master.
     // So it only deals with unintended consequences.
-    private void rebuildGroup(AkibanInformationSchema ais, UserTable table) {
-        rebuildGroupIndexes(ais, table);
+    private void rebuildGroup(AkibanInformationSchema ais, UserTable table,
+                              Collection<TableChange> columnChanges) {
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             table.removeCandidateParentJoin(parentJoin);
             parentJoin.getParent().removeCandidateChildJoin(parentJoin);
-            if (joinStillValid(parentJoin, table, false)) {
-                parentJoin = rebuildJoin(ais, parentJoin, table, false);
+            if (joinStillValid(parentJoin, table, columnChanges, false)) {
+                parentJoin = rebuildJoin(ais, parentJoin, table, columnChanges, false);
                 assert (table.getParentJoin() == parentJoin);
             }
             else {
@@ -305,8 +306,8 @@ public class OSCRenameTableHook
         for (Join childJoin : table.getChildJoins()) {
             table.removeCandidateChildJoin(parentJoin);
             childJoin.getChild().removeCandidateParentJoin(childJoin);
-            if (joinStillValid(childJoin, table, true)) {
-                childJoin = rebuildJoin(ais, childJoin, table, true);
+            if (joinStillValid(childJoin, table, columnChanges, true)) {
+                childJoin = rebuildJoin(ais, childJoin, table, columnChanges, true);
             }
             else {
                 logger.info("Join {} no longer valid; group split.", childJoin);
@@ -314,64 +315,49 @@ public class OSCRenameTableHook
         }
     }
 
-    private void rebuildGroupIndexes(AkibanInformationSchema ais, UserTable table) {
-        Group group = table.getGroup();
-        List<GroupIndex> dropIndexes = new ArrayList<GroupIndex>();
-        List<GroupIndex> copyIndexes = new ArrayList<GroupIndex>();
-        for (GroupIndex groupIndex : group.getIndexes()) {
-            boolean found = false, drop = false;
-            for (IndexColumn indexColumn : groupIndex.getKeyColumns()) {
-                if (indexColumn.getColumn().getTable() == table) {
-                    found = true;
-                    if (table.getColumn(indexColumn.getColumn().getName()) == null) {
-                        drop = true;
-                    }
-                }
-            }
-            if (found) {
-                if (drop)
-                    dropIndexes.add(groupIndex);
-                else
-                    copyIndexes.add(groupIndex);
-            }
-        }
-        group.removeIndexes(dropIndexes);
-        group.removeIndexes(copyIndexes);
-        for (GroupIndex oldIndex : copyIndexes) {
-            GroupIndex newIndex = GroupIndex.create(ais, group, oldIndex);
-            int idxpos = 0;
-            for (IndexColumn indexColumn : oldIndex.getKeyColumns()) {
-                Column column = indexColumn.getColumn();
-                if (column.getTable() == table)
-                    column = table.getColumn(column.getName());
-                IndexColumn.create(newIndex, column, indexColumn, idxpos++);
-            }
-        }
-    }
-
-    private boolean joinStillValid(Join join, UserTable table, boolean asParent) {
+    private boolean joinStillValid(Join join, UserTable table, 
+                                   Collection<TableChange> columnChanges, boolean asParent) {
         for (JoinColumn joinColumn : join.getJoinColumns()) {
             Column column = (asParent) ? joinColumn.getParent() : joinColumn.getChild();
             assert (column.getTable() == table);
-            if (table.getColumn(column.getName()) == null)
+            if (correspondingJoinColumn(column, table, columnChanges) == null)
                 return false;
         }
         return true;
     }
     
-    private Join rebuildJoin(AkibanInformationSchema ais, Join oldJoin, UserTable table, boolean asParent) {
+    private Join rebuildJoin(AkibanInformationSchema ais, Join oldJoin, UserTable table, 
+                             Collection<TableChange> columnChanges, boolean asParent) {
         Join newJoin = Join.create(ais, oldJoin.getName(), oldJoin.getParent(), oldJoin.getChild());
         newJoin.setGroup(oldJoin.getGroup());
         for (JoinColumn joinColumn : oldJoin.getJoinColumns()) {
             Column parent = joinColumn.getParent();
             Column child = joinColumn.getChild();
             if (asParent)
-                parent = table.getColumn(parent.getName());
+                parent = correspondingJoinColumn(parent, table, columnChanges);
             else
-                child = table.getColumn(child.getName());
+                child = correspondingJoinColumn(child, table, columnChanges);
             newJoin.addJoinColumn(parent, child);
         }
         return newJoin;
+    }
+
+    private Column correspondingJoinColumn(Column column, UserTable table, Collection<TableChange> columnChanges) {
+        String columnName = column.getName();
+        for (TableChange change : columnChanges) {
+            switch (change.getChangeType()) {
+            case DROP:
+                if (change.getOldName().equals(columnName)) {
+                    return null;
+                }
+            case MODIFY:
+                if (change.getOldName().equals(columnName)) {
+                    columnName = change.getNewName();
+                    break;
+                }
+            }
+        }
+        return table.getColumn(columnName);
     }
 
     private static class GroupSelector extends com.akiban.ais.protobuf.ProtobufWriter.TableSelector {

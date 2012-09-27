@@ -89,13 +89,10 @@ public class InConditionReverser extends BaseRule
         Project project = (Project)input;
         input = project.getInput();
         List<ExpressionNode> projectFields = project.getFields();
-        ConditionList joinConditions = new ConditionList(projectFields.size());
-        // TODO: Right now, always one condition.  For row constructor
-        // IN, will it be like this or an AND or even something with a
-        // ConditionList?
-        for (ExpressionNode cexpr : projectFields) {
-            joinConditions.add((ConditionExpression)cexpr);
-        }
+        if (projectFields.size() != 1)
+            return;
+        ConditionList joinConditions = new ConditionList();
+        addAnyConditions(joinConditions, (ConditionExpression)projectFields.get(0));
         if (!negated) {
             if (input instanceof ExpressionsSource) {
                 ExpressionsSource expressionsSource = (ExpressionsSource)input;
@@ -134,7 +131,20 @@ public class InConditionReverser extends BaseRule
             return;
         }
     }
-        
+
+    private void addAnyConditions(ConditionList joinConditions,
+                                  ConditionExpression condition) {
+        if (condition instanceof LogicalFunctionCondition) {
+            LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
+            if ("and".equals(lcond.getFunction())) {
+                addAnyConditions(joinConditions, lcond.getLeft());
+                addAnyConditions(joinConditions, lcond.getRight());
+                return;
+            }
+        }
+        joinConditions.add(condition);
+    }
+
     protected boolean convertToSubquerySource(Select select, 
                                               ConditionExpression selectElement, AnyCondition any, 
                                               Joinable selectInput, PlanNode input,

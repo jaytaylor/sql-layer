@@ -400,7 +400,21 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
          * @return this instance; useful for chaining
          */
         public <T> BindingsConfigurationProvider bind(Class<T> anInterface, Class<? extends T> anImplementation) {
-            elements.add(new ManualServiceBinding(anInterface.getName(), anImplementation.getName()));
+            elements.add(new ManualServiceBinding(anInterface.getName(), anImplementation.getName(), false));
+            return this;
+        }
+
+        /**
+         * Adds a service binding to the internal list. This is equivalent to a yaml segment of
+         * {@code bind: {theInteface : theImplementation}}. For instance, it does not affect locking, and if the
+         * interface is locked, this will fail at run time.
+         * @param anInterface the interface to bind to
+         * @param anImplementation the implementing class
+         * @param <T> the interface's type
+         * @return this instance; useful for chaining
+         */
+        public <T> BindingsConfigurationProvider bindAndRequire(Class<T> anInterface, Class<? extends T> anImplementation) {
+            elements.add(new ManualServiceBinding(anInterface.getName(), anImplementation.getName(), true));
             return this;
         }
 
@@ -487,20 +501,24 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         @Override
         public void loadInto(ServiceConfigurationHandler config) {
             config.bind(interfaceName, implementationName);
+            if (required)
+                config.require(interfaceName);
         }
 
 
         // ManualServiceBinding interface
 
-        private ManualServiceBinding(String interfaceName, String implementationName) {
+        private ManualServiceBinding(String interfaceName, String implementationName, boolean required) {
             this.interfaceName = interfaceName;
             this.implementationName = implementationName;
+            this.required = required;
         }
 
         // object state
 
         private final String interfaceName;
         private final String implementationName;
+        private final boolean required;
     }
 
     static class PropertyBindings implements BindingsConfigurationLoader {
