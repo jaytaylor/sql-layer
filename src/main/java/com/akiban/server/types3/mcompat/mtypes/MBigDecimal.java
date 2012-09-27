@@ -71,11 +71,12 @@ public class MBigDecimal extends TClassBase {
         return new MBigDecimalWrapper(sb.toString());
     }
 
-    public static void adjustAttrsAsNeeded(TExecutionContext context, PValueSource source,
+    public static void adjustAttrsAsNeeded(TExecutionContext context, TInstance sourceInstance, PValueSource source,
                                            TInstance targetInstance, PValueTarget target)
     {
+        BigDecimalWrapper value = getWrapper(source, sourceInstance);
         // TODO!
-        target.putObject(source.getObject());
+        target.putObject(value);
     }
 
     public MBigDecimal(String name){
@@ -86,7 +87,7 @@ public class MBigDecimal extends TClassBase {
     public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
                          TInstance targetInstance, PValueTarget target)
     {
-        adjustAttrsAsNeeded(context, source, targetInstance, target);
+        adjustAttrsAsNeeded(context, sourceInstance, source, targetInstance, target);
     }
 
     @Override
