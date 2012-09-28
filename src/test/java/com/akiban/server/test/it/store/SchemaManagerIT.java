@@ -429,23 +429,27 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         AkibanInformationSchema ais = schemaManager.getAis(session());
+        Collection<UserTable> before = new ArrayList<UserTable>(ais.getUserTables().values());
         assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        System.out.println("BEFORE");
-        for (UserTable table : ais.getUserTables().values()) {
-                System.out.println(String.format("    %s", table));
-        }
         assertEquals("group tables count before", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
         safeRestart();
         ais = schemaManager.getAis(session());
         assertNotNull(ais);
-
-        assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        System.out.println("AFTER");
-        for (UserTable table : ais.getUserTables().values()) {
-            System.out.println(String.format("    %s", table));
+        Collection<UserTable> after = ais.getUserTables().values();
+        // Diagnostics for occasional assertion violation of user table count
+        if (ais.getUserTables().size() != TABLE_COUNT + UT_COUNT) {
+            System.out.println("BEFORE");
+            for (UserTable userTable : before) {
+                System.out.println(String.format("    %s", userTable));
+            }
+            System.out.println("AFTER");
+            for (UserTable userTable : after) {
+                System.out.println(String.format("    %s", userTable));
+            }
         }
+        assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
         assertEquals("group tables count after", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
     }
