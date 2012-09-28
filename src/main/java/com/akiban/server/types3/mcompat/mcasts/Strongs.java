@@ -26,17 +26,89 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TStrongCasts;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public final class Strongs {
-    public static final TStrongCasts fromVarchar = TStrongCasts.from(MString.VARCHAR).toAll(MBundle.INSTANCE.id());
 
-    public static final TStrongCasts fromTinyint = TStrongCasts.from(MNumeric.TINYINT).to(
+    private static final TStrongCasts.TClassPredicate notString = new TStrongCasts.TClassPredicate() {
+        @Override
+        public boolean apply(TClass input) {
+            return ! (input instanceof MString);
+        }
+    };
+    private static final TStrongCasts.TClassPredicate notBinary = new TStrongCasts.TClassPredicate() {
+        @Override
+        public boolean apply(TClass input) {
+            return ! (input instanceof MBinary);
+        }
+    };
+
+    public static final TStrongCasts bulkVarchar = TStrongCasts.from(MString.VARCHAR).toAll(MBundle.INSTANCE.id());
+    public static final TStrongCasts bulkChar = TStrongCasts.from(MString.CHAR).toAll(MBundle.INSTANCE.id(), notString);
+    public static final TStrongCasts bulkTinytext = TStrongCasts.from(MString.TINYTEXT).toAll(MBundle.INSTANCE.id(), notString);
+    public static final TStrongCasts bulkText = TStrongCasts.from(MString.TEXT).toAll(MBundle.INSTANCE.id(), notString);
+    public static final TStrongCasts bulkMediumtext = TStrongCasts.from(MString.MEDIUMTEXT).toAll(MBundle.INSTANCE.id(), notString);
+    public static final TStrongCasts bulkLongtext = TStrongCasts.from(MString.LONGTEXT).toAll(MBundle.INSTANCE.id(), notString);
+    
+    public static final TStrongCasts bulkVarbinary = TStrongCasts.from(MBinary.VARBINARY).toAll(MBundle.INSTANCE.id(), notString);
+    public static final TStrongCasts bulkBinary = TStrongCasts.from(MBinary.BINARY).toAll(MBundle.INSTANCE.id(), notString, notBinary);
+    public static final TStrongCasts bulkTinyblob = TStrongCasts.from(MBinary.TINYBLOB).toAll(MBundle.INSTANCE.id(), notString, notBinary);
+    public static final TStrongCasts bulkBlob = TStrongCasts.from(MBinary.BLOB).toAll(MBundle.INSTANCE.id(), notString, notBinary);
+    public static final TStrongCasts bulkMediumblob = TStrongCasts.from(MBinary.MEDIUMBLOB).toAll(MBundle.INSTANCE.id(), notString, notBinary);
+    public static final TStrongCasts bulkLongblob = TStrongCasts.from(MBinary.LONGBLOB).toAll(MBundle.INSTANCE.id(), notString, notBinary);
+
+    public static final TStrongCasts fromChar = TStrongCasts.from(MString.CHAR).to(
+            MString.TINYTEXT,
+            MString.TEXT,
+            MString.MEDIUMTEXT,
+            MString.LONGTEXT
+    );
+
+    public static final TStrongCasts fromTinytext = TStrongCasts.from(MString.TINYTEXT).to(
+            MString.TEXT,
+            MString.MEDIUMTEXT,
+            MString.LONGTEXT
+    );
+
+    public static final TStrongCasts fromText = TStrongCasts.from(MString.TEXT).to(
+            MString.MEDIUMTEXT,
+            MString.LONGTEXT
+    );
+
+    public static final TStrongCasts fromMediumtext = TStrongCasts.from(MString.MEDIUMTEXT).to(
+            MString.LONGTEXT
+    );
+
+    public static final TStrongCasts fromBinary = TStrongCasts.from(MBinary.BINARY).to(
+            MBinary.TINYBLOB,
+            MBinary.BLOB,
+            MBinary.MEDIUMBLOB,
+            MBinary.LONGBLOB
+    );
+
+    public static final TStrongCasts fromTinyblob = TStrongCasts.from(MBinary.TINYBLOB).to(
+            MBinary.BLOB,
+            MBinary.MEDIUMBLOB,
+            MBinary.LONGBLOB
+    );
+
+    public static final TStrongCasts fromBlob = TStrongCasts.from(MBinary.BLOB).to(
+            MBinary.MEDIUMBLOB,
+            MBinary.LONGBLOB
+    );
+
+    public static final TStrongCasts fromMediumblob = TStrongCasts.from(MBinary.MEDIUMBLOB).to(
+            MBinary.LONGBLOB
+    );
+
+    public static final TStrongCasts fromint = TStrongCasts.from(MNumeric.TINYINT).to(
             MNumeric.SMALLINT,
             MNumeric.MEDIUMINT,
             MNumeric.INT,
@@ -47,7 +119,6 @@ public final class Strongs {
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromSmallint = TStrongCasts.from(MNumeric.SMALLINT).to(
@@ -59,37 +130,27 @@ public final class Strongs {
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromMediumint = TStrongCasts.from(MNumeric.MEDIUMINT).to(
             MNumeric.INT,
             MNumeric.BIGINT,
-            MNumeric.SMALLINT_UNSIGNED,
             MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromInt = TStrongCasts.from(MNumeric.INT).to(
             MNumeric.BIGINT,
-            MNumeric.SMALLINT_UNSIGNED,
-            MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromBigint = TStrongCasts.from(MNumeric.BIGINT).to(
-            MNumeric.SMALLINT_UNSIGNED,
-            MNumeric.MEDIUMINT_UNSIGNED,
-            MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
 
@@ -99,6 +160,7 @@ public final class Strongs {
             MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
             MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
@@ -106,17 +168,20 @@ public final class Strongs {
             MNumeric.MEDIUMINT_UNSIGNED,
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
             MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromMediumintUnsigned = TStrongCasts.from(MNumeric.MEDIUMINT_UNSIGNED).to(
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
             MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromIntUnsigned = TStrongCasts.from(MNumeric.INT_UNSIGNED).to(
             MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
             MNumeric.DECIMAL_UNSIGNED,
             MApproximateNumber.DOUBLE
     );
@@ -127,6 +192,19 @@ public final class Strongs {
     );
 
     public static final TStrongCasts fromDatetime = TStrongCasts.from(MDatetimes.DATETIME).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromDate = TStrongCasts.from(MDatetimes.DATE).to(
+            MDatetimes.DATETIME,
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromTime = TStrongCasts.from(MDatetimes.TIME).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromYear = TStrongCasts.from(MDatetimes.YEAR).to(
             MApproximateNumber.DOUBLE
     );
 
@@ -144,6 +222,14 @@ public final class Strongs {
     );
 
     public static final TStrongCasts fromFloat = TStrongCasts.from(MApproximateNumber.FLOAT).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromFloatUnsigned = TStrongCasts.from(MApproximateNumber.FLOAT_UNSIGNED).to(
+            MApproximateNumber.DOUBLE
+    );
+
+    public static final TStrongCasts fromDoubleUnsigned = TStrongCasts.from(MApproximateNumber.DOUBLE_UNSIGNED).to(
             MApproximateNumber.DOUBLE
     );
 }

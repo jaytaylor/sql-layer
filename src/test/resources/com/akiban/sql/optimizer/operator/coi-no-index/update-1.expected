@@ -1,5 +1,5 @@
 PhysicalUpdate
-  Update_Default(customers SET name = 'Smyth')
+  Update_Returning(customers SET name = 'Smyth')
     Filter_Default(customers)
       Select_HKeyOrdered(customers.name == 'Smith')
         GroupScan_Default(customers)

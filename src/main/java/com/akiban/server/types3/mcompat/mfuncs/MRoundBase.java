@@ -61,28 +61,6 @@ public abstract class MRoundBase extends TOverloadBase {
             double evaluate(double result) {
                 return Math.floor(result);
             }
-        },
-        TRUNCATE() {
-            @Override
-            BigDecimalWrapper evaluate(BigDecimalWrapper result) {
-                return result.truncate(0);
-            }
-            
-            @Override
-            double evaluate(double result) {
-                return (double)(int) result;
-            }
-        },
-        ROUND() {
-            @Override
-            BigDecimalWrapper evaluate(BigDecimalWrapper result) {
-                return result.round(0);
-            }
-            
-            @Override
-            double evaluate(double result) {
-                return Math.round(result);
-            }
         };
         
         abstract double evaluate(double result);

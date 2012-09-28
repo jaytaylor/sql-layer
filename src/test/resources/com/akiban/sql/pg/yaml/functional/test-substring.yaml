@@ -6,6 +6,9 @@
 --- # test SUBSTRINNG in SELECT clause, with 3 args
 - Statement: SELECT SUBSTRING(varchar_field, 5, LENGTH(varchar_field) - 4) from all_types;
 - output: [['ratically'], ['la']]
+--- # test with 3 args
+- Statement: SELECT SUBSTRING('quadratically', integer_field, 6) from all_types WHERE integer_field  = 3;
+- output: [['adrati']]
 --- # test SUBSTRING with 3 args
 - Statement: SELECT SUBSTRING('quadratically', integer_field, double_field + 1) FROM all_types WHERE integer_field = 3;
 - output: [['adrati']]

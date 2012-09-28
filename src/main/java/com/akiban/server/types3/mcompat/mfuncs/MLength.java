@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
@@ -38,9 +39,9 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.google.common.collect.ObjectArrays;
+
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -62,8 +63,21 @@ public abstract class MLength extends TOverloadBase
         }
     };
 
-    public static final TOverload OCTET_LENGTH = new MLength("OCTET_LENGTH")
+    public static final TOverload OCTET_LENGTH = new MBinaryLength("OCTET_LENGTH", 1, "getOctetLength");
+    public static final TOverload BIT_LENGTH = new MBinaryLength("BIT_LENGTH", 8);
+
+    private static class MBinaryLength extends MLength
     {
+
+        private final int multiplier;
+        private final String[] aliases;
+
+        private MBinaryLength(String name, int multiplier, String... aliases) {
+            super(name);
+            this.multiplier = multiplier;
+            this.aliases = ObjectArrays.concat(aliases, name);
+        }
+
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
@@ -71,23 +85,26 @@ public abstract class MLength extends TOverloadBase
             String charset = (StringFactory.Charset.values())[charsetId].name();
             try
             {
-                output.putInt32((inputs.get(0).getString()).getBytes(charset).length);
+                int length = (inputs.get(0).getString()).getBytes(charset).length;
+                length *= multiplier;
+                output.putInt32(length);
             }
             catch (UnsupportedEncodingException ex) // impossible to happen
             {
-                Logger.getLogger(MLength.class.getName()).log(Level.WARNING, null, ex);
+                context.warnClient(new InvalidParameterValueException("Unknown CHARSET: " + charset));
                 output.putNull();
             }
         }
 
         @Override
         public String[] registeredNames() {
-            return new String[] { "octet_length", "getOctetLength" };
+            return aliases;
         }
-    };
-
+    }
+    
     private final String name;
-    MLength (String name)
+
+    private MLength (String name)
     {
         this.name = name;
     }
@@ -109,6 +126,6 @@ public abstract class MLength extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT.instance());
+        return TOverloadResult.fixed(MNumeric.INT.instance(10));
     }
 }

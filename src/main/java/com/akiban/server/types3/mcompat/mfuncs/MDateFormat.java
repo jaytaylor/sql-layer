@@ -58,7 +58,8 @@ public abstract class MDateFormat extends TOverloadBase
                 @Override
                 protected long[] getYMDHMS(PValueSource source)
                 {
-                    return MDatetimes.decodeDate(source.getInt32());
+                    long ret[] = MDatetimes.decodeDate(source.getInt32());
+                    return MDatetimes.isValidDayMonth(ret) ? ret : null;
                 }
             },
             new MDateFormat(MDatetimes.DATETIME)
@@ -66,7 +67,8 @@ public abstract class MDateFormat extends TOverloadBase
                 @Override
                 protected long[] getYMDHMS(PValueSource source)
                 {
-                    return MDatetimes.decodeDatetime(source.getInt64());
+                    long ret[] = MDatetimes.decodeDatetime(source.getInt64());
+                    return MDatetimes.isValidDatetime(ret) ? ret : null;
                 }
             },
             new MDateFormat(MDatetimes.TIME)
@@ -75,11 +77,14 @@ public abstract class MDateFormat extends TOverloadBase
                 protected long[] getYMDHMS(PValueSource source)
                 {
                     long ret[] = MDatetimes.decodeTime(source.getInt32());
-                    
+
+                    if (!MDatetimes.isValidHrMinSec(ret, false))
+                        return null;
+
                     // adjust the date part to 0s
-                    ret[MDatetimes.YEAR_INDEX] = 0;
-                    ret[MDatetimes.MONTH_INDEX] = 0;
-                    ret[MDatetimes.DAY_INDEX] = 0;
+                    ret[MDatetimes.YEAR_INDEX] = 2009;
+                    ret[MDatetimes.MONTH_INDEX] = 1;
+                    ret[MDatetimes.DAY_INDEX] = 1;
                     
                     return ret;
                 }
@@ -184,7 +189,7 @@ public abstract class MDateFormat extends TOverloadBase
     {
         String st = null;
         InvalidOperationException error = null;
-        if (!MDatetimes.isValidDatetime(ymd))
+        if (ymd == null)
             error = new InvalidParameterValueException("Incorrect datetime value");
         else
             try

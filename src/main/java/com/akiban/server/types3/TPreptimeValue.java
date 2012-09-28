@@ -32,6 +32,7 @@ import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Equality;
 
 public final class TPreptimeValue {
@@ -39,6 +40,10 @@ public final class TPreptimeValue {
     public void instance(TInstance tInstance) {
         assert mutable : "not mutable";
         this.tInstance = tInstance;
+    }
+
+    public boolean isNullable() {
+        return tInstance == null || tInstance.nullability();
     }
 
     public TInstance instance() {
@@ -66,12 +71,16 @@ public final class TPreptimeValue {
         this.tInstance = tInstance;
         this.value = value;
         this.mutable = false;
-        if (value != null)
+        if (tInstance == null)
+            ArgumentValidation.isNull("value", value);
+        else if (value != null)
             tInstance.setNullable(value.isNull());
     }
 
     @Override
     public String toString() {
+        if (tInstance == null)
+            return "NULL";
         String result = tInstance.toString();
         if (value != null)
             result = result + '=' + value;
@@ -89,7 +98,7 @@ public final class TPreptimeValue {
             return false;
         if (value == null)
             return that.value == null;
-        return that.value != null && PValueSources.areEqual(value, that.value);
+        return that.value != null && PValueSources.areEqual(value, that.value, tInstance);
     }
 
     @Override

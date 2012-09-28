@@ -172,9 +172,19 @@ public class MApproximateNumber extends SimpleDtdTClass
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1)
+    protected TInstance doPickInstance(TInstance instanceL, TInstance instanceR)
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        int precisionL = instanceL.attribute(DoubleAttribute.PRECISION);
+        if (precisionL <= 0)
+            return instance();
+        int precisionR = instanceR.attribute(DoubleAttribute.PRECISION);
+        if (precisionR <= 0)
+            return instance();
+
+        int scaleL = instanceL.attribute(DoubleAttribute.SCALE);
+        int scaleR = instanceR.attribute(DoubleAttribute.SCALE);
+
+        return MBigDecimal.pickPrecisionAndScale(this, precisionL, scaleL, precisionR, scaleR);
     }
 
     @Override

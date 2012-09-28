@@ -43,7 +43,7 @@ public abstract class MCount extends TAggregatorBase {
         new MCount() {
 
             @Override
-            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object o) {
                 long count = state.hasAnyValue() ? state.getInt64() : 0;
                 ++count;
                 state.putInt64(count);
@@ -58,7 +58,7 @@ public abstract class MCount extends TAggregatorBase {
         new MCount() {
 
             @Override
-            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object o) {
                 if (!source.isNull()) {
                     long count = state.hasAnyValue() ? state.getInt64() : 0;
                     ++count;

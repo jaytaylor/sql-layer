@@ -65,11 +65,13 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                 config, indexStatisticsService, overloadResolutionService);
     }
 
+    @Override
     public void start() throws ServiceStartupException {
         server = new PostgresServer(reqs);
         server.start();
     }
 
+    @Override
     public void stop() {
         if (server != null) {
             server.stop();
@@ -77,16 +79,19 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
         }
     }
 
+    @Override
     public void crash() {
         stop();
     }
 
     /*** PostgresService ***/
 
+    @Override
     public int getPort() {
         return server.getPort();
     }
     
+    @Override
     public PostgresServer getServer() {
         return server;
     }

@@ -47,7 +47,6 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
 {
 
     private Operator resultOperator;
-    private RowType resultRowType;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
@@ -59,9 +58,8 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
                                      boolean usesPValues) {
-        super(columnNames, columnTypes, parameterTypes, usesPValues);
+        super(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.resultOperator = resultOperator;
-        this.resultRowType = resultRowType;
     }
     
     @Override
@@ -87,14 +85,16 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
             cursor = API.cursor(resultOperator, context);
             cursor.open();
             PostgresOutputter<Row> outputter = getRowOutputter(context);
+            outputter.beforeData();
             Row row;
             while ((row = cursor.next()) != null) {
-                assert resultRowType == null || (row.rowType() == resultRowType) : row;
+                assert getResultRowType() == null || (row.rowType() == getResultRowType()) : row;
                 outputter.output(row, usesPValues());
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
             }
+            outputter.afterData();
         }
         catch (IOException e) {
             exceptionDuringExecution = e;
@@ -127,10 +127,6 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
             messenger.sendMessage();
         }
         return nrows;
-    }
-
-    protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
-        return new PostgresRowOutputter(context, this);
     }
 
     @Override

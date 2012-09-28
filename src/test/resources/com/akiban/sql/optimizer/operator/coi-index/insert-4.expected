@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Insert_Default(INTO orders(oid, cid))
-    Project_Default(205, customers.cid, NULL)
+  Insert_Returning(INTO orders(oid, cid))
+    Project_Default(CAST(205 AS INT), customers.cid, NULL)
       IndexScan_Default(Index(customers.name), name = 'Jones', cid)

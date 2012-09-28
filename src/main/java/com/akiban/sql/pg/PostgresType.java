@@ -26,29 +26,20 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.aksql.aktypes.AkInterval;
-import com.akiban.server.types3.common.types.StringFactory.Charset;
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.server.ServerType;
 
-import com.akiban.server.error.UnknownDataTypeException;
-import com.akiban.server.error.UnknownTypeSizeException;
-import com.akiban.server.types.AkType;
-
-import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
+import com.akiban.server.error.UnknownDataTypeException;
+import com.akiban.server.error.UnknownTypeSizeException;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +49,6 @@ import org.slf4j.LoggerFactory;
  */
 public class PostgresType extends ServerType
 {
-
     private static Logger logger = LoggerFactory.getLogger(PostgresType.class);
 
     /*** Type OIDs ***/
@@ -343,164 +333,87 @@ public class PostgresType extends ServerType
         return new PostgresType(oid, length, modifier, aisType.akType(), instance);
     }
 
-    public static PostgresType fromDerby(DataTypeDescriptor type, TInstance tInstance)  {
+    public static PostgresType fromDerby(DataTypeDescriptor sqlType, final AkType akType, final TInstance tInstance)  {
         TypeOid oid;
         short length = -1;
         int modifier = -1;
 
-        TypeId typeId = type.getTypeId();
-
-        final AkType akType;
-
+        TypeId typeId = sqlType.getTypeId();
+        
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
             oid = TypeOid.INTERVAL_TYPE_OID;
-            akType = AkType.INTERVAL_MILLIS;
-            if (tInstance == null) tInstance = AkInterval.SECONDS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
             oid = TypeOid.INTERVAL_TYPE_OID;
-            akType = AkType.INTERVAL_MONTH;
-            if (tInstance == null) tInstance = AkInterval.MONTHS.tInstanceFrom(type);
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
             oid = TypeOid.BYTEA_TYPE_OID;
-            akType = AkType.VARBINARY;
-            if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             oid = TypeOid.BOOL_TYPE_OID;
-            akType = AkType.BOOL;
-            if (tInstance == null) tInstance = AkBool.INSTANCE.instance();
             break;
         case TypeId.FormatIds.CHAR_TYPE_ID:
             oid = TypeOid.BPCHAR_TYPE_OID;
-            akType = AkType.VARCHAR;
-            if (tInstance == null) tInstance = charType(type, MString.VARCHAR);
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
             oid = TypeOid.DATE_TYPE_OID;
-            akType = AkType.DATE;
-            if (tInstance == null) tInstance = MDatetimes.DATE.instance();
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
             oid = TypeOid.NUMERIC_TYPE_OID;
-            akType = AkType.DECIMAL;
-            if (tInstance == null) tInstance = MNumeric.DECIMAL.instance(type.getPrecision(), type.getScale());
             break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
             oid = TypeOid.FLOAT8_TYPE_OID;
-            if (typeId.isUnsigned()) {
-                akType = AkType.U_DOUBLE;
-                if (tInstance == null) tInstance = MApproximateNumber.DOUBLE_UNSIGNED.instance();
-            }
-            else {
-                akType = AkType.DOUBLE;
-                if (tInstance == null) tInstance = MApproximateNumber.DOUBLE.instance();
-            }
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
             oid = TypeOid.INT4_TYPE_OID;
-            if (typeId.isUnsigned()) {
-                akType = AkType.U_INT;
-                if (tInstance == null) tInstance = MNumeric.INT_UNSIGNED.instance();
-            }
-            else {
-                akType = AkType.LONG;
-                if (tInstance == null) tInstance = MNumeric.INT.instance();
-            }
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned()) {
-                if (tInstance == null) tInstance = MNumeric.BIGINT_UNSIGNED.instance();
                 return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
-                                        AkType.U_BIGINT, tInstance);
+                                        akType, tInstance);
             }
             oid = TypeOid.INT8_TYPE_OID;
-            akType = AkType.LONG;
-            if (tInstance == null) tInstance = MNumeric.BIGINT.instance();
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TypeOid.TEXT_TYPE_OID;
-            akType = AkType.TEXT;
-            if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
             oid = TypeOid.TEXT_TYPE_OID;
-            akType = AkType.TEXT;
-            if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.REAL_TYPE_ID:
             oid = TypeOid.FLOAT4_TYPE_OID;
-            if (typeId.isUnsigned()) {
-                akType = AkType.U_FLOAT;
-                if (tInstance == null) tInstance = MApproximateNumber.FLOAT_UNSIGNED.instance();
-            }
-            else {
-                akType = AkType.FLOAT;
-                if (tInstance == null) tInstance = MApproximateNumber.FLOAT.instance();
-            }
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             oid = TypeOid.INT2_TYPE_OID;
-            if (typeId == TypeId.YEAR_ID) {
-                akType = AkType.YEAR;
-                if (tInstance == null) tInstance = MDatetimes.YEAR.instance();
-            }
-            else {
-                akType = AkType.LONG;
-                if (tInstance == null) tInstance = (typeId.isUnsigned()) ? MNumeric.SMALLINT_UNSIGNED.instance() : MNumeric.SMALLINT.instance();
-            }
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TypeOid.TIME_TYPE_OID;
-            akType = AkType.TIME;
-            if (tInstance == null) tInstance = MDatetimes.TIME.instance();
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
+            // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another
+            // way of representing seconds precision, not ISO
+            // timestamp with fractional seconds.
             oid = TypeOid.TIMESTAMP_TYPE_OID;
-            if (typeId == TypeId.DATETIME_ID) {
-                akType = AkType.DATETIME;
-                if (tInstance == null) tInstance = MDatetimes.DATETIME.instance();
-            }
-            else {
-                // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another
-                // way of representing seconds precision, not ISO
-                // timestamp with fractional seconds.
-                akType = AkType.TIMESTAMP;
-                if (tInstance == null) tInstance = MDatetimes.TIMESTAMP.instance();
-            }
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = TypeOid.INT2_TYPE_OID; // No INT1
-            akType = AkType.LONG;
-            if (tInstance == null) tInstance = (typeId.isUnsigned()) ? MNumeric.TINYINT_UNSIGNED.instance() : MNumeric.TINYINT.instance();
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             oid = TypeOid.BYTEA_TYPE_OID;
-            akType = AkType.VARBINARY;
-            if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:
             oid = TypeOid.TEXT_TYPE_OID;
-            akType = AkType.VARBINARY;
-            if (tInstance == null) tInstance = MBinary.VARBINARY.instance(type.getMaximumWidth());
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             oid = TypeOid.VARCHAR_TYPE_OID;
-            akType = AkType.VARCHAR;
-            if (tInstance == null) tInstance = charType(type, MString.VARCHAR);
             break;
         case TypeId.FormatIds.CLOB_TYPE_ID:
             oid = TypeOid.TEXT_TYPE_OID;
-            akType = AkType.TEXT;
-            if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.XML_TYPE_ID:
             oid = TypeOid.XML_TYPE_OID;
-            akType = AkType.TEXT;
-            if (tInstance == null) tInstance = charType(type, MString.TEXT);
             break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
@@ -509,38 +422,26 @@ public class PostgresType extends ServerType
                 String name = typeId.getSQLTypeName();
                 for (Type aisType : Types.types()) {
                     if (aisType.name().equalsIgnoreCase(name)) {
-                        return fromAIS(aisType, null, type.isNullable(), tInstance);
+                        return fromAIS(aisType, null, sqlType.isNullable(), tInstance);
                     }
                 }
             }
             /* falls through */
         default:
-            throw new UnknownDataTypeException(type.toString());
+            throw new UnknownDataTypeException(sqlType.toString());
         }
 
         if (typeId.isDecimalTypeId() || typeId.isNumericTypeId()) {
-            modifier = (type.getPrecision() << 16) + type.getScale() + 4;
+            modifier = (sqlType.getPrecision() << 16) + sqlType.getScale() + 4;
         }
         else if (typeId.variableLength()) {
-            modifier = type.getMaximumWidth() + 4;
+            modifier = sqlType.getMaximumWidth() + 4;
         }
         else {
             length = (short)typeId.getMaximumMaximumWidth();
         }
 
-        if (tInstance == null)
-            logger.warn("no TInstance created for {}", type);
-        else
-            tInstance.setNullable(type.isNullable());
         return new PostgresType(oid, length, modifier, akType, tInstance);
-    }
-
-    private static TInstance charType(DataTypeDescriptor type, TString tClass) {
-        CharacterTypeAttributes typeAttributes = type.getCharacterAttributes();
-        int charsetId = (typeAttributes == null)
-                ? -1
-                : Charset.of(typeAttributes.getCharacterSet()).ordinal();
-        return tClass.instance(type.getMaximumWidth(), charsetId);
     }
 
     @Override

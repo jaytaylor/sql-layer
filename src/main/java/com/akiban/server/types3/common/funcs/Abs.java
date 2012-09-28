@@ -50,7 +50,7 @@ public abstract class Abs extends TOverloadBase {
 
     @Override
     public String[] registeredNames() {
-        return new String[] {"absolute"};
+        return new String[] {"absolute", "abs"};
     }
 
     @Override

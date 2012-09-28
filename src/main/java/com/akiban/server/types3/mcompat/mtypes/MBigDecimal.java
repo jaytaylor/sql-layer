@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.rowdata.ConversionHelperBigDecimal;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
@@ -45,6 +46,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
@@ -74,8 +76,25 @@ public class MBigDecimal extends TClassBase {
     public static void adjustAttrsAsNeeded(TExecutionContext context, PValueSource source,
                                            TInstance targetInstance, PValueTarget target)
     {
-        // TODO!
-        target.putObject(source.getObject());
+        TInstance inputInstance = context.inputTInstanceAt(0);
+        int inputPrecision = inputInstance.attribute(Attrs.PRECISION);
+        int targetPrecision = targetInstance.attribute(Attrs.PRECISION);
+        int inputScale = inputInstance.attribute(Attrs.SCALE);
+        int targetScale = targetInstance.attribute(Attrs.SCALE);
+        if ( (inputPrecision != targetPrecision) || (inputScale != targetScale) ) {
+            BigDecimalWrapper bdw = getWrapper(source, inputInstance);
+            bdw.round(targetScale);
+            target.putObject(bdw);
+        }
+        else if (source.hasCacheValue()) {
+            target.putObject(source.getObject());
+        }
+        else if (source.hasRawValue()) {
+            target.putBytes(source.getBytes());
+        }
+        else {
+            throw new IllegalStateException("no value set");
+        }
     }
 
     public MBigDecimal(String name){
@@ -87,6 +106,11 @@ public class MBigDecimal extends TClassBase {
                          TInstance targetInstance, PValueTarget target)
     {
         adjustAttrsAsNeeded(context, source, targetInstance, target);
+    }
+
+    @Override
+    public boolean normalizeInstancesBeforeComparison() {
+        return true;
     }
 
     @Override
@@ -117,11 +141,9 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    public PValueCacher<BigDecimalWrapper> cacher() {
+    public PValueCacher cacher() {
         return cacher;
     }
-
-
 
     @Override
     public TInstance instance() {
@@ -153,20 +175,50 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        // Determine precision of TInstance
-        /*switch (mode) {
-            case COMBINE:
-            case CHOOSE:
-        }*/
-        throw new UnsupportedOperationException("Not supported yet.");
+    protected TInstance doPickInstance(TInstance instanceL, TInstance instanceR) {
+        int scaleL = instanceL.attribute(Attrs.SCALE);
+        int scaleR = instanceL.attribute(Attrs.SCALE);
+
+        int precisionL = instanceL.attribute(Attrs.PRECISION);
+        int precisionR = instanceR.attribute(Attrs.PRECISION);
+
+        return pickPrecisionAndScale(this, precisionL, scaleL, precisionR, scaleR);
     }
 
-    public static final PValueCacher<BigDecimalWrapper> cacher = new PValueCacher<BigDecimalWrapper>() {
+    public static TInstance pickPrecisionAndScale(TClass tclass,
+                                                  int precisionL, int scaleL, int precisionR, int scaleR)
+    {
+        int resultPrecision, resultScale;
+
+        if (scaleL == scaleR) {
+            resultScale = scaleL;
+            resultPrecision = Math.max(precisionL, precisionR);
+        }
+        else {
+            int precisionOfSmallerScale, precisionOfLargerScale;
+            if (scaleL > scaleR) {
+                resultScale = scaleL;
+                resultPrecision = scaleL; // might be swapped later
+                precisionOfSmallerScale = precisionR;
+            }
+            else {
+                resultScale = scaleR;
+                resultPrecision = scaleR; // might be swapped later
+                precisionOfSmallerScale = precisionL;
+            }
+            // Whatever the precision was of the DECIMAL of smaller scale, widen it so that we can have this DECIMAL
+            // have the big scale
+            precisionOfSmallerScale += Math.abs(scaleL - scaleR);
+            resultPrecision = Math.max(precisionOfSmallerScale, resultPrecision);
+        }
+        return tclass.instance(resultPrecision, resultScale);
+    }
+
+    public static final PValueCacher cacher = new PValueCacher() {
 
         @Override
-        public void cacheToValue(BigDecimalWrapper bdw, TInstance tInstance, PBasicValueTarget target) {
-            BigDecimal bd = bdw.asBigDecimal();
+        public void cacheToValue(Object bdw, TInstance tInstance, PBasicValueTarget target) {
+            BigDecimal bd = ((BigDecimalWrapper)bdw).asBigDecimal();
             int precision = tInstance.attribute(Attrs.PRECISION);
             int scale = tInstance.attribute(Attrs.SCALE);
             byte[] bb = ConversionHelperBigDecimal.bytesFromObject(bd, precision, scale);

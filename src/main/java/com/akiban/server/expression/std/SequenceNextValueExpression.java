@@ -56,7 +56,7 @@ public final class SequenceNextValueExpression extends AbstractBinaryExpression 
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException {
             argumentTypes.setType(0, AkType.VARCHAR);
-            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
             return ExpressionTypes.LONG;
         }
     };

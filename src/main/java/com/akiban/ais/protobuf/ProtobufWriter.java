@@ -40,9 +40,10 @@ import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
-import com.akiban.ais.model.View;
-
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
+import com.akiban.ais.pt.PendingOSC;
+import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufWriteException;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.protobuf.CodedOutputStream;
@@ -341,6 +342,10 @@ public class ProtobufWriter {
             tableBuilder.setParentTable(joinBuilder.build());
         }
 
+        if (table.getPendingOSC() != null) {
+            writePendingOSC(tableBuilder, table.getPendingOSC());
+        }
+
         schemaBuilder.addTables(tableBuilder.build());
     }
 
@@ -510,6 +515,40 @@ public class ProtobufWriter {
         case Z_ORDER_LAT_LON: 
             return AISProtobuf.IndexMethod.Z_ORDER_LAT_LON;
         }
+    }
+
+    private static void writePendingOSC(AISProtobuf.Table.Builder tableBuilder, PendingOSC pendingOSC) {
+        AISProtobuf.PendingOSC.Builder oscBuilder = AISProtobuf.PendingOSC.newBuilder();
+        oscBuilder.setOriginalName(pendingOSC.getOriginalName());
+        for (TableChange columnChange : pendingOSC.getColumnChanges()) {
+            oscBuilder.addColumnChanges(writePendingOSChange(columnChange));
+        }
+        for (TableChange indexChange : pendingOSC.getIndexChanges()) {
+            oscBuilder.addIndexChanges(writePendingOSChange(indexChange));
+        }
+        if (pendingOSC.getCurrentName() != null)
+            oscBuilder.setCurrentName(pendingOSC.getCurrentName());
+        tableBuilder.setPendingOSC(oscBuilder.build());
+    }
+
+    private static AISProtobuf.PendingOSChange writePendingOSChange(TableChange tableChange) {
+        AISProtobuf.PendingOSChange.Builder oscBuilder = AISProtobuf.PendingOSChange.newBuilder();
+        switch (tableChange.getChangeType()) {
+        case ADD:
+            oscBuilder.setType(AISProtobuf.PendingOSChangeType.ADD);
+            oscBuilder.setNewName(tableChange.getNewName());
+            break;
+        case DROP:
+            oscBuilder.setType(AISProtobuf.PendingOSChangeType.DROP);
+            oscBuilder.setOldName(tableChange.getOldName());
+            break;
+        case MODIFY:
+            oscBuilder.setType(AISProtobuf.PendingOSChangeType.MODIFY);
+            oscBuilder.setOldName(tableChange.getOldName());
+            oscBuilder.setNewName(tableChange.getNewName());
+            break;
+        }
+        return oscBuilder.build();
     }
 
     private static void writeSequence (AISProtobuf.Schema.Builder schemaBuilder, Sequence sequence) {

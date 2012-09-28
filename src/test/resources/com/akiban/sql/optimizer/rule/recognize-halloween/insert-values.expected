@@ -1,2 +1,3 @@
-InsertStatement@8eb62c4(t[t.id, t.n])
-  ExpressionsSource@15a1366f([[1, 1], [2, 2]])
+DMLStatement@471508ac(t)
+  InsertStatement@477872fd(t[t.id, t.n])
+    ExpressionsSource@34c564b3([[1, 1], [2, 2]])

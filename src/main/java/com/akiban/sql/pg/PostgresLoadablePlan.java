@@ -26,12 +26,19 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.sql.optimizer.TypesTranslation;
+import com.akiban.sql.types.DataTypeDescriptor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PostgresLoadablePlan
 {
@@ -41,14 +48,22 @@ public class PostgresLoadablePlan
         if (loadablePlan == null)
             return null;
         loadablePlan.ais(server.getAIS());
+        List<String> columnNames = loadablePlan.columnNames();
+        List<PostgresType> columnTypes = columnTypes(loadablePlan);
+        boolean usesPValues = server.getBooleanProperty("newtypes", Types3Switch.ON);
         if (loadablePlan instanceof LoadableOperator)
             return new PostgresLoadableOperator(
                     (LoadableOperator)loadablePlan,
+                    columnNames,
+                    columnTypes,
                     args,
-                    server.getBooleanProperty("newtypes", Types3Switch.ON));
+                    usesPValues);
         if (loadablePlan instanceof LoadableDirectObjectPlan)
-            return new PostgresLoadableDirectObjectPlan((LoadableDirectObjectPlan)loadablePlan, args,
-                    server.getBooleanProperty("newtypes", Types3Switch.ON));
+            return new PostgresLoadableDirectObjectPlan((LoadableDirectObjectPlan)loadablePlan, 
+                                                        columnNames, 
+                                                        columnTypes,
+                                                        args,
+                                                        usesPValues);
         return null;
     }
     
@@ -67,6 +82,18 @@ public class PostgresLoadablePlan
                 }
             }
         }
+    }
+
+    public static List<PostgresType> columnTypes(LoadablePlan<?> plan)
+    {
+        List<PostgresType> columnTypes = new ArrayList<PostgresType>();
+        for (int jdbcType : plan.jdbcTypes()) {
+            DataTypeDescriptor sqlType = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
+            AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
+            TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+            columnTypes.add(PostgresType.fromDerby(sqlType, akType, tInstance));
+        }
+        return columnTypes;
     }
 
     // All static methods.

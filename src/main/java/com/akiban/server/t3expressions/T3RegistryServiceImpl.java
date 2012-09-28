@@ -36,6 +36,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCommutativeOverloads;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
@@ -56,8 +57,11 @@ import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -65,6 +69,7 @@ import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,16 +79,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
 
     // T3RegistryService interface
-
+    
     @Override
-    public Collection<TValidatedOverload> getOverloads(String name) {
-        return overloadsByName.get(name.toLowerCase());
+    public Iterable<? extends ScalarsGroup> getOverloads(String name) {
+        List<ScalarsGroup> result = overloadsByName.get(name.toLowerCase());
+        return result.isEmpty() ? null : result;
     }
 
     @Override
@@ -195,15 +202,32 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return local;
     }
 
-    private static Multimap<String, TValidatedOverload> createScalars(InstanceFinder finder) {
+    private static ListMultimap<String, ScalarsGroup> createScalars(InstanceFinder finder) {
+
+        Set<TOverload> commutedOverloads = new HashSet<TOverload>();
+        for (TCommutativeOverloads commutativeOverloads : finder.find(TCommutativeOverloads.class)) {
+            commutativeOverloads.addTo(commutedOverloads);
+        }
+
         Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
 
         int errors = 0;
         for (TOverload scalar : finder.find(TOverload.class)) {
             try {
                 TValidatedOverload validated = new TValidatedOverload(scalar);
-                for (String name : validated.registeredNames())
-                    overloadsByName.put(name.toLowerCase(), validated);
+
+                String[] names = validated.registeredNames();
+                for (int i = 0; i < names.length; ++i)
+                    names[i] = names[i].toLowerCase();
+
+                for (String name : names)
+                    overloadsByName.put(name, validated);
+
+                if (commutedOverloads.remove(scalar)) {
+                    TValidatedOverload commuted = validated.createCommuted();
+                    for (String name : names)
+                        overloadsByName.put(name, commuted);
+                }
             } catch (RuntimeException e) {
                 rejectTOverload(scalar, e);
                 ++errors;
@@ -212,6 +236,11 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 ++errors;
             }
         }
+        if (!commutedOverloads.isEmpty()) {
+            logger.error("overload(s) were marked as commutative, but not found: {}", commutedOverloads);
+            ++errors;
+        }
+
         if (errors > 0) {
             StringBuilder sb = new StringBuilder("Found ").append(errors).append(" error");
             if (errors != 1)
@@ -219,7 +248,49 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             sb.append(" while collecting scalar functions. Check logs for details.");
             throw new AkibanInternalException(sb.toString());
         }
-        return overloadsByName;
+
+        ArrayListMultimap<String, ScalarsGroup> results = ArrayListMultimap.create();
+        for (Map.Entry<String, Collection<TValidatedOverload>> entry : overloadsByName.asMap().entrySet()) {
+            String overloadName = entry.getKey();
+            Collection<TValidatedOverload> allOverloads = entry.getValue();
+            for (Collection<TValidatedOverload> priorityGroup : scalarsByPriority(allOverloads)) {
+                ScalarsGroup scalarsGroup = new ScalarsGroupImpl(priorityGroup);
+                results.put(overloadName, scalarsGroup);
+            }
+        }
+        results.trimToSize();
+        return Multimaps.unmodifiableListMultimap(results);
+    }
+
+
+    private static List<Collection<TValidatedOverload>> scalarsByPriority(
+            Collection<TValidatedOverload> overloads)
+    {
+        // First, we'll put this into a SortedMap<Integer, Collection<TVO>> so that we have each subset of the
+        // overloads grouped by priority. Then we'll go over those collections; for each one, we'll wrap it in
+        // an unmodifiable Collection (so that users of the iterator() can't modify the Collections).
+        // Finally, we'll wrap the result in an unmodifiable Collection (so that users can't remove Collections
+        // from it via the Iterator).
+        SortedMap<Integer, ArrayList<TValidatedOverload>> byPriority
+                = new TreeMap<Integer, ArrayList<TValidatedOverload>>();
+        for (TValidatedOverload overload : overloads) {
+            for (int priority : overload.getPriorities()) {
+                ArrayList<TValidatedOverload> thisPriorityOverloads = byPriority.get(priority);
+                if (thisPriorityOverloads == null) {
+                    thisPriorityOverloads = new ArrayList<TValidatedOverload>();
+                    byPriority.put(priority, thisPriorityOverloads);
+                }
+                thisPriorityOverloads.add(overload);
+            }
+        }
+
+        List<Collection<TValidatedOverload>> results
+                = new ArrayList<Collection<TValidatedOverload>>(byPriority.size());
+        for (ArrayList<TValidatedOverload> priorityGroup : byPriority.values()) {
+            priorityGroup.trimToSize();
+            results.add(Collections.unmodifiableCollection(priorityGroup));
+        }
+        return results;
     }
 
     private static void rejectTOverload(TOverload overload, Throwable e) {
@@ -422,10 +493,12 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     private static final Logger logger = LoggerFactory.getLogger(T3RegistryServiceImpl.class);
 
     // object state
+
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
-    private volatile Multimap<String, TValidatedOverload> overloadsByName;
+    private volatile ListMultimap<String, ScalarsGroup> overloadsByName;
     private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
+
     private volatile Collection<? extends TClass> tClasses;
     private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {
         @Override
@@ -437,6 +510,142 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     };
 
     // inner classes
+
+    protected static class ScalarsGroupImpl implements ScalarsGroup {
+
+        @Override
+        public Collection<? extends TValidatedOverload> getOverloads() {
+            return overloads;
+        }
+
+        public ScalarsGroupImpl(Collection<TValidatedOverload> overloads) {
+            this.overloads = Collections.unmodifiableCollection(overloads);
+            boolean outRange[] = new boolean[1];
+            int argc[] = new int[1];
+            sameType = doFindSameType(overloads, argc, outRange);
+            
+            outOfRangeVal = outRange[0];
+            nArgs = argc[0];
+        }
+
+        @Override
+        public boolean hasSameTypeAt(int pos)
+        {
+            return pos >= nArgs         // if pos is out of range
+                        ? outOfRangeVal
+                        : sameType.get(pos); 
+        }
+        
+        private static int nArgsOf(TValidatedOverload ovl)
+        {
+            return ovl.positionalInputs() 
+                   + (ovl.varargInputSet() == null ? 0 : 1);
+        }
+
+        private static boolean hasVararg(TValidatedOverload ovl)
+        {
+            return ovl.varargInputSet() != null;
+        }
+
+        protected static BitSet doFindSameType(Collection<? extends TValidatedOverload> overloads, int range[], boolean outRange[])
+        {
+            ArrayList<Integer> nArgs = new ArrayList<Integer>();
+
+            // overload with the longest argument list
+            TValidatedOverload maxOvl = overloads.iterator().next();
+            int maxArgc = nArgsOf(maxOvl);
+            boolean hasVararg = hasVararg(maxOvl);
+            int n = 1;
+            
+            // whether arg that's out of range should be 'same' or 'not same'
+                // false if all overloads in the group have fixed length
+                // true if all overloads with varargs in the group have the same targetType of vararg
+                // false otherwise
+            boolean outOfRange = false; 
+            TClass firstVararg = null;
+            
+            for (TValidatedOverload ovl : overloads)
+            {
+                int curArgc = nArgsOf(ovl);
+                nArgs.add(curArgc);
+                boolean curHasVar = hasVararg(ovl);
+                
+                if (curHasVar)
+                {
+                    if (firstVararg == null)
+                    {
+                        outOfRange = true;
+                        firstVararg = ovl.varargInputSet().targetType();
+                    }
+                    else
+                        outOfRange &= firstVararg.equals(ovl.varargInputSet().targetType());
+                }
+
+                if (curArgc > maxArgc
+                        || curArgc == maxArgc 
+                           && hasVararg 
+                           && !curHasVar)
+                {
+                    hasVararg = hasVararg(ovl);
+                    maxOvl = ovl;
+                    maxArgc = curArgc;
+                }
+                ++n;
+            }
+            
+            outRange[0] = outOfRange;
+            range[0] = maxArgc;
+            
+            // all the overloads in the group are vararg
+            if (hasVararg && maxArgc == 1)
+            {
+                BitSet ret = new BitSet(1);
+                ret.set(0, outOfRange);
+                return ret;
+            }
+            
+            BitSet sameType = new BitSet(maxArgc);
+
+            Boolean same;
+            for (n = 0; n < maxArgc; ++n)
+            {
+                same = Boolean.TRUE;
+                TClass common = maxOvl.inputSetAt(n).targetType();
+                int index = 0;
+                for (TValidatedOverload ovl : overloads)
+                {
+                    int curArgc = nArgs.get(index++);
+                    TClass targetType;
+
+                    // if the arg is absent  
+                    if (n >= curArgc)
+                    {
+                        if (!hasVararg(ovl))
+                            continue;
+                        else
+                            targetType = ovl.varargInputSet().targetType();
+                    }
+                    else
+                        targetType = ovl.inputSetAt(n).targetType();
+                    
+                    if (targetType != null && !targetType.equals(common)
+                            || targetType == null && common != null)
+                    {
+                        same = Boolean.FALSE;
+                        break;
+                    }
+                }
+                sameType.set(n, same);
+            }
+            
+            return sameType;
+        }
+        private final int nArgs;
+        private final boolean outOfRangeVal;
+        private final BitSet sameType;
+        private final Collection<? extends TValidatedOverload> overloads;
+
+    }
 
     private static class SelfCast implements TCast {
 
@@ -617,7 +826,13 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         }
 
         private Object scalarDescriptors() {
-            return describeOverloads(overloadsByName.asMap(), Functions.toStringFunction());
+            Multimap<String, TValidatedOverload> flattenedOverloads = HashMultimap.create();
+            for (Map.Entry<String, ScalarsGroup> entry : overloadsByName.entries()) {
+                String overloadName = entry.getKey();
+                ScalarsGroup scalarsGroup = entry.getValue();
+                flattenedOverloads.putAll(overloadName, scalarsGroup.getOverloads());
+            }
+            return describeOverloads(flattenedOverloads.asMap(), Functions.toStringFunction());
         }
 
         private Object aggregateDescriptors() {
@@ -666,4 +881,5 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return new Yaml(options).dump(obj);
         }
     }
+
 }

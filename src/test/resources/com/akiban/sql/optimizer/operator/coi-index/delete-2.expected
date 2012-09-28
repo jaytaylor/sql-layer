@@ -1,5 +1,5 @@
 PhysicalUpdate
-  Delete_Default(FROM items)
+  Delete_Returning(FROM items)
     Filter_Default(items)
       Select_HKeyOrdered(items.quan == 0)
         GroupScan_Default(customers)

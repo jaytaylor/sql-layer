@@ -130,6 +130,7 @@ message Table {
                                         // by user actions. For AIS tables.
     optional int32   version     = 10;  // Version this table was created with.
                                         // For AIS tables.
+    optional PendingOSC pendingOSC = 11; // ALTER by pt-online-schema-change.
 }
 
 message Property {
@@ -159,6 +160,25 @@ message Schema {
     optional CharCollation charColl = 4; // schema default character set & collation
     repeated View   views        = 5;  // list of views in the schema
     repeated Sequence sequences  = 6;  // list of sequences 
+}
+
+message PendingOSC {
+    optional string originalName           = 1; // name of the original that this copied
+    repeated PendingOSChange columnChanges = 2; // column changes to be done
+    repeated PendingOSChange indexChanges  = 3; // index changes to be done
+    optional string currentName            = 4; // name original has been renamed to
+}
+
+enum PendingOSChangeType {
+    ADD    = 0;
+    DROP   = 1;
+    MODIFY = 2;
+}
+
+message PendingOSChange {
+    optional PendingOSChangeType type = 1; // type of change
+    optional string oldName = 2;           // old column / index name
+    optional string newName = 3;           // new column / index name
 }
 
 message AkibanInformationSchema {

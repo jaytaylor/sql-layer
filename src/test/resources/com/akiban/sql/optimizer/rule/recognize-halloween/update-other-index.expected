@@ -1,6 +1,7 @@
-UpdateStatement@77106813(t[t.n = plus(t.n,1)])
-  Select@5620f476[]
-    Flatten@1bf573e3(t)
-      AncestorLookup@f8b4a6c(t -> [t])
-        SingleIndexScan@1c3006d(Index(test.t.PRIMARY[IndexColumn(id)]), NONE, <1000, rows = 1, cost = 12.0678)
-        TableSource@53bf2926(t - TableGroup@2950f502(t))
+DMLStatement@11b1d486(t)
+  UpdateStatement@13b58dd8(t[t.n = plus(t.n,1)])
+    Select@74736a03[]
+      Flatten@780185f9(t)
+        AncestorLookup@2c02dbfc(t -> [t])
+          SingleIndexScan@6fb893f6(Index(test.t.PRIMARY[IndexColumn(id)]), NONE, <1000, rows = 1, cost = 12.0678)
+          TableSource@181ac47f(t - TableGroup@3efa34c7(t))

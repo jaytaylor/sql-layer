@@ -58,7 +58,9 @@ public final class TNullExpression implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        TEvaluatableExpression result = evaluationsByUnderlying.get(tInstance.typeClass().underlyingType());
+        TEvaluatableExpression result = tInstance == null
+                ? nullUnknown
+                : evaluationsByUnderlying.get(tInstance.typeClass().underlyingType());
         assert result != null : tInstance;
         return result;
     }
@@ -79,6 +81,7 @@ public final class TNullExpression implements TPreparedExpression {
     private final TInstance tInstance;
 
     private static final EnumMap<PUnderlying,InnerEvaluation> evaluationsByUnderlying = createEvaluations();
+    private static final InnerEvaluation nullUnknown = new InnerEvaluation(null);
 
     private static EnumMap<PUnderlying, InnerEvaluation> createEvaluations() {
         EnumMap<PUnderlying, InnerEvaluation> result = new EnumMap<PUnderlying, InnerEvaluation>(PUnderlying.class);

@@ -57,6 +57,11 @@ public class AkIfElse extends TOverloadBase
     }
 
     @Override
+    protected boolean nullContaminates(int inputIndex) {
+        return inputIndex == 0;
+    }
+
+    @Override
     public String displayName()
     {
         return "IF";

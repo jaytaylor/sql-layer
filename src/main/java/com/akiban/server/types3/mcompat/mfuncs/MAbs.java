@@ -45,11 +45,6 @@ public class MAbs {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putInt8((byte) Math.abs(inputs.get(0).getInt8()));
         }
-
-        @Override
-        public TOverloadResult resultType() {
-            return TOverloadResult.fixed(MNumeric.INT.instance());
-        }
     };
     public static final TOverload SMALLINT = new Abs(MNumeric.SMALLINT) {
 
@@ -57,22 +52,12 @@ public class MAbs {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putInt16((short) Math.abs(inputs.get(0).getInt16()));
         }
-
-        @Override
-        public TOverloadResult resultType() {
-            return TOverloadResult.fixed(MNumeric.INT.instance());
-        }
     };
     public static final TOverload MEDIUMINT = new Abs(MNumeric.MEDIUMINT) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putInt32((int) Math.abs(inputs.get(0).getInt32()));
-        }
-
-        @Override
-        public TOverloadResult resultType() {
-            return TOverloadResult.fixed(MNumeric.INT.instance());
         }
     };
     public static final TOverload BIGINT = new Abs(MNumeric.BIGINT) {

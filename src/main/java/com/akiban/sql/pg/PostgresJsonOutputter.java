@@ -33,7 +33,11 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.Quote;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.aksql.aktypes.AkResultSet;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
 
 import java.util.*;
@@ -54,6 +58,12 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
         this.valueType = valueType;
     }
 
+    @Override
+    public void beforeData() throws IOException {
+        if (context.getServer().getOutputFormat() == PostgresServerSession.OutputFormat.JSON_WITH_META_DATA)
+            outputMetaData();
+    }
+    
     @Override
     public void output(Row row, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
@@ -78,17 +88,14 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
             encoder.appendString("\":");
             if (usePVals) {
                 PValueSource value = row.pvalue(i);
-                if (false) {
-                    // TODO: No getResultSet() yet.
-                }
-                else if (value.isNull()) {
-                    encoder.appendString("null");
+                TInstance columnTInstance = resultColumn.getTInstance();
+                if (columnTInstance.typeClass() instanceof AkResultSet) {
+                    outputNestedResultSet((Cursor)value.getObject(),
+                                          resultColumn.getNestedResultColumns(),
+                                          usePVals);
                 }
                 else {
-                    // TODO: No Quote support for new types.
-                    encoder.appendString("\"");
-                    encoder.appendPValue(value, valueType, false);
-                    encoder.appendString("\"");
+                    columnTInstance.formatAsJson(value, appender);
                 }
             }
             else {
@@ -128,6 +135,61 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
         }
         finally {
             cursor.destroy();
+        }
+        encoder.appendString("]");
+    }
+
+    public void outputMetaData() throws IOException {
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(1);
+        encoder.reset();
+        outputMetaData(resultColumns);
+        ByteArrayOutputStream bytes = encoder.getByteStream();
+        messenger.writeInt(bytes.size());
+        messenger.writeByteStream(bytes);
+        messenger.sendMessage();
+    }
+
+    public void outputMetaData(List<JsonResultColumn> resultColumns) throws IOException {
+        AkibanAppender appender = encoder.getAppender();
+        encoder.appendString("[");
+        boolean first = true;
+        for (JsonResultColumn resultColumn : resultColumns) {
+            if (first)
+                first = false;
+            else
+                encoder.appendString(",");
+            encoder.appendString("{\"name\":\"");
+            Quote.DOUBLE_QUOTE.append(appender, resultColumn.getName());
+            encoder.appendString("\"");
+            if (resultColumn.getNestedResultColumns() != null) {
+                encoder.appendString(",\"columns\":");
+                outputMetaData(resultColumn.getNestedResultColumns());
+            }
+            else {
+                if (resultColumn.getPostgresType() != null) {
+                    encoder.appendString(",\"oid\":");
+                    encoder.getWriter().print(resultColumn.getPostgresType().getOid());
+                }
+                if (resultColumn.getSqlType() != null) {
+                    DataTypeDescriptor type = resultColumn.getSqlType();
+                    encoder.appendString(",\"type\":\"");
+                    Quote.DOUBLE_QUOTE.append(appender, type.toString());
+                    encoder.appendString("\"");
+                    TypeId typeId = type.getTypeId();
+                    if (typeId.isDecimalTypeId()) {
+                        encoder.appendString(",\"precision\":");
+                        encoder.getWriter().print(type.getPrecision());
+                        encoder.appendString(",\"scale\":");
+                        encoder.getWriter().print(type.getScale());
+                    }
+                    else if (typeId.variableLength()) {
+                        encoder.appendString(",\"length\":");
+                        encoder.getWriter().print(type.getMaximumWidth());
+                    }
+                }
+            }
+            encoder.appendString("}");
         }
         encoder.appendString("]");
     }

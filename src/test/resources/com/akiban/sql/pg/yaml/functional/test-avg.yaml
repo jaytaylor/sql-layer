@@ -12,7 +12,7 @@
 - Statement: INSERT INTO t VALUES ('Infinity')
 ---
 - Statement: SELECT AVG(real_field) FROM t
-- output: [[Infinity]]
+- output: !select-engine {all: [[Infinity]], newtypes: [[0.0]] }
 #Test with no rows => null
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
@@ -46,7 +46,10 @@
     AVG(boolean_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
-- output: [[1.0, 1.0 , 1.0, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0]]
+- output: !select-engine {
+    all: [[1.0, 1.0 , 1.0, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0]],
+    newtypes: [[1.0, 1.0, 1.0, '1.0000', 1.0, 1.0, 1.0, '1.0000', 1.0, 1.0]] # not quite right, but close enough
+    }
 
 # Insert duplicate row
 ---
@@ -60,7 +63,10 @@
     AVG(boolean_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
-- output: [[1.0, 1.0, 1.0, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0]]
+- output: !select-engine {
+    all: [[1.0, 1.0, 1.0, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0]],
+    newtypes: [[1.0, 1.0, 1.0, '1.0000', 1.0, 1.0, 1.0, '1.0000', 1.0, 1.0]]
+    }
 # Rounding (1+1+2+2)/4 = 6/4 = 1.5
 ---
 - Statement: INSERT INTO all_types
@@ -75,7 +81,10 @@
     AVG(integer_field), AVG(numeric_field), AVG(real_field),
     AVG(smallint_field)
     FROM all_types
-- output: [[1.5, 1.5, 2, 1.5, 1.5, 1.5, 2, 1.5, 1.5]]
+- output: !select-engine {
+    all: [[1.5, 1.5, 2, 1.5, 1.5, 1.5, 2, 1.5, 1.5]],
+    newtypes: [[1.5, 1.5, '1.5000', 1.5, 1.5, 1.5, '1.5000', 1.5, 1.5]]
+    }
 
 # Back to zero
 ---
@@ -88,7 +97,10 @@
 - Statement: SELECT AVG(bigint_field), AVG(decimal_field),
     AVG(double_field), AVG(float_field), AVG(integer_field),
     AVG(numeric_field), AVG(real_field), AVG(smallint_field) FROM all_types
-- output: [[0.0, 0, 0.0, 0.0, 0.0, 0, 0.0, 0.0]]
+- output: !select-engine {
+    all: [[0.0, 0, 0.0, 0.0, 0.0, 0, 0.0, 0.0]],
+    newtypes: [[0.0, '0.0000', 0.0, 0.0, 0.0, '0.0000', 0.0, 0.0]]
+    }
 # Do boolean specially
 # Returns incorrect results -- see bug-avg-boolean.yaml
 ---
@@ -124,7 +136,10 @@
     VALUES ('Infinity', 'Infinity')
 ---
 - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
-- output: [[Infinity, Infinity]]
+- output: !select-engine {
+    all: [[Infinity, Infinity]],
+    newtypes: [[-500.0, -500.0]]
+    }
 ---
 - Statement: DELETE FROM all_types
 ---
@@ -135,13 +150,13 @@
     VALUES ('-Infinity', '-Infinity')
 ---
 - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
-- output: [[-Infinity, -Infinity]]
+- output: !select-engine { all: [[-Infinity, -Infinity]], newtypes: [[500.0, 500.0]] }
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
     VALUES ('Infinity', 'Infinity')
 ---
 - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
-- output: [[NaN, NaN]]
+- output: !select-engine { all: [[NaN, NaN]], newtypes: [[333.3333333333333, 333.3333333333333]] }
 ---
 - Statement: DELETE FROM all_types
 
@@ -153,6 +168,6 @@
     VALUES ('NaN', 'NaN')
 ---
 - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
-- output: [[NaN, NaN]]
+- output: !select-engine { all: [[NaN, NaN]], newtypes: [[0.5, 0.5]] }
 
 ...

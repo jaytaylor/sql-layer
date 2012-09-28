@@ -46,9 +46,14 @@
 ---
 - Statement: SELECT ABS(double_field), ABS(float_field), ABS(real_field)
     FROM all_types
-- output: [['Infinity', 'Infinity', 'Infinity'], 
-          ['Infinity', 'Infinity', 'Infinity'], 
-          [NaN, NaN, NaN]]
+- output: !select-engine {
+    all: [['Infinity', 'Infinity', 'Infinity'],
+          ['Infinity', 'Infinity', 'Infinity'],
+          [NaN, NaN, NaN]],
+    newtypes: [[0.0, 0.0, 0.0],
+               [0.0, 0.0, 0.0],
+               [0.0, 0.0, 0.0]]
+   }
 
 # Literals
 ---

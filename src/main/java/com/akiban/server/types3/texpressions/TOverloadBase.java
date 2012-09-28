@@ -112,9 +112,7 @@ public abstract class TOverloadBase implements TOverload {
         }
         for (int i = 0; i < inputs.size(); ++i) {
             if (constnessMatters(i)) {
-                TPreptimeValue preptimeValue = inputs.get(i);
-                PValueSource prepSource = (preptimeValue == null) ? null : preptimeValue.value();
-                Constantness constness = constness(i, prepSource);
+                Constantness constness = constness(i, inputs);
                 if (constness == Constantness.NOT_CONST)
                     return null;
                 if (constness == Constantness.CONST)
@@ -147,6 +145,16 @@ public abstract class TOverloadBase implements TOverload {
         return new TPreptimeValue(execContext.outputTInstance(), outputValue);
     }
 
+    @Override
+    public int[] getPriorities() {
+        return new int[1];
+    }
+
+    protected static PValueSource constSource(LazyList<? extends TPreptimeValue> inputs, int index) {
+        TPreptimeValue tpv = inputs.get(index);
+        return tpv == null ? null : tpv.value();
+    }
+
     protected abstract void buildInputSets(TInputSetBuilder builder);
 
     protected abstract void doEvaluate(TExecutionContext context,
@@ -166,12 +174,13 @@ public abstract class TOverloadBase implements TOverload {
      * 
      * <p>The default is to return {@linkplain Constantness#NOT_CONST} as soon as a non-const value is seen, and
      * {@linkplain Constantness#UNKNOWN} until then.</p>
+     *
      * @param inputIndex the index of the input whose prepare-time value is being considered
-     * @param preptimeValue the prepare-time value, or <tt>null</tt> if not a prepare-time constant
+     * @param values
      * @return what is known about this expression's constness due to this input
      */
-    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
-        return preptimeValue == null ? Constantness.NOT_CONST : Constantness.UNKNOWN;
+    protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+        return constSource(values,  inputIndex) == null ? Constantness.NOT_CONST : Constantness.UNKNOWN;
     }
 
     protected boolean nullContaminates(int inputIndex) {

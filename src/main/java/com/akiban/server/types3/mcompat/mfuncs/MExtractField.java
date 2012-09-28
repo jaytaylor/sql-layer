@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
@@ -62,7 +63,8 @@ public abstract class MExtractField extends TOverloadBase
 
                 // special case
                 // month of zero and a sensible value for day (in the range [0, 31] )
-                if (ymd[MDatetimes.MONTH_INDEX] == 0L
+                if (ymd != null
+                        && ymd[MDatetimes.MONTH_INDEX] == 0L
                         && ymd[MDatetimes.DAY_INDEX] >= 0L
                         && ymd[MDatetimes.DAY_INDEX] <= 31L)
                     output.putInt32(0);
@@ -88,6 +90,12 @@ public abstract class MExtractField extends TOverloadBase
         },
         new MExtractField("MONTH", MDatetimes.DATE, Decoder.DATE)
         {
+            @Override
+            public String[] registeredNames()
+            {
+                return new String[]{"MONTH", "MONTHOFYEAR"};
+            }
+            
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
@@ -122,7 +130,13 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) MDatetimes.getLastDay(ymd);
+                ymd[2] = MDatetimes.getLastDay(ymd);
+                return MDatetimes.encodeDate(ymd);
+            }
+
+            @Override
+            public TOverloadResult resultType() {
+                return TOverloadResult.fixed(MDatetimes.DATE);
             }
         },
         new MExtractField("DAYOFYEAR", MDatetimes.DATE, Decoder.DATE)
@@ -134,7 +148,13 @@ public abstract class MExtractField extends TOverloadBase
             }
         },
         new MExtractField("DAY", MDatetimes.DATE, Decoder.DATE) // day of month
-        {    
+        {   
+            @Override
+            public String[] registeredNames()
+            {
+                return new String[]{"DAYOFMONTH", "DAY"};
+            }
+
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
@@ -146,7 +166,8 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) ymd[MDatetimes.HOUR_INDEX];
+                // select hour('-10:10:10') should just return 10
+                return Math.abs((int) ymd[MDatetimes.HOUR_INDEX]);
             }
         },
         new MExtractField("MINUTE", MDatetimes.TIME, Decoder.TIME)
@@ -176,7 +197,15 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
             {
-                String dayName = MDatetimes.toJodaDatetime(MDatetimes.decodeDate(inputs.get(0).getInt32()),
+                int date = inputs.get(0).getInt32();
+                long ymd[] = MDatetimes.decodeDate(date);
+                if (!MDatetimes.isValidDayMonth(ymd))
+                {
+                    output.putNull();
+                    context.warnClient(new InvalidDateFormatException("DATE", date + ""));
+                    return;
+                }
+                String dayName = MDatetimes.toJodaDatetime(ymd,
                                                            context.getCurrentTimezone()).dayOfWeek().
                                                                 getAsText(context.getCurrentLocale());
                 output.putString(dayName, null);
@@ -205,6 +234,15 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
             {
+                int date = inputs.get(0).getInt32();
+                long ymd[] = MDatetimes.decodeDate(date);
+                if (!MDatetimes.isValidDayMonth(ymd))
+                {
+                    output.putNull();
+                    context.warnClient(new InvalidDateFormatException("DATE", date + ""));
+                    return;
+                }
+                
                 int numericMonth = (int) MDatetimes.decodeDate(inputs.get(0).getInt32())[MDatetimes.MONTH_INDEX];
                 String month = MDatetimes.getMonthName(numericMonth,
                                                        context.getCurrentLocale().getLanguage(),

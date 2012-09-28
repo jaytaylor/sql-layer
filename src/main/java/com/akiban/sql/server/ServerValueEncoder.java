@@ -387,6 +387,10 @@ public class ServerValueEncoder
         printWriter.write(string);
     }
 
+    public PrintWriter getWriter() {
+        return printWriter;
+    }
+
     /** Adjust seconds since 1970-01-01 00:00:00-UTC to seconds since
      * 2000-01-01 00:00:00 timezoneless. A conversion from local time
      * to UTC involves an offset that varies for Summer time. A

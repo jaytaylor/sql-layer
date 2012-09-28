@@ -41,10 +41,17 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Ints;
+import org.joda.time.DurationFieldType;
+import org.joda.time.MutableDateTime;
 
 import java.util.List;
 
@@ -54,11 +61,19 @@ public abstract class MArithmetic extends TArithmetic {
     
     private final String infix;
     private final boolean associative;
-    
-    private MArithmetic(String overloadName, String infix, boolean associative, TClass inputType, TInstance resultType) {
-        super(overloadName, inputType, resultType);
+
+    private MArithmetic(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1,
+                        TInstance resultType)
+    {
+        super(overloadName, operand0, operand1, resultType);
         this.infix = infix;
         this.associative = associative;
+    }
+
+    private MArithmetic(String overloadName, String infix, boolean associative, TClass operand,
+                        TInstance resultType)
+    {
+        this(overloadName, infix, associative, operand, operand, resultType);
     }
 
     @Override
@@ -152,6 +167,15 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
     
+    public static final TOverload ADD_DOUBLE = new MArithmetic("plus", "+", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putDouble(inputs.get(0).getDouble() + inputs.get(1).getDouble());
+        }
+    };
+    
     // Subtract functions
     public static final TOverload SUBTRACT_TINYINT = new MArithmetic("minus", "-", false, MNumeric.TINYINT, MNumeric.INT.instance(5)) {
         @Override
@@ -212,6 +236,15 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
     
+    public static final TOverload SUBSTRACT_DOUBLE = new MArithmetic("minus", "-", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putDouble(inputs.get(0).getDouble() - inputs.get(1).getDouble());
+        }
+    };
+
     // (Regular) Divide functions
     public static final TOverload DIVIDE_TINYINT = new MArithmetic("divide", "/", false, MNumeric.TINYINT, MApproximateNumber.DOUBLE.instance())
     {
@@ -284,27 +317,30 @@ public abstract class MArithmetic extends TArithmetic {
         {
             BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
             
-            if (divisor.isZero())
+            if (divisor.isZero()) {
                 output.putNull();
-            else
-                output.putObject(getWrapper(context)
-                                    .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
-                                    .divide(divisor,
-                                            context.outputTInstance().
-                                                attribute(MBigDecimal.Attrs.SCALE)));  // get the scale computed
-                                                                                       // during expr generation time
+            }
+            else {
+                BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+                BigDecimalWrapper result = getWrapper(context);
+                result.add(numerator);
+                result.divide(divisor, context.outputTInstance().attribute(Attrs.SCALE));
+                output.putObject(result);
+            }
         }
 
        @Override
        protected long precisionAndScale(int p1, int s1, int p2, int s2) 
        {
-           // http://msdn.microsoft.com/en-us/library/ms190476%28v=SQL.90%29.aspx
+           // https://dev.mysql.com/doc/refman/5.5/en/arithmetic-functions.html :
+           //
+           // In division performed with /, the scale of the result when using two exact-value operands is the scale of
+           // the first operand plus the value of the div_precision_increment system variable (which is 4 by default).
+           //
+           // This seems to apply to precision, too.
            
-           //precision: p1 - s1 + s2 + max(6, s1 + p2 + 1) 
-           // scale: max(6, s1 + p2 + 1)
-           
-           int precision = p1 - s1 + p2 + Math.max(6, s1 + p2 + 1);
-           int scale = Math.max(6, s1 + p2 + 1);
+           int precision = p1 + DIV_PRECISION_INCREMENT;
+           int scale = s1 + DIV_PRECISION_INCREMENT;
 
            return packPrecisionAndScale(precision, scale);
        }
@@ -389,28 +425,37 @@ public abstract class MArithmetic extends TArithmetic {
                 output.putInt64((long)(inputs.get(0).getDouble() / divisor));
         }   
     };
-   
-    public static final TOverload DIV_DECIMAL = new  DecimalArithmetic("div", "div", false)
-    {
+    //(String overloadName, String infix, boolean associative, TClass inputType, TInstance resultType)
+    public static final TOverload DIV_DECIMAL = new MArithmetic("div", "div", false, MNumeric.DECIMAL, null) {
         @Override
-        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale)
-        {
-            int pre = arg0Precision + arg1Precision;
-            int scale = 0; // integer division
-            return packPrecisionAndScale(pre, scale);
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
+            long rounded = numerator.divide(divisor).round(0).asBigDecimal().longValue();
+            output.putInt64(rounded);
         }
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-        {
-            BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
-            
-            if (divisor.isZero())
-                output.putNull();
-            else
-                output.putObject(getWrapper(context)
-                                    .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
-                                    .divideToIntegeralValue(divisor)); // scale is 0
+        public TOverloadResult resultType() {
+            return TOverloadResult.custom(MNumeric.BIGINT.instance(), new TCustomOverloadResult() {
+                @Override
+                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                    TInstance numeratorType = inputs.get(0).instance();
+                    int precision = numeratorType.attribute(Attrs.PRECISION);
+                    int scale = numeratorType.attribute(Attrs.SCALE);
+
+                    // These seem to be MySQL's wonky rules. For instance:
+                    //  DECIMAL(11, 0) -> BIGINT(12)
+                    //  DECIMAL(11, 1) -> BIGINT(12)
+                    //  DECIMAL(11, 2) -> BIGINT(11)
+                    //  DECIMAL(11, 3) -> BIGINT(10) etc
+                    ++precision;
+                    scale = (scale == 0) ? 0 : scale - 1;
+                    TClass tClass = (scale > 11) ? MNumeric.BIGINT : MNumeric.INT;
+                    return tClass.instance(precision - scale);
+                }
+            });
         }
     };
    
@@ -459,19 +504,43 @@ public abstract class MArithmetic extends TArithmetic {
             output.putInt64(a0 * a1);
         }
     };
-    
-    public static final TOverload MULTIPLY_DECIMAL = new DecimalArithmetic("times", "*", true) { // TODO --> What's the status of this TODO? (08/14/12)
+
+    public static final TOverload MULTIPLY_DOUBLE = new MArithmetic("times", "*", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE.instance()) {
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long a0 = inputs.get(0).getInt64();
-            long a1 = inputs.get(1).getInt64();
-            output.putInt64(a0 * a1);
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            double result = inputs.get(0).getDouble() * inputs.get(1).getDouble();
+            if (Doubles.isFinite(result))
+                output.putNull();
+            else
+                output.putDouble(result);
         }
 
-       @Override
-       protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale) {
-           return packPrecisionAndScale(arg0Precision + arg1Precision, arg0Scale + arg1Scale);
-       }
+        @Override
+        public int[] getPriorities() {
+            return new int[] { 1, 2 };
+        }
+    };
+    
+    public static final TOverload MULTIPLY_DECIMAL = new DecimalArithmetic("times", "*", true)
+    {
+        @Override
+        protected long precisionAndScale(int arg0Precision, int arg0Scale, int arg1Precision, int arg1Scale)
+        {
+            //TODO:
+            // for now, just sum up the precisions and scales
+            return  packPrecisionAndScale(arg0Precision + arg1Precision,
+                                          arg0Scale + arg1Scale);
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            BigDecimalWrapper arg0 = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+            BigDecimalWrapper arg1 = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
+            
+            output.putObject(arg0.multiply(arg1));
+        }
     };
 
     public static final TOverload MOD_TINYTINT = new MArithmetic("mod", "mod", false, MNumeric.TINYINT, MNumeric.INT.instance(4))
@@ -618,4 +687,37 @@ public abstract class MArithmetic extends TArithmetic {
             super(overloadName, infix, associative, MNumeric.DECIMAL, (TInstance) null);
         }
     }
+
+    /**
+     * Implementation for arithmetic which always results in a NULL VARCHAR(29). Odd as it may seem, such things do
+     * seem to exist. For instance, {@code &lt;time&gt; + INTERVAL N MONTH}.
+     */
+    static class AlwaysNull extends MArithmetic {
+
+        AlwaysNull(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1) {
+            super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR.instance(29));
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            output.putNull();
+        }
+
+        @Override
+        protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+            return Constantness.CONST;
+        }
+
+        @Override
+        protected boolean nullContaminates(int inputIndex) {
+            // We return false here so that TOverloadBase never tries to look at the inputs as part of evaluating
+            // a const, to see if they're null. If it did, a non-const input would cause an exception during const
+            // evaluation. Returning false here means we'll always get to doEvaluate, which will then putNull.
+            return false;
+        }
+
+    }
+
+    private static final int DIV_PRECISION_INCREMENT = 4;
 }

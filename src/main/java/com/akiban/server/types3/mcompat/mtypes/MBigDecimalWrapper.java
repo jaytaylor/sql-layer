@@ -119,7 +119,7 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     {
         value = value.divide(augend.asBigDecimal(),
                 scale,
-                RoundingMode.UP);
+                RoundingMode.HALF_UP);
         return this;
     }
 
@@ -192,6 +192,11 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     {
         value = value.remainder(num.asBigDecimal());
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return value == null ? "UNSET" : value.toString();
     }
 }
 

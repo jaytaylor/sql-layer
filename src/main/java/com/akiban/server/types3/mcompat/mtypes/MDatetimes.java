@@ -48,7 +48,9 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.IllegalFieldValueException;
 import org.joda.time.MutableDateTime;
+import org.joda.time.base.BaseDateTime;
 
 public class MDatetimes
 {
@@ -143,6 +145,13 @@ public class MDatetimes
                 out.append(datetimeToString(source.getInt64()));
                 out.append("'");
             }
+        };
+
+        @Override
+        public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
+            out.append('"');
+            format(instance, source, out);
+            out.append('"');
         }
     }
     
@@ -274,9 +283,19 @@ public class MDatetimes
         
         try
         {
-            return Integer.parseInt(tks[0]) * 512
-                    + Integer.parseInt(tks[1]) * 32
-                    + Integer.parseInt(CastUtils.truncateNonDigits(tks[2], context));
+            int ret[] = new int[]
+            {
+                Integer.parseInt(tks[0]),
+                Integer.parseInt(tks[1]),
+                Integer.parseInt(CastUtils.truncateNonDigits(tks[2], context))
+            };
+            
+            if (!isValidDayMonth(ret[0], ret[1], ret[2]))
+                throw new InvalidDateFormatException("date", st);
+            else
+                return ret[0] * 512
+                        + ret[1] * 32
+                        + ret[2];
         }
         catch (NumberFormatException ex)
         {
@@ -346,10 +365,116 @@ public class MDatetimes
                              dt[SEC_INDEX]);
     }
     
+    /**
+     * parse the string for DATE, DATETIME or TIME and store the parsed values in ymd
+     * @return a integer indicating the type that's been parsed:
+     *      DATE_ST :       date string
+     *      TIME_ST:        time string
+     *      DATETIME_ST:    datetime string
+     */
+    public static StringType parseDateOrTime(String st, long ymd[])
+    {        
+        st = st.trim();
+
+        Matcher datetime;
+        Matcher time;
+        Matcher timeNoday;
         
+        String year = "0";
+        String month = "0";
+        String day = "0";
+        String hour = "0";
+        String minute = "0";
+        String seconds = "0";
+        
+        datetime = DATE_PATTERN.matcher(st.trim());
+        if (datetime.matches())
+        {
+            StringType ret = StringType.DATE_ST;
+            year = datetime.group(DATE_YEAR_GROUP);
+            month = datetime.group(DATE_MONTH_GROUP);
+            day = datetime.group(DATE_DAY_GROUP);
+            
+            if (datetime.group(TIME_GROUP) != null)
+            {
+                ret = StringType.DATETIME_ST;
+                hour = datetime.group(TIME_HOUR_GROUP);
+                minute = datetime.group(TIME_MINUTE_GROUP);
+                seconds = datetime.group(TIME_SECOND_GROUP);
+            }
+            
+            doParse(st,
+                    ymd,
+                    year, month, day,
+                    hour, minute, seconds);
+            if (isValidDatetime(ymd))
+                return ret;
+        }
+        else if ((time = TIME_WITH_DAY_PATTERN.matcher(st)).matches())
+        {   
+            day = time.group(MDatetimes.TIME_WITH_DAY_DAY_GROUP);
+            hour = time.group(MDatetimes.TIME_WITH_DAY_HOUR_GROUP);
+            minute = time.group(MDatetimes.TIME_WITH_DAY_MIN_GROUP);
+            seconds = time.group(MDatetimes.TIME_WITH_DAY_SEC_GROUP);
+            
+            doParse(st,
+                    ymd,
+                    year, month, day,
+                    hour, minute, seconds);
+            
+            if (MDatetimes.isValidHrMinSec(ymd, false))
+            {
+                // adjust DAY to HOUR 
+                int sign = 1;
+                if (ymd[DAY_INDEX] < 0)
+                    ymd[DAY_INDEX] *= (sign = -1);
+                ymd[HOUR_INDEX] = sign * (ymd[HOUR_INDEX] += ymd[DAY_INDEX] * 24);
+                ymd[DAY_INDEX] = 0;
+                return StringType.TIME_ST;
+            }
+        }
+        else if ((timeNoday = TIME_WITHOUT_DAY_PATTERN.matcher(st)).matches())
+        {
+            hour = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_HOUR_GROUP);
+            minute = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_MIN_GROUP);
+            seconds = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_SEC_GROUP);
+            
+            doParse(st,
+                    ymd,
+                    year, month, day,
+                    hour, minute, seconds);
+            if (MDatetimes.isValidHrMinSec(ymd, false))
+                return StringType.TIME_ST;
+        }
+
+        // anything else is an error
+        throw new InvalidDateFormatException("datetime", st);
+    }
+
+    private static void doParse(String st, // for error message only
+                                long ymd[],
+                                String year, String month, String day,
+                                String hour, String minute, String seconds)
+    {
+        try
+        {
+            ymd[YEAR_INDEX] = Long.parseLong(year);
+            ymd[MONTH_INDEX] = Long.parseLong(month);
+            ymd[DAY_INDEX] = Long.parseLong(day);
+            ymd[HOUR_INDEX] = Long.parseLong(hour);
+            ymd[MIN_INDEX] = Long.parseLong(minute);
+            ymd[SEC_INDEX] = Long.parseLong(seconds);
+
+        }
+        catch (NumberFormatException ex)
+        {
+            throw new InvalidDateFormatException("datetime", st);
+        }
+    }
+
     public static long parseDatetime(String st)
     {
-        Matcher m = PARSE_PATTERN.matcher(st.trim());
+        Matcher m = DATE_PATTERN.matcher(st.trim());
 
             if (!m.matches() || m.group(DATE_GROUP) == null) 
             throw new InvalidDateFormatException("datetime", st);
@@ -360,7 +485,7 @@ public class MDatetimes
         String hour = "0";
         String minute = "0";
         String seconds = "0";
-
+        
         if (m.group(TIME_GROUP) != null)
         {
             hour = m.group(TIME_HOUR_GROUP);
@@ -370,12 +495,25 @@ public class MDatetimes
 
         try
         {
-            return Long.parseLong(year) * DATETIME_YEAR_SCALE
-                    + Long.parseLong(month) * DATETIME_MONTH_SCALE
-                    + Long.parseLong(day) * DATETIME_DAY_SCALE
-                    + Long.parseLong(hour) * DATETIME_HOUR_SCALE
-                    + Long.parseLong(minute) * DATETIME_MIN_SCALE
-                    + Long.parseLong(seconds);
+            long ret[] = new long[]
+            {
+                Long.parseLong(year),
+                Long.parseLong(month),
+                Long.parseLong(day),
+                Long.parseLong(hour),
+                Long.parseLong(minute),
+                Long.parseLong(seconds)
+            };
+            
+            if (!isValidDatetime(ret))
+                throw new InvalidDateFormatException("datetime", st);
+            else
+                return ret[0] * DATETIME_YEAR_SCALE
+                       + ret[1] * DATETIME_MONTH_SCALE
+                       + ret[2] * DATETIME_DAY_SCALE
+                       + ret[3] * DATETIME_HOUR_SCALE
+                       + ret[4] * DATETIME_MIN_SCALE
+                       + ret[5];
         }
         catch (NumberFormatException ex)
         {
@@ -383,7 +521,7 @@ public class MDatetimes
         }
     }
     
-    public static long encodeDatetime(DateTime dt)
+    public static long encodeDatetime(BaseDateTime dt)
     {
         return dt.getYear() * DATETIME_YEAR_SCALE
                 + dt.getMonthOfYear() * DATETIME_MONTH_SCALE
@@ -535,12 +673,19 @@ public class MDatetimes
     }
     public static long[] decodeTime(long val)
     {
+        int sign;
+        
+        if (val < 0)
+            val *= sign = -1;
+        else
+            sign = 1;
+
         return new long[]
         {
             1970,
             1,
             1,
-            val / DATETIME_HOUR_SCALE,
+            sign * val / DATETIME_HOUR_SCALE,
             val / DATETIME_MIN_SCALE % 100,
             val % 100
         };
@@ -587,7 +732,7 @@ public class MDatetimes
 
     public static int parseTimestamp (String ts, String tz, TExecutionContext context)
     {
-        Matcher m = PARSE_PATTERN.matcher(ts.trim());
+        Matcher m = DATE_PATTERN.matcher(ts.trim());
 
             if (!m.matches() || m.group(DATE_GROUP) == null) 
             throw new InvalidDateFormatException("datetime", ts);
@@ -618,6 +763,10 @@ public class MDatetimes
                                        DateTimeZone.forID(tz)
                                       ).getMillis();
             return (int)CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
+        }
+        catch (IllegalFieldValueException e)
+        {
+            return 0; // e.g. SELECT UNIX_TIMESTAMP('1920-21-01 00:00:00') -> 0
         }
         catch (NumberFormatException ex)
         {
@@ -677,12 +826,12 @@ public class MDatetimes
 
     public static boolean isValidDatetime (long ymdhms[])
     {
-        return isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms, true);
+        return ymdhms != null && isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms, true);
     }
     
     public static boolean isValidHrMinSec (long ymdhms[], boolean shortTime)
     {
-        return ymdhms[HOUR_INDEX] >= 0 
+        return  (shortTime ? ymdhms[HOUR_INDEX] >= 0  : true) // if time portion is from a DATETIME, hour should be non-neg
                 && (shortTime ? ymdhms[HOUR_INDEX] < 24 : true) // if time portion is from a DATETIME, hour should be less than 24
                 && ymdhms[MIN_INDEX] >= 0 && ymdhms[MIN_INDEX] < 60 
                 && ymdhms[SEC_INDEX] >= 0 && ymdhms[SEC_INDEX] < 60;
@@ -705,7 +854,7 @@ public class MDatetimes
 
     public static boolean isValidDayMonth(long ymd[])
     {
-        if (ymd[MONTH_INDEX] == 0)
+        if (ymd[MONTH_INDEX] == 0 || ymd[DAY_INDEX] <= 0)
             return false;
         long last = getLastDay(ymd);
         return last > 0 && ymd[DAY_INDEX] <= last;
@@ -791,8 +940,22 @@ public class MDatetimes
     private static final int TIME_SECOND_GROUP = 8;
     private static final int TIME_FRAC_GROUP = 9;
     private static final int TIME_TIMEZONE_GROUP = 10;
-    private static final Pattern PARSE_PATTERN 
+    private static final Pattern DATE_PATTERN 
             = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
+    
+    
+    private static final int TIME_WITH_DAY_DAY_GROUP = 2;
+    private static final int TIME_WITH_DAY_HOUR_GROUP = 3;
+    private static final int TIME_WITH_DAY_MIN_GROUP = 4;
+    private static final int TIME_WITH_DAY_SEC_GROUP = 5;
+    private static final Pattern TIME_WITH_DAY_PATTERN
+            = Pattern.compile("^(([-+]?\\d+)\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
+
+    private static final int TIME_WITHOUT_DAY_HOUR_GROUP = 2;
+    private static final int TIME_WITHOUT_DAY_MIN_GROUP = 3;
+    private static final int TIME_WITHOUT_DAY_SEC_GROUP = 4;
+    private static final Pattern TIME_WITHOUT_DAY_PATTERN
+            = Pattern.compile("^(([-+]?\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
 
     // upper and lower limit of TIMESTAMP value
     // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
@@ -804,5 +967,11 @@ public class MDatetimes
     // as per http://dev.mysql.com/doc/refman/5.5/en/time.html
     public static final int TIME_MAX = 8385959;
     public static final int TIME_MIN = -8385959;
+    
+    
+    public static enum StringType
+    {
+        DATE_ST, DATETIME_ST, TIME_ST;
+    }
 }
 

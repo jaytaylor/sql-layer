@@ -57,7 +57,8 @@ public class API
                                                      RowType rowType,
                                                      int inputsIndex,
                                                      AggregatorRegistry registry,
-                                                     List<String> aggregatorNames)
+                                                     List<String> aggregatorNames,
+                                                     List<Object> options)
     {
         return new Aggregate_Partial(
                 inputOperator, rowType,
@@ -65,7 +66,8 @@ public class API
                 Aggregators.factories(
                         registry,
                         Aggregators.aggregatorIds(aggregatorNames, rowType, inputsIndex)
-                )
+                ),
+                options
         );
     }
 
@@ -73,10 +75,11 @@ public class API
                                              RowType rowType,
                                              int inputsIndex,
                                              List<? extends TAggregator> aggregatorFactories,
-                                             List<? extends TInstance> aggregatorTypes
+                                             List<? extends TInstance> aggregatorTypes,
+                                             List<Object> options
                                              )
     {
-        return new Aggregate_Partial(inputOperator, rowType, inputsIndex, aggregatorFactories, aggregatorTypes);
+        return new Aggregate_Partial(inputOperator, rowType, inputsIndex, aggregatorFactories, aggregatorTypes, options);
     }
 
     // Project
@@ -801,6 +804,10 @@ public class API
         return new Insert_Default(inputOperator, usePVals);
     }
 
+    public static Operator insert_Returning (Operator inputOperator, boolean usePVals) 
+    {
+        return new Insert_Returning (inputOperator, usePVals);
+    }
 
     // Update
 
@@ -810,6 +817,13 @@ public class API
         return new Update_Default(inputOperator, updateFunction);
     }
     
+    public static Operator update_Returning (Operator inputOperator,
+                                            UpdateFunction updateFunction, 
+                                            boolean usePValues)
+    {
+        return new Update_Returning (inputOperator, updateFunction, usePValues);
+    }
+    
     // Delete
 
     public static UpdatePlannable delete_Default(Operator inputOperator, boolean usePValues)
@@ -817,6 +831,10 @@ public class API
         return new Delete_Default(inputOperator, usePValues);
     }
 
+    public static Operator delete_Returning (Operator inputOperator, boolean usePValues)
+    {
+        return new Delete_Returning(inputOperator, usePValues);
+    }
     // Execution interface
 
     public static Cursor cursor(Operator root, QueryContext context)

@@ -95,7 +95,7 @@ public class Column implements ColumnContainer
     }
 
     public TInstance tInstance() {
-        return tInstance(false);
+        return new TInstance(tInstance(false));
     }
 
     @Override
@@ -568,7 +568,7 @@ public class Column implements ColumnContainer
         final TInstance old = tInstanceRef.get();
         if (old != null && !force)
             return old;
-        final TInstance tinst = generateTInstance(charsetAndCollation, type, typeParameter1, typeParameter2, nullable);
+        final TInstance tinst = generateTInstance(getCharsetAndCollation(), type, typeParameter1, typeParameter2, nullable);
         tInstanceRef.set(tinst); // TODO ignores race conditions, because they "shouldn't" happen but do. Don't know why
 //        if (!tInstanceRef.compareAndSet(old, tinst))
 //            assert false : "CAS failed; Column is not thread-safe, so mutating it from multiple threads is bad!";
