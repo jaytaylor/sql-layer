@@ -878,13 +878,8 @@ public class PersistitStore implements Store, Service {
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = rowDef.getTableStatus();
         try {
-            if (rowDef.isGroupTable()) {
-                ts.setRowCount(2);
-                ts.setAutoIncrementValue(-1);
-            } else {
-                ts.setAutoIncrementValue(status.getAutoIncrement());
-                ts.setRowCount(status.getRowCount());
-            }
+            ts.setAutoIncrementValue(status.getAutoIncrement());
+            ts.setRowCount(status.getRowCount());
             // TODO - get correct values
             ts.setMeanRecordLength(100);
             ts.setBlockSize(8192);
