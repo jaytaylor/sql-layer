@@ -1,0 +1,1 @@
+DELETE from t2 where w = 'Y' RETURNING z

@@ -1,6 +1,7 @@
-InsertStatement@14433bd1(t[t.id, t.n])
-  Project@4a0c20bb[t2.id, charLength(t2.s)]
-    Select@6238faf7[]
-      Flatten@3d86206c(t2)
-        GroupScan@30bab202(Group(t2 -> test._akiban_t2), rows = 1, cost = 0.00000)
-          TableSource@6d6b20fe(t2 - TableGroup@30fcba4c(t2))
+DMLStatement@40959106(t)
+  InsertStatement@64937e57(t[t.id, t.n])
+    Project@f4bb557[t2.id, charLength(t2.s)]
+      Select@336e6a99[]
+        Flatten@272c4f4(t2)
+          GroupScan@3ce0706d(Group(t2 -> test._akiban_t2), rows = 1, cost = 0.00000)
+            TableSource@769fb521(t2 - TableGroup@32f52354(t2))

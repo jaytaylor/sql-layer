@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
@@ -115,9 +114,7 @@ class Project_Default extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(1);
-        result.add(inputOperator);
-        return result;
+        return Collections.singletonList(inputOperator);
     }
 
     @Override

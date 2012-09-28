@@ -29,11 +29,15 @@ package com.akiban.sql.pg;
 import java.io.IOException;
 import java.util.List;
 
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
+
 /**
  * An ordinary SQL statement.
  */
 public abstract class PostgresDMLStatement extends PostgresBaseStatement
 {
+    private RowType resultRowType;
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
     private PostgresType[] parameterTypes;
@@ -44,10 +48,12 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
         this.usesPValues = usesPValues;
     }
 
-    protected PostgresDMLStatement(List<String> columnNames, 
+    protected PostgresDMLStatement(RowType resultsRowType,
+                                    List<String> columnNames, 
                                    List<PostgresType> columnTypes,
                                    PostgresType[] parameterTypes,
                                    boolean usesPValues) {
+        this.resultRowType = resultsRowType;
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.parameterTypes = parameterTypes;
@@ -66,6 +72,9 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
         return columnTypes;
     }
 
+    public RowType getResultRowType() {
+        return resultRowType;
+    }
     @Override
     public PostgresType[] getParameterTypes() {
         return parameterTypes;
@@ -99,5 +108,8 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
         }
         messenger.sendMessage();
     }
-
+    
+    protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
+        return new PostgresRowOutputter(context, this);
+    }
 }

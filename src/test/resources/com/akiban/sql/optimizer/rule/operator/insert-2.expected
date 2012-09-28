@@ -1,5 +1,5 @@
 PhysicalUpdate@55a7b0bf
-  Insert_Default(INTO test.child)
+  Insert_Returning(INTO test.child)
     Project_Default(NULL, Field(1), Field(0))
       UnionAll_Default()
         IndexScan_Default(Index(test.parent.name), name < 'IGNORE' ASC, id)

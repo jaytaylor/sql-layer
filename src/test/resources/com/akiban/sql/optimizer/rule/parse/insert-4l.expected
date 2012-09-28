@@ -1,2 +1,3 @@
-InsertStatement@694142ff(parent[parent.id, parent.name])
-  ExpressionsSource@3b95a955([[1, abc]])
+DMLStatement@2a5123e4(parent)
+  InsertStatement@13cb1be0(parent[parent.id, parent.name])
+    ExpressionsSource@7b931946([[1, abc]])

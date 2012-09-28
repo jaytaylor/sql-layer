@@ -1,5 +1,5 @@
 PhysicalUpdate
-  Update_Default(items SET quan = 66)
+  Update_Returning(items SET quan = 66)
     Filter_Default(items)
       BranchLookup_Default(Index(orders.order_date) -> orders)
         IndexScan_Default(Index(orders.order_date), order_date > DATE '2011-04-01')
