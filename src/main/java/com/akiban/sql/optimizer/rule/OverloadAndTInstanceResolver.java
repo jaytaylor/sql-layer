@@ -34,6 +34,7 @@ import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.ErrorHandlingMode;
+import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
@@ -417,7 +418,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             // Put the preptime value, possibly including nullness, into the expression. The constant folder
             // will use it.
-            TPreptimeValue preptimeValue = overload.evaluateConstant(context, new LazyListBase<TPreptimeValue>() {
+            LazyList<TPreptimeValue> lazyInputs = new LazyListBase<TPreptimeValue>() {
                 @Override
                 public TPreptimeValue get(int i) {
                     return operandValues.get(i);
@@ -427,7 +428,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 public int size() {
                     return operandValues.size();
                 }
-            });
+            };
+
+            TPreptimeValue preptimeValue = overload.evaluateConstant(context, overload.filterInputs(lazyInputs));
             if (preptimeValue == null)
                 preptimeValue = new TPreptimeValue(resultInstance);
             else

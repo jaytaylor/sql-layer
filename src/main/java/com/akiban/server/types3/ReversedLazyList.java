@@ -24,42 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.funcs;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+public final class ReversedLazyList<T> extends LazyListBase<T> {
 
-public abstract class TArithmetic extends TOverloadBase {
-
-    protected TArithmetic(String overloadName, TClass operand0, TClass operand1, TInstance resultType) {
-       this.overloadName = overloadName;
-       this.operand0 = operand0;
-       this.operand1 = operand1;
-       this.resultType = resultType;
-    }
-    
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        if (operand0 == operand1)
-            builder.covers(operand0, 0, 1);
-        else
-            builder.covers(operand0, 0).covers(operand1, 1);
+    public T get(int i) {
+        i = originalSize -i - 1;
+        return original.get(i);
     }
 
     @Override
-    public String displayName() {
-        return overloadName;
+    public int size() {
+        return originalSize;
     }
 
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(resultType);
-    } 
-    
-    private final String overloadName;
-    private final TClass operand0;
-    private final TClass operand1;
-    private final TInstance resultType;
+    public ReversedLazyList(LazyList<? extends T> original) {
+        this.original = original;
+        originalSize = original.size();
+    }
+
+    private final LazyList<? extends T> original;
+    private final int originalSize;
 }

@@ -36,6 +36,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCommutativeOverloads;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
@@ -202,14 +203,31 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     }
 
     private static ListMultimap<String, ScalarsGroup> createScalars(InstanceFinder finder) {
+
+        Set<TOverload> commutedOverloads = new HashSet<TOverload>();
+        for (TCommutativeOverloads commutativeOverloads : finder.find(TCommutativeOverloads.class)) {
+            commutativeOverloads.addTo(commutedOverloads);
+        }
+
         Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
 
         int errors = 0;
         for (TOverload scalar : finder.find(TOverload.class)) {
             try {
                 TValidatedOverload validated = new TValidatedOverload(scalar);
-                for (String name : validated.registeredNames())
-                    overloadsByName.put(name.toLowerCase(), validated);
+
+                String[] names = validated.registeredNames();
+                for (int i = 0; i < names.length; ++i)
+                    names[i] = names[i].toLowerCase();
+
+                for (String name : names)
+                    overloadsByName.put(name, validated);
+
+                if (commutedOverloads.remove(scalar)) {
+                    TValidatedOverload commuted = validated.createCommuted();
+                    for (String name : names)
+                        overloadsByName.put(name, commuted);
+                }
             } catch (RuntimeException e) {
                 rejectTOverload(scalar, e);
                 ++errors;
@@ -218,6 +236,11 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 ++errors;
             }
         }
+        if (!commutedOverloads.isEmpty()) {
+            logger.error("overload(s) were marked as commutative, but not found: {}", commutedOverloads);
+            ++errors;
+        }
+
         if (errors > 0) {
             StringBuilder sb = new StringBuilder("Found ").append(errors).append(" error");
             if (errors != 1)
