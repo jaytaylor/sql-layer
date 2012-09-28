@@ -107,12 +107,7 @@ public class MNumeric extends SimpleDtdTClass {
 
     @Override
     protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        // Determine precision of TInstance
-        /*switch (mode) {
-            case COMBINE:
-            case CHOOSE:
-        }*/
-        throw new UnsupportedOperationException("Not supported yet.");
+        return instance0; // TODO we currently don't care about attributes, though we actually should when casting to varchar
     }
     
     private final int defaultWidth;

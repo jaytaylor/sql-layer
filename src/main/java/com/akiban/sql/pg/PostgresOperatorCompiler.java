@@ -118,7 +118,9 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         else if (field.getSQLtype() != null) {
             DataTypeDescriptor sqlType = field.getSQLtype();
             AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
-            TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+            TInstance tInstance = field.getTInstance();
+            if (tInstance == null)
+                tInstance = TypesTranslation.toTInstance(sqlType);
             pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
         }
         else {
