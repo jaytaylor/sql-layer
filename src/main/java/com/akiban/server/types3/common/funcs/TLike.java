@@ -185,8 +185,7 @@ public class TLike extends TOverloadBase
         }
         catch (InvalidOperationException e)
         {
-            // TODO:
-            // What's the new way of issuing a warning?
+            context.warnClient(e);
             output.putNull();
         }
     }
