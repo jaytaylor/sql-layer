@@ -36,32 +36,37 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
-public class VersionExpression extends AbstractNoArgExpression
+public abstract class VersionExpression extends AbstractNoArgExpression
 {
-    @Scalar("version")
-    public static final ExpressionComposer COMPOSER = new NoArgComposer()
+    @Scalar("version_full")
+    public static final ExpressionComposer FULL_COMPOSER = new NoArgComposer()
     {
         @Override
         protected Expression compose()
         {
-            return INSTANCE;
+            return FULL_VERSION;
         }
 
         @Override
         protected ExpressionType composeType()
         {
-            return ExpressionTypes.varchar(VERSION.getString().length());
+            return ExpressionTypes.varchar(FULL_VERSION_SOURCE.getString().length());
         }
     };
 
-    private static final Expression INSTANCE = new VersionExpression();
-    private static final ValueSource VERSION = new ValueHolder(AkType.VARCHAR, AkServer.VERSION_STRING);
-    private static final ExpressionEvaluation EVAL = new AbstractNoArgExpressionEvaluation()
+    @Scalar("version")
+    public static final ExpressionComposer SHORT_COMPOSER = new NoArgComposer()
     {
         @Override
-        public ValueSource eval()
+        protected Expression compose()
         {
-            return VERSION;
+            return SHORT_VERSION;
+        }
+
+        @Override
+        protected ExpressionType composeType()
+        {
+            return ExpressionTypes.varchar(SHORT_VERSION_SOURCE.getString().length());
         }
     };
     
@@ -71,14 +76,49 @@ public class VersionExpression extends AbstractNoArgExpression
     }
 
     @Override
-    public ExpressionEvaluation evaluation()
-    {
-        return EVAL;
-    }
-
-    @Override
     public String name()
     {
         return "version";
     }
+    
+    // static members
+
+    private static final ValueSource FULL_VERSION_SOURCE = new ValueHolder(AkType.VARCHAR, AkServer.VERSION_STRING);
+    private static final ValueSource SHORT_VERSION_SOURCE = new ValueHolder(AkType.VARCHAR, AkServer.SHORT_VERSION_STRING);
+    
+    private static final Expression FULL_VERSION = new VersionExpression()
+    {
+        @Override
+        public ExpressionEvaluation evaluation()
+        {
+            return FULL_EVAL;
+        }
+    };
+    
+    private static final Expression SHORT_VERSION = new VersionExpression()
+    {
+        @Override
+        public ExpressionEvaluation evaluation()
+        {
+            return SHORT_EVAL;
+        }
+    };
+    
+    private static final ExpressionEvaluation FULL_EVAL = new AbstractNoArgExpressionEvaluation()
+    {
+        @Override
+        public ValueSource eval()
+        {
+            return FULL_VERSION_SOURCE;
+        }
+    };
+    
+    private static final ExpressionEvaluation SHORT_EVAL = new AbstractNoArgExpressionEvaluation()
+    {
+        @Override
+        public ValueSource eval()
+        {
+            return SHORT_VERSION_SOURCE;
+        }   
+    };
 }

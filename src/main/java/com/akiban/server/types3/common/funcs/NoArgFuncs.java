@@ -46,8 +46,27 @@ public class NoArgFuncs
 {
     static final int USER_NAME_LENGTH = 77;
 
-    public static final TOverload SERVER_VERSION = new NoArgExpression("version", true)
+    private static final TInstance SHORT_VERSION_INST = MString.VARCHAR.instance(AkServer.SHORT_VERSION_STRING.length());
+    public static final TOverload SHORT_SERVER_VERSION = new NoArgExpression("version", true)
     {
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putString(AkServer.SHORT_VERSION_STRING, null);
+        }
+
+        @Override
+        protected TInstance tInstance()
+        {
+            return SHORT_VERSION_INST;
+        }
+        
+    };
+
+    private static final TInstance FULL_VERSION_INST = MString.VARCHAR.instance(AkServer.VERSION_STRING.length());
+    public static final TOverload SERVER_FULL_VERSION = new NoArgExpression("version_full", true)
+    {
+
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
@@ -57,9 +76,8 @@ public class NoArgFuncs
         @Override
         protected TInstance tInstance()
         {
-            return MString.VARCHAR.instance(AkServer.VERSION_STRING.length());
+            return FULL_VERSION_INST;
         }
-        
     };
     
     public static final TOverload PI = new TOverloadBase()
