@@ -835,7 +835,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                                   ParametersSync parametersSync)
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
-        if (expression instanceof ParameterExpression) {
+        if ((expression instanceof ParameterExpression) &&
+            !(expression instanceof ParameterCondition)) {
             CastExpression castExpression
                     = new CastExpression(expression, null, null);
             castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
