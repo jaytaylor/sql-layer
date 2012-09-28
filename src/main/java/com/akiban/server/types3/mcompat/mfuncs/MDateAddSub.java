@@ -241,7 +241,10 @@ public class MDateAddSub extends TOverloadBase
             long[] decode(PValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeDate(val.getInt32());
-                return  MDatetimes.isValidDayMonth(ret) ? ret : null;
+                return  MDatetimes.isValidDayMonth(ret) // zero dates are considered 'valid'
+                            && !MDatetimes.isZeroDayMonth(ret) // but here we don't want them to be
+                        ? ret 
+                        : null;
             }
             
             @Override
@@ -272,7 +275,10 @@ public class MDateAddSub extends TOverloadBase
             long[] decode(PValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeDatetime(val.getInt64());
-                return MDatetimes.isValidDatetime(ret) ? ret : null;
+                return MDatetimes.isValidDatetime(ret) 
+                            && !MDatetimes.isZeroDayMonth(ret)
+                       ? ret 
+                       : null;
             }
             
             @Override
