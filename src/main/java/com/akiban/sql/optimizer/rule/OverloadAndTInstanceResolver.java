@@ -242,7 +242,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TPreptimeValue tpv = n.getPreptimeValue();
             if (tpv != null) {
                 TInstance tInstance = tpv.instance();
-                if ((n.getSQLtype().getCharacterAttributes() != null) &&
+                if ((n.getSQLtype() != null) &&
+                    (n.getSQLtype().getCharacterAttributes() != null) &&
                     (n.getSQLtype().getCharacterAttributes().getCollationDerivation() == CharacterTypeAttributes.CollationDerivation.EXPLICIT)) {
                     // Apply result of explicit COLLATE, which will otherwise get lost.
                     // No way to mutate the existing instance, so replace entire tpv.
