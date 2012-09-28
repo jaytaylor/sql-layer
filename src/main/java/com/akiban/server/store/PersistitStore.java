@@ -654,46 +654,32 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void dropGroup(Session session, int rowDefId) throws PersistitException {
-        RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
-        if (!groupRowDef.isGroupTable()) {
-            groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
-        }
-        for(RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-            removeTrees(session, userRowDef.table());
+    public void dropGroup(Session session, Group group) throws PersistitException {
+        for(Table table : group.getRoot().getAIS().getUserTables().values()) {
+            if(table.getGroup() == group) {
+                removeTrees(session, table);
+            }
         }
         // tableStatusCache entries updated elsewhere
     }
 
     @Override
-    public void truncateGroup(final Session session, final int rowDefId) throws PersistitException {
-        RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
-        if (!groupRowDef.isGroupTable()) {
-            groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
-        }
-
-        //
-        // Truncate the index trees
-        //
-        for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-            for (Index index : userRowDef.getIndexes()) {
-                truncateIndexes(session, Collections.singleton(index));
+    public void truncateGroup(final Session session, final Group group) throws PersistitException {
+        List<Index> indexes = new ArrayList<Index>();
+        // Collect indexes, truncate table statuses
+        for(UserTable table : group.getRoot().getAIS().getUserTables().values()) {
+            if(table.getGroup() == group) {
+                indexes.addAll(table.getIndexesIncludingInternal());
+                tableStatusCache.truncate(table.getTableId());
             }
         }
-        for (Index index : groupRowDef.getGroupIndexes()) {
-            truncateIndexes(session, Collections.singleton(index));
-        }
+        indexes.addAll(group.getIndexes());
+        truncateIndexes(session, indexes);
 
-        //
         // Truncate the group tree
-        //
-        final Exchange hEx = getExchange(session, groupRowDef);
+        final Exchange hEx = getExchange(session, group);
         hEx.removeAll();
         releaseExchange(session, hEx);
-        for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
-            final int childRowDefId = groupRowDef.getUserTableRowDefs()[i].getRowDefId();
-            tableStatusCache.truncate(childRowDefId);
-        }
     }
 
     // This is to avoid circular dependencies in Guicer.  
