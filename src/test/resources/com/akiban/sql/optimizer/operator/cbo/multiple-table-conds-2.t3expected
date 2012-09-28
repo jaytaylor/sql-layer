@@ -1,0 +1,11 @@
+PhysicalSelect[name:varchar(32)[VARCHAR]]
+  Map_NestedLoops()
+    IndexScan_Default(Index(parent.name), name)
+    Map_NestedLoops()
+      Select_HKeyOrdered(LIKE(customers.name, 'M%'))
+        IndexScan_Default(Index(customers.name), name = parent.name)
+      Project_Default(customers.name)
+        Select_HKeyOrdered(parent.name != addresses.city)
+          AncestorLookup_Default(Index(addresses.state) -> addresses)
+            Select_HKeyOrdered((addresses.state != 'WY') AND (customers.name != addresses.state))
+              IndexScan_Default(Index(addresses.state), state > 'M')

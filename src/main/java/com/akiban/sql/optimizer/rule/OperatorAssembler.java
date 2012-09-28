@@ -45,9 +45,13 @@ import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
 import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
 import com.akiban.server.types3.texpressions.ResultSetSubqueryTExpression;
@@ -55,6 +59,7 @@ import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -709,6 +714,7 @@ public class OperatorAssembler extends BaseRule
                 }
             }
 
+            // Types 2 processing 
             if (inserts != null) {
                 Expression[] row = new Expression[targetRowType.nFields()];
 
@@ -755,8 +761,23 @@ public class OperatorAssembler extends BaseRule
                     }
                 }
                 inserts = Arrays.asList(row);
+                // else do the types 3 processing. 
+            } else { 
+                TPreparedExpression[] row = new TPreparedExpression[targetRowType.nFields()];
+                int ncols = insertsP.size();
+                for (int i = 0; i < ncols; i++) {
+                    Column column = insert.getTargetColumns().get(i);
+                    row[column.getPosition()] = insertsP.get(i);
+                }
+                for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
+                    if (row[i] == null) {
+                        TInstance tinst = targetRowType.typeInstanceAt(i);
+                        PUnderlying underlying = tinst.typeClass().underlyingType();
+                        row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
+                    }
+                }
+                insertsP = Arrays.asList(row);
             }
-            // else { do the Types3 TPreparedExpression/insertsP (see below) } 
             
             input.operator = API.project_Table(input.operator, input.rowType,
                     targetRowType, inserts, insertsP);
@@ -783,6 +804,8 @@ public class OperatorAssembler extends BaseRule
                         params.add(new ConstantExpression(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR)));
                         params.add(new ConstantExpression(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR)));
                         FunctionExpression seq = new FunctionExpression ("NEXTVAL", params, DataTypeDescriptor.INTEGER, null);
+                        
+                        
                         seqExpr = newPartialAssembler.assembleExpression(seq, null);
                         
                         if (row[i] != null) {
@@ -838,25 +861,7 @@ public class OperatorAssembler extends BaseRule
                 explainUpdateStatement(stream.operator, updateStatement, updateColumns, updates, updatesP);            
             return stream;
         }
-        /*
-        protected PhysicalUpdate updateStatement(UpdateStatement updateStatement) {
-            RowStream stream = assembleQuery(updateStatement.getQuery());
-            UserTableRowType targetRowType = 
-                tableRowType(updateStatement.getTargetTable());
-            assert (stream.rowType == targetRowType);
-            List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<Expression> updates = oldPartialAssembler.assembleUpdates(targetRowType, updateColumns,
-                    stream.fieldOffsets);
-            List<TPreparedExpression> updatesP = newPartialAssembler.assembleUpdates(targetRowType, updateColumns,
-                    stream.fieldOffsets);
-            UpdateFunction updateFunction = 
-                new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
-            UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
-            if (explainContext != null)
-                explainUpdateStatement(plan, updateStatement, updateColumns, updates, updatesP);
-            return new PhysicalUpdate(plan, getParameterTypes(), updateStatement.isRequireStepIsolation());
-        }
-*/
+
         protected void explainUpdateStatement(Operator plan, UpdateStatement updateStatement, List<UpdateColumn> updateColumns, List<Expression> updates, List<TPreparedExpression> updatesP) {
             Attributes atts = new Attributes();
             TableName tableName = updateStatement.getTargetTable().getTable().getName();
