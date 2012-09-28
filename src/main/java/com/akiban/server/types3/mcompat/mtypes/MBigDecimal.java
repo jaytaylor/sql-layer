@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.rowdata.ConversionHelperBigDecimal;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
@@ -181,6 +182,12 @@ public class MBigDecimal extends TClassBase {
         int precisionL = instanceL.attribute(Attrs.PRECISION);
         int precisionR = instanceR.attribute(Attrs.PRECISION);
 
+        return pickPrecisionAndScale(this, precisionL, scaleL, precisionR, scaleR);
+    }
+
+    public static TInstance pickPrecisionAndScale(TClass tclass,
+                                                  int precisionL, int scaleL, int precisionR, int scaleR)
+    {
         int resultPrecision, resultScale;
 
         if (scaleL == scaleR) {
@@ -204,7 +211,7 @@ public class MBigDecimal extends TClassBase {
             precisionOfSmallerScale += Math.abs(scaleL - scaleR);
             resultPrecision = Math.max(precisionOfSmallerScale, resultPrecision);
         }
-        return MNumeric.DECIMAL.instance(resultPrecision, resultScale);
+        return tclass.instance(resultPrecision, resultScale);
     }
 
     public static final PValueCacher cacher = new PValueCacher() {
