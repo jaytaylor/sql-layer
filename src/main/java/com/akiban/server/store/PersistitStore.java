@@ -1211,8 +1211,8 @@ public class PersistitStore implements Store, Service {
 
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         flushIndexes(session);
+        Set<Group> groups = new HashSet<Group>();
         Set<RowDef> userRowDefs = new HashSet<RowDef>();
-        Set<RowDef> groupRowDefs = new HashSet<RowDef>();
         Set<Index> indexesToBuild = new HashSet<Index>();
         for(Index index : indexes) {
             IndexDef indexDef = index.indexDef();
@@ -1222,31 +1222,16 @@ public class PersistitStore implements Store, Service {
             indexesToBuild.add(index);
             RowDef rowDef = indexDef.getRowDef();
             userRowDefs.add(rowDef);
-            RowDef groupDef = rowDefCache.getRowDef(rowDef.getGroupRowDefId());
-            if(groupDef != null) {
-                groupRowDefs.add(groupDef);
-            }
+            groups.add(rowDef.table().getGroup());
         }
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
-        for (RowDef rowDef : groupRowDefs) {
+        for (Group group : groups) {
             RowData rowData = new RowData(new byte[MAX_ROW_SIZE]);
-            rowData.createRow(rowDef, new Object[0]);
 
-            byte[] columnBitMap = new byte[(rowDef.getFieldCount() + 7) / 8];
-            // Project onto all columns of selected user tables
-            for (RowDef user : rowDef.getUserTableRowDefs()) {
-                if (userRowDefs.contains(user)) {
-                    for (int bit = 0; bit < user.getFieldCount(); bit++) {
-                        int c = bit + user.getColumnOffset();
-                        columnBitMap[c / 8] |= (1 << (c % 8));
-                    }
-                }
-            }
             int indexKeyCount = 0;
-            Exchange hEx = getExchange(session, rowDef);
-            hEx.getKey().clear();
-            // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
+            Exchange hEx = getExchange(session, group);
             try {
+                hEx.clear();
                 while (hEx.next(true)) {
                     expandRowData(hEx, rowData);
                     int tableId = rowData.getRowDefId();
@@ -1267,7 +1252,7 @@ public class PersistitStore implements Store, Service {
                 throw new PersistitAdapterException(e);
             }
             flushIndexes(session);
-            LOG.debug("Inserted {} index keys into {}", indexKeyCount, rowDef.table().getName());
+            LOG.debug("Inserted {} index keys into group {}", indexKeyCount, group.getName());
         }
     }
 
@@ -1405,12 +1390,10 @@ public class PersistitStore implements Store, Service {
         deferIndexes = defer;
     }
 
-    public void traverse(Session session, RowDef rowDef, TreeRecordVisitor visitor)
-            throws PersistitException, InvalidOperationException {
-        assert rowDef.isGroupTable() : rowDef;
-        Exchange exchange = getExchange(session, rowDef).append(
-                Key.BEFORE);
+    public void traverse(Session session, Group group, TreeRecordVisitor visitor) throws PersistitException {
+        Exchange exchange = getExchange(session, group);
         try {
+            exchange.clear().append(Key.BEFORE);
             visitor.initialize(this, exchange);
             while (exchange.next(true)) {
                 visitor.visit();
@@ -1420,8 +1403,7 @@ public class PersistitStore implements Store, Service {
         }
     }
 
-    public <V extends IndexVisitor> V traverse(Session session, Index index, V visitor)
-            throws PersistitException, InvalidOperationException {
+    public <V extends IndexVisitor> V traverse(Session session, Index index, V visitor) throws PersistitException {
         Exchange exchange = getExchange(session, index).append(Key.BEFORE);
         try {
             visitor.initialize(exchange);

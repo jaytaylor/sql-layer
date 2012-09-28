@@ -403,14 +403,6 @@ public class RowDef {
         return fieldDefs;
     }
 
-    public int getGroupRowDefId() {
-        return table.isGroupTable() ? table.getTableId() : table.getGroup().getGroupTable().getTableId();
-    }
-
-    public RowDef getGroupRowDef() {
-        return table().isGroupTable() ? this : table.getGroup().getGroupTable().rowDef();
-    }
-
     public Index[] getIndexes() {
         return indexes;
     }
