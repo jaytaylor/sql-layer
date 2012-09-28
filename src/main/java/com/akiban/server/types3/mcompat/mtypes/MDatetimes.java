@@ -142,7 +142,7 @@ public class MDatetimes
             @Override
             public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append("TIMESTAMP '");
-                out.append(datetimeToString(source.getInt64()));
+                out.append(timestampToString(source.getInt32(), null));
                 out.append("'");
             }
         };
