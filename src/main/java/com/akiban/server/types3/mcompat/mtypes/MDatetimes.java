@@ -703,7 +703,7 @@ public class MDatetimes
         DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
 
         return (int)(dt.getHourOfDay() * DATETIME_HOUR_SCALE  
-                        + dt.getMinuteOfHour() * DATETIME_HOUR_SCALE
+                        + dt.getMinuteOfHour() * DATETIME_MIN_SCALE
                         + dt.getSecondOfMinute());
     }
     
