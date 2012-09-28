@@ -104,6 +104,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -325,7 +327,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 Integer oldPosition = helper.findOldPosition(origTable, newCol);
                 TInstance newInst = newCol.tInstance();
                 if(oldPosition == null) {
-                    pProjections.add(new TPreparedLiteral(newInst, PValueSources.getNullSource(newInst.typeClass().underlyingType())));
+                    final String defaultValue = newCol.getDefaultValue();
+                    final PValueSource defaultValueSource;
+                    if(defaultValue == null) {
+                        defaultValueSource = PValueSources.getNullSource(newInst.typeClass().underlyingType());
+                    } else {
+                        defaultValueSource = new PValue(defaultValue);
+                    }
+                    pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
                 } else {
                     TInstance oldInst = oldCol.tInstance();
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
