@@ -110,6 +110,10 @@ public class SparseArray<T> {
         return definedElements.get(index);
     }
     
+    public boolean isEmpty() {
+        return definedElements.isEmpty();
+    }
+
     public void clear() {
         Arrays.fill(internalArray, null);
         definedElements.clear();
