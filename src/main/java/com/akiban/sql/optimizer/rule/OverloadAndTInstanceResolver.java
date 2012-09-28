@@ -113,10 +113,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     @Override
     public void apply(PlanContext plan) {
         NewFolder folder = new NewFolder(plan);
-        ResolvingVistor resolvingVistor = new ResolvingVistor(plan, folder);
-        plan.putWhiteboard(RESOLVER_MARKER, resolvingVistor);
-        resolvingVistor.resolve(plan.getPlan());
-        new TopLevelCastingVistor(folder, resolvingVistor.parametersSync).apply(plan.getPlan());
+        ResolvingVisitor resolvingVisitor = new ResolvingVisitor(plan, folder);
+        folder.initResolvingVisitor(resolvingVisitor);
+        plan.putWhiteboard(RESOLVER_MARKER, resolvingVisitor);
+        resolvingVisitor.resolve(plan.getPlan());
+        new TopLevelCastingVisitor(folder, resolvingVisitor.parametersSync).apply(plan.getPlan());
         plan.getPlan().accept(ParameterCastInliner.instance);
     }
 
@@ -127,14 +128,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return plan.getWhiteboard(RESOLVER_MARKER);
     }
 
-    static class ResolvingVistor implements PlanVisitor, ExpressionRewriteVisitor {
+    static class ResolvingVisitor implements PlanVisitor, ExpressionRewriteVisitor {
 
         private NewFolder folder;
         private OverloadResolver resolver;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 
-        ResolvingVistor(PlanContext context, NewFolder folder) {
+        ResolvingVisitor(PlanContext context, NewFolder folder) {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             resolver = src.getOverloadResolver();
@@ -697,13 +698,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return expression;
     }
 
-    static class TopLevelCastingVistor implements PlanVisitor {
+    static class TopLevelCastingVisitor implements PlanVisitor {
 
         private List<? extends ColumnContainer> targetColumns;
         private NewFolder folder;
         private ParametersSync parametersSync;
 
-        TopLevelCastingVistor(NewFolder folder, ParametersSync parametersSync) {
+        TopLevelCastingVisitor(NewFolder folder, ParametersSync parametersSync) {
             this.folder = folder;
             this.parametersSync = parametersSync;
         }

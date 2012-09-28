@@ -183,17 +183,13 @@ public class ConstantFolder extends BaseRule
             Constantness lc = isConstant(cond.getLeft());
             Constantness rc = isConstant(cond.getRight());
             if ((lc == Constantness.NULL) || (rc == Constantness.NULL))
-                return new BooleanConstantExpression(null, 
-                                                     cond.getSQLtype(), 
-                                                     cond.getSQLsource());
+                return newBooleanConstant(null, cond);
             if ((lc != Constantness.VARIABLE) && (rc != Constantness.VARIABLE))
                 return evalNow(cond);
             if (isIdempotentEquality(cond)) {
                 if ((cond.getLeft().getSQLtype() != null) &&
                     !cond.getLeft().getSQLtype().isNullable()) {
-                    return new BooleanConstantExpression(Boolean.TRUE, 
-                                                         cond.getSQLtype(), 
-                                                         cond.getSQLsource());
+                    return newBooleanConstant(Boolean.TRUE, cond);
                 }
             }
             return cond;
@@ -277,13 +273,9 @@ public class ConstantFolder extends BaseRule
                 ConditionExpression cond = lfun.getOperand();
                 Constantness c = isConstant(cond);
                 if (c == Constantness.NULL)
-                    return new BooleanConstantExpression(null, 
-                                                         lfun.getSQLtype(), 
-                                                         lfun.getSQLsource());
+                    return newBooleanConstant(null, lfun);
                 if (c == Constantness.CONSTANT)
-                    return new BooleanConstantExpression(!checkConstantBoolean((ConstantExpression)cond),
-                                                         lfun.getSQLtype(), 
-                                                         lfun.getSQLsource());
+                    return newBooleanConstant(!checkConstantBoolean((ConstantExpression)cond), lfun);
             }
             return lfun;
         }
@@ -306,9 +298,7 @@ public class ConstantFolder extends BaseRule
             // pkey IS NULL is FALSE, for instance.
             if ((operand.getSQLtype() != null) &&
                 !operand.getSQLtype().isNullable())
-                return new BooleanConstantExpression(Boolean.FALSE, 
-                                                     fun.getSQLtype(), 
-                                                     fun.getSQLsource());
+                return newBooleanConstant(Boolean.FALSE, fun);
             return fun;
         }
 
@@ -317,9 +307,7 @@ public class ConstantFolder extends BaseRule
             if (isConstant(operand) != Constantness.VARIABLE)
                 return evalNow(fun);
             else if (isFalseOrUnknown((ConditionExpression)operand))
-                return new BooleanConstantExpression(Boolean.FALSE, 
-                                                     fun.getSQLtype(), 
-                                                     fun.getSQLsource());
+                return newBooleanConstant(Boolean.FALSE, fun);
             else
                 return fun;
         }
@@ -329,9 +317,7 @@ public class ConstantFolder extends BaseRule
             if (isConstant(operand) != Constantness.VARIABLE)
                 return evalNow(fun);
             else if (isTrueOrUnknown((ConditionExpression)operand))
-                return new BooleanConstantExpression(Boolean.FALSE, 
-                                                     fun.getSQLtype(), 
-                                                     fun.getSQLsource());
+                return newBooleanConstant(Boolean.FALSE, fun);
             else
                 return fun;
         }
@@ -354,9 +340,7 @@ public class ConstantFolder extends BaseRule
                 i++;
             }
             if (operands.isEmpty())
-                return new BooleanConstantExpression(null, 
-                                                     fun.getSQLtype(), 
-                                                     fun.getSQLsource());
+                return newBooleanConstant(null, fun);
             return fun;
         }
 
@@ -405,10 +389,7 @@ public class ConstantFolder extends BaseRule
                             Object value = null;
                             if (isAggregateZero(afun))
                                 value = Integer.valueOf(0);
-                            return new ConstantExpression(value,
-                                                          col.getSQLtype(),
-                                                          col.getAkType(),
-                                                          col.getSQLsource());
+                            return newConstant(value, col.getAkType(), col);
                         }
                     }
                     else if (state == State.AGGREGATES) {
@@ -436,8 +417,7 @@ public class ConstantFolder extends BaseRule
                     // TODO: Could do a new ColumnExpression with the
                     // NullSource that replaced it, but then that'd have
                     // to eval specially.
-                    return new ConstantExpression(null,
-                                                  col.getSQLtype(), AkType.NULL, col.getSQLsource());
+                    return newConstant(null, AkType.NULL, col);
             }
             return col;
         }
@@ -632,8 +612,7 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode subqueryValueExpression(SubqueryValueExpression expr) {
             SubqueryEmptiness empty = isEmptySubquery(expr.getSubquery());
             if (empty == SubqueryEmptiness.EMPTY) {
-                return new ConstantExpression(null,
-                                              expr.getSQLtype(), AkType.NULL, expr.getSQLsource());
+                return newConstant(null, AkType.NULL, expr);
             }
             ExpressionNode inner = getSubqueryColumn(expr.getSubquery());
             if (inner != null) {
@@ -642,9 +621,7 @@ public class ConstantFolder extends BaseRule
                     // If it's empty, it's NULL. 
                     // If it selects something, that projects NULL.
                     // NULL either way.
-                    return new ConstantExpression(NullValueSource.only(),
-                                                  expr.getSQLtype(), 
-                                                  expr.getSQLsource());
+                    return newConstant(null, AkType.NULL, expr);
                 }
                 else if ((ic == Constantness.CONSTANT) &&
                          (empty == SubqueryEmptiness.NON_EMPTY)) {
@@ -663,8 +640,7 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode existsCondition(ExistsCondition cond) {
             if (isEmptySubquery(cond.getSubquery()) == SubqueryEmptiness.EMPTY) {
                 // Empty EXISTS is false.
-                return new BooleanConstantExpression(Boolean.FALSE,
-                                                     cond.getSQLtype(), cond.getSQLsource());
+                return newBooleanConstant(Boolean.FALSE, cond);
             }
             return cond;
         }
@@ -673,8 +649,7 @@ public class ConstantFolder extends BaseRule
             SubqueryEmptiness empty = isEmptySubquery(cond.getSubquery());
             if (empty == SubqueryEmptiness.EMPTY) {
                 // Empty ANY is false.
-                return new BooleanConstantExpression(Boolean.FALSE,
-                                                     cond.getSQLtype(), cond.getSQLsource());
+                return newBooleanConstant(Boolean.FALSE, cond);
             }
             ExpressionNode inner = getSubqueryColumn(cond.getSubquery());
             if ((inner != null) &&
@@ -693,20 +668,14 @@ public class ConstantFolder extends BaseRule
                 in.dedup(isTopLevelCondition(cond));
                 switch (in.compareConstants(this)) {
                 case COMPARE_NULL:
-                    return new BooleanConstantExpression(null, 
-                                                         cond.getSQLtype(), 
-                                                         cond.getSQLsource());
+                    return newBooleanConstant(null, cond);
                 case ROW_EQUALS:
-                    return new BooleanConstantExpression(Boolean.TRUE,
-                                                         cond.getSQLtype(), 
-                                                         cond.getSQLsource());
+                    return newBooleanConstant(Boolean.TRUE, cond);
                 }
                 if (in.isEmpty())
-                    return new BooleanConstantExpression(Boolean.FALSE,
-                                                         cond.getSQLtype(), 
-                                                         cond.getSQLsource());
+                    return newBooleanConstant(Boolean.FALSE, cond);
                 if (in.isSingleton()) {
-                    return in.buildCondition(in.getSingleton());
+                    return in.buildCondition(in.getSingleton(), this);
                 }
             }
             return cond;
@@ -819,6 +788,21 @@ public class ConstantFolder extends BaseRule
             return Boolean.TRUE.equals(actual);
         }
         
+        protected ExpressionNode newConstant(Object value, AkType akType, ExpressionNode source) {
+            return newExpression(new ConstantExpression(value, source.getSQLtype(), akType, source.getSQLsource()));
+        }
+
+        protected ConditionExpression newBooleanConstant(Boolean value, ExpressionNode source) {
+            return (ConditionExpression)
+                newExpression(new BooleanConstantExpression(value, 
+                                                            source.getSQLtype(), 
+                                                            source.getSQLsource()));
+        }
+
+        protected ExpressionNode newExpression(ExpressionNode expr) {
+            return expr;
+        }
+
         protected abstract ExpressionNode genericFunctionExpression(FunctionExpression fun);
         protected abstract Boolean getBooleanObject(ConstantExpression expression);
         protected abstract Constantness isConstant(ExpressionNode expr);
@@ -856,10 +840,8 @@ public class ConstantFolder extends BaseRule
                 switch(oldExpressionAssembler.getFunctionRegistry().composer(fun.getFunction()).getNullTreating())
                 {
                 case REMOVE_AFTER_FIRST: return removeNull(fun, 1);   
-                case REMOVE:       return removeNull(fun);
-                case RETURN_NULL: return new BooleanConstantExpression(null,
-                        fun.getSQLtype(),
-                        fun.getSQLsource());
+                case REMOVE:      return removeNull(fun);
+                case RETURN_NULL: return newBooleanConstant(null, fun);
                 }
 
             return fun;
@@ -886,9 +868,7 @@ public class ConstantFolder extends BaseRule
             List<ExpressionNode> operands = fun.getOperands();
 
             if (operands.isEmpty())
-                return new BooleanConstantExpression(null,
-                        fun.getSQLtype(),
-                        fun.getSQLsource());
+                return newBooleanConstant(null, fun);
             int i = start;
             while (i < operands.size())
             {
@@ -911,8 +891,14 @@ public class ConstantFolder extends BaseRule
     }
 
     public static final class NewFolder extends Folder {
+        private ExpressionRewriteVisitor resolvingVisitor;
+
         public NewFolder(PlanContext planContext) {
             super(planContext, new NewExpressionAssembler(planContext));
+        }
+
+        public void initResolvingVisitor(ExpressionRewriteVisitor resolvingVisitor) {
+            this.resolvingVisitor = resolvingVisitor;
         }
 
         @Override
@@ -944,6 +930,11 @@ public class ConstantFolder extends BaseRule
             return value.isNull()
                     ? Constantness.NULL
                     : Constantness.CONSTANT;
+        }
+
+        @Override
+        protected ExpressionNode newExpression(ExpressionNode expr) {
+            return resolvingVisitor.visit(expr);
         }
     }
 
@@ -1176,11 +1167,12 @@ public class ConstantFolder extends BaseRule
                 }
             }
             if (removedComparison)
-                project.getFields().set(0, buildCondition(null));
+                project.getFields().set(0, buildCondition(null, folder));
             return CompareConstants.NORMAL;
         }
 
-        public ConditionExpression buildCondition(List<ExpressionNode> values) {
+        public ConditionExpression buildCondition(List<ExpressionNode> values,
+                                                  Folder folder) {
             ConditionExpression result = null;
             for (int i = 0; i < comparisons.size(); i++) {
                 ComparisonCondition comp = comparisons.get(i);
@@ -1193,14 +1185,13 @@ public class ConstantFolder extends BaseRule
                         
                     operands.add(result);
                     operands.add(comp);
-                    result = new LogicalFunctionCondition("and", operands,
-                                                          comp.getSQLtype(), null);
+                    result = (ConditionExpression)
+                        folder.newExpression(new LogicalFunctionCondition("and", operands,
+                                                                          comp.getSQLtype(), null));
                 }
             }
             if (result == null)
-                result = new BooleanConstantExpression(Boolean.TRUE,
-                                                       any.getSQLtype(), 
-                                                       any.getSQLsource());
+                result = folder.newBooleanConstant(Boolean.TRUE, any);
             return result;
         }
 
