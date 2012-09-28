@@ -934,7 +934,10 @@ public class ConstantFolder extends BaseRule
 
         @Override
         protected ExpressionNode newExpression(ExpressionNode expr) {
-            return resolvingVisitor.visit(expr);
+            if (resolvingVisitor != null)
+                return resolvingVisitor.visit(expr);
+            else
+                return expr;
         }
     }
 
