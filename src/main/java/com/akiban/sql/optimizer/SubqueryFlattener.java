@@ -50,6 +50,8 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.parser.*;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.akiban.sql.StandardException;
 import com.akiban.ais.model.Column;
@@ -223,7 +225,7 @@ public class SubqueryFlattener
                                                           selectNode.getWhereClause()));
         if (leftOperand == null) {
             ValueNode node = (ValueNode)nodeFactory.getNode(NodeTypes.BOOLEAN_CONSTANT_NODE, Boolean.TRUE, parserContext);
-            node.setType(subqueryNode.getType());
+            node.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
             return node;
         }
 
@@ -266,11 +268,8 @@ public class SubqueryFlattener
             assert false;
         }
         ValueNode newNode = (ValueNode)nodeFactory.getNode(nodeType, leftOperand, rightOperand, parserContext);
-        newNode.setType(subqueryNode.getType());
+        newNode.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
         return newNode;
-        //return (ValueNode)nodeFactory.getNode(nodeType,
-        //                                      leftOperand, rightOperand, 
-        //                                      parserContext);
     }
 
     protected boolean flattenableFromSubquery(FromSubquery fromSubquery)
