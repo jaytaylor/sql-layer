@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.operator.Operator;
 import com.akiban.sql.server.ServerOperatorCompiler;
 import com.akiban.sql.server.ServerPlanContext;
 
@@ -118,7 +119,9 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         else if (field.getSQLtype() != null) {
             DataTypeDescriptor sqlType = field.getSQLtype();
             AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
-            TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+            TInstance tInstance = field.getTInstance();
+            if (tInstance == null)
+                tInstance = TypesTranslation.toTInstance(sqlType);
             pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
         }
         else {
@@ -189,11 +192,32 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
 
     protected PostgresStatement generateUpdate(PhysicalUpdate update, String statementType,
                                                PostgresType[] parameterTypes) {
-        return new PostgresModifyOperatorStatement(statementType,
-                                                   update.getUpdatePlannable(),
-                                                   parameterTypes,
-                                                   usesPValues(),
-                                                   update.isRequireStepIsolation());
+        
+        if (update.isReturning()) {
+            int ncols = update.getResultColumns().size();
+            List<String> columnNames = new ArrayList<String>(ncols);
+            List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
+            for (PhysicalResultColumn physColumn : update.getResultColumns()) {
+                PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
+                columnNames.add(resultColumn.getName());
+                columnTypes.add(resultColumn.getType());
+            }
+            
+            return new PostgresModifyOperatorStatement (statementType, 
+                            (Operator)update.getPlannable(),
+                            update.getResultRowType(),
+                            columnNames, columnTypes,
+                            parameterTypes,
+                            usesPValues(),
+                            update.isRequireStepIsolation());
+        } else { 
+            return new PostgresModifyOperatorStatement(statementType,
+                    (Operator)update.getPlannable(),
+                    parameterTypes,
+                    usesPValues(),
+                    update.isRequireStepIsolation());
+            
+        }
     }
 
     protected PostgresStatement generateSelect(PhysicalSelect select,
@@ -212,5 +236,4 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                                              parameterTypes,
                                              usesPValues());
     }
-
 }

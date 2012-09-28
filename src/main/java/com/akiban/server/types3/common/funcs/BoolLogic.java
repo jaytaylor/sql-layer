@@ -128,12 +128,13 @@ public class BoolLogic extends TOverloadBase
 
     @Override
     protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
-        // For non-const inputs, only the second arg can make the whole exprsesion NOT_CONST.
+        // The expression is const iff either argument is a const whose value is equal to op.contaminant.
+        // The first argument can never make the expression non-const (though it can make it const), and the second
+        // argument can never leave the constness unknown.
         PValueSource preptimeValue = constSource(values, inputIndex);
-        if (preptimeValue == null)
-            return (inputIndex == 0) ? Constantness.UNKNOWN : Constantness.NOT_CONST;
-        Boolean arg = getBoolean(preptimeValue);
-        return Objects.equal(arg, op.contaminant) ? Constantness.CONST : Constantness.UNKNOWN;
+        if ((preptimeValue != null) && Objects.equal(op.contaminant, getBoolean(preptimeValue)))
+            return Constantness.CONST;
+        return (inputIndex == 0) ? Constantness.UNKNOWN : Constantness.NOT_CONST;
     }
 
     @Override
@@ -151,7 +152,7 @@ public class BoolLogic extends TOverloadBase
         }
         else {
             // need to look at the second arg
-            Boolean secondArg =  getBoolean(inputs, 1);
+            Boolean secondArg = getBoolean(inputs, 1);
             if (Objects.equal(op.contaminant, secondArg)) {
                 result = secondArg;
             }

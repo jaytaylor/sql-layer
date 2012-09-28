@@ -196,6 +196,7 @@ public final class Strongs {
     );
 
     public static final TStrongCasts fromDate = TStrongCasts.from(MDatetimes.DATE).to(
+            MDatetimes.DATETIME,
             MApproximateNumber.DOUBLE
     );
 

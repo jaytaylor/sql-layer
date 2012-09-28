@@ -1,3 +1,4 @@
-DeleteStatement@ad4d66b(child)
-  Select@1b49105b[child.name == Fred]
-    TableSource@59d0d45b(child)
+DMLStatement@2ff327e4(child)
+  DeleteStatement@44cc2153(child)
+    Select@359ff36e[child.name == Fred]
+      TableSource@1826d643(child)

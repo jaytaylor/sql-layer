@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Delete_Default(FROM items)
+  Delete_Returning(FROM items)
     AncestorLookup_Default(Index(items.PRIMARY) -> items)
       IndexScan_Default(Index(items.PRIMARY), iid = 1012)

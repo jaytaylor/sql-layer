@@ -189,7 +189,7 @@ public abstract class MDateFormat extends TOverloadBase
     {
         String st = null;
         InvalidOperationException error = null;
-        if (ymd == null)
+        if (ymd == null || MDatetimes.isZeroDayMonth(ymd))
             error = new InvalidParameterValueException("Incorrect datetime value");
         else
             try

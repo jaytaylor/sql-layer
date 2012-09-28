@@ -1,6 +1,7 @@
-UpdateStatement@1b83048(items[items.quan = Subquery@169dd64])
-  Select@145f5e3[]
-    TableSource@122d9c(items)
+DMLStatement@53720a2(items)
+  UpdateStatement@261be469(items[items.quan = Subquery@7130bd0a])
+    Select@36cb1594[]
+      TableSource@4ef5c3a6(items)
 
 Subquery@169dd64
   ResultSet@170984c[_SQL_COL_1]

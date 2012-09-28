@@ -46,8 +46,12 @@ import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDataSource;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
@@ -350,9 +354,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     protected void attach(PersistitKeyPValueSource source, int position, PUnderlying type)
     {
-        if (index.isSpatial()) {
-            throw new UnsupportedOperationException("Spatial indexes don't implement types3 yet");
-        }
         if (position < pKeyFields) {
             source.attach(pKey, position, type);
         } else {
@@ -515,7 +516,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     // Inner classes
 
-    // TODO: types3 version
     private class SpatialHandler
     {
         public int dimensions()
@@ -526,8 +526,30 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         public void bind(RowData rowData)
         {
             for (int d = 0; d < dimensions; d++) {
-                rowDataValueSource.bind(fieldDefs[d], rowData);
-                switch (types[d]) {
+                rowDataSource.bind(fieldDefs[d], rowData);
+                if (Types3Switch.ON) {
+                    RowDataPValueSource rowDataPValueSource = (RowDataPValueSource)rowDataSource;
+                    TClass tclass = tinstances[d].typeClass();
+                    if (tclass == MNumeric.DECIMAL) {
+                        BigDecimalWrapper wrapper = MBigDecimal.getWrapper(rowDataPValueSource, tinstances[d]);
+                        coords[d] =
+                            d == 0
+                            ? SpaceLatLon.scaleLat(wrapper.asBigDecimal())
+                            : SpaceLatLon.scaleLon(wrapper.asBigDecimal());
+                    }
+                    else if (tclass == MNumeric.BIGINT) {
+                        coords[d] = rowDataPValueSource.getInt64();
+                    }
+                    else if (tclass == MNumeric.INT) {
+                        coords[d] = rowDataPValueSource.getInt32();
+                    }
+                    else {
+                        assert false : fieldDefs[d].column();
+                    }
+                }
+                else {
+                    RowDataValueSource rowDataValueSource = (RowDataValueSource)rowDataSource;
+                    switch (types[d]) {
                     case INT:
                         coords[d] = rowDataValueSource.getInt();
                         break;
@@ -543,6 +565,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     default:
                         assert false : fieldDefs[d].column();
                         break;
+                    }
                 }
             }
         }
@@ -555,22 +578,35 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         private Space space;
         private final int dimensions;
         private final AkType[] types;
+        private final TInstance[] tinstances;
         private final FieldDef[] fieldDefs;
         private final long[] coords;
-        private final RowDataValueSource rowDataValueSource;
+        private final RowDataSource rowDataSource;
 
         {
             space = ((TableIndex)index).space();
             dimensions = space.dimensions();
             assert index.getKeyColumns().size() == dimensions;
-            types = new AkType[dimensions];
+            if (Types3Switch.ON) {
+                tinstances = new TInstance[dimensions];
+                types = null;
+            }
+            else {
+                types = new AkType[dimensions];
+                tinstances = null;
+            }
             fieldDefs = new FieldDef[dimensions];
             coords = new long[dimensions];
-            rowDataValueSource = new RowDataValueSource();
+            rowDataSource = (Types3Switch.ON) ? new RowDataPValueSource() : new RowDataValueSource();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 int position = indexColumn.getPosition();
                 Column column = indexColumn.getColumn();
-                types[position] = column.getType().akType();
+                if (Types3Switch.ON) {
+                    tinstances[position] = column.tInstance();
+                }
+                else {
+                    types[position] = column.getType().akType();
+                }
                 fieldDefs[position] = column.getFieldDef();
             }
         }

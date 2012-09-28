@@ -1,0 +1,93 @@
+com.akiban.sql.parser.InsertNode@34330fb9
+statementType: INSERT
+resultSet: 	
+	com.akiban.sql.parser.RowResultSetNode@690bc995
+	correlation Name: null
+	null
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@4df8b14
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@7023d08b
+		exposedName: null
+		name: null
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.NumericConstantNode@3f508f31
+			value: 1
+			type: INTEGER NOT NULL
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@41e8fa70
+		exposedName: null
+		name: null
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.NumericConstantNode@2691f0de
+			value: 3
+			type: INTEGER NOT NULL
+targetTableName: 	
+	com.akiban.sql.parser.TableName@e3d
+	t1
+	userData: test.t1
+returningList: 	
+	com.akiban.sql.parser.ResultColumnList@44d5575
+
+	[0]:	
+	com.akiban.sql.parser.ResultColumn@71257687
+	exposedName: x
+	name: x
+	tableName: null
+	isDefaultColumn: false
+	type: null
+	expression: 		
+		com.akiban.sql.parser.ColumnReference@5288d319
+		columnName: x
+		tableName: null
+		type: null
+		userData: t1.x from com.akiban.sql.parser.FromBaseTable@5ec736e4
+	[1]:	
+	com.akiban.sql.parser.ResultColumn@14db38a4
+	exposedName: y
+	name: y
+	tableName: null
+	isDefaultColumn: false
+	type: null
+	expression: 		
+		com.akiban.sql.parser.ColumnReference@4463a1ae
+		columnName: y
+		tableName: null
+		type: null
+		userData: t1.y from com.akiban.sql.parser.FromBaseTable@5ec736e4
+targetColumnList: 	
+	com.akiban.sql.parser.ResultColumnList@375c929a
+
+	[0]:	
+	com.akiban.sql.parser.ResultColumn@1e9cd8db
+	exposedName: x
+	name: x
+	tableName: null
+	isDefaultColumn: false
+	type: null
+	reference: 		
+		com.akiban.sql.parser.ColumnReference@4b612190
+		columnName: x
+		tableName: null
+		type: null
+		userData: t1.x
+	[1]:	
+	com.akiban.sql.parser.ResultColumn@55e29b99
+	exposedName: y
+	name: y
+	tableName: null
+	isDefaultColumn: false
+	type: null
+	reference: 		
+		com.akiban.sql.parser.ColumnReference@105585dc
+		columnName: y
+		tableName: null
+		type: null
+		userData: t1.y

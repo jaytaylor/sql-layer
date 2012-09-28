@@ -26,31 +26,44 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.ExplainContext;
 
 import java.util.Arrays;
+import java.util.List;
 
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable
 {
     private boolean requireStepIsolation;
+    private boolean returning;
 
-    public PhysicalUpdate(UpdatePlannable updatePlannable,
-                          DataTypeDescriptor[] parameterTypes,
-                          boolean requireStepIsolation) {
-        super(updatePlannable, parameterTypes);
+    public PhysicalUpdate (Operator resultsOperator, 
+                            DataTypeDescriptor[] paramterTypes,
+                            RowType rowType, 
+                            List<PhysicalResultColumn> resultColumns,
+                            boolean returning, 
+                            boolean requireStepIsolation) {
+        super (resultsOperator, paramterTypes, rowType, resultColumns);
         this.requireStepIsolation = requireStepIsolation;
+        this.returning = returning;
     }
-
+    
     public UpdatePlannable getUpdatePlannable() {
         return (UpdatePlannable)getPlannable();
     }
 
     public boolean isRequireStepIsolation() {
         return requireStepIsolation;
+    }
+    
+    public boolean isReturning() { 
+        return returning;
     }
 
     @Override

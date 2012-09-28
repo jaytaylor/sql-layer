@@ -33,19 +33,19 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public abstract class TArithmetic extends TOverloadBase {
 
-    protected TArithmetic(String overloadName, TClass inputType, NoAttrTClass resultType) {
-        this(overloadName, inputType, resultType.instance());
-    }
-
-    protected TArithmetic(String overloadName, TClass inputType, TInstance resultType) {
+    protected TArithmetic(String overloadName, TClass operand0, TClass operand1, TInstance resultType) {
        this.overloadName = overloadName;
-       this.inputType = inputType;
+       this.operand0 = operand0;
+       this.operand1 = operand1;
        this.resultType = resultType;
     }
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(inputType, 0, 1);
+        if (operand0 == operand1)
+            builder.covers(operand0, 0, 1);
+        else
+            builder.covers(operand0, 0).covers(operand1, 1);
     }
 
     @Override
@@ -59,6 +59,7 @@ public abstract class TArithmetic extends TOverloadBase {
     } 
     
     private final String overloadName;
-    private final TClass inputType;
+    private final TClass operand0;
+    private final TClass operand1;
     private final TInstance resultType;
 }

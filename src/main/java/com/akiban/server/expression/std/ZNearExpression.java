@@ -71,8 +71,8 @@ public class ZNearExpression extends AbstractCompositeExpression {
         
         @Override
         public ValueSource eval() {
-            throw new UnsupportedSQLException("This query is not supported by Akiban, it's definition "
-                    + "is used solely for optimization purposes.");
+            throw new UnsupportedSQLException("This query is not supported by Akiban, its definition " + 
+                                              "is used solely for optimization purposes.");
         }
     }
     

@@ -60,7 +60,7 @@ public class IfNullExpression extends CoalesceExpression
         }
     };
     
-    protected IfNullExpression (List< ? extends Expression> children)
+    public IfNullExpression (List< ? extends Expression> children)
     {
         super(checkArgs(children));
     }

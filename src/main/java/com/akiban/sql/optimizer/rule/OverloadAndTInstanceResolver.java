@@ -34,6 +34,7 @@ import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.ErrorHandlingMode;
+import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
@@ -88,6 +89,8 @@ import com.akiban.sql.optimizer.plan.TypedPlan;
 import com.akiban.sql.optimizer.plan.UpdateStatement;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
+import com.akiban.sql.optimizer.rule.PlanContext.WhiteboardMarker;
+import com.akiban.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.util.SparseArray;
 import com.google.common.base.Objects;
@@ -111,9 +114,17 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     public void apply(PlanContext plan) {
         NewFolder folder = new NewFolder(plan);
         ResolvingVistor resolvingVistor = new ResolvingVistor(plan, folder);
+        plan.putWhiteboard(RESOLVER_MARKER, resolvingVistor);
         resolvingVistor.resolve(plan.getPlan());
         new TopLevelCastingVistor(folder, resolvingVistor.parametersSync).apply(plan.getPlan());
         plan.getPlan().accept(ParameterCastInliner.instance);
+    }
+
+    public static final WhiteboardMarker<ExpressionRewriteVisitor> RESOLVER_MARKER = 
+        new DefaultWhiteboardMarker<ExpressionRewriteVisitor>();
+
+    public static ExpressionRewriteVisitor getResolver(PlanContext plan) {
+        return plan.getWhiteboard(RESOLVER_MARKER);
     }
 
     static class ResolvingVistor implements PlanVisitor, ExpressionRewriteVisitor {
@@ -407,7 +418,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             // Put the preptime value, possibly including nullness, into the expression. The constant folder
             // will use it.
-            TPreptimeValue preptimeValue = overload.evaluateConstant(context, new LazyListBase<TPreptimeValue>() {
+            LazyList<TPreptimeValue> lazyInputs = new LazyListBase<TPreptimeValue>() {
                 @Override
                 public TPreptimeValue get(int i) {
                     return operandValues.get(i);
@@ -417,7 +428,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 public int size() {
                     return operandValues.size();
                 }
-            });
+            };
+
+            TPreptimeValue preptimeValue = overload.evaluateConstant(context, overload.filterInputs(lazyInputs));
             if (preptimeValue == null)
                 preptimeValue = new TPreptimeValue(resultInstance);
             else
@@ -931,8 +944,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         public void uninferred(ParameterExpression parameterExpression) {
             assert parameterExpression.getPreptimeValue() == null : parameterExpression;
             List<ExpressionNode> siblings = siblings(parameterExpression);
-            if (!siblings.isEmpty()) {
-                TPreptimeValue preptimeValue = siblings.get(0).getPreptimeValue(); // fine if this is null
+            if (siblings.isEmpty()) {
+                parameterExpression.setPreptimeValue(new TPreptimeValue());
+            }
+            else {
+                TPreptimeValue preptimeValue = siblings.get(0).getPreptimeValue();
                 parameterExpression.setPreptimeValue(preptimeValue);
             }
             siblings.add(parameterExpression);
@@ -951,18 +967,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         public void set(ExpressionNode node, TInstance tInstance) {
             List<ExpressionNode> siblings = siblings((ParameterExpression) node);
             TPreptimeValue sharedTpv = siblings.get(0).getPreptimeValue();
-            if (sharedTpv == null) {
-                sharedTpv = new TPreptimeValue();
-                sharedTpv.instance(tInstance);
-                // all siblings have no tpv, so set it for all of them
-                for (int i = 0, size = siblings.size(); i < size; ++i)
-                    siblings.get(i).setPreptimeValue(sharedTpv);
-            }
-            else {
-                TInstance previousInstance = sharedTpv.instance();
-                tInstance = commonInstance(resolver, tInstance, previousInstance);
-                sharedTpv.instance(tInstance);
-            }
+            TInstance previousInstance = sharedTpv.instance();
+            tInstance = commonInstance(resolver, tInstance, previousInstance);
+            sharedTpv.instance(tInstance);
         }
     }
 }

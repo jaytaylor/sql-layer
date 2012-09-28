@@ -48,7 +48,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
                                                List<String> columnNames, List<PostgresType> columnTypes, 
                                                Object[] args, boolean usePVals)
     {
-        super(columnNames, columnTypes, null, usePVals);
+        super(null,
+              columnNames,
+              columnTypes,
+              null,
+              usePVals);
         this.args = args;
 
         plan = loadablePlan.plan();

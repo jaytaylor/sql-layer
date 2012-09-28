@@ -1,0 +1,5 @@
+PhysicalUpdate
+  Project_Default(orders.oid, orders.cid, orders.order_date)
+    Delete_Returning(FROM orders)
+      Filter_Default(orders)
+        GroupScan_Default(customers)
