@@ -451,7 +451,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             expression.setPreptimeValue(preptimeValue);
             
             SparseArray<Object> values = context.getValues();
-            if (!values.isEmpty())
+            if ((values != null) && !values.isEmpty())
                 expression.setPreptimeValues(values);
 
             if (castTo == null) {
