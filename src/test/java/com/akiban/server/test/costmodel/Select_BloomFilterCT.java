@@ -170,6 +170,7 @@ public class Select_BloomFilterCT extends CostModelBase
                         new Ordering()),
                     // filterFields
                     Arrays.asList(Expressions.field(dIndexRowType, 0)),
+                    null,
                     // filterBindingPosition
                     0));
         return plan;
@@ -223,6 +224,7 @@ public class Select_BloomFilterCT extends CostModelBase
                         new Ordering()),
                     // filterFields
                     Arrays.asList(Expressions.field(dIndexRowType, 0)),
+                    null,
                     // filterBindingPosition
                     0));
         return plan;

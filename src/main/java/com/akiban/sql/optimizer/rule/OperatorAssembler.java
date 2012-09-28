@@ -1653,7 +1653,9 @@ public class OperatorAssembler extends BaseRule
             RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
             boundRows.set(pos, null);
             List<Expression> fields = oldPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
-                                                          stream.fieldOffsets);
+                    stream.fieldOffsets);
+            List<TPreparedExpression> tFields = newPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
+                    stream.fieldOffsets);
             List<AkCollator> collators = new ArrayList<AkCollator>();
             for (ExpressionNode expressionNode : bloomFilterFilter.getLookupExpressions()) {
                 collators.add(expressionNode.getCollator());
@@ -1661,6 +1663,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.select_BloomFilter(stream.operator,
                                                      cstream.operator,
                                                      fields,
+                                                     tFields,
                                                      collators,
                                                      pos);
             return stream;

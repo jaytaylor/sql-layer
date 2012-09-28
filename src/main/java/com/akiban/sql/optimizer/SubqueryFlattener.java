@@ -221,10 +221,11 @@ public class SubqueryFlattener
         currentSelectNode.getFromList().addAll(selectNode.getFromList());
         currentSelectNode.setWhereClause(mergeWhereClause(currentSelectNode.getWhereClause(),
                                                           selectNode.getWhereClause()));
-        if (leftOperand == null)
-            return (ValueNode)nodeFactory.getNode(NodeTypes.BOOLEAN_CONSTANT_NODE,
-                                                  Boolean.TRUE,
-                                                  parserContext);
+        if (leftOperand == null) {
+            ValueNode node = (ValueNode)nodeFactory.getNode(NodeTypes.BOOLEAN_CONSTANT_NODE, Boolean.TRUE, parserContext);
+            node.setType(subqueryNode.getType());
+            return node;
+        }
 
         int nodeType = 0;
         switch (subqueryNode.getSubqueryType()) {
@@ -264,9 +265,12 @@ public class SubqueryFlattener
         default:
             assert false;
         }
-        return (ValueNode)nodeFactory.getNode(nodeType,
-                                              leftOperand, rightOperand, 
-                                              parserContext);
+        ValueNode newNode = (ValueNode)nodeFactory.getNode(nodeType, leftOperand, rightOperand, parserContext);
+        newNode.setType(subqueryNode.getType());
+        return newNode;
+        //return (ValueNode)nodeFactory.getNode(nodeType,
+        //                                      leftOperand, rightOperand, 
+        //                                      parserContext);
     }
 
     protected boolean flattenableFromSubquery(FromSubquery fromSubquery)
