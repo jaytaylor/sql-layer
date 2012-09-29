@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.common.types;
 
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TInstance;
@@ -65,5 +66,10 @@ public enum StringAttribute implements Attribute
         }
         tInstance.setMetaData(result);
         return result;
+    }
+
+    public static TInstance copyWithCollation(TInstance tInstance, CharacterTypeAttributes cattrs) {
+        AkCollator collator = AkCollatorFactory.getAkCollator(cattrs.getCollation());
+        return tInstance.typeClass().instance(tInstance.attribute(LENGTH), tInstance.attribute(CHARSET), collator.getCollationId());
     }
 }
