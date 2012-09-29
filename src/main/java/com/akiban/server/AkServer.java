@@ -59,7 +59,8 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
 {
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
-
+    public static final String SHORT_VERSION_STRING = shorten(VERSION_STRING);
+    
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
     private static final String AKSERVER_NAME_PROP = "akserver.name";
     private static final String PID_FILE_NAME = System.getProperty("akserver.pidfile");
@@ -213,4 +214,21 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
                                                           new Object[0], new String[0]);
     }
 
+    /**
+     * 
+     * @param version
+     * @return the short version of the string (ie., the part before the first dash ('-');
+     */
+    private static String shorten(String version)
+    {
+        StringBuilder bd = new StringBuilder();
+        char ch;
+        for (int n = 0; n < version.length(); ++n)
+            if ((ch = version.charAt(n)) == '-')
+                return bd.toString();
+            else
+                bd.append(ch);
+        
+        return bd.toString();
+    }
 }

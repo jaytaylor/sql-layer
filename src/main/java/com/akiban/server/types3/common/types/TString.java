@@ -46,9 +46,10 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.AkibanAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.akiban.util.AkibanAppender;
+import java.util.Formatter;
 
 public abstract class TString extends TClass
 {
@@ -81,26 +82,46 @@ public abstract class TString extends TClass
 
             @Override
             public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
-                formatQuoted(source, out, '\'', '\'');
+                formatQuoted(source, out, '\'', '\'', false);
             }
 
             @Override
             public void formatAsJson(TInstance instance, PValueSource source, AkibanAppender out) {
-                formatQuoted(source, out, '"', '\\');
+                formatQuoted(source, out, '"', '\\', true);
             }
 
+            private boolean needsEscaping(int ch) {
+                // Anything other than printing ASCII.
+                return (ch >= 0200) || Character.isISOControl(ch);
+            }
+
+            private static final String SIMPLY_ESCAPED = "\r\n\t";
+            private static final String SIMPLY_ESCAPES = "rnt";
+
             protected void formatQuoted(PValueSource source, AkibanAppender out,
-                                        char quote, char escape) {
+                                        char quote, char escape, boolean escapeControlChars) {
                 String value = source.getString();
                 out.append(quote);
-                if (value.indexOf(quote) < 0)
+                if (!escapeControlChars && (value.indexOf(quote) < 0))
                     out.append(value);
                 else {
                     for (int i = 0; i < value.length(); i++) {
                         int ch = value.charAt(i);
-                        if (ch == quote)
-                            out.append(escape);
-                        out.append((char)ch);
+                        if (escapeControlChars && needsEscaping(ch)) {
+                            int idx = SIMPLY_ESCAPED.indexOf(ch);
+                            if (idx < 0) {
+                                new Formatter(out.getAppendable()).format("\\u%04x", (int)ch);
+                            }
+                            else {
+                                out.append(escape);
+                                out.append(SIMPLY_ESCAPES.charAt(idx));
+                            }
+                        }
+                        else {
+                            if ((ch == quote) || (ch == escape))
+                                out.append(escape);
+                            out.append((char)ch);
+                        }
                     }
                 }
                 out.append(quote);
@@ -156,7 +177,7 @@ public abstract class TString extends TClass
     @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         return new DataTypeDescriptor(
-                typeId, instance.nullability(), instance.attribute(StringAttribute.LENGTH));
+                typeId, instance.nullability(), instance.attribute(StringAttribute.LENGTH), StringAttribute.characterTypeAttributes(instance));
     }
 
     @Override

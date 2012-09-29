@@ -28,6 +28,9 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -50,8 +53,6 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
 import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
 import com.akiban.server.types3.texpressions.ResultSetSubqueryTExpression;
@@ -59,7 +60,6 @@ import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -804,8 +804,6 @@ public class OperatorAssembler extends BaseRule
                         params.add(new ConstantExpression(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR)));
                         params.add(new ConstantExpression(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR)));
                         FunctionExpression seq = new FunctionExpression ("NEXTVAL", params, DataTypeDescriptor.INTEGER, null);
-                        
-                        
                         seqExpr = newPartialAssembler.assembleExpression(seq, null);
                         
                         if (row[i] != null) {

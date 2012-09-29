@@ -63,7 +63,7 @@ public final class TExecutionContext {
     public Object preptimeObjectAt(int index) {
         if (preptimeCache == null)
             preptimeCache = new SparseArray<Object>(index);
-        return preptimeCache.getIfDefined(index);
+        return preptimeCache.get(index);
     }
 
     public boolean hasExectimeObject(int index) {

@@ -1,4 +1,4 @@
-PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
+PhysicalSelect[_SQL_COL_1:BIGINT NOT NULL]
   Project_Default(Field(0))
     Count_Default(*)
       Filter_Default(customers - orders)
