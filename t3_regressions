@@ -11,7 +11,8 @@ done
 if [ "$RUN_TESTS" = "yes" ]; then
     CMD='mvn test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
     echo "Running tests: $CMD"
-    #echo $CMD > /dev/null
+    echo '...'
+    echo $CMD > /dev/null
     echo "Tests finished."
 else
     echo "Skipping tests run."
@@ -19,7 +20,7 @@ fi
 
 BASE=$(dirname $(readlink -f $0))
 FAILURES_FILE=$BASE/src/test/resources/com/akiban/sql/pg/yaml/newtypes-failures
-FAILED=$($BASE/t3_regressions-collect)
+FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -r 's/testYaml \[([^]]*).*/\1/' | sort)
 FAILDIFF=$(echo "$FAILED" | diff --suppress-common-lines $FAILURES_FILE -)
 REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
 FIXES=$(echo "$FAILDIFF" | grep '<')
