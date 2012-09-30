@@ -68,13 +68,23 @@ public class Procedure
         return null;
     }
 
+    public Parameter getReturnValue() {
+        return returnValue;
+    }
+
     protected void checkMutability() {
         ais.checkMutability();
     }
 
     protected void addParameter(Parameter parameter)
     {
-        parameters.add(parameter);
+        switch (parameter.getDirection()) {
+        case RETURN:
+            returnValue = parameter;
+            break;
+        default:
+            parameters.add(parameter);
+        }
     }
 
     // State

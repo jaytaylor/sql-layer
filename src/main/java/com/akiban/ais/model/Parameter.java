@@ -32,14 +32,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Parameter
 {
-    public static enum Direction { IN, OUT, INOUT };
+    public static enum Direction { IN, OUT, INOUT, RETURN };
 
     public static Parameter create(Procedure procedure, String name, Direction direction,
                                    Type type, Long typeParameter1, Long typeParameter2)
     {
         procedure.checkMutability();
         AISInvariants.checkNullName(name, "parameter", "parameter name");
-        AISInvariants.checkDuplicateParametersInProcedure(procedure, name);
+        AISInvariants.checkDuplicateParametersInProcedure(procedure, name, direction);
         Parameter parameter = new Parameter(procedure, name, direction, type, typeParameter1, typeParameter2);
         procedure.addParameter(parameter);
         return parameter;

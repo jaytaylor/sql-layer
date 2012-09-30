@@ -278,6 +278,24 @@ public class AISBuilder {
         }
     }
 
+    public void procedure(String schemaName, String procedureName) {
+        LOG.info("procedure: {}.{} ", schemaName, procedureName);
+        Procedure procedure = Procedure.create(ais, schemaName, procedureName);
+    }
+    
+    public void parameter(String schemaName, String procedureName, 
+                          String parameterName, Parameter.Direction direction, 
+                          String typeName, Long typeParameter1, Long typeParameter2) {
+        LOG.info("parameter: {} {}", schemaName + "." + procedureName, parameterName);
+        Procedure procedure = ais.getProcedure(new TableName(schemaName, procedureName));
+        checkFound(procedure, "creating parameter", "procedure", 
+                   concat(schemaName, procedureName));
+        Type type = ais.getType(typeName);
+        checkFound(type, "creating parameter", "type", typeName);
+        Parameter parameter = Parameter.create(procedure, parameterName, direction,
+                                               type, typeParameter1, typeParameter2);
+    }
+
     public void basicSchemaIsComplete() {
         LOG.info("basicSchemaIsComplete");
         for (UserTable userTable : ais.getUserTables().values()) {

@@ -270,6 +270,7 @@ public enum ErrorCode {
     NO_SUCH_SEQUENCE        ("42", "516", Importance.DEBUG, NoSuchSequenceException.class),
     NO_SUCH_UNIQUE          ("42", "517", Importance.DEBUG, NoSuchUniqueException.class),
     NO_SUCH_GROUPING_FK     ("42", "518", Importance.DEBUG, NoSuchGroupingFKException.class),
+    NO_SUCH_PROCEDURE       ("42", "519", Importance.DEBUG, NoSuchProcedureException.class),
 
     // Class 44 - with check option violation
     

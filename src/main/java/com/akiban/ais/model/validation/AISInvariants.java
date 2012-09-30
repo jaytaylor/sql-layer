@@ -129,10 +129,17 @@ public class AISInvariants {
         }
     }
     
-    public static void checkDuplicateParametersInProcedure(Procedure procedure, String parameterName)
+    public static void checkDuplicateParametersInProcedure(Procedure procedure, String parameterName, Parameter.Direction direction)
     {
-        if (procedure.getNamedParameter(parameterName) != null) {
-            throw new DuplicateParameterNameException(procedure.getName(), parameterName);
+        if (direction == Parameter.Direction.RETURN) {
+            if (procedure.getReturnValue() != null) {
+                throw new DuplicateParameterNameException(procedure.getName(), "return value");
+            }
+        }
+        else {
+            if (procedure.getNamedParameter(parameterName) != null) {
+                throw new DuplicateParameterNameException(procedure.getName(), parameterName);
+            }
         }
     }
 }
