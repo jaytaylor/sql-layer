@@ -1,0 +1,43 @@
+#!/bin/bash
+
+RUN_TESTS='yes'
+while getopts 'sh' opt; do
+    case $opt in
+        s) RUN_TESTS='no' ;;
+        ?) echo 'Run with -s to skip "mvn test", or else with no args' ;;
+    esac
+done
+
+if [ "$RUN_TESTS" = "yes" ]; then
+    CMD='mvn test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
+    echo "Running tests: $CMD"
+    #echo $CMD > /dev/null
+    echo "Tests finished."
+else
+    echo "Skipping tests run."
+fi
+
+BASE=$(dirname $(readlink -f $0))
+FAILURES_FILE=$BASE/src/test/resources/com/akiban/sql/pg/yaml/newtypes-failures
+FAILED=$($BASE/t3_regressions-collect)
+FAILDIFF=$(echo "$FAILED" | diff --suppress-common-lines $FAILURES_FILE -)
+REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
+FIXES=$(echo "$FAILDIFF" | grep '<')
+RESULT="neither"
+EXIT_CODE=0
+if [ -n "$FIXES" ]; then
+    echo "$FIXES"       | sed 's/^< /Fixed:     /'
+    RESULT="fixes"
+fi
+if [ -n "$REGRESSIONS" ]; then
+    echo "$REGRESSIONS" | sed 's/^> /REGRESSED: /'
+    EXIT_CODE=1
+    RESULT="regressions"
+fi
+if [ "$RESULT" = "fixes" ]; then
+    echo "Updating expected failures file"
+    echo "$FAILED" > $FAILURES_FILE
+elif [ "$RESULT" = "neither" ]; then
+    echo "No fixes or regressions."
+fi
+exit $EXIT_CODE
