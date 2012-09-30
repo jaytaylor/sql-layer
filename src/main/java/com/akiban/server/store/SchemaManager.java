@@ -33,6 +33,7 @@ import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Procedure;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -198,6 +199,12 @@ public interface SchemaManager {
     
     /** Drop the given sequence from the current AIS. */
     void dropSequence(Session session, Sequence sequence);
+
+    /** Add the Procedure to the current AIS */
+    void createProcedure(Session session, Procedure procedure);
+    
+    /** Drop the given procedure from the current AIS. */
+    void dropProcedure(Session session, TableName procedureName);
 
     // TODO: PSSM should handle this itself...
     void rollbackAIS(Session session, AkibanInformationSchema replacementAIS,

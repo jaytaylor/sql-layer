@@ -658,4 +658,13 @@ public class AISMerge {
         newAIS.freeze();
         return newAIS;
     }    
+
+    public static AkibanInformationSchema mergeProcedure(AkibanInformationSchema oldAIS,
+                                                         Procedure procedure) {
+        AkibanInformationSchema newAIS = copyAISForAdd(oldAIS);
+        newAIS.addProcedure(procedure);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
 }

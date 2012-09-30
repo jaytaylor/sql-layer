@@ -679,7 +679,7 @@ public class AkibanInformationSchema implements Traversable
         }
     }
 
-    void removeProcedure(TableName name) {
+    public void removeProcedure(TableName name) {
         procedures.remove(name);
         Schema schema = getSchema(name.getSchemaName());
         if (schema != null) {

@@ -28,6 +28,7 @@ package com.akiban.server.api.ddl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Procedure;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -175,6 +176,16 @@ public class DDLFunctionsMockBase implements DDLFunctions {
 
     @Override
     public void dropSequence(Session session, TableName sequenceName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void createProcedure(Session session, Procedure procedure) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void dropProcedure(Session session, TableName procedureName) {
         throw new UnsupportedOperationException();
     }
 }
