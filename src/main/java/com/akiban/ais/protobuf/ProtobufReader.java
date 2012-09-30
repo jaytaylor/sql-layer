@@ -39,6 +39,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Procedure;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -158,6 +160,7 @@ public class ProtobufReader {
             // Requires no tables, does not load indexes
             loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
             loadViews(pbSchema.getSchemaName(), pbSchema.getViewsList());
+            loadProcedures(pbSchema.getSchemaName(), pbSchema.getProceduresList());
         }
 
         // Assume no ordering of schemas or tables, load joins and view refs second
@@ -457,6 +460,46 @@ public class ProtobufReader {
             return Index.UNIQUE_KEY_CONSTRAINT;
         }
         return Index.KEY_CONSTRAINT;
+    }
+
+    private void loadProcedures(String schema, Collection<AISProtobuf.Procedure> pbProcedures) {
+        for (AISProtobuf.Procedure pbProcedure : pbProcedures) {
+            hasRequiredFields(pbProcedure);
+            Procedure procedure = Procedure.create(
+                    destAIS,
+                    schema,
+                    pbProcedure.getProcedureName()
+            );
+            loadParameters(procedure, pbProcedure.getParametersList());
+        }
+    }
+
+    private void loadParameters(Procedure procedure, Collection<AISProtobuf.Parameter> pbParameters) {
+        for (AISProtobuf.Parameter pbParameter : pbParameters) {
+            hasRequiredFields(pbParameter);
+            Parameter parameter = Parameter.create(
+                procedure,
+                pbParameter.getParameterName(),
+                convertParameterDirection(pbParameter.getDirection()),
+                destAIS.getType(pbParameter.getTypeName()),
+                pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
+                pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null
+            );
+        }
+    }
+
+    private static Parameter.Direction convertParameterDirection(AISProtobuf.ParameterDirection parameterDirection) {
+        switch (parameterDirection) {
+        case IN: 
+        default:
+            return Parameter.Direction.IN;
+        case OUT: 
+            return Parameter.Direction.OUT;
+        case INOUT: 
+            return Parameter.Direction.INOUT;
+        case RETURN: 
+            return Parameter.Direction.RETURN;
+        }
     }
 
     private PendingOSC loadPendingOSC(AISProtobuf.PendingOSC pbPendingOSC) {

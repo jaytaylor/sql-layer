@@ -36,6 +36,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Procedure;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
@@ -62,6 +64,7 @@ public class ProtobufWriter {
         /** Called for all GroupIndexes and all table indexes where getSelected(UserTable) is not null **/
         boolean isSelected(Index index);
         boolean isSelected(Sequence sequence);
+        boolean isSelected(Procedure procedure);
     }
 
     public static final WriteSelector ALL_SELECTOR = new WriteSelector() {
@@ -89,6 +92,11 @@ public class ProtobufWriter {
         public boolean isSelected(Sequence sequence) {
             return true;
         }
+
+        @Override
+        public boolean isSelected(Procedure procedure) {
+            return true;
+        }
     };
 
     public static abstract class TableFilterSelector implements WriteSelector {
@@ -109,6 +117,11 @@ public class ProtobufWriter {
 
         @Override
         public boolean isSelected(Sequence sequence) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(Procedure procedure) {
             return true;
         }
     }
@@ -156,6 +169,11 @@ public class ProtobufWriter {
         @Override 
         public boolean isSelected(Sequence sequence) {
             return schemaName.equals(sequence.getSequenceName().getSchemaName());
+        }
+        
+        @Override 
+        public boolean isSelected(Procedure procedure) {
+            return schemaName.equals(procedure.getName().getSchemaName());
         }
     }
 
@@ -262,6 +280,14 @@ public class ProtobufWriter {
             }
         }
         
+        for(View view : schema.getViews().values()) {
+            view = (View)selector.getSelected(view);
+            if(view != null) {
+                writeView(schemaBuilder, view);
+                isEmpty = false;
+            }
+        }
+
         for (Sequence sequence : schema.getSequences().values()) {
             if (selector.isSelected (sequence)) { 
                 writeSequence(schemaBuilder, sequence);
@@ -269,10 +295,9 @@ public class ProtobufWriter {
             }
         }
 
-        for(View view : schema.getViews().values()) {
-            view = (View)selector.getSelected(view);
-            if(view != null) {
-                writeView(schemaBuilder, view);
+        for (Procedure procedure : schema.getProcedures().values()) {
+            if (selector.isSelected (procedure)) { 
+                writeProcedure(schemaBuilder, procedure);
                 isEmpty = false;
             }
         }
@@ -567,4 +592,45 @@ public class ProtobufWriter {
         }
         schemaBuilder.addSequences (sequenceBuilder.build());
     }
+
+    private static void writeProcedure(AISProtobuf.Schema.Builder schemaBuilder, Procedure procedure) {
+        AISProtobuf.Procedure.Builder procedureBuilder = AISProtobuf.Procedure.newBuilder()
+            .setProcedureName(procedure.getName().getTableName());
+        for (Parameter parameter : procedure.getParameters()) {
+            writeParameter(procedureBuilder, parameter);
+        }
+        if (procedure.getReturnValue() != null) {
+            writeParameter(procedureBuilder, procedure.getReturnValue());
+        }
+        schemaBuilder.addProcedures(procedureBuilder.build());
+    }
+
+    private static void writeParameter(AISProtobuf.Procedure.Builder procedureBuilder, Parameter parameter) {
+        AISProtobuf.Parameter.Builder parameterBuilder = AISProtobuf.Parameter.newBuilder()
+            .setParameterName(parameter.getName())
+            .setDirection(convertParameterDirection(parameter.getDirection()))
+            .setTypeName(parameter.getType().name());
+        if (parameter.getTypeParameter1() != null) {
+            parameterBuilder.setTypeParam1(parameter.getTypeParameter1());
+        }
+        if (parameter.getTypeParameter2() != null) {
+            parameterBuilder.setTypeParam2(parameter.getTypeParameter2());
+        }
+        procedureBuilder.addParameters(parameterBuilder.build());
+    }
+
+    private static AISProtobuf.ParameterDirection convertParameterDirection(Parameter.Direction parameterDirection) {
+        switch (parameterDirection) {
+        case IN: 
+        default:
+            return AISProtobuf.ParameterDirection.IN;
+        case OUT: 
+            return AISProtobuf.ParameterDirection.OUT;
+        case INOUT: 
+            return AISProtobuf.ParameterDirection.INOUT;
+        case RETURN: 
+            return AISProtobuf.ParameterDirection.RETURN;
+        }
+    }
+
 }
