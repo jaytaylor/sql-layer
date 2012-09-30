@@ -10,9 +10,10 @@ done
 
 if [ "$RUN_TESTS" = "yes" ]; then
     CMD='mvn test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
+    CMD='mvn test -Dtest=CastUtilsTest'
     echo "Running tests: $CMD"
     echo '...'
-    $CMD > /dev/null
+    time ($CMD > /dev/null)
     echo "Tests finished."
 else
     echo "Skipping tests run."
