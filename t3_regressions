@@ -34,12 +34,12 @@ if [ -n "$REGRESSIONS" ]; then
     RESULT="regressions"
 fi
 
+echo "Fixes:       $(echo "$FIXES" | wc -l)"
+echo "Regressions: $(echo "$REGRESSIONS" | wc -l)"
+
 EXIT_CODE=1
 if [ "$RESULT" = "fixes" ]; then
     echo "Updating expected failures file"
     echo "$FAILED" > $FAILURES_FILE
-elif [ "$RESULT" = "neither" ]; then
-    EXIT_CODE=0
-    echo "No fixes or regressions."
 fi
 exit $EXIT_CODE
