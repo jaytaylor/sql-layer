@@ -89,6 +89,22 @@ public class Schema {
         views.remove(viewName);
     }
 
+    public Map<String, Procedure> getProcedures() {
+        return procedures;
+    }
+    
+    public Procedure getProcedure(String procedureName) {
+        return procedures.get(procedureName);
+    }
+    
+    void addProcedure(Procedure procedure) {
+        procedures.put(procedure.getName().getTableName(), procedure);
+    }
+    
+    void removeProcedure(String procedureName) {
+        procedures.remove(procedureName);
+    }
+    
     Schema(String name) {
         this.name = name;
     }
@@ -97,4 +113,5 @@ public class Schema {
     private final Map<String, UserTable> userTables = new TreeMap<String, UserTable>();
     private final Map<String, Sequence> sequences = new TreeMap<String, Sequence>();
     private final Map<String, View> views = new TreeMap<String, View>();
+    private final Map<String, Procedure> procedures = new TreeMap<String, Procedure>();
 }

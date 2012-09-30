@@ -262,6 +262,16 @@ public class AkibanInformationSchema implements Traversable
         return sequences.get(sequenceName);
     }
     
+    public Map<TableName, Procedure> getProcedures()
+    {
+        return procedures;
+    }
+    
+    public Procedure getProcedure(final TableName procedureName)
+    {
+        return procedures.get(procedureName);
+    }
+    
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
@@ -396,6 +406,20 @@ public class AkibanInformationSchema implements Traversable
             addSchema(schema);
         }
         schema.addSequence(seq);
+    }
+    
+    public void addProcedure(Procedure procedure)
+    {
+        TableName procedureName = procedure.getName();
+        procedures.put(procedureName, procedure);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(procedureName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(procedureName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addProcedure(procedure);
     }
     
     public void deleteGroupAndGroupTable(Group group)
@@ -655,6 +679,14 @@ public class AkibanInformationSchema implements Traversable
         }
     }
 
+    void removeProcedure(TableName name) {
+        procedures.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeProcedure(name.getTableName());
+        }
+    }
+
     public void removeView(TableName name) {
         views.remove(name);
         Schema schema = getSchema(name.getSchemaName());
@@ -673,6 +705,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
     private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
     private final Map<TableName, View> views = new TreeMap<TableName, View>();
+    private final Map<TableName, Procedure> procedures = new TreeMap<TableName, Procedure>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();

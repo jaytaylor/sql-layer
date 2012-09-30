@@ -305,6 +305,8 @@ public enum ErrorCode {
     INDISTINGUISHABLE_INDEX ("50", "00T", Importance.DEBUG, IndistinguishableIndexException.class),
     DROP_GROUP_NOT_ROOT     ("50", "00U", Importance.DEBUG, DropGroupNotRootException.class),
     BAD_SPATIAL_INDEX       ("50", "00V", Importance.DEBUG, BadSpatialIndexException.class),
+    DUPLICATE_PROCEDURE     ("50", "00W", Importance.DEBUG, DuplicateProcedureNameException.class), 
+    DUPLICATE_PARAMETER     ("50", "00X", Importance.DEBUG, DuplicateParameterNameException.class),
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
     GROUP_MULTIPLE_ROOTS    ("50", "010", Importance.DEBUG, GroupHasMultipleRootsException.class),

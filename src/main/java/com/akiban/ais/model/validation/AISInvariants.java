@@ -31,6 +31,8 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Procedure;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.AISNullReferenceException;
@@ -38,6 +40,8 @@ import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateGroupNameException;
 import com.akiban.server.error.DuplicateIndexColumnException;
 import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.DuplicateParameterNameException;
+import com.akiban.server.error.DuplicateProcedureNameException;
 import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NameIsNullException;
@@ -117,4 +121,18 @@ public class AISInvariants {
             throw new DuplicateGroupNameException (groupName);
         }
     }    
+
+    public static void checkDuplicateProcedure(AkibanInformationSchema ais, String schemaName, String procedureName)
+    {
+        if (ais.getProcedure(new TableName(schemaName, procedureName)) != null) {
+            throw new DuplicateProcedureNameException(new TableName(schemaName, procedureName));
+        }
+    }
+    
+    public static void checkDuplicateParametersInProcedure(Procedure procedure, String parameterName)
+    {
+        if (procedure.getNamedParameter(parameterName) != null) {
+            throw new DuplicateParameterNameException(procedure.getName(), parameterName);
+        }
+    }
 }
