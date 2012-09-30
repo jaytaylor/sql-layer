@@ -50,6 +50,8 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.parser.*;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.akiban.sql.StandardException;
 import com.akiban.ais.model.Column;
@@ -221,10 +223,11 @@ public class SubqueryFlattener
         currentSelectNode.getFromList().addAll(selectNode.getFromList());
         currentSelectNode.setWhereClause(mergeWhereClause(currentSelectNode.getWhereClause(),
                                                           selectNode.getWhereClause()));
-        if (leftOperand == null)
-            return (ValueNode)nodeFactory.getNode(NodeTypes.BOOLEAN_CONSTANT_NODE,
-                                                  Boolean.TRUE,
-                                                  parserContext);
+        if (leftOperand == null) {
+            ValueNode node = (ValueNode)nodeFactory.getNode(NodeTypes.BOOLEAN_CONSTANT_NODE, Boolean.TRUE, parserContext);
+            node.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
+            return node;
+        }
 
         int nodeType = 0;
         switch (subqueryNode.getSubqueryType()) {
@@ -264,9 +267,9 @@ public class SubqueryFlattener
         default:
             assert false;
         }
-        return (ValueNode)nodeFactory.getNode(nodeType,
-                                              leftOperand, rightOperand, 
-                                              parserContext);
+        ValueNode newNode = (ValueNode)nodeFactory.getNode(nodeType, leftOperand, rightOperand, parserContext);
+        newNode.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
+        return newNode;
     }
 
     protected boolean flattenableFromSubquery(FromSubquery fromSubquery)
