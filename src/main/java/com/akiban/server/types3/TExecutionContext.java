@@ -61,9 +61,10 @@ public final class TExecutionContext {
     }
 
     public Object preptimeObjectAt(int index) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        return preptimeCache.get(index);
+        if ((preptimeCache != null) && preptimeCache.isDefined(index))
+            return preptimeCache.get(index);
+        else
+            return null;
     }
 
     public boolean hasExectimeObject(int index) {
@@ -79,7 +80,8 @@ public final class TExecutionContext {
     public void putExectimeObject(int index, Object value) {
         if (preptimeCache != null && preptimeCache.isDefined(index)) {
             Object conflict = preptimeCache.get(index);
-            throw new IllegalStateException("conflicts with preptime value: " + conflict);
+            if (conflict != null)
+                throw new IllegalStateException("conflicts with preptime value: " + conflict);
         }
         if (exectimeCache == null)
             exectimeCache = new SparseArray<Object>(index);
