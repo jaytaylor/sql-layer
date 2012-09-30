@@ -4,7 +4,7 @@ RUN_TESTS='yes'
 while getopts 'sh' opt; do
     case $opt in
         s) RUN_TESTS='no' ;;
-        ?) echo 'Run with -s to skip "mvn test", or else with no args' ;;
+        ?) echo 'Run with -s to skip "mvn test", or else with no args' ; exit 1 ;;
     esac
 done
 
@@ -12,7 +12,7 @@ if [ "$RUN_TESTS" = "yes" ]; then
     CMD='mvn test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
     echo "Running tests: $CMD"
     echo '...'
-    echo $CMD > /dev/null
+    $CMD > /dev/null
     echo "Tests finished."
 else
     echo "Skipping tests run."
