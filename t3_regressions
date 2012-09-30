@@ -38,6 +38,9 @@ if [ -n "$REGRESSIONS" ]; then
     RESULT="regressions"
 fi
 
+echo "Fixes:       $(FIXES_COUNT)"
+echo "Regressions: $(REGRESSIONS_COUNT)"
+
 EXIT_CODE=1
 if [ "$RESULT" = "fixes" ]; then
     if [ -n "$FAILED" ]; then
