@@ -25,20 +25,21 @@ FAILDIFF=$(echo "$FAILED" | diff --suppress-common-lines $FAILURES_FILE -)
 REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
 FIXES=$(echo "$FAILDIFF" | grep '<')
 RESULT="neither"
-EXIT_CODE=0
 if [ -n "$FIXES" ]; then
     echo "$FIXES"       | sed 's/^< /Fixed:     /'
     RESULT="fixes"
 fi
 if [ -n "$REGRESSIONS" ]; then
     echo "$REGRESSIONS" | sed 's/^> /REGRESSED: /'
-    EXIT_CODE=1
     RESULT="regressions"
 fi
+
+EXIT_CODE=1
 if [ "$RESULT" = "fixes" ]; then
     echo "Updating expected failures file"
     echo "$FAILED" > $FAILURES_FILE
 elif [ "$RESULT" = "neither" ]; then
+    EXIT_CODE=0
     echo "No fixes or regressions."
 fi
 exit $EXIT_CODE
