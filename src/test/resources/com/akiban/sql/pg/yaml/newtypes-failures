@@ -1,7 +1,6 @@
 test-abs
 test-adddate
 test-addtime
-test-and-boolean-param
 test-arith-typing
 test-bit-count
 test-bitwise-BITAND
