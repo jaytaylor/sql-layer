@@ -43,7 +43,7 @@ if [ -n "$REGRESSIONS" ]; then
 fi
 
 EXIT_CODE=1
-if [ ( "$RESULT" = "fixes" ) -a ( -n "$OUT_FILE" ) ]; then
+if [ "$RESULT" = "fixes" ] && [ -n "$OUT_FILE" ]; then
     echo "Updating expected failures file"
     echo "$FAILED" > $OUT_FILE
 elif [ "$RESULT" = "neither" ]; then
