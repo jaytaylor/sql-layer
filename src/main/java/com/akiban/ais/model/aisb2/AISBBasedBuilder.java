@@ -410,37 +410,37 @@ public class AISBBasedBuilder
         }
     
         @Override
-        public NewUserTableBuilder paramLongIn(String name) {
-            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "LONG", null, null);
+        public NewProcedureBuilder paramLongIn(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "BIGINT", null, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder paramStringIn(String name, int length) {
+        public NewProcedureBuilder paramStringIn(String name, int length) {
             aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "VARCHAR", (long)length, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder paramDoubleIn(String name) {
+        public NewProcedureBuilder paramDoubleIn(String name) {
             aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "DOUBLE", null, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder paramLongOut(String name) {
-            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "LONG", null, null);
+        public NewProcedureBuilder paramLongOut(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "BIGINT", null, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder paramStringOut(String name, int length) {
+        public NewProcedureBuilder paramStringOut(String name, int length) {
             aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "VARCHAR", (long)length, null);
             return this;
         }
 
         @Override
-        public NewUserTableBuilder paramDoubleOut(String name) {
+        public NewProcedureBuilder paramDoubleOut(String name) {
             aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "DOUBLE", null, null);
             return this;
         }

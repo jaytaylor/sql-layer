@@ -28,20 +28,20 @@ package com.akiban.ais.model.aisb2;
 
 import com.akiban.ais.model.Procedure.CallingConvention;
 
-public interface NewProcedureBuilder extends NewUserTableBuilder {
+public interface NewProcedureBuilder {
     NewProcedureBuilder language(String language, CallingConvention callingConvention);
     
-    NewUserTableBuilder paramLongIn(String name);
+    NewProcedureBuilder paramLongIn(String name);
 
-    NewUserTableBuilder paramStringIn(String name, int length);
+    NewProcedureBuilder paramStringIn(String name, int length);
 
-    NewUserTableBuilder paramDoubleIn(String name);
+    NewProcedureBuilder paramDoubleIn(String name);
     
-    NewUserTableBuilder paramLongOut(String name);
+    NewProcedureBuilder paramLongOut(String name);
 
-    NewUserTableBuilder paramStringOut(String name, int length);
+    NewProcedureBuilder paramStringOut(String name, int length);
 
-    NewUserTableBuilder paramDoubleOut(String name);
+    NewProcedureBuilder paramDoubleOut(String name);
     
     NewProcedureBuilder externalName(String jarName, String className, String methodName);
 

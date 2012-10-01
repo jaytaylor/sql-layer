@@ -35,6 +35,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Procedure;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -474,6 +476,33 @@ public class ProtobufReaderWriterTest {
         outAIS = writeAndRead(inAIS);
         outCol = outAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
         assertEquals("defaultValue", inCol.getDefaultValue(), outCol.getDefaultValue());
+    }
+
+    @Test
+    public void procedureJava() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.procedure("PROC1")
+            .language("JAVA", Procedure.CallingConvention.JAVA)
+            .paramLongIn("x1")
+            .paramLongIn("x2")
+            .paramDoubleOut("d")
+            .externalName("myjar", "com.acme.Procs", "proc1");
+        
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Procedure proc = inAIS.getProcedure(new TableName(SCHEMA, "PROC1"));
+        
+        assertEquals("JAVA", proc.getLanguage());
+        assertEquals(Procedure.CallingConvention.JAVA, proc.getCallingConvention());
+        assertEquals(3, proc.getParameters().size());
+        assertEquals("x1", proc.getParameters().get(0).getName());
+        assertEquals(Parameter.Direction.IN, proc.getParameters().get(0).getDirection());
+        assertEquals(Types.BIGINT, proc.getParameters().get(0).getType());
+        assertEquals("x2", proc.getParameters().get(1).getName());
+        assertEquals(Types.BIGINT, proc.getParameters().get(1).getType());
+        assertEquals(Parameter.Direction.IN, proc.getParameters().get(1).getDirection());
+        assertEquals("d", proc.getParameters().get(2).getName());
+        assertEquals(Types.DOUBLE, proc.getParameters().get(2).getType());
+        assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
     }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
