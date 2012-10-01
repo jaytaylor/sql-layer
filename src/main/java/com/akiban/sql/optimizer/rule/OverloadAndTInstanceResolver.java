@@ -656,7 +656,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleParameterCondition(ParameterCondition expression) {
             parametersSync.uninferred(expression);
-            return castTo(expression, AkBool.INSTANCE.instance().setNullable(true), 
+            return castTo(expression, AkBool.INSTANCE.instance(),
                           folder, parametersSync);
         }
 
@@ -856,6 +856,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
         if (expression instanceof ParameterExpression) {
+            targetInstance.setNullable(true);
             CastExpression castExpression = 
                 newCastExpression(expression, targetInstance);
             castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
