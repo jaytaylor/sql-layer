@@ -492,14 +492,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
             ExpressionNode operand = expression.getOperand();
             TInstance resultType;
+            TAggregator tAggregator;
             if (operand == null) {
-                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), null);
+                tAggregator = resolver.getAggregation(expression.getFunction(), null);
                 resultType = tAggregator.resultType(null);
-                expression.setPreptimeValue(new TPreptimeValue(resultType));
             }
             else {
                 TClass inputTClass = tclass(operand);
-                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
+                tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
                 TClass aggrTypeClass = tAggregator.getTypeClass();
                 if (aggrTypeClass != null && !aggrTypeClass.equals(inputTClass)) {
                     operand = castTo(operand, aggrTypeClass, folder, parametersSync);
@@ -507,6 +507,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
                 resultType = tAggregator.resultType(operand.getPreptimeValue());
             }
+            PValue empty = new PValue(resultType.typeClass().underlyingType());
+            tAggregator.emptyValue(empty);
+            resultType.setNullable(empty.isNull());
             expression.setPreptimeValue(new TPreptimeValue(resultType));
             return expression;
         }

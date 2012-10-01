@@ -20,7 +20,6 @@ test-elt
 test-encrypt-decrypt
 test-extract
 test-field
-test-group-concat
 test-hour
 test-identity
 test-if
