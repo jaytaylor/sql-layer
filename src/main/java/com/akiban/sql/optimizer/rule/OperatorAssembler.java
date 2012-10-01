@@ -28,6 +28,9 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
+import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
+import com.akiban.server.types3.common.funcs.SequenceCurrentValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
@@ -51,15 +54,19 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
 import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
 import com.akiban.server.types3.texpressions.ResultSetSubqueryTExpression;
 import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
+import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedFunction;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -146,7 +153,7 @@ public class OperatorAssembler extends BaseRule
         T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets);
         void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, T[] arr, int i);
         Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex, List<String> names, List<Object> options);
-
+        T sequenceGenerator(Sequence sequence, Column column);
         T field(RowType rowType, int position);
         
         RowType valuesRowType(ExpressionsSource expressionsSource);
@@ -230,6 +237,10 @@ public class OperatorAssembler extends BaseRule
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public Explainable sequenceGenerator(Sequence sequence, Column column) {
+            return null;
+        }
         @Override
         public Explainable field(RowType rowType, int position) {
             return null;
@@ -316,6 +327,7 @@ public class OperatorAssembler extends BaseRule
                                                              int bindingPosition);
             protected abstract T nullExpression(RowType rowType, int i);
 
+            public abstract T sequenceGenerator(Sequence sequence, Column column);
 
             protected List<? extends T> createNulls(RowType rowType) {
                 int nfields = rowType.nFields();
@@ -441,6 +453,14 @@ public class OperatorAssembler extends BaseRule
             public RowType valuesRowType(ExpressionsSource expressionsSource) {
                 AkType[] types = expressionsSource.getFieldTypes();
                 return schema.newValuesType(types);
+            }
+            
+            @Override
+            public Expression sequenceGenerator (Sequence sequence, Column column) {
+                return new com.akiban.server.expression.std.CastExpression (column.getType().akType(),
+                        new SequenceNextValueExpression(AkType.LONG, 
+                        new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getSchemaName()),
+                        new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getTableName())));
             }
 
             @Override
@@ -577,6 +597,25 @@ public class OperatorAssembler extends BaseRule
                                                          PlanContext planContext) {
                 ExpressionRewriteVisitor visitor = OverloadAndTInstanceResolver.getResolver(planContext);
                 return expr.accept(visitor);
+            }
+
+            @Override
+            public TPreparedExpression sequenceGenerator(Sequence sequence, Column column) {
+                OverloadResolver resolver = rulesContext.getOverloadResolver();
+
+                List<TPreptimeValue> input = new ArrayList<TPreptimeValue>(2);
+                input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
+                input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
+
+                TValidatedOverload overload = resolver.get("NEXTVAL", input).getOverload();
+
+                List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
+                arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
+                arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
+                
+                TInstance resultInstance = overload.resultStrategy().fixed();
+                
+                return new TPreparedFunction(overload, resultInstance, arguments, planContext.getQueryContext());
             }
         }
 
@@ -723,10 +762,7 @@ public class OperatorAssembler extends BaseRule
                     Column column = table.getColumnsIncludingInternal().get(i);
                     if (column.getIdentityGenerator() != null) {
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
-                        row[i] = new com.akiban.server.expression.std.CastExpression (column.getType().akType(),
-                                new SequenceNextValueExpression(AkType.LONG, 
-                                new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getSchemaName()),
-                                new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getTableName())));
+                        row[i] = oldPartialAssembler.sequenceGenerator(sequence, column);
                     }
                     else if (column.getDefaultValue() != null) {
                         // TODO: Convert the defaultValue string into an Expression
@@ -770,7 +806,13 @@ public class OperatorAssembler extends BaseRule
                     row[column.getPosition()] = insertsP.get(i);
                 }
                 for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
-                    if (row[i] == null) {
+                    Column column = table.getColumnsIncludingInternal().get(i);
+                    if (column.getIdentityGenerator() != null) {
+                        Sequence sequence = table.getColumn(i).getIdentityGenerator();
+                        row[i] = newPartialAssembler.sequenceGenerator(sequence, column);
+                    } 
+                    // else if (column.getDefaultValue() != null) // TODO: Convert string to expression
+                    else if (row[i] == null) {
                         TInstance tinst = targetRowType.typeInstanceAt(i);
                         PUnderlying underlying = tinst.typeClass().underlyingType();
                         row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
