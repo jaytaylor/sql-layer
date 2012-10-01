@@ -32,6 +32,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.InvalidProcedureException;
 import com.akiban.server.error.NoSuchProcedureException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateAliasNode;
@@ -51,8 +52,26 @@ public class ProcedureDDL {
         TableName tableName = DDLHelper.convertName(defaultSchemaName, createProcedure.getObjectName());
         String schemaName = tableName.getSchemaName();
         String procedureName = tableName.getTableName();
+        String language = aliasInfo.getLanguage();
+        Procedure.CallingConvention callingConvention;
+        if (language.equalsIgnoreCase("JAVA")) {
+            switch (aliasInfo.getParameterStyle()) {
+            case JAVA:
+                callingConvention = Procedure.CallingConvention.JAVA;
+                break;
+            case AKIBAN_LOADABLE_PLAN:
+                callingConvention = Procedure.CallingConvention.LOADABLE_PLAN;
+                break;
+            default:
+                throw new InvalidProcedureException(schemaName, procedureName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
+            }
+        }
+        else {
+            throw new InvalidProcedureException(schemaName, procedureName, "unsupported LANGUAGE " + language);
+        }
         AISBuilder builder = new AISBuilder();
-        builder.procedure(schemaName, procedureName);
+        builder.procedure(schemaName, procedureName,
+                          language, callingConvention);
         
         Long[] typeParameters = new Long[2];
         for (int i = 0; i < aliasInfo.getParameterCount(); i++) {
@@ -62,10 +81,13 @@ public class ProcedureDDL {
             case ParameterMetaData.parameterModeIn:
             default:
                 direction = Parameter.Direction.IN;
+                break;
             case ParameterMetaData.parameterModeOut:
                 direction = Parameter.Direction.OUT;
+                break;
             case ParameterMetaData.parameterModeInOut:
                 direction = Parameter.Direction.INOUT;
+                break;
             }
             Type builderType = TableDDL.columnType(aliasInfo.getParameterTypes()[i], typeParameters,
                                                    schemaName, procedureName, parameterName);

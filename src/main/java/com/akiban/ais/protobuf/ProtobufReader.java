@@ -468,7 +468,9 @@ public class ProtobufReader {
             Procedure procedure = Procedure.create(
                     destAIS,
                     schema,
-                    pbProcedure.getProcedureName()
+                    pbProcedure.getProcedureName(),
+                    pbProcedure.getLanguage(),
+                    convertProcedureCallingConvention(pbProcedure.getCallingConvention())
             );
             loadParameters(procedure, pbProcedure.getParametersList());
         }
@@ -488,16 +490,26 @@ public class ProtobufReader {
         }
     }
 
+    private static Procedure.CallingConvention convertProcedureCallingConvention(AISProtobuf.ProcedureCallingConvention procedureCallingConvention) {
+        switch (procedureCallingConvention) {
+        case JAVA:
+        default:
+            return Procedure.CallingConvention.JAVA;
+        case LOADABLE_PLAN: 
+            return Procedure.CallingConvention.LOADABLE_PLAN;
+        }
+    }
+
     private static Parameter.Direction convertParameterDirection(AISProtobuf.ParameterDirection parameterDirection) {
         switch (parameterDirection) {
-        case IN: 
+        case IN:
         default:
             return Parameter.Direction.IN;
-        case OUT: 
+        case OUT:
             return Parameter.Direction.OUT;
-        case INOUT: 
+        case INOUT:
             return Parameter.Direction.INOUT;
-        case RETURN: 
+        case RETURN:
             return Parameter.Direction.RETURN;
         }
     }
@@ -595,6 +607,7 @@ public class ProtobufReader {
                 AISProtobuf.Schema.GROUPS_FIELD_NUMBER,
                 AISProtobuf.Schema.SEQUENCES_FIELD_NUMBER,
                 AISProtobuf.Schema.VIEWS_FIELD_NUMBER,
+                AISProtobuf.Schema.PROCEDURES_FIELD_NUMBER,
                 AISProtobuf.Schema.CHARCOLL_FIELD_NUMBER
         );
     }
@@ -688,6 +701,29 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbReference,
                 AISProtobuf.ColumnReference.COLUMNS_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields (AISProtobuf.Procedure pbProcedure) {
+        requireAllFieldsExcept(
+                pbProcedure,
+                AISProtobuf.Procedure.PARAMETERS_FIELD_NUMBER,
+                AISProtobuf.Procedure.JARNAME_FIELD_NUMBER,
+                AISProtobuf.Procedure.CLASSNAME_FIELD_NUMBER,
+                AISProtobuf.Procedure.METHODNAME_FIELD_NUMBER,
+                AISProtobuf.Procedure.DEFINITION_FIELD_NUMBER,
+                AISProtobuf.Procedure.DESCRIPTION_FIELD_NUMBER,
+                AISProtobuf.Procedure.PROTECTED_FIELD_NUMBER,
+                AISProtobuf.Procedure.SQLALLOWED_FIELD_NUMBER,
+                AISProtobuf.Procedure.DYNAMICRESULTSETS_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields (AISProtobuf.Parameter pbParameter) {
+        requireAllFieldsExcept(
+                pbParameter,
+                AISProtobuf.Parameter.TYPEPARAM1_FIELD_NUMBER,
+                AISProtobuf.Parameter.TYPEPARAM2_FIELD_NUMBER
         );
     }
 

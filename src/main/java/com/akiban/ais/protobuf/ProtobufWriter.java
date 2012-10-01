@@ -595,7 +595,9 @@ public class ProtobufWriter {
 
     private static void writeProcedure(AISProtobuf.Schema.Builder schemaBuilder, Procedure procedure) {
         AISProtobuf.Procedure.Builder procedureBuilder = AISProtobuf.Procedure.newBuilder()
-            .setProcedureName(procedure.getName().getTableName());
+            .setProcedureName(procedure.getName().getTableName())
+            .setLanguage(procedure.getLanguage())
+            .setCallingConvention(convertProcedureCallingConvention(procedure.getCallingConvention()));
         for (Parameter parameter : procedure.getParameters()) {
             writeParameter(procedureBuilder, parameter);
         }
@@ -619,16 +621,26 @@ public class ProtobufWriter {
         procedureBuilder.addParameters(parameterBuilder.build());
     }
 
+    private static AISProtobuf.ProcedureCallingConvention convertProcedureCallingConvention(Procedure.CallingConvention procedureCallingConvention) {
+        switch (procedureCallingConvention) {
+        case JAVA:
+        default:
+            return AISProtobuf.ProcedureCallingConvention.JAVA;
+        case LOADABLE_PLAN:
+            return AISProtobuf.ProcedureCallingConvention.LOADABLE_PLAN;
+        }
+    }
+
     private static AISProtobuf.ParameterDirection convertParameterDirection(Parameter.Direction parameterDirection) {
         switch (parameterDirection) {
-        case IN: 
+        case IN:
         default:
             return AISProtobuf.ParameterDirection.IN;
-        case OUT: 
+        case OUT:
             return AISProtobuf.ParameterDirection.OUT;
-        case INOUT: 
+        case INOUT:
             return AISProtobuf.ParameterDirection.INOUT;
-        case RETURN: 
+        case RETURN:
             return AISProtobuf.ParameterDirection.RETURN;
         }
     }

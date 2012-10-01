@@ -278,9 +278,11 @@ public class AISBuilder {
         }
     }
 
-    public void procedure(String schemaName, String procedureName) {
+    public void procedure(String schemaName, String procedureName,
+                          String language, Procedure.CallingConvention callingConvention) {
         LOG.info("procedure: {}.{} ", schemaName, procedureName);
-        Procedure procedure = Procedure.create(ais, schemaName, procedureName);
+        Procedure procedure = Procedure.create(ais, schemaName, procedureName,
+                                               language, callingConvention);
     }
     
     public void parameter(String schemaName, String procedureName, 

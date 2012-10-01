@@ -119,7 +119,7 @@ public class AISDDL
             }
             break;
         case NodeTypes.DROP_ALIAS_NODE:
-            switch (((CreateAliasNode)ddl).getAliasType()) {
+            switch (((DropAliasNode)ddl).getAliasType()) {
             case PROCEDURE:
             case FUNCTION:
                 ProcedureDDL.dropProcedure(ddlFunctions, session, schema, (DropAliasNode)ddl, context);

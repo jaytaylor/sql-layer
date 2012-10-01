@@ -31,17 +31,21 @@ import java.util.*;
 
 public class Procedure 
 {
+    public static enum CallingConvention {
+        JAVA, LOADABLE_PLAN
+    }
+
     public static Procedure create(AkibanInformationSchema ais, 
-                                   String schemaName, 
-                                   String name) {
-        Procedure procedure = new Procedure(ais, schemaName, name);
+                                   String schemaName, String name,
+                                   String language, CallingConvention callingConvention) {
+        Procedure procedure = new Procedure(ais, schemaName, name, language, callingConvention);
         ais.addProcedure(procedure);
         return procedure; 
     }
     
     protected Procedure(AkibanInformationSchema ais,
-                        String schemaName, 
-                        String name) {
+                        String schemaName, String name,
+                        String language, CallingConvention callingConvention) {
         ais.checkMutability();
         AISInvariants.checkNullName(schemaName, "Procedure", "schema name");
         AISInvariants.checkNullName(name, "Procedure", "table name");
@@ -49,6 +53,8 @@ public class Procedure
         
         this.ais = ais;
         this.name = new TableName(schemaName, name);
+        this.language = language;
+        this.callingConvention = callingConvention;
     }
     
     public TableName getName() {
@@ -72,6 +78,14 @@ public class Procedure
         return returnValue;
     }
 
+    public String getLanguage() {
+        return language;
+    }
+
+    public CallingConvention getCallingConvention() {
+        return callingConvention;
+    }
+
     protected void checkMutability() {
         ais.checkMutability();
     }
@@ -92,4 +106,6 @@ public class Procedure
     protected final TableName name;
     protected final List<Parameter> parameters = new ArrayList<Parameter>();
     protected Parameter returnValue = null;
+    protected String language;
+    protected CallingConvention callingConvention;
 }
