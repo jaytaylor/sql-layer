@@ -40,7 +40,6 @@ test-mod
 test-month
 test-parser-settings
 test-round
-test-select-null
 test-sign
 test-sqrt
 test-subdate
@@ -54,6 +53,5 @@ test-to-days
 test-trim
 test-unary-op
 test-unix-ts
-test-views
 test-year
 test-zero-date
