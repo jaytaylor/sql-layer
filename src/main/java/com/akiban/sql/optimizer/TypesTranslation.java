@@ -345,6 +345,7 @@ public final class TypesTranslation {
             return null;
         TInstance tInstance;
         TypeId typeId = sqlType.getTypeId();
+        typeIdSwitch:
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
             tInstance = AkInterval.SECONDS.tInstanceFrom(sqlType);
@@ -471,6 +472,7 @@ public final class TypesTranslation {
                 for (Type aisType : Types.types()) {
                     if (aisType.name().equalsIgnoreCase(name)) {
                         tInstance = Column.generateTInstance(null, aisType, null, null, false);
+                        break typeIdSwitch;
                     }
                 }
             }

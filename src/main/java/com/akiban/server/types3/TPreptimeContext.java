@@ -68,10 +68,10 @@ public final class TPreptimeContext {
     }
     
     public Object get(int index) {
-        if (preptimeCache == null)
-            return null;
-        else
+        if ((preptimeCache != null) && preptimeCache.isDefined(index))
             return preptimeCache.get(index);
+        else
+            return null;
     }
 
     public void set(int index, Object value) {
