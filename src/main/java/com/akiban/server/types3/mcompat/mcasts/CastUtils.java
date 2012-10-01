@@ -153,7 +153,7 @@ public final class CastUtils
      * @return 
      */
     public static double parseDoubleString(String st, TExecutionContext context)
-    {      
+    {
         Matcher m = DOUBLE_PATTERN.matcher(st);
 
         m.lookingAt();
@@ -230,14 +230,14 @@ public final class CastUtils
             for (int i = truncatedLength-1; i >= firstChar; --i) {
                 char c = st.charAt(i);
                 assert (c >= '0') && (c <= '9') : c + " at index " + i + " of: " + st;
-                if (c == '9') {
+                if (needsRoundingUp && c == '9') {
                     sb.append('0');
                 }
                 else {
-                    ++c;
+                    if (needsRoundingUp)
+                        ++c;
                     sb.append(c);
                     needsRoundingUp = false;
-                    break;
                 }
             }
             if (needsRoundingUp)
@@ -250,6 +250,7 @@ public final class CastUtils
         else {
             ret = st.substring(0, truncatedLength);
         }
+
         return ret;
     }
 
