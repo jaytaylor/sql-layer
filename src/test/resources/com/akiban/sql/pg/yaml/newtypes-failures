@@ -54,7 +54,6 @@ test-minute
 test-mod
 test-month
 test-monthname
-test-parser-settings
 test-quarter
 test-rand
 test-right
