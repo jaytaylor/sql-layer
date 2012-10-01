@@ -505,6 +505,21 @@ public class ProtobufReaderWriterTest {
         assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
     }
 
+    @Test
+    public void procedureLoadablePlan() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.procedure("PROC2")
+            .language("JAVA", Procedure.CallingConvention.LOADABLE_PLAN)
+            .externalName("myjar", "com.acme.Procs", "proc1");
+        
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Procedure proc = inAIS.getProcedure(new TableName(SCHEMA, "PROC2"));
+        
+        assertEquals("JAVA", proc.getLanguage());
+        assertEquals(Procedure.CallingConvention.LOADABLE_PLAN, proc.getCallingConvention());
+        assertEquals(0, proc.getParameters().size());
+    }
+
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }
