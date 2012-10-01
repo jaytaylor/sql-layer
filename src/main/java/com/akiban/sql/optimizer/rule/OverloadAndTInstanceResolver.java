@@ -58,6 +58,7 @@ import com.akiban.sql.optimizer.plan.AnyCondition;
 import com.akiban.sql.optimizer.plan.BasePlanWithInput;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
+import com.akiban.sql.optimizer.plan.CastCondition;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
@@ -654,7 +655,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleParameterCondition(ParameterCondition expression) {
-            return boolExpr(expression);
+            parametersSync.uninferred(expression);
+            return castTo(expression, AkBool.INSTANCE.instance().setNullable(true), 
+                          folder, parametersSync);
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
@@ -852,10 +855,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                                   ParametersSync parametersSync)
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
-        if ((expression instanceof ParameterExpression) &&
-            !(expression instanceof ParameterCondition)) {
-            CastExpression castExpression
-                    = new CastExpression(expression, null, null);
+        if (expression instanceof ParameterExpression) {
+            CastExpression castExpression = 
+                newCastExpression(expression, targetInstance);
             castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
             targetInstance.setNullable(true);
             parametersSync.set(expression, targetInstance);
@@ -871,12 +873,20 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression;
         DataTypeDescriptor sqlType = expression.getSQLtype();
         targetInstance.setNullable(sqlType == null || sqlType.isNullable());
-        CastExpression castExpression
-                = new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+        CastExpression castExpression = 
+            newCastExpression(expression, targetInstance);
         castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
         ExpressionNode result = finishCast(castExpression, folder, parametersSync);
         result = folder.foldConstants(result);
         return result;
+    }
+    
+    private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
+        if (targetInstance.typeClass() == AkBool.INSTANCE)
+            // Allow use as a condition.
+            return new CastCondition(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+        else
+            return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
     }
 
     private static ExpressionNode finishCast(CastExpression castNode, NewFolder folder, ParametersSync parametersSync) {
