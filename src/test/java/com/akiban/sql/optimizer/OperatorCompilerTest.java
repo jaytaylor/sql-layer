@@ -142,6 +142,9 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         @Override
         public PhysicalResultColumn getResultColumn(ResultField field) {
             String type = String.valueOf(field.getSQLtype());
+            //if (field.getTInstance() != null) {
+            //    type = String.valueOf(field.getTInstance());
+            //}
             Column column = field.getAIScolumn();
             if (column != null) {
                 type = column.getTypeDescription() +
@@ -216,5 +219,4 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     public void checkResult(String result) throws IOException{
         assertEqualsWithoutHashes(caseName, expected, result);
     }
-
 }
