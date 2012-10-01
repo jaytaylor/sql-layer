@@ -53,8 +53,6 @@ import org.junit.runner.RunWith;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.qp.exec.Plannable;
-import com.akiban.server.explain.Explainer;
 
 import org.junit.Before;
 
@@ -65,7 +63,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class OperatorCompilerTest extends NamedParamsTestBase 
@@ -174,6 +171,11 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                     File propertiesFile = new File(subdir, args[0] + ".properties");
                     if (!propertiesFile.exists())
                         propertiesFile = compilerPropertiesFile;
+                    // If the is a t3expected file, this 
+                    File t3Results = new File (subdir, args[0] + ".t3expected");
+                    if (t3Results.exists() && Types3Switch.ON) {
+                        args[2] = fileContents(t3Results);
+                    }
                     Object[] nargs = new Object[args.length+3];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = schemaFile;

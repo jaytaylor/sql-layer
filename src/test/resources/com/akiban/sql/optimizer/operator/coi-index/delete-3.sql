@@ -1,0 +1,1 @@
+delete from items where oid is null returning iid

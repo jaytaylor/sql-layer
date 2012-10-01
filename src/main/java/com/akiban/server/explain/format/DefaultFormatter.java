@@ -568,7 +568,8 @@ public class DefaultFormatter
     }
 
     protected void appendDUIOperator(String name, Attributes atts) {
-        if (name.equals("Delete_Default")) {
+        if (name.equals("Delete_Default")||
+                name.equals("Delete_Returning")) {
             if (atts.containsKey(Label.TABLE_NAME)) {
                 sb.append("FROM ");
                 appendTableName(atts);
@@ -578,7 +579,8 @@ public class DefaultFormatter
                 append(atts.getAttribute(Label.TABLE_TYPE));
             }
         }
-        else if (name.equals("Insert_Default")) {
+        else if (name.equals("Insert_Default") || 
+                    name.equals("Insert_Returning")) {
             if (atts.containsKey(Label.TABLE_NAME)) {
                 sb.append("INTO ");
                 appendTableName(atts);
@@ -597,7 +599,8 @@ public class DefaultFormatter
                 }
             }
         }
-        else if (name.equals("Update_Default")) {
+        else if (name.equals("Update_Default") || 
+                    name.equals("Update_Returning")) {
             if (atts.containsKey(Label.TABLE_NAME)) {
                 appendTableName(atts);
             }

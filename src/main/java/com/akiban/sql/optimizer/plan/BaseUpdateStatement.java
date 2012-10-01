@@ -26,30 +26,39 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-
-/** A statement that modifies the database and returns row counts.
+/** A statement that modifies the database.
  */
-public class BaseUpdateStatement extends BaseStatement
+public class BaseUpdateStatement extends BasePlanWithInput
 {
+    public enum StatementType {
+        DELETE,
+        INSERT,
+        UPDATE
+    }
+    
     private TableNode targetTable;
-    private boolean requireStepIsolation;
-
-    protected BaseUpdateStatement(PlanNode query, TableNode targetTable,
-                                  EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, columnEquivalencies);
+    private TableSource table;
+    private final StatementType type;
+    
+    protected BaseUpdateStatement(PlanNode query, StatementType type, TableNode targetTable,
+                                    TableSource table) {
+        super(query);
+        this.type = type;
         this.targetTable = targetTable;
+        this.table = table;
     }
 
     public TableNode getTargetTable() {
         return targetTable;
     }
 
-    public boolean isRequireStepIsolation() {
-        return requireStepIsolation;
+
+    public TableSource getTable() { 
+        return table;
     }
-    public void setRequireStepIsolation(boolean requireStepIsolation) {
-        this.requireStepIsolation = requireStepIsolation;
+
+    public StatementType getType() {
+        return type;
     }
 
     @Override
@@ -57,8 +66,8 @@ public class BaseUpdateStatement extends BaseStatement
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append('(');
         fillSummaryString(str);
-        if (requireStepIsolation)
-            str.append(", HALLOWEEN");
+        //if (requireStepIsolation)
+        //    str.append(", HALLOWEEN");
         str.append(')');
         return str.toString();
     }
@@ -72,5 +81,4 @@ public class BaseUpdateStatement extends BaseStatement
         super.deepCopy(map);
         targetTable = map.duplicate(targetTable);
     }
-
 }

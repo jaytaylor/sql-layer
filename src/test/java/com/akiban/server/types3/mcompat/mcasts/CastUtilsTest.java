@@ -44,6 +44,8 @@ public final class CastUtilsTest {
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
         ParameterizationBuilder pb = new ParameterizationBuilder();
+        param(pb, "12.5", "13");
+        param(pb, "-1299.5", "-1300");
         param(pb, "2.0", "2");
         param(pb, "-2.0", "-2");
         param(pb, "2.b", "2");

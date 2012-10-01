@@ -1,4 +1,5 @@
-InsertStatement@50502819(child[child.pid, child.name])
-  Project@2ff11e0f[parent.id, parent.name]
-    Select@6401d98a[like(parent.name,X%)]
-      TableSource@35712651(parent)
+DMLStatement@435d6df6(child)
+  InsertStatement@3035762a(child[child.pid, child.name])
+    Project@5e0d820[parent.id, parent.name]
+      Select@6c8d1fe3[like(parent.name,X%)]
+        TableSource@2528a7c2(parent)

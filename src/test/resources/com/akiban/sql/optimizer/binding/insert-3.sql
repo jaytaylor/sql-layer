@@ -1,0 +1,1 @@
+insert into t1 (x, y, z) values (1, 2, '3') returning *

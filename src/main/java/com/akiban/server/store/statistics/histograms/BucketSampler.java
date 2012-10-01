@@ -41,9 +41,29 @@ final class BucketSampler<T> {
         // last bucket is always in
         if (inputsCount > expectedCount)
             throw new IllegalStateException("expected " + expectedCount + " elements, but saw " + inputsCount);
-        // see if we've crossed a median point (or are at the end)
-        boolean insertIntoResults = (inputsCount == expectedCount);
-        if (!insertIntoResults) {
+        // Form a bucket if:
+        // 1) we've crossed a median point,
+        // 2) we're at the end, or
+        // 3) we're at the beginning (see bug 1052606)
+        boolean insertIntoResults = false;
+        if (buckets.isEmpty()) {
+            // Bucket with min value of index
+            bucket.markMinKeyBucket();
+            insertIntoResults = true;
+            // We want to keep the min-value bucket no matter what. If we were going to keep it anyway, due to
+            // crossing a median point, then our median markers are OK as is. Otherwise, they need to be recomputed.
+            if (inputsCount >= nextMedianPoint) {
+                while (inputsCount >= nextMedianPoint) {
+                    nextMedianPoint += medianPointDistance;
+                }
+            } else {
+                computeMedianPointBoundaries(maxSize - 1);
+            }
+        } else if (inputsCount == expectedCount) {
+            // end
+            insertIntoResults = true;
+        } else {
+            // Did we cross a median point?
             while (inputsCount >= nextMedianPoint) {
                 insertIntoResults = true;
                 nextMedianPoint += medianPointDistance;
@@ -89,8 +109,8 @@ final class BucketSampler<T> {
         return ((double)equalsSeen) / ((double)bucketsSeen);
     }
 
-    BucketSampler(int maxSize, long expectedInputs) {
-        this(maxSize, expectedInputs, true);
+    BucketSampler(int bucketCount, long expectedInputs) {
+        this(bucketCount, expectedInputs, true);
     }
 
     BucketSampler(int maxSize, long expectedInputs, boolean calculateStandardDeviation) {
@@ -98,19 +118,25 @@ final class BucketSampler<T> {
             throw new IllegalArgumentException("max must be at least 1");
         if (expectedInputs < 0)
             throw new IllegalArgumentException("expectedInputs must be non-negative: " + expectedInputs);
+        this.maxSize = maxSize;
         this.expectedCount = expectedInputs;
         this.buckets = new ArrayList<Bucket<T>>(maxSize + 1);
+        this.stdDev = calculateStandardDeviation ? new StandardDeviation() : null;
+        computeMedianPointBoundaries(maxSize);
+    }
+
+    private void computeMedianPointBoundaries(int maxSize)
+    {
         double medianPointDistance = ((double)expectedCount) / maxSize;
         this.medianPointDistance = medianPointDistance == 0 ? 1 : medianPointDistance;
         this.nextMedianPoint = this.medianPointDistance;
         assert this.nextMedianPoint > 0 : this.nextMedianPoint;
-        this.stdDev = calculateStandardDeviation ? new StandardDeviation() : null;
     }
 
+    private final int maxSize;
     private final long expectedCount;
-    private final double medianPointDistance;
-    private final StandardDeviation stdDev;
-
+    private double medianPointDistance;
+    private StandardDeviation stdDev;
     private double nextMedianPoint;
     private long inputsCount;
     private long runningLessThans;

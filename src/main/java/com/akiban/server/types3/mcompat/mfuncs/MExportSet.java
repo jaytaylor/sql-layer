@@ -124,9 +124,9 @@ public abstract class  MExportSet extends TOverloadBase
         };
     }
             
-    private static String computeSet(BigInteger num, String bits[], String delim, int length)
+    private static String computeSet(long num, String bits[], String delim, int length)
     {
-        char digits[] = num.toString(2).toCharArray();
+        char digits[] = Long.toBinaryString(num).toCharArray();
         int count = 0;
         StringBuilder ret = new StringBuilder();
         
@@ -138,20 +138,10 @@ public abstract class  MExportSet extends TOverloadBase
         for (; count < length; ++count)
             ret.append(bits[0]).append(delim);
         if (!delim.isEmpty()) // delete the last delimiter
-            ret.substring(0, ret.length() - delim.length());
+            return ret.substring(0, ret.length() - delim.length());
         return ret.toString();
     }
-    
-    private static BigInteger getUnsignedBigint64(long num)
-    {
-        // if it's negative, get the two's complement
-        BigInteger ret = BigInteger.valueOf(num);
-        if (num < 0)
-            return ret.abs().xor(MASK).and(BigInteger.ONE);
-        else
-            return ret;
-    }
-    
+
     protected abstract String getDelimeter(LazyList<? extends PValueSource> inputs);
     protected abstract int getLength(LazyList<? extends PValueSource> inputs);
 
@@ -165,7 +155,7 @@ public abstract class  MExportSet extends TOverloadBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         String s = computeSet(
-                getUnsignedBigint64(inputs.get(0).getInt64()),
+                inputs.get(0).getInt64(),
                 new String[]{inputs.get(2).getString(), inputs.get(1).getString()},
                 getDelimeter(inputs),
                 getLength(inputs));

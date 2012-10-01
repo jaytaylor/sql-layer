@@ -49,11 +49,21 @@ import static com.akiban.sql.optimizer.TypesTranslation.*;
 public class FunctionsTypeComputer extends AISTypeComputer
 {
     private FunctionsRegistry functionsRegistry;
+    private boolean useComposers;
 
     public FunctionsTypeComputer(FunctionsRegistry functionsRegistry) {
         this.functionsRegistry = functionsRegistry;
+        useComposers = true;
     }
     
+    public boolean isUseComposers() {
+        return useComposers;
+    }
+
+    public void setUseComposers(boolean useComposers) {
+        this.useComposers = useComposers;
+    }
+
     @Override
     protected DataTypeDescriptor computeType(ValueNode node) throws StandardException {
         switch (node.getNodeType()) {
@@ -116,6 +126,9 @@ public class FunctionsTypeComputer extends AISTypeComputer
                                                     ArgumentsAccess args,
                                                     boolean isNullable)
             throws StandardException {
+        if (!useComposers)
+            return null;
+
         ExpressionComposer composer;
         try {
             composer = functionsRegistry.composer(functionName);

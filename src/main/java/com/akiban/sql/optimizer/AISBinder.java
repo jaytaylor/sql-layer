@@ -1103,6 +1103,53 @@ public class AISBinder implements Visitor
                 columnReference.setUserData(columnBinding);
             }
         }
+        if (node.getReturningList() != null) {
+            ResultColumnList rcl = node.getReturningList();
+            NodeFactory nodeFactory = node.getNodeFactory();
+            SQLParserContext parserContext = node.getParserContext();
+            FromBaseTable fromTable = null;
+            FromList fromList = null;
+            try {
+                fromTable = (FromBaseTable)nodeFactory.getNode(NodeTypes.FROM_BASE_TABLE,
+                        tableName, null, rcl, null, null, parserContext);
+                fromTable.setUserData(new TableBinding(table, false));
+
+                fromList = (FromList)nodeFactory.getNode(NodeTypes.FROM_LIST, Boolean.FALSE, parserContext);
+                fromList.add(fromTable);
+            } catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
+            }
+            node.setUserData(fromTable);
+            
+            for (int index = 0; index < rcl.size(); index ++) {
+                ResultColumn rc = rcl.get(index);
+                if (rc instanceof AllResultColumn) {
+                    AllResultColumn arc = (AllResultColumn)rc;
+                    ResultColumnList allExpansion = expandAll(tableName, fromList, false);
+                    // Make sure that every column has a name.
+                    for (ResultColumn nrc : allExpansion) {
+                        guaranteeColumnName(nrc);
+                    }
+                    // Replace the AllResultColumn with the expanded list.
+                    rcl.remove(index);
+                    for (int inner = 0; inner < allExpansion.size(); inner++) {
+                        rcl.add(index + inner, allExpansion.get(inner));
+                    }
+                    index += allExpansion.size() - 1;
+                } else {
+                    // Make sure that every column has a name.
+                    guaranteeColumnName(rc);
+                }
+            }
+            pushBindingContext(null);
+            getBindingContext().tables.add(fromTable);
+            try {
+                rcl.accept(this);
+            } catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
+            }
+            popBindingContext();
+        }
     }
 
     protected void unionNode(UnionNode node) {

@@ -147,10 +147,14 @@ public class IndexGoal implements Comparator<IndexScan>
                 conditions.addAll(cs);
             }
         }
-            
-        if ((query instanceof UpdateStatement) ||
-            (query instanceof DeleteStatement))
-          updateTarget = ((BaseUpdateStatement)query).getTargetTable();
+        
+        if (query instanceof DMLStatement) {
+            DMLStatement stmt = (DMLStatement) query;
+            if (stmt.getType() == BaseUpdateStatement.StatementType.DELETE ||
+                    stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
+                updateTarget = stmt.getTargetTable();
+            }
+        }
 
         requiredColumns = new RequiredColumns(tables);
         Collection<PlanNode> orderings = (ordering == null) ? 

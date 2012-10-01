@@ -37,7 +37,6 @@ import com.akiban.server.store.statistics.histograms.Sampler;
 import com.akiban.server.store.statistics.histograms.Splitter;
 import com.akiban.util.Flywheel;
 import com.persistit.Key;
-import com.persistit.Persistit;
 import com.persistit.Value;
 
 import org.slf4j.Logger;

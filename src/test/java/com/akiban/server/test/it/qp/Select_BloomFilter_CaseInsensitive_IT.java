@@ -318,6 +318,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                         Arrays.asList(
                             Expressions.field(dIndexRowType, 1),
                             Expressions.field(dIndexRowType, 2)),
+                        null,
                         // collators
                         collators,
                         // filterBindingPosition
