@@ -69,4 +69,15 @@ public interface NewAISBuilder extends NewAISProvider {
     NewViewBuilder view(String schema, String view);
 
     NewViewBuilder view(TableName viewName);
+
+    /**
+     * create a new procedure 
+     * @param procedure
+     * @return
+     */
+    NewProcedureBuilder procedure(String procedure);
+
+    NewProcedureBuilder procedure(String schema, String procedure);
+
+    NewProcedureBuilder procedure(TableName procedureName);
 }

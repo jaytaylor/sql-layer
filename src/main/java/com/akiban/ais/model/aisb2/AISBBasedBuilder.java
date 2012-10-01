@@ -32,6 +32,8 @@ import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Procedure;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
@@ -56,7 +58,7 @@ public class AISBBasedBuilder
         return new ActualBuilder().defaultSchema(defaultSchema);
     }
 
-    private static class ActualBuilder implements NewAISBuilder, NewViewBuilder, NewAkibanJoinBuilder {
+    private static class ActualBuilder implements NewAISBuilder, NewViewBuilder, NewAkibanJoinBuilder, NewProcedureBuilder {
 
         // NewAISProvider interface
 
@@ -148,6 +150,25 @@ public class AISBBasedBuilder
         @Override
         public NewViewBuilder view(TableName viewName) {
             return view(viewName.getSchemaName(), viewName.getTableName());
+        }
+
+        @Override
+        public NewProcedureBuilder procedure(String procedure) {
+            return procedure(defaultSchema, procedure);
+        }
+
+        @Override
+        public NewProcedureBuilder procedure(String schema, String procedure) {
+            checkUsable();
+            AISInvariants.checkDuplicateProcedure(aisb.akibanInformationSchema(), schema, procedure);
+            this.schema = schema;
+            this.userTable = procedure;
+            return this;
+        }
+
+        @Override
+        public NewProcedureBuilder procedure(TableName procedureName) {
+            return procedure(procedureName.getSchemaName(), procedureName.getTableName());
         }
 
         @Override
@@ -377,6 +398,63 @@ public class AISBBasedBuilder
             for (String colname : columns) {
                 entry.add(colname);
             }
+            return this;
+        }
+
+        // NewProcedureBuilder
+
+        @Override
+        public NewProcedureBuilder language(String language, Procedure.CallingConvention callingConvention) {
+            aisb.procedure(schema, userTable, language, callingConvention);
+            return this;
+        }
+    
+        @Override
+        public NewUserTableBuilder paramLongIn(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "LONG", null, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder paramStringIn(String name, int length) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "VARCHAR", (long)length, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder paramDoubleIn(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "DOUBLE", null, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder paramLongOut(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "LONG", null, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder paramStringOut(String name, int length) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "VARCHAR", (long)length, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder paramDoubleOut(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "DOUBLE", null, null);
+            return this;
+        }
+
+        @Override
+        public NewProcedureBuilder externalName(String jarName, String className, String methodName) {
+            aisb.procedureExternalName(schema, userTable, 
+                                       jarName, className, methodName);
+            return this;
+        }
+
+        @Override
+        public NewProcedureBuilder procDef(String definition) {
+            aisb.procedureDefinition(schema, userTable, definition);
             return this;
         }
 
