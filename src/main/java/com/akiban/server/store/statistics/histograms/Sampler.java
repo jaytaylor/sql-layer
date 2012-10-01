@@ -82,12 +82,12 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         int regularsCount = 0;
 
         // a bucket is "exceptionally popular" if its popularity (equals-count) is more than one standard dev
-        // above average
+        // above average. Also keep the first (min key) bucket.
         long popularityCutoff = Math.round(sampler.getEqualsMean() + sampler.getEqualsStdDev());
         for (Iterator<Bucket<T>> iter = samples.iterator(); iter.hasNext(); ) {
             Bucket<T> sample = iter.next();
             long sampleCount = sample.getEqualsCount() + sample.getLessThanCount();
-            if (sample.getEqualsCount() >= popularityCutoff) {
+            if (sample.isMinKeyBucket() || sample.getEqualsCount() >= popularityCutoff) {
                 iter.remove();
                 popular.add(sample);
                 popularsCount += sampleCount;
@@ -110,7 +110,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
 
 
     private List<Bucket<T>> mergePopularitySplit(PopularitySplit<T> split) {
-        // if populars.size() > maxSize,
+        // if populars.size() >= maxSize,
         //     we sample the populars, merging the unpopular buckets into the sampled populars as we go
         // if populars.size() < maxSize,
         //     we sample the unpopulars, appending the popular buckets into the sampling as we go
@@ -125,10 +125,13 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         int unpopularsNeeded = maxSize - populars.size();
         BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, split.regularsCount, false);
         for (Bucket<T> regularBucket : split.regularBuckets) {
+            assert !regularBucket.isMinKeyBucket(); // Min-key buckets were deemed popular
+            T regularValue = regularBucket.value();
             while (!populars.isEmpty()) {
-                T regularValue = regularBucket.value();
-                T popularValue = populars.getFirst().value();
-                if (popularValue.compareTo(regularValue) < 0)
+                Bucket<T> popularBucket = populars.getFirst();
+                // The min-key bucket, by definition, comes before any bucket, including regularBucket.
+                // But there is an explicit test for the min-key bucket to make it clear that it must be included.
+                if (popularBucket.isMinKeyBucket() || popularBucket.value().compareTo(regularValue) < 0)
                     sampler.appendToResults(populars.removeFirst()); // and the loop will try again
                 else
                     break;
@@ -143,10 +146,8 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
     private List<Bucket<T>> mergeUnpopularsIntoPopulars(PopularitySplit<T> split) {
         Deque<Bucket<T>> populars = split.popularBuckets;
         assert populars.size() >= maxSize : "failed  populars.size[" + populars.size() + "] >= maxSize[" + maxSize + "]";
-
         PeekingIterator<Bucket<T>> unpopulars = Iterators.peekingIterator(split.regularBuckets.iterator());
         List<Bucket<T>> results = new ArrayList<Bucket<T>>(populars.size());
-        
         BucketSampler<T> sampler = new BucketSampler<T>(maxSize, split.popularsCount, false);
         for (Bucket<T> popular : populars) {
             if (sampler.add(popular)) {
@@ -158,7 +159,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
                 results.add(popular);
             }
         }
-        // now, create one last value which merges in all of the remaining populars
+        // now, create one last value which merges in all of the remaining unpopulars
         Bucket<T> last = null;
         while(unpopulars.hasNext()) {
             Bucket<T> unpopular = unpopulars.next();

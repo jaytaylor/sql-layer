@@ -772,20 +772,23 @@ public class API
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends Expression> filterFields,
+                                              List<? extends TPreparedExpression> tFilterFields,
                                               int bindingPosition)
     {
-        return select_BloomFilter(input, onPositive, filterFields, null, bindingPosition);
+        return select_BloomFilter(input, onPositive, filterFields, tFilterFields, null, bindingPosition);
     }
 
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends Expression> filterFields,
+                                              List<? extends TPreparedExpression> tFilterFields,
                                               List<AkCollator> collators,
                                               int bindingPosition)
     {
         return new Select_BloomFilter(input,
                                       onPositive,
                                       filterFields,
+                                      tFilterFields,
                                       collators,
                                       bindingPosition);
     }
