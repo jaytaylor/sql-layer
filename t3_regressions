@@ -13,6 +13,7 @@ done
 echo "Getting known failures from nighthawk."
 KNOWN_FAILURES=$(wget -qO - http://172.16.20.117/t3-regressions/known-failures)
 if [ -n "$OUT_FILE" ]; then
+    echo "...outputting to $OUT_FILE"
     echo "$KNOWN_FAILURES" > $OUT_FILE
 fi
 
@@ -42,8 +43,9 @@ if [ -n "$REGRESSIONS" ]; then
 fi
 
 EXIT_CODE=1
-if [ "$RESULT" = "fixes" ]; then
+if [ ( "$RESULT" = "fixes" ) -a ( -n "$OUT_FILE" ) ]; then
     echo "Updating expected failures file"
+    echo "$FAILED" > $OUT_FILE
 elif [ "$RESULT" = "neither" ]; then
     EXIT_CODE=0
     echo "No fixes or regressions."
