@@ -104,6 +104,23 @@ public class ProcedureDDL {
                               builderType.name(), typeParameters[0], typeParameters[1]);
         }
 
+        if (createProcedure.getJavaClassName() != null) {
+            String jarName = null;
+            String className = createProcedure.getJavaClassName();
+            String methodName = createProcedure.getMethodName();
+            int idx = className.indexOf(':');
+            if (idx >= 0) {
+                jarName = className.substring(0, idx);
+                className = className.substring(idx + 1, className.length());
+            }
+            builder.procedureExternalName(schemaName, procedureName,
+                                          jarName, className, methodName);
+        }
+        else if (createProcedure.getDefinition() != null) {
+            builder.procedureDefinition(schemaName, procedureName, 
+                                        createProcedure.getDefinition());
+        }
+
         Procedure procedure = builder.akibanInformationSchema().getProcedure(tableName);
         ddlFunctions.createProcedure(session, procedure);
     }

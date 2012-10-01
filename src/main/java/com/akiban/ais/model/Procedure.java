@@ -26,6 +26,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.error.InvalidProcedureException;
 
 import java.util.*;
 
@@ -86,12 +87,29 @@ public class Procedure
         return callingConvention;
     }
 
+    public String getJarName() {
+        return jarName;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public String getDefinition() {
+        return definition;
+    }
+
     protected void checkMutability() {
         ais.checkMutability();
     }
 
     protected void addParameter(Parameter parameter)
     {
+        checkMutability();
         switch (parameter.getDirection()) {
         case RETURN:
             returnValue = parameter;
@@ -101,6 +119,35 @@ public class Procedure
         }
     }
 
+    protected void setExternalName(String jarName, String className, String methodName) {
+        checkMutability();
+        AISInvariants.checkNullName(className, "Procedure", "class name");
+        switch (callingConvention) {
+        case JAVA:
+            AISInvariants.checkNullName(methodName, "Procedure", "method name");
+            break;
+        case LOADABLE_PLAN:
+            break;
+        default:
+            throw new InvalidProcedureException(name.getSchemaName(), name.getTableName(), 
+                                                "EXTERNAL NAME not allowed for " + callingConvention);
+        }
+        this.jarName = jarName;
+        this.className = className;
+        this.methodName = methodName;
+    }
+
+    protected void setDefinition(String definition) {
+        checkMutability();
+        switch (callingConvention) {
+        case JAVA:
+        case LOADABLE_PLAN:
+            throw new InvalidProcedureException(name.getSchemaName(), name.getTableName(), 
+                                                "AS not allowed for " + callingConvention);
+        }
+        this.definition = definition;
+    }
+
     // State
     protected final AkibanInformationSchema ais;
     protected final TableName name;
@@ -108,4 +155,6 @@ public class Procedure
     protected Parameter returnValue = null;
     protected String language;
     protected CallingConvention callingConvention;
+    protected String jarName, className, methodName;
+    protected String definition;
 }

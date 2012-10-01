@@ -288,7 +288,7 @@ public class AISBuilder {
     public void parameter(String schemaName, String procedureName, 
                           String parameterName, Parameter.Direction direction, 
                           String typeName, Long typeParameter1, Long typeParameter2) {
-        LOG.info("parameter: {} {}", schemaName + "." + procedureName, parameterName);
+        LOG.info("parameter: {} {}", concat(schemaName, procedureName), parameterName);
         Procedure procedure = ais.getProcedure(new TableName(schemaName, procedureName));
         checkFound(procedure, "creating parameter", "procedure", 
                    concat(schemaName, procedureName));
@@ -296,6 +296,24 @@ public class AISBuilder {
         checkFound(type, "creating parameter", "type", typeName);
         Parameter parameter = Parameter.create(procedure, parameterName, direction,
                                                type, typeParameter1, typeParameter2);
+    }
+
+    public void procedureExternalName(String schemaName, String procedureName,
+                                      String jarName, String className, String methodName) {
+        LOG.info("external name: {} {}", concat(schemaName, procedureName), concat(jarName, className, methodName));
+        Procedure procedure = ais.getProcedure(new TableName(schemaName, procedureName));
+        checkFound(procedure, "external name", "procedure", 
+                   concat(schemaName, procedureName));
+        procedure.setExternalName(jarName, className, methodName);
+    }
+
+    public void procedureDefinition(String schemaName, String procedureName,
+                                    String definition) {
+        LOG.info("external name: {} {}", concat(schemaName, procedureName), definition);
+        Procedure procedure = ais.getProcedure(new TableName(schemaName, procedureName));
+        checkFound(procedure, "external name", "procedure", 
+                   concat(schemaName, procedureName));
+        procedure.setDefinition(definition);
     }
 
     public void basicSchemaIsComplete() {
