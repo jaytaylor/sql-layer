@@ -51,15 +51,39 @@ public final class IndexHistogramsIT extends ITBase {
     
     @Test
     public void customersPk() {
-        HistogramEntryDescription[] expected = new HistogramEntryDescription[32];
-        // there are 320 customers and 32 buckets, so 10 histograms per bucket. Each bucket is defined by its
-        // *last* entry, and we're 0 based. So it's 0009, 0019, 0029...
-        for (int i=0; i < expected.length; ++i) {
-            int entryCid = 9 + 10*i;
-            String entryString = String.format("{\"%04d\"}", entryCid);
-            expected[i] = entry(entryString, 1, 9, 9);
-        }
-        validateHistogram("customers", PK, 1, expected);
+        validateHistogram("customers", PK, 1,
+                          entry("{\"0000\"}", 1, 0, 0),
+                          entry("{\"0010\"}", 1, 9, 9),
+                          entry("{\"0020\"}", 1, 9, 9),
+                          entry("{\"0030\"}", 1, 9, 9),
+                          entry("{\"0041\"}", 1, 10, 10),
+                          entry("{\"0051\"}", 1, 9, 9),
+                          entry("{\"0061\"}", 1, 9, 9),
+                          entry("{\"0072\"}", 1, 10, 10),
+                          entry("{\"0082\"}", 1, 9, 9),
+                          entry("{\"0092\"}", 1, 9, 9),
+                          entry("{\"0103\"}", 1, 10, 10),
+                          entry("{\"0113\"}", 1, 9, 9),
+                          entry("{\"0123\"}", 1, 9, 9),
+                          entry("{\"0134\"}", 1, 10, 10),
+                          entry("{\"0144\"}", 1, 9, 9),
+                          entry("{\"0154\"}", 1, 9, 9),
+                          entry("{\"0165\"}", 1, 10, 10),
+                          entry("{\"0175\"}", 1, 9, 9),
+                          entry("{\"0185\"}", 1, 9, 9),
+                          entry("{\"0196\"}", 1, 10, 10),
+                          entry("{\"0206\"}", 1, 9, 9),
+                          entry("{\"0216\"}", 1, 9, 9),
+                          entry("{\"0227\"}", 1, 10, 10),
+                          entry("{\"0237\"}", 1, 9, 9),
+                          entry("{\"0247\"}", 1, 9, 9),
+                          entry("{\"0258\"}", 1, 10, 10),
+                          entry("{\"0268\"}", 1, 9, 9),
+                          entry("{\"0278\"}", 1, 9, 9),
+                          entry("{\"0289\"}", 1, 10, 10),
+                          entry("{\"0299\"}", 1, 9, 9),
+                          entry("{\"0309\"}", 1, 9, 9),
+                          entry("{\"0319\"}", 1, 9, 9));
     }
 
     @Test
@@ -119,15 +143,39 @@ public final class IndexHistogramsIT extends ITBase {
     
     @Test
     public void ordersPk() {
-        HistogramEntryDescription[] expected = new HistogramEntryDescription[32];
-        // there are 320*3 = 960 orders and 32 buckets, so 30 histograms per bucket. Each bucket is defined by its
-        // *last* entry, and we're 0 based. So it's 29, 59, 89...
-        for (int i=0; i < expected.length; ++i) {
-            int entryCid = 29 + 30*i;
-            String entryString = String.format("{(long)%d}", entryCid);
-            expected[i] = entry(entryString, 1, 29, 29);
-        }
-        validateHistogram("orders", PK, 1, expected);
+        validateHistogram("orders", PK, 1, 
+                          entry("{(long)0}", 1, 0, 0),
+                          entry("{(long)30}", 1, 29, 29),
+                          entry("{(long)61}", 1, 30, 30),
+                          entry("{(long)92}", 1, 30, 30),
+                          entry("{(long)123}", 1, 30, 30),
+                          entry("{(long)154}", 1, 30, 30),
+                          entry("{(long)185}", 1, 30, 30),
+                          entry("{(long)216}", 1, 30, 30),
+                          entry("{(long)247}", 1, 30, 30),
+                          entry("{(long)278}", 1, 30, 30),
+                          entry("{(long)309}", 1, 30, 30),
+                          entry("{(long)340}", 1, 30, 30),
+                          entry("{(long)371}", 1, 30, 30),
+                          entry("{(long)402}", 1, 30, 30),
+                          entry("{(long)433}", 1, 30, 30),
+                          entry("{(long)464}", 1, 30, 30),
+                          entry("{(long)495}", 1, 30, 30),
+                          entry("{(long)526}", 1, 30, 30),
+                          entry("{(long)557}", 1, 30, 30),
+                          entry("{(long)588}", 1, 30, 30),
+                          entry("{(long)619}", 1, 30, 30),
+                          entry("{(long)650}", 1, 30, 30),
+                          entry("{(long)681}", 1, 30, 30),
+                          entry("{(long)712}", 1, 30, 30),
+                          entry("{(long)743}", 1, 30, 30),
+                          entry("{(long)774}", 1, 30, 30),
+                          entry("{(long)805}", 1, 30, 30),
+                          entry("{(long)836}", 1, 30, 30),
+                          entry("{(long)867}", 1, 30, 30),
+                          entry("{(long)898}", 1, 30, 30),
+                          entry("{(long)929}", 1, 30, 30),
+                          entry("{(long)959}", 1, 29, 29));
     }
     
     @Test
@@ -218,16 +266,39 @@ public final class IndexHistogramsIT extends ITBase {
         int oTable = getUserTable(SCHEMA, "orders").getTableId();
         int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
-
-        HistogramEntryDescription[] expected = new HistogramEntryDescription[32];
-        // there are 1600 customers and 32 buckets, so 50 histograms per bucket. Each bucket is defined by its
-        // *last* entry, and we're 0 based. So it's 0049, 0099, 0149...
-        for (int i=0; i < expected.length; ++i) {
-            int entryCid = 49 + 50*i;
-            String entryString = String.format("{\"%04d\"}", entryCid);
-            expected[i] = entry(entryString, 1, 49, 49);
-        }
-        validateHistogram("customers", PK, 1, expected);
+        validateHistogram("customers", PK, 1, 
+                          entry("{\"0000\"}", 1, 0, 0),
+                          entry("{\"0051\"}", 1, 50, 50),
+                          entry("{\"0103\"}", 1, 51, 51),
+                          entry("{\"0154\"}", 1, 50, 50),
+                          entry("{\"0206\"}", 1, 51, 51),
+                          entry("{\"0258\"}", 1, 51, 51),
+                          entry("{\"0309\"}", 1, 50, 50),
+                          entry("{\"0361\"}", 1, 51, 51),
+                          entry("{\"0412\"}", 1, 50, 50),
+                          entry("{\"0464\"}", 1, 51, 51),
+                          entry("{\"0516\"}", 1, 51, 51),
+                          entry("{\"0567\"}", 1, 50, 50),
+                          entry("{\"0619\"}", 1, 51, 51),
+                          entry("{\"0670\"}", 1, 50, 50),
+                          entry("{\"0722\"}", 1, 51, 51),
+                          entry("{\"0774\"}", 1, 51, 51),
+                          entry("{\"0825\"}", 1, 50, 50),
+                          entry("{\"0877\"}", 1, 51, 51),
+                          entry("{\"0929\"}", 1, 51, 51),
+                          entry("{\"0980\"}", 1, 50, 50),
+                          entry("{\"1032\"}", 1, 51, 51),
+                          entry("{\"1083\"}", 1, 50, 50),
+                          entry("{\"1135\"}", 1, 51, 51),
+                          entry("{\"1187\"}", 1, 51, 51),
+                          entry("{\"1238\"}", 1, 50, 50),
+                          entry("{\"1290\"}", 1, 51, 51),
+                          entry("{\"1341\"}", 1, 50, 50),
+                          entry("{\"1393\"}", 1, 51, 51),
+                          entry("{\"1445\"}", 1, 51, 51),
+                          entry("{\"1496\"}", 1, 50, 50),
+                          entry("{\"1548\"}", 1, 51, 51),
+                          entry("{\"1599\"}", 1, 50, 50));
     }
 
     @Test
@@ -236,16 +307,39 @@ public final class IndexHistogramsIT extends ITBase {
         int oTable = getUserTable(SCHEMA, "orders").getTableId();
         int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR+1;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
-
-        HistogramEntryDescription[] expected = new HistogramEntryDescription[32];
-        // there are 1600 customers and 32 buckets, so 50 histograms per bucket. First bucket rounds up to 51.
-        for (int i=0; i < expected.length; ++i) {
-            int entryCid = 50*(i+1);
-            String entryString = String.format("{\"%04d\"}", entryCid);
-            int lessThans = i == 0 ? 50 : 49;
-            expected[i] = entry(entryString, 1, lessThans, lessThans);
-        }
-        validateHistogram("customers", PK, 1, expected);
+        validateHistogram("customers", PK, 1,
+                          entry("{\"0000\"}", 1, 0, 0),
+                          entry("{\"0051\"}", 1, 50,50),
+                          entry("{\"0103\"}", 1, 51,51),
+                          entry("{\"0154\"}", 1, 50,50),
+                          entry("{\"0206\"}", 1, 51,51),
+                          entry("{\"0258\"}", 1, 51,51),
+                          entry("{\"0309\"}", 1, 50,50),
+                          entry("{\"0361\"}", 1, 51,51),
+                          entry("{\"0413\"}", 1, 51,51),
+                          entry("{\"0464\"}", 1, 50,50),
+                          entry("{\"0516\"}", 1, 51,51),
+                          entry("{\"0568\"}", 1, 51,51),
+                          entry("{\"0619\"}", 1, 50,50),
+                          entry("{\"0671\"}", 1, 51,51),
+                          entry("{\"0723\"}", 1, 51,51),
+                          entry("{\"0774\"}", 1, 50,50),
+                          entry("{\"0826\"}", 1, 51,51),
+                          entry("{\"0877\"}", 1, 50,50),
+                          entry("{\"0929\"}", 1, 51,51),
+                          entry("{\"0981\"}", 1, 51,51),
+                          entry("{\"1032\"}", 1, 50,50),
+                          entry("{\"1084\"}", 1, 51,51),
+                          entry("{\"1136\"}", 1, 51,51),
+                          entry("{\"1187\"}", 1, 50,50),
+                          entry("{\"1239\"}", 1, 51,51),
+                          entry("{\"1291\"}", 1, 51,51),
+                          entry("{\"1342\"}", 1, 50,50),
+                          entry("{\"1394\"}", 1, 51,51),
+                          entry("{\"1446\"}", 1, 51,51),
+                          entry("{\"1497\"}", 1, 50,50),
+                          entry("{\"1549\"}", 1, 51,51),
+                          entry("{\"1600\"}", 1, 50,50));
     }
 
     @Test
