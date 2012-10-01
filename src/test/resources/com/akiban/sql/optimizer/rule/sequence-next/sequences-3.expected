@@ -1,4 +1,5 @@
-InsertStatement@76ff7048(customers[customers.cid, customers.name])
-  Project@7c24c400[nextval(test,customer_1), customers.name]
-    Select@51c01bac[]
-      TableSource@1b58e322(customers)
+DMLStatement@14e51422(customers)
+  InsertStatement@61357859(customers[customers.cid, customers.name])
+    Project@7d704cea[nextval(test,customer_1), customers.name]
+      Select@57c9d6fc[]
+        TableSource@441676b(customers)

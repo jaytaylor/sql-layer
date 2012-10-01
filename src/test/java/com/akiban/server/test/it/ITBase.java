@@ -39,6 +39,7 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ShareHolder;
@@ -101,7 +102,10 @@ public abstract class ITBase extends ApiTestBase {
             for (int i = 0; i < actual.rowType().nFields(); i++) {
                 PValueSource expectedField = expected.pvalue(i);
                 PValueSource actualField = expected.pvalue(i);
-                if (PValueSources.areEqual(expectedField, actualField))
+                TInstance expectedType = expected.rowType().typeInstanceAt(i);
+                TInstance actualType = actual.rowType().typeInstanceAt(i);
+                assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
+                if (!PValueSources.areEqual(expectedField, actualField, expectedType))
                     return false;
             }
             return true;

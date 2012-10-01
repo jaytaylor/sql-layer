@@ -69,9 +69,13 @@ public class QueryIndexGoal
         this.projectDistinct = projectDistinct;
         this.limit = limit;
 
-        if ((query instanceof UpdateStatement) ||
-            (query instanceof DeleteStatement))
-          updateTarget = ((BaseUpdateStatement)query).getTargetTable();
+        if (query instanceof DMLStatement) {
+            DMLStatement stmt = (DMLStatement)query;
+            if (stmt.getType() == BaseUpdateStatement.StatementType.DELETE ||
+                    stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
+                updateTarget = stmt.getTargetTable();
+            }
+        }
     }
 
     public BaseQuery getQuery() {

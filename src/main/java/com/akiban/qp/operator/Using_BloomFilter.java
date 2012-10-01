@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
@@ -275,7 +274,7 @@ class Using_BloomFilter extends Operator
                 for (int f = 0; f < fields; f++) {
                     if (usePValues) {
                         PValueSource valueSource = row.pvalue(f);
-                        h = h ^ PValueSources.hash(valueSource);
+                        h = h ^ PValueSources.hash(valueSource, collator(f));
                     }
                     else {
                         ValueSource valueSource = row.eval(f);

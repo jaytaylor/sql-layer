@@ -52,23 +52,18 @@ public final class OverloadResolver {
         private TValidatedOverload overload;
         private Map<TInputSet, TInstance> instances;
 
-        private OverloadResult(TValidatedOverload overload, TInstance pickedInstance,
-                               List<? extends TPreptimeValue> inputs)
+        private OverloadResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs)
         {
             this.overload = overload;
             List<TInputSet> inputSets = overload.inputSets();
             this.instances = new HashMap<TInputSet, TInstance>(inputSets.size());
             for (TInputSet inputSet : inputSets) {
                 final TInstance instance;
-                if (inputSet.isPicking()) {
-                    instance = pickedInstance;
-                }
-                else {
-                    TClass targetTClass = inputSet.targetType();
-                    if (targetTClass == null)
-                        targetTClass = findCommon(overload, inputSet, inputs);
-                    instance = (targetTClass == null) ? null : targetTClass.instance();
-                }
+                TClass targetTClass = inputSet.targetType();
+                if (targetTClass == null)
+                    instance = findCommon(overload, inputSet, inputs);
+                else
+                    instance = findInstance(overload, inputSet, inputs);
                 if (instance != null) {
                     boolean nullable = nullable(overload,  inputSet, inputs);
                     instance.setNullable(nullable);
@@ -90,14 +85,46 @@ public final class OverloadResolver {
             return false;
         }
 
-        private TClass findCommon(TValidatedOverload overload, TInputSet inputSet,
+        private TInstance findInstance(TValidatedOverload overload, TInputSet inputSet,
+                                       List<? extends TPreptimeValue> inputs)
+        {
+            final TClass targetTClass = inputSet.targetType();
+            assert targetTClass != null;
+
+            TInstance result = null;
+            int lastPositionalInput = overload.positionalInputs();
+            boolean notVararg = ! overload.isVararg();
+            for (int i = 0, size = inputs.size(); i < size; ++i) {
+                if (overload.inputSetAt(i) != inputSet)
+                    continue;
+                if (notVararg && (i >= lastPositionalInput))
+                    break;
+                TInstance inputInstance = inputs.get(i).instance();
+                TClass inputClass = (inputInstance == null) ? null : inputInstance.typeClass();
+                if (inputClass == targetTClass) {
+                    result = (result == null)
+                            ? inputInstance
+                            : targetTClass.pickInstance(result, inputInstance);
+                }
+            }
+            if (result == null)
+                result = targetTClass.instance();
+            return result;
+        }
+
+        private TInstance findCommon(TValidatedOverload overload, TInputSet inputSet,
                                   List<? extends TPreptimeValue> inputs)
         {
             assert inputSet.targetType() == null : inputSet; // so we have to look at inputs
             TClass common = null;
+            TInstance commonInst = null;
+            int lastPositionalInput = overload.positionalInputs();
+            boolean notVararg = ! overload.isVararg();
             for (int i = 0, size = inputs.size(); i < size; ++i) {
                 if (overload.inputSetAt(i) != inputSet)
                     continue;
+                if (notVararg && (i >= lastPositionalInput))
+                    break;
                 TInstance inputInstance = inputs.get(i).instance();
                 if (inputInstance == null) {
                     // unknown type, like a NULL literal or parameter
@@ -105,16 +132,43 @@ public final class OverloadResolver {
                 }
                 TClass inputClass = inputInstance.typeClass();
                 if (common == null) {
+                    // First input we've seen, so just use it.
                     common = inputClass;
+                    commonInst = inputInstance;
+                }
+                else if (inputClass == common) {
+                    // saw the same TClass as before, so pick it
+                    commonInst = (commonInst == null) ? inputInstance : common.pickInstance(commonInst, inputInstance);
                 }
                 else {
-                    common = commonTClass(common, inputClass);
-                    if (common == null)
+                    // Saw a different TCLass as before, so need to cast one of them. We'll get the new common type,
+                    // at which point we have exactly one of three possibilities:
+                    //   1) newCommon == [old] common, in which case we'll keep the old TInstance
+                    //   2) newCommon == inputClass, in which case we'll use the inputInstance
+                    //   3) newCommon is neither, in which case we'll generate a new TInstance
+                    // We know that we can't have both #1 and #2, because that would imply [old] common == inputClass,
+                    // which has already been handled.
+                    TClass newCommon = commonTClass(common, inputClass);
+                    if (newCommon == null)
                         throw new OverloadException(overload + ": couldn't find common types for " + inputSet
                             + " with " + inputs);
+
+                    if (newCommon == inputClass) { // case #2
+                        common = newCommon;
+                        commonInst = inputInstance;
+                    }
+                    else if (newCommon != common) { // case #3
+                        common = newCommon;
+                        commonInst = null;
+                    }
+                    // else if (newCommon = common), we don't need this because there's nothing to do in this case
                 }
             }
-            return common;
+            if (common == null)
+                throw new OverloadException("couldn't resolve type for " + inputSet + " with " + inputs);
+            return (commonInst == null)
+                ? common.instance()
+                : commonInst;
         }
 
         public TValidatedOverload getOverload() {
@@ -376,37 +430,7 @@ public final class OverloadResolver {
     }
 
     private OverloadResult buildResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
-        TInstance pickingInstance = pickingInstance(overload, inputs);
-        return new OverloadResult(overload, pickingInstance, inputs);
-    }
-
-    private TInstance pickingInstance(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
-        TInputSet pickingSet = overload.pickingInputSet();
-        if (pickingSet == null) {
-            return null;
-        }
-        TClass common = null; // TODO change to TInstance, so we can more precisely pick instances
-        for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i+1)) {
-            TInstance instance = inputs.get(i).instance();
-            if (instance != null) {
-                common = commonTClass(common, instance.typeClass());
-                if (common == null)
-                    throw new OverloadException(overload.displayName());
-            }
-        }
-        if (pickingSet.coversRemaining()) {
-            for (int i = overload.firstVarargInput(), last = inputs.size(); i < last; ++i) {
-                TInstance instance = inputs.get(i).instance();
-                if (instance != null) {
-                    common = commonTClass(common, instance.typeClass());
-                    if (common == null)
-                        throw new OverloadException(overload.displayName());
-                }
-            }
-        }
-        if (common == null)
-            throw new OverloadException(overload.displayName());
-        return common.instance();
+        return new OverloadResult(overload, inputs);
     }
 
     /*

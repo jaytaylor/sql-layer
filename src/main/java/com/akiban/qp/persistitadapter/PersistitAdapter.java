@@ -130,12 +130,12 @@ public class PersistitAdapter extends StoreAdapter
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
-        RowData oldRowData = oldRowData(rowDef, oldRow, rowDataCreator(usePValues));
+        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
         int oldStep = 0;
         try {
             // For Update row, the new row (value being inserted) does not 
             // need the default value (including identity set)
-            RowData newRowData = oldRowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
+            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
@@ -157,7 +157,7 @@ public class PersistitAdapter extends StoreAdapter
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         int oldStep = 0;
         try {
-            RowData newRowData = newRowData (rowDef, newRow, rowDataCreator(usePValues));
+            RowData newRowData = rowData (rowDef, newRow, rowDataCreator(usePValues));
             oldStep = enterUpdateStep();
             store.writeRow(getSession(), newRowData);
         } catch (InvalidOperationException e) {
@@ -176,7 +176,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public void deleteRow (Row oldRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowData oldRowData = oldRowData(rowDef, oldRow, rowDataCreator(usePValues));
+        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
         oldRowData.setExplicitRowDef(rowDef);
         int oldStep = enterUpdateStep();
         try {
@@ -198,12 +198,12 @@ public class PersistitAdapter extends StoreAdapter
     public void alterRow(Row oldRow, Row newRow, Index[] indexes, boolean hKeyChanged, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
-        RowData oldRowData = oldRowData(rowDef, oldRow, rowDataCreator(usePValues));
+        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
 
         int oldStep = 0;
         try {
             // Altered row does not need defaults from newRowData()
-            RowData newRowData = oldRowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
+            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
             oldRowData.setExplicitRowDef(rowDef);
             newRowData.setExplicitRowDef(rowDefNewRow);
             if(hKeyChanged) {
@@ -288,45 +288,13 @@ public class PersistitAdapter extends StoreAdapter
                 : new OldRowDataCreator();
     }
 
-    private <S> RowData oldRowData (RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+    private <S> RowData rowData (RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow) row).rowData();
         }
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             S source = creator.eval(row, i);
-            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
-        }
-        return niceRow.toRowData();
-    }
-
-    private <S> RowData newRowData(RowDef rowDef, RowBase row, RowDataCreator<S> creator) throws PersistitException
-    {
-        if (row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow) row).rowData();
-        }
-//
-        NewRow niceRow = newRow(rowDef);
-        for(int i = 0; i < row.rowType().nFields(); ++i) {
-            S source = creator.eval(row, i);
-
-            // this is the generated always case. Always override the value in the
-            // row
-            if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
-                    rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
-                long value = sequenceValue (rowDef.table().getColumn(i).getIdentityGenerator(), false); 
-                source = creator.createId(value);
-            }
-
-            if (creator.isNull(source)) {
-                if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
-                    long value = sequenceValue(rowDef.table().getColumn(i).getIdentityGenerator(), false);
-                    source = creator.createId(value);
-                }
-                // TODO: If not an identityGenerator, insert the column default value.
-            }
-
-            // TODO: Validate column Check Constraints.
             creator.put(source, niceRow, rowDef.getFieldDef(i), i);
         }
         return niceRow.toRowData();

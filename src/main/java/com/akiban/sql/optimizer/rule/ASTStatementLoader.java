@@ -154,7 +154,7 @@ public class ASTStatementLoader extends BaseRule
         }
 
         // UPDATE
-        protected UpdateStatement toUpdateStatement(UpdateNode updateNode)
+        protected DMLStatement toUpdateStatement(UpdateNode updateNode)
                 throws StandardException {
             ResultSetNode rs = updateNode.getResultSetNode();
             PlanNode query = toQuery((SelectNode)rs);
@@ -168,11 +168,21 @@ public class ASTStatementLoader extends BaseRule
                 ExpressionNode value = toExpression(result.getExpression());
                 updateColumns.add(new UpdateColumn(column, value));
             }
-            return new UpdateStatement(query, targetTable, updateColumns, peekEquivalenceFinder());
+            ReturningValues values = calculateReturningValues (updateNode.getReturningList(),
+                        (FromTable)updateNode.getUserData(),
+                        targetTable.getTable().getColumns().size());
+            query = new UpdateStatement(query, targetTable, 
+                        updateColumns, values.table); 
+
+            if (values.row != null) {
+                query = new Project (query, values.row);
+            }
+            return new DMLStatement (query, BaseUpdateStatement.StatementType.UPDATE, 
+                    values.results, values.table, targetTable, peekEquivalenceFinder());
         }
 
         // INSERT
-        protected InsertStatement toInsertStatement(InsertNode insertNode)
+        protected DMLStatement toInsertStatement(InsertNode insertNode)
                 throws StandardException {
             PlanNode query = toQueryForSelect(insertNode.getResultSetNode(),
                                               insertNode.getOrderByList(),
@@ -181,9 +191,9 @@ public class ASTStatementLoader extends BaseRule
             if (query instanceof ResultSet)
                 query = ((ResultSet)query).getInput();
             TableNode targetTable = getTargetTable(insertNode);
-            List<Column> targetColumns;
-            int ncols = insertNode.getResultSetNode().getResultColumns().size();
             ResultColumnList rcl = insertNode.getTargetColumnList();
+            int ncols = insertNode.getResultSetNode().getResultColumns().size();
+            List<Column> targetColumns;
             if (rcl != null) {
                 if (ncols != rcl.size())
                     throw new InsertWrongCountException(rcl.size(), ncols);
@@ -204,17 +214,59 @@ public class ASTStatementLoader extends BaseRule
                     targetColumns.add(aisColumns.get(i));
                 }
             }
-            return new InsertStatement(query, targetTable, targetColumns, peekEquivalenceFinder());
+
+            ReturningValues values = calculateReturningValues (insertNode.getReturningList(),
+                                (FromTable)insertNode.getUserData(),
+                                targetTable.getTable().getColumns().size());
+            
+            query = new InsertStatement (query, targetTable, 
+                    targetColumns, values.table);
+            if (values.row != null) {
+                query = new Project (query, values.row);
+            }
+            return new DMLStatement (query, BaseUpdateStatement.StatementType.INSERT, 
+                    values.results, values.table, targetTable, peekEquivalenceFinder());
         }
     
+        
         // DELETE
-        protected DeleteStatement toDeleteStatement(DeleteNode deleteNode)
+        protected DMLStatement toDeleteStatement(DeleteNode deleteNode)
                 throws StandardException {
             PlanNode query = toQuery((SelectNode)deleteNode.getResultSetNode());
             TableNode targetTable = getTargetTable(deleteNode);
-            return new DeleteStatement(query, targetTable, peekEquivalenceFinder());
+            
+            ReturningValues values = calculateReturningValues (deleteNode.getReturningList(), 
+                                        (FromTable)deleteNode.getUserData(),
+                                        targetTable.getTable().getColumns().size());
+            
+            query = new DeleteStatement(query, targetTable, values.table);
+            if (values.row != null) {
+                query = new Project (query, values.row);
+            }
+            return new DMLStatement(query, BaseUpdateStatement.StatementType.DELETE, 
+                    values.results, values.table, targetTable, peekEquivalenceFinder());
+        }
+        
+        private class ReturningValues {
+            public List<ExpressionNode> row = null;
+            public TableSource table = null;
+            public List<ResultField> results = null;
         }
 
+        protected ReturningValues calculateReturningValues (ResultColumnList rcl, FromTable table, int size)
+                throws StandardException {
+            ReturningValues values = new ReturningValues();
+            if (rcl != null) {
+                values.table = (TableSource)toJoinNode(table, true);
+                values.row = new ArrayList<ExpressionNode>(rcl.size());
+                for (ResultColumn resultColumn : rcl) {
+                    values.row.add(toExpression(resultColumn.getExpression()));
+                }
+                values.results = resultColumns(rcl);
+            }
+            return values;
+        }
+        
         /** The query part of SELECT / INSERT, which might be VALUES / UNION */
         protected PlanNode toQueryForSelect(ResultSetNode resultSet,
                                             OrderByList orderByList,
@@ -250,16 +302,8 @@ public class ASTStatementLoader extends BaseRule
                 throw new UnsupportedSQLException("Unsupported query", resultSet);
         }
 
-        /** A normal SELECT */
-        protected PlanNode toQueryForSelect(SelectNode selectNode,
-                                            OrderByList orderByList,
-                                            ValueNode offsetClause,
-                                            ValueNode fetchFirstClause)
-                throws StandardException {
-            PlanNode query = toQuery(selectNode);
-
-            ResultColumnList rcl = selectNode.getResultColumns();
-            List<ExpressionNode> projects = new ArrayList<ExpressionNode>(rcl.size());
+        protected List<ResultField> resultColumns(ResultColumnList rcl) 
+                        throws StandardException {
             List<ResultField> results = new ArrayList<ResultField>(rcl.size());
             for (ResultColumn result : rcl) {
                 String name = result.getName();
@@ -269,13 +313,30 @@ public class ASTStatementLoader extends BaseRule
                     (name == ((ColumnReference)result.getExpression()).getColumnName());
                 Column column = null;
                 ExpressionNode expr = toExpression(result.getExpression());
-                projects.add(expr);
                 if (expr instanceof ColumnExpression) {
                     column = ((ColumnExpression)expr).getColumn();
                     if ((column != null) && nameDefaulted)
                         name = column.getName();
                 }
                 results.add(new ResultField(name, type, column));
+            }
+            return results;
+        }
+        /** A normal SELECT */
+        protected PlanNode toQueryForSelect(SelectNode selectNode,
+                                            OrderByList orderByList,
+                                            ValueNode offsetClause,
+                                            ValueNode fetchFirstClause)
+                throws StandardException {
+            PlanNode query = toQuery(selectNode);
+
+            ResultColumnList rcl = selectNode.getResultColumns();
+            List<ResultField> results = resultColumns (rcl);
+            List<ExpressionNode> projects = new ArrayList<ExpressionNode>(rcl.size());
+
+            for (ResultColumn result : rcl) {
+                ExpressionNode expr = toExpression(result.getExpression());
+                projects.add(expr);
             }
 
             List<OrderByExpression> sorts = new ArrayList<OrderByExpression>();
@@ -758,7 +819,7 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> operands = null;
             ExpressionNode operand = null;
             boolean needOperand = false, multipleOperands = false;
-            ConditionList innerConds = null;
+            //ConditionList innerConds = null;
             switch (subqueryNode.getSubqueryType()) {
             case EXISTS:
                 break;
@@ -823,6 +884,9 @@ public class ASTStatementLoader extends BaseRule
                 comp = Comparison.GT;
                 needOperand = true;
                 break;
+            case FROM:
+            default:
+                assert false;
             }
             boolean distinct = false;
             // TODO: This may not be right for c IN (SELECT x ... UNION SELECT y ...).
@@ -1665,5 +1729,4 @@ public class ASTStatementLoader extends BaseRule
         }
 
     }
-
 }

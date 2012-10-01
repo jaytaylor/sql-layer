@@ -47,7 +47,7 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
                 @Override
                 protected void evaluate(PValueSource source, PValueTarget target)
                 {
-                    target.putBool(source.getBoolean(true));
+                    target.putBool(source.getBoolean(false));
                 }
             },
             new IsTrueFalseUnknownNull(boolType, "isFalse")
@@ -55,10 +55,10 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
                 @Override
                 protected void evaluate(PValueSource source, PValueTarget target)
                 {
-                    target.putBool(source.getBoolean(false));
+                    target.putBool(!source.getBoolean(true));
                 }
             },
-            new IsTrueFalseUnknownNull(boolType, "isUnknown")
+            new IsTrueFalseUnknownNull(boolType, "isUnknown", "isNull")
             {
                 @Override
                 protected void evaluate(PValueSource source, PValueTarget target)
@@ -72,12 +72,12 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
     protected abstract void evaluate(PValueSource source, PValueTarget target);
     
     private final TClass boolType;
-    private final String name;
+    private final String names[];
     
-    private IsTrueFalseUnknownNull(TClass boolType, String name)
+    private IsTrueFalseUnknownNull(TClass boolType, String...names)
     {
         this.boolType = boolType;
-        this.name = name;
+        this.names = names;
     }
 
     @Override
@@ -100,9 +100,15 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
     }
 
     @Override
+    public String[] registeredNames()
+    {
+        return names;
+    }
+
+    @Override
     public String displayName()
     {
-        return name;
+        return names[0];
     }
 
     @Override

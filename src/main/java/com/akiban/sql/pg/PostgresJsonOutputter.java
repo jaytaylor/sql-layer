@@ -34,6 +34,7 @@ import com.akiban.server.Quote;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.aksql.aktypes.AkResultSet;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -87,11 +88,13 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
             encoder.appendString("\":");
             if (usePVals) {
                 PValueSource value = row.pvalue(i);
-                if (false) {
-                    // TODO: No getResultSet() yet.
+                TInstance columnTInstance = resultColumn.getTInstance();
+                if (columnTInstance.typeClass() instanceof AkResultSet) {
+                    outputNestedResultSet((Cursor)value.getObject(),
+                                          resultColumn.getNestedResultColumns(),
+                                          usePVals);
                 }
                 else {
-                    TInstance columnTInstance = resultColumn.getTInstance();
                     columnTInstance.formatAsJson(value, appender);
                 }
             }

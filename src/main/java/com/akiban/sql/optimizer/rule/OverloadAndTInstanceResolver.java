@@ -34,6 +34,7 @@ import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.ErrorHandlingMode;
+import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
@@ -44,6 +45,7 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -56,6 +58,7 @@ import com.akiban.sql.optimizer.plan.AnyCondition;
 import com.akiban.sql.optimizer.plan.BasePlanWithInput;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
+import com.akiban.sql.optimizer.plan.CastCondition;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
@@ -88,7 +91,10 @@ import com.akiban.sql.optimizer.plan.TypedPlan;
 import com.akiban.sql.optimizer.plan.UpdateStatement;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
+import com.akiban.sql.optimizer.rule.PlanContext.WhiteboardMarker;
+import com.akiban.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.util.SparseArray;
 import com.google.common.base.Objects;
 import org.slf4j.Logger;
@@ -110,20 +116,29 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     @Override
     public void apply(PlanContext plan) {
         NewFolder folder = new NewFolder(plan);
-        ResolvingVistor resolvingVistor = new ResolvingVistor(plan, folder);
-        resolvingVistor.resolve(plan.getPlan());
-        new TopLevelCastingVistor(folder, resolvingVistor.parametersSync).apply(plan.getPlan());
+        ResolvingVisitor resolvingVisitor = new ResolvingVisitor(plan, folder);
+        folder.initResolvingVisitor(resolvingVisitor);
+        plan.putWhiteboard(RESOLVER_MARKER, resolvingVisitor);
+        resolvingVisitor.resolve(plan.getPlan());
+        new TopLevelCastingVisitor(folder, resolvingVisitor.parametersSync).apply(plan.getPlan());
         plan.getPlan().accept(ParameterCastInliner.instance);
     }
 
-    static class ResolvingVistor implements PlanVisitor, ExpressionRewriteVisitor {
+    public static final WhiteboardMarker<ExpressionRewriteVisitor> RESOLVER_MARKER = 
+        new DefaultWhiteboardMarker<ExpressionRewriteVisitor>();
+
+    public static ExpressionRewriteVisitor getResolver(PlanContext plan) {
+        return plan.getWhiteboard(RESOLVER_MARKER);
+    }
+
+    static class ResolvingVisitor implements PlanVisitor, ExpressionRewriteVisitor {
 
         private NewFolder folder;
         private OverloadResolver resolver;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 
-        ResolvingVistor(PlanContext context, NewFolder folder) {
+        ResolvingVisitor(PlanContext context, NewFolder folder) {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             resolver = src.getOverloadResolver();
@@ -229,6 +244,15 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TPreptimeValue tpv = n.getPreptimeValue();
             if (tpv != null) {
                 TInstance tInstance = tpv.instance();
+                if ((n.getSQLtype() != null) &&
+                    (n.getSQLtype().getCharacterAttributes() != null) &&
+                    (n.getSQLtype().getCharacterAttributes().getCollationDerivation() == CharacterTypeAttributes.CollationDerivation.EXPLICIT)) {
+                    // Apply result of explicit COLLATE, which will otherwise get lost.
+                    // No way to mutate the existing instance, so replace entire tpv.
+                    tInstance = StringAttribute.copyWithCollation(tInstance, n.getSQLtype().getCharacterAttributes());
+                    tpv = new TPreptimeValue(tInstance, tpv.value());
+                    n.setPreptimeValue(tpv);
+                }
                 if (tInstance != null) {
                     if (tInstance.nullability() == null)
                         tInstance.setNullable(n.getSQLtype().isNullable());
@@ -276,8 +300,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     TClass topClass = tclass(instances[field]);
                     TClass botClass = tclass(botInstance);
 
-                    TClass common = resolver.commonTClass(topClass, botClass);
-                    if (common == null) {
+                    TClass commonTClass = resolver.commonTClass(topClass, botClass);
+                    if (commonTClass == null) {
                         throw new AkibanInternalException("no common type found found between row " + (rownum-1)
                         + " and " + rownum + " at field " + field);
                     }
@@ -288,9 +312,20 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
                     Boolean topIsNullable = (instances[field] == null) ? null : instances[field].nullability();
                     Boolean botIsNullable = botInstance.nullability();
-                    if (topClass != common){
-                        TInstance instance = (botClass == common) ? botInstance : common.instance();
-                        instances[field] = instance;
+                    // need to set a new instances[field]. Rules:
+                    // - if topClass and botClass are the same as common, use picking algorithm
+                    // - else, if one of them == commonTClass, use topInstance or botInstance (whichever is == common)
+                    // - else, use commonTClass.instance()
+                    boolean topIsCommon = (topClass == commonTClass);
+                    boolean botIsCommon = (botClass == commonTClass);
+                    if (topIsCommon && botIsCommon) {
+                        instances[field] = topClass.pickInstance(instances[field], botInstance);
+                    }
+                    else if (botIsCommon) {
+                        instances[field] = botInstance;
+                    }
+                    else if (!topIsCommon) { // this of this as "else if (topIsBottom) { <noop> } else { ..."
+                        instances[field] = commonTClass.instance();
                     }
 
                     // See if the top instance is not nullable but should be
@@ -396,7 +431,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             // Put the preptime value, possibly including nullness, into the expression. The constant folder
             // will use it.
-            TPreptimeValue preptimeValue = overload.evaluateConstant(context, new LazyListBase<TPreptimeValue>() {
+            LazyList<TPreptimeValue> lazyInputs = new LazyListBase<TPreptimeValue>() {
                 @Override
                 public TPreptimeValue get(int i) {
                     return operandValues.get(i);
@@ -406,7 +441,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 public int size() {
                     return operandValues.size();
                 }
-            });
+            };
+
+            TPreptimeValue preptimeValue = overload.evaluateConstant(context, overload.filterInputs(lazyInputs));
             if (preptimeValue == null)
                 preptimeValue = new TPreptimeValue(resultInstance);
             else
@@ -414,6 +451,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         : resultInstance + " != " + preptimeValue.instance();
 
             expression.setPreptimeValue(preptimeValue);
+            
+            SparseArray<Object> values = context.getValues();
+            if ((values != null) && !values.isEmpty())
+                expression.setPreptimeValues(values);
+
             if (castTo == null) {
                 return expression;
             }
@@ -491,7 +533,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleSubqueryResultSetExpression(SubqueryResultSetExpression expression) {
-            return boolExpr(expression);
+            TPreptimeValue tpv = new TPreptimeValue(TypesTranslation.toTInstance(expression.getSQLtype()));
+            expression.setPreptimeValue(tpv);
+            return expression;
         }
 
         ExpressionNode handleAnyCondition(AnyCondition expression) {
@@ -501,9 +545,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         ExpressionNode handleComparisonCondition(ComparisonCondition expression) {
             ExpressionNode left = expression.getLeft();
             ExpressionNode right = expression.getRight();
-            TClass leftTClass = tclass(left);
-            TClass rightTClass = tclass(right);
-            if (leftTClass != rightTClass) {
+            TInstance leftTInst = tinst(left);
+            TInstance rightTInst = tinst(right);
+            if (TClass.comparisonNeedsCasting(leftTInst, rightTInst)) {
                 boolean needCasts = true;
                 if ( (left.getClass() == ColumnExpression.class)&& (right.getClass() == ConstantExpression.class)) {
                     // Left is a Column, right is a Constant. Ideally, we'd like to keep the Column as a Column,
@@ -511,7 +555,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     // So, try to cast the const to the column's type. To do this, CAST(Const -> Column) must be
                     // indexFriendly, *and* casting this result back to the original Const type must equal the same
                     // const.
-                    if (resolver.getRegistry().isIndexFriendly(leftTClass, rightTClass)) {
+                    if (resolver.getRegistry().isIndexFriendly(tclass(leftTInst), tclass(rightTInst))) {
                         TInstance columnType = tinst(left);
                         TInstance constType = tinst(right);
                         TCast constToCol = resolver.getTCast(constType, columnType);
@@ -524,7 +568,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                                         ? null
                                         : new TPreptimeValue(columnType, asColType);
                                 PValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
-                                if (PValueSources.areEqual(constValue.value(), backToConstType)) {
+                                if (PValueSources.areEqual(constValue.value(), backToConstType, constType)) {
                                     TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
                                     ConstantExpression constCasted = new ConstantExpression(constTpv);
                                     expression.setRight(constCasted);
@@ -611,7 +655,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleParameterCondition(ParameterCondition expression) {
-            return boolExpr(expression);
+            parametersSync.uninferred(expression);
+            return castTo(expression, AkBool.INSTANCE.instance(),
+                          folder, parametersSync);
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
@@ -671,13 +717,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return expression;
     }
 
-    static class TopLevelCastingVistor implements PlanVisitor {
+    static class TopLevelCastingVisitor implements PlanVisitor {
 
         private List<? extends ColumnContainer> targetColumns;
         private NewFolder folder;
         private ParametersSync parametersSync;
 
-        TopLevelCastingVistor(NewFolder folder, ParametersSync parametersSync) {
+        TopLevelCastingVisitor(NewFolder folder, ParametersSync parametersSync) {
             this.folder = folder;
             this.parametersSync = parametersSync;
         }
@@ -810,8 +856,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
         if (expression instanceof ParameterExpression) {
-            CastExpression castExpression
-                    = new CastExpression(expression, null, null);
+            targetInstance.setNullable(true);
+            CastExpression castExpression = 
+                newCastExpression(expression, targetInstance);
             castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
             targetInstance.setNullable(true);
             parametersSync.set(expression, targetInstance);
@@ -827,12 +874,20 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression;
         DataTypeDescriptor sqlType = expression.getSQLtype();
         targetInstance.setNullable(sqlType == null || sqlType.isNullable());
-        CastExpression castExpression
-                = new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+        CastExpression castExpression = 
+            newCastExpression(expression, targetInstance);
         castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
         ExpressionNode result = finishCast(castExpression, folder, parametersSync);
         result = folder.foldConstants(result);
         return result;
+    }
+    
+    private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
+        if (targetInstance.typeClass() == AkBool.INSTANCE)
+            // Allow use as a condition.
+            return new CastCondition(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+        else
+            return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
     }
 
     private static ExpressionNode finishCast(CastExpression castNode, NewFolder folder, ParametersSync parametersSync) {
@@ -918,8 +973,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         public void uninferred(ParameterExpression parameterExpression) {
             assert parameterExpression.getPreptimeValue() == null : parameterExpression;
             List<ExpressionNode> siblings = siblings(parameterExpression);
-            if (!siblings.isEmpty()) {
-                TPreptimeValue preptimeValue = siblings.get(0).getPreptimeValue(); // fine if this is null
+            if (siblings.isEmpty()) {
+                parameterExpression.setPreptimeValue(new TPreptimeValue());
+            }
+            else {
+                TPreptimeValue preptimeValue = siblings.get(0).getPreptimeValue();
                 parameterExpression.setPreptimeValue(preptimeValue);
             }
             siblings.add(parameterExpression);
@@ -938,18 +996,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         public void set(ExpressionNode node, TInstance tInstance) {
             List<ExpressionNode> siblings = siblings((ParameterExpression) node);
             TPreptimeValue sharedTpv = siblings.get(0).getPreptimeValue();
-            if (sharedTpv == null) {
-                sharedTpv = new TPreptimeValue();
-                sharedTpv.instance(tInstance);
-                // all siblings have no tpv, so set it for all of them
-                for (int i = 0, size = siblings.size(); i < size; ++i)
-                    siblings.get(i).setPreptimeValue(sharedTpv);
-            }
-            else {
-                TInstance previousInstance = sharedTpv.instance();
-                tInstance = commonInstance(resolver, tInstance, previousInstance);
-                sharedTpv.instance(tInstance);
-            }
+            TInstance previousInstance = sharedTpv.instance();
+            tInstance = commonInstance(resolver, tInstance, previousInstance);
+            sharedTpv.instance(tInstance);
         }
     }
 }

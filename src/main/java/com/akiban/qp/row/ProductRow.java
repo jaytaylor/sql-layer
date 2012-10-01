@@ -27,18 +27,11 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.ProductRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
-import com.akiban.util.ShareHolder;
 
-public class ProductRow extends AbstractRow
+public class ProductRow extends CompoundRow
 {
     // Object interface
 
@@ -46,8 +39,9 @@ public class ProductRow extends AbstractRow
     public String toString()
     {
         ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
+        ProductRowType type = (ProductRowType)rowType();
         buffer.putString("(");
-        int nFields = rowType.leftType().nFields() + rowType.rightType().nFields() - rowType.branchType().nFields();
+        int nFields = type.leftType().nFields() + type.rightType().nFields() - type.branchType().nFields();
         for (int i = 0; i < nFields; i++) {
             if (i > 0) {
                 buffer.putString(", ");
@@ -58,86 +52,14 @@ public class ProductRow extends AbstractRow
         return buffer.toString();
     }
 
-    // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        ValueSource source;
-        if (i < nLeftFields) {
-            source = left.isEmpty() ? NullValueSource.only() : left.get().eval(i);
-        } else {
-            source = right.isEmpty() ? NullValueSource.only() : right.get().eval(i - firstRightFieldOffset);
-        }
-        return source;
-    }
-
-    @Override
-    public PValueSource pvalue(int i) {
-        PValueSource source;
-        if (i < nLeftFields) {
-            source = left.isEmpty() ? nullPValue(i) : left.get().pvalue(i);
-        } else {
-            source = right.isEmpty() ? nullPValue(i) : right.get().pvalue(i - firstRightFieldOffset);
-        }
-        return source;
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return null;
-    }
-
-    @Override
-    public Row subRow(RowType subRowType)
-    {
-        Row subRow;
-        if (subRowType == rowType.leftType()) {
-            subRow = left.get();
-        } else if (subRowType == rowType.rightType()) {
-            subRow = right.get();
-        } else {
-            // If the subRowType doesn't match leftType or rightType, then it might be buried deeper.
-            subRow = left.get().subRow(subRowType);
-            if (subRow == null) {
-                subRow = right.get().subRow(subRowType);
-            }
-        }
-        return subRow;
-    }
-
     // ProductRow interface
 
     public ProductRow(ProductRowType rowType, Row left, Row right)
     {
-        this.rowType = rowType;
-        this.left.hold(left);
-        this.right.hold(right);
-        this.nLeftFields = rowType.leftType().nFields();
-        this.firstRightFieldOffset = nLeftFields - rowType.branchType().nFields();
+        super (rowType, left, right);
+        this.rowOffset = firstRowFields() - rowType.branchType().nFields();
         if (left != null && right != null) {
             // assert left.runId() == right.runId();
         }
-    }
-
-    // Object state
-
-    private final ProductRowType rowType;
-    private final ShareHolder<Row> left = new ShareHolder<Row>();
-    private final ShareHolder<Row> right = new ShareHolder<Row>();
-    private final int nLeftFields;
-    private final int firstRightFieldOffset;
-
-    // private methods
-
-    private PValueSource nullPValue(int i) {
-        PUnderlying underlying = rowType.typeInstanceAt(i).typeClass().underlyingType();
-        return PValueSources.getNullSource(underlying);
     }
 }

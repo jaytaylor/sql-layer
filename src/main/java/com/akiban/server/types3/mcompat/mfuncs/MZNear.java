@@ -23,48 +23,49 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common.funcs;
 
+package com.akiban.server.types3.mcompat.mfuncs;
+
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public final class IsNull extends TOverloadBase {
+public class MZNear extends TOverloadBase
+{
+    public static final TOverload INSTANCE = new MZNear();
 
-    public static final TOverload INSTANCE = new IsNull();
-
+    private MZNear(){}
+    
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(null, 0);
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(MNumeric.DECIMAL, 0, 1, 2, 3);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        PValueSource arg = inputs.get(0);
-        output.putBool(arg.isNull());
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+            throw new UnsupportedSQLException("This query is not supported by Akiban, its definition " + 
+                                              "is used solely for optimization purposes.");
     }
 
     @Override
-    public String displayName() {
-        return "isnull";
+    public String displayName()
+    {
+        return "znear";
     }
 
     @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(AkBool.INSTANCE.instance());
+    public TOverloadResult resultType()
+    {
+        return TOverloadResult.fixed(MApproximateNumber.DOUBLE.instance());
     }
-
-    @Override
-    protected boolean nullContaminates(int inputIndex) {
-        return false;
-    }
-
-    private IsNull() {}
 }

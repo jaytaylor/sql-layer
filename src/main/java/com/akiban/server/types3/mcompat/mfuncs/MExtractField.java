@@ -43,6 +43,8 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public abstract class MExtractField extends TOverloadBase
 {
+    private static int MAX_YEAR = 9999;
+
     public static final TOverload INSTANCES[] = new TOverload[]
     {
         new MExtractField("YEAR", MDatetimes.DATE, Decoder.DATE)
@@ -50,36 +52,18 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) ymd[MDatetimes.YEAR_INDEX];
+                int ret = (int) ymd[MDatetimes.YEAR_INDEX];
+                return ret > MAX_YEAR ? -1 : ret; // mysql caps the output to [0, 9999]
             }
         },
         new MExtractField("QUARTER", MDatetimes.DATE, Decoder.DATE)
         {
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-            {
-                int val = inputs.get(0).getInt32();
-                long ymd[] = Decoder.DATE.decode(val);
-
-                // special case
-                // month of zero and a sensible value for day (in the range [0, 31] )
-                if (ymd != null
-                        && ymd[MDatetimes.MONTH_INDEX] == 0L
-                        && ymd[MDatetimes.DAY_INDEX] >= 0L
-                        && ymd[MDatetimes.DAY_INDEX] <= 31L)
-                    output.putInt32(0);
-                else if (!MDatetimes.isValidDatetime(ymd))
-                {
-                    context.warnClient(new InvalidParameterValueException("Invalid DATETIME value: " + val));
-                    output.putNull();
-                }
-                else
-                    output.putInt32(getField(ymd, context));
-            }
-
-            @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
+                if (MDatetimes.isZeroDayMonth(ymd))
+                    return 0;
+
                 int month = (int) ymd[MDatetimes.MONTH_INDEX];
 
                 if (month < 4) return 1;
@@ -107,10 +91,12 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                // mysql:  (1 = Sunday, 2 = Monday, …, 7 = Saturday
-                // joda    (7 = Sunday, 1 = mon, l...., 6 = Saturday
-                return MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfWeek()
-                       % 7 + 1;
+                return MDatetimes.isZeroDayMonth(ymd)
+                           ? -1
+                           // mysql:  (1 = Sunday, 2 = Monday, …, 7 = Saturday
+                           // joda    (7 = Sunday, 1 = mon, l...., 6 = Saturday
+                           : MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfWeek()
+                             % 7 + 1;
 
             }
         },
@@ -119,10 +105,11 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                
-                 //mysql: (0 = Monday, 1 = Tuesday, … 6 = Sunday).
-                 //joda:  mon = 1, ..., sat = 6, sun = 7
-                return MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfWeek() - 1;
+                return MDatetimes.isZeroDayMonth(ymd)
+                            ? -1
+                            //mysql: (0 = Monday, 1 = Tuesday, … 6 = Sunday).
+                            //joda:  mon = 1, ..., sat = 6, sun = 7
+                           : MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfWeek() - 1;
             }   
         },
         new MExtractField("LAST_DAY", MDatetimes.DATE, Decoder.DATE)
@@ -144,7 +131,9 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfYear();
+                return MDatetimes.isZeroDayMonth(ymd)
+                            ? -1
+                            : MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone()).getDayOfYear();
             }
         },
         new MExtractField("DAY", MDatetimes.DATE, Decoder.DATE) // day of month
@@ -166,7 +155,8 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
-                return (int) ymd[MDatetimes.HOUR_INDEX];
+                // select hour('-10:10:10') should just return 10
+                return Math.abs((int) ymd[MDatetimes.HOUR_INDEX]);
             }
         },
         new MExtractField("MINUTE", MDatetimes.TIME, Decoder.TIME)
@@ -198,7 +188,7 @@ public abstract class MExtractField extends TOverloadBase
             {
                 int date = inputs.get(0).getInt32();
                 long ymd[] = MDatetimes.decodeDate(date);
-                if (!MDatetimes.isValidDayMonth(ymd))
+                if (!MDatetimes.isValidDayMonth(ymd) || MDatetimes.isZeroDayMonth(ymd))
                 {
                     output.putNull();
                     context.warnClient(new InvalidDateFormatException("DATE", date + ""));
@@ -235,7 +225,7 @@ public abstract class MExtractField extends TOverloadBase
             {
                 int date = inputs.get(0).getInt32();
                 long ymd[] = MDatetimes.decodeDate(date);
-                if (!MDatetimes.isValidDayMonth(ymd))
+                if (!MDatetimes.isValidDayMonth(ymd) || MDatetimes.isZeroDayMonth(ymd))
                 {
                     output.putNull();
                     context.warnClient(new InvalidDateFormatException("DATE", date + ""));
@@ -327,14 +317,14 @@ public abstract class MExtractField extends TOverloadBase
     {
         int val = inputs.get(0).getInt32();
         long ymd[] = decoder.decode(val);
-
-        if (ymd == null)
+        int ret;
+        if (ymd == null || (ret = getField(ymd, context)) < 0)
         {
             context.warnClient(new InvalidParameterValueException("Invalid DATETIME value: " + val));
             output.putNull();
         }
         else
-            output.putInt32(getField(ymd, context));
+            output.putInt32(ret);
     }
 
     @Override

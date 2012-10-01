@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
@@ -41,8 +42,6 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 import com.google.common.collect.ObjectArrays;
 
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -92,7 +91,7 @@ public abstract class MLength extends TOverloadBase
             }
             catch (UnsupportedEncodingException ex) // impossible to happen
             {
-                Logger.getLogger(MLength.class.getName()).log(Level.WARNING, null, ex);
+                context.warnClient(new InvalidParameterValueException("Unknown CHARSET: " + charset));
                 output.putNull();
             }
         }
@@ -102,7 +101,7 @@ public abstract class MLength extends TOverloadBase
             return aliases;
         }
     }
-
+    
     private final String name;
 
     private MLength (String name)
@@ -127,6 +126,6 @@ public abstract class MLength extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT.instance());
+        return TOverloadResult.fixed(MNumeric.INT.instance(10));
     }
 }

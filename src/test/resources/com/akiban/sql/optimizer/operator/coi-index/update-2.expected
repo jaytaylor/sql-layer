@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Update_Default(items SET quan = items.quan, sku = 42)
+  Update_Returning(items SET quan = items.quan, sku = 42)
     Filter_Default(items)
       GroupScan_Default(customers)

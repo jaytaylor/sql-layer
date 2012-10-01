@@ -1,4 +1,4 @@
 PhysicalUpdate@3b58f1fa
-  Update_Default()
+  Update_Returning()
     AncestorLookup_Default(Index(test.items.sku) -> test.items)
       IndexScan_Default(Index(test.items.sku), sku = 'ABCD', orders.cid ASC, oid, iid)

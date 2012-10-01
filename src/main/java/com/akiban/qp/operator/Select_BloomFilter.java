@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
@@ -34,6 +33,9 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
@@ -108,7 +110,10 @@ class Select_BloomFilter extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context);
+        if (tFields == null)
+            return new Execution<ExpressionEvaluation>(context, fields, oldExpressionsAdapater);
+        else
+            return new Execution<TEvaluatableExpression>(context, tFields, newExpressionsAdapter);
     }
 
     @Override
@@ -128,18 +133,27 @@ class Select_BloomFilter extends Operator
     public Select_BloomFilter(Operator input,
                               Operator onPositive,
                               List<? extends Expression> fields,
+                              List<? extends TPreparedExpression> tFields,
                               List<AkCollator> collators,
                               int bindingPosition)
     {
         ArgumentValidation.notNull("input", input);
         ArgumentValidation.notNull("onPositive", onPositive);
-        ArgumentValidation.notNull("fields", fields);
-        ArgumentValidation.isGT("fields.size()", fields.size(), 0);
+        int size;
+        if (tFields == null) {
+            ArgumentValidation.notNull("fields", fields);
+            size = fields.size();
+        }
+        else {
+            size = tFields.size();
+        }
+        ArgumentValidation.isGT("fields.size()", size, 0);
         ArgumentValidation.isGTE("bindingPosition", bindingPosition, 0);
         this.input = input;
         this.onPositive = onPositive;
         this.bindingPosition = bindingPosition;
         this.fields = fields;
+        this.tFields = tFields;
         this.collators = collators;
     }
 
@@ -162,6 +176,7 @@ class Select_BloomFilter extends Operator
     private final Operator onPositive;
     private final int bindingPosition;
     private final List<? extends Expression> fields;
+    private final List<? extends TPreparedExpression> tFields;
     private final List<AkCollator> collators;
 
     @Override
@@ -171,15 +186,60 @@ class Select_BloomFilter extends Operator
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
         atts.put(Label.INPUT_OPERATOR, input.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, onPositive.getExplainer(context));
-        for (Expression field : fields) {
-            atts.put(Label.EXPRESSIONS, field.getExplainer(context));
+        if (tFields == null) {
+            for (Expression field : fields) {
+                atts.put(Label.EXPRESSIONS, field.getExplainer(context));
+            }
+        }
+        else {
+            for (TPreparedExpression field : tFields) {
+                atts.put(Label.EXPRESSIONS, field.getExplainer(context));
+            }
         }
         return new CompoundExplainer(Type.BLOOM_FILTER, atts);
     }
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private interface ExpressionAdapter<EXPR,EVAL> {
+        EVAL evaluate(EXPR expression, QueryContext contex);
+        int hash(StoreAdapter adapter, EVAL evaluation, Row row, AkCollator collator);
+    }
+
+    private static ExpressionAdapter<Expression, ExpressionEvaluation> oldExpressionsAdapater
+            = new ExpressionAdapter<Expression, ExpressionEvaluation>() {
+        @Override
+        public ExpressionEvaluation evaluate(Expression expression, QueryContext contex) {
+            ExpressionEvaluation eval = expression.evaluation();
+            eval.of(contex);
+            return eval;
+        }
+
+        @Override
+        public int hash(StoreAdapter adapter, ExpressionEvaluation evaluation, Row row, AkCollator collator) {
+            evaluation.of(row);
+            return ValueSourceHasher.hash(adapter, evaluation.eval(), collator);
+        }
+    };
+
+    private static ExpressionAdapter<TPreparedExpression, TEvaluatableExpression> newExpressionsAdapter
+            = new ExpressionAdapter<TPreparedExpression, TEvaluatableExpression>() {
+        @Override
+        public TEvaluatableExpression evaluate(TPreparedExpression expression, QueryContext contex) {
+            TEvaluatableExpression eval = expression.build();
+            eval.with(contex);
+            return eval;
+        }
+
+        @Override
+        public int hash(StoreAdapter adapter, TEvaluatableExpression evaluation, Row row, AkCollator collator) {
+            evaluation.with(row);
+            evaluation.evaluate();
+            return PValueSources.hash(evaluation.resultValue(), collator);
+        }
+    };
+
+    private class Execution<E> extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -261,14 +321,15 @@ class Select_BloomFilter extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context)
+        <EXPR> Execution(QueryContext context,
+                              List<? extends EXPR> expressions, ExpressionAdapter<EXPR,E> adapter)
         {
             super(context);
             this.inputCursor = input.cursor(context);
             this.onPositiveCursor = onPositive.cursor(context);
-            for (Expression field : fields) {
-                ExpressionEvaluation eval = field.evaluation();
-                eval.of(context);
+            this.adapter = adapter;
+            for (EXPR field : expressions) {
+                E eval = adapter.evaluate(field, context);
                 fieldEvals.add(eval);
             }
         }
@@ -279,9 +340,8 @@ class Select_BloomFilter extends Operator
         {
             int hash = 0;
             for (int f = 0; f < fieldEvals.size(); f++) {
-                ExpressionEvaluation fieldEval = fieldEvals.get(f);
-                fieldEval.of(row);
-                hash = hash ^ ValueSourceHasher.hash(adapter(), fieldEval.eval(), collator(f));
+                E fieldEval = fieldEvals.get(f);
+                hash = hash ^ adapter.hash(adapter(), fieldEval, row, collator(f));
             }
             return hash;
         }
@@ -314,7 +374,8 @@ class Select_BloomFilter extends Operator
         private final Cursor inputCursor;
         private final Cursor onPositiveCursor;
         private BloomFilter filter;
-        private final List<ExpressionEvaluation> fieldEvals = new ArrayList<ExpressionEvaluation>();
+        private final List<E> fieldEvals = new ArrayList<E>();
+        private final ExpressionAdapter<?, E> adapter;
         private boolean idle = true;
         private boolean destroyed = false;
     }

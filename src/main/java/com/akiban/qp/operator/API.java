@@ -772,20 +772,23 @@ public class API
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends Expression> filterFields,
+                                              List<? extends TPreparedExpression> tFilterFields,
                                               int bindingPosition)
     {
-        return select_BloomFilter(input, onPositive, filterFields, null, bindingPosition);
+        return select_BloomFilter(input, onPositive, filterFields, tFilterFields, null, bindingPosition);
     }
 
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends Expression> filterFields,
+                                              List<? extends TPreparedExpression> tFilterFields,
                                               List<AkCollator> collators,
                                               int bindingPosition)
     {
         return new Select_BloomFilter(input,
                                       onPositive,
                                       filterFields,
+                                      tFilterFields,
                                       collators,
                                       bindingPosition);
     }
@@ -801,6 +804,10 @@ public class API
         return new Insert_Default(inputOperator, usePVals);
     }
 
+    public static Operator insert_Returning (Operator inputOperator, boolean usePVals) 
+    {
+        return new Insert_Returning (inputOperator, usePVals);
+    }
 
     // Update
 
@@ -810,6 +817,13 @@ public class API
         return new Update_Default(inputOperator, updateFunction);
     }
     
+    public static Operator update_Returning (Operator inputOperator,
+                                            UpdateFunction updateFunction, 
+                                            boolean usePValues)
+    {
+        return new Update_Returning (inputOperator, updateFunction, usePValues);
+    }
+    
     // Delete
 
     public static UpdatePlannable delete_Default(Operator inputOperator, boolean usePValues)
@@ -817,6 +831,10 @@ public class API
         return new Delete_Default(inputOperator, usePValues);
     }
 
+    public static Operator delete_Returning (Operator inputOperator, boolean usePValues)
+    {
+        return new Delete_Returning(inputOperator, usePValues);
+    }
     // Execution interface
 
     public static Cursor cursor(Operator root, QueryContext context)

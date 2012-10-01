@@ -34,6 +34,9 @@ import java.util.List;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.error.*;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

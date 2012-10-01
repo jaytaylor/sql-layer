@@ -305,6 +305,7 @@ public class Select_BloomFilterIT extends OperatorITBase
                         Arrays.asList(
                             Expressions.field(dIndexRowType, 1),
                             Expressions.field(dIndexRowType, 2)),
+                        null,
                         // filterBindingPosition
                         0)),
                 dIndexRowType,

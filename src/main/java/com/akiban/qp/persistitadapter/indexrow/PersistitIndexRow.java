@@ -43,8 +43,11 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -97,10 +100,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     @Override
     public final PValueSource pvalue(int i)
     {
-        if (index.isSpatial()) {
-            throw new UnsupportedOperationException("Spatial indexes don't implement types3 yet");
-        }
-        PUnderlying underlying = rowType().typeInstanceAt(i).typeClass().underlyingType();
+        PUnderlying underlying = tInstances[i].typeClass().underlyingType();
         PersistitKeyPValueSource keySource = keyPSource(i, underlying);
         attach(keySource, i, underlying);
         return keySource;
@@ -142,23 +142,46 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
             // TODO: be done when we support function indexes. Until then, just deal with the differences using
             // TODO: brute force.
             // nPhysicalFields counts the z-value field plus the number of undeclared (hkey) columns.
-            this.akTypes = new AkType[nIndexFields];
-            this.akCollators = new AkCollator[nIndexFields];
-            this.akTypes[0] = AkType.LONG;
-            this.akCollators[0] = null;
+            if (Types3Switch.ON) {
+                this.akTypes = null;
+                this.akCollators = null;
+                this.tInstances = new TInstance[nIndexFields];
+                this.tInstances[0] = MNumeric.BIGINT.instance();
+            }
+            else {
+                this.akTypes = new AkType[nIndexFields];
+                this.akCollators = new AkCollator[nIndexFields];
+                this.akTypes[0] = AkType.LONG;
+                this.akCollators[0] = null;
+                this.tInstances = null;
+            }
             int physicalPosition = 1;
             int logicalPosition = index.getKeyColumns().size();
             while (physicalPosition < nIndexFields) {
                 IndexColumn indexColumn = index.getAllColumns().get(logicalPosition);
                 Column column = indexColumn.getColumn();
-                this.akTypes[physicalPosition] = column.getType().akType();
-                this.akCollators[physicalPosition] = column.getCollator();
+                if (Types3Switch.ON) {
+                    this.tInstances[physicalPosition] = column.tInstance();
+                } else {
+                    this.akTypes[physicalPosition] = column.getType().akType();
+                    this.akCollators[physicalPosition] = column.getCollator();
+                }
                 logicalPosition++;
                 physicalPosition++;
             }
         } else {
-            this.akTypes = index.akTypes();
-            this.akCollators = index.akCollators();
+            if (Types3Switch.ON) {
+                this.akTypes = null;
+                this.akCollators = null;
+                this.tInstances = new TInstance[nIndexFields];
+                for (int i = 0; i < nIndexFields; i++) {
+                    this.tInstances[i] = index.getAllColumns().get(i).getColumn().tInstance();
+                }
+            } else {
+                this.akTypes = index.akTypes();
+                this.akCollators = index.akCollators();
+                this.tInstances = null;
+            }
         }
     }
 
@@ -192,6 +215,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     private final IndexRowType indexRowType;
     private final AkType[] akTypes;
     private final AkCollator[] akCollators;
+    private final TInstance[] tInstances;
     private PersistitKeyValueSource[] keySources;
     private PersistitKeyPValueSource[] keyPSources;
 }

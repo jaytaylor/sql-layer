@@ -122,7 +122,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:x");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "x MCOMPAT_ INT(11) NULL");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "x MCOMPAT_ INTEGER(11) NULL");
         else
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "x int NULL");
     }
@@ -134,7 +134,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:v1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "v1 MCOMPAT_ VARCHAR(255", "UTF_8", "UCS_BINARY) NULL", "PRIMARY(aid)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "v1 MCOMPAT_ VARCHAR(255", "UTF8", "UCS_BINARY) NULL", "PRIMARY(aid)");
         else
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "v1 varchar(32) NULL", "PRIMARY(aid)");
     }
@@ -146,7 +146,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:x");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "x MCOMPAT_ INT(11) NOT NULL DEFAULT 0", "PRIMARY(aid)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "x MCOMPAT_ INTEGER(11) NOT NULL DEFAULT 0", "PRIMARY(aid)");
         else
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "x int NOT NULL DEFAULT 0", "PRIMARY(aid)");
     }
@@ -158,7 +158,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:d1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "c_c MCOMPAT_ BIGINT(21)", "d1 MCOMPAT_ DECIMAL(10, 3) NULL", "PRIMARY(id)");
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "c_c MCOMPAT_ BIGINT(21) NULL", "d1 MCOMPAT_ DECIMAL(10, 3) NULL", "PRIMARY(id)");
         else
             expectFinalTable(C_NAME, "id bigint NOT NULL", "c_c bigint NULL", "d1 decimal(10, 3) NULL", "PRIMARY(id)");
         expectUnchangedTables(O_NAME, I_NAME, A_NAME);
@@ -171,8 +171,8 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:f1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21)", "cid MCOMPAT_ BIGINT(21)", "o_o MCOMPAT_ BIGINT(21)",
-                             "f1 MCOMPAT_ FLOAT(-1, -1) NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
+                                     "f1 MCOMPAT_ FLOAT(-1, -1) NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         else
             expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "o_o bigint NULL", "f1 float NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
@@ -185,7 +185,9 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:d1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21)", "oid MCOMPAT_ BIGINT(21)", "i_i MCOMPAT_ BIGINT(21)", "d1 MCOMPAT_ DOUBLE(-1, -1) NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ BIGINT(21) NULL",
+                                     "i_i MCOMPAT_ BIGINT(21) NULL", "d1 MCOMPAT_ DOUBLE(-1, -1) NULL", "__akiban_fk2(oid)",
+                                     "PRIMARY(id)", "join(oid->id)");
         else
             expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "i_i bigint NULL", "d1 double NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
@@ -198,7 +200,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:new");
         expectIndexChanges();
         if (Types3Switch.ON) {
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "new MCOMPAT_ BIGINT(21)", "UNIQUE new(new)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "new MCOMPAT_ BIGINT(21) NOT NULL", "UNIQUE new(new)");
         } else {
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)");
         }
@@ -211,7 +213,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("ADD:new");
         expectIndexChanges("ADD:PRIMARY");
         if (Types3Switch.ON) {
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "new MCOMPAT_ BIGINT(21)", "UNIQUE new(new)", "PRIMARY(new)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "new MCOMPAT_ BIGINT(21) NOT NULL", "UNIQUE new(new)", "PRIMARY(new)");
         } else {
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)", "PRIMARY(new)");
         }
@@ -234,7 +236,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:aid");
         expectIndexChanges("DROP:PRIMARY");
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "x MCOMPAT_ BIGINT(21)");
+            expectFinalTable(A_NAME, "x MCOMPAT_ BIGINT(21) NULL");
         else
             expectFinalTable(A_NAME, "x bigint NULL");
     }
@@ -246,7 +248,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:x");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL");
         else
             expectFinalTable(A_NAME, "aid bigint NOT NULL");
     }
@@ -258,7 +260,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:v1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "PRIMARY(aid)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(aid)");
         else
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "PRIMARY(aid)");
     }
@@ -270,7 +272,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:c_c");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "PRIMARY(id)");
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(id)");
         else
             expectFinalTable(C_NAME, "id bigint NOT NULL", "PRIMARY(id)");
         expectUnchangedTables(O_NAME, I_NAME, A_NAME);
@@ -283,7 +285,8 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:o_o");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21)", "cid MCOMPAT_ BIGINT(21)", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL",
+                                     "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         else
             expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
@@ -296,7 +299,8 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:i_i");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21)", "oid MCOMPAT_ BIGINT(21)", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ BIGINT(21) NULL",
+                                     "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         else
             expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);
@@ -309,7 +313,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:c1");
         expectIndexChanges("DROP:c1");
         if(Types3Switch.ON)
-            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "PRIMARY(id)");
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "PRIMARY(id)");
         else
             expectFinalTable(C_NAME, "id bigint NOT NULL", "PRIMARY(id)");
     }
@@ -321,7 +325,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("DROP:c1");
         expectIndexChanges("MODIFY:c1_c2->c1_c2");
         if(Types3Switch.ON)
-            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "c2 MCOMPAT_ BIGINT(21)", "c1_c2(c2)", "PRIMARY(id)");
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ BIGINT(21) NULL", "c1_c2(c2)", "PRIMARY(id)");
         else
             expectFinalTable(C_NAME, "id bigint NOT NULL", "c2 bigint NULL", "c1_c2(c2)", "PRIMARY(id)");
     }
@@ -351,7 +355,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:c1->c1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) DEFAULT 42");
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NULL DEFAULT 42");
         else
             expectFinalTable(C_NAME, "c1 bigint NULL DEFAULT 42");
     }
@@ -364,7 +368,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:c1->c1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21)");
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NULL");
         else
             expectFinalTable(C_NAME, "c1 bigint NULL");
     }
@@ -388,7 +392,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:c1->c1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21)");
+            expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
         else
             expectFinalTable(C_NAME, "c1 bigint NOT NULL");
     }
@@ -411,8 +415,8 @@ public class AlterTableDDLTest {
         expectIndexChanges();
         // Do not check group and assume join removal handled at lower level (TableChangeValidator)
         if(Types3Switch.ON)
-            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ VARCHAR(32) NULL",
-                             "i_i MCOMPAT_ BIGINT(21) NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL",
+                                     "i_i MCOMPAT_ BIGINT(21) NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         else
             expectFinalTable(I_NAME, "id bigint NOT NULL", "oid varchar(32) NULL", "i_i bigint NULL", "__akiban_fk2(oid)",
                              "PRIMARY(id)", "join(oid->id)");
@@ -425,7 +429,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:aid->aid");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "PRIMARY(aid)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ INTEGER(11) NOT NULL", "PRIMARY(aid)");
         else
             expectFinalTable(A_NAME, "aid int NOT NULL", "PRIMARY(aid)");
     }
@@ -437,7 +441,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:x->x");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "x MCOMPAT_ VARCHAR(255, UTF_8, UCS_BINARY) NOT NULL");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "x MCOMPAT_ VARCHAR(255, UTF8, UCS_BINARY) NOT NULL");
         else
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "x varchar(32) NOT NULL"); // keeps NULL-ability
     }
@@ -449,7 +453,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:v1->v1");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21)", "v1 MCOMPAT_ INT(11) NULL", "PRIMARY(aid)");
+            expectFinalTable(A_NAME, "aid MCOMPAT_ BIGINT(21) NOT NULL", "v1 MCOMPAT_ INTEGER(11) NULL", "PRIMARY(aid)");
         else
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "v1 int NULL", "PRIMARY(aid)");
     }
@@ -461,7 +465,7 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:c_c->c_c");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21)", "c_c MCOMPAT_ DECIMAL(5, 2) NULL", "PRIMARY(id)");
+            expectFinalTable(C_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "c_c MCOMPAT_ DECIMAL(5, 2) NULL", "PRIMARY(id)");
         else
             expectFinalTable(C_NAME, "id bigint NOT NULL", "c_c decimal(5, 2) NULL", "PRIMARY(id)");
         expectUnchangedTables(O_NAME, I_NAME, A_NAME);
@@ -474,8 +478,9 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:o_o->o_o");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21)", "cid MCOMPAT_ BIGINT(21)", "o_o MCOMPAT_ VARCHAR(255, UTF_8, UCS_BINARY) NULL",
-                             "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
+            expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL",
+                                     "o_o MCOMPAT_ VARCHAR(255, UTF8, UCS_BINARY) NULL", "__akiban_fk1(cid)",
+                                     "PRIMARY(id)", "join(cid->id)");
         else
             expectFinalTable(O_NAME, "id bigint NOT NULL", "cid bigint NULL", "o_o varchar(10) NULL", "__akiban_fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
@@ -488,8 +493,8 @@ public class AlterTableDDLTest {
         expectColumnChanges("MODIFY:i_i->i_i");
         expectIndexChanges();
         if(Types3Switch.ON)
-            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21)", "oid MCOMPAT_ BIGINT(21)", "i_i MCOMPAT_ DOUBLE(-1, -1) NULL",
-                             "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
+            expectFinalTable(I_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "oid MCOMPAT_ BIGINT(21) NULL",
+                                     "i_i MCOMPAT_ DOUBLE(-1, -1) NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         else
             expectFinalTable(I_NAME, "id bigint NOT NULL", "oid bigint NULL", "i_i double NULL", "__akiban_fk2(oid)", "PRIMARY(id)", "join(oid->id)");
         expectUnchangedTables(C_NAME, O_NAME, A_NAME);

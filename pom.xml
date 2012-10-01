@@ -53,6 +53,11 @@
             <version>3.0</version>
         </dependency>
         <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-jdk1.5</artifactId>
+            <version>0.7.3</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.8.1</version>
@@ -305,6 +310,7 @@
                         <exclude>**/*.sql</exclude>
                         <exclude>**/*.tag</exclude>
                         <exclude>**/*.expected</exclude>
+                        <exclude>**/*.t3expected</exclude>
                         <exclude>**/*.error</exclude>
                         <exclude>**/*.dat</exclude>
                         <exclude>**/*.fail</exclude>

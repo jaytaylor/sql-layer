@@ -1,4 +1,4 @@
 PhysicalUpdate/STEP_ISOLATE
-  Update_Default(customers SET name = 'Smyth')
+  Update_Returning(customers SET name = 'Smyth')
     AncestorLookup_Default(Index(customers.name) -> customers)
       IndexScan_Default(Index(customers.name), name = 'Smith')

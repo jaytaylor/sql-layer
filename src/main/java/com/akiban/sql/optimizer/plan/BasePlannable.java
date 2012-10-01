@@ -26,9 +26,11 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.format.DefaultFormatter;
 import com.akiban.server.explain.format.JsonFormatter;
@@ -40,11 +42,18 @@ public abstract class BasePlannable extends BasePlanNode
 {
     private Plannable plannable;
     private DataTypeDescriptor[] parameterTypes;
+    private List<PhysicalResultColumn> resultColumns;
+    private RowType rowType;
+
     
     protected BasePlannable(Plannable plannable,
-                            DataTypeDescriptor[] parameterTypes) {
+                            DataTypeDescriptor[] parameterTypes,
+                            RowType rowType,
+                            List<PhysicalResultColumn> resultColumns) {
         this.plannable = plannable;
         this.parameterTypes = parameterTypes;
+        this.rowType = rowType;
+        this.resultColumns = resultColumns;
     }
 
     public Plannable getPlannable() {
@@ -52,6 +61,14 @@ public abstract class BasePlannable extends BasePlanNode
     }
     public DataTypeDescriptor[] getParameterTypes() {
         return parameterTypes;
+    }
+
+    public RowType getResultRowType() {
+        return rowType;
+    }
+
+    public List<PhysicalResultColumn> getResultColumns() {
+        return resultColumns;
     }
 
     public abstract boolean isUpdate();

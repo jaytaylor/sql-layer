@@ -27,10 +27,10 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
@@ -71,7 +71,13 @@ public class Coalesce extends TOverloadBase {
     }
 
     @Override
-    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
+    protected boolean nullContaminates(int inputIndex) {
+        return false;
+    }
+
+    @Override
+    protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+        PValueSource preptimeValue = constSource(values, inputIndex);
         if (preptimeValue == null)
             return Constantness.NOT_CONST;
         return preptimeValue.isNull() ? Constantness.UNKNOWN : Constantness.CONST;

@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TClass;
@@ -378,7 +379,7 @@ public final class PValueSources {
         }
     }
 
-    public static boolean areEqual(PValueSource one, PValueSource two) {
+    public static boolean areEqual(PValueSource one, PValueSource two, TInstance instance) {
         PUnderlying underlyingType = one.getUnderlyingType();
         if (underlyingType != two.getUnderlyingType())
             return false;
@@ -386,6 +387,10 @@ public final class PValueSources {
             return two.isNull();
         if (two.isNull())
             return false;
+        if (one.hasCacheValue() && two.hasCacheValue())
+            return one.getObject().equals(two.getObject());
+        ensureRawValue(one, instance);
+        ensureRawValue(two, instance);
         switch (underlyingType) {
         case BOOL:
             return one.getBoolean() == two.getBoolean();
@@ -412,14 +417,7 @@ public final class PValueSources {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T getCached(PValueSource source, TInstance tInstance, PValueCacher<? extends T> cacher) {
-        if (source.hasCacheValue())
-            return (T) source.getObject();
-        return cacher.valueToCache(source, tInstance);
-    }
-
-    public static int hash(PValueSource source) {
+    public static int hash(PValueSource source, AkCollator collator) {
         if (source.isNull())
             return 0;
         final long hash;
@@ -452,7 +450,7 @@ public final class PValueSources {
             hash = Arrays.hashCode(source.getBytes());
             break;
         case STRING:
-            hash = source.getString().hashCode();
+            hash = collator.hashCode(source.getString());
             break;
         default:
             throw new AssertionError(source.getUnderlyingType());
@@ -552,6 +550,21 @@ public final class PValueSources {
         StringBuilder sb = new StringBuilder();
         toStringSimple(source, sb);
         return sb.toString();
+    }
+
+    public static void ensureRawValue(PValueSource source, TInstance instance) {
+        if (!source.hasAnyValue())
+            throw new IllegalStateException("no value set");
+        if (!source.hasRawValue()) {
+            PValueCacher cacher = instance.typeClass().cacher();
+            if (cacher == null)
+                throw new IllegalArgumentException("no cacher for " + instance + " with value " + source);
+            if (source instanceof PValue) {
+                ((PValue)source).ensureRaw(cacher, instance);
+            }
+            else
+                throw new IllegalArgumentException("can't update value of type " + source.getClass());
+        }
     }
 
     public static abstract class ValueSourceConverter<T> {

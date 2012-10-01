@@ -88,7 +88,7 @@
 ---
 - Statement: SELECT MAX(double_field), MAX(float_field), MAX(real_field)
     FROM all_types
-- output: [[-Infinity, -Infinity, -Infinity]]
+- output: !select-engine { all: [[-Infinity, -Infinity, -Infinity]], newtypes: [[0.0, 0.0, 0.0]] }
 ---
 - Statement: INSERT INTO all_types (double_field, float_field, real_field)
     VALUES (1.0, 1.0, 1.0);
@@ -102,13 +102,13 @@
 ---
 - Statement: SELECT MAX(double_field), MAX(float_field), MAX(real_field)
     FROM all_types
-- output: [[Infinity, Infinity, Infinity]]
+- output: !select-engine { all: [[Infinity, Infinity, Infinity]], newtypes: [[1.0, 1.0, 1.0]] }
 ---
 - Statement: INSERT INTO all_types (double_field, float_field, real_field)
     VALUES ('NaN', 'NaN', 'NaN')
 ---
 - Statement: SELECT MAX(double_field), MAX(float_field), MAX(real_field)
     FROM all_types
-- output: [[NaN, NaN, NaN]]
+- output: !select-engine { all: [[NaN, NaN, NaN]], newtypes: [[1.0, 1.0, 1.0]] }
 
 ...
