@@ -267,6 +267,11 @@ public class AkibanInformationSchema implements Traversable
         return procedures;
     }
     
+    public Procedure getProcedure(final String schemaName, final String procedureName)
+    {
+        return getProcedure(new TableName(schemaName, procedureName));
+    }
+    
     public Procedure getProcedure(final TableName procedureName)
     {
         return procedures.get(procedureName);

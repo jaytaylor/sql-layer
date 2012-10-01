@@ -482,16 +482,16 @@ public class ProtobufReaderWriterTest {
     public void procedureJava() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.procedure("PROC1")
-            .language("JAVA", Procedure.CallingConvention.JAVA)
+            .language("java", Procedure.CallingConvention.JAVA)
             .paramLongIn("x1")
             .paramLongIn("x2")
             .paramDoubleOut("d")
             .externalName("myjar", "com.acme.Procs", "proc1");
         
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
-        Procedure proc = inAIS.getProcedure(new TableName(SCHEMA, "PROC1"));
+        Procedure proc = inAIS.getProcedure(SCHEMA, "PROC1");
         
-        assertEquals("JAVA", proc.getLanguage());
+        assertEquals("java", proc.getLanguage());
         assertEquals(Procedure.CallingConvention.JAVA, proc.getCallingConvention());
         assertEquals(3, proc.getParameters().size());
         assertEquals("x1", proc.getParameters().get(0).getName());
@@ -509,13 +509,13 @@ public class ProtobufReaderWriterTest {
     public void procedureLoadablePlan() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.procedure("PROC2")
-            .language("JAVA", Procedure.CallingConvention.LOADABLE_PLAN)
+            .language("java", Procedure.CallingConvention.LOADABLE_PLAN)
             .externalName("myjar", "com.acme.Procs", "proc1");
         
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
-        Procedure proc = inAIS.getProcedure(new TableName(SCHEMA, "PROC2"));
+        Procedure proc = inAIS.getProcedure(SCHEMA, "PROC2");
         
-        assertEquals("JAVA", proc.getLanguage());
+        assertEquals("java", proc.getLanguage());
         assertEquals(Procedure.CallingConvention.LOADABLE_PLAN, proc.getCallingConvention());
         assertEquals(0, proc.getParameters().size());
     }
