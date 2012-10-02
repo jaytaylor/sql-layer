@@ -278,42 +278,42 @@ public class AISBuilder {
         }
     }
 
-    public void procedure(String schemaName, String procedureName,
-                          String language, Procedure.CallingConvention callingConvention) {
-        LOG.info("procedure: {}.{} ", schemaName, procedureName);
-        Procedure procedure = Procedure.create(ais, schemaName, procedureName,
+    public void routine(String schemaName, String routineName,
+                        String language, Routine.CallingConvention callingConvention) {
+        LOG.info("routine: {}.{} ", schemaName, routineName);
+        Routine routine = Routine.create(ais, schemaName, routineName,
                                                language, callingConvention);
     }
     
-    public void parameter(String schemaName, String procedureName, 
+    public void parameter(String schemaName, String routineName, 
                           String parameterName, Parameter.Direction direction, 
                           String typeName, Long typeParameter1, Long typeParameter2) {
-        LOG.info("parameter: {} {}", concat(schemaName, procedureName), parameterName);
-        Procedure procedure = ais.getProcedure(new TableName(schemaName, procedureName));
-        checkFound(procedure, "creating parameter", "procedure", 
-                   concat(schemaName, procedureName));
+        LOG.info("parameter: {} {}", concat(schemaName, routineName), parameterName);
+        Routine routine = ais.getRoutine(new TableName(schemaName, routineName));
+        checkFound(routine, "creating parameter", "routine", 
+                   concat(schemaName, routineName));
         Type type = ais.getType(typeName);
         checkFound(type, "creating parameter", "type", typeName);
-        Parameter parameter = Parameter.create(procedure, parameterName, direction,
+        Parameter parameter = Parameter.create(routine, parameterName, direction,
                                                type, typeParameter1, typeParameter2);
     }
 
-    public void procedureExternalName(String schemaName, String procedureName,
-                                      String jarName, String className, String methodName) {
-        LOG.info("external name: {} {}", concat(schemaName, procedureName), concat(jarName, className, methodName));
-        Procedure procedure = ais.getProcedure(new TableName(schemaName, procedureName));
-        checkFound(procedure, "external name", "procedure", 
-                   concat(schemaName, procedureName));
-        procedure.setExternalName(jarName, className, methodName);
+    public void routineExternalName(String schemaName, String routineName,
+                                    String jarName, String className, String methodName) {
+        LOG.info("external name: {} {}", concat(schemaName, routineName), concat(jarName, className, methodName));
+        Routine routine = ais.getRoutine(new TableName(schemaName, routineName));
+        checkFound(routine, "external name", "routine", 
+                   concat(schemaName, routineName));
+        routine.setExternalName(jarName, className, methodName);
     }
 
-    public void procedureDefinition(String schemaName, String procedureName,
-                                    String definition) {
-        LOG.info("external name: {} {}", concat(schemaName, procedureName), definition);
-        Procedure procedure = ais.getProcedure(new TableName(schemaName, procedureName));
-        checkFound(procedure, "external name", "procedure", 
-                   concat(schemaName, procedureName));
-        procedure.setDefinition(definition);
+    public void routineDefinition(String schemaName, String routineName,
+                                  String definition) {
+        LOG.info("external name: {} {}", concat(schemaName, routineName), definition);
+        Routine routine = ais.getRoutine(new TableName(schemaName, routineName));
+        checkFound(routine, "external name", "routine", 
+                   concat(schemaName, routineName));
+        routine.setDefinition(definition);
     }
 
     public void basicSchemaIsComplete() {

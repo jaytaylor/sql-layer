@@ -27,13 +27,13 @@ package com.akiban.sql.aisddl;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.InvalidProcedureException;
-import com.akiban.server.error.NoSuchProcedureException;
+import com.akiban.server.error.InvalidRoutineException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateAliasNode;
 import com.akiban.sql.parser.DropAliasNode;
@@ -41,37 +41,37 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.RoutineAliasInfo;
 import java.sql.ParameterMetaData;
 
-public class ProcedureDDL {
-    private ProcedureDDL() { }
+public class RoutineDDL {
+    private RoutineDDL() { }
     
-    public static void createProcedure(DDLFunctions ddlFunctions,
-                                       Session session,
-                                       String defaultSchemaName,
-                                       CreateAliasNode createProcedure) {
-        RoutineAliasInfo aliasInfo = (RoutineAliasInfo)createProcedure.getAliasInfo();
-        TableName tableName = DDLHelper.convertName(defaultSchemaName, createProcedure.getObjectName());
+    public static void createRoutine(DDLFunctions ddlFunctions,
+                                     Session session,
+                                     String defaultSchemaName,
+                                     CreateAliasNode createAlias) {
+        RoutineAliasInfo aliasInfo = (RoutineAliasInfo)createAlias.getAliasInfo();
+        TableName tableName = DDLHelper.convertName(defaultSchemaName, createAlias.getObjectName());
         String schemaName = tableName.getSchemaName();
-        String procedureName = tableName.getTableName();
+        String routineName = tableName.getTableName();
         String language = aliasInfo.getLanguage();
-        Procedure.CallingConvention callingConvention;
+        Routine.CallingConvention callingConvention;
         if (language.equalsIgnoreCase("JAVA")) {
             switch (aliasInfo.getParameterStyle()) {
             case JAVA:
-                callingConvention = Procedure.CallingConvention.JAVA;
+                callingConvention = Routine.CallingConvention.JAVA;
                 break;
             case AKIBAN_LOADABLE_PLAN:
-                callingConvention = Procedure.CallingConvention.LOADABLE_PLAN;
+                callingConvention = Routine.CallingConvention.LOADABLE_PLAN;
                 break;
             default:
-                throw new InvalidProcedureException(schemaName, procedureName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
+                throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
             }
         }
         else {
-            throw new InvalidProcedureException(schemaName, procedureName, "unsupported LANGUAGE " + language);
+            throw new InvalidRoutineException(schemaName, routineName, "unsupported LANGUAGE " + language);
         }
         AISBuilder builder = new AISBuilder();
-        builder.procedure(schemaName, procedureName,
-                          language, callingConvention);
+        builder.routine(schemaName, routineName,
+                        language, callingConvention);
         
         Long[] typeParameters = new Long[2];
         for (int i = 0; i < aliasInfo.getParameterCount(); i++) {
@@ -90,52 +90,52 @@ public class ProcedureDDL {
                 break;
             }
             Type builderType = TableDDL.columnType(aliasInfo.getParameterTypes()[i], typeParameters,
-                                                   schemaName, procedureName, parameterName);
-            builder.parameter(schemaName, procedureName,
+                                                   schemaName, routineName, parameterName);
+            builder.parameter(schemaName, routineName,
                               parameterName, direction,
                               builderType.name(), typeParameters[0], typeParameters[1]);
         }
         
         if (aliasInfo.getReturnType() != null) {
             Type builderType = TableDDL.columnType(aliasInfo.getReturnType(), typeParameters,
-                                                   schemaName, procedureName, "return value");
-            builder.parameter(schemaName, procedureName,
+                                                   schemaName, routineName, "return value");
+            builder.parameter(schemaName, routineName,
                               null, Parameter.Direction.RETURN,
                               builderType.name(), typeParameters[0], typeParameters[1]);
         }
 
-        if (createProcedure.getJavaClassName() != null) {
+        if (createAlias.getJavaClassName() != null) {
             String jarName = null;
-            String className = createProcedure.getJavaClassName();
-            String methodName = createProcedure.getMethodName();
+            String className = createAlias.getJavaClassName();
+            String methodName = createAlias.getMethodName();
             int idx = className.indexOf(':');
             if (idx >= 0) {
                 jarName = className.substring(0, idx);
                 className = className.substring(idx + 1, className.length());
             }
-            builder.procedureExternalName(schemaName, procedureName,
+            builder.routineExternalName(schemaName, routineName,
                                           jarName, className, methodName);
         }
-        else if (createProcedure.getDefinition() != null) {
-            builder.procedureDefinition(schemaName, procedureName, 
-                                        createProcedure.getDefinition());
+        else if (createAlias.getDefinition() != null) {
+            builder.routineDefinition(schemaName, routineName, 
+                                      createAlias.getDefinition());
         }
 
-        Procedure procedure = builder.akibanInformationSchema().getProcedure(tableName);
-        ddlFunctions.createProcedure(session, procedure);
+        Routine routine = builder.akibanInformationSchema().getRoutine(tableName);
+        ddlFunctions.createRoutine(session, routine);
     }
 
-    public static void dropProcedure(DDLFunctions ddlFunctions,
-                                     Session session,
-                                     String defaultSchemaName,
-                                     DropAliasNode dropProcedure,
-                                     QueryContext context) {
-        TableName procedureName = DDLHelper.convertName(defaultSchemaName, dropProcedure.getObjectName());
-        Procedure procedure = ddlFunctions.getAIS(session).getProcedure(procedureName);
+    public static void dropRoutine(DDLFunctions ddlFunctions,
+                                   Session session,
+                                   String defaultSchemaName,
+                                   DropAliasNode dropRoutine,
+                                   QueryContext context) {
+        TableName routineName = DDLHelper.convertName(defaultSchemaName, dropRoutine.getObjectName());
+        Routine routine = ddlFunctions.getAIS(session).getRoutine(routineName);
         
-        if (procedure == null) {
-            throw new NoSuchProcedureException(procedureName);
+        if (routine == null) {
+            throw new NoSuchRoutineException(routineName);
         } 
-        ddlFunctions.dropProcedure(session, procedureName);
+        ddlFunctions.dropRoutine(session, routineName);
     }
 }

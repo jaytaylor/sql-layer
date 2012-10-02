@@ -114,7 +114,7 @@ public class AISDDL
             switch (((CreateAliasNode)ddl).getAliasType()) {
             case PROCEDURE:
             case FUNCTION:
-                ProcedureDDL.createProcedure(ddlFunctions, session, schema, (CreateAliasNode)ddl);
+                RoutineDDL.createRoutine(ddlFunctions, session, schema, (CreateAliasNode)ddl);
                 return;
             }
             break;
@@ -122,7 +122,7 @@ public class AISDDL
             switch (((DropAliasNode)ddl).getAliasType()) {
             case PROCEDURE:
             case FUNCTION:
-                ProcedureDDL.dropProcedure(ddlFunctions, session, schema, (DropAliasNode)ddl, context);
+                RoutineDDL.dropRoutine(ddlFunctions, session, schema, (DropAliasNode)ddl, context);
                 return;
             }
             break;

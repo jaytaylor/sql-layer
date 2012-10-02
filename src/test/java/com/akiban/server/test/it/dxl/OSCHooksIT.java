@@ -30,7 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -299,14 +299,14 @@ public class OSCHooksIT extends AlterTableITBase {
         }
 
         @Override
-        public void createProcedure(Session session, Procedure procedure) {
-            delegate.createProcedure(session, procedure);
+        public void createRoutine(Session session, Routine routine) {
+            delegate.createRoutine(session, routine);
         
         }
 
         @Override
-        public void dropProcedure(Session session, TableName procedureName) {
-            delegate.dropProcedure(session, procedureName);
+        public void dropRoutine(Session session, TableName routineName) {
+            delegate.dropRoutine(session, routineName);
         }
     }
 

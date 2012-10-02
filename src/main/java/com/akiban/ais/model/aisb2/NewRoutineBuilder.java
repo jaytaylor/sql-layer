@@ -24,17 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.error;
+package com.akiban.ais.model.aisb2;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Routine.CallingConvention;
 
-public final class DuplicateProcedureNameException extends InvalidOperationException {
-    public DuplicateProcedureNameException(TableName name) {
-        super(ErrorCode.DUPLICATE_PROCEDURE, name.getSchemaName(), name.getTableName());
-    }
+public interface NewRoutineBuilder {
+    NewRoutineBuilder language(String language, CallingConvention callingConvention);
     
-    public DuplicateProcedureNameException(String schemaName, String procedureName)
-    {
-        super(ErrorCode.DUPLICATE_PROCEDURE, schemaName, procedureName);
-    }
+    NewRoutineBuilder paramLongIn(String name);
+
+    NewRoutineBuilder paramStringIn(String name, int length);
+
+    NewRoutineBuilder paramDoubleIn(String name);
+    
+    NewRoutineBuilder paramLongOut(String name);
+
+    NewRoutineBuilder paramStringOut(String name, int length);
+
+    NewRoutineBuilder paramDoubleOut(String name);
+    
+    NewRoutineBuilder externalName(String jarName, String className, String methodName);
+
+    NewRoutineBuilder procDef(String definition);
 }

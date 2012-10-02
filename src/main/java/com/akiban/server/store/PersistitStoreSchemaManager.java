@@ -53,7 +53,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.View;
@@ -65,7 +65,7 @@ import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.DuplicateProcedureNameException;
+import com.akiban.server.error.DuplicateRoutineNameException;
 import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.DuplicateViewException;
@@ -75,7 +75,7 @@ import com.akiban.server.error.JoinColumnTypesMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
-import com.akiban.server.error.NoSuchProcedureException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.PersistitAdapterException;
@@ -589,25 +589,25 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public void createProcedure(Session session, Procedure procedure) {
+    public void createRoutine(Session session, Routine routine) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(procedure.getName(), false);
-        if (oldAIS.getProcedure(procedure.getName()) != null)
-            throw new DuplicateProcedureNameException(procedure.getName());
-        AkibanInformationSchema newAIS = AISMerge.mergeProcedure(oldAIS, procedure);
-        final String schemaName = procedure.getName().getSchemaName();
+        checkAISSchema(routine.getName(), false);
+        if (oldAIS.getRoutine(routine.getName()) != null)
+            throw new DuplicateRoutineNameException(routine.getName());
+        AkibanInformationSchema newAIS = AISMerge.mergeRoutine(oldAIS, routine);
+        final String schemaName = routine.getName().getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
     
     @Override
-    public void dropProcedure(Session session, TableName procedureName) {
+    public void dropRoutine(Session session, TableName routineName) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(procedureName, false);
-        if (oldAIS.getProcedure(procedureName) == null)
-            throw new NoSuchProcedureException(procedureName);
+        checkAISSchema(routineName, false);
+        if (oldAIS.getRoutine(routineName) == null)
+            throw new NoSuchRoutineException(routineName);
         final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
-        newAIS.removeProcedure(procedureName);
-        final String schemaName = procedureName.getSchemaName();
+        newAIS.removeRoutine(routineName);
+        final String schemaName = routineName.getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
 

@@ -28,7 +28,7 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -155,32 +155,32 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createProcedure(Session session, Procedure procedure) {
+    public void createRoutine(Session session, Routine routine) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunction.CREATE_PROCEDURE);
-            delegate.createProcedure(session, procedure);
+            hook.hookFunctionIn(session, DXLFunction.CREATE_ROUTINE);
+            delegate.createRoutine(session, routine);
         }catch (Throwable t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.CREATE_PROCEDURE, t);
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_ROUTINE, t);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunction.CREATE_PROCEDURE, thrown);
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_ROUTINE, thrown);
         }
     }
 
     @Override
-    public void dropProcedure(Session session, TableName procedureName) {
+    public void dropRoutine(Session session, TableName routineName) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunction.DROP_PROCEDURE);
-            delegate.dropProcedure(session, procedureName);
+            hook.hookFunctionIn(session, DXLFunction.DROP_ROUTINE);
+            delegate.dropRoutine(session, routineName);
         } catch (Throwable t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.DROP_PROCEDURE, t);
+            hook.hookFunctionCatch(session, DXLFunction.DROP_ROUTINE, t);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunction.DROP_PROCEDURE, thrown);
+            hook.hookFunctionFinally(session, DXLFunction.DROP_ROUTINE, thrown);
         }
     }
 

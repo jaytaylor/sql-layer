@@ -34,14 +34,14 @@ public class Parameter
 {
     public static enum Direction { IN, OUT, INOUT, RETURN };
 
-    public static Parameter create(Procedure procedure, String name, Direction direction,
+    public static Parameter create(Routine routine, String name, Direction direction,
                                    Type type, Long typeParameter1, Long typeParameter2)
     {
-        procedure.checkMutability();
+        routine.checkMutability();
         AISInvariants.checkNullName(name, "parameter", "parameter name");
-        AISInvariants.checkDuplicateParametersInProcedure(procedure, name, direction);
-        Parameter parameter = new Parameter(procedure, name, direction, type, typeParameter1, typeParameter2);
-        procedure.addParameter(parameter);
+        AISInvariants.checkDuplicateParametersInRoutine(routine, name, direction);
+        Parameter parameter = new Parameter(routine, name, direction, type, typeParameter1, typeParameter2);
+        routine.addParameter(parameter);
         return parameter;
     }
 
@@ -78,9 +78,9 @@ public class Parameter
         return parameterType.toString();
     }
 
-    public Procedure getProcedure()
+    public Routine getRoutine()
     {
-        return procedure;
+        return routine;
     }
 
     public Direction getDirection()
@@ -108,14 +108,14 @@ public class Parameter
         return typeParameter2;
     }
 
-    private Parameter(Procedure procedure,
+    private Parameter(Routine routine,
                       String name,
                       Direction direction,
                       Type type,
                       Long typeParameter1,
                       Long typeParameter2)
     {
-        this.procedure = procedure;
+        this.routine = routine;
         this.name = name;
         this.direction = direction;
         this.type = type;
@@ -134,7 +134,7 @@ public class Parameter
 
     // State
 
-    private final Procedure procedure;
+    private final Routine routine;
     private final String name;
     private final Direction direction;
     private final Type type;

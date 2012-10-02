@@ -659,10 +659,10 @@ public class AISMerge {
         return newAIS;
     }    
 
-    public static AkibanInformationSchema mergeProcedure(AkibanInformationSchema oldAIS,
-                                                         Procedure procedure) {
+    public static AkibanInformationSchema mergeRoutine(AkibanInformationSchema oldAIS,
+                                                       Routine routine) {
         AkibanInformationSchema newAIS = copyAISForAdd(oldAIS);
-        newAIS.addProcedure(procedure);
+        newAIS.addRoutine(routine);
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;

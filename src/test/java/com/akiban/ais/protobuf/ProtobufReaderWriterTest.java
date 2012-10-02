@@ -36,7 +36,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -482,17 +482,17 @@ public class ProtobufReaderWriterTest {
     public void procedureJava() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.procedure("PROC1")
-            .language("java", Procedure.CallingConvention.JAVA)
+            .language("java", Routine.CallingConvention.JAVA)
             .paramLongIn("x1")
             .paramLongIn("x2")
             .paramDoubleOut("d")
             .externalName("myjar", "com.acme.Procs", "proc1");
         
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
-        Procedure proc = inAIS.getProcedure(SCHEMA, "PROC1");
+        Routine proc = inAIS.getRoutine(SCHEMA, "PROC1");
         
         assertEquals("java", proc.getLanguage());
-        assertEquals(Procedure.CallingConvention.JAVA, proc.getCallingConvention());
+        assertEquals(Routine.CallingConvention.JAVA, proc.getCallingConvention());
         assertEquals(3, proc.getParameters().size());
         assertEquals("x1", proc.getParameters().get(0).getName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(0).getDirection());
@@ -509,14 +509,14 @@ public class ProtobufReaderWriterTest {
     public void procedureLoadablePlan() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.procedure("PROC2")
-            .language("java", Procedure.CallingConvention.LOADABLE_PLAN)
+            .language("java", Routine.CallingConvention.LOADABLE_PLAN)
             .externalName("myjar", "com.acme.Procs", "proc1");
         
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
-        Procedure proc = inAIS.getProcedure(SCHEMA, "PROC2");
+        Routine proc = inAIS.getRoutine(SCHEMA, "PROC2");
         
         assertEquals("java", proc.getLanguage());
-        assertEquals(Procedure.CallingConvention.LOADABLE_PLAN, proc.getCallingConvention());
+        assertEquals(Routine.CallingConvention.LOADABLE_PLAN, proc.getCallingConvention());
         assertEquals(0, proc.getParameters().size());
     }
 

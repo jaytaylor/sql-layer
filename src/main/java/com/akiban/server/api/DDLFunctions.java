@@ -31,7 +31,7 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -249,14 +249,14 @@ public interface DDLFunctions {
     void dropSequence(Session session, TableName sequenceName);
     
     /**
-     * Create a stored procedure.
-     * @param procedure Procedure to create.
+     * Create a stored routine.
+     * @param routine Routine to create.
      */
-    void createProcedure(Session session, Procedure procedure);
+    void createRoutine(Session session, Routine routine);
     
     /**
-     * Drop a stored procedure.
-     * @param procedureName Procedure to drop
+     * Drop a stored routine.
+     * @param routineName Routine to drop
      */
-    void dropProcedure(Session session, TableName procedureName);
+    void dropRoutine(Session session, TableName routineName);
 }

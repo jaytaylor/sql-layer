@@ -23,27 +23,17 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.error;
 
-package com.akiban.ais.model.aisb2;
+import com.akiban.ais.model.TableName;
 
-import com.akiban.ais.model.Procedure.CallingConvention;
-
-public interface NewProcedureBuilder {
-    NewProcedureBuilder language(String language, CallingConvention callingConvention);
+public class NoSuchRoutineException extends BaseSQLException {
+    public NoSuchRoutineException(String schemaName, String routineName) {
+        super(ErrorCode.NO_SUCH_ROUTINE, schemaName, routineName, null);
+    }
     
-    NewProcedureBuilder paramLongIn(String name);
+    public NoSuchRoutineException(TableName routineName) {
+        super(ErrorCode.NO_SUCH_ROUTINE, routineName.getSchemaName(), routineName.getTableName(), null);
+    }
 
-    NewProcedureBuilder paramStringIn(String name, int length);
-
-    NewProcedureBuilder paramDoubleIn(String name);
-    
-    NewProcedureBuilder paramLongOut(String name);
-
-    NewProcedureBuilder paramStringOut(String name, int length);
-
-    NewProcedureBuilder paramDoubleOut(String name);
-    
-    NewProcedureBuilder externalName(String jarName, String className, String methodName);
-
-    NewProcedureBuilder procDef(String definition);
 }

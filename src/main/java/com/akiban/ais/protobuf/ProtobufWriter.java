@@ -37,7 +37,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
@@ -64,7 +64,7 @@ public class ProtobufWriter {
         /** Called for all GroupIndexes and all table indexes where getSelected(UserTable) is not null **/
         boolean isSelected(Index index);
         boolean isSelected(Sequence sequence);
-        boolean isSelected(Procedure procedure);
+        boolean isSelected(Routine routine);
     }
 
     public static final WriteSelector ALL_SELECTOR = new WriteSelector() {
@@ -94,7 +94,7 @@ public class ProtobufWriter {
         }
 
         @Override
-        public boolean isSelected(Procedure procedure) {
+        public boolean isSelected(Routine routine) {
             return true;
         }
     };
@@ -121,7 +121,7 @@ public class ProtobufWriter {
         }
 
         @Override
-        public boolean isSelected(Procedure procedure) {
+        public boolean isSelected(Routine routine) {
             return true;
         }
     }
@@ -172,8 +172,8 @@ public class ProtobufWriter {
         }
         
         @Override 
-        public boolean isSelected(Procedure procedure) {
-            return schemaName.equals(procedure.getName().getSchemaName());
+        public boolean isSelected(Routine routine) {
+            return schemaName.equals(routine.getName().getSchemaName());
         }
     }
 
@@ -295,9 +295,9 @@ public class ProtobufWriter {
             }
         }
 
-        for (Procedure procedure : schema.getProcedures().values()) {
-            if (selector.isSelected (procedure)) { 
-                writeProcedure(schemaBuilder, procedure);
+        for (Routine routine : schema.getRoutines().values()) {
+            if (selector.isSelected (routine)) { 
+                writeRoutine(schemaBuilder, routine);
                 isEmpty = false;
             }
         }
@@ -593,21 +593,21 @@ public class ProtobufWriter {
         schemaBuilder.addSequences (sequenceBuilder.build());
     }
 
-    private static void writeProcedure(AISProtobuf.Schema.Builder schemaBuilder, Procedure procedure) {
-        AISProtobuf.Procedure.Builder procedureBuilder = AISProtobuf.Procedure.newBuilder()
-            .setProcedureName(procedure.getName().getTableName())
-            .setLanguage(procedure.getLanguage())
-            .setCallingConvention(convertProcedureCallingConvention(procedure.getCallingConvention()));
-        for (Parameter parameter : procedure.getParameters()) {
-            writeParameter(procedureBuilder, parameter);
+    private static void writeRoutine(AISProtobuf.Schema.Builder schemaBuilder, Routine routine) {
+        AISProtobuf.Routine.Builder routineBuilder = AISProtobuf.Routine.newBuilder()
+            .setRoutineName(routine.getName().getTableName())
+            .setLanguage(routine.getLanguage())
+            .setCallingConvention(convertRoutineCallingConvention(routine.getCallingConvention()));
+        for (Parameter parameter : routine.getParameters()) {
+            writeParameter(routineBuilder, parameter);
         }
-        if (procedure.getReturnValue() != null) {
-            writeParameter(procedureBuilder, procedure.getReturnValue());
+        if (routine.getReturnValue() != null) {
+            writeParameter(routineBuilder, routine.getReturnValue());
         }
-        schemaBuilder.addProcedures(procedureBuilder.build());
+        schemaBuilder.addRoutines(routineBuilder.build());
     }
 
-    private static void writeParameter(AISProtobuf.Procedure.Builder procedureBuilder, Parameter parameter) {
+    private static void writeParameter(AISProtobuf.Routine.Builder routineBuilder, Parameter parameter) {
         AISProtobuf.Parameter.Builder parameterBuilder = AISProtobuf.Parameter.newBuilder()
             .setParameterName(parameter.getName())
             .setDirection(convertParameterDirection(parameter.getDirection()))
@@ -618,16 +618,16 @@ public class ProtobufWriter {
         if (parameter.getTypeParameter2() != null) {
             parameterBuilder.setTypeParam2(parameter.getTypeParameter2());
         }
-        procedureBuilder.addParameters(parameterBuilder.build());
+        routineBuilder.addParameters(parameterBuilder.build());
     }
 
-    private static AISProtobuf.ProcedureCallingConvention convertProcedureCallingConvention(Procedure.CallingConvention procedureCallingConvention) {
-        switch (procedureCallingConvention) {
+    private static AISProtobuf.RoutineCallingConvention convertRoutineCallingConvention(Routine.CallingConvention routineCallingConvention) {
+        switch (routineCallingConvention) {
         case JAVA:
         default:
-            return AISProtobuf.ProcedureCallingConvention.JAVA;
+            return AISProtobuf.RoutineCallingConvention.JAVA;
         case LOADABLE_PLAN:
-            return AISProtobuf.ProcedureCallingConvention.LOADABLE_PLAN;
+            return AISProtobuf.RoutineCallingConvention.LOADABLE_PLAN;
         }
     }
 

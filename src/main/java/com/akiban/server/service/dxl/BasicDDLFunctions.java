@@ -44,7 +44,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -89,7 +89,7 @@ import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.NoSuchProcedureException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
@@ -943,15 +943,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void createProcedure(Session session, Procedure procedure)
+    public void createRoutine(Session session, Routine routine)
     {
-        schemaManager().createProcedure(session, procedure);
+        schemaManager().createRoutine(session, routine);
     }
 
     @Override
-    public void dropProcedure(Session session, TableName procedureName)
+    public void dropRoutine(Session session, TableName routineName)
     {
-        schemaManager().dropProcedure(session, procedureName);
+        schemaManager().dropRoutine(session, routineName);
     }
 
     private void checkCursorsForDDLModification(Session session, Table table) {

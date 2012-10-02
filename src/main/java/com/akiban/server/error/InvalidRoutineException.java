@@ -23,17 +23,14 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
+
 package com.akiban.server.error;
 
-import com.akiban.ais.model.TableName;
-
-public class NoSuchProcedureException extends BaseSQLException {
-    public NoSuchProcedureException(String schemaName, String procedureName) {
-        super(ErrorCode.NO_SUCH_PROCEDURE, schemaName, procedureName, null);
+public class InvalidRoutineException extends InvalidOperationException
+{
+    public InvalidRoutineException(String schemaName, String routineName, String msg)
+    {
+        super(ErrorCode.INVALID_ROUTINE, schemaName, routineName, msg);
     }
-    
-    public NoSuchProcedureException(TableName procedureName) {
-        super(ErrorCode.NO_SUCH_PROCEDURE, procedureName.getSchemaName(), procedureName.getTableName(), null);
-    }
-
 }

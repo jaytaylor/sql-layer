@@ -40,7 +40,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -160,7 +160,7 @@ public class ProtobufReader {
             // Requires no tables, does not load indexes
             loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
             loadViews(pbSchema.getSchemaName(), pbSchema.getViewsList());
-            loadProcedures(pbSchema.getSchemaName(), pbSchema.getProceduresList());
+            loadRoutines(pbSchema.getSchemaName(), pbSchema.getRoutinesList());
         }
 
         // Assume no ordering of schemas or tables, load joins and view refs second
@@ -462,25 +462,25 @@ public class ProtobufReader {
         return Index.KEY_CONSTRAINT;
     }
 
-    private void loadProcedures(String schema, Collection<AISProtobuf.Procedure> pbProcedures) {
-        for (AISProtobuf.Procedure pbProcedure : pbProcedures) {
-            hasRequiredFields(pbProcedure);
-            Procedure procedure = Procedure.create(
+    private void loadRoutines(String schema, Collection<AISProtobuf.Routine> pbRoutines) {
+        for (AISProtobuf.Routine pbRoutine : pbRoutines) {
+            hasRequiredFields(pbRoutine);
+            Routine routine = Routine.create(
                     destAIS,
                     schema,
-                    pbProcedure.getProcedureName(),
-                    pbProcedure.getLanguage(),
-                    convertProcedureCallingConvention(pbProcedure.getCallingConvention())
+                    pbRoutine.getRoutineName(),
+                    pbRoutine.getLanguage(),
+                    convertRoutineCallingConvention(pbRoutine.getCallingConvention())
             );
-            loadParameters(procedure, pbProcedure.getParametersList());
+            loadParameters(routine, pbRoutine.getParametersList());
         }
     }
 
-    private void loadParameters(Procedure procedure, Collection<AISProtobuf.Parameter> pbParameters) {
+    private void loadParameters(Routine routine, Collection<AISProtobuf.Parameter> pbParameters) {
         for (AISProtobuf.Parameter pbParameter : pbParameters) {
             hasRequiredFields(pbParameter);
             Parameter parameter = Parameter.create(
-                procedure,
+                routine,
                 pbParameter.getParameterName(),
                 convertParameterDirection(pbParameter.getDirection()),
                 destAIS.getType(pbParameter.getTypeName()),
@@ -490,13 +490,13 @@ public class ProtobufReader {
         }
     }
 
-    private static Procedure.CallingConvention convertProcedureCallingConvention(AISProtobuf.ProcedureCallingConvention procedureCallingConvention) {
-        switch (procedureCallingConvention) {
+    private static Routine.CallingConvention convertRoutineCallingConvention(AISProtobuf.RoutineCallingConvention routineCallingConvention) {
+        switch (routineCallingConvention) {
         case JAVA:
         default:
-            return Procedure.CallingConvention.JAVA;
+            return Routine.CallingConvention.JAVA;
         case LOADABLE_PLAN: 
-            return Procedure.CallingConvention.LOADABLE_PLAN;
+            return Routine.CallingConvention.LOADABLE_PLAN;
         }
     }
 
@@ -607,7 +607,7 @@ public class ProtobufReader {
                 AISProtobuf.Schema.GROUPS_FIELD_NUMBER,
                 AISProtobuf.Schema.SEQUENCES_FIELD_NUMBER,
                 AISProtobuf.Schema.VIEWS_FIELD_NUMBER,
-                AISProtobuf.Schema.PROCEDURES_FIELD_NUMBER,
+                AISProtobuf.Schema.ROUTINES_FIELD_NUMBER,
                 AISProtobuf.Schema.CHARCOLL_FIELD_NUMBER
         );
     }
@@ -704,18 +704,18 @@ public class ProtobufReader {
         );
     }
 
-    private static void hasRequiredFields (AISProtobuf.Procedure pbProcedure) {
+    private static void hasRequiredFields (AISProtobuf.Routine pbRoutine) {
         requireAllFieldsExcept(
-                pbProcedure,
-                AISProtobuf.Procedure.PARAMETERS_FIELD_NUMBER,
-                AISProtobuf.Procedure.JARNAME_FIELD_NUMBER,
-                AISProtobuf.Procedure.CLASSNAME_FIELD_NUMBER,
-                AISProtobuf.Procedure.METHODNAME_FIELD_NUMBER,
-                AISProtobuf.Procedure.DEFINITION_FIELD_NUMBER,
-                AISProtobuf.Procedure.DESCRIPTION_FIELD_NUMBER,
-                AISProtobuf.Procedure.PROTECTED_FIELD_NUMBER,
-                AISProtobuf.Procedure.SQLALLOWED_FIELD_NUMBER,
-                AISProtobuf.Procedure.DYNAMICRESULTSETS_FIELD_NUMBER
+                pbRoutine,
+                AISProtobuf.Routine.PARAMETERS_FIELD_NUMBER,
+                AISProtobuf.Routine.JARNAME_FIELD_NUMBER,
+                AISProtobuf.Routine.CLASSNAME_FIELD_NUMBER,
+                AISProtobuf.Routine.METHODNAME_FIELD_NUMBER,
+                AISProtobuf.Routine.DEFINITION_FIELD_NUMBER,
+                AISProtobuf.Routine.DESCRIPTION_FIELD_NUMBER,
+                AISProtobuf.Routine.PROTECTED_FIELD_NUMBER,
+                AISProtobuf.Routine.SQLALLOWED_FIELD_NUMBER,
+                AISProtobuf.Routine.DYNAMICRESULTSETS_FIELD_NUMBER
         );
     }
 

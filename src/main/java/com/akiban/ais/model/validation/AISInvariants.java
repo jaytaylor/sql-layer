@@ -32,7 +32,7 @@ import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.AISNullReferenceException;
@@ -41,7 +41,7 @@ import com.akiban.server.error.DuplicateGroupNameException;
 import com.akiban.server.error.DuplicateIndexColumnException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateParameterNameException;
-import com.akiban.server.error.DuplicateProcedureNameException;
+import com.akiban.server.error.DuplicateRoutineNameException;
 import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NameIsNullException;
@@ -122,23 +122,23 @@ public class AISInvariants {
         }
     }    
 
-    public static void checkDuplicateProcedure(AkibanInformationSchema ais, String schemaName, String procedureName)
+    public static void checkDuplicateRoutine(AkibanInformationSchema ais, String schemaName, String routineName)
     {
-        if (ais.getProcedure(new TableName(schemaName, procedureName)) != null) {
-            throw new DuplicateProcedureNameException(new TableName(schemaName, procedureName));
+        if (ais.getRoutine(new TableName(schemaName, routineName)) != null) {
+            throw new DuplicateRoutineNameException(new TableName(schemaName, routineName));
         }
     }
     
-    public static void checkDuplicateParametersInProcedure(Procedure procedure, String parameterName, Parameter.Direction direction)
+    public static void checkDuplicateParametersInRoutine(Routine routine, String parameterName, Parameter.Direction direction)
     {
         if (direction == Parameter.Direction.RETURN) {
-            if (procedure.getReturnValue() != null) {
-                throw new DuplicateParameterNameException(procedure.getName(), "return value");
+            if (routine.getReturnValue() != null) {
+                throw new DuplicateParameterNameException(routine.getName(), "return value");
             }
         }
         else {
-            if (procedure.getNamedParameter(parameterName) != null) {
-                throw new DuplicateParameterNameException(procedure.getName(), parameterName);
+            if (routine.getNamedParameter(parameterName) != null) {
+                throw new DuplicateParameterNameException(routine.getName(), parameterName);
             }
         }
     }

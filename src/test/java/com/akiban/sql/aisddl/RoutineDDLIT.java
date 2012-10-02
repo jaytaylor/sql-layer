@@ -40,14 +40,14 @@ import java.sql.SQLException;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Procedure;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.sql.pg.PostgresServerITBase;
 
 import java.util.Collection;
 
-public class ProcedureDDLIT extends PostgresServerITBase {
+public class RoutineDDLIT extends PostgresServerITBase {
     private Statement stmt;
 
     @Before
@@ -63,10 +63,10 @@ public class ProcedureDDLIT extends PostgresServerITBase {
     @Test
     public void testCreateJava() throws Exception {
         stmt.executeUpdate("CREATE PROCEDURE proca(IN x INT, OUT d DOUBLE) LANGUAGE JAVA PARAMETER STYLE JAVA EXTERNAL NAME 'ajar:com.acme.Procs.aproc'");
-        Procedure proc = ddl().getAIS(session()).getProcedure(SCHEMA_NAME, "proca");
+        Routine proc = ddl().getAIS(session()).getRoutine(SCHEMA_NAME, "proca");
         assertNotNull(proc);
         assertEquals("java", proc.getLanguage());
-        assertEquals(Procedure.CallingConvention.JAVA, proc.getCallingConvention());
+        assertEquals(Routine.CallingConvention.JAVA, proc.getCallingConvention());
         assertEquals(2, proc.getParameters().size());
         assertEquals("x", proc.getParameters().get(0).getName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(0).getDirection());
@@ -84,10 +84,10 @@ public class ProcedureDDLIT extends PostgresServerITBase {
     @Test
     public void testDropExists() throws Exception {
         stmt.executeUpdate("CREATE PROCEDURE procb() LANGUAGE JAVA PARAMETER STYLE JAVA EXTERNAL NAME 'ajar:com.acme.Procs.bproc'");
-        assertNotNull(ddl().getAIS(session()).getProcedure(SCHEMA_NAME, "procb"));
+        assertNotNull(ddl().getAIS(session()).getRoutine(SCHEMA_NAME, "procb"));
 
         stmt.executeUpdate("DROP PROCEDURE procb");
-        assertNull(ddl().getAIS(session()).getProcedure(SCHEMA_NAME, "procb"));
+        assertNull(ddl().getAIS(session()).getRoutine(SCHEMA_NAME, "procb"));
     }
 
 }

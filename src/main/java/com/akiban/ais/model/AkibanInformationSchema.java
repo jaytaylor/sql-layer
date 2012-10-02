@@ -262,19 +262,19 @@ public class AkibanInformationSchema implements Traversable
         return sequences.get(sequenceName);
     }
     
-    public Map<TableName, Procedure> getProcedures()
+    public Map<TableName, Routine> getRoutines()
     {
-        return procedures;
+        return routines;
     }
     
-    public Procedure getProcedure(final String schemaName, final String procedureName)
+    public Routine getRoutine(final String schemaName, final String routineName)
     {
-        return getProcedure(new TableName(schemaName, procedureName));
+        return getRoutine(new TableName(schemaName, routineName));
     }
     
-    public Procedure getProcedure(final TableName procedureName)
+    public Routine getRoutine(final TableName routineName)
     {
-        return procedures.get(procedureName);
+        return routines.get(routineName);
     }
     
     public CharsetAndCollation getCharsetAndCollation()
@@ -413,18 +413,18 @@ public class AkibanInformationSchema implements Traversable
         schema.addSequence(seq);
     }
     
-    public void addProcedure(Procedure procedure)
+    public void addRoutine(Routine routine)
     {
-        TableName procedureName = procedure.getName();
-        procedures.put(procedureName, procedure);
+        TableName routineName = routine.getName();
+        routines.put(routineName, routine);
 
         // TODO: Create on demand until Schema is more of a first class citizen
-        Schema schema = getSchema(procedureName.getSchemaName());
+        Schema schema = getSchema(routineName.getSchemaName());
         if (schema == null) {
-            schema = new Schema(procedureName.getSchemaName());
+            schema = new Schema(routineName.getSchemaName());
             addSchema(schema);
         }
-        schema.addProcedure(procedure);
+        schema.addRoutine(routine);
     }
     
     public void deleteGroupAndGroupTable(Group group)
@@ -684,11 +684,11 @@ public class AkibanInformationSchema implements Traversable
         }
     }
 
-    public void removeProcedure(TableName name) {
-        procedures.remove(name);
+    public void removeRoutine(TableName name) {
+        routines.remove(name);
         Schema schema = getSchema(name.getSchemaName());
         if (schema != null) {
-            schema.removeProcedure(name.getTableName());
+            schema.removeRoutine(name.getTableName());
         }
     }
 
@@ -710,7 +710,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
     private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
     private final Map<TableName, View> views = new TreeMap<TableName, View>();
-    private final Map<TableName, Procedure> procedures = new TreeMap<TableName, Procedure>();
+    private final Map<TableName, Routine> routines = new TreeMap<TableName, Routine>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();

@@ -75,9 +75,9 @@ public interface NewAISBuilder extends NewAISProvider {
      * @param procedure
      * @return
      */
-    NewProcedureBuilder procedure(String procedure);
+    NewRoutineBuilder procedure(String procedure);
 
-    NewProcedureBuilder procedure(String schema, String procedure);
+    NewRoutineBuilder procedure(String schema, String procedure);
 
-    NewProcedureBuilder procedure(TableName procedureName);
+    NewRoutineBuilder procedure(TableName procedureName);
 }

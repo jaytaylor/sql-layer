@@ -26,31 +26,31 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.server.error.InvalidProcedureException;
+import com.akiban.server.error.InvalidRoutineException;
 
 import java.util.*;
 
-public class Procedure 
+public class Routine 
 {
     public static enum CallingConvention {
         JAVA, LOADABLE_PLAN
     }
 
-    public static Procedure create(AkibanInformationSchema ais, 
-                                   String schemaName, String name,
-                                   String language, CallingConvention callingConvention) {
-        Procedure procedure = new Procedure(ais, schemaName, name, language, callingConvention);
-        ais.addProcedure(procedure);
-        return procedure; 
+    public static Routine create(AkibanInformationSchema ais, 
+                                 String schemaName, String name,
+                                 String language, CallingConvention callingConvention) {
+        Routine routine = new Routine(ais, schemaName, name, language, callingConvention);
+        ais.addRoutine(routine);
+        return routine; 
     }
     
-    protected Procedure(AkibanInformationSchema ais,
-                        String schemaName, String name,
-                        String language, CallingConvention callingConvention) {
+    protected Routine(AkibanInformationSchema ais,
+                      String schemaName, String name,
+                      String language, CallingConvention callingConvention) {
         ais.checkMutability();
-        AISInvariants.checkNullName(schemaName, "Procedure", "schema name");
-        AISInvariants.checkNullName(name, "Procedure", "table name");
-        AISInvariants.checkDuplicateProcedure(ais, schemaName, name);
+        AISInvariants.checkNullName(schemaName, "Routine", "schema name");
+        AISInvariants.checkNullName(name, "Routine", "table name");
+        AISInvariants.checkDuplicateRoutine(ais, schemaName, name);
         
         this.ais = ais;
         this.name = new TableName(schemaName, name);
@@ -121,16 +121,16 @@ public class Procedure
 
     protected void setExternalName(String jarName, String className, String methodName) {
         checkMutability();
-        AISInvariants.checkNullName(className, "Procedure", "class name");
+        AISInvariants.checkNullName(className, "Routine", "class name");
         switch (callingConvention) {
         case JAVA:
-            AISInvariants.checkNullName(methodName, "Procedure", "method name");
+            AISInvariants.checkNullName(methodName, "Routine", "method name");
             break;
         case LOADABLE_PLAN:
             break;
         default:
-            throw new InvalidProcedureException(name.getSchemaName(), name.getTableName(), 
-                                                "EXTERNAL NAME not allowed for " + callingConvention);
+            throw new InvalidRoutineException(name.getSchemaName(), name.getTableName(), 
+                                              "EXTERNAL NAME not allowed for " + callingConvention);
         }
         this.jarName = jarName;
         this.className = className;
@@ -142,8 +142,8 @@ public class Procedure
         switch (callingConvention) {
         case JAVA:
         case LOADABLE_PLAN:
-            throw new InvalidProcedureException(name.getSchemaName(), name.getTableName(), 
-                                                "AS not allowed for " + callingConvention);
+            throw new InvalidRoutineException(name.getSchemaName(), name.getTableName(), 
+                                              "AS not allowed for " + callingConvention);
         }
         this.definition = definition;
     }

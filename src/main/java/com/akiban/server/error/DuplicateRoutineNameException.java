@@ -24,13 +24,17 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-
 package com.akiban.server.error;
 
-public class InvalidProcedureException extends InvalidOperationException
-{
-    public InvalidProcedureException(String schemaName, String procedureName, String msg)
+import com.akiban.ais.model.TableName;
+
+public final class DuplicateRoutineNameException extends InvalidOperationException {
+    public DuplicateRoutineNameException(TableName name) {
+        super(ErrorCode.DUPLICATE_ROUTINE, name.getSchemaName(), name.getTableName());
+    }
+    
+    public DuplicateRoutineNameException(String schemaName, String routineName)
     {
-        super(ErrorCode.INVALID_PROCEDURE, schemaName, procedureName, msg);
+        super(ErrorCode.DUPLICATE_ROUTINE, schemaName, routineName);
     }
 }
