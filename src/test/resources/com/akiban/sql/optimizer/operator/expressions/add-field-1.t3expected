@@ -1,0 +1,3 @@
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NOT NULL]
+  Project_Default(1 + customers.cid)
+    IndexScan_Default(Index(customers.PRIMARY), cid)

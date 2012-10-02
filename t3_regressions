@@ -27,9 +27,10 @@ else
     echo "Skipping tests run."
 fi
 
-BASE=$(dirname $(readlink -f $0))
-FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -r 's/testYaml \[([^]]*).*/\1/' | sort)
-FAILDIFF=$(diff --suppress-common-lines <(echo "$KNOWN_FAILURES") <(echo "$FAILED"))
+BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+FAILURES_FILE=$BASE/src/test/resources/com/akiban/sql/pg/yaml/newtypes-failures
+FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sort)
+FAILDIFF=$(echo "$FAILED" | diff --suppress-common-lines $FAILURES_FILE -)
 REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
 FIXES=$(echo "$FAILDIFF" | grep '<')
 RESULT="neither"
