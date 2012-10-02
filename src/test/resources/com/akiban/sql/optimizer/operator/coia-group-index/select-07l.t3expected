@@ -1,0 +1,3 @@
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NOT NULL, _SQL_COL_2:MCOMPAT_ VARCHAR(5, UTF8, -1) NOT NULL]
+  Project_Default(1, 'hello')
+    IndexScan_Default(Index(.customers.sku_and_date), items.sku = '1234', orders.order_date > DATE '2011-01-01')
