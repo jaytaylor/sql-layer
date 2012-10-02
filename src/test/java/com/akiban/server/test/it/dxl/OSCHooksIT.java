@@ -32,6 +32,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -307,6 +308,21 @@ public class OSCHooksIT extends AlterTableITBase {
         @Override
         public void dropRoutine(Session session, TableName routineName) {
             delegate.dropRoutine(session, routineName);
+        }
+
+        @Override
+        public void createSQLJJar(Session session, SQLJJar sqljJar) {
+            delegate.createSQLJJar(session, sqljJar);
+        }
+    
+        @Override
+        public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
+            delegate.replaceSQLJJar(session, sqljJar);
+        }
+    
+        @Override
+        public void dropSQLJJar(Session session, TableName jarName) {
+            delegate.dropSQLJJar(session, jarName);
         }
     }
 

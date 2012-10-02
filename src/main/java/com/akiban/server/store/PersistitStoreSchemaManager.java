@@ -55,6 +55,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
@@ -67,6 +68,7 @@ import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateRoutineNameException;
 import com.akiban.server.error.DuplicateSequenceNameException;
+import com.akiban.server.error.DuplicateSQLJJarNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
@@ -77,11 +79,13 @@ import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
+import com.akiban.server.error.NoSuchSQLJJarException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
+import com.akiban.server.error.ReferencedSQLJJarException;
 import com.akiban.server.error.TableNotInGroupException;
 import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.error.UnsupportedMetadataTypeException;
@@ -594,7 +598,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         checkAISSchema(routine.getName(), false);
         if (oldAIS.getRoutine(routine.getName()) != null)
             throw new DuplicateRoutineNameException(routine.getName());
-        AkibanInformationSchema newAIS = AISMerge.mergeRoutine(oldAIS, routine);
+        final AkibanInformationSchema newAIS = AISMerge.mergeRoutine(oldAIS, routine);
         final String schemaName = routine.getName().getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
@@ -603,11 +607,58 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public void dropRoutine(Session session, TableName routineName) {
         final AkibanInformationSchema oldAIS = getAis();
         checkAISSchema(routineName, false);
-        if (oldAIS.getRoutine(routineName) == null)
+        Routine routine = oldAIS.getRoutine(routineName);
+        if (routine == null)
             throw new NoSuchRoutineException(routineName);
         final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        routine = newAIS.getRoutine(routineName);
         newAIS.removeRoutine(routineName);
+        if (routine.getSQLJJar() != null)
+            routine.getSQLJJar().removeRoutine(routine); // Keep accurate in memory.
         final String schemaName = routineName.getSchemaName();
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+    }
+
+    @Override
+    public void createSQLJJar(Session session, SQLJJar sqljJar) {
+        final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(sqljJar.getName(), false);
+        if (oldAIS.getSQLJJar(sqljJar.getName()) != null)
+            throw new DuplicateSQLJJarNameException(sqljJar.getName());
+        final AkibanInformationSchema newAIS = AISMerge.mergeSQLJJar(oldAIS, sqljJar);
+        final String schemaName = sqljJar.getName().getSchemaName();
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+    }
+    
+    @Override
+    public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
+        final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(sqljJar.getName(), false);
+        SQLJJar oldJar = oldAIS.getSQLJJar(sqljJar.getName());
+        if (sqljJar == null)
+            throw new NoSuchSQLJJarException(sqljJar.getName());
+        final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        // Changing old state rather than actually replacing saves having to find
+        // referencing routines, possibly in other schemas.
+        oldJar = newAIS.getSQLJJar(sqljJar.getName());
+        assert (oldJar != null);
+        oldJar.setURL(sqljJar.getURL());
+        final String schemaName = sqljJar.getName().getSchemaName();
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+    }
+    
+    @Override
+    public void dropSQLJJar(Session session, TableName jarName) {
+        final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(jarName, false);
+        SQLJJar sqljJar = oldAIS.getSQLJJar(jarName);
+        if (sqljJar == null)
+            throw new NoSuchSQLJJarException(jarName);
+        if (!sqljJar.getRoutines().isEmpty())
+            throw new ReferencedSQLJJarException(sqljJar);
+        final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        newAIS.removeSQLJJar(jarName);
+        final String schemaName = jarName.getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
 

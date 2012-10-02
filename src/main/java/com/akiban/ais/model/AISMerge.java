@@ -667,4 +667,13 @@ public class AISMerge {
         newAIS.freeze();
         return newAIS;
     }
+
+    public static AkibanInformationSchema mergeSQLJJar(AkibanInformationSchema oldAIS,
+                                                       SQLJJar sqljJar) {
+        AkibanInformationSchema newAIS = copyAISForAdd(oldAIS);
+        newAIS.addSQLJJar(sqljJar);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
 }

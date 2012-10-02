@@ -278,6 +278,7 @@ public enum ErrorCode {
     // Class 46 - SQL/J
     INVALID_SQLJ_JAR_URL    ("46", "001", Importance.DEBUG, InvalidSQLJJarURLException.class),
     DUPLICATE_SQLJ_JAR      ("46", "002", Importance.DEBUG, DuplicateSQLJJarNameException.class),
+    REFERENCED_SQLJ_JAR     ("46", "003", Importance.DEBUG, ReferencedSQLJJarException.class),
     NO_SUCH_SQLJ_JAR        ("46", "00B", Importance.DEBUG, NoSuchSQLJJarException.class),
 
     // Class 50 - DDL definition failure

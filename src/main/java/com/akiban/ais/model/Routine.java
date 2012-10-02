@@ -87,7 +87,7 @@ public class Routine
         return callingConvention;
     }
 
-    public SQLJJar getSQJJar() {
+    public SQLJJar getSQLJJar() {
         return sqljJar;
     }
 
@@ -133,6 +133,8 @@ public class Routine
                                               "EXTERNAL NAME not allowed for " + callingConvention);
         }
         this.sqljJar = sqljJar;
+        if (sqljJar != null)
+            sqljJar.addRoutine(this);
         this.className = className;
         this.methodName = methodName;
     }

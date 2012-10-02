@@ -277,7 +277,7 @@ public class AkibanInformationSchema implements Traversable
         return routines.get(routineName);
     }
     
-    public Map<String, SQLJJar> getSQLJJars() {
+    public Map<TableName, SQLJJar> getSQLJJars() {
         return sqljJars;
     }
     
@@ -289,14 +289,6 @@ public class AkibanInformationSchema implements Traversable
     public SQLJJar getSQLJJar(final TableName name)
     {
         return sqljJars.get(name);
-    }
-    
-    void addSQLJJar(SQLJJar sqljJar) {
-        sqljJars.put(sqljJar.getName().getTableName(), sqljJar);
-    }
-    
-    void removeSQLJJar(String sqljJarName) {
-        sqljJars.remove(sqljJarName);
     }
     
     public CharsetAndCollation getCharsetAndCollation()
@@ -449,6 +441,19 @@ public class AkibanInformationSchema implements Traversable
         schema.addRoutine(routine);
     }
     
+    public void addSQLJJar(SQLJJar sqljJar) {
+        TableName jarName = sqljJar.getName();
+        sqljJars.put(jarName, sqljJar);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(jarName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(jarName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addSQLJJar(sqljJar);
+    }
+
     public void deleteGroupAndGroupTable(Group group)
     {
         Group removedGroup = groups.remove(group.getName());
@@ -722,6 +727,14 @@ public class AkibanInformationSchema implements Traversable
         }
     }
 
+    public void removeSQLJJar(TableName jarName) {
+        sqljJars.remove(jarName);
+        Schema schema = getSchema(jarName.getSchemaName());
+        if (schema != null) {
+            schema.removeRoutine(jarName.getTableName());
+        }
+    }
+
     // State
 
     private static String defaultCharset = "utf8";
@@ -733,7 +746,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
     private final Map<TableName, View> views = new TreeMap<TableName, View>();
     private final Map<TableName, Routine> routines = new TreeMap<TableName, Routine>();
-    private final Map<String, SQLJJar> sqljJars = new TreeMap<String, SQLJJar>();
+    private final Map<TableName, SQLJJar> sqljJars = new TreeMap<TableName, SQLJJar>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();

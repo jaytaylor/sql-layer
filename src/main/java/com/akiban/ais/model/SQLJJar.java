@@ -76,7 +76,11 @@ public class SQLJJar
         routines.add(routine);
     }
 
-    protected void setURL(URL url) {
+    public void removeRoutine(Routine routine) {
+        routines.remove(routine);
+    }
+
+    public void setURL(URL url) {
         checkMutability();
         this.url = url;
     }
@@ -86,5 +90,5 @@ public class SQLJJar
     protected final AkibanInformationSchema ais;
     protected final TableName name;
     protected URL url;
-    protected final Collection<Routine> routines = new ArrayList<Routine>();
+    protected transient final Collection<Routine> routines = new ArrayList<Routine>();
 }

@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -185,7 +186,22 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public void dropRoutine(Session session, TableName routineName) {
+    public void dropRoutine(Session session, TableName procedureName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void createSQLJJar(Session session, SQLJJar sqljJar) {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public void dropSQLJJar(Session session, TableName jarName) {
         throw new UnsupportedOperationException();
     }
 }

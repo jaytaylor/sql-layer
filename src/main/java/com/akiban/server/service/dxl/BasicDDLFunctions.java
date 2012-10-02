@@ -46,6 +46,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -952,6 +953,21 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void dropRoutine(Session session, TableName routineName)
     {
         schemaManager().dropRoutine(session, routineName);
+    }
+
+    @Override
+    public void createSQLJJar(Session session, SQLJJar sqljJar) {
+        schemaManager().createSQLJJar(session, sqljJar);
+    }
+    
+    @Override
+    public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
+        schemaManager().replaceSQLJJar(session, sqljJar);
+    }
+    
+    @Override
+    public void dropSQLJJar(Session session, TableName jarName) {
+        schemaManager().dropSQLJJar(session, jarName);
     }
 
     private void checkCursorsForDDLModification(Session session, Table table) {
