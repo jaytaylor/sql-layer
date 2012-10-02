@@ -28,9 +28,9 @@ else
 fi
 
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-FAILURES_FILE=$BASE/src/test/resources/com/akiban/sql/pg/yaml/newtypes-failures
-FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sort)
-FAILDIFF=$(echo "$FAILED" | diff --suppress-common-lines $FAILURES_FILE -)
+# the sed of '-' -> 'ZZZ' -> '-' is to ensure stable sorting across OSes
+FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sed 's/-/ZZZ/g' | sort | sed 's/ZZZ/-/g')
+FAILDIFF=$(echo "$FAILED" | diff --suppress-common-lines <(echo "$KNOWN_FAILURES") <(echo "$FAILED"))
 REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
 FIXES=$(echo "$FAILDIFF" | grep '<')
 RESULT="neither"
