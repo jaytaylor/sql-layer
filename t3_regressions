@@ -22,7 +22,7 @@ else
     echo "Getting known failures from nighthawk."
     KNOWN_FAILURES=$(wget -qO - http://172.16.20.117/t3-regressions/known-failures)
 fi
-if [ -n "$OUT_FILE" ] && [ "$OUT_FILE" != "$KNOWN_FAILURES" ]; then
+if [ -n "$OUT_FILE" ] && [ "$OUT_FILE" != "$INPUT_FAILURES" ]; then
     echo "...outputting to $OUT_FILE"
     echo "$KNOWN_FAILURES" > $OUT_FILE
 fi
@@ -40,7 +40,8 @@ fi
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # the sed of '-' -> 'ZZZ' -> '-' is to ensure stable sorting across OSes
 FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sed 's/-/ZZZ/g' | sort | sed 's/ZZZ/-/g')
-FAILDIFF=$(echo "$FAILED" | diff --suppress-common-lines -C 0 <(echo "$KNOWN_FAILURES") <(echo "$FAILED"))
+FAILDIFF=$(echo "$FAILED" | diff <(echo "$KNOWN_FAILURES") <(echo "$FAILED"))
+echo "$FAILDIFF"
 REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
 FIXES=$(echo "$FAILDIFF" | grep '<')
 RESULT="neither"
@@ -60,7 +61,6 @@ fi
 echo "Fixes:       $FIXES_COUNT"
 echo "Regressions: $REGRESSIONS_COUNT"
 
-EXIT_CODE=1
 if [ "$RESULT" = "fixes" ] && [ -n "$OUT_FILE" ]; then
     if [ -n "$FAILED" ]; then
         echo "Updating expected failures file with $(echo "$FAILED" | wc -l) failures"
@@ -69,7 +69,7 @@ if [ "$RESULT" = "fixes" ] && [ -n "$OUT_FILE" ]; then
     fi
     echo "$FAILED" > $OUT_FILE
 elif [ "$RESULT" = "neither" ]; then
-    EXIT_CODE=0
     echo "No fixes or regressions."
 fi
+EXIT_CODE=$([ -n "$FAILED" ])
 exit $EXIT_CODE
