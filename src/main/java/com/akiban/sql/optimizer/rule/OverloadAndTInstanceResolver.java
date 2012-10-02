@@ -512,7 +512,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleExistsCondition(ExistsCondition expression) {
-            return boolExpr(expression);
+            return boolExpr(expression, true);
         }
 
         ExpressionNode handleSubqueryValueExpression(SubqueryValueExpression expression) {
@@ -539,7 +539,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleAnyCondition(AnyCondition expression) {
-            return boolExpr(expression);
+            return boolExpr(expression, true);
         }
 
         ExpressionNode handleComparisonCondition(ComparisonCondition expression) {
@@ -592,7 +592,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
             }
 
-            return boolExpr(expression);
+            return boolExpr(expression, isNullable(left) || isNullable(right));
+        }
+
+        private boolean isNullable(ExpressionNode node) {
+            return tinst(node).nullability();
         }
 
         ExpressionNode handleColumnExpression(ColumnExpression expression) {
@@ -651,12 +655,22 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleInListCondition(InListCondition expression) {
-            return boolExpr(expression);
+            boolean nullable = isNullable(expression.getOperand());
+            if (!nullable) {
+                List<ExpressionNode> expressions = expression.getExpressions();
+                for (int i = 0, expressionsSize = expressions.size(); (!nullable) && i < expressionsSize; i++) {
+                    ExpressionNode rhs = expressions.get(i);
+                    nullable = isNullable(rhs);
+                }
+            }
+            return boolExpr(expression, nullable);
         }
 
         ExpressionNode handleParameterCondition(ParameterCondition expression) {
             parametersSync.uninferred(expression);
-            return castTo(expression, AkBool.INSTANCE.instance(),
+            TInstance instance = AkBool.INSTANCE.instance();
+            instance.setNullable(true);
+            return castTo(expression, instance,
                           folder, parametersSync);
         }
 
@@ -666,11 +680,15 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleBooleanOperationExpression(BooleanOperationExpression expression) {
-            return boolExpr(expression);
+            boolean isNullable;
+            DataTypeDescriptor sqLtype = expression.getSQLtype();
+            isNullable = sqLtype == null // TODO if no SQL type, assume nullable for now
+                    || sqLtype.isNullable(); // TODO rely on the previous type computer for now
+            return boolExpr(expression, isNullable);
         }
 
         ExpressionNode handleBooleanConstantExpression(BooleanConstantExpression expression) {
-            return boolExpr(expression);
+            return boolExpr(expression, expression.getValue() == null);
         }
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
@@ -712,8 +730,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return result;
     }
 
-    private static ExpressionNode boolExpr(ExpressionNode expression) {
-        expression.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
+    private static ExpressionNode boolExpr(ExpressionNode expression, Boolean nullable) {
+        TInstance instance = AkBool.INSTANCE.instance();
+        instance.setNullable(nullable);
+        expression.setPreptimeValue(new TPreptimeValue(instance));
         return expression;
     }
 
