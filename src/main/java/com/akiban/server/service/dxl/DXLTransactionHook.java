@@ -144,6 +144,9 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case DROP_SEQUENCE:
             case CREATE_ROUTINE:
             case DROP_ROUTINE:
+            case CREATE_SQLJ_JAR:
+            case REPLACE_SQLJ_JAR:
+            case DROP_SQLJ_JAR:
                 return true;
 
             case GET_AIS:

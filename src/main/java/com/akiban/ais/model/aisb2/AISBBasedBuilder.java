@@ -469,6 +469,11 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewRoutineBuilder externalName(String className, String methodName) {
+            return externalName(null, className, methodName);
+        }
+
+        @Override
         public NewRoutineBuilder externalName(String jarName,
                                               String className, String methodName) {
             return externalName(defaultSchema, jarName, className, methodName);

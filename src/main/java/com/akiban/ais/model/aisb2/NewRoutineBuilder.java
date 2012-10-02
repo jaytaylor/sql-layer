@@ -43,6 +43,8 @@ public interface NewRoutineBuilder {
 
     NewRoutineBuilder paramDoubleOut(String name);
     
+    NewRoutineBuilder externalName(String className, String methodName);
+
     NewRoutineBuilder externalName(String jarName, String className, String methodName);
 
     NewRoutineBuilder externalName(String jarSchema, String jarName, 

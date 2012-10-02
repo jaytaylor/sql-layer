@@ -650,6 +650,26 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 return o2.getTableId().compareTo(o1.getTableId());
             }
         });
+        List<Routine> routinesToDrop = new ArrayList<Routine>();
+        for (Routine routine : ais.getRoutines().values()) {
+            if (routine.getName().getSchemaName().equals(schemaName)) {
+                routinesToDrop.add(routine);
+            }
+        }
+        List<SQLJJar> jarsToDrop = new ArrayList<SQLJJar>();
+        for (SQLJJar jar : ais.getSQLJJars().values()) {
+            if (jar.getName().getSchemaName().equals(schemaName)) {
+                boolean anyOutside = false;
+                for (Routine routine : jar.getRoutines()) {
+                    if (!routine.getName().getSchemaName().equals(schemaName)) {
+                        anyOutside = true;
+                        break;
+                    }
+                }
+                if (!anyOutside)
+                    jarsToDrop.add(jar);
+            }
+        }
         // Do the actual dropping
         for(UserTable table : tablesToDrop) {
             dropTable(session, table.getName());
@@ -659,6 +679,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         for (Sequence sequence : sequencesToDrop) {
             dropSequence(session, sequence.getSequenceName());
+        }
+        for (Routine routine : routinesToDrop) {
+            dropRoutine(session, routine.getName());
+        }
+        for (SQLJJar jar : jarsToDrop) {
+            dropSQLJJar(session, jar.getName());
         }
     }
 

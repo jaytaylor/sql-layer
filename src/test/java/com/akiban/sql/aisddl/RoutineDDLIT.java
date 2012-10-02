@@ -38,6 +38,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
@@ -45,6 +46,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.sql.pg.PostgresServerITBase;
 
+import java.net.URL;
 import java.util.Collection;
 
 public class RoutineDDLIT extends PostgresServerITBase {
@@ -53,6 +55,15 @@ public class RoutineDDLIT extends PostgresServerITBase {
     @Before
     public void createStatement() throws Exception {
         stmt = getConnection().createStatement();
+        if (false) {
+            stmt.executeUpdate("CALL SQLJ.INSTALL_JAR('foo.jar', 'ajar', 0)");
+        }
+        else {
+            AISBuilder builder = new AISBuilder();
+            builder.sqljJar(SCHEMA_NAME, "ajar", new URL("file://foo.jar"));
+            ddl().createSQLJJar(session(), builder.akibanInformationSchema().getSQLJJar(SCHEMA_NAME, "ajar"));
+            updateAISGeneration();
+        }
     }
 
     @After

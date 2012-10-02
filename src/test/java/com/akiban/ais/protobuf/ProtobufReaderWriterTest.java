@@ -38,6 +38,7 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -482,7 +483,8 @@ public class ProtobufReaderWriterTest {
     public void procedureJava() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.sqljJar("myjar")
-            .file("/tmp/procs.jar");
+            // A file URL would vary by testing system.
+            .url("http://software.akiban.com/procs.jar");
         builder.procedure("PROC1")
             .language("java", Routine.CallingConvention.JAVA)
             .paramLongIn("x1")
@@ -492,7 +494,13 @@ public class ProtobufReaderWriterTest {
         
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
         Routine proc = inAIS.getRoutine(SCHEMA, "PROC1");
+        assertNotNull(proc);
         
+        SQLJJar jar = proc.getSQLJJar();
+        assertNotNull(jar);
+        assertEquals("myjar", jar.getName().getTableName());
+        assertEquals("http://software.akiban.com/procs.jar", jar.getURL().toString());
+
         assertEquals("java", proc.getLanguage());
         assertEquals(Routine.CallingConvention.JAVA, proc.getCallingConvention());
         assertEquals(3, proc.getParameters().size());
@@ -512,7 +520,7 @@ public class ProtobufReaderWriterTest {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.procedure("PROC2")
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
-            .externalName("myjar", "com.acme.Procs", "proc1");
+            .externalName("com.acme.Procs", "proc1");
         
         AkibanInformationSchema inAIS = builder.unvalidatedAIS();
         Routine proc = inAIS.getRoutine(SCHEMA, "PROC2");

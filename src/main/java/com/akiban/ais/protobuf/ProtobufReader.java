@@ -663,6 +663,7 @@ public class ProtobufReader {
                 AISProtobuf.Schema.SEQUENCES_FIELD_NUMBER,
                 AISProtobuf.Schema.VIEWS_FIELD_NUMBER,
                 AISProtobuf.Schema.ROUTINES_FIELD_NUMBER,
+                AISProtobuf.Schema.SQLJJARS_FIELD_NUMBER,
                 AISProtobuf.Schema.CHARCOLL_FIELD_NUMBER
         );
     }
