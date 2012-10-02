@@ -153,7 +153,7 @@ public class OperatorAssembler extends BaseRule
         T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets);
         void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, T[] arr, int i);
         Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex, List<String> names, List<Object> options);
-        T sequenceGenerator(Sequence sequence, Column column);
+        T sequenceGenerator(Sequence sequence, Column column, T expression);
         T field(RowType rowType, int position);
         
         RowType valuesRowType(ExpressionsSource expressionsSource);
@@ -238,7 +238,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         @Override
-        public Explainable sequenceGenerator(Sequence sequence, Column column) {
+        public Explainable sequenceGenerator(Sequence sequence, Column column, Explainable expression) {
             return null;
         }
         @Override
@@ -327,7 +327,7 @@ public class OperatorAssembler extends BaseRule
                                                              int bindingPosition);
             protected abstract T nullExpression(RowType rowType, int i);
 
-            public abstract T sequenceGenerator(Sequence sequence, Column column);
+            public abstract T sequenceGenerator(Sequence sequence, Column column, T expression);
 
             protected List<? extends T> createNulls(RowType rowType) {
                 int nfields = rowType.nFields();
@@ -456,11 +456,24 @@ public class OperatorAssembler extends BaseRule
             }
             
             @Override
-            public Expression sequenceGenerator (Sequence sequence, Column column) {
-                return new com.akiban.server.expression.std.CastExpression (column.getType().akType(),
+            public Expression sequenceGenerator (Sequence sequence, Column column, Expression expression) {
+
+                Expression seqExpr = new com.akiban.server.expression.std.CastExpression (column.getType().akType(),
                         new SequenceNextValueExpression(AkType.LONG, 
                         new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getSchemaName()),
                         new LiteralExpression (AkType.VARCHAR, sequence.getSequenceName().getTableName())));
+                // If the row expression is not null (i.e. the user supplied values for this column)
+                // and the column is has "BY DEFAULT" as the identity generator
+                // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
+                if (expression != null && 
+                        column.getDefaultIdentity() != null &&
+                        column.getDefaultIdentity().booleanValue()) { 
+                    List<Expression> expr = new ArrayList<Expression>(2);
+                    expr.add(expression);
+                    expr.add(seqExpr);
+                    seqExpr = new IfNullExpression (expr);
+                }
+                return seqExpr; 
             }
 
             @Override
@@ -600,7 +613,7 @@ public class OperatorAssembler extends BaseRule
             }
 
             @Override
-            public TPreparedExpression sequenceGenerator(Sequence sequence, Column column) {
+            public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
                 OverloadResolver resolver = rulesContext.getOverloadResolver();
 
                 List<TPreptimeValue> input = new ArrayList<TPreptimeValue>(2);
@@ -613,9 +626,29 @@ public class OperatorAssembler extends BaseRule
                 arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
                 arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
                 
-                TInstance resultInstance = overload.resultStrategy().fixed();
+                TPreparedExpression seqExpr =  new TPreparedFunction(overload, overload.resultStrategy().fixed(), 
+                                arguments, planContext.getQueryContext());
                 
-                return new TPreparedFunction(overload, resultInstance, arguments, planContext.getQueryContext());
+                // If the row expression is not null (i.e. the user supplied values for this column)
+                // and the column is has "BY DEFAULT" as the identity generator
+                // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
+                if (expression != null && 
+                        column.getDefaultIdentity() != null &&
+                        column.getDefaultIdentity().booleanValue()) { 
+                    List<TPreptimeValue> ifNullInput = new ArrayList<TPreptimeValue>(2);
+                    ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
+                    ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
+                    
+                    OverloadResult ifNullResult = resolver.get("IFNULL", ifNullInput);
+                    TValidatedOverload ifNullOverload = ifNullResult.getOverload();
+                    List<TPreparedExpression> ifNullArgs = new ArrayList<TPreparedExpression>(2);
+                    ifNullArgs.add(expression);
+                    ifNullArgs.add(seqExpr);
+                    seqExpr = new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
+                            ifNullArgs, planContext.getQueryContext());
+                }
+                
+                return seqExpr;
             }
         }
 
@@ -756,44 +789,30 @@ public class OperatorAssembler extends BaseRule
             // Types 2 processing 
             if (inserts != null) {
                 Expression[] row = new Expression[targetRowType.nFields()];
+                int ncols = inserts.size();
 
+                for (int i = 0; i < ncols; i++) {
+                    Column column = insert.getTargetColumns().get(i);
+                    int pos = column.getPosition();
+                    row[pos] = inserts.get(i);
+
+                    if (column.getType().akType() != row[pos].valueType() ) {
+                        row[pos] = new com.akiban.server.expression.std.CastExpression 
+                                (column.getType().akType(), row[pos]);
+                    }
+                }
                 // Insert the sequence generator values and default value processing
                 for (int i = 0; i < targetRowType.nFields(); i++) {
                     Column column = table.getColumnsIncludingInternal().get(i);
                     if (column.getIdentityGenerator() != null) {
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
-                        row[i] = oldPartialAssembler.sequenceGenerator(sequence, column);
+                        row[i] = oldPartialAssembler.sequenceGenerator(sequence, column, row[i]);
                     }
                     else if (column.getDefaultValue() != null) {
                         // TODO: Convert the defaultValue string into an Expression
                         row[i] = LiteralExpression.forNull();
-                    } else {
+                    } else if (row[i] == null) {
                         row[i] = LiteralExpression.forNull();
-                    }
-                }
-                int ncols = inserts.size();
-                for (int i = 0; i < ncols; i++) {
-                    // TODO: If inserts.get() == DEFAULT, skip the replacement of the default value 
-                    Column column = insert.getTargetColumns().get(i);
-                    int pos = column.getPosition();
-                    // If Column is an identity column, 
-                    // DefaultValue == false -> Generated always, override the user setting
-                    // DefaultValue == true -> generated by default, only if user value is null
-                    if (column.getDefaultIdentity() != null) {
-                        if (column.getDefaultIdentity().booleanValue()) { 
-                            List<Expression> expr = new ArrayList<Expression>(2);
-                            expr.add(inserts.get(i));
-                            expr.add(row[pos]);
-                            row[pos] = new IfNullExpression (expr);
-                        }
-                    } else {
-                        row[pos] = inserts.get(i);
-                    }
-                    // In all cases make sure to cast the input expression to the 
-                    // output (column) type. 
-                    if (column.getType().akType() != row[pos].valueType()) {
-                        row[pos] = new com.akiban.server.expression.std.CastExpression 
-                                (column.getType().akType(), row[pos]);
                     }
                 }
                 inserts = Arrays.asList(row);
@@ -809,7 +828,7 @@ public class OperatorAssembler extends BaseRule
                     Column column = table.getColumnsIncludingInternal().get(i);
                     if (column.getIdentityGenerator() != null) {
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
-                        row[i] = newPartialAssembler.sequenceGenerator(sequence, column);
+                        row[i] = newPartialAssembler.sequenceGenerator(sequence, column, row[i]);
                     } 
                     // else if (column.getDefaultValue() != null) // TODO: Convert string to expression
                     else if (row[i] == null) {

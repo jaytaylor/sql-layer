@@ -1,4 +1,4 @@
 PhysicalUpdate
   Insert_Returning(INTO addresses(aid, cid, state, city))
-    Project_Default(COALESCE(Field(0), CAST(NEXTVAL('test', '_sequence-878100532') AS INT)), CAST(Field(1) AS INT), Field(2), Field(3))
+    Project_Default(COALESCE(CAST(Field(0) AS INT), CAST(NEXTVAL('test', '_sequence-878100532') AS INT)), CAST(Field(1) AS INT), Field(2), Field(3))
       ValuesScan_Default([NULL, 100, 'VT', 'Vergennes'])
