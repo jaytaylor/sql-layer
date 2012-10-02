@@ -2,19 +2,25 @@
 
 RUN_TESTS='yes'
 OUT_FILE=''
-while getopts 'sho:' opt; do
+while getopts 'shof:' opt; do
     case $opt in
         s) RUN_TESTS='no' ;;
         o) OUT_FILE=$OPTARG ;;
+        f) IN_FILE=$OPTARG ;;
         ?) echo 'Run with -s to skip "mvn test", -o <file> to output the failures to a file' ; exit 1 ;;
     esac
 done
 
-echo "Getting known failures from nighthawk."
-KNOWN_FAILURES=$(wget -qO - http://172.16.20.117/t3-regressions/known-failures)
-if [ -n "$OUT_FILE" ]; then
-    echo "...outputting to $OUT_FILE"
-    echo "$KNOWN_FAILURES" > $OUT_FILE
+if [ -z "$IN_FILE" ] ; then 
+	echo "Getting known failures from nighthawk."
+	KNOWN_FAILURES=$(wget -qO - http://172.16.20.117/t3-regressions/known-failures)
+	if [ -n "$OUT_FILE" ]; then
+    	echo "...outputting to $OUT_FILE"
+    	echo "$KNOWN_FAILURES" > $OUT_FILE
+	fi
+else
+	echo "reading from local source"
+	KNOWN_FAILURES=$(cat $IN_FILE)
 fi
 
 if [ "$RUN_TESTS" = "yes" ]; then
@@ -27,8 +33,8 @@ else
     echo "Skipping tests run."
 fi
 
-BASE=$(dirname $(readlink -f $0))
-FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -r 's/testYaml \[([^]]*).*/\1/' | sort)
+BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sort)
 FAILDIFF=$(diff --suppress-common-lines <(echo "$KNOWN_FAILURES") <(echo "$FAILED"))
 REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
 FIXES=$(echo "$FAILDIFF" | grep '<')
