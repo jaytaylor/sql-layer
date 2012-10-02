@@ -477,7 +477,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         Collection<? extends TStrongCasts> strongCastIds = finder.find(TStrongCasts.class);
         Set<TCastIdentifier> strongCasts = new HashSet<TCastIdentifier>(strongCastIds.size()); // rough guess
         for (TStrongCasts strongCastGenerator : strongCastIds) {
-            for (TCastIdentifier castId : strongCastGenerator.get(castsBySource.keySet())) {
+            for (TCastIdentifier castId : strongCastGenerator.get()) {
                 TCast cast = cast(castsBySource, castId.getSource(), castId.getTarget());
                 if (cast == null)
                     throw new AkibanInternalException("no cast defined for " + castId +", which is marked as strong");

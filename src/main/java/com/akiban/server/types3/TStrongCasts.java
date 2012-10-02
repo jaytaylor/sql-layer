@@ -26,96 +26,60 @@
 
 package com.akiban.server.types3;
 
-import com.google.common.base.Function;
+import com.akiban.server.error.AkibanInternalException;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.ObjectArrays;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class TStrongCasts {
 
-    public static TStrongCastsBuilder from(TClass source) {
-        return new TStrongCastsBuilder(source);
+    public static TStrongCastsBuilder from(TClass firstSource, TClass... sources) {
+        return new TStrongCastsBuilder(ObjectArrays.concat(sources, firstSource));
     }
 
-    public abstract Iterable<TCastIdentifier> get(Iterable<? extends TClass> knownClasses);
+    public abstract Iterable<TCastIdentifier> get();
 
     private TStrongCasts() { }
 
     public static class TStrongCastsBuilder {
 
         public TStrongCasts to(TClass firstTarget, TClass... targets) {
-            List<TCastIdentifier> ids = new ArrayList<TCastIdentifier>();
-            ids.add(new TCastIdentifier(source, firstTarget));
-            for (TClass target : targets) {
-                ids.add(new TCastIdentifier(source, target));
-            }
-            return new ExplicitStrongCasts(ids);
+            return new StrongCastsGenerator(sources, ObjectArrays.concat(targets, firstTarget));
         }
 
-        public TStrongCasts toAll(TBundleID inBundle, TClassPredicate... additionalPredicates) {
-            return new ToAllCastsBuilder(source, inBundle, additionalPredicates);
+        private TStrongCastsBuilder(TClass... sources) {
+            assert sources.length > 0;
+            this.sources = sources;
         }
 
-        private TStrongCastsBuilder(TClass source) {
-            this.source = source;
-        }
-
-        private final TClass source;
+        private final TClass[] sources;
     }
 
     public interface TClassPredicate extends Predicate<TClass> {}
 
-    private static class ExplicitStrongCasts extends TStrongCasts {
+    private static class StrongCastsGenerator extends TStrongCasts {
 
         @Override
-        public Iterable<TCastIdentifier> get(Iterable<? extends TClass> knownClasses) {
-            return iterable;
-        }
-
-        private ExplicitStrongCasts(Collection<TCastIdentifier> casts) {
-            this.iterable = Collections.unmodifiableCollection(casts);
-        }
-
-        private final Collection<TCastIdentifier> iterable;
-    }
-
-    private static class ToAllCastsBuilder extends TStrongCasts {
-
-        @Override
-        public Iterable<TCastIdentifier> get(Iterable<? extends TClass> knownClasses) {
-            Iterable<? extends TClass> filtered = Iterables.filter(knownClasses, inBundle);
-            for (TClassPredicate predicate : additionalPredicates)
-                filtered = Iterables.filter(filtered, predicate);
-            return Iterables.transform(
-                    filtered,
-                    castIdentifier);
-        }
-
-        private ToAllCastsBuilder(final TClass source, final TBundleID targetBundle,
-                                  TClassPredicate[] additionalPredicates)
-        {
-            this.inBundle = new Predicate<TClass>() {
-                @Override
-                public boolean apply( TClass input) {
-                    return input.name().bundleId() == targetBundle;
+        public Iterable<TCastIdentifier> get() {
+            Set<TCastIdentifier> results = new HashSet<TCastIdentifier>(targets.length * sources.length);
+            for (TClass source :sources) {
+                for (TClass target : targets) {
+                    TCastIdentifier identifier = new TCastIdentifier(source, target);
+                    if (!results.add(identifier))
+                        throw new AkibanInternalException("duplicate strong cast identifier: " + identifier);
                 }
-            };
-            this.castIdentifier = new Function<TClass, TCastIdentifier>() {
-                @Override
-                public TCastIdentifier apply(TClass input) {
-                    return new TCastIdentifier(source, input);
-                }
-            };
-            this.additionalPredicates = additionalPredicates;
+            }
+            return results;
         }
 
-        private final Predicate<TClass> inBundle;
-        private final TClassPredicate[] additionalPredicates;
-        private final Function<TClass,TCastIdentifier> castIdentifier;
-    }
+        private StrongCastsGenerator(TClass[] sources, TClass[] targets) {
+            this.sources = sources;
+            this.targets = targets;
+        }
 
+        private final TClass[] sources;
+        private final TClass[] targets;
+    }
 }

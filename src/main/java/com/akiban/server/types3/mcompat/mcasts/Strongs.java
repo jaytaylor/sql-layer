@@ -26,9 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TStrongCasts;
-import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
@@ -37,32 +35,20 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public final class Strongs {
 
-    private static final TStrongCasts.TClassPredicate notString = new TStrongCasts.TClassPredicate() {
-        @Override
-        public boolean apply(TClass input) {
-            return ! (input instanceof MString);
-        }
-    };
-    private static final TStrongCasts.TClassPredicate notBinary = new TStrongCasts.TClassPredicate() {
-        @Override
-        public boolean apply(TClass input) {
-            return ! (input instanceof MBinary);
-        }
-    };
+    public static final TStrongCasts stringsToDoubles = TStrongCasts.
+            from(
+                MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT,
+                MBinary.VARBINARY, MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB)
+            .to(
+                MApproximateNumber.DOUBLE);
 
-    public static final TStrongCasts bulkVarchar = TStrongCasts.from(MString.VARCHAR).toAll(MBundle.INSTANCE.id());
-    public static final TStrongCasts bulkChar = TStrongCasts.from(MString.CHAR).toAll(MBundle.INSTANCE.id(), notString);
-    public static final TStrongCasts bulkTinytext = TStrongCasts.from(MString.TINYTEXT).toAll(MBundle.INSTANCE.id(), notString);
-    public static final TStrongCasts bulkText = TStrongCasts.from(MString.TEXT).toAll(MBundle.INSTANCE.id(), notString);
-    public static final TStrongCasts bulkMediumtext = TStrongCasts.from(MString.MEDIUMTEXT).toAll(MBundle.INSTANCE.id(), notString);
-    public static final TStrongCasts bulkLongtext = TStrongCasts.from(MString.LONGTEXT).toAll(MBundle.INSTANCE.id(), notString);
-    
-    public static final TStrongCasts bulkVarbinary = TStrongCasts.from(MBinary.VARBINARY).toAll(MBundle.INSTANCE.id(), notString);
-    public static final TStrongCasts bulkBinary = TStrongCasts.from(MBinary.BINARY).toAll(MBundle.INSTANCE.id(), notString, notBinary);
-    public static final TStrongCasts bulkTinyblob = TStrongCasts.from(MBinary.TINYBLOB).toAll(MBundle.INSTANCE.id(), notString, notBinary);
-    public static final TStrongCasts bulkBlob = TStrongCasts.from(MBinary.BLOB).toAll(MBundle.INSTANCE.id(), notString, notBinary);
-    public static final TStrongCasts bulkMediumblob = TStrongCasts.from(MBinary.MEDIUMBLOB).toAll(MBundle.INSTANCE.id(), notString, notBinary);
-    public static final TStrongCasts bulkLongblob = TStrongCasts.from(MBinary.LONGBLOB).toAll(MBundle.INSTANCE.id(), notString, notBinary);
+    public static final TStrongCasts textsToVarchar = TStrongCasts
+            .from(MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT)
+            .to(MString.VARCHAR);
+
+    public static final TStrongCasts blobsToBinary = TStrongCasts
+            .from(MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB)
+            .to(MBinary.VARBINARY);
 
     public static final TStrongCasts fromChar = TStrongCasts.from(MString.CHAR).to(
             MString.TINYTEXT,
