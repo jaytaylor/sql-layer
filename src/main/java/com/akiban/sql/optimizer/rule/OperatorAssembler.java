@@ -822,7 +822,20 @@ public class OperatorAssembler extends BaseRule
                 int ncols = insertsP.size();
                 for (int i = 0; i < ncols; i++) {
                     Column column = insert.getTargetColumns().get(i);
-                    row[column.getPosition()] = insertsP.get(i);
+                    int pos = column.getPosition();
+                    row[pos] = insertsP.get(i);
+                    
+                    if (!column.tInstance().equals(row[pos].resultType())) {
+                        
+                        RulesContext rulesContext = planContext.getRulesContext();
+                        OverloadResolver overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
+
+                        TCast tcast = overloadResolver.getTCast(column.tInstance(), row[pos].resultType());
+                        row[pos] = 
+                        new TCastExpression(row[pos], tcast, column.tInstance(), planContext.getQueryContext());
+                        
+                    }
+                    
                 }
                 for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
                     Column column = table.getColumnsIncludingInternal().get(i);
@@ -846,48 +859,6 @@ public class OperatorAssembler extends BaseRule
             input.fieldOffsets = new ColumnSourceFieldOffsets(insert.getTable(), targetRowType);
             return input;
         }
-        
-/*        
-            else {
-                TPreparedExpression[] row = new TPreparedExpression[targetRowType.nFields()];
-                int ncols = insertsP.size();
-                for (int i = 0; i < ncols; i++) {
-                    Column column = insertStatement.getTargetColumns().get(i);
-                    row[column.getPosition()] = insertsP.get(i);
-                }
-                for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
- *                  I fail to understand why this has to be this complex.                     
-                    TPreparedExpression seqExpr = null;
-                    Column column = table.getColumnsIncludingInternal().get(i);
-                    if (column.getIdentityGenerator() != null) {
-                        Sequence sequence = table.getColumn(i).getIdentityGenerator();
-                        List<ExpressionNode> params = new ArrayList<ExpressionNode>(2);
-                        params.add(new ConstantExpression(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR)));
-                        params.add(new ConstantExpression(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR)));
-                        FunctionExpression seq = new FunctionExpression ("NEXTVAL", params, DataTypeDescriptor.INTEGER, null);
-                        seqExpr = newPartialAssembler.assembleExpression(seq, null);
-                        
-                        if (row[i] != null) {
-                            List<ExpressionNode>params2 = new ArrayList<ExpressionNode>(2);
-                            params.add(row[i]);
-                            params.add(seq);
-                            FunctionExpression ifnull = new FunctionExpression ("IFNULL", params2, null, null);
-                        }
-                    }
-                    if (column.getDefaultIdentity() != null && column.getDefaultIdentity().booleanValue() == false) {
-                        row[i] = seqExpr;
-                    } else
-                    if (row[i] == null) {
-                        TInstance tinst = targetRowType.typeInstanceAt(i);
-                        PUnderlying underlying = tinst.typeClass().underlyingType();
-                        row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
-                    }
-                }
-                insertsP = Arrays.asList(row);
-            }
-*/        
-        
-
 
         protected void explainInsertStatement(Operator plan, InsertStatement insertStatement) {
             Attributes atts = new Attributes();

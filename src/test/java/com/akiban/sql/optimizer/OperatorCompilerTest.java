@@ -141,11 +141,9 @@ public class OperatorCompilerTest extends NamedParamsTestBase
 
         @Override
         public PhysicalResultColumn getResultColumn(ResultField field) {
-            String type;
+            String type = String.valueOf(field.getSQLtype());
             if (field.getTInstance() != null) {
                 type = String.valueOf(field.getTInstance());
-            } else {
-                type = String.valueOf(field.getSQLtype());
             }
             Column column = field.getAIScolumn();
             if (column != null) {
