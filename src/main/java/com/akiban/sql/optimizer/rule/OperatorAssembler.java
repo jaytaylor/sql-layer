@@ -830,15 +830,16 @@ public class OperatorAssembler extends BaseRule
                 int ncols = insertsP.size();
                 for (int i = 0; i < ncols; i++) {
                     Column column = insert.getTargetColumns().get(i);
+                    TInstance instance = column.tInstance();
                     int pos = column.getPosition();
                     row[pos] = insertsP.get(i);
                     
-                    if (!column.tInstance().equals(row[pos].resultType())) {
+                    if (!instance.equals(row[pos].resultType())) {
                         RulesContext rulesContext = planContext.getRulesContext();
                         OverloadResolver overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
-                        TCast tcast = overloadResolver.getTCast(column.tInstance(), row[pos].resultType());
+                        TCast tcast = overloadResolver.getTCast(instance, row[pos].resultType());
                         row[pos] = 
-                                new TCastExpression(row[pos], tcast, column.tInstance(), planContext.getQueryContext());
+                                new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
                     }
                 }
                 for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
