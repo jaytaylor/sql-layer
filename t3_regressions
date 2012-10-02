@@ -1,12 +1,21 @@
 #!/bin/bash
 
 RUN_TESTS='yes'
-while getopts 'sh' opt; do
+OUT_FILE=''
+while getopts 'sho:' opt; do
     case $opt in
         s) RUN_TESTS='no' ;;
-        ?) echo 'Run with -s to skip "mvn test", or else with no args' ; exit 1 ;;
+        o) OUT_FILE=$OPTARG ;;
+        ?) echo 'Run with -s to skip "mvn test", -o <file> to output the failures to a file' ; exit 1 ;;
     esac
 done
+
+echo "Getting known failures from nighthawk."
+KNOWN_FAILURES=$(wget -qO - http://172.16.20.117/t3-regressions/known-failures)
+if [ -n "$OUT_FILE" ]; then
+    echo "...outputting to $OUT_FILE"
+    echo "$KNOWN_FAILURES" > $OUT_FILE
+fi
 
 if [ "$RUN_TESTS" = "yes" ]; then
     CMD='mvn test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
@@ -18,9 +27,9 @@ else
     echo "Skipping tests run."
 fi
 
-BASE=$(dirname $(readlink -f $0))
+BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 FAILURES_FILE=$BASE/src/test/resources/com/akiban/sql/pg/yaml/newtypes-failures
-FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -r 's/testYaml \[([^]]*).*/\1/' | sort)
+FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sort)
 FAILDIFF=$(echo "$FAILED" | diff --suppress-common-lines $FAILURES_FILE -)
 REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
 FIXES=$(echo "$FAILDIFF" | grep '<')
@@ -42,12 +51,15 @@ echo "Fixes:       $FIXES_COUNT"
 echo "Regressions: $REGRESSIONS_COUNT"
 
 EXIT_CODE=1
-if [ "$RESULT" = "fixes" ]; then
+if [ "$RESULT" = "fixes" ] && [ -n "$OUT_FILE" ]; then
     if [ -n "$FAILED" ]; then
         echo "Updating expected failures file with $(echo "$FAILED" | wc -l) failures"
     else
         echo "No failures!!!"
     fi
-    echo "$FAILED" > $FAILURES_FILE
+    echo "$FAILED" > $OUT_FILE
+elif [ "$RESULT" = "neither" ]; then
+    EXIT_CODE=0
+    echo "No fixes or regressions."
 fi
 exit $EXIT_CODE

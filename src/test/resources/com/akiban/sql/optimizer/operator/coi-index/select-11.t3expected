@@ -1,0 +1,10 @@
+PhysicalSelect[name:varchar(32)[VARCHAR], value:MCOMPAT_ DATE]
+  Map_NestedLoops()
+    Project_Default(Field(0), Field(1))
+      Aggregate_Partial(GROUP BY cid: MAX)
+        Project_Default(orders.cid, orders.order_date)
+          AncestorLookup_Default(Index(orders.__akiban_fk_0) -> orders)
+            IndexScan_Default(Index(orders.__akiban_fk_0), cid ASC)
+    Project_Default(customers.name, Bound(0, 1))
+      AncestorLookup_Default(Index(customers.PRIMARY) -> customers)
+        IndexScan_Default(Index(customers.PRIMARY), cid = Bound(0, 0))
