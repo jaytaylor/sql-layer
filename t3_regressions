@@ -71,5 +71,5 @@ if [ "$RESULT" = "fixes" ] && [ -n "$OUT_FILE" ]; then
 elif [ "$RESULT" = "neither" ]; then
     echo "No fixes or regressions."
 fi
-EXIT_CODE=$([ -n "$FAILED" ])
+EXIT_CODE=$([ "$REGRESSIONS" = "0" ])
 exit $EXIT_CODE
