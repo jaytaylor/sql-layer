@@ -246,7 +246,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 TInstance tInstance = tpv.instance();
                 if ((n.getSQLtype() != null) &&
                     (n.getSQLtype().getCharacterAttributes() != null) &&
-                    (n.getSQLtype().getCharacterAttributes().getCollationDerivation() == CharacterTypeAttributes.CollationDerivation.EXPLICIT)) {
+                    (n.getSQLtype().getCharacterAttributes().getCollationDerivation() == 
+                        CharacterTypeAttributes.CollationDerivation.EXPLICIT)) {
                     // Apply result of explicit COLLATE, which will otherwise get lost.
                     // No way to mutate the existing instance, so replace entire tpv.
                     tInstance = StringAttribute.copyWithCollation(tInstance, n.getSQLtype().getCharacterAttributes());
@@ -254,8 +255,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     n.setPreptimeValue(tpv);
                 }
                 if (tInstance != null) {
-                    if (tInstance.nullability() == null)
+                    if (tInstance.nullability() == null) {
+                        assert n.getSQLtype() != null : "ExpressionNode.SQLType is incorrectly null";
                         tInstance.setNullable(n.getSQLtype().isNullable());
+                    }
                     DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
                     n.setSQLtype(newDtd);
                 }
