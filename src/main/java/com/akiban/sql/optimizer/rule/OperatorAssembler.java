@@ -628,7 +628,14 @@ public class OperatorAssembler extends BaseRule
                 
                 TPreparedExpression seqExpr =  new TPreparedFunction(overload, overload.resultStrategy().fixed(), 
                                 arguments, planContext.getQueryContext());
-                
+
+                if (!column.tInstance().equals(overload.resultStrategy().fixed())) {
+                    RulesContext rulesContext = planContext.getRulesContext();
+                    OverloadResolver overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
+                    TCast tcast = overloadResolver.getTCast(seqExpr.resultType(), column.tInstance());
+                    seqExpr = 
+                            new TCastExpression(seqExpr, tcast, column.tInstance(), planContext.getQueryContext());
+                }
                 // If the row expression is not null (i.e. the user supplied values for this column)
                 // and the column is has "BY DEFAULT" as the identity generator
                 // replace the SequenceNextValue is a IFNULL(<user value>, <sequence>) expression. 
@@ -826,16 +833,12 @@ public class OperatorAssembler extends BaseRule
                     row[pos] = insertsP.get(i);
                     
                     if (!column.tInstance().equals(row[pos].resultType())) {
-                        
                         RulesContext rulesContext = planContext.getRulesContext();
                         OverloadResolver overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
-
                         TCast tcast = overloadResolver.getTCast(column.tInstance(), row[pos].resultType());
                         row[pos] = 
-                        new TCastExpression(row[pos], tcast, column.tInstance(), planContext.getQueryContext());
-                        
+                                new TCastExpression(row[pos], tcast, column.tInstance(), planContext.getQueryContext());
                     }
-                    
                 }
                 for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
                     Column column = table.getColumnsIncludingInternal().get(i);
