@@ -969,6 +969,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         TClass commonClass = resolver.commonTClass(leftTClass, rightTClass);
         if (commonClass == null)
             throw error("couldn't determine a type for CASE expression");
+        if (commonClass == leftTClass)
+            return left;
+        if (commonClass == rightTClass)
+            return right;
         return commonClass.instance();
     }
 

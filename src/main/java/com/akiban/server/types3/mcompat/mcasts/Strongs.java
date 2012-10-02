@@ -35,11 +35,15 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public final class Strongs {
 
-    public static final TStrongCasts stringsToDoubles = TStrongCasts.
+    public static final TStrongCasts fromStrings = TStrongCasts.
             from(
                 MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT,
                 MBinary.VARBINARY, MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB)
-            .to(
+            .to(MDatetimes.DATE,
+                MDatetimes.DATETIME,
+                MDatetimes.TIME,
+                MDatetimes.TIMESTAMP,
+                MDatetimes.YEAR,
                 MApproximateNumber.DOUBLE);
 
     public static final TStrongCasts textsToVarchar = TStrongCasts
@@ -49,6 +53,10 @@ public final class Strongs {
     public static final TStrongCasts blobsToBinary = TStrongCasts
             .from(MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB)
             .to(MBinary.VARBINARY);
+
+    public static final TStrongCasts charsToBinaries = TStrongCasts
+            .from(MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT)
+            .to(MBinary.VARBINARY, MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB);
 
     public static final TStrongCasts fromChar = TStrongCasts.from(MString.CHAR).to(
             MString.TINYTEXT,

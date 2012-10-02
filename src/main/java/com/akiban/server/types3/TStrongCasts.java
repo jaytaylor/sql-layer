@@ -57,8 +57,6 @@ public abstract class TStrongCasts {
         private final TClass[] sources;
     }
 
-    public interface TClassPredicate extends Predicate<TClass> {}
-
     private static class StrongCastsGenerator extends TStrongCasts {
 
         @Override
