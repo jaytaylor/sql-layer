@@ -615,7 +615,8 @@ public class OperatorAssembler extends BaseRule
             @Override
             public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
                 OverloadResolver resolver = rulesContext.getOverloadResolver();
-
+                TInstance instance = column.tInstance();
+                
                 List<TPreptimeValue> input = new ArrayList<TPreptimeValue>(2);
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
@@ -629,12 +630,12 @@ public class OperatorAssembler extends BaseRule
                 TPreparedExpression seqExpr =  new TPreparedFunction(overload, overload.resultStrategy().fixed(), 
                                 arguments, planContext.getQueryContext());
 
-                if (!column.tInstance().equals(overload.resultStrategy().fixed())) {
+                if (!instance.equals(overload.resultStrategy().fixed())) {
                     RulesContext rulesContext = planContext.getRulesContext();
                     OverloadResolver overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
-                    TCast tcast = overloadResolver.getTCast(seqExpr.resultType(), column.tInstance());
+                    TCast tcast = overloadResolver.getTCast(seqExpr.resultType(), instance);
                     seqExpr = 
-                            new TCastExpression(seqExpr, tcast, column.tInstance(), planContext.getQueryContext());
+                            new TCastExpression(seqExpr, tcast, instance, planContext.getQueryContext());
                 }
                 // If the row expression is not null (i.e. the user supplied values for this column)
                 // and the column is has "BY DEFAULT" as the identity generator
