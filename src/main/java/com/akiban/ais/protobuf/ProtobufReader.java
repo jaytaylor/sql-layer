@@ -42,6 +42,7 @@ import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -57,6 +58,8 @@ import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -161,11 +164,13 @@ public class ProtobufReader {
             loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
             loadViews(pbSchema.getSchemaName(), pbSchema.getViewsList());
             loadRoutines(pbSchema.getSchemaName(), pbSchema.getRoutinesList());
+            loadSQLJJars(pbSchema.getSchemaName(), pbSchema.getSqljJarsList());
         }
 
         // Assume no ordering of schemas or tables, load joins and view refs second
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             loadTableJoins(pbSchema.getSchemaName(), pbSchema.getTablesList());
+            loadExternalRoutines(pbSchema.getSchemaName(), pbSchema.getRoutinesList());
         }
 
         // Hook up groups, create group tables and indexes after all in place
@@ -473,9 +478,11 @@ public class ProtobufReader {
                     convertRoutineCallingConvention(pbRoutine.getCallingConvention())
             );
             loadParameters(routine, pbRoutine.getParametersList());
+            if (pbRoutine.hasDefinition())
+                routine.setDefinition(pbRoutine.getDefinition());
         }
     }
-
+    
     private void loadParameters(Routine routine, Collection<AISProtobuf.Parameter> pbParameters) {
         for (AISProtobuf.Parameter pbParameter : pbParameters) {
             hasRequiredFields(pbParameter);
@@ -511,6 +518,54 @@ public class ProtobufReader {
             return Parameter.Direction.INOUT;
         case RETURN:
             return Parameter.Direction.RETURN;
+        }
+    }
+
+    private void loadSQLJJars(String schema, Collection<AISProtobuf.SQLJJar> pbJars) {
+        for (AISProtobuf.SQLJJar pbJar : pbJars) {
+            hasRequiredFields(pbJar);
+            try {
+                SQLJJar sqljJar = SQLJJar.create(destAIS, 
+                                                 schema,
+                                                 pbJar.getJarName(),
+                                                 new URL(pbJar.getUrl()));
+            }
+            catch (MalformedURLException ex) {
+                throw new ProtobufReadException(
+                       pbJar.getDescriptorForType().getFullName(),
+                       ex.toString()
+                );
+            }
+        }        
+    }
+
+    private void loadExternalRoutines(String schema, Collection<AISProtobuf.Routine> pbRoutines) {
+        for (AISProtobuf.Routine pbRoutine : pbRoutines) {
+            if (pbRoutine.hasClassName()) {
+                SQLJJar sqljJar = null;
+                String className = pbRoutine.getClassName();
+                String methodName = null;
+                Routine routine = destAIS.getRoutine(schema, pbRoutine.getRoutineName());
+                if (routine == null) {
+                    throw new ProtobufReadException(
+                            pbRoutine.getDescriptorForType().getFullName(),
+                            String.format("%s not found", pbRoutine.getRoutineName())
+                    );
+                }
+                if (pbRoutine.hasJarName()) {
+                    sqljJar = destAIS.getSQLJJar(pbRoutine.getJarName().getSchemaName(),
+                                                 pbRoutine.getJarName().getTableName());
+                    if (sqljJar == null) {
+                        throw new ProtobufReadException(
+                               pbRoutine.getDescriptorForType().getFullName(),
+                               String.format("%s references JAR %s", pbRoutine.getRoutineName(), pbRoutine.getJarName())
+                        );
+                    }
+                }
+                if (pbRoutine.hasMethodName())
+                    methodName = pbRoutine.getMethodName();
+                routine.setExternalName(sqljJar, className, methodName);
+            }
         }
     }
 
@@ -704,7 +759,7 @@ public class ProtobufReader {
         );
     }
 
-    private static void hasRequiredFields (AISProtobuf.Routine pbRoutine) {
+    private static void hasRequiredFields(AISProtobuf.Routine pbRoutine) {
         requireAllFieldsExcept(
                 pbRoutine,
                 AISProtobuf.Routine.PARAMETERS_FIELD_NUMBER,
@@ -719,11 +774,17 @@ public class ProtobufReader {
         );
     }
 
-    private static void hasRequiredFields (AISProtobuf.Parameter pbParameter) {
+    private static void hasRequiredFields(AISProtobuf.Parameter pbParameter) {
         requireAllFieldsExcept(
                 pbParameter,
                 AISProtobuf.Parameter.TYPEPARAM1_FIELD_NUMBER,
                 AISProtobuf.Parameter.TYPEPARAM2_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.SQLJJar pbJar) {
+        requireAllFieldsExcept(
+                pbJar
         );
     }
 

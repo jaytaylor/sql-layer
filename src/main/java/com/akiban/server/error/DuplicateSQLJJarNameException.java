@@ -23,17 +23,18 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.server.error;
 
 import com.akiban.ais.model.TableName;
 
-public class NoSuchRoutineException extends BaseSQLException {
-    public NoSuchRoutineException(String schemaName, String routineName) {
-        super(ErrorCode.NO_SUCH_ROUTINE, schemaName, routineName, null);
+public final class DuplicateSQLJJarNameException extends InvalidOperationException {
+    public DuplicateSQLJJarNameException(TableName name) {
+        super(ErrorCode.DUPLICATE_SQLJ_JAR, name.getSchemaName(), name.getTableName());
     }
     
-    public NoSuchRoutineException(TableName name) {
-        super(ErrorCode.NO_SUCH_ROUTINE, name.getSchemaName(), name.getTableName(), null);
+    public DuplicateSQLJJarNameException(String schemaName, String jarName)
+    {
+        super(ErrorCode.DUPLICATE_SQLJ_JAR, schemaName, jarName);
     }
-
 }

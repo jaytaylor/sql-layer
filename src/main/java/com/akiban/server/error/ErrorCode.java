@@ -275,6 +275,11 @@ public enum ErrorCode {
     // Class 44 - with check option violation
     
 
+    // Class 46 - SQL/J
+    INVALID_SQLJ_JAR_URL    ("46", "001", Importance.DEBUG, InvalidSQLJJarURLException.class),
+    DUPLICATE_SQLJ_JAR      ("46", "002", Importance.DEBUG, DuplicateSQLJJarNameException.class),
+    NO_SUCH_SQLJ_JAR        ("46", "00B", Importance.DEBUG, NoSuchSQLJJarException.class),
+
     // Class 50 - DDL definition failure
     PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 
     JOIN_TO_PROTECTED_TABLE ("50", "003", Importance.DEBUG, JoinToProtectedTableException.class), 

@@ -87,8 +87,8 @@ public class Routine
         return callingConvention;
     }
 
-    public String getJarName() {
-        return jarName;
+    public SQLJJar getSQJJar() {
+        return sqljJar;
     }
 
     public String getClassName() {
@@ -119,7 +119,7 @@ public class Routine
         }
     }
 
-    protected void setExternalName(String jarName, String className, String methodName) {
+    public void setExternalName(SQLJJar sqljJar, String className, String methodName) {
         checkMutability();
         AISInvariants.checkNullName(className, "Routine", "class name");
         switch (callingConvention) {
@@ -132,12 +132,12 @@ public class Routine
             throw new InvalidRoutineException(name.getSchemaName(), name.getTableName(), 
                                               "EXTERNAL NAME not allowed for " + callingConvention);
         }
-        this.jarName = jarName;
+        this.sqljJar = sqljJar;
         this.className = className;
         this.methodName = methodName;
     }
 
-    protected void setDefinition(String definition) {
+    public void setDefinition(String definition) {
         checkMutability();
         switch (callingConvention) {
         case JAVA:
@@ -155,6 +155,7 @@ public class Routine
     protected Parameter returnValue = null;
     protected String language;
     protected CallingConvention callingConvention;
-    protected String jarName, className, methodName;
+    protected SQLJJar sqljJar;
+    protected String className, methodName;
     protected String definition;
 }

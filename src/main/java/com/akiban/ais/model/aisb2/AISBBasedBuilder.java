@@ -40,7 +40,11 @@ import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.ais.model.validation.AISValidations;
+import com.akiban.server.error.InvalidSQLJJarURLException;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,7 +62,7 @@ public class AISBBasedBuilder
         return new ActualBuilder().defaultSchema(defaultSchema);
     }
 
-    private static class ActualBuilder implements NewAISBuilder, NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder {
+    private static class ActualBuilder implements NewAISBuilder, NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
 
         // NewAISProvider interface
 
@@ -169,6 +173,25 @@ public class AISBBasedBuilder
         @Override
         public NewRoutineBuilder procedure(TableName procedureName) {
             return procedure(procedureName.getSchemaName(), procedureName.getTableName());
+        }
+
+        @Override
+        public NewSQLJJarBuilder sqljJar(String jarName) {
+            return sqljJar(defaultSchema, jarName);
+        }
+
+        @Override
+        public NewSQLJJarBuilder sqljJar(String schema, String jarName) {
+            checkUsable();
+            AISInvariants.checkDuplicateSQLJJar(aisb.akibanInformationSchema(), schema, jarName);
+            this.schema = schema;
+            this.userTable = jarName;
+            return this;
+        }
+
+        @Override
+        public NewSQLJJarBuilder sqljJar(TableName name) {
+            return sqljJar(name.getSchemaName(), name.getTableName());
         }
 
         @Override
@@ -446,15 +469,47 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewRoutineBuilder externalName(String jarName, String className, String methodName) {
+        public NewRoutineBuilder externalName(String jarName,
+                                              String className, String methodName) {
+            return externalName(defaultSchema, jarName, className, methodName);
+        }
+
+        @Override
+        public NewRoutineBuilder externalName(String jarSchema, String jarName, 
+                                              String className, String methodName) {
             aisb.routineExternalName(schema, userTable, 
-                                       jarName, className, methodName);
+                                     jarSchema, jarName, 
+                                     className, methodName);
             return this;
         }
 
         @Override
         public NewRoutineBuilder procDef(String definition) {
             aisb.routineDefinition(schema, userTable, definition);
+            return this;
+        }
+
+        // NewSQLJJarBuilder
+
+        @Override
+        public NewSQLJJarBuilder url(String url) {
+            try {
+                aisb.sqljJar(schema, userTable, new URL(url));
+            }
+            catch (MalformedURLException ex) {
+                throw new InvalidSQLJJarURLException(schema, userTable, ex.toString());
+            }
+            return this;
+        }
+
+        @Override
+        public NewSQLJJarBuilder file(String file) {
+            try {
+                aisb.sqljJar(schema, userTable, new File(file).toURL());
+            }
+            catch (MalformedURLException ex) {
+                throw new InvalidSQLJJarURLException(schema, userTable, ex.toString());
+            }
             return this;
         }
 

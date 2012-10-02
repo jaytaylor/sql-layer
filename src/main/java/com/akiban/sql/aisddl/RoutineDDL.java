@@ -25,15 +25,18 @@
  */
 package com.akiban.sql.aisddl;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidRoutineException;
 import com.akiban.server.error.NoSuchRoutineException;
+import com.akiban.server.error.NoSuchSQLJJarException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateAliasNode;
 import com.akiban.sql.parser.DropAliasNode;
@@ -105,16 +108,30 @@ public class RoutineDDL {
         }
 
         if (createAlias.getJavaClassName() != null) {
+            String jarSchema = defaultSchemaName;
             String jarName = null;
             String className = createAlias.getJavaClassName();
             String methodName = createAlias.getMethodName();
             int idx = className.indexOf(':');
             if (idx >= 0) {
                 jarName = className.substring(0, idx);
-                className = className.substring(idx + 1, className.length());
+                className = className.substring(idx + 1);
+                idx = jarName.indexOf('.');
+                if (idx >= 0) {
+                    jarSchema = jarName.substring(0, idx);
+                    jarName = jarName.substring(idx + 1);
+                }
             }
-            builder.routineExternalName(schemaName, routineName,
-                                          jarName, className, methodName);
+            if (jarName != null) {
+                AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+                SQLJJar sqljJar = ais.getSQLJJar(jarSchema, jarName);
+                if (sqljJar == null)
+                    throw new NoSuchSQLJJarException(jarSchema, jarName);
+                builder.sqljJar(jarSchema, jarName, sqljJar.getURL());
+            }
+            builder.routineExternalName(schemaName, routineName, 
+                                        jarSchema, jarName, 
+                                        className, methodName);
         }
         else if (createAlias.getDefinition() != null) {
             builder.routineDefinition(schemaName, routineName, 

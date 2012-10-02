@@ -277,6 +277,28 @@ public class AkibanInformationSchema implements Traversable
         return routines.get(routineName);
     }
     
+    public Map<String, SQLJJar> getSQLJJars() {
+        return sqljJars;
+    }
+    
+    public SQLJJar getSQLJJar(final String schemaName, final String jarName)
+    {
+        return getSQLJJar(new TableName(schemaName, jarName));
+    }
+    
+    public SQLJJar getSQLJJar(final TableName name)
+    {
+        return sqljJars.get(name);
+    }
+    
+    void addSQLJJar(SQLJJar sqljJar) {
+        sqljJars.put(sqljJar.getName().getTableName(), sqljJar);
+    }
+    
+    void removeSQLJJar(String sqljJarName) {
+        sqljJars.remove(sqljJarName);
+    }
+    
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
@@ -711,6 +733,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
     private final Map<TableName, View> views = new TreeMap<TableName, View>();
     private final Map<TableName, Routine> routines = new TreeMap<TableName, Routine>();
+    private final Map<String, SQLJJar> sqljJars = new TreeMap<String, SQLJJar>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();

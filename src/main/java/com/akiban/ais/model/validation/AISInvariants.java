@@ -43,6 +43,7 @@ import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateParameterNameException;
 import com.akiban.server.error.DuplicateRoutineNameException;
 import com.akiban.server.error.DuplicateSequenceNameException;
+import com.akiban.server.error.DuplicateSQLJJarNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NameIsNullException;
 
@@ -140,6 +141,13 @@ public class AISInvariants {
             if (routine.getNamedParameter(parameterName) != null) {
                 throw new DuplicateParameterNameException(routine.getName(), parameterName);
             }
+        }
+    }
+
+    public static void checkDuplicateSQLJJar(AkibanInformationSchema ais, String schemaName, String jarName)
+    {
+        if (ais.getSQLJJar(new TableName(schemaName, jarName)) != null) {
+            throw new DuplicateSQLJJarNameException(new TableName(schemaName, jarName));
         }
     }
 }

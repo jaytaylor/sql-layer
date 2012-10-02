@@ -40,6 +40,7 @@ import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
@@ -65,6 +66,7 @@ public class ProtobufWriter {
         boolean isSelected(Index index);
         boolean isSelected(Sequence sequence);
         boolean isSelected(Routine routine);
+        boolean isSelected(SQLJJar sqljJar);
     }
 
     public static final WriteSelector ALL_SELECTOR = new WriteSelector() {
@@ -97,6 +99,11 @@ public class ProtobufWriter {
         public boolean isSelected(Routine routine) {
             return true;
         }
+
+        @Override
+        public boolean isSelected(SQLJJar sqljJar) {
+            return true;
+        }
     };
 
     public static abstract class TableFilterSelector implements WriteSelector {
@@ -122,6 +129,11 @@ public class ProtobufWriter {
 
         @Override
         public boolean isSelected(Routine routine) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(SQLJJar sqljJar) {
             return true;
         }
     }
@@ -174,6 +186,11 @@ public class ProtobufWriter {
         @Override 
         public boolean isSelected(Routine routine) {
             return schemaName.equals(routine.getName().getSchemaName());
+        }
+
+        @Override
+        public boolean isSelected(SQLJJar sqljJar) {
+            return schemaName.equals(sqljJar.getName().getSchemaName());
         }
     }
 
@@ -296,8 +313,15 @@ public class ProtobufWriter {
         }
 
         for (Routine routine : schema.getRoutines().values()) {
-            if (selector.isSelected (routine)) { 
+            if (selector.isSelected(routine)) { 
                 writeRoutine(schemaBuilder, routine);
+                isEmpty = false;
+            }
+        }
+
+        for (SQLJJar sqljJar : schema.getSQLJJars().values()) {
+            if (selector.isSelected(sqljJar)) { 
+                writeSQLJJar(schemaBuilder, sqljJar);
                 isEmpty = false;
             }
         }
@@ -643,6 +667,13 @@ public class ProtobufWriter {
         case RETURN:
             return AISProtobuf.ParameterDirection.RETURN;
         }
+    }
+
+    private static void writeSQLJJar(AISProtobuf.Schema.Builder schemaBuilder, SQLJJar sqljJar) {
+        AISProtobuf.SQLJJar.Builder jarBuilder = AISProtobuf.SQLJJar.newBuilder()
+            .setJarName(sqljJar.getName().getTableName())
+            .setUrl(sqljJar.getURL().toExternalForm());
+        schemaBuilder.addSqljJars(jarBuilder.build());
     }
 
 }

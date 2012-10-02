@@ -481,6 +481,8 @@ public class ProtobufReaderWriterTest {
     @Test
     public void procedureJava() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.sqljJar("myjar")
+            .file("/tmp/procs.jar");
         builder.procedure("PROC1")
             .language("java", Routine.CallingConvention.JAVA)
             .paramLongIn("x1")

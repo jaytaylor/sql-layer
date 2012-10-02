@@ -45,5 +45,8 @@ public interface NewRoutineBuilder {
     
     NewRoutineBuilder externalName(String jarName, String className, String methodName);
 
+    NewRoutineBuilder externalName(String jarSchema, String jarName, 
+                                   String className, String methodName);
+
     NewRoutineBuilder procDef(String definition);
 }
