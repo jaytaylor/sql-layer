@@ -2,19 +2,28 @@
 
 RUN_TESTS='yes'
 OUT_FILE=''
-while getopts 'sho:' opt; do
+while getopts 'sho:i:' opt; do
     case $opt in
-        s) RUN_TESTS='no' ;;
-        o) OUT_FILE=$OPTARG ;;
-        ?) echo 'Run with -s to skip "mvn test", -o <file> to output the failures to a file' ; exit 1 ;;
+        s) RUN_TESTS='no' ;; # whether to run $(mvn test...) or assume it's already been run
+        o) OUT_FILE=$OPTARG ;; # if provided, the file to output failures to
+        i) INPUT_FAILURES=$OPTARG ;; # if provided, the file to read previous known failures from (instead of wget'ing from nighthawk)
+        ?) echo "read the script's source to find the options :)" ; exit 1 ;;
     esac
 done
 
-echo "Getting known failures from nighthawk."
-KNOWN_FAILURES=$(wget -qO - http://172.16.20.117/t3-regressions/known-failures)
-if [ -n "$OUT_FILE" ]; then
-    echo "...outputting to $OUT_FILE"
-    echo "$KNOWN_FAILURES" > $OUT_FILE
+if [ -n "$INPUT_FAILURES" ]; then
+    if [ ! -e $INPUT_FAILURES ]; then
+        echo "Input file $INPUT_FAILURES not found"
+        exit 1
+    fi
+    KNOWN_FAILURES=$(cat $INPUT_FAILURES)
+else
+    echo "Getting known failures from nighthawk."
+    KNOWN_FAILURES=$(wget -qO - http://172.16.20.117/t3-regressions/known-failures)
+    if [ -n "$OUT_FILE" ]; then
+        echo "...outputting to $OUT_FILE"
+        echo "$KNOWN_FAILURES" > $OUT_FILE
+    fi
 fi
 
 if [ "$RUN_TESTS" = "yes" ]; then
