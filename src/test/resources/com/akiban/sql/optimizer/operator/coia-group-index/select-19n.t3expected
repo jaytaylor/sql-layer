@@ -1,4 +1,4 @@
-PhysicalSelect[_SQL_COL_1:MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL]
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL]
   Project_Default(Field(0))
     IfEmpty_Default(NULL)
       Limit_Default(1)
