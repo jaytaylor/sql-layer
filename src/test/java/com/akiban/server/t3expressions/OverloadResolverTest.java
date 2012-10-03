@@ -36,7 +36,7 @@ import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TStrongCasts;
@@ -46,7 +46,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -101,7 +102,7 @@ public class OverloadResolverTest {
 
 
     private static final String MUL_NAME = "*";
-    private static class TestMulBase extends TOverloadBase {
+    private static class TestMulBase extends TScalarBase {
         private final TClass tLeft;
         private final TClass tRight;
         private final TClass tTarget;
@@ -142,7 +143,7 @@ public class OverloadResolverTest {
         }
     }
 
-    private static class TestGetBase extends TOverloadBase {
+    private static class TestGetBase extends TScalarBase {
         private final String name;
         private final TClass tResult;
         private final TInputSetBuilder builder = new TInputSetBuilder();
@@ -193,8 +194,8 @@ public class OverloadResolverTest {
     private OverloadResolver resolver;
 
     private class Initializer {
-        public Initializer overloads(TOverload... overloads) {
-            finder.put(TOverload.class, overloads);
+        public Initializer overloads(TScalar... scalars) {
+            finder.put(TScalar.class, scalars);
             return this;
         }
 
@@ -245,9 +246,9 @@ public class OverloadResolverTest {
         return Arrays.asList(prepVals);
     }
 
-    private void checkResolved(String msg, TOverload expected, String overloadName, List<TPreptimeValue> prepValues) {
+    private void checkResolved(String msg, TScalar expected, String overloadName, List<TPreptimeValue> prepValues) {
         // result.getPickingClass() not checked, SimpleRegistry doesn't implement commonTypes()
-        OverloadResolver.OverloadResult result = resolver.get(overloadName, prepValues);
+        OverloadResolver.OverloadResult result = resolver.get(overloadName, prepValues, TValidatedScalar.class);
         assertSame(msg, expected, result != null ? result.getOverload().getUnderlying() : null);
     }
 
@@ -282,19 +283,19 @@ public class OverloadResolverTest {
     @Test(expected=NoSuchFunctionException.class)
     public void noSuchOverload() {
         new Initializer().init();
-        resolver.get("foo", Arrays.asList(prepVal(TINT)));
+        resolver.get("foo", Arrays.asList(prepVal(TINT)), TValidatedScalar.class);
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooFewParams() {
         new Initializer().overloads(MUL_INTS).init();
-        resolver.get(MUL_NAME, prepVals(TINT));
+        resolver.get(MUL_NAME, prepVals(TINT), TValidatedScalar.class);
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooManyParams() {
         new Initializer().overloads(MUL_INTS).init();
-        resolver.get(MUL_NAME, prepVals(TINT, TINT, TINT));
+        resolver.get(MUL_NAME, prepVals(TINT, TINT, TINT), TValidatedScalar.class);
     }
 
     // default resolution, exact match
@@ -398,7 +399,7 @@ public class OverloadResolverTest {
         new Initializer().overloads(coalesce).init();
 
         try {
-            OverloadResolver.OverloadResult result = resolver.get(NAME, prepVals());
+            OverloadResolver.OverloadResult result = resolver.get(NAME, prepVals(), TValidatedScalar.class);
             fail("WrongArity expected but got: " + result);
         } catch(WrongExpressionArityException e) {
             // Expected

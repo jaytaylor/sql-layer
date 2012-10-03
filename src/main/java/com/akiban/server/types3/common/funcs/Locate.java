@@ -29,16 +29,16 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public abstract class Locate extends TOverloadBase
+public abstract class Locate extends TScalarBase
 {
-    public static TOverload create2ArgOverload(final TClass stringType, final TClass intType, String name)
+    public static TScalar create2ArgOverload(final TClass stringType, final TClass intType, String name)
     {
         return new Locate(intType, name)
         {
@@ -50,7 +50,7 @@ public abstract class Locate extends TOverloadBase
         };
     }
     
-    public static TOverload create3ArgOverload(final TClass stringType, final TClass intType, String name)
+    public static TScalar create3ArgOverload(final TClass stringType, final TClass intType, String name)
     {
         return new Locate(intType, name)
         {

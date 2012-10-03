@@ -360,8 +360,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         orderRD = rowDefCache().getRowDef(orderId);
         itemRD = rowDefCache().getRowDef(itemId);
         // group
-        int groupRowDefId = customerRD.getGroupRowDefId();
-        groupRD = store().getRowDefCache().getRowDef(groupRowDefId);
+        group = customerRD.getGroup();
     }
 
     @Override

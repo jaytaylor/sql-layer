@@ -40,9 +40,7 @@ import com.akiban.server.TableStatus;
  * AIS, interpret it, and provide information on how to encode and decode fields
  * from a RowData structure.
  * 
- * 
  * @author peter
- * 
  */
 public class RowDef {
 
@@ -69,18 +67,6 @@ public class RowDef {
      * Field index of the auto-increment column; -1 if none.
      */
     private int autoIncrementField;
-
-    /**
-     * RowDefs of constituent user tables. Populated only if this is the RowDef
-     * for a group table. Null if this is the RowDef for a user table.
-     */
-    private RowDef[] userTableRowDefs;
-
-    /**
-     * For a user table, the column position of the first column of the user
-     * table relative to the group table.
-     */
-    private int columnOffset;
 
     /**
      * For a user table, the number of Persistit Key segments uses to encode the
@@ -199,18 +185,7 @@ public class RowDef {
                                                            table.getTableId(),
                                                            table.getName(),
                                                            getPkTreeName()));
-        if (userTableRowDefs != null) {
-            for (int i = 0; i < userTableRowDefs.length; i++) {
-                sb.append(i == 0 ? "{" : ",");
-                sb.append(userTableRowDefs[i].getRowDefId());
-                sb.append("->");
-                sb.append(userTableRowDefs[i].getColumnOffset());
-                sb.append(":" + userTableRowDefs[i].getFieldCount());
-            }
-            sb.append("}");
-        }
-        sb.append("groupColumnOffset, fieldcount " + getColumnOffset() + ", "
-                + getFieldCount());
+        sb.append("fieldCount ").append(getFieldCount()).append(' ');
 
         for (int i = 0; i < fieldDefs.length; i++) {
             sb.append(i == 0 ? "[" : ",");
@@ -403,14 +378,6 @@ public class RowDef {
         return fieldDefs;
     }
 
-    public int getGroupRowDefId() {
-        return table.isGroupTable() ? table.getTableId() : table.getGroup().getGroupTable().getTableId();
-    }
-
-    public RowDef getGroupRowDef() {
-        return table().isGroupTable() ? this : table.getGroup().getGroupTable().rowDef();
-    }
-
     public Index[] getIndexes() {
         return indexes;
     }
@@ -474,10 +441,6 @@ public class RowDef {
         return table.getName().getSchemaName();
     }
 
-    public boolean isGroupTable() {
-        return userTableRowDefs != null;
-    }
-
     public int getOrdinal() {
         return ordinalCache;
     }
@@ -487,7 +450,7 @@ public class RowDef {
     }
 
     public boolean isUserTable() {
-        return !isGroupTable();
+        return table.isUserTable();
     }
 
     public void setIndexes(TableIndex[] indexes) {
@@ -514,29 +477,13 @@ public class RowDef {
         return hkeyDepth;
     }
 
-    public int getColumnOffset() {
-        assert !isGroupTable() || columnOffset == 0;
-        return columnOffset;
-    }
-
-    public void setColumnOffset(final int columnOffset) {
-        this.columnOffset = columnOffset;
-    }
-
     public TableIndex getPKIndex() {
-        if (!isGroupTable() && indexes != null && indexes.length > 0) {
+        assert isUserTable() : this;
+        if (indexes != null && indexes.length > 0) {
             return indexes[0];
         } else {
             return null;
         }
-    }
-
-    public RowDef[] getUserTableRowDefs() {
-        return userTableRowDefs;
-    }
-
-    public void setUserTableRowDefs(final RowDef[] userTableRowDefs) {
-        this.userTableRowDefs = userTableRowDefs;
     }
 
     public boolean isAutoIncrement() {

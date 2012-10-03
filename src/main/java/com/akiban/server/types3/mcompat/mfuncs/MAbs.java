@@ -27,8 +27,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.funcs.Abs;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
@@ -39,42 +38,42 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MAbs {
 
-    public static final TOverload TINYINT = new Abs(MNumeric.TINYINT) {
+    public static final TScalar TINYINT = new Abs(MNumeric.TINYINT) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putInt8((byte) Math.abs(inputs.get(0).getInt8()));
         }
     };
-    public static final TOverload SMALLINT = new Abs(MNumeric.SMALLINT) {
+    public static final TScalar SMALLINT = new Abs(MNumeric.SMALLINT) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putInt16((short) Math.abs(inputs.get(0).getInt16()));
         }
     };
-    public static final TOverload MEDIUMINT = new Abs(MNumeric.MEDIUMINT) {
+    public static final TScalar MEDIUMINT = new Abs(MNumeric.MEDIUMINT) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putInt32((int) Math.abs(inputs.get(0).getInt32()));
         }
     };
-    public static final TOverload BIGINT = new Abs(MNumeric.BIGINT) {
+    public static final TScalar BIGINT = new Abs(MNumeric.BIGINT) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putInt64((long) Math.abs(inputs.get(0).getInt64()));
         }
     };
-    public static final TOverload INT = new Abs(MNumeric.INT) {
+    public static final TScalar INT = new Abs(MNumeric.INT) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putInt32((int) Math.abs(inputs.get(0).getInt32()));
         }
     };
-    public static final TOverload DECIMAL = new Abs(MNumeric.DECIMAL) {
+    public static final TScalar DECIMAL = new Abs(MNumeric.DECIMAL) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -82,7 +81,7 @@ public class MAbs {
             output.putObject(wrapper.abs());
         }
     };
-    public static final TOverload DOUBLE = new Abs(MApproximateNumber.DOUBLE) {
+    public static final TScalar DOUBLE = new Abs(MApproximateNumber.DOUBLE) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {

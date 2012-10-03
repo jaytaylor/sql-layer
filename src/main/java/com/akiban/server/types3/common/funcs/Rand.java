@@ -31,16 +31,17 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+
 import java.util.Random;
 
-public abstract class Rand extends TOverloadBase {
+public abstract class Rand extends TScalarBase {
 
     private static final int RAND_INDEX = 0; // the cached Random Object's index
     
-    public static TOverload[] create(TClass inputType, TClass resultType)
+    public static TScalar[] create(TClass inputType, TClass resultType)
     {
-        return new TOverload[]
+        return new TScalar[]
         {
             new Rand(inputType, resultType)
             {

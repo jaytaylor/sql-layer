@@ -361,7 +361,7 @@ final class Aggregate_Partial extends Operator
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         if (pAggrs != null) {
             for (TAggregator agg : pAggrs)
-                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.name().toUpperCase()));
+                atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.displayName().toUpperCase()));
         }
         else {
             for (AggregatorFactory agg : aggregatorFactories)
