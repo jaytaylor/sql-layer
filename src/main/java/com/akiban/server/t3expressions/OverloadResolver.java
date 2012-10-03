@@ -268,9 +268,9 @@ public final class OverloadResolver {
         Iterable<? extends ScalarsGroup<V>> scalarsGroup;
         // TODO CLEANUP: or we could just pass in the right overload registry...
         if (overloadType == TValidatedScalar.class)
-            scalarsGroup = (Iterable<? extends ScalarsGroup<V>>) registry.getOverloads(name);
+            scalarsGroup = (Iterable<? extends ScalarsGroup<V>>) registry.getScalars().get(name);
         else if (overloadType == TValidatedAggregator.class)
-            scalarsGroup = (Iterable<? extends ScalarsGroup<V>>) registry.getAggregates(name);
+            scalarsGroup = (Iterable<? extends ScalarsGroup<V>>) registry.getAggregates().get(name);
         else
             throw new AssertionError("unrecognized overload type: " + overloadType);
         if (scalarsGroup == null) {

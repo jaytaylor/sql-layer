@@ -93,7 +93,7 @@ public final class T3ScalarsRegistryTest {
     public void noOverloads() {
         T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
         registry.start(new InstanceFinderBuilder());
-        assertEquals("lookup for FOO", null, registry.getOverloads("foo"));
+        assertEquals("lookup for FOO", null, registry.getScalars().get("foo"));
         test.noRunNeeded();
     }
 
@@ -129,7 +129,7 @@ public final class T3ScalarsRegistryTest {
             T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
             registry.start(instanceFinder);
 
-            Iterable<? extends ScalarsGroup<TValidatedScalar>> scalarsByPriority = registry.getOverloads(FUNC_NAME);
+            Iterable<? extends ScalarsGroup<TValidatedScalar>> scalarsByPriority = registry.getScalars().get(FUNC_NAME);
             List<Set<TInputSet>> actuals = new ArrayList<Set<TInputSet>>();
             for (ScalarsGroup<TValidatedScalar> scalarsGroup : scalarsByPriority) {
                 Set<TInputSet> actualInputs = new HashSet<TInputSet>();

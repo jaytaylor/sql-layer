@@ -66,10 +66,15 @@ import java.util.TreeMap;
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
 
     // T3RegistryService interface
-    
+
     @Override
-    public Iterable<? extends ScalarsGroup<TValidatedScalar>> getOverloads(String name) {
-        return scalarsRegistry.get(name);
+    public ResolvablesRegistry<TValidatedScalar> getScalars() {
+        return scalarsRegistry;
+    }
+
+    @Override
+    public ResolvablesRegistry<TValidatedAggregator> getAggregates() {
+        return aggreatorsRegistry;
     }
 
     @Override
@@ -80,11 +85,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     @Override
     public Set<TClass> stronglyCastableFrom(TClass tClass) {
         return castsRegistry.stronglyCastableFrom(tClass);
-    }
-
-    @Override
-    public Iterable<? extends ScalarsGroup<TValidatedAggregator>> getAggregates(String name) {
-        return aggreatorsRegistry.get(name);
     }
 
     @Override

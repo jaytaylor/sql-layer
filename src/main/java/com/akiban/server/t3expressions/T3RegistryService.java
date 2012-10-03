@@ -34,8 +34,8 @@ import com.akiban.server.types3.texpressions.TValidatedScalar;
 import java.util.Set;
 
 public interface T3RegistryService {
-    Iterable<? extends ScalarsGroup<TValidatedAggregator>> getAggregates(String name);
-    Iterable<? extends ScalarsGroup<TValidatedScalar>> getOverloads(String name);
+    ResolvablesRegistry<TValidatedScalar> getScalars();
+    ResolvablesRegistry<TValidatedAggregator> getAggregates();
 
     /**
      * Find the registered cast going from source to taret.
