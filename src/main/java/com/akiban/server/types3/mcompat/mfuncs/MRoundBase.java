@@ -33,10 +33,10 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import java.util.List;
 
-public abstract class MRoundBase extends TOverloadBase {
+public abstract class MRoundBase extends TScalarBase {
     
     static enum RoundType
     {
@@ -67,8 +67,8 @@ public abstract class MRoundBase extends TOverloadBase {
         abstract BigDecimalWrapper evaluate(BigDecimalWrapper result);
     }
     
-    public static TOverload[] create(final RoundType roundType) {
-        TOverload exactType = new MRoundBase(roundType, MNumeric.DECIMAL) {
+    public static TScalar[] create(final RoundType roundType) {
+        TScalar exactType = new MRoundBase(roundType, MNumeric.DECIMAL) {
                     
             private final int RET_TYPE_INDEX = 0;
 
@@ -128,7 +128,7 @@ public abstract class MRoundBase extends TOverloadBase {
             }
         };
 
-        TOverload inexactType = new MRoundBase(roundType, MApproximateNumber.DOUBLE) {
+        TScalar inexactType = new MRoundBase(roundType, MApproximateNumber.DOUBLE) {
             private int DEFAULT_DOUBLE = 17;
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -148,7 +148,7 @@ public abstract class MRoundBase extends TOverloadBase {
             }
         };
         
-        return new TOverload[]{exactType, inexactType};
+        return new TScalar[]{exactType, inexactType};
     }
     protected final TClass numericType;
     private final RoundType roundType;

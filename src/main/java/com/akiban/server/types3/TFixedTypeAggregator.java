@@ -24,14 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.common.funcs.Mid;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+public abstract class TFixedTypeAggregator extends TAggregatorBase {
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(inputClass().instance());
+    }
 
-public class MMid
-{
-    public static final TScalar INSTANCE = new Mid(MString.VARCHAR, MNumeric.INT);
+    public TFixedTypeAggregator(String name, TClass inputAndOutput) {
+        super(name, inputAndOutput);
+    }
 }

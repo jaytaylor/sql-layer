@@ -29,18 +29,18 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public abstract class IsTrueFalseUnknown extends TOverloadBase
+public abstract class IsTrueFalseUnknown extends TScalarBase
 {
-    public static TOverload[] create (TClass boolType)
+    public static TScalar[] create (TClass boolType)
     {
-        return new TOverload[]
+        return new TScalar[]
         {
             new IsTrueFalseUnknown(boolType, "isTrue")
             {

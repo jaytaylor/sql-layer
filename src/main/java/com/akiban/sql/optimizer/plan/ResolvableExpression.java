@@ -24,14 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.common.funcs.Mid;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 
-public class MMid
-{
-    public static final TScalar INSTANCE = new Mid(MString.VARCHAR, MNumeric.INT);
+public interface ResolvableExpression<T> extends ExpressionNode {
+    String getFunction();
+    void setResolved(T resolved);
+    T getResolved();
+    TPreptimeContext getPreptimeContext();
+    void setPreptimeContext(TPreptimeContext context);
 }

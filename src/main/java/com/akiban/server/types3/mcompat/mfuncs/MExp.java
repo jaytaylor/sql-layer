@@ -26,11 +26,11 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.common.funcs.Exp;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MExp
 {
-    public static final TOverload INSTANCE = new Exp(MApproximateNumber.DOUBLE);
+    public static final TScalar INSTANCE = new Exp(MApproximateNumber.DOUBLE);
 }

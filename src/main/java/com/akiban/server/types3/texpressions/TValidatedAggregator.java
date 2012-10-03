@@ -24,14 +24,29 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.texpressions;
 
-import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.common.funcs.Mid;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-public class MMid
-{
-    public static final TScalar INSTANCE = new Mid(MString.VARCHAR, MNumeric.INT);
+public final class TValidatedAggregator extends TValidatedOverload implements TAggregator {
+    @Override
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object option) {
+        aggregator.input(instance, source, stateType, state, option);
+    }
+
+    @Override
+    public void emptyValue(PValueTarget state) {
+        aggregator.emptyValue(state);
+    }
+
+    public TValidatedAggregator(TAggregator overload) {
+        super(overload);
+        this.aggregator = overload;
+    }
+    
+    private final TAggregator aggregator;
 }

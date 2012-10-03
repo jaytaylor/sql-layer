@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
+import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
@@ -218,7 +219,7 @@ abstract class ExpressionAssembler<T extends Explainable> {
     }
 
     public abstract Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys,
-                                            List<String> names, List<Object> options);
+                                            AggregateSource aggregateSource);
 
     public interface ColumnExpressionToIndex {
         /** Return the field position of the given column in the target row. */

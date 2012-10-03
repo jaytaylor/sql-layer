@@ -33,17 +33,17 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.texpressions.TScalarBase;
+import com.akiban.server.types3.TScalar;
 
-public class TLog extends TOverloadBase
+public class TLog extends TScalarBase
 {
     static final double ln2 = Math.log(2);
     
-    public static TOverload[] create(TInstance ins)
+    public static TScalar[] create(TInstance ins)
     {
         LogType values[] = LogType.values();
-        TOverload ret[] = new TOverload[values.length];
+        TScalar ret[] = new TScalar[values.length];
         
         for (int n = 0; n < ret.length; ++n)
             ret[n] = new TLog(values[n], ins);
