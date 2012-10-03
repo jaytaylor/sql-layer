@@ -56,9 +56,9 @@ import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.AnyCondition;
 import com.akiban.sql.optimizer.plan.BasePlanWithInput;
+import com.akiban.sql.optimizer.plan.BooleanCastExpression;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
-import com.akiban.sql.optimizer.plan.CastCondition;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
@@ -911,7 +911,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
         if (targetInstance.typeClass() == AkBool.INSTANCE)
             // Allow use as a condition.
-            return new CastCondition(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+            return new BooleanCastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
         else
             return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
     }
