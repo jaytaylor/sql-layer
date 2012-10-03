@@ -628,12 +628,24 @@ public class ProtobufWriter {
         if (routine.getReturnValue() != null) {
             writeParameter(routineBuilder, routine.getReturnValue());
         }
+        SQLJJar sqljJar = routine.getSQLJJar();
+        if (sqljJar != null) {
+            routineBuilder.setJarName(AISProtobuf.TableName.newBuilder()
+                                      .setSchemaName(sqljJar.getName().getSchemaName())
+                                      .setTableName(sqljJar.getName().getTableName())
+                                      .build());
+        }
+        if (routine.getClassName() != null)
+            routineBuilder.setClassName(routine.getClassName());
+        if (routine.getMethodName() != null)
+            routineBuilder.setMethodName(routine.getMethodName());
+        if (routine.getDefinition() != null)
+            routineBuilder.setDefinition(routine.getDefinition());
         schemaBuilder.addRoutines(routineBuilder.build());
     }
 
     private static void writeParameter(AISProtobuf.Routine.Builder routineBuilder, Parameter parameter) {
         AISProtobuf.Parameter.Builder parameterBuilder = AISProtobuf.Parameter.newBuilder()
-            .setParameterName(parameter.getName())
             .setDirection(convertParameterDirection(parameter.getDirection()))
             .setTypeName(parameter.getType().name());
         if (parameter.getTypeParameter1() != null) {
@@ -641,6 +653,9 @@ public class ProtobufWriter {
         }
         if (parameter.getTypeParameter2() != null) {
             parameterBuilder.setTypeParam2(parameter.getTypeParameter2());
+        }
+        if (parameter.getName() != null) {
+            parameterBuilder.setParameterName(parameter.getName());
         }
         routineBuilder.addParameters(parameterBuilder.build());
     }

@@ -75,6 +75,10 @@ public class Routine
         return null;
     }
 
+    public boolean isProcedure() {
+        return (returnValue == null);
+    }
+
     public Parameter getReturnValue() {
         return returnValue;
     }
@@ -97,6 +101,13 @@ public class Routine
 
     public String getMethodName() {
         return methodName;
+    }
+
+    public String getExternalName() {
+        if (methodName == null)
+            return className;
+        else
+            return className + "." + methodName;
     }
 
     public String getDefinition() {

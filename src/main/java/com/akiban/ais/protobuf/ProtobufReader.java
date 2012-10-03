@@ -779,7 +779,8 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbParameter,
                 AISProtobuf.Parameter.TYPEPARAM1_FIELD_NUMBER,
-                AISProtobuf.Parameter.TYPEPARAM2_FIELD_NUMBER
+                AISProtobuf.Parameter.TYPEPARAM2_FIELD_NUMBER,
+                AISProtobuf.Parameter.PARAMETERNAME_FIELD_NUMBER
         );
     }
 

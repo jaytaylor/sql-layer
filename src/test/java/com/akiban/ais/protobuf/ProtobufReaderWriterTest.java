@@ -492,8 +492,10 @@ public class ProtobufReaderWriterTest {
             .paramDoubleOut("d")
             .externalName("myjar", "com.acme.Procs", "proc1");
         
-        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
-        Routine proc = inAIS.getRoutine(SCHEMA, "PROC1");
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+
+        Routine proc = outAIS.getRoutine(SCHEMA, "PROC1");
         assertNotNull(proc);
         
         SQLJJar jar = proc.getSQLJJar();
@@ -513,6 +515,8 @@ public class ProtobufReaderWriterTest {
         assertEquals("d", proc.getParameters().get(2).getName());
         assertEquals(Types.DOUBLE, proc.getParameters().get(2).getType());
         assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
+        assertEquals("com.acme.Procs", proc.getClassName());
+        assertEquals("proc1", proc.getMethodName());
     }
 
     @Test
@@ -522,8 +526,10 @@ public class ProtobufReaderWriterTest {
             .language("java", Routine.CallingConvention.LOADABLE_PLAN)
             .externalName("com.acme.Procs", "proc1");
         
-        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
-        Routine proc = inAIS.getRoutine(SCHEMA, "PROC2");
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+
+        Routine proc = outAIS.getRoutine(SCHEMA, "PROC2");
         
         assertEquals("java", proc.getLanguage());
         assertEquals(Routine.CallingConvention.LOADABLE_PLAN, proc.getCallingConvention());
