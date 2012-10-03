@@ -30,7 +30,7 @@ import com.akiban.util.HasId;
 
 import java.util.List;
 
-public interface TResolvable extends HasId {
+public interface TOverload extends HasId {
 
     /**
      *

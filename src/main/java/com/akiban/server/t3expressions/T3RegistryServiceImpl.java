@@ -38,7 +38,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TScalar;
-import com.akiban.server.types3.TResolvable;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TStrongCasts;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -48,8 +48,8 @@ import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
-import com.akiban.server.types3.texpressions.TValidatedResolvable;
 import com.akiban.util.DagChecker;
 import com.akiban.util.HasId;
 import com.google.common.base.Function;
@@ -585,8 +585,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return result;
         }
 
-        private <V extends TValidatedResolvable> Object describeOverloads(ResolvablesRegistry<V> registry) {
-            Multimap<String, TResolvable> flattenedOverloads = HashMultimap.create();
+        private <V extends TValidatedOverload> Object describeOverloads(ResolvablesRegistry<V> registry) {
+            Multimap<String, TOverload> flattenedOverloads = HashMultimap.create();
             for (Map.Entry<String, ScalarsGroup<V>> entry : registry.entriesByName()) {
                 String overloadName = entry.getKey();
                 ScalarsGroup<V> scalarsGroup = entry.getValue();

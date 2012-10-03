@@ -29,9 +29,9 @@ package com.akiban.server.t3expressions;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCommutativeOverloads;
-import com.akiban.server.types3.TResolvable;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.service.InstanceFinder;
-import com.akiban.server.types3.texpressions.TValidatedResolvable;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -51,7 +51,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-final class ResolvablesRegistry<V extends TValidatedResolvable> {
+final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     public Iterable<? extends ScalarsGroup<V>> get(String name) {
         List<ScalarsGroup<V>> result = overloadsByName.get(name.toLowerCase());
@@ -62,7 +62,7 @@ final class ResolvablesRegistry<V extends TValidatedResolvable> {
         return Collections.unmodifiableCollection(overloadsByName.entries());
     }
 
-    public static <R extends TResolvable, V extends TValidatedResolvable>
+    public static <R extends TOverload, V extends TValidatedOverload>
     ResolvablesRegistry<V> create(InstanceFinder finder,
                                   Class<R> plainClass,
                                   Function<R, V> validator,
@@ -76,16 +76,16 @@ final class ResolvablesRegistry<V extends TValidatedResolvable> {
         this.overloadsByName = overloadsByName;
     }
 
-    private static <R extends TResolvable, V extends TValidatedResolvable>
+    private static <R extends TOverload, V extends TValidatedOverload>
     ListMultimap<String, ScalarsGroup<V>> createScalars(InstanceFinder finder,
                                                         Class<R> plainClass,
                                                         Function<R, V> validator,
                                                         Function<V, V> commutor)
     {
 
-        Set<TResolvable> commutedOverloads;
+        Set<TOverload> commutedOverloads;
         if (commutor != null) {
-            commutedOverloads = new HashSet<TResolvable>();
+            commutedOverloads = new HashSet<TOverload>();
             for (TCommutativeOverloads commutativeOverloads : finder.find(TCommutativeOverloads.class)) {
                 commutativeOverloads.addTo(commutedOverloads);
             }
@@ -146,7 +146,7 @@ final class ResolvablesRegistry<V extends TValidatedResolvable> {
         return Multimaps.unmodifiableListMultimap(results);
     }
 
-    private static <V extends TResolvable> List<Collection<V>> scalarsByPriority(
+    private static <V extends TOverload> List<Collection<V>> scalarsByPriority(
             Collection<V> overloads)
     {
         // First, we'll put this into a SortedMap<Integer, Collection<TVO>> so that we have each subset of the
@@ -193,7 +193,7 @@ final class ResolvablesRegistry<V extends TValidatedResolvable> {
 
     // static classes
 
-    protected static class ScalarsGroupImpl<V extends TValidatedResolvable> implements ScalarsGroup<V> {
+    protected static class ScalarsGroupImpl<V extends TValidatedOverload> implements ScalarsGroup<V> {
 
         @Override
         public Collection<? extends V> getOverloads() {
@@ -218,18 +218,18 @@ final class ResolvablesRegistry<V extends TValidatedResolvable> {
                     : sameType.get(pos);
         }
 
-        private static <V extends TValidatedResolvable> int nArgsOf(V ovl)
+        private static <V extends TValidatedOverload> int nArgsOf(V ovl)
         {
             return ovl.positionalInputs()
                     + (ovl.varargInputSet() == null ? 0 : 1);
         }
 
-        private static <V extends TValidatedResolvable> boolean hasVararg(V ovl)
+        private static <V extends TValidatedOverload> boolean hasVararg(V ovl)
         {
             return ovl.varargInputSet() != null;
         }
 
-        protected static <V extends TValidatedResolvable>
+        protected static <V extends TValidatedOverload>
         BitSet doFindSameType(Collection<? extends V> overloads, int range[], boolean outRange[])
         {
             ArrayList<Integer> nArgs = new ArrayList<Integer>();

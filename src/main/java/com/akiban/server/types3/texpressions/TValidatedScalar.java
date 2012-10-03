@@ -41,7 +41,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 import java.util.List;
 
-public final class TValidatedScalar extends TValidatedResolvable implements TScalar {
+public final class TValidatedScalar extends TValidatedOverload implements TScalar {
 
     // TOverload methods (straight delegation)
 

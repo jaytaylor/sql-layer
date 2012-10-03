@@ -33,8 +33,8 @@ import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
-import com.akiban.server.types3.texpressions.TValidatedResolvable;
 import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ import java.util.Set;
 
 public final class OverloadResolver {
 
-    public class OverloadResult<V extends TValidatedResolvable> {
+    public class OverloadResult<V extends TValidatedOverload> {
         private V overload;
         private Map<TInputSet, TInstance> instances;
 
@@ -263,7 +263,7 @@ public final class OverloadResolver {
         return mostSpecific;
     }
 
-    public <V extends TValidatedResolvable> OverloadResult<V> get(String name, List<? extends TPreptimeValue> inputs,
+    public <V extends TValidatedOverload> OverloadResult<V> get(String name, List<? extends TPreptimeValue> inputs,
                                                                      Class<V> overloadType) {
         Iterable<? extends ScalarsGroup<V>> scalarsGroup;
         // TODO CLEANUP: or we could just pass in the right overload registry...
@@ -279,7 +279,7 @@ public final class OverloadResolver {
         return inputBasedResolution(name, inputs, scalarsGroup);
     }
 
-    private <V extends TValidatedResolvable> OverloadResult<V> inputBasedResolution(
+    private <V extends TValidatedOverload> OverloadResult<V> inputBasedResolution(
             String name, List<? extends TPreptimeValue> inputs,
             Iterable<? extends ScalarsGroup<V>> scalarGroupsByPriority)
     {
@@ -359,7 +359,7 @@ public final class OverloadResolver {
         return isStrong(registry.cast(source, target));
     }
 
-    private <V extends TValidatedResolvable> boolean isCandidate(V overload,
+    private <V extends TValidatedOverload> boolean isCandidate(V overload,
                                 List<? extends TPreptimeValue> inputs,
                                 ScalarsGroup<V> scalarGroups) {
         if (!overload.coversNInputs(inputs.size()))
@@ -398,7 +398,7 @@ public final class OverloadResolver {
         return true;
     }
 
-    private <V extends TValidatedResolvable> OverloadResult<V> buildResult(
+    private <V extends TValidatedOverload> OverloadResult<V> buildResult(
             V overload, List<? extends TPreptimeValue> inputs)
     {
         return new OverloadResult<V>(overload, inputs);
@@ -413,7 +413,7 @@ public final class OverloadResolver {
      * set Ai can be strongly cast to the target type of Bi, then A is said to be MORE SPECIFIC than A, and B
      * is discarded as a possible overload.
      */
-    private <V extends TValidatedResolvable> List<List<V>> reduceToMinimalCastGroups(List<V> candidates) {
+    private <V extends TValidatedOverload> List<List<V>> reduceToMinimalCastGroups(List<V> candidates) {
         // NOTE:
         // This method shares some concepts with #commonTClass. See that method for a note about possible refactoring
         // opportunities (tl;dr is the two methods don't share code right now, but they might be able to.)
