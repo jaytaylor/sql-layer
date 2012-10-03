@@ -31,11 +31,11 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public class MMaketime extends TOverloadBase {
+public class MMaketime extends TScalarBase {
 
-    public static final TOverload INSTANCE = new MMaketime() {};
+    public static final TScalar INSTANCE = new MMaketime() {};
     
     private MMaketime() {}
 

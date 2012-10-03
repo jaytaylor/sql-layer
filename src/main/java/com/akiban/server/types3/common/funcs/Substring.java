@@ -31,7 +31,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -40,14 +40,15 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+
 import java.util.List;
 
-public abstract class Substring extends TOverloadBase
+public abstract class Substring extends TScalarBase
 {
-    public static TOverload[] create(TClass strType, TClass intType)
+    public static TScalar[] create(TClass strType, TClass intType)
     {
-        return new TOverload[]
+        return new TScalar[]
         {
             new Substring(strType, intType, new int[] {1}) // 2 args: SUBSTR(<STRING>, <OFFSET>)
             {

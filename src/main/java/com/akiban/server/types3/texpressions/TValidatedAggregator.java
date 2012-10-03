@@ -32,7 +32,7 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-public final class TValidatedAggregator extends TValidatedResolvable implements TAggregator {
+public final class TValidatedAggregator extends TValidatedOverload implements TAggregator {
     @Override
     public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object option) {
         aggregator.input(instance, source, stateType, state, option);

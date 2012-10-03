@@ -33,12 +33,12 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import java.util.List;
 
-public class MSubstringIndex extends TOverloadBase {
+public class MSubstringIndex extends TScalarBase {
 
-    public static final TOverload INSTANCE = new MSubstringIndex();
+    public static final TScalar INSTANCE = new MSubstringIndex();
     
     private static final int MATCHER_INDEX = 0;
 

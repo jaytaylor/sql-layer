@@ -33,13 +33,13 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.T3TestClass;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.texpressions.TScalarBase;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -166,13 +166,13 @@ public final class ScalarsGroupImplTest {
         assertEquals(sameTypeAtExpected, scalarsGroup.hasSameTypeAt(pos));
     }
 
-    public ScalarsGroupImplTest(ScalarsGroup<TValidatedOverload> scalarsGroup, int pos, boolean sameTypeAtExpected) {
+    public ScalarsGroupImplTest(ScalarsGroup<TValidatedScalar> scalarsGroup, int pos, boolean sameTypeAtExpected) {
         this.scalarsGroup = scalarsGroup;
         this.pos = pos;
         this.sameTypeAtExpected = sameTypeAtExpected;
     }
 
-    private final ScalarsGroup<TValidatedOverload> scalarsGroup;
+    private final ScalarsGroup<TValidatedScalar> scalarsGroup;
     private final int pos;
     private final boolean sameTypeAtExpected;
 
@@ -208,14 +208,14 @@ public final class ScalarsGroupImplTest {
                 assert expectations == null : expectations;
                 return; // must have been the first call to start()
             }
-            Collection<TValidatedOverload> overloads = new ArrayList<TValidatedOverload>();
+            Collection<TValidatedScalar> overloads = new ArrayList<TValidatedScalar>();
             for (String overloadDef : overloadDefs) {
-                TOverload overload = parse(overloadDef);
-                TValidatedOverload validated = new TValidatedOverload(overload);
+                TScalar scalar = parse(overloadDef);
+                TValidatedScalar validated = new TValidatedScalar(scalar);
                 overloads.add(validated);
             }
-            ScalarsGroup<TValidatedOverload> scalarsGroup
-                    = new ResolvablesRegistry.ScalarsGroupImpl<TValidatedOverload>(overloads);
+            ScalarsGroup<TValidatedScalar> scalarsGroup
+                    = new ResolvablesRegistry.ScalarsGroupImpl<TValidatedScalar>(overloads);
 
             StringBuilder overloadsDescBuilder = new StringBuilder();
             for (int i = 0; i < overloadDefs.length; i++) {
@@ -234,8 +234,8 @@ public final class ScalarsGroupImplTest {
             }
         }
 
-        private TOverload parse(final String overloadDef) {
-            return new TOverloadBase() {
+        private TScalar parse(final String overloadDef) {
+            return new TScalarBase() {
                 @Override
                 protected void buildInputSets(TInputSetBuilder builder) {
                     String[] args = overloadDef.split(", *");

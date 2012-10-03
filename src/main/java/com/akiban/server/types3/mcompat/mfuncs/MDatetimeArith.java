@@ -32,16 +32,16 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import java.util.List;
 import org.joda.time.MutableDateTime;
 
-public abstract class MDatetimeArith extends TOverloadBase {
+public abstract class MDatetimeArith extends TScalarBase {
     
     private final String name;
     private static final long DAY_FACTOR = 3600L * 1000 * 24;
 
-    public static final TOverload DATEDIFF = new MDatetimeArith("DATEDIFF") {
+    public static final TScalar DATEDIFF = new MDatetimeArith("DATEDIFF") {
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
@@ -60,7 +60,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         }
     };
     
-    public static final TOverload TIMEDIFF = new MDatetimeArith("TIMEDIFF") {
+    public static final TScalar TIMEDIFF = new MDatetimeArith("TIMEDIFF") {
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
