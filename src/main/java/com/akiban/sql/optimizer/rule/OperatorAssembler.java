@@ -815,10 +815,10 @@ public class OperatorAssembler extends BaseRule
                     if (column.getIdentityGenerator() != null) {
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
                         row[i] = oldPartialAssembler.sequenceGenerator(sequence, column, row[i]);
-                    }
-                    else if (column.getDefaultValue() != null) {
-                        // TODO: Convert the defaultValue string into an Expression
-                        row[i] = LiteralExpression.forNull();
+                    //}
+                    //else if (column.getDefaultValue() != null) {
+                    // TODO: Convert the defaultValue string into an Expression
+                    //    row[i] = LiteralExpression.forNull();
                     } else if (row[i] == null) {
                         row[i] = LiteralExpression.forNull();
                     }
