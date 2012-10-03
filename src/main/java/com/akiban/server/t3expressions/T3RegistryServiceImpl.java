@@ -26,39 +26,25 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastIdentifier;
-import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TStrongCasts;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.service.ReflectiveInstanceFinder;
-import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
-import com.akiban.util.DagChecker;
 import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Objects;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,14 +56,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
 
