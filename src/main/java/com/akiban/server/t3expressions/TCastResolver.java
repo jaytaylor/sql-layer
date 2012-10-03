@@ -52,7 +52,6 @@ public final class TCastResolver {
         return castsRegistry.castsBySource();
     }
 
-
     /**
      * Returns the common of the two types. For either argument, a <tt>null</tt> value is interpreted as any type. At
      * least one of the input TClasses must be non-<tt>null</tt>. If one of the inputs is null, the result is always

@@ -33,5 +33,4 @@ public interface T3RegistryService {
     OverloadResolver<TValidatedScalar> getScalarsResolver();
     OverloadResolver<TValidatedAggregator> getAggregatesResolver();
     TCastResolver getCastsResolver();
-
 }
