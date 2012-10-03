@@ -30,6 +30,7 @@ import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -60,7 +61,7 @@ public class MMinMax extends TAggregatorBase {
     public static final TAggregator MAX = new MMinMax(MType.MAX);
     
     private MMinMax(MType mType) {
-        this.mType = mType;
+        super(mType.name(), null);
     }
 
     @Override
@@ -84,22 +85,7 @@ public class MMinMax extends TAggregatorBase {
     }
 
     @Override
-    public TInstance resultType(TPreptimeValue value) {
-        return value.instance();
-    }
-
-    @Override
-    public TClass getTypeClass() {
-        return null;
-    }
-
-    @Override
-    public String name() {
-        return mType.name();
-    }
-
-    @Override
-    public String toString() {
-        return name().toLowerCase();
+    public TOverloadResult resultType() {
+        return TOverloadResult.picking();
     }
 }

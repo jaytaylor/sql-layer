@@ -209,7 +209,11 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     }
 
     @Override
-    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names, List<Object> options) {
+    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys,
+                                       AggregateSource aggregateSource)
+    {
+        List<String> names = aggregateSource.getAggregateFunctions();
+        List<Object> options = aggregateSource.getOptions();
         return API.aggregate_Partial(
                 inputOperator,
                 rowType,

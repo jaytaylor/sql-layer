@@ -29,34 +29,29 @@ package com.akiban.server.types3.mcompat.aggr;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
+import java.util.List;
+
 public abstract class MCount extends TAggregatorBase {
 
     public static final TAggregator[] INSTANCES = {
-        // COUNT(*)
-        new MCount() {
-
+        new MCount("count(*)") {
             @Override
             public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object o) {
                 long count = state.hasAnyValue() ? state.getInt64() : 0;
                 ++count;
                 state.putInt64(count);
             }
-
-            @Override
-            public String name() {
-                return "count(*)";
-            }
         },
-        // COUNT
-        new MCount() {
-
+        new MCount("count") {
             @Override
             public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object o) {
                 if (!source.isNull()) {
@@ -64,11 +59,6 @@ public abstract class MCount extends TAggregatorBase {
                     ++count;
                     state.putInt64(count);
                 }
-            }
-
-            @Override
-            public String name() {
-                return "count";
             }
         }
     };
@@ -79,17 +69,11 @@ public abstract class MCount extends TAggregatorBase {
     }
 
     @Override
-    public TClass getTypeClass() {
-        return null;
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(MNumeric.BIGINT.instance());
     }
 
-    @Override
-    public TInstance resultType(TPreptimeValue value) {
-        return MNumeric.BIGINT.instance();
-    }
-
-    @Override
-    public String toString() {
-        return name();
+    private MCount(String name) {
+        super(name, null);
     }
 }

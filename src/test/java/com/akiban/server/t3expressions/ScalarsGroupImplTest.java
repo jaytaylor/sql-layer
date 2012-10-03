@@ -166,13 +166,13 @@ public final class ScalarsGroupImplTest {
         assertEquals(sameTypeAtExpected, scalarsGroup.hasSameTypeAt(pos));
     }
 
-    public ScalarsGroupImplTest(ScalarsGroup scalarsGroup, int pos, boolean sameTypeAtExpected) {
+    public ScalarsGroupImplTest(ScalarsGroup<TValidatedOverload> scalarsGroup, int pos, boolean sameTypeAtExpected) {
         this.scalarsGroup = scalarsGroup;
         this.pos = pos;
         this.sameTypeAtExpected = sameTypeAtExpected;
     }
 
-    private final ScalarsGroup scalarsGroup;
+    private final ScalarsGroup<TValidatedOverload> scalarsGroup;
     private final int pos;
     private final boolean sameTypeAtExpected;
 
@@ -214,7 +214,8 @@ public final class ScalarsGroupImplTest {
                 TValidatedOverload validated = new TValidatedOverload(overload);
                 overloads.add(validated);
             }
-            ScalarsGroup scalarsGroup = new T3RegistryServiceImpl.ScalarsGroupImpl(overloads);
+            ScalarsGroup<TValidatedOverload> scalarsGroup
+                    = new ResolvablesRegistry.ScalarsGroupImpl<TValidatedOverload>(overloads);
 
             StringBuilder overloadsDescBuilder = new StringBuilder();
             for (int i = 0; i < overloadDefs.length; i++) {

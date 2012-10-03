@@ -56,6 +56,8 @@ import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
+import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
@@ -100,7 +102,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         SparseArray<Object> preptimeValues = null;
         if (functionNode instanceof FunctionExpression) {
             FunctionExpression fexpr = (FunctionExpression) functionNode;
-            overload = fexpr.getOverload();
+            overload = fexpr.getResolved();
             preptimeValues = fexpr.getPreptimeValues();
         }
         else if (functionNode instanceof BooleanOperationExpression) {
@@ -108,7 +110,8 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             for (ExpressionNode argument : argumentNodes) {
                 inputPreptimeValues.add(argument.getPreptimeValue());
             }
-            OverloadResult overloadResult = overloadResolver.get(functionName, inputPreptimeValues);
+            OverloadResult<TValidatedOverload> overloadResult = overloadResolver.get(functionName, inputPreptimeValues,
+                    TValidatedOverload.class);
             overload = overloadResult.getOverload();
         }
         else if (functionNode instanceof IfElseExpression) {
@@ -214,18 +217,15 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     }
 
     @Override
-    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names, List<Object> options) {
-        int naggrs = names.size();
+    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, AggregateSource aggregateSource) {
+        List<AggregateFunctionExpression> aggregates = aggregateSource.getAggregates();
+        int naggrs = aggregates.size();
         List<TAggregator> aggregators = new ArrayList<TAggregator>(naggrs);
         List<TInstance> outputInstances = new ArrayList<TInstance>(naggrs);
         for (int i = 0; i < naggrs; ++i) {
-            int inputIndex = nkeys + i;
-            TInstance inputInstance = rowType.typeInstanceAt(inputIndex);
-            TAggregator aggr = overloadResolver.getAggregation(names.get(i), inputInstance.typeClass());
-            TPreptimeValue preptimeValue = new TPreptimeValue(inputInstance);
-            TInstance outputInstance = aggr.resultType(preptimeValue);
-            aggregators.add(aggr);
-            outputInstances.add(outputInstance);
+            AggregateFunctionExpression aggr = aggregates.get(i);
+            aggregators.add(aggr.getResolved());
+            outputInstances.add(aggr.getPreptimeValue().instance());
         }
         return API.aggregate_Partial(
                 inputOperator,
@@ -233,7 +233,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
                 nkeys,
                 aggregators,
                 outputInstances,
-                options);
+                aggregateSource.getOptions());
     }
 
     @Override

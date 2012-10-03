@@ -28,16 +28,16 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TResolvable;
 import com.akiban.util.SparseArray;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TValidatedResolvable<T extends TResolvable> implements TResolvable {
+public class TValidatedResolvable implements TResolvable {
 
     // TResolvable methods (straight delegation)
 
@@ -76,7 +76,7 @@ public class TValidatedResolvable<T extends TResolvable> implements TResolvable 
 
     // TValidatedResolvable methods
 
-    public T getUnderlying() {
+    public TResolvable getUnderlying() {
         return overload;
     }
 
@@ -151,15 +151,15 @@ public class TValidatedResolvable<T extends TResolvable> implements TResolvable 
         return (!isVararg()) && inputSetsByPos.size() == nargs;
     }
 
-    TValidatedResolvable(T overload) {
+    TValidatedResolvable(TResolvable overload) {
         this(overload, overload.inputSets());
     }
 
-    TValidatedResolvable(T overload, List<TInputSet> inputSets) {
+    TValidatedResolvable(TResolvable overload, List<TInputSet> inputSets) {
         TInputSet localVarargInputs = null;
         TInputSet localPickingInputs = null;
         SparseArray<TInputSet> inputSetsArray = new SparseArray<TInputSet>();
-        this.inputSetsCached = inputSets;
+        this.inputSetsCached = new ArrayList<TInputSet>(inputSets);
         for (TInputSet inputSet : inputSetsCached) {
             if (inputSet.coversRemaining()) {
                 if (localVarargInputs != null)
@@ -222,7 +222,7 @@ public class TValidatedResolvable<T extends TResolvable> implements TResolvable 
         return result;
     }
 
-    private final T overload;
+    private final TResolvable overload;
     private final List<TInputSet> inputSetsCached;
     private final List<TInputSet> inputSetsByPos;
     private final TOverloadResult resultStrategy;

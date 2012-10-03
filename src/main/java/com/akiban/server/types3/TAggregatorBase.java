@@ -26,10 +26,52 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.util.BitSets;
+
+import java.util.Collections;
+import java.util.List;
+
 public abstract class TAggregatorBase implements TAggregator {
 
     @Override
     public String id() {
         return getClass().getName();
     }
+
+    @Override
+    public int[] getPriorities() {
+        return new int[] { 1 };
+    }
+
+    @Override
+    public String[] registeredNames() {
+        return new String[] { displayName() };
+    }
+
+    @Override
+    public final String displayName() {
+        return name;
+    }
+
+    @Override
+    public final List<TInputSet> inputSets() {
+        return Collections.singletonList(new TInputSet(inputClass, BitSets.of(0), false, inputClass == null, false));
+    }
+
+    @Override
+    public final String toString() {
+        return displayName();
+    }
+
+    protected TClass inputClass() {
+        return inputClass;
+    }
+
+    protected TAggregatorBase(String name, TClass inputClass) {
+        this.name = name;
+        this.inputClass = inputClass;
+    }
+
+    private final String name;
+    private final TClass inputClass;
 }

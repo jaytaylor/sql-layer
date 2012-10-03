@@ -34,45 +34,41 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.util.SparseArray;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public final class TValidatedOverload extends TValidatedResolvable<TOverload> implements TOverload {
+public final class TValidatedOverload extends TValidatedResolvable implements TOverload {
 
     // TOverload methods (straight delegation)
 
     @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs) {
-        return getUnderlying().evaluateConstant(context, inputs);
+        return overload.evaluateConstant(context, inputs);
     }
 
     @Override
     public void finishPreptimePhase(TPreptimeContext context) {
-        getUnderlying().finishPreptimePhase(context);
+        overload.finishPreptimePhase(context);
     }
 
     @Override
     public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        getUnderlying().evaluate(context, inputs, output);
+        overload.evaluate(context, inputs, output);
     }
 
     @Override
     public String toString(List<? extends TPreparedExpression> inputs, TInstance resultType) {
-        return getUnderlying().toString(inputs, resultType);
+        return overload.toString(inputs, resultType);
     }
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context, List<? extends TPreparedExpression> inputs, TInstance resultType)
     {
-        return getUnderlying().getExplainer(context, inputs, resultType);
+        return overload.getExplainer(context, inputs, resultType);
     }
 
     public <T> LazyList<? extends T> filterInputs(LazyList<? extends T> inputs) {
@@ -92,7 +88,7 @@ public final class TValidatedOverload extends TValidatedResolvable<TOverload> im
         builder.covers(origArg1, 0);
         builder.covers(origArg0, 1);
         List<TInputSet> commutedInputSets = builder.toList();
-        return new TValidatedOverload(getUnderlying(), commutedInputSets, true);
+        return new TValidatedOverload(overload, commutedInputSets, true);
     }
 
     public TValidatedOverload(TOverload overload) {
@@ -102,7 +98,9 @@ public final class TValidatedOverload extends TValidatedResolvable<TOverload> im
     private TValidatedOverload(TOverload overload, List<TInputSet> inputSets, boolean commuted) {
         super(overload, inputSets);
         this.commuted = commuted;
+        this.overload = overload;
     }
 
+    private final TOverload overload;
     private final boolean commuted;
 }

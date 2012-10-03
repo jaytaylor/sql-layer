@@ -31,17 +31,17 @@ import java.util.Collections;
 
 public final class TCommutativeOverloads {
 
-    public static TCommutativeOverloads createFrom(TOverload... overloads) {
+    public static TCommutativeOverloads createFrom(TResolvable... overloads) {
         return new TCommutativeOverloads(overloads);
     }
 
-    public void addTo(Collection<? super TOverload> overloadsSet) {
+    public void addTo(Collection<? super TResolvable> overloadsSet) {
         Collections.addAll(overloadsSet, origins);
     }
 
-    private TCommutativeOverloads(TOverload[] origins) {
+    private TCommutativeOverloads(TResolvable[] origins) {
         this.origins = origins;
     }
 
-    private final TOverload[] origins;
+    private final TResolvable[] origins;
 }

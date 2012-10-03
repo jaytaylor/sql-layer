@@ -24,13 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.types3.texpressions.TValidatedResolvable;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 
-import java.util.Collection;
-
-public interface ScalarsGroup<V extends TValidatedResolvable> {
-    Collection<? extends V> getOverloads();
-    boolean hasSameTypeAt(int pos);
+public interface ResolvableExpression<T> extends ExpressionNode {
+    String getFunction();
+    void setResolved(T resolved);
+    T getResolved();
+    TPreptimeContext getPreptimeContext();
+    void setPreptimeContext(TPreptimeContext context);
 }

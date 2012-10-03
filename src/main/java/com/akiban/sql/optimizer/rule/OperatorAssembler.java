@@ -145,7 +145,8 @@ public class OperatorAssembler extends BaseRule
                                      ColumnExpressionToIndex fieldOffsets);
         T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets);
         void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, T[] arr, int i);
-        Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex, List<String> names, List<Object> options);
+        Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
+                                    AggregateSource aggregateSource);
 
         T field(RowType rowType, int position);
         
@@ -204,7 +205,7 @@ public class OperatorAssembler extends BaseRule
 
         @Override
         public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                           List<String> names, List<Object> options) {
+                                           AggregateSource aggregateSource) {
             throw new AssertionError();
         }
 
@@ -295,8 +296,8 @@ public class OperatorAssembler extends BaseRule
             // Assemble an aggregate operator
             @Override
             public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                               List<String> names, List<Object> options) {
-                return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, names, options);
+                                               AggregateSource aggregateSource) {
+                return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, aggregateSource);
             }
 
             protected abstract T existsExpression(Operator operator, RowType outerRowType,
@@ -1464,7 +1465,7 @@ public class OperatorAssembler extends BaseRule
             }
             PartialAssembler<?> partialAssembler = usePValues ? newPartialAssembler : oldPartialAssembler;
             stream.operator = partialAssembler.assembleAggregates(stream.operator, stream.rowType, nkeys,
-                    aggregateSource.getAggregateFunctions(), aggregateSource.getOptions());
+                    aggregateSource);
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);

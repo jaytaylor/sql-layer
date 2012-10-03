@@ -24,13 +24,29 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.server.types3.texpressions;
 
-import com.akiban.server.types3.texpressions.TValidatedResolvable;
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-import java.util.Collection;
+public final class TValidatedAggregator extends TValidatedResolvable implements TAggregator {
+    @Override
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object option) {
+        aggregator.input(instance, source, stateType, state, option);
+    }
 
-public interface ScalarsGroup<V extends TValidatedResolvable> {
-    Collection<? extends V> getOverloads();
-    boolean hasSameTypeAt(int pos);
+    @Override
+    public void emptyValue(PValueTarget state) {
+        aggregator.emptyValue(state);
+    }
+
+    public TValidatedAggregator(TAggregator overload) {
+        super(overload);
+        this.aggregator = overload;
+    }
+    
+    private final TAggregator aggregator;
 }
