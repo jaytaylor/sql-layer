@@ -1,0 +1,74 @@
+#!/bin/bash
+
+RUN_TESTS='yes'
+OUT_FILE=''
+while getopts 'sho:i:' opt; do
+    case $opt in
+        s) RUN_TESTS='no' ;; # whether to run $(mvn test...) or assume it's already been run
+        o) OUT_FILE=$OPTARG ;; # if provided, the file to output failures to
+        i) INPUT_FAILURES=$OPTARG ;; # if provided, the file to read previous known failures from (instead of wget'ing from nighthawk)
+        ?) echo "read the script's source to find the options :)" ; exit 1 ;;
+    esac
+done
+
+if [ -n "$INPUT_FAILURES" ]; then
+    if [ ! -e $INPUT_FAILURES ]; then
+        echo "Input file $INPUT_FAILURES not found"
+        exit 1
+    fi
+    echo "Getting known failures from provided file: $INPUT_FAILURES"
+    KNOWN_FAILURES=$(cat $INPUT_FAILURES)
+else
+    echo "Getting known failures from nighthawk."
+    KNOWN_FAILURES=$(wget -qO - http://172.16.20.117/t3-regressions/known-failures)
+fi
+if [ -n "$OUT_FILE" ] && [ "$OUT_FILE" != "$INPUT_FAILURES" ]; then
+    echo "...outputting to $OUT_FILE"
+    echo "$KNOWN_FAILURES" > $OUT_FILE
+fi
+
+if [ "$RUN_TESTS" = "yes" ]; then
+    CMD='mvn test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
+    echo "Running tests: $CMD"
+    echo '...'
+    time ($CMD > /dev/null)
+    echo "Tests finished."
+else
+    echo "Skipping tests run."
+fi
+
+BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# the sed of '-' -> 'ZZZ' -> '-' is to ensure stable sorting across OSes
+FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sed 's/-/ZZZ/g' | sort | sed 's/ZZZ/-/g')
+FAILDIFF=$(echo "$FAILED" | diff <(echo "$KNOWN_FAILURES") <(echo "$FAILED"))
+echo "$FAILDIFF"
+REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
+FIXES=$(echo "$FAILDIFF" | grep '<')
+RESULT="neither"
+REGRESSIONS_COUNT=0
+FIXES_COUNT=0
+if [ -n "$FIXES" ]; then
+    echo "$FIXES"       | sed 's/^< /Fixed:     /'
+    FIXES_COUNT=$(echo "$FIXES" | wc -l)
+    RESULT="fixes"
+fi
+if [ -n "$REGRESSIONS" ]; then
+    echo "$REGRESSIONS" | sed 's/^> /REGRESSED: /'
+    REGRESSIONS_COUNT=$(echo "$REGRESSIONS" | wc -l)
+    RESULT="regressions"
+fi
+
+echo "Fixes:       $FIXES_COUNT"
+echo "Regressions: $REGRESSIONS_COUNT"
+
+if [ "$RESULT" = "fixes" ] && [ -n "$OUT_FILE" ]; then
+    if [ -n "$FAILED" ]; then
+        echo "Updating expected failures file with $(echo "$FAILED" | wc -l) failures"
+    else
+        echo "No failures!!!"
+    fi
+    echo "$FAILED" > $OUT_FILE
+elif [ "$RESULT" = "neither" ]; then
+    echo "No fixes or regressions."
+fi
+exit $(test "$REGRESSIONS_COUNT" = "0")

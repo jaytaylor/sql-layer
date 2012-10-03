@@ -1,0 +1,4 @@
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NOT NULL]
+  Project_Default(Field(0))
+    Count_Default(*)
+      IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku = '1234')

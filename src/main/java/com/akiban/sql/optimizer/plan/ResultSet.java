@@ -58,6 +58,9 @@ public class ResultSet extends BasePlanWithInput
         }
 
         public DataTypeDescriptor getSQLtype() {
+            if (sqlType == null && TInstance != null) {
+                sqlType = TInstance.dataTypeDescriptor();
+            }
             return sqlType;
         }
 
@@ -69,8 +72,8 @@ public class ResultSet extends BasePlanWithInput
             return TInstance;
         }
 
-        public void setTInstance(TInstance TInstance) {
-            this.TInstance = TInstance;
+        public void setTInstance(TInstance tInstance) {
+            this.TInstance = tInstance;
         }
 
         @Override

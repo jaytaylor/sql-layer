@@ -45,6 +45,7 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -57,6 +58,7 @@ import com.akiban.sql.optimizer.plan.AnyCondition;
 import com.akiban.sql.optimizer.plan.BasePlanWithInput;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
+import com.akiban.sql.optimizer.plan.CastCondition;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
@@ -92,6 +94,7 @@ import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.akiban.sql.optimizer.rule.PlanContext.WhiteboardMarker;
 import com.akiban.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.util.SparseArray;
 import com.google.common.base.Objects;
 import org.slf4j.Logger;
@@ -113,10 +116,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     @Override
     public void apply(PlanContext plan) {
         NewFolder folder = new NewFolder(plan);
-        ResolvingVistor resolvingVistor = new ResolvingVistor(plan, folder);
-        plan.putWhiteboard(RESOLVER_MARKER, resolvingVistor);
-        resolvingVistor.resolve(plan.getPlan());
-        new TopLevelCastingVistor(folder, resolvingVistor.parametersSync).apply(plan.getPlan());
+        ResolvingVisitor resolvingVisitor = new ResolvingVisitor(plan, folder);
+        folder.initResolvingVisitor(resolvingVisitor);
+        plan.putWhiteboard(RESOLVER_MARKER, resolvingVisitor);
+        resolvingVisitor.resolve(plan.getPlan());
+        new TopLevelCastingVisitor(folder, resolvingVisitor.parametersSync).apply(plan.getPlan());
         plan.getPlan().accept(ParameterCastInliner.instance);
     }
 
@@ -127,14 +131,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return plan.getWhiteboard(RESOLVER_MARKER);
     }
 
-    static class ResolvingVistor implements PlanVisitor, ExpressionRewriteVisitor {
+    static class ResolvingVisitor implements PlanVisitor, ExpressionRewriteVisitor {
 
         private NewFolder folder;
         private OverloadResolver resolver;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 
-        ResolvingVistor(PlanContext context, NewFolder folder) {
+        ResolvingVisitor(PlanContext context, NewFolder folder) {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             resolver = src.getOverloadResolver();
@@ -240,9 +244,21 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TPreptimeValue tpv = n.getPreptimeValue();
             if (tpv != null) {
                 TInstance tInstance = tpv.instance();
+                if ((n.getSQLtype() != null) &&
+                    (n.getSQLtype().getCharacterAttributes() != null) &&
+                    (n.getSQLtype().getCharacterAttributes().getCollationDerivation() == 
+                        CharacterTypeAttributes.CollationDerivation.EXPLICIT)) {
+                    // Apply result of explicit COLLATE, which will otherwise get lost.
+                    // No way to mutate the existing instance, so replace entire tpv.
+                    tInstance = StringAttribute.copyWithCollation(tInstance, n.getSQLtype().getCharacterAttributes());
+                    tpv = new TPreptimeValue(tInstance, tpv.value());
+                    n.setPreptimeValue(tpv);
+                }
                 if (tInstance != null) {
-                    if (tInstance.nullability() == null)
+                    if (tInstance.nullability() == null) {
+                        assert n.getSQLtype() != null : "ExpressionNode.SQLType is incorrectly null";
                         tInstance.setNullable(n.getSQLtype().isNullable());
+                    }
                     DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
                     n.setSQLtype(newDtd);
                 }
@@ -438,6 +454,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         : resultInstance + " != " + preptimeValue.instance();
 
             expression.setPreptimeValue(preptimeValue);
+            
+            SparseArray<Object> values = context.getValues();
+            if ((values != null) && !values.isEmpty())
+                expression.setPreptimeValues(values);
+
             if (castTo == null) {
                 return expression;
             }
@@ -474,14 +495,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
             ExpressionNode operand = expression.getOperand();
             TInstance resultType;
+            TAggregator tAggregator;
             if (operand == null) {
-                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), null);
+                tAggregator = resolver.getAggregation(expression.getFunction(), null);
                 resultType = tAggregator.resultType(null);
-                expression.setPreptimeValue(new TPreptimeValue(resultType));
             }
             else {
                 TClass inputTClass = tclass(operand);
-                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
+                tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
                 TClass aggrTypeClass = tAggregator.getTypeClass();
                 if (aggrTypeClass != null && !aggrTypeClass.equals(inputTClass)) {
                     operand = castTo(operand, aggrTypeClass, folder, parametersSync);
@@ -489,12 +510,15 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
                 resultType = tAggregator.resultType(operand.getPreptimeValue());
             }
+            PValue empty = new PValue(resultType.typeClass().underlyingType());
+            tAggregator.emptyValue(empty);
+            resultType.setNullable(empty.isNull());
             expression.setPreptimeValue(new TPreptimeValue(resultType));
             return expression;
         }
 
         ExpressionNode handleExistsCondition(ExistsCondition expression) {
-            return boolExpr(expression);
+            return boolExpr(expression, true);
         }
 
         ExpressionNode handleSubqueryValueExpression(SubqueryValueExpression expression) {
@@ -521,7 +545,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleAnyCondition(AnyCondition expression) {
-            return boolExpr(expression);
+            return boolExpr(expression, true);
         }
 
         ExpressionNode handleComparisonCondition(ComparisonCondition expression) {
@@ -574,7 +598,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
             }
 
-            return boolExpr(expression);
+            return boolExpr(expression, isNullable(left) || isNullable(right));
+        }
+
+        private boolean isNullable(ExpressionNode node) {
+            return tinst(node).nullability();
         }
 
         ExpressionNode handleColumnExpression(ColumnExpression expression) {
@@ -633,11 +661,23 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleInListCondition(InListCondition expression) {
-            return boolExpr(expression);
+            boolean nullable = isNullable(expression.getOperand());
+            if (!nullable) {
+                List<ExpressionNode> expressions = expression.getExpressions();
+                for (int i = 0, expressionsSize = expressions.size(); (!nullable) && i < expressionsSize; i++) {
+                    ExpressionNode rhs = expressions.get(i);
+                    nullable = isNullable(rhs);
+                }
+            }
+            return boolExpr(expression, nullable);
         }
 
         ExpressionNode handleParameterCondition(ParameterCondition expression) {
-            return boolExpr(expression);
+            parametersSync.uninferred(expression);
+            TInstance instance = AkBool.INSTANCE.instance();
+            instance.setNullable(true);
+            return castTo(expression, instance,
+                          folder, parametersSync);
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
@@ -646,11 +686,15 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleBooleanOperationExpression(BooleanOperationExpression expression) {
-            return boolExpr(expression);
+            boolean isNullable;
+            DataTypeDescriptor sqLtype = expression.getSQLtype();
+            isNullable = sqLtype == null // TODO if no SQL type, assume nullable for now
+                    || sqLtype.isNullable(); // TODO rely on the previous type computer for now
+            return boolExpr(expression, isNullable);
         }
 
         ExpressionNode handleBooleanConstantExpression(BooleanConstantExpression expression) {
-            return boolExpr(expression);
+            return boolExpr(expression, expression.getValue() == null);
         }
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
@@ -692,18 +736,20 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return result;
     }
 
-    private static ExpressionNode boolExpr(ExpressionNode expression) {
-        expression.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
+    private static ExpressionNode boolExpr(ExpressionNode expression, Boolean nullable) {
+        TInstance instance = AkBool.INSTANCE.instance();
+        instance.setNullable(nullable);
+        expression.setPreptimeValue(new TPreptimeValue(instance));
         return expression;
     }
 
-    static class TopLevelCastingVistor implements PlanVisitor {
+    static class TopLevelCastingVisitor implements PlanVisitor {
 
         private List<? extends ColumnContainer> targetColumns;
         private NewFolder folder;
         private ParametersSync parametersSync;
 
-        TopLevelCastingVistor(NewFolder folder, ParametersSync parametersSync) {
+        TopLevelCastingVisitor(NewFolder folder, ParametersSync parametersSync) {
             this.folder = folder;
             this.parametersSync = parametersSync;
         }
@@ -836,8 +882,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
         if (expression instanceof ParameterExpression) {
-            CastExpression castExpression
-                    = new CastExpression(expression, null, null);
+            targetInstance.setNullable(true);
+            CastExpression castExpression = 
+                newCastExpression(expression, targetInstance);
             castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
             targetInstance.setNullable(true);
             parametersSync.set(expression, targetInstance);
@@ -853,12 +900,20 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression;
         DataTypeDescriptor sqlType = expression.getSQLtype();
         targetInstance.setNullable(sqlType == null || sqlType.isNullable());
-        CastExpression castExpression
-                = new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+        CastExpression castExpression = 
+            newCastExpression(expression, targetInstance);
         castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
         ExpressionNode result = finishCast(castExpression, folder, parametersSync);
         result = folder.foldConstants(result);
         return result;
+    }
+    
+    private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
+        if (targetInstance.typeClass() == AkBool.INSTANCE)
+            // Allow use as a condition.
+            return new CastCondition(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+        else
+            return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
     }
 
     private static ExpressionNode finishCast(CastExpression castNode, NewFolder folder, ParametersSync parametersSync) {

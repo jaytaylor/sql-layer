@@ -14,10 +14,10 @@ resultSet:
 		name: _SQL_COL_1
 		tableName: null
 		isDefaultColumn: false
-		type: VARCHAR(18)
+		type: VARCHAR(25)
 		expression: 			
 			com.akiban.sql.parser.JavaToSQLValueNode@451ef443
-			type: VARCHAR(18)
+			type: VARCHAR(25)
 			javaNode: 				
 				com.akiban.sql.parser.StaticMethodCallNode@73367e28
 				javaClassName: null
@@ -36,8 +36,8 @@ resultSet:
 
 					value: 						
 						com.akiban.sql.parser.CastNode@6446d228
-						castTarget: VARCHAR(4)
-						type: VARCHAR(4)
+						castTarget: VARCHAR(11)
+						type: VARCHAR(11)
 						castOperand: 							
 							com.akiban.sql.parser.ColumnReference@582ab653
 							columnName: x

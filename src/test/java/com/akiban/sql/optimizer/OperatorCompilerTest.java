@@ -142,6 +142,9 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         @Override
         public PhysicalResultColumn getResultColumn(ResultField field) {
             String type = String.valueOf(field.getSQLtype());
+            if (field.getTInstance() != null) {
+                type = String.valueOf(field.getTInstance());
+            }
             Column column = field.getAIScolumn();
             if (column != null) {
                 type = column.getTypeDescription() +
@@ -171,6 +174,11 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                     File propertiesFile = new File(subdir, args[0] + ".properties");
                     if (!propertiesFile.exists())
                         propertiesFile = compilerPropertiesFile;
+                    // If the is a t3expected file, this 
+                    File t3Results = new File (subdir, args[0] + ".t3expected");
+                    if (t3Results.exists() && Types3Switch.ON) {
+                        args[2] = fileContents(t3Results);
+                    }
                     Object[] nargs = new Object[args.length+3];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = schemaFile;
@@ -211,5 +219,4 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     public void checkResult(String result) throws IOException{
         assertEqualsWithoutHashes(caseName, expected, result);
     }
-
 }

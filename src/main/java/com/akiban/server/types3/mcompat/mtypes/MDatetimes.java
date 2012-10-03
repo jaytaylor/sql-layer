@@ -142,7 +142,7 @@ public class MDatetimes
             @Override
             public void formatAsLiteral(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append("TIMESTAMP '");
-                out.append(datetimeToString(source.getInt64()));
+                out.append(timestampToString(source.getInt32(), null));
                 out.append("'");
             }
         };
@@ -703,7 +703,7 @@ public class MDatetimes
         DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
 
         return (int)(dt.getHourOfDay() * DATETIME_HOUR_SCALE  
-                        + dt.getMinuteOfHour() * DATETIME_HOUR_SCALE
+                        + dt.getMinuteOfHour() * DATETIME_MIN_SCALE
                         + dt.getSecondOfMinute());
     }
     
@@ -844,18 +844,20 @@ public class MDatetimes
                 && min >= 0 && min < 60 
                 && sec >= 0 && sec < 60;
     }
+    
+    public static boolean isZeroDayMonth(long ymd[])
+    {
+        return ymd[DAY_INDEX] == 0 || ymd[MONTH_INDEX] == 0;
+    }
+
     public static boolean isValidDayMonth(int year, int month, int day)
     {
-        if (month == 0)
-            return false;
         long last = getLastDay(year, month);
         return last > 0 && day <= last;
     }
 
     public static boolean isValidDayMonth(long ymd[])
     {
-        if (ymd[MONTH_INDEX] == 0 || ymd[DAY_INDEX] <= 0)
-            return false;
         long last = getLastDay(ymd);
         return last > 0 && ymd[DAY_INDEX] <= last;
     }

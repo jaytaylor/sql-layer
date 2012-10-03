@@ -33,6 +33,18 @@ import java.util.List;
 import java.util.TimeZone;
 
 public final class TPreptimeContext {
+    public List<TInstance> getInputTypes() {
+        return inputTypes;
+    }
+
+    public TInstance inputTypeAt(int index) {
+        return inputTypes.get(index);
+    }
+
+    public TInstance getOutputType() {
+        return outputType;
+    }
+
     public void setOutputType(TInstance outputType) {
         this.outputType = outputType;
     }
@@ -55,10 +67,21 @@ public final class TPreptimeContext {
         throw new UnsupportedOperationException("not supported yet");
     }
     
+    public Object get(int index) {
+        if ((preptimeCache != null) && preptimeCache.isDefined(index))
+            return preptimeCache.get(index);
+        else
+            return null;
+    }
+
     public void set(int index, Object value) {
         if (preptimeCache == null)
             preptimeCache = new SparseArray<Object>(index);
         preptimeCache.set(index, value);
+    }
+
+    public SparseArray<Object> getValues() {
+        return preptimeCache;
     }
 
     public TPreptimeContext(List<TInstance> inputTypes, QueryContext queryContext) {
@@ -70,6 +93,13 @@ public final class TPreptimeContext {
         this.inputTypes = inputTypes;
         this.outputType = outputType;
         this.queryContext = queryContext;
+    }
+
+    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType, QueryContext queryContext, SparseArray<Object> preptimeCache) {
+        this.inputTypes = inputTypes;
+        this.outputType = outputType;
+        this.queryContext = queryContext;
+        this.preptimeCache = preptimeCache;
     }
 
     private final QueryContext queryContext;

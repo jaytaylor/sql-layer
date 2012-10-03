@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
+import com.akiban.util.SparseArray;
 
 import java.util.List;
 
@@ -39,6 +40,7 @@ public class FunctionExpression extends BaseExpression
     private String function;
     private List<ExpressionNode> operands;
     private TValidatedOverload overload;
+    private SparseArray<Object> preptimeValues;
     
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
@@ -60,6 +62,14 @@ public class FunctionExpression extends BaseExpression
     }
     public void setOverload(TValidatedOverload overload) {
         this.overload = overload;
+    }
+
+    public SparseArray<Object> getPreptimeValues() {
+        return preptimeValues;
+    }
+
+    public void setPreptimeValues(SparseArray<Object> values) {
+        this.preptimeValues = values;
     }
 
     @Override

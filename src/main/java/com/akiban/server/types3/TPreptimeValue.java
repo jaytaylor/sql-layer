@@ -26,6 +26,10 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ArgumentValidation;
@@ -100,7 +104,15 @@ public final class TPreptimeValue {
     @Override
     public int hashCode() {
         int result = tInstance != null ? tInstance.hashCode() : 0;
-        result = 31 * result + (value != null ? PValueSources.hash(value) : 0);
+        AkCollator collator;
+        if (tInstance != null && tInstance.typeClass() instanceof TString) {
+            int charsetId = tInstance.attribute(StringAttribute.CHARSET);
+            collator = AkCollatorFactory.getAkCollator(charsetId);
+        }
+        else {
+            collator = null;
+        }
+        result = 31 * result + (value != null ? PValueSources.hash(value, collator) : 0);
         return result;
     }
 

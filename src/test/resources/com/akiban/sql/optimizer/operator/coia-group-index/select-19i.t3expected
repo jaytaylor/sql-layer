@@ -1,0 +1,7 @@
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL]
+  Project_Default(Field(0))
+    Aggregate_Partial(MAX)
+      Map_NestedLoops()
+        ValuesScan_Default(['Adams'], ['Jones'], ['Smith'])
+        Project_Default(items.sku)
+          IndexScan_Default(Index(.customers.cname_and_sku), customers.name = Bound(0, 0), items.sku)
