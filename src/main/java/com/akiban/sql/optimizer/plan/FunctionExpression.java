@@ -27,7 +27,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 import com.akiban.util.SparseArray;
@@ -36,11 +36,11 @@ import java.util.List;
 
 /** A call to a function.
  */
-public class FunctionExpression extends BaseExpression implements ResolvableExpression<TValidatedOverload>
+public class FunctionExpression extends BaseExpression implements ResolvableExpression<TValidatedScalar>
 {
     private String function;
     private List<ExpressionNode> operands;
-    private TValidatedOverload overload;
+    private TValidatedScalar overload;
     private SparseArray<Object> preptimeValues;
     private TPreptimeContext preptimeContext;
 
@@ -61,12 +61,12 @@ public class FunctionExpression extends BaseExpression implements ResolvableExpr
     }
 
     @Override
-    public void setResolved(TValidatedOverload resolved) {
+    public void setResolved(TValidatedScalar resolved) {
         this.overload = resolved;
     }
 
     @Override
-    public TValidatedOverload getResolved() {
+    public TValidatedScalar getResolved() {
         return overload;
     }
 

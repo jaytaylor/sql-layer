@@ -31,7 +31,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -43,11 +43,11 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
 import java.util.List;
 
-public final class MUnaryMinus extends TOverloadBase {
+public final class MUnaryMinus extends TScalarBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
@@ -74,7 +74,7 @@ public final class MUnaryMinus extends TOverloadBase {
         });
     }
 
-    public static final TOverload[] overloads = create();
+    public static final TScalar[] overloads = create();
 
     private MUnaryMinus(Strategy strategy) {
         this.strategy = strategy;
@@ -145,9 +145,9 @@ public final class MUnaryMinus extends TOverloadBase {
         private final TClass tClass;
     }
 
-    private static TOverload[] create() {
+    private static TScalar[] create() {
         Strategy[] strategies = Strategy.values();
-        TOverload[] results = new TOverload[strategies.length];
+        TScalar[] results = new TScalar[strategies.length];
         for (int i = 0, strategiesLength = strategies.length; i < strategiesLength; i++) {
             Strategy strategy = strategies[i];
             results[i] = new MUnaryMinus(strategy);

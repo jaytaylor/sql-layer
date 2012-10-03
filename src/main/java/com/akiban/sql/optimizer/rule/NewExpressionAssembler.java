@@ -56,8 +56,7 @@ import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
-import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
@@ -81,7 +80,7 @@ import java.util.List;
 public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedExpression> {
     private static final Logger logger = LoggerFactory.getLogger(NewExpressionAssembler.class);
 
-    private static final TValidatedOverload ifElseValidated = new TValidatedOverload(AkIfElse.INSTANCE);
+    private static final TValidatedScalar ifElseValidated = new TValidatedScalar(AkIfElse.INSTANCE);
 
     private final OverloadResolver overloadResolver;
     private final QueryContext queryContext;
@@ -100,7 +99,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
                                                    SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
 
         List<TPreparedExpression> arguments = assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
-        TValidatedOverload overload;
+        TValidatedScalar overload;
         SparseArray<Object> preptimeValues = null;
         if (functionNode instanceof FunctionExpression) {
             FunctionExpression fexpr = (FunctionExpression) functionNode;
@@ -112,8 +111,8 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             for (ExpressionNode argument : argumentNodes) {
                 inputPreptimeValues.add(argument.getPreptimeValue());
             }
-            OverloadResult<TValidatedOverload> overloadResult = overloadResolver.get(functionName, inputPreptimeValues,
-                    TValidatedOverload.class);
+            OverloadResult<TValidatedScalar> overloadResult = overloadResolver.get(functionName, inputPreptimeValues,
+                    TValidatedScalar.class);
             overload = overloadResult.getOverload();
         }
         else if (functionNode instanceof IfElseExpression) {

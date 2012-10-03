@@ -33,7 +33,7 @@ import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.server.types3.texpressions.TValidatedResolvable;
 import com.google.common.collect.Sets;
 
@@ -267,7 +267,7 @@ public final class OverloadResolver {
                                                                      Class<V> overloadType) {
         Iterable<? extends ScalarsGroup<V>> scalarsGroup;
         // TODO CLEANUP: or we could just pass in the right overload registry...
-        if (overloadType == TValidatedOverload.class)
+        if (overloadType == TValidatedScalar.class)
             scalarsGroup = (Iterable<? extends ScalarsGroup<V>>) registry.getOverloads(name);
         else if (overloadType == TValidatedAggregator.class)
             scalarsGroup = (Iterable<? extends ScalarsGroup<V>>) registry.getAggregates(name);

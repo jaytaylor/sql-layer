@@ -33,7 +33,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -41,41 +41,41 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 import java.util.List;
 
-public final class TValidatedOverload extends TValidatedResolvable implements TOverload {
+public final class TValidatedScalar extends TValidatedResolvable implements TScalar {
 
     // TOverload methods (straight delegation)
 
     @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs) {
-        return overload.evaluateConstant(context, inputs);
+        return scalar.evaluateConstant(context, inputs);
     }
 
     @Override
     public void finishPreptimePhase(TPreptimeContext context) {
-        overload.finishPreptimePhase(context);
+        scalar.finishPreptimePhase(context);
     }
 
     @Override
     public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        overload.evaluate(context, inputs, output);
+        scalar.evaluate(context, inputs, output);
     }
 
     @Override
     public String toString(List<? extends TPreparedExpression> inputs, TInstance resultType) {
-        return overload.toString(inputs, resultType);
+        return scalar.toString(inputs, resultType);
     }
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context, List<? extends TPreparedExpression> inputs, TInstance resultType)
     {
-        return overload.getExplainer(context, inputs, resultType);
+        return scalar.getExplainer(context, inputs, resultType);
     }
 
     public <T> LazyList<? extends T> filterInputs(LazyList<? extends T> inputs) {
         return commuted ? new ReversedLazyList<T>(inputs) : inputs;
     }
 
-    public TValidatedOverload createCommuted() {
+    public TValidatedScalar createCommuted() {
         if (!coversExactlyNArgs(2))
             throw new IllegalStateException("commuted overloads must take exactly two arguments: " + this);
         TClass origArg1 = inputSetAt(1).targetType();
@@ -88,19 +88,19 @@ public final class TValidatedOverload extends TValidatedResolvable implements TO
         builder.covers(origArg1, 0);
         builder.covers(origArg0, 1);
         List<TInputSet> commutedInputSets = builder.toList();
-        return new TValidatedOverload(overload, commutedInputSets, true);
+        return new TValidatedScalar(scalar, commutedInputSets, true);
     }
 
-    public TValidatedOverload(TOverload overload) {
-        this(overload, overload.inputSets(), false);
+    public TValidatedScalar(TScalar scalar) {
+        this(scalar, scalar.inputSets(), false);
     }
 
-    private TValidatedOverload(TOverload overload, List<TInputSet> inputSets, boolean commuted) {
-        super(overload, inputSets);
+    private TValidatedScalar(TScalar scalar, List<TInputSet> inputSets, boolean commuted) {
+        super(scalar, inputSets);
         this.commuted = commuted;
-        this.overload = overload;
+        this.scalar = scalar;
     }
 
-    private final TOverload overload;
+    private final TScalar scalar;
     private final boolean commuted;
 }

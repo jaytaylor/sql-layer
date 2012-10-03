@@ -37,7 +37,7 @@ import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TResolvable;
 import com.akiban.server.types3.TStrongCasts;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -48,7 +48,7 @@ import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.server.types3.texpressions.TValidatedResolvable;
 import com.akiban.util.DagChecker;
 import com.akiban.util.HasId;
@@ -84,7 +84,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // T3RegistryService interface
     
     @Override
-    public Iterable<? extends ScalarsGroup<TValidatedOverload>> getOverloads(String name) {
+    public Iterable<? extends ScalarsGroup<TValidatedScalar>> getOverloads(String name) {
         return scalarsRegistry.get(name);
     }
 
@@ -175,15 +175,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         scalarsRegistry = ResolvablesRegistry.create(
                 finder,
-                TOverload.class,
-                new Function<TOverload, TValidatedOverload>() {
+                TScalar.class,
+                new Function<TScalar, TValidatedScalar>() {
                     @Override
-                    public TValidatedOverload apply(TOverload input) {
-                        return new TValidatedOverload(input);
+                    public TValidatedScalar apply(TScalar input) {
+                        return new TValidatedScalar(input);
                     }
-                }, new Function<TValidatedOverload, TValidatedOverload>() {
+                }, new Function<TValidatedScalar, TValidatedScalar>() {
                     @Override
-                    public TValidatedOverload apply(TValidatedOverload input) {
+                    public TValidatedScalar apply(TValidatedScalar input) {
                         return input.createCommuted();
                     }
                 }
@@ -393,7 +393,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
     private volatile ResolvablesRegistry<TValidatedAggregator> aggreatorsRegistry;
-    private volatile ResolvablesRegistry<TValidatedOverload> scalarsRegistry;
+    private volatile ResolvablesRegistry<TValidatedScalar> scalarsRegistry;
 
     private volatile Collection<? extends TClass> tClasses;
     private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {

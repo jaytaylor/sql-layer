@@ -50,7 +50,7 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.server.types3.texpressions.TValidatedResolvable;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
@@ -461,9 +461,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleFunctionExpression(FunctionExpression expression) {
             List<ExpressionNode> operands = expression.getOperands();
-            ExpressionNode result = resolve(expression, operands, TValidatedOverload.class, true);
+            ExpressionNode result = resolve(expression, operands, TValidatedScalar.class, true);
 
-            TValidatedOverload overload = expression.getResolved();
+            TValidatedScalar overload = expression.getResolved();
             TPreptimeContext context = expression.getPreptimeContext();
 
             final List<TPreptimeValue> operandValues = new ArrayList<TPreptimeValue>(operands.size());

@@ -28,20 +28,20 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-public class MFromUnixtimeOneArg extends TOverloadBase
+public class MFromUnixtimeOneArg extends TScalarBase
 {
-    public static final TOverload INSTANCE = new MFromUnixtimeOneArg();
+    public static final TScalar INSTANCE = new MFromUnixtimeOneArg();
 
     private MFromUnixtimeOneArg(){}
 

@@ -35,7 +35,7 @@ import com.akiban.util.HasId;
 
 import java.util.List;
 
-public interface TOverload extends TResolvable {
+public interface TScalar extends TResolvable {
     TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
     void finishPreptimePhase(TPreptimeContext context);
     void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);

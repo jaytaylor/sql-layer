@@ -30,7 +30,7 @@ import com.akiban.server.AkServer;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
@@ -38,7 +38,7 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.server.types3.texpressions.std.NoArgExpression;
 import java.util.Date;
 
@@ -47,7 +47,7 @@ public class NoArgFuncs
     static final int USER_NAME_LENGTH = 77;
 
     private static final TInstance SHORT_VERSION_INST = MString.VARCHAR.instance(AkServer.SHORT_VERSION_STRING.length());
-    public static final TOverload SHORT_SERVER_VERSION = new NoArgExpression("version", true)
+    public static final TScalar SHORT_SERVER_VERSION = new NoArgExpression("version", true)
     {
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
@@ -64,7 +64,7 @@ public class NoArgFuncs
     };
 
     private static final TInstance FULL_VERSION_INST = MString.VARCHAR.instance(AkServer.VERSION_STRING.length());
-    public static final TOverload SERVER_FULL_VERSION = new NoArgExpression("version_full", true)
+    public static final TScalar SERVER_FULL_VERSION = new NoArgExpression("version_full", true)
     {
 
         @Override
@@ -80,7 +80,7 @@ public class NoArgFuncs
         }
     };
     
-    public static final TOverload PI = new TOverloadBase()
+    public static final TScalar PI = new TScalarBase()
     {
         @Override
         protected void buildInputSets(TInputSetBuilder builder)
@@ -108,7 +108,7 @@ public class NoArgFuncs
         }
     };
  
-    public static final TOverload CUR_DATE = new NoArgExpression("CURRENT_DATE", true)
+    public static final TScalar CUR_DATE = new NoArgExpression("CURRENT_DATE", true)
     {
         @Override
         public String[] registeredNames()
@@ -129,7 +129,7 @@ public class NoArgFuncs
         }
     };
 
-    public static final TOverload CUR_TIME = new NoArgExpression("CURRENT_TIME", true)
+    public static final TScalar CUR_TIME = new NoArgExpression("CURRENT_TIME", true)
     {
         @Override
         public String[] registeredNames()
@@ -150,7 +150,7 @@ public class NoArgFuncs
         }   
     };
 
-    public static final TOverload CUR_TIMESTAMP = new NoArgExpression("CURRENT_TIMESTAMP", true)
+    public static final TScalar CUR_TIMESTAMP = new NoArgExpression("CURRENT_TIMESTAMP", true)
     {
         @Override
         public String[] registeredNames()
@@ -171,7 +171,7 @@ public class NoArgFuncs
         }
     };
     
-    public static final TOverload UNIX_TIMESTAMP = new NoArgExpression("UNIX_TIMESTAMP", true)
+    public static final TScalar UNIX_TIMESTAMP = new NoArgExpression("UNIX_TIMESTAMP", true)
     {
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
@@ -187,7 +187,7 @@ public class NoArgFuncs
         
     };
     
-    public static final TOverload SYSDATE = new NoArgExpression("SYSDATE", false)
+    public static final TScalar SYSDATE = new NoArgExpression("SYSDATE", false)
     {
         @Override
         public TInstance tInstance()
@@ -202,7 +202,7 @@ public class NoArgFuncs
         }
     };
 
-    public static final TOverload CUR_USER;
+    public static final TScalar CUR_USER;
 
     static {
         CUR_USER = new NoArgExpression("CURRENT_USER", true) {
@@ -219,7 +219,7 @@ public class NoArgFuncs
         };
     }
 
-    public static final TOverload SESSION_USER = new NoArgExpression("SESSION_USER", true)
+    public static final TScalar SESSION_USER = new NoArgExpression("SESSION_USER", true)
     {
         @Override
         public TInstance tInstance()
@@ -234,7 +234,7 @@ public class NoArgFuncs
         }
     };
     
-    public static final TOverload SYSTEM_USER = new NoArgExpression("SYSTEM_USER", true)
+    public static final TScalar SYSTEM_USER = new NoArgExpression("SYSTEM_USER", true)
     {
         @Override
         public TInstance tInstance()
