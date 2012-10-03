@@ -815,12 +815,9 @@ public class OperatorAssembler extends BaseRule
                     if (column.getIdentityGenerator() != null) {
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
                         row[i] = oldPartialAssembler.sequenceGenerator(sequence, column, row[i]);
-                    }
-                    else if (column.getDefaultValue() != null) {
-                        // TODO: Convert the defaultValue string into an Expression
-                        row[i] = LiteralExpression.forNull();
                     } else if (row[i] == null) {
                         row[i] = LiteralExpression.forNull();
+                        // TODO: If column has a default value Convert the defaultValue string into an Expression
                     }
                 }
                 inserts = Arrays.asList(row);
@@ -848,11 +845,11 @@ public class OperatorAssembler extends BaseRule
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
                         row[i] = newPartialAssembler.sequenceGenerator(sequence, column, row[i]);
                     } 
-                    // else if (column.getDefaultValue() != null) // TODO: Convert string to expression
                     else if (row[i] == null) {
                         TInstance tinst = targetRowType.typeInstanceAt(i);
                         PUnderlying underlying = tinst.typeClass().underlyingType();
                         row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
+                        // TODO: If column has a default value Convert the defaultValue string into an TPreparedExpression
                     }
                 }
                 insertsP = Arrays.asList(row);
