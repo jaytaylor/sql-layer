@@ -283,7 +283,6 @@ public final class OverloadResolver {
             String name, List<? extends TPreptimeValue> inputs,
             Iterable<? extends ScalarsGroup<V>> scalarGroupsByPriority)
     {
-
         V mostSpecific = null;
         boolean sawRightArity = false;
         for (ScalarsGroup<V> scalarsGroup : scalarGroupsByPriority) {
