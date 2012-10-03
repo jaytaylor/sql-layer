@@ -27,7 +27,6 @@
 package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
@@ -36,10 +35,10 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCommutativeOverloads;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TResolvable;
 import com.akiban.server.types3.TStrongCasts;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -48,20 +47,19 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.Constantness;
+import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.texpressions.TValidatedResolvable;
 import com.akiban.util.DagChecker;
 import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -69,7 +67,6 @@ import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -79,7 +76,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -88,9 +84,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // T3RegistryService interface
     
     @Override
-    public Iterable<? extends ScalarsGroup> getOverloads(String name) {
-        List<ScalarsGroup> result = overloadsByName.get(name.toLowerCase());
-        return result.isEmpty() ? null : result;
+    public Iterable<? extends ScalarsGroup<TValidatedOverload>> getOverloads(String name) {
+        return scalarsRegistry.get(name);
     }
 
     @Override
@@ -105,12 +100,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     }
 
     @Override
-    public Collection<? extends TAggregator> getAggregates(String name) {
-        name = name.toLowerCase();
-        Collection<? extends TAggregator> aggrs = aggregatorsByName.get(name);
-        if (aggrs == null)
-            throw new NoSuchFunctionException(name);
-        return aggrs;
+    public Iterable<? extends ScalarsGroup<TValidatedAggregator>> getAggregates(String name) {
+        return aggreatorsRegistry.get(name);
     }
 
     @Override
@@ -146,8 +137,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     public void stop() {
         castsBySource = null;
         strongCastsBySource = null;
-        overloadsByName = null;
-        aggregatorsByName = null;
+        scalarsRegistry = null;
+        aggreatorsRegistry = null;
         tClasses = null;
     }
 
@@ -182,127 +173,32 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         strongCastsBySource = createStrongCastsMap(castsBySource, finder);
         checkDag(strongCastsBySource);
 
-        overloadsByName = createScalars(finder);
-
-        aggregatorsByName = createAggregates(finder);
-    }
-
-    private static Map<String, Collection<TAggregator>> createAggregates(InstanceFinder finder) {
-        Collection<? extends TAggregator> aggrs = finder.find(TAggregator.class);
-        Map<String, Collection<TAggregator>> local = new HashMap<String, Collection<TAggregator>>(aggrs.size());
-        for (TAggregator aggr : aggrs) {
-            String name = aggr.name().toLowerCase();
-            Collection<TAggregator> values = local.get(name);
-            if (values == null) {
-                values = new ArrayList<TAggregator>(2); // most aggrs don't have many overloads
-                local.put(name, values);
-            }
-            values.add(aggr);
-        }
-        return local;
-    }
-
-    private static ListMultimap<String, ScalarsGroup> createScalars(InstanceFinder finder) {
-
-        Set<TOverload> commutedOverloads = new HashSet<TOverload>();
-        for (TCommutativeOverloads commutativeOverloads : finder.find(TCommutativeOverloads.class)) {
-            commutativeOverloads.addTo(commutedOverloads);
-        }
-
-        Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
-
-        int errors = 0;
-        for (TOverload scalar : finder.find(TOverload.class)) {
-            try {
-                TValidatedOverload validated = new TValidatedOverload(scalar);
-
-                String[] names = validated.registeredNames();
-                for (int i = 0; i < names.length; ++i)
-                    names[i] = names[i].toLowerCase();
-
-                for (String name : names)
-                    overloadsByName.put(name, validated);
-
-                if (commutedOverloads.remove(scalar)) {
-                    TValidatedOverload commuted = validated.createCommuted();
-                    for (String name : names)
-                        overloadsByName.put(name, commuted);
+        scalarsRegistry = ResolvablesRegistry.create(
+                finder,
+                TOverload.class,
+                new Function<TOverload, TValidatedOverload>() {
+                    @Override
+                    public TValidatedOverload apply(TOverload input) {
+                        return new TValidatedOverload(input);
+                    }
+                }, new Function<TValidatedOverload, TValidatedOverload>() {
+                    @Override
+                    public TValidatedOverload apply(TValidatedOverload input) {
+                        return input.createCommuted();
+                    }
                 }
-            } catch (RuntimeException e) {
-                rejectTOverload(scalar, e);
-                ++errors;
-            } catch (AssertionError e) {
-                rejectTOverload(scalar, e);
-                ++errors;
-            }
-        }
-        if (!commutedOverloads.isEmpty()) {
-            logger.error("overload(s) were marked as commutative, but not found: {}", commutedOverloads);
-            ++errors;
-        }
-
-        if (errors > 0) {
-            StringBuilder sb = new StringBuilder("Found ").append(errors).append(" error");
-            if (errors != 1)
-                sb.append('s');
-            sb.append(" while collecting scalar functions. Check logs for details.");
-            throw new AkibanInternalException(sb.toString());
-        }
-
-        ArrayListMultimap<String, ScalarsGroup> results = ArrayListMultimap.create();
-        for (Map.Entry<String, Collection<TValidatedOverload>> entry : overloadsByName.asMap().entrySet()) {
-            String overloadName = entry.getKey();
-            Collection<TValidatedOverload> allOverloads = entry.getValue();
-            for (Collection<TValidatedOverload> priorityGroup : scalarsByPriority(allOverloads)) {
-                ScalarsGroup scalarsGroup = new ScalarsGroupImpl(priorityGroup);
-                results.put(overloadName, scalarsGroup);
-            }
-        }
-        results.trimToSize();
-        return Multimaps.unmodifiableListMultimap(results);
-    }
-
-
-    private static List<Collection<TValidatedOverload>> scalarsByPriority(
-            Collection<TValidatedOverload> overloads)
-    {
-        // First, we'll put this into a SortedMap<Integer, Collection<TVO>> so that we have each subset of the
-        // overloads grouped by priority. Then we'll go over those collections; for each one, we'll wrap it in
-        // an unmodifiable Collection (so that users of the iterator() can't modify the Collections).
-        // Finally, we'll wrap the result in an unmodifiable Collection (so that users can't remove Collections
-        // from it via the Iterator).
-        SortedMap<Integer, ArrayList<TValidatedOverload>> byPriority
-                = new TreeMap<Integer, ArrayList<TValidatedOverload>>();
-        for (TValidatedOverload overload : overloads) {
-            for (int priority : overload.getPriorities()) {
-                ArrayList<TValidatedOverload> thisPriorityOverloads = byPriority.get(priority);
-                if (thisPriorityOverloads == null) {
-                    thisPriorityOverloads = new ArrayList<TValidatedOverload>();
-                    byPriority.put(priority, thisPriorityOverloads);
-                }
-                thisPriorityOverloads.add(overload);
-            }
-        }
-
-        List<Collection<TValidatedOverload>> results
-                = new ArrayList<Collection<TValidatedOverload>>(byPriority.size());
-        for (ArrayList<TValidatedOverload> priorityGroup : byPriority.values()) {
-            priorityGroup.trimToSize();
-            results.add(Collections.unmodifiableCollection(priorityGroup));
-        }
-        return results;
-    }
-
-    private static void rejectTOverload(TOverload overload, Throwable e) {
-        StringBuilder sb = new StringBuilder("rejecting overload ");
-        Class<?> overloadClass = overload == null ? null : overload.getClass();
-        try {
-            sb.append(overload).append(' ');
-        } catch (Exception e1) {
-            logger.error("couldn't toString overload: " + overload);
-        }
-        sb.append("from ").append(overloadClass);
-        logger.error(sb.toString(), e);
+        );
+        aggreatorsRegistry = ResolvablesRegistry.create(
+                finder,
+                TAggregator.class,
+                new Function<TAggregator, TValidatedAggregator>() {
+                    @Override
+                    public TValidatedAggregator apply(TAggregator input) {
+                        return new TValidatedAggregator(input);
+                    }
+                },
+                null
+        );
     }
 
     static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
@@ -477,7 +373,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         Collection<? extends TStrongCasts> strongCastIds = finder.find(TStrongCasts.class);
         Set<TCastIdentifier> strongCasts = new HashSet<TCastIdentifier>(strongCastIds.size()); // rough guess
         for (TStrongCasts strongCastGenerator : strongCastIds) {
-            for (TCastIdentifier castId : strongCastGenerator.get(castsBySource.keySet())) {
+            for (TCastIdentifier castId : strongCastGenerator.get()) {
                 TCast cast = cast(castsBySource, castId.getSource(), castId.getTarget());
                 if (cast == null)
                     throw new AkibanInternalException("no cast defined for " + castId +", which is marked as strong");
@@ -496,8 +392,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
     private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
-    private volatile ListMultimap<String, ScalarsGroup> overloadsByName;
-    private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
+    private volatile ResolvablesRegistry<TValidatedAggregator> aggreatorsRegistry;
+    private volatile ResolvablesRegistry<TValidatedOverload> scalarsRegistry;
 
     private volatile Collection<? extends TClass> tClasses;
     private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {
@@ -510,142 +406,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     };
 
     // inner classes
-
-    protected static class ScalarsGroupImpl implements ScalarsGroup {
-
-        @Override
-        public Collection<? extends TValidatedOverload> getOverloads() {
-            return overloads;
-        }
-
-        public ScalarsGroupImpl(Collection<TValidatedOverload> overloads) {
-            this.overloads = Collections.unmodifiableCollection(overloads);
-            boolean outRange[] = new boolean[1];
-            int argc[] = new int[1];
-            sameType = doFindSameType(overloads, argc, outRange);
-            
-            outOfRangeVal = outRange[0];
-            nArgs = argc[0];
-        }
-
-        @Override
-        public boolean hasSameTypeAt(int pos)
-        {
-            return pos >= nArgs         // if pos is out of range
-                        ? outOfRangeVal
-                        : sameType.get(pos); 
-        }
-        
-        private static int nArgsOf(TValidatedOverload ovl)
-        {
-            return ovl.positionalInputs() 
-                   + (ovl.varargInputSet() == null ? 0 : 1);
-        }
-
-        private static boolean hasVararg(TValidatedOverload ovl)
-        {
-            return ovl.varargInputSet() != null;
-        }
-
-        protected static BitSet doFindSameType(Collection<? extends TValidatedOverload> overloads, int range[], boolean outRange[])
-        {
-            ArrayList<Integer> nArgs = new ArrayList<Integer>();
-
-            // overload with the longest argument list
-            TValidatedOverload maxOvl = overloads.iterator().next();
-            int maxArgc = nArgsOf(maxOvl);
-            boolean hasVararg = hasVararg(maxOvl);
-            int n = 1;
-            
-            // whether arg that's out of range should be 'same' or 'not same'
-                // false if all overloads in the group have fixed length
-                // true if all overloads with varargs in the group have the same targetType of vararg
-                // false otherwise
-            boolean outOfRange = false; 
-            TClass firstVararg = null;
-            
-            for (TValidatedOverload ovl : overloads)
-            {
-                int curArgc = nArgsOf(ovl);
-                nArgs.add(curArgc);
-                boolean curHasVar = hasVararg(ovl);
-                
-                if (curHasVar)
-                {
-                    if (firstVararg == null)
-                    {
-                        outOfRange = true;
-                        firstVararg = ovl.varargInputSet().targetType();
-                    }
-                    else
-                        outOfRange &= firstVararg.equals(ovl.varargInputSet().targetType());
-                }
-
-                if (curArgc > maxArgc
-                        || curArgc == maxArgc 
-                           && hasVararg 
-                           && !curHasVar)
-                {
-                    hasVararg = hasVararg(ovl);
-                    maxOvl = ovl;
-                    maxArgc = curArgc;
-                }
-                ++n;
-            }
-            
-            outRange[0] = outOfRange;
-            range[0] = maxArgc;
-            
-            // all the overloads in the group are vararg
-            if (hasVararg && maxArgc == 1)
-            {
-                BitSet ret = new BitSet(1);
-                ret.set(0, outOfRange);
-                return ret;
-            }
-            
-            BitSet sameType = new BitSet(maxArgc);
-
-            Boolean same;
-            for (n = 0; n < maxArgc; ++n)
-            {
-                same = Boolean.TRUE;
-                TClass common = maxOvl.inputSetAt(n).targetType();
-                int index = 0;
-                for (TValidatedOverload ovl : overloads)
-                {
-                    int curArgc = nArgs.get(index++);
-                    TClass targetType;
-
-                    // if the arg is absent  
-                    if (n >= curArgc)
-                    {
-                        if (!hasVararg(ovl))
-                            continue;
-                        else
-                            targetType = ovl.varargInputSet().targetType();
-                    }
-                    else
-                        targetType = ovl.inputSetAt(n).targetType();
-                    
-                    if (targetType != null && !targetType.equals(common)
-                            || targetType == null && common != null)
-                    {
-                        same = Boolean.FALSE;
-                        break;
-                    }
-                }
-                sameType.set(n, same);
-            }
-            
-            return sameType;
-        }
-        private final int nArgs;
-        private final boolean outOfRangeVal;
-        private final BitSet sameType;
-        private final Collection<? extends TValidatedOverload> overloads;
-
-    }
 
     private static class SelfCast implements TCast {
 
@@ -754,12 +514,12 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         @Override
         public String describeScalars() {
-            return toYaml(scalarDescriptors());
+            return toYaml(describeOverloads(scalarsRegistry));
         }
 
         @Override
         public String describeAggregates() {
-            return toYaml(aggregateDescriptors());
+            return toYaml(describeOverloads(aggreatorsRegistry));
         }
 
         @Override
@@ -768,8 +528,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
             all.put("types", typesDescriptors());
             all.put("casts", castsDescriptors());
-            all.put("scalar_functions", scalarDescriptors());
-            all.put("aggregate_functions", aggregateDescriptors());
+            all.put("scalar_functions", describeOverloads(scalarsRegistry));
+            all.put("aggregate_functions", describeOverloads(aggreatorsRegistry));
 
             return toYaml(all);
         }
@@ -825,23 +585,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return result;
         }
 
-        private Object scalarDescriptors() {
-            Multimap<String, TValidatedOverload> flattenedOverloads = HashMultimap.create();
-            for (Map.Entry<String, ScalarsGroup> entry : overloadsByName.entries()) {
+        private <V extends TValidatedResolvable> Object describeOverloads(ResolvablesRegistry<V> registry) {
+            Multimap<String, TResolvable> flattenedOverloads = HashMultimap.create();
+            for (Map.Entry<String, ScalarsGroup<V>> entry : registry.entriesByName()) {
                 String overloadName = entry.getKey();
-                ScalarsGroup scalarsGroup = entry.getValue();
+                ScalarsGroup<V> scalarsGroup = entry.getValue();
                 flattenedOverloads.putAll(overloadName, scalarsGroup.getOverloads());
             }
             return describeOverloads(flattenedOverloads.asMap(), Functions.toStringFunction());
-        }
-
-        private Object aggregateDescriptors() {
-            return describeOverloads(aggregatorsByName, new Function<TAggregator, TClass>() {
-                @Override
-                public TClass apply(TAggregator aggr) {
-                    return aggr.getTypeClass();
-                }
-            });
         }
 
         private <T extends HasId,S> Object describeOverloads(

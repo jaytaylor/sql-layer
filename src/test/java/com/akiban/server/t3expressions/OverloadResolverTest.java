@@ -47,6 +47,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -247,7 +248,7 @@ public class OverloadResolverTest {
 
     private void checkResolved(String msg, TOverload expected, String overloadName, List<TPreptimeValue> prepValues) {
         // result.getPickingClass() not checked, SimpleRegistry doesn't implement commonTypes()
-        OverloadResolver.OverloadResult result = resolver.get(overloadName, prepValues);
+        OverloadResolver.OverloadResult result = resolver.get(overloadName, prepValues, TValidatedOverload.class);
         assertSame(msg, expected, result != null ? result.getOverload().getUnderlying() : null);
     }
 
@@ -282,19 +283,19 @@ public class OverloadResolverTest {
     @Test(expected=NoSuchFunctionException.class)
     public void noSuchOverload() {
         new Initializer().init();
-        resolver.get("foo", Arrays.asList(prepVal(TINT)));
+        resolver.get("foo", Arrays.asList(prepVal(TINT)), TValidatedOverload.class);
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooFewParams() {
         new Initializer().overloads(MUL_INTS).init();
-        resolver.get(MUL_NAME, prepVals(TINT));
+        resolver.get(MUL_NAME, prepVals(TINT), TValidatedOverload.class);
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooManyParams() {
         new Initializer().overloads(MUL_INTS).init();
-        resolver.get(MUL_NAME, prepVals(TINT, TINT, TINT));
+        resolver.get(MUL_NAME, prepVals(TINT, TINT, TINT), TValidatedOverload.class);
     }
 
     // default resolution, exact match
@@ -398,7 +399,7 @@ public class OverloadResolverTest {
         new Initializer().overloads(coalesce).init();
 
         try {
-            OverloadResolver.OverloadResult result = resolver.get(NAME, prepVals());
+            OverloadResolver.OverloadResult result = resolver.get(NAME, prepVals(), TValidatedOverload.class);
             fail("WrongArity expected but got: " + result);
         } catch(WrongExpressionArityException e) {
             // Expected

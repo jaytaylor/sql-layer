@@ -152,7 +152,8 @@ public class OperatorAssembler extends BaseRule
                                      ColumnExpressionToIndex fieldOffsets);
         T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets);
         void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, T[] arr, int i);
-        Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex, List<String> names, List<Object> options);
+        Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
+                                    AggregateSource aggregateSource);
         T sequenceGenerator(Sequence sequence, Column column, T expression);
         T field(RowType rowType, int position);
         
@@ -211,7 +212,7 @@ public class OperatorAssembler extends BaseRule
 
         @Override
         public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                           List<String> names, List<Object> options) {
+                                           AggregateSource aggregateSource) {
             throw new AssertionError();
         }
 
@@ -306,8 +307,8 @@ public class OperatorAssembler extends BaseRule
             // Assemble an aggregate operator
             @Override
             public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                               List<String> names, List<Object> options) {
-                return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, names, options);
+                                               AggregateSource aggregateSource) {
+                return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, aggregateSource);
             }
 
             protected abstract T existsExpression(Operator operator, RowType outerRowType,
@@ -621,7 +622,7 @@ public class OperatorAssembler extends BaseRule
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
 
-                TValidatedOverload overload = resolver.get("NEXTVAL", input).getOverload();
+                TValidatedOverload overload = resolver.get("NEXTVAL", input, TValidatedOverload.class).getOverload();
 
                 List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
                 arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
@@ -647,7 +648,7 @@ public class OperatorAssembler extends BaseRule
                     ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
                     ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
                     
-                    OverloadResult ifNullResult = resolver.get("IFNULL", ifNullInput);
+                    OverloadResult<TValidatedOverload> ifNullResult = resolver.get("IFNULL", ifNullInput, TValidatedOverload.class);
                     TValidatedOverload ifNullOverload = ifNullResult.getOverload();
                     List<TPreparedExpression> ifNullArgs = new ArrayList<TPreparedExpression>(2);
                     ifNullArgs.add(expression);
@@ -1498,7 +1499,7 @@ public class OperatorAssembler extends BaseRule
             }
             PartialAssembler<?> partialAssembler = usePValues ? newPartialAssembler : oldPartialAssembler;
             stream.operator = partialAssembler.assembleAggregates(stream.operator, stream.rowType, nkeys,
-                    aggregateSource.getAggregateFunctions(), aggregateSource.getOptions());
+                    aggregateSource);
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);

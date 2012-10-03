@@ -24,13 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.texpressions.TValidatedResolvable;
+public abstract class TFixedTypeAggregator extends TAggregatorBase {
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(inputClass().instance());
+    }
 
-import java.util.Collection;
-
-public interface ScalarsGroup<V extends TValidatedResolvable> {
-    Collection<? extends V> getOverloads();
-    boolean hasSameTypeAt(int pos);
+    public TFixedTypeAggregator(String name, TClass inputAndOutput) {
+        super(name, inputAndOutput);
+    }
 }

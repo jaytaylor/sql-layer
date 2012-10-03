@@ -37,6 +37,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
@@ -50,7 +51,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public final class T3ScalarsRegistryTest {
@@ -129,9 +129,9 @@ public final class T3ScalarsRegistryTest {
             T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
             registry.start(instanceFinder);
 
-            Iterable<? extends ScalarsGroup> scalarsByPriority = registry.getOverloads(FUNC_NAME);
+            Iterable<? extends ScalarsGroup<TValidatedOverload>> scalarsByPriority = registry.getOverloads(FUNC_NAME);
             List<Set<TInputSet>> actuals = new ArrayList<Set<TInputSet>>();
-            for (ScalarsGroup scalarsGroup : scalarsByPriority) {
+            for (ScalarsGroup<TValidatedOverload> scalarsGroup : scalarsByPriority) {
                 Set<TInputSet> actualInputs = new HashSet<TInputSet>();
                 for (TOverload overload : scalarsGroup.getOverloads()) {
                     TInputSet overloadInput = onlyInputSet(overload);

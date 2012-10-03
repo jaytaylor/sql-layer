@@ -24,13 +24,33 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.texpressions.TValidatedResolvable;
+import com.akiban.util.HasId;
 
-import java.util.Collection;
+import java.util.List;
 
-public interface ScalarsGroup<V extends TValidatedResolvable> {
-    Collection<? extends V> getOverloads();
-    boolean hasSameTypeAt(int pos);
+public interface TResolvable extends HasId {
+
+    /**
+     *
+     * Name that the user will see/use
+     */
+    String displayName();
+
+    /**
+     *
+     * Name(s) used internally by the parser/registry.
+     *
+     * Most of the times, the two names are the same, but they could be different
+     * for certain functions, especially those that need "special treatment"
+     *
+     * This needs to be an array because we could be defining different functions
+     * with the same implementation
+     */
+    String[] registeredNames();
+
+    TOverloadResult resultType();
+    List<TInputSet> inputSets();
+    int[] getPriorities();
 }

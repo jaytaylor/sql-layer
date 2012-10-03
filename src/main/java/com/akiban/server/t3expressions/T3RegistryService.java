@@ -26,17 +26,16 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 
-import java.util.Collection;
 import java.util.Set;
 
 public interface T3RegistryService {
-    Collection<? extends TAggregator> getAggregates(String name);
-    Iterable<? extends ScalarsGroup> getOverloads(String name);
+    Iterable<? extends ScalarsGroup<TValidatedAggregator>> getAggregates(String name);
+    Iterable<? extends ScalarsGroup<TValidatedOverload>> getOverloads(String name);
 
     /**
      * Find the registered cast going from source to taret.
