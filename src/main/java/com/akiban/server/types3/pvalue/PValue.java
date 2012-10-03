@@ -289,7 +289,7 @@ public final class PValue implements PValueSource, PValueTarget {
             throw new NullValueException();
         case CACHE_ONLY:
             // TODO
-            assert false : "internalUpdateRaw() not supported yet"; 
+            assert false;
             // fall through
         case VAL_ONLY:
         case VAL_AND_CACHE:
