@@ -82,13 +82,17 @@ public class Cast_From_Time {
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
+    // Generally, TIME cannot be converted to DATE, DATETIME or TIMESTAMP
+    // Any cast from <TIME> --> <DATE> | <DATETIME> | <TIMESTAMP> should result in NULL
     public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeTime(source.getInt32())));
+            // direct cast TIME --> DATETIME results in a truncation to zero
+            context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00 00:00:00");
+            target.putInt64(0);
         }
     };
     
@@ -98,7 +102,8 @@ public class Cast_From_Time {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // there is not DATE value in TIME, hence it's 0.
+            // direct cast TIME --> DATE results in a truncation to zero
+            context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00");
             target.putInt32(0);
         }
     };
@@ -109,9 +114,9 @@ public class Cast_From_Time {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)MDatetimes.encodeTimestamp(MDatetimes.decodeTime(source.getInt32()), 
-                                                            context.getCurrentTimezone(),
-                                                            context));
+            // direct cast TIME --> TIMESTAMP results in a truncation to zero
+            context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00 00:00:00");
+            target.putInt32(0);
         }
     };
 }
