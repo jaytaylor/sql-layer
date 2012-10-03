@@ -522,9 +522,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
-            operands.add(expression.getOperand());
+            ExpressionNode operand = expression.getOperand();
+            if (operand != null)
+                operands.add(operand);
             ExpressionNode result = resolve(expression, operands, TValidatedAggregator.class, false);
-            expression.setOperand(operands.get(0)); // in case the original operand was casted
+            if (operand != null)
+                expression.setOperand(operands.get(0)); // in case the original operand was casted
             return result;
         }
 

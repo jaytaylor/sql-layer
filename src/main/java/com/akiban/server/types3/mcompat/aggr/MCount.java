@@ -28,16 +28,15 @@ package com.akiban.server.types3.mcompat.aggr;
 
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TAggregatorBase;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
+import java.util.Collections;
 import java.util.List;
 
 public abstract class MCount extends TAggregatorBase {
@@ -71,6 +70,11 @@ public abstract class MCount extends TAggregatorBase {
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MNumeric.BIGINT.instance());
+    }
+
+    @Override
+    public List<TInputSet> inputSets() {
+        return Collections.emptyList();
     }
 
     private MCount(String name) {
