@@ -29,20 +29,15 @@ package com.akiban.server.rowdata;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
-import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.error.RowDefNotFoundException;
-import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.sql.StandardException;
@@ -146,17 +141,15 @@ public class SchemaFactory {
 
         @Override
         protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
+            Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
             Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
-            for (RowDef groupRowDef : getRowDefs()) {
-                if (groupRowDef.isGroupTable()) {
-                    ordinalMap.put(groupRowDef.table(), 0);
-                    int userTableOrdinal = 1;
-                    for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                        int ordinal = userTableOrdinal++;
-                        tableStatusCache.setOrdinal(userRowDef.getRowDefId(), ordinal);
-                        userRowDef.setOrdinalCache(ordinal);
-                        ordinalMap.put(userRowDef.table(), ordinal);
-                    }
+            for(List<RowDef> allRowDefs  : groupToRowDefs.values()) {
+                int userTableOrdinal = 1;
+                for(RowDef userRowDef : allRowDefs) {
+                    int ordinal = userTableOrdinal++;
+                    tableStatusCache.setOrdinal(userRowDef.getRowDefId(), ordinal);
+                    userRowDef.setOrdinalCache(ordinal);
+                    ordinalMap.put(userRowDef.table(), ordinal);
                 }
             }
             return ordinalMap;

@@ -26,7 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
@@ -35,15 +35,15 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import static com.akiban.server.types3.mcompat.mtypes.MDatetimes.*;
 
-public class MConvertTZ extends TOverloadBase
+public class MConvertTZ extends TScalarBase
 {
-    public static final TOverload INSTANCE = new MConvertTZ();
+    public static final TScalar INSTANCE = new MConvertTZ();
 
     private MConvertTZ() {}
     

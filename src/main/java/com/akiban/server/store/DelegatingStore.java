@@ -26,12 +26,11 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -40,7 +39,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
-import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
 import java.util.Collection;
@@ -93,12 +91,12 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
         delegate.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
     }
 
-    public void dropGroup(Session session, int rowDefId) throws PersistitException {
-        delegate.dropGroup(session, rowDefId);
+    public void dropGroup(Session session, Group group) throws PersistitException {
+        delegate.dropGroup(session, group);
     }
 
-    public void truncateGroup(Session session, int rowDefId) throws PersistitException {
-        delegate.truncateGroup(session, rowDefId);
+    public void truncateGroup(Session session, Group group) throws PersistitException {
+        delegate.truncateGroup(session, group);
     }
 
     public void truncateTableStatus(Session session, int rowDefId) throws PersistitException {

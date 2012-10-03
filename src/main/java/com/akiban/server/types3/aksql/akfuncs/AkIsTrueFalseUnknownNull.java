@@ -26,11 +26,11 @@
 
 package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.common.funcs.IsTrueFalseUnknownNull;
 
 public class AkIsTrueFalseUnknownNull
 {
-    public static final TOverload INSTANCES[] = IsTrueFalseUnknownNull.create(AkBool.INSTANCE);
+    public static final TScalar INSTANCES[] = IsTrueFalseUnknownNull.create(AkBool.INSTANCE);
 }

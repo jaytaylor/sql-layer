@@ -1,0 +1,4 @@
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ DOUBLE(-1, -1) NULL]
+  Project_Default(items.quan / 100)
+    Filter_Default(items)
+      GroupScan_Default(customers)
