@@ -69,6 +69,7 @@ import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
 import com.akiban.sql.optimizer.plan.ExpressionsSource;
+import com.akiban.sql.optimizer.plan.FunctionCondition;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
@@ -458,13 +459,28 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             SparseArray<Object> values = context.getValues();
             if ((values != null) && !values.isEmpty())
                 expression.setPreptimeValues(values);
-
+            
+            ExpressionNode resultExpression;
             if (castTo == null) {
-                return expression;
+                resultExpression = expression;
             }
             else {
-                return castTo(expression, castTo, folder, parametersSync);
+                resultExpression = castTo(expression, castTo, folder, parametersSync);
+                resultInstance = castTo;
             }
+
+            if (expression instanceof FunctionCondition) {
+                // Didn't know whether function would return boolean or not earlier,
+                // so just assumed it would.
+                if (resultInstance.typeClass() != AkBool.INSTANCE) {
+                    castTo = AkBool.INSTANCE.instance();
+                    castTo.setNullable(resultInstance.nullability());
+                    resultExpression = castTo(resultExpression, castTo, folder, parametersSync);
+                    resultInstance = castTo;
+                }
+            }
+            
+            return resultExpression;
         }
 
         ExpressionNode handleIfElseExpression(IfElseExpression expression) {
