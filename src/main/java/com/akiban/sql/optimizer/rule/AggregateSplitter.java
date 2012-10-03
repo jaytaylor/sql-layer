@@ -34,8 +34,6 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.AggregateSource.Implementation;
 
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-import com.akiban.sql.parser.OrderByColumn;
-import com.akiban.sql.parser.OrderByList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,7 +128,7 @@ public class AggregateSplitter extends BaseRule
                 ExpressionNode other = aggregate.getOperand();
                 if (operand == null)
                     operand = other;
-                else if (!operand.equals(other))
+                else if (!matchExpressionNode(operand, other))
                     throw new UnsupportedSQLException("More than one DISTINCT",
                                                       other.getSQLsource());
             }
@@ -147,7 +145,7 @@ public class AggregateSplitter extends BaseRule
             for (AggregateFunctionExpression aggregate : source.getAggregates()) {
                 if (!aggregate.isDistinct()) {
                     ExpressionNode other = aggregate.getOperand();
-                    if (!operand.equals(other))
+                    if (!matchExpressionNode(operand,other))
                         throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
                                                           operand.getSQLsource());
                     else if (!distinctDoesNotMatter(aggregate.getFunction()))
@@ -162,6 +160,20 @@ public class AggregateSplitter extends BaseRule
         return new Object[]{distinct, ret};
     }
 
+    protected boolean matchExpressionNode (ExpressionNode operand, ExpressionNode other) {
+        if (operand instanceof CastExpression) {
+            if (!((CastExpression)operand).getOperand().equals(other)) 
+                return false;
+        }
+        else if (other instanceof CastExpression) {
+            if (!((CastExpression)other).getOperand().equals(operand))
+                return false;
+        }
+        else if (!operand.equals(other))
+            return false;
+        return true;
+    }
+    
     protected boolean distinctDoesNotMatter(String aggregateFunction) {
         return ("MAX".equals(aggregateFunction) ||
                 "MIN".equals(aggregateFunction));
