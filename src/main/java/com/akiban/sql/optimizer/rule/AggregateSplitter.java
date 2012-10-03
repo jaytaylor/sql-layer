@@ -162,16 +162,13 @@ public class AggregateSplitter extends BaseRule
 
     protected boolean matchExpressionNode (ExpressionNode operand, ExpressionNode other) {
         if (operand instanceof CastExpression) {
-            if (!((CastExpression)operand).getOperand().equals(other)) 
-                return false;
+            return ((CastExpression)operand).getOperand().equals(other);
         }
         else if (other instanceof CastExpression) {
-            if (!((CastExpression)other).getOperand().equals(operand))
-                return false;
+            return ((CastExpression)other).getOperand().equals(operand);
         }
-        else if (!operand.equals(other))
-            return false;
-        return true;
+        else
+            return operand.equals(other);
     }
     
     protected boolean distinctDoesNotMatter(String aggregateFunction) {
