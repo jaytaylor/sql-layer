@@ -42,7 +42,6 @@ import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -60,7 +59,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
@@ -68,38 +66,18 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // T3RegistryService interface
 
     @Override
-    public ResolvablesRegistry<TValidatedScalar> getScalars() {
-        return scalarsRegistry;
+    public OverloadResolver<TValidatedScalar> getScalarsResolver() {
+        return scalarsResolver;
     }
 
     @Override
-    public ResolvablesRegistry<TValidatedAggregator> getAggregates() {
-        return aggreatorsRegistry;
+    public OverloadResolver<TValidatedAggregator> getAggregatesResolver() {
+        return aggregatesResolver;
     }
 
     @Override
-    public TCast cast(TClass source, TClass target) {
-        return castsRegistry.cast(source, target);
-    }
-
-    @Override
-    public Set<TClass> stronglyCastableFrom(TClass tClass) {
-        return castsRegistry.stronglyCastableFrom(tClass);
-    }
-
-    @Override
-    public boolean isStrong(TCast cast) {
-        TClass source = cast.sourceClass();
-        TClass target = cast.targetClass();
-        return stronglyCastableFrom(source).contains(target);
-    }
-
-    @Override
-    public boolean isIndexFriendly(TClass source, TClass target) {
-        return Objects.equal(
-                source.name().categoryName(),
-                target.name().categoryName()
-        );
+    public TCastResolver getCastsResolver() {
+        return castsResolver;
     }
 
     // Service interface
@@ -118,7 +96,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     @Override
     public void stop() {
-        castsRegistry = null;
+        castsResolver = null;
         scalarsRegistry = null;
         aggreatorsRegistry = null;
         tClasses = null;
@@ -141,7 +119,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     void start(InstanceFinder finder) {
         tClasses = new HashSet<TClass>(finder.find(TClass.class));
 
-        castsRegistry = new TCastsRegistry(tClasses, finder);
+        TCastsRegistry castsRegistry = new TCastsRegistry(tClasses, finder);
+        castsResolver = new TCastResolver(castsRegistry);
 
         scalarsRegistry = ResolvablesRegistry.create(
                 finder,
@@ -158,6 +137,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     }
                 }
         );
+        scalarsResolver = new OverloadResolver<TValidatedScalar>(scalarsRegistry, castsResolver);
+
         aggreatorsRegistry = ResolvablesRegistry.create(
                 finder,
                 TAggregator.class,
@@ -169,6 +150,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 },
                 null
         );
+        aggregatesResolver = new OverloadResolver<TValidatedAggregator>(aggreatorsRegistry, castsResolver);
     }
 
     // class state
@@ -176,9 +158,11 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     // object state
 
-    private volatile TCastsRegistry castsRegistry;
+    private volatile TCastResolver castsResolver;
     private volatile ResolvablesRegistry<TValidatedAggregator> aggreatorsRegistry;
+    private volatile OverloadResolver<TValidatedAggregator> aggregatesResolver;
     private volatile ResolvablesRegistry<TValidatedScalar> scalarsRegistry;
+    private volatile OverloadResolver<TValidatedScalar> scalarsResolver;
 
     private volatile Collection<? extends TClass> tClasses;
 
@@ -244,14 +228,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         private Object castsDescriptors() {
             // the starting size is just a guess
-            Collection<Map<TClass, TCast>> castsBySource = castsRegistry.castsBySource();
+            Collection<Map<TClass, TCast>> castsBySource = castsResolver.castsBySource();
             List<Map<String,Comparable<?>>> result = new ArrayList<Map<String,Comparable<?>>>(castsBySource.size() * 5);
             for (Map<TClass,TCast> castsByTarget : castsBySource) {
                 for (TCast tCast : castsByTarget.values()) {
                     Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
                     buildTName("source_bundle", "source_type", tCast.sourceClass(), map);
                     buildTName("target_bundle", "target_type", tCast.targetClass(), map);
-                    map.put("strong", isStrong(tCast));
+                    map.put("strong", castsResolver.isStrong(tCast));
                     map.put("isDerived", tCast instanceof TCastsRegistry.ChainedCast);
                     result.add(map);
                 }

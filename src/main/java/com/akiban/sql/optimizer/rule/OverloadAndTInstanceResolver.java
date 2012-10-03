@@ -32,6 +32,8 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.ErrorHandlingMode;
 import com.akiban.server.types3.LazyList;
@@ -136,15 +138,15 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     static class ResolvingVisitor implements PlanVisitor, ExpressionRewriteVisitor {
 
         private NewFolder folder;
-        private OverloadResolver resolver;
+        private T3RegistryService registry;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 
         ResolvingVisitor(PlanContext context, NewFolder folder) {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
-            resolver = src.getOverloadResolver();
-            parametersSync = new ParametersSync(resolver);
+            registry = src.getT3Registry();
+            parametersSync = new ParametersSync(registry.getCastsResolver());
             this.queryContext = context.getQueryContext();
         }
 
@@ -305,7 +307,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     TClass topClass = tclass(instances[field]);
                     TClass botClass = tclass(botInstance);
 
-                    TClass commonTClass = resolver.commonTClass(topClass, botClass);
+                    TClass commonTClass = registry.getCastsResolver().commonTClass(topClass, botClass);
                     if (commonTClass == null) {
                         throw new AkibanInternalException("no common type found found between row " + (rownum-1)
                         + " and " + rownum + " at field " + field);
@@ -372,14 +374,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         private <V extends TValidatedOverload> ExpressionNode resolve(
                 ResolvableExpression<V> expression,
                 List<ExpressionNode> operands,
-                Class<V> overloadType,
+                OverloadResolver<V> resolver,
                 boolean createPreptimeContext)
         {
             List<TPreptimeValue> operandClasses = new ArrayList<TPreptimeValue>(operands.size());
             for (ExpressionNode operand : operands)
                 operandClasses.add(operand.getPreptimeValue());
 
-            OverloadResult<V> resolutionResult = resolver.get(expression.getFunction(), operandClasses, overloadType);
+            OverloadResult<V> resolutionResult = resolver.get(expression.getFunction(), operandClasses);
 
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
@@ -461,7 +463,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleFunctionExpression(FunctionExpression expression) {
             List<ExpressionNode> operands = expression.getOperands();
-            ExpressionNode result = resolve(expression, operands, TValidatedScalar.class, true);
+            ExpressionNode result = resolve(expression, operands, registry.getScalarsResolver(), true);
 
             TValidatedScalar overload = expression.getResolved();
             TPreptimeContext context = expression.getPreptimeContext();
@@ -513,7 +515,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 return conditionMet ? thenExpr : elseExpr;
             }
 
-            TInstance commonInstance = commonInstance(resolver, tinst(thenExpr), tinst(elseExpr));
+            TInstance commonInstance = commonInstance(registry.getCastsResolver(), tinst(thenExpr), tinst(elseExpr));
             if (commonInstance == null)
                 return new ConstantExpression(null, AkType.NULL); // both types are unknown, so result is unknown
 
@@ -532,7 +534,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             ExpressionNode operand = expression.getOperand();
             if (operand != null)
                 operands.add(operand);
-            ExpressionNode result = resolve(expression, operands, TValidatedAggregator.class, false);
+            ExpressionNode result = resolve(expression, operands, registry.getAggregatesResolver(), false);
             if (operand != null)
                 expression.setOperand(operands.get(0)); // in case the original operand was casted
             return result;
@@ -576,18 +578,19 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TInstance rightTInst = tinst(right);
             if (TClass.comparisonNeedsCasting(leftTInst, rightTInst)) {
                 boolean needCasts = true;
+                TCastResolver casts = registry.getCastsResolver();
                 if ( (left.getClass() == ColumnExpression.class)&& (right.getClass() == ConstantExpression.class)) {
                     // Left is a Column, right is a Constant. Ideally, we'd like to keep the Column as a Column,
                     // and not a CAST(Column AS _) -- otherwise, we can't use it in an index lookup.
                     // So, try to cast the const to the column's type. To do this, CAST(Const -> Column) must be
                     // indexFriendly, *and* casting this result back to the original Const type must equal the same
                     // const.
-                    if (resolver.getRegistry().isIndexFriendly(tclass(leftTInst), tclass(rightTInst))) {
+                    if (casts.isIndexFriendly(tclass(leftTInst), tclass(rightTInst))) {
                         TInstance columnType = tinst(left);
                         TInstance constType = tinst(right);
-                        TCast constToCol = resolver.getTCast(constType, columnType);
+                        TCast constToCol = casts.cast(constType, columnType);
                         if (constToCol != null) {
-                            TCast colToConst = resolver.getTCast(columnType, constType);
+                            TCast colToConst = casts.cast(columnType, constType);
                             if (colToConst != null) {
                                 TPreptimeValue constValue = right.getPreptimeValue();
                                 PValueSource asColType = castValue(constToCol, constValue, columnType);
@@ -607,7 +610,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     }
                 }
                 if (needCasts) {
-                    TInstance common = commonInstance(resolver, left, right);
+                    TInstance common = commonInstance(casts, left, right);
                     if (common == null) {
                         // TODO this means we have something like '? = ?' or '? = NULL'. What to do? Varchar for now?
                         common = MString.VARCHAR.instance();
@@ -977,11 +980,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return ptv == null ? null : ptv.instance();
     }
 
-    private static TInstance commonInstance(OverloadResolver resolver, ExpressionNode left, ExpressionNode right) {
+    private static TInstance commonInstance(TCastResolver resolver, ExpressionNode left, ExpressionNode right) {
         return commonInstance(resolver, tinst(left), tinst(right));
     }
 
-    private static TInstance commonInstance(OverloadResolver resolver, TInstance left, TInstance right) {
+    private static TInstance commonInstance(TCastResolver resolver, TInstance left, TInstance right) {
         if (left == null && right == null)
             return null;
         else if (left == null)
@@ -1013,10 +1016,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
      * both $1s.
      */
     private static class ParametersSync {
-        private OverloadResolver resolver;
+        private TCastResolver resolver;
         private SparseArray<List<ExpressionNode>> instancesMap;
 
-        private ParametersSync(OverloadResolver resolver) {
+        private ParametersSync(TCastResolver resolver) {
             this.resolver = resolver;
             this.instancesMap = new SparseArray<List<ExpressionNode>>();
         }

@@ -68,6 +68,12 @@ public final class TCastsRegistry {
         return castsFrom.keySet();
     }
 
+    public boolean isStrong(TCast cast) {
+        TClass source = cast.sourceClass();
+        TClass target = cast.targetClass();
+        return stronglyCastableFrom(source).contains(target);
+    }
+
     Collection<Map<TClass, TCast>> castsBySource() {
         return castsBySource.values();
     }
