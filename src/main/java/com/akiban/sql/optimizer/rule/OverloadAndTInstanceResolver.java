@@ -442,6 +442,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             default:
                 throw new AssertionError(overloadResultStrategy.category());
             }
+            resultInstance = resultInstance.copy(); // May change nullability.
             if (createPreptimeContext)
                 context.setOutputType(resultInstance);
 
@@ -903,11 +904,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
         if (expression instanceof ParameterExpression) {
+            targetInstance = targetInstance.copy();
             targetInstance.setNullable(true);
             CastExpression castExpression = 
                 newCastExpression(expression, targetInstance);
             castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
-            targetInstance.setNullable(true);
             parametersSync.set(expression, targetInstance);
             return castExpression;
         }
@@ -920,6 +921,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         if (targetInstance.equalsExcludingNullable(tinst(expression)))
             return expression;
         DataTypeDescriptor sqlType = expression.getSQLtype();
+        targetInstance = targetInstance.copy();
         targetInstance.setNullable(sqlType == null || sqlType.isNullable());
         CastExpression castExpression = 
             newCastExpression(expression, targetInstance);
