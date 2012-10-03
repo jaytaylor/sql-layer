@@ -35,12 +35,14 @@ import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.parser.OrderByList;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
+import com.akiban.util.StackTracer;
+
 import java.util.List;
 
 /** An expression representing the result (total) of an aggregate function.
  */
 public class AggregateFunctionExpression extends BaseExpression implements ResolvableExpression<TValidatedAggregator>
-{
+{final StackTracer tracer = new StackTracer();
     private String function;
     private ExpressionNode operand;
     private boolean distinct;

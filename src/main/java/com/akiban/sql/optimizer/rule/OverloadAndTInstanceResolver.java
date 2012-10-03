@@ -439,6 +439,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             default:
                 throw new AssertionError(overloadResultStrategy.category());
             }
+            if (createPreptimeContext)
+                context.setOutputType(resultInstance);
 
             if (resultInstance.nullability() == null) {
                 resultInstance.setNullable(anyOperandsNullable);
@@ -521,7 +523,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
             operands.add(expression.getOperand());
-            return resolve(expression, operands, TValidatedAggregator.class, false);
+            ExpressionNode result = resolve(expression, operands, TValidatedAggregator.class, false);
+            expression.setOperand(operands.get(0)); // in case the original operand was casted
+            return result;
         }
 
         ExpressionNode handleExistsCondition(ExistsCondition expression) {

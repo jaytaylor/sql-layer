@@ -39,7 +39,7 @@ import com.akiban.server.types3.pvalue.PValueTargets;
 
 public class MMinMax extends TAggregatorBase {
 
-    private MType mType;
+    private final MType mType;
     
     private enum MType {
         MIN() {
@@ -62,6 +62,7 @@ public class MMinMax extends TAggregatorBase {
     
     private MMinMax(MType mType) {
         super(mType.name(), null);
+        this.mType = mType;
     }
 
     @Override

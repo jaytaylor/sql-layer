@@ -55,6 +55,7 @@ import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
+import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AggregateSource;
@@ -68,6 +69,7 @@ import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.optimizer.plan.ResolvableExpression;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.util.SparseArray;
 import org.slf4j.Logger;
@@ -218,12 +220,12 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, AggregateSource aggregateSource) {
-        List<AggregateFunctionExpression> aggregates = aggregateSource.getAggregates();
+        List<ResolvableExpression<TValidatedAggregator>> aggregates = aggregateSource.getResolved();
         int naggrs = aggregates.size();
         List<TAggregator> aggregators = new ArrayList<TAggregator>(naggrs);
         List<TInstance> outputInstances = new ArrayList<TInstance>(naggrs);
         for (int i = 0; i < naggrs; ++i) {
-            AggregateFunctionExpression aggr = aggregates.get(i);
+            ResolvableExpression<TValidatedAggregator> aggr = aggregates.get(i);
             aggregators.add(aggr.getResolved());
             outputInstances.add(aggr.getPreptimeValue().instance());
         }
