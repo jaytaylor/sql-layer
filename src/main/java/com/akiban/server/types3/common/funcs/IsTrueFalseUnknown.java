@@ -36,13 +36,13 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public abstract class IsTrueFalseUnknownNull extends TOverloadBase
+public abstract class IsTrueFalseUnknown extends TOverloadBase
 {
     public static TOverload[] create (TClass boolType)
     {
         return new TOverload[]
         {
-            new IsTrueFalseUnknownNull(boolType, "isTrue")
+            new IsTrueFalseUnknown(boolType, "isTrue")
             {
                 @Override
                 protected void evaluate(PValueSource source, PValueTarget target)
@@ -50,7 +50,7 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
                     target.putBool(source.getBoolean(false));
                 }
             },
-            new IsTrueFalseUnknownNull(boolType, "isFalse")
+            new IsTrueFalseUnknown(boolType, "isFalse")
             {
                 @Override
                 protected void evaluate(PValueSource source, PValueTarget target)
@@ -58,7 +58,7 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
                     target.putBool(!source.getBoolean(true));
                 }
             },
-            new IsTrueFalseUnknownNull(boolType, "isUnknown", "isNull")
+            new IsTrueFalseUnknown(boolType, "isUnknown")
             {
                 @Override
                 protected void evaluate(PValueSource source, PValueTarget target)
@@ -72,12 +72,12 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
     protected abstract void evaluate(PValueSource source, PValueTarget target);
     
     private final TClass boolType;
-    private final String names[];
+    private final String name;
     
-    private IsTrueFalseUnknownNull(TClass boolType, String...names)
+    private IsTrueFalseUnknown(TClass boolType, String name)
     {
         this.boolType = boolType;
-        this.names = names;
+        this.name = name;
     }
 
     @Override
@@ -100,15 +100,9 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
     }
 
     @Override
-    public String[] registeredNames()
-    {
-        return names;
-    }
-
-    @Override
     public String displayName()
     {
-        return names[0];
+        return name;
     }
 
     @Override
