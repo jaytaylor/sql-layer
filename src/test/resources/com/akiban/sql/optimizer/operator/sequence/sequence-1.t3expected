@@ -1,0 +1,4 @@
+PhysicalUpdate
+  Insert_Returning(INTO addresses(aid, cid, state, city))
+    Project_Default(ifnull(Field(0), NEXTVAL('test', '_sequence-878100532')), Field(1), Field(2), Field(3))
+      ValuesScan_Default([NULL, 100, 'VT', 'Vergennes'])

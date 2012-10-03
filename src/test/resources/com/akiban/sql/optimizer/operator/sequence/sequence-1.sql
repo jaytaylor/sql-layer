@@ -1,0 +1,1 @@
+INSERT INTO addresses (aid, cid, state, city) values (null, 100, 'VT', 'Vergennes')

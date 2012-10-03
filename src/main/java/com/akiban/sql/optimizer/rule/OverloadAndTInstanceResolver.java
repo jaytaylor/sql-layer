@@ -246,7 +246,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 TInstance tInstance = tpv.instance();
                 if ((n.getSQLtype() != null) &&
                     (n.getSQLtype().getCharacterAttributes() != null) &&
-                    (n.getSQLtype().getCharacterAttributes().getCollationDerivation() == CharacterTypeAttributes.CollationDerivation.EXPLICIT)) {
+                    (n.getSQLtype().getCharacterAttributes().getCollationDerivation() == 
+                        CharacterTypeAttributes.CollationDerivation.EXPLICIT)) {
                     // Apply result of explicit COLLATE, which will otherwise get lost.
                     // No way to mutate the existing instance, so replace entire tpv.
                     tInstance = StringAttribute.copyWithCollation(tInstance, n.getSQLtype().getCharacterAttributes());
@@ -254,8 +255,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     n.setPreptimeValue(tpv);
                 }
                 if (tInstance != null) {
-                    if (tInstance.nullability() == null)
+                    if (tInstance.nullability() == null) {
+                        assert n.getSQLtype() != null : "ExpressionNode.SQLType is incorrectly null";
                         tInstance.setNullable(n.getSQLtype().isNullable());
+                    }
                     DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
                     n.setSQLtype(newDtd);
                 }
@@ -492,14 +495,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
             ExpressionNode operand = expression.getOperand();
             TInstance resultType;
+            TAggregator tAggregator;
             if (operand == null) {
-                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), null);
+                tAggregator = resolver.getAggregation(expression.getFunction(), null);
                 resultType = tAggregator.resultType(null);
-                expression.setPreptimeValue(new TPreptimeValue(resultType));
             }
             else {
                 TClass inputTClass = tclass(operand);
-                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
+                tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
                 TClass aggrTypeClass = tAggregator.getTypeClass();
                 if (aggrTypeClass != null && !aggrTypeClass.equals(inputTClass)) {
                     operand = castTo(operand, aggrTypeClass, folder, parametersSync);
@@ -507,6 +510,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
                 resultType = tAggregator.resultType(operand.getPreptimeValue());
             }
+            PValue empty = new PValue(resultType.typeClass().underlyingType());
+            tAggregator.emptyValue(empty);
+            resultType.setNullable(empty.isNull());
             expression.setPreptimeValue(new TPreptimeValue(resultType));
             return expression;
         }
