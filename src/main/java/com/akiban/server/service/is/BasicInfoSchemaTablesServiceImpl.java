@@ -274,13 +274,13 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
 
                 // TODO: This should come from type attributes when new types go in
-                Integer scale = null;
                 Integer precision = null;
+                Integer scale = null;
                 CharsetAndCollation charAndColl = null;
                 switch(column.getType().akType()) {
                     case DECIMAL:
-                        scale = column.getTypeParameter1().intValue();
-                        precision = column.getTypeParameter2().intValue();
+                        precision = column.getTypeParameter1().intValue();
+                        scale = column.getTypeParameter2().intValue();
                     break;
                     case VARCHAR:
                     case TEXT:
@@ -306,8 +306,8 @@ public class BasicInfoSchemaTablesServiceImpl
                                      column.getType().name(),
                                      boolResult(column.getNullable()),
                                      length,
-                                     scale,
                                      precision,
+                                     scale,
                                      column.getPrefixSize(),
                                      column.getInitialAutoIncrementValue(),
                                      charAndColl != null ? CHARSET_SCHEMA : null,
@@ -1115,12 +1115,12 @@ public class BasicInfoSchemaTablesServiceImpl
                     }
                 }
                 Long length = null;
-                Long scale = null;
                 Long precision = null;
+                Long scale = null;
                 switch(param.getType().akType()) {
                     case DECIMAL:
-                        scale = param.getTypeParameter1();
-                        precision = param.getTypeParameter2();
+                        precision = param.getTypeParameter1();
+                        scale = param.getTypeParameter2();
                     break;
                     case VARCHAR:
                         length = param.getTypeParameter1();

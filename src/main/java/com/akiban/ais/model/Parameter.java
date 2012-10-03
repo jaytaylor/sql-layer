@@ -38,7 +38,8 @@ public class Parameter
                                    Type type, Long typeParameter1, Long typeParameter2)
     {
         routine.checkMutability();
-        AISInvariants.checkDuplicateParametersInRoutine(routine, name, direction);
+        if (name != null)
+            AISInvariants.checkDuplicateParametersInRoutine(routine, name, direction);
         Parameter parameter = new Parameter(routine, name, direction, type, typeParameter1, typeParameter2);
         routine.addParameter(parameter);
         return parameter;
