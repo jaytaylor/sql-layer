@@ -90,7 +90,9 @@ public class Cast_From_Time {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putNull();
+            // direct cast TIME --> DATETIME results in a truncation to zero
+            context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00 00:00:00");
+            target.putInt64(0);
         }
     };
     
@@ -100,7 +102,9 @@ public class Cast_From_Time {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putNull();
+            // direct cast TIME --> DATE results in a truncation to zero
+            context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00");
+            target.putInt32(0);
         }
     };
     
@@ -110,7 +114,9 @@ public class Cast_From_Time {
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putNull();
+            // direct cast TIME --> TIMESTAMP results in a truncation to zero
+            context.reportTruncate(String.valueOf(source.getInt32()), "0000-00-00 00:00:00");
+            target.putInt32(0);
         }
     };
 }
