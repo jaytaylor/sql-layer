@@ -32,6 +32,8 @@ import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.common.funcs.SequenceCurrentValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.sql.optimizer.*;
@@ -816,8 +818,8 @@ public class OperatorAssembler extends BaseRule
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
                         row[i] = oldPartialAssembler.sequenceGenerator(sequence, column, row[i]);
                     } else if (row[i] == null) {
-                        row[i] = LiteralExpression.forNull();
-                        // TODO: If column has a default value Convert the defaultValue string into an Expression
+                        row[i] = new com.akiban.server.expression.std.CastExpression 
+                                (column.getType().akType(), new LiteralExpression(AkType.VARCHAR, column.getDefaultValue()));
                     }
                 }
                 inserts = Arrays.asList(row);
@@ -839,6 +841,7 @@ public class OperatorAssembler extends BaseRule
                                 new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
                     }
                 }
+                // Insert the sequence generator and column default values
                 for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
                     Column column = table.getColumnsIncludingInternal().get(i);
                     if (column.getIdentityGenerator() != null) {
@@ -847,9 +850,15 @@ public class OperatorAssembler extends BaseRule
                     } 
                     else if (row[i] == null) {
                         TInstance tinst = targetRowType.typeInstanceAt(i);
-                        PUnderlying underlying = tinst.typeClass().underlyingType();
-                        row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
-                        // TODO: If column has a default value Convert the defaultValue string into an TPreparedExpression
+                        final String defaultValue = column.getDefaultValue();
+                        final PValueSource defaultValueSource;
+                        if(defaultValue == null) {
+                            defaultValueSource = PValueSources.getNullSource(tinst.typeClass().underlyingType());
+                        } else {
+                            defaultValueSource = new PValue(defaultValue);
+                        }
+
+                        row[i] = new TPreparedLiteral(tinst, defaultValueSource);
                     }
                 }
                 insertsP = Arrays.asList(row);
