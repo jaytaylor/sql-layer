@@ -36,6 +36,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
@@ -82,13 +83,13 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     private static final TValidatedScalar ifElseValidated = new TValidatedScalar(AkIfElse.INSTANCE);
 
-    private final OverloadResolver overloadResolver;
+    private final T3RegistryService registryService;
     private final QueryContext queryContext;
 
     public NewExpressionAssembler(PlanContext planContext) {
         super(planContext);
         RulesContext rulesContext = planContext.getRulesContext();
-        overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
+        registryService = ((SchemaRulesContext)rulesContext).getT3Registry();
         queryContext = planContext.getQueryContext();
     }
 
@@ -111,8 +112,9 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             for (ExpressionNode argument : argumentNodes) {
                 inputPreptimeValues.add(argument.getPreptimeValue());
             }
-            OverloadResult<TValidatedScalar> overloadResult = overloadResolver.get(functionName, inputPreptimeValues,
-                    TValidatedScalar.class);
+
+            OverloadResolver<TValidatedScalar> scalarsResolver = registryService.getScalarsResolver();
+            OverloadResult<TValidatedScalar> overloadResult = scalarsResolver.get(functionName, inputPreptimeValues);
             overload = overloadResult.getOverload();
         }
         else if (functionNode instanceof IfElseExpression) {
@@ -142,7 +144,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         else if (!toType.equals(sourceInstance))
         {
             // Do type conversion.
-            TCast tcast = overloadResolver.getTCast(sourceInstance, toType);
+            TCast tcast = registryService.getCastsResolver().cast(sourceInstance, toType);
             if (tcast == null) {
                 String castName = "CAST("
                         + sourceInstance.typeClass()

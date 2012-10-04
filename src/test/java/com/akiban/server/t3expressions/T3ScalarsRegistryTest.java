@@ -31,6 +31,7 @@ import com.akiban.server.types3.T3TestClass;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -46,6 +47,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -93,7 +95,8 @@ public final class T3ScalarsRegistryTest {
     public void noOverloads() {
         T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
         registry.start(new InstanceFinderBuilder());
-        assertEquals("lookup for FOO", null, registry.getOverloads("foo"));
+        List<TPreptimeValue> args = Collections.emptyList();
+        assertEquals("lookup for FOO", null, registry.getScalarsResolver().getRegistry().get("foo"));
         test.noRunNeeded();
     }
 
@@ -129,7 +132,8 @@ public final class T3ScalarsRegistryTest {
             T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
             registry.start(instanceFinder);
 
-            Iterable<? extends ScalarsGroup<TValidatedScalar>> scalarsByPriority = registry.getOverloads(FUNC_NAME);
+            Iterable<? extends ScalarsGroup<TValidatedScalar>> scalarsByPriority
+                    = registry.getScalarsResolver().getRegistry().get(FUNC_NAME);
             List<Set<TInputSet>> actuals = new ArrayList<Set<TInputSet>>();
             for (ScalarsGroup<TValidatedScalar> scalarsGroup : scalarsByPriority) {
                 Set<TInputSet> actualInputs = new HashSet<TInputSet>();

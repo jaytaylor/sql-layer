@@ -27,15 +27,11 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
-import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,15 +39,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-public final class OverloadResolver {
+public final class OverloadResolver<V extends TValidatedOverload> {
 
-    public class OverloadResult<V extends TValidatedOverload> {
+    public static class OverloadResult<V extends TValidatedOverload> {
         private V overload;
         private Map<TInputSet, TInstance> instances;
 
-        private OverloadResult(V overload, List<? extends TPreptimeValue> inputs)
+        private OverloadResult(V overload, List<? extends TPreptimeValue> inputs, TCastResolver resolver)
         {
             this.overload = overload;
             List<TInputSet> inputSets = overload.inputSets();
@@ -60,7 +55,7 @@ public final class OverloadResolver {
                 final TInstance instance;
                 TClass targetTClass = inputSet.targetType();
                 if (targetTClass == null)
-                    instance = findCommon(overload, inputSet, inputs);
+                    instance = findCommon(overload, inputSet, inputs, resolver);
                 else
                     instance = findInstance(overload, inputSet, inputs);
                 if (instance != null) {
@@ -112,7 +107,7 @@ public final class OverloadResolver {
         }
 
         private TInstance findCommon(V overload, TInputSet inputSet,
-                                  List<? extends TPreptimeValue> inputs)
+                                  List<? extends TPreptimeValue> inputs, TCastResolver resolver)
         {
             assert inputSet.targetType() == null : inputSet; // so we have to look at inputs
             TClass common = null;
@@ -147,7 +142,7 @@ public final class OverloadResolver {
                     //   3) newCommon is neither, in which case we'll generate a new TInstance
                     // We know that we can't have both #1 and #2, because that would imply [old] common == inputClass,
                     // which has already been handled.
-                    TClass newCommon = commonTClass(common, inputClass);
+                    TClass newCommon = resolver.commonTClass(common, inputClass);
                     if (newCommon == null)
                         throw new OverloadException(overload + ": couldn't find common types for " + inputSet
                             + " with " + inputs);
@@ -184,102 +179,24 @@ public final class OverloadResolver {
         }
     }
 
-    private final T3RegistryService registry;
+    private final ResolvablesRegistry<V> overloadsRegistry;
+    private final TCastResolver castsResolver;
 
-    public OverloadResolver(T3RegistryService registry) {
-        this.registry = registry;
+    public OverloadResolver(ResolvablesRegistry<V> overloadsRegistry, TCastResolver castsResolver) {
+        this.overloadsRegistry = overloadsRegistry;
+        this.castsResolver = castsResolver;
     }
 
-    public TCast getTCast(TInstance source, TInstance target) {
-        return registry.cast(source.typeClass(), target.typeClass());
-    }
-
-    public T3RegistryService getRegistry() {
-        return registry;
-    }
-
-    /**
-     * Returns the common of the two types. For either argument, a <tt>null</tt> value is interpreted as any type. At
-     * least one of the input TClasses must be non-<tt>null</tt>. If one of the inputs is null, the result is always
-     * the other input.
-     * @param tClass1 the first type class
-     * @param tClass2 the other type class
-     * @return the common class, or <tt>null</tt> if none were found
-     * @throws IllegalArgumentException if both inputs are <tt>null</tt>
-     */
-    public TClass commonTClass(TClass tClass1, TClass tClass2) {
-        // NOTE:
-        // This method shares some concepts with #reduceToMinimalCastGroups, but the two methods seem different enough
-        // that they're best implemented without much common code. But this could be an opportunity for refactoring.
-
-        // handle easy cases where one or the other is null
-        if (tClass1 == null) {
-            if (tClass2 == null)
-                throw new IllegalArgumentException("both inputs can't be null");
-            return tClass2;
-        }
-        if (tClass2 == null)
-            return tClass1;
-
-        // If they're the same class, this is a really easy question to answer.
-        if (tClass1.equals(tClass2))
-            return tClass1;
-
-        // Alright, neither is null and they're both different. Try the hard way.
-        Set<? extends TClass> t1Targets = registry.stronglyCastableFrom(tClass1);
-        Set<? extends TClass> t2Targets = registry.stronglyCastableFrom(tClass2);
-
-        // TODO: The following is not very efficient -- opportunity for optimization?
-
-        // Sets.intersection works best when the first arg is smaller, so do that.
-        Set<? extends TClass> set1, set2;
-        if (t1Targets.size() < t2Targets.size()) {
-            set1 = t1Targets;
-            set2 = t2Targets;
-        }
-        else {
-            set1 = t2Targets;
-            set2 = t1Targets;
-        }
-        Set<? extends TClass> castGroup = Sets.intersection(set1, set2); // N^2 operation number 1
-
-        // The cast group is the set of type classes such that for each element C of castGroup, both tClass1 and tClass2
-        // can be strongly cast to C. castGroup is thus the set of common types for { tClass1, tClass2 }. We now need
-        // to find the MOST SPECIFIC cast M such that any element of castGroup which is not M can be strongly castable
-        // from M.
-        if (castGroup.isEmpty())
-            throw new OverloadException("no common types found for " + tClass1 + " and " + tClass2);
-
-        // N^2 operation number 2...
-        TClass mostSpecific = null;
-        for (TClass candidate : castGroup) {
-            if (isMostSpecific(candidate, castGroup)) {
-                if (mostSpecific == null)
-                    mostSpecific = candidate;
-                else
-                    return null;
-            }
-        }
-        return mostSpecific;
-    }
-
-    public <V extends TValidatedOverload> OverloadResult<V> get(String name, List<? extends TPreptimeValue> inputs,
-                                                                     Class<V> overloadType) {
-        Iterable<? extends ScalarsGroup<V>> scalarsGroup;
-        // TODO CLEANUP: or we could just pass in the right overload registry...
-        if (overloadType == TValidatedScalar.class)
-            scalarsGroup = (Iterable<? extends ScalarsGroup<V>>) registry.getOverloads(name);
-        else if (overloadType == TValidatedAggregator.class)
-            scalarsGroup = (Iterable<? extends ScalarsGroup<V>>) registry.getAggregates(name);
-        else
-            throw new AssertionError("unrecognized overload type: " + overloadType);
+    public OverloadResult<V> get(String name, List<? extends TPreptimeValue> inputs)
+    {
+        Iterable<? extends ScalarsGroup<V>> scalarsGroup = overloadsRegistry.get(name);
         if (scalarsGroup == null) {
             throw new NoSuchFunctionException(name);
         }
         return inputBasedResolution(name, inputs, scalarsGroup);
     }
 
-    private <V extends TValidatedOverload> OverloadResult<V> inputBasedResolution(
+    private OverloadResult<V> inputBasedResolution(
             String name, List<? extends TPreptimeValue> inputs,
             Iterable<? extends ScalarsGroup<V>> scalarGroupsByPriority)
     {
@@ -322,6 +239,10 @@ public final class OverloadResolver {
         return buildResult(mostSpecific, inputs);
     }
 
+    ResolvablesRegistry<V> getRegistry() {
+        return overloadsRegistry;
+    }
+
     private OverloadException overloadException(String name, List<? extends TPreptimeValue> inputs) {
         StringBuilder sb = new StringBuilder("no suitable overload found for ");
         sb.append(name).append('(');
@@ -344,22 +265,7 @@ public final class OverloadResolver {
         return new OverloadException(sb.toString());
     }
 
-    private boolean isMostSpecific(TClass candidate, Set<? extends TClass> castGroup) {
-        for (TClass inner : castGroup) {
-            if (candidate.equals(inner))
-                continue;
-            if (!stronglyCastable(candidate, inner)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean stronglyCastable(TClass source, TClass target) {
-        return isStrong(registry.cast(source, target));
-    }
-
-    private <V extends TValidatedOverload> boolean isCandidate(V overload,
+    private boolean isCandidate(V overload,
                                 List<? extends TPreptimeValue> inputs,
                                 ScalarsGroup<V> scalarGroups) {
         if (!overload.coversNInputs(inputs.size()))
@@ -387,8 +293,7 @@ public final class OverloadResolver {
                     continue;
             }
             else {
-                TCast cast = registry.cast(inputInstance.typeClass(), inputSet.targetType());
-                if (isStrong(cast))
+                if (castsResolver.strongCastExists(inputInstance.typeClass(), inputSet.targetType()))
                     continue;
             }
             // This input precludes the use of the overload
@@ -398,10 +303,9 @@ public final class OverloadResolver {
         return true;
     }
 
-    private <V extends TValidatedOverload> OverloadResult<V> buildResult(
-            V overload, List<? extends TPreptimeValue> inputs)
+    private OverloadResult<V> buildResult(V overload, List<? extends TPreptimeValue> inputs)
     {
-        return new OverloadResult<V>(overload, inputs);
+        return new OverloadResult<V>(overload, inputs, castsResolver);
     }
 
     /*
@@ -413,7 +317,7 @@ public final class OverloadResolver {
      * set Ai can be strongly cast to the target type of Bi, then A is said to be MORE SPECIFIC than A, and B
      * is discarded as a possible overload.
      */
-    private <V extends TValidatedOverload> List<List<V>> reduceToMinimalCastGroups(List<V> candidates) {
+    private List<List<V>> reduceToMinimalCastGroups(List<V> candidates) {
         // NOTE:
         // This method shares some concepts with #commonTClass. See that method for a note about possible refactoring
         // opportunities (tl;dr is the two methods don't share code right now, but they might be able to.)
@@ -449,8 +353,8 @@ public final class OverloadResolver {
                     for(int i = 0; i < nInputSets; ++i) {
                         TInputSet Ai = A.inputSetAt(i);
                         TInputSet Bi = B.inputSetAt(i);
-                        AtoB &= isStrong(registry.cast(Ai.targetType(), Bi.targetType()));
-                        BtoA &= isStrong(registry.cast(Bi.targetType(), Ai.targetType()));
+                        AtoB &= castsResolver.strongCastExists(Ai.targetType(), Bi.targetType());
+                        BtoA &= castsResolver.strongCastExists(Bi.targetType(), Ai.targetType());
                     }
                     if(AtoB) {
                         // current more specific
@@ -475,14 +379,5 @@ public final class OverloadResolver {
         return castGroups;
     }
 
-    private boolean isStrong(TCast cast) {
-        return (cast != null) && registry.isStrong(cast);
-    }
 
-    // TODO replace with InvalidOperationExceptions
-    static class OverloadException extends RuntimeException {
-        private OverloadException(String message) {
-            super(message);
-        }
-    }
 }

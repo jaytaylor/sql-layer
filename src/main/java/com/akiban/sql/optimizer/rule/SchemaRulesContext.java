@@ -27,7 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
@@ -44,7 +44,7 @@ public abstract class SchemaRulesContext extends RulesContext
 
     private FunctionsRegistry functionsRegistry;
     private CostEstimator costEstimator;
-    private OverloadResolver overloadResolver;
+    private T3RegistryService t3Registry;
     protected SchemaRulesContext() {
     }
 
@@ -56,8 +56,8 @@ public abstract class SchemaRulesContext extends RulesContext
         this.functionsRegistry = functionsRegistry;
     }
 
-    protected void initOverloadResolver(OverloadResolver overloadResolver) {
-        this.overloadResolver = overloadResolver;
+    protected void initT3Registry(T3RegistryService overloadResolver) {
+        this.t3Registry = overloadResolver;
     }
 
     protected void initCostEstimator(CostEstimator costEstimator, boolean usePValues) {
@@ -80,8 +80,8 @@ public abstract class SchemaRulesContext extends RulesContext
         return new PhysicalResultColumn(field.getName());
     }
 
-    public OverloadResolver getOverloadResolver() {
-        return overloadResolver;
+    public T3RegistryService getT3Registry() {
+        return t3Registry;
     }
 
     public FunctionsRegistry getFunctionsRegistry() {
