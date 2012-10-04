@@ -855,11 +855,15 @@ public class OperatorAssembler extends BaseRule
                             defaultValueSource.putNull();
                         } else {
                             TCast cast = tinst.typeClass().castFromVarchar();
-                            defaultValueSource = new PValue(tinst.typeClass().underlyingType());
-                            TExecutionContext executionContext = new TExecutionContext(
-                                    Collections.singletonList(MString.VARCHAR.instance(defaultValue.length())), 
-                                    tinst, planContext.getQueryContext());
-                            cast.evaluate(executionContext, new PValue(defaultValue), defaultValueSource);
+                            if (cast != null) {
+                                defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                                TExecutionContext executionContext = new TExecutionContext(
+                                        Collections.singletonList(MString.VARCHAR.instance(defaultValue.length())), 
+                                        tinst, planContext.getQueryContext());
+                                cast.evaluate(executionContext, new PValue(defaultValue), defaultValueSource);
+                            } else {
+                                defaultValueSource = new PValue (defaultValue);
+                            }
                         }
                         row[i] = new TPreparedLiteral(tinst, defaultValueSource);
                     }
