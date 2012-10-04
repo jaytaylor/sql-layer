@@ -1,0 +1,4 @@
+PhysicalUpdate
+  Insert_Returning(INTO customers(customer_id, customer_name, customer_title, primary_payment_code))
+    Project_Default(ifnull(Field(0), NEXTVAL('test', '_sequence-1615118567')), Field(1), Field(2), Field(3), 'C', NULL)
+      ValuesScan_Default([1, 'THOMAS', 'NONE', NULL])

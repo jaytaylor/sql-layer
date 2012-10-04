@@ -30,7 +30,8 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
@@ -52,6 +53,7 @@ import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
@@ -814,8 +816,8 @@ public class OperatorAssembler extends BaseRule
                         Sequence sequence = table.getColumn(i).getIdentityGenerator();
                         row[i] = oldPartialAssembler.sequenceGenerator(sequence, column, row[i]);
                     } else if (row[i] == null) {
-                        row[i] = LiteralExpression.forNull();
-                        // TODO: If column has a default value Convert the defaultValue string into an Expression
+                        row[i] = new com.akiban.server.expression.std.CastExpression 
+                                (column.getType().akType(), new LiteralExpression(AkType.VARCHAR, column.getDefaultValue()));
                     }
                 }
                 inserts = Arrays.asList(row);
@@ -837,6 +839,7 @@ public class OperatorAssembler extends BaseRule
                                 new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
                     }
                 }
+                // Insert the sequence generator and column default values
                 for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
                     Column column = table.getColumnsIncludingInternal().get(i);
                     if (column.getIdentityGenerator() != null) {
@@ -845,9 +848,24 @@ public class OperatorAssembler extends BaseRule
                     } 
                     else if (row[i] == null) {
                         TInstance tinst = targetRowType.typeInstanceAt(i);
-                        PUnderlying underlying = tinst.typeClass().underlyingType();
-                        row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
-                        // TODO: If column has a default value Convert the defaultValue string into an TPreparedExpression
+                        final String defaultValue = column.getDefaultValue();
+                        final PValue defaultValueSource;
+                        if(defaultValue == null) {
+                            defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                            defaultValueSource.putNull();
+                        } else {
+                            TCast cast = tinst.typeClass().castFromVarchar();
+                            if (cast != null) {
+                                defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                                TExecutionContext executionContext = new TExecutionContext(
+                                        Collections.singletonList(MString.VARCHAR.instance(defaultValue.length())), 
+                                        tinst, planContext.getQueryContext());
+                                cast.evaluate(executionContext, new PValue(defaultValue), defaultValueSource);
+                            } else {
+                                defaultValueSource = new PValue (defaultValue);
+                            }
+                        }
+                        row[i] = new TPreparedLiteral(tinst, defaultValueSource);
                     }
                 }
                 insertsP = Arrays.asList(row);

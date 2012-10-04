@@ -1,4 +1,4 @@
-PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NOT NULL, _SQL_COL_2:MCOMPAT_ BIGINT(21) NOT NULL]
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NULL, _SQL_COL_2:MCOMPAT_ BIGINT(21) NULL]
   Project_Default(Field(0), Field(1))
     Aggregate_Partial(COUNT, COUNT)
       Sort_Tree(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)
