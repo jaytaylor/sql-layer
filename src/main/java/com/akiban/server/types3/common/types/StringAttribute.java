@@ -55,7 +55,7 @@ public enum StringAttribute implements Attribute
         int charsetId = tInstance.attribute(CHARSET);
         String charsetName = StringFactory.Charset.values()[charsetId].name();
         int collationId = tInstance.attribute(COLLATION);
-        if (collationId == -1) {
+        if (collationId == StringFactory.NULL_COLLATION_ID) {
             result = new CharacterTypeAttributes(charsetName, null, null);
         }
         else {
