@@ -1043,7 +1043,7 @@ public class ConstantFolder extends BaseRule
                     }
                     else {
                         allConstant = false;
-                        if (!(col instanceof ParameterExpression)) {
+                        if (!isParam(col)) {
                             allConstOrParam = false;
                         }
                     }
@@ -1094,6 +1094,14 @@ public class ConstantFolder extends BaseRule
             else
                 distinct = DistinctState.DISTINCT;
             expressions.setDistinctState(distinct);
+        }
+
+        private static boolean isParam(ExpressionNode expr) {
+            // CAST(? AS type) is okay, too.
+            // (Actually, any function with only one param as arguments would be.)
+            while (expr instanceof CastExpression)
+                expr = ((CastExpression)expr).getOperand();
+            return (expr instanceof ParameterExpression);
         }
 
         public enum CompareConstants { NORMAL, COMPARE_NULL, ROW_EQUALS };

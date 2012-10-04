@@ -27,6 +27,7 @@
 package com.akiban.sql.server;
 
 import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.sql.optimizer.AISBinderContext;
@@ -157,5 +158,5 @@ public interface ServerSession
     public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator);
 
     /** Get the overload resolver */
-    public OverloadResolver overloadResolver();
+    public T3RegistryService t3RegistryService();
 }

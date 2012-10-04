@@ -59,7 +59,7 @@ public final class T3RegistryServiceImplTest {
     @Test
     public void createSelfCasts() {
         InstanceFinder finder = createFinder();
-        Map<TClass, Map<TClass, TCast>> casts = T3RegistryServiceImpl.createCasts(finder.find(TClass.class), finder);
+        Map<TClass, Map<TClass, TCast>> casts = TCastsRegistry.createCasts(finder.find(TClass.class), finder);
         checkAll(casts,
                 new CastCheck(CLASS_A, CLASS_A),
                 new CastCheck(CLASS_B, CLASS_B),
@@ -84,9 +84,9 @@ public final class T3RegistryServiceImplTest {
         InstanceFinderBuilder finder = createFinder();
         TCastPath path = TCastPath.create(CLASS_A, CLASS_B, CLASS_C);
         finder.put(TCastPath.class, path);
-        Map<TClass, Map<TClass, TCast>> casts = T3RegistryServiceImpl.createCasts(finder.find(TClass.class), finder);
+        Map<TClass, Map<TClass, TCast>> casts = TCastsRegistry.createCasts(finder.find(TClass.class), finder);
         singleStepCasts(casts);
-        T3RegistryServiceImpl.createDerivedCasts(casts, finder);
+        TCastsRegistry.createDerivedCasts(casts, finder);
         checkAll(casts,
                 // self casts
                 new CastCheck(CLASS_A, CLASS_A),
@@ -109,10 +109,10 @@ public final class T3RegistryServiceImplTest {
         InstanceFinderBuilder finder = createFinder();
         finder.put(TCastPath.class, TCastPath.create(CLASS_A, CLASS_B, CLASS_C, CLASS_D, CLASS_E));
 
-        Map<TClass, Map<TClass, TCast>> casts = T3RegistryServiceImpl.createCasts(finder.find(TClass.class), finder);
+        Map<TClass, Map<TClass, TCast>> casts = TCastsRegistry.createCasts(finder.find(TClass.class), finder);
         singleStepCasts(casts);
         putCast(new BogusCast(CLASS_A, CLASS_D), casts);
-        T3RegistryServiceImpl.createDerivedCasts(casts, finder);
+        TCastsRegistry.createDerivedCasts(casts, finder);
         checkAll(casts,
                 // self casts
                 new CastCheck(CLASS_A, CLASS_A),

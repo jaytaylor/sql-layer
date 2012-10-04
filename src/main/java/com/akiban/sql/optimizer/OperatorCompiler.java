@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.rule.BaseRule;
@@ -45,7 +46,6 @@ import com.akiban.sql.parser.SQLParserContext;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.t3expressions.OverloadResolver;
 
 import java.util.List;
 
@@ -85,8 +85,8 @@ public class OperatorCompiler extends SchemaRulesContext
     }
 
     @Override
-    protected void initOverloadResolver(OverloadResolver overloadResolver) {
-        super.initOverloadResolver(overloadResolver);
+    protected void initT3Registry(T3RegistryService overloadResolver) {
+        super.initT3Registry(overloadResolver);
         typeComputer.setUseComposers(false);
     }
 

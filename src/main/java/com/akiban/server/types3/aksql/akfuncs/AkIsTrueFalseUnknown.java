@@ -24,13 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.akiban.server.types3.TScalar;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.common.funcs.IsTrueFalseUnknown;
 
-public interface T3RegistryService {
-    OverloadResolver<TValidatedScalar> getScalarsResolver();
-    OverloadResolver<TValidatedAggregator> getAggregatesResolver();
-    TCastResolver getCastsResolver();
+public class AkIsTrueFalseUnknown
+{
+    public static final TScalar INSTANCES[] = IsTrueFalseUnknown.create(AkBool.INSTANCE);
 }
