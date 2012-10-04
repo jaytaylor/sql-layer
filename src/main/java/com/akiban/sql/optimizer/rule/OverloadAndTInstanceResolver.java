@@ -59,9 +59,9 @@ import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.AnyCondition;
 import com.akiban.sql.optimizer.plan.BasePlanWithInput;
+import com.akiban.sql.optimizer.plan.BooleanCastExpression;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
-import com.akiban.sql.optimizer.plan.CastCondition;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
@@ -72,6 +72,7 @@ import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
 import com.akiban.sql.optimizer.plan.ExpressionsSource;
+import com.akiban.sql.optimizer.plan.FunctionCondition;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
@@ -458,12 +459,27 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             expression.setPreptimeValue(new TPreptimeValue(resultInstance));
 
+            ExpressionNode resultExpression;
             if (castTo == null) {
-                return expression;
+                resultExpression = expression;
             }
             else {
-                return castTo(expression, castTo, folder, parametersSync);
+                resultExpression = castTo(expression, castTo, folder, parametersSync);
+                resultInstance = castTo;
             }
+
+            if (expression instanceof FunctionCondition) {
+                // Didn't know whether function would return boolean or not earlier,
+                // so just assumed it would.
+                if (resultInstance.typeClass() != AkBool.INSTANCE) {
+                    castTo = AkBool.INSTANCE.instance();
+                    castTo.setNullable(resultInstance.nullability());
+                    resultExpression = castTo(resultExpression, castTo, folder, parametersSync);
+                    resultInstance = castTo;
+                }
+            }
+
+            return resultExpression;
         }
 
         ExpressionNode handleFunctionExpression(FunctionExpression expression) {
@@ -949,7 +965,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
         if (targetInstance.typeClass() == AkBool.INSTANCE)
             // Allow use as a condition.
-            return new CastCondition(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
+            return new BooleanCastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
         else
             return new CastExpression(expression, targetInstance.dataTypeDescriptor(), expression.getSQLsource());
     }
