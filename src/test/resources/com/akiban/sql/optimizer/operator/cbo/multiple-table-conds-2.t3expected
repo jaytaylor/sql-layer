@@ -7,5 +7,5 @@ PhysicalSelect[name:varchar(32)[VARCHAR]]
       Project_Default(customers.name)
         Select_HKeyOrdered(parent.name != addresses.city)
           AncestorLookup_Default(Index(addresses.state) -> addresses)
-            Select_HKeyOrdered((addresses.state != 'WY') AND (customers.name != addresses.state))
+            Select_HKeyOrdered((customers.name != addresses.state) AND (addresses.state != 'WY'))
               IndexScan_Default(Index(addresses.state), state > 'M')
