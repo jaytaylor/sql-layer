@@ -96,7 +96,7 @@ public final class T3ScalarsRegistryTest {
         T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
         registry.start(new InstanceFinderBuilder());
         List<TPreptimeValue> args = Collections.emptyList();
-        assertEquals("lookup for FOO", null, registry.getScalarsResolver().get("foo", args));
+        assertEquals("lookup for FOO", null, registry.getScalarsResolver().getRegistry().get("foo"));
         test.noRunNeeded();
     }
 
