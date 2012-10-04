@@ -531,9 +531,9 @@ public class ConstantFolder extends BaseRule
                     // A complex boolean may have been reduced to a top-level AND.
                     LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
                     if ("and".equals(lcond.getFunction())) {
-                        conditions.remove(i);
-                        conditions.add(i++, lcond.getLeft());
-                        conditions.add(i, lcond.getRight());
+                        conditions.set(i, lcond.getLeft());
+                        conditions.add(i+1, lcond.getRight());
+                        continue; // Might be AND(AND(...
                     }
                 }
                 i++;
