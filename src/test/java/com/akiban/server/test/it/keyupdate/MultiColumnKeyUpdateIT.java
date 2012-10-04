@@ -598,8 +598,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         customerRD = rowDefCache().getRowDef(customerId);
         orderRD = rowDefCache().getRowDef(orderId);
         itemRD = rowDefCache().getRowDef(itemId);
-        int groupRowDefId = customerRD.getGroupRowDefId();
-        groupRD = store().getRowDefCache().getRowDef(groupRowDefId);
+        group = customerRD.getGroup();
     }
 
     @Override

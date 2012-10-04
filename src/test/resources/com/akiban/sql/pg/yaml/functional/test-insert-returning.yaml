@@ -117,4 +117,12 @@
 ---
 - Statement: Insert into t4 (c1, c2) select c1 + 100, c2 from t3 returning c1
 - output: [[101], [102], [103], [104]]
+---
+- CreateTable: t5 (c1 integer not null default 0, c2 varchar(10) not null default 'CHG')
+---
+- Statement: insert into t5 (c1) values (1), (2), (3) returning c2
+- output: [['CHG'], ['CHG'], ['CHG']]
+---
+- Statement: insert into t5 (c2) values ('ERG'), ('MIN'), ('CAT') returning c1
+- output: [[0], [0], [0]]
 ... 

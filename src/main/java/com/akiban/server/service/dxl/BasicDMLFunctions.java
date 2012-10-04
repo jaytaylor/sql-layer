@@ -736,9 +736,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 
         if(utable == null || canFastTruncate(session, utable)) {
-            final RowDef rowDef = ddlFunctions.getRowDef(table.getTableId());
             try {
-                store().truncateGroup(session, rowDef.getRowDefId());
+                store().truncateGroup(session, table.getGroup());
             } catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
             }

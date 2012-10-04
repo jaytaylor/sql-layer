@@ -668,10 +668,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
         final Table table = group.getGroupTable();
-        final RowDef rowDef = getRowDef(table.getTableId());
         final TableName tableName = table.getName();
         try {
-            store().dropGroup(session, rowDef.getRowDefId());
+            store().dropGroup(session, group);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
