@@ -33,6 +33,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.sql.optimizer.TypesTranslation;
@@ -49,9 +50,24 @@ public class ConstantExpression extends BaseExpression
     public ConstantExpression(Object value, 
                               DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
         super(sqlType, type, sqlSource);
-        if (value instanceof Integer)
-            value = new Long(((Integer)value).intValue());
-        this.value = value;
+        if (value instanceof Integer) {
+            int ival = ((Integer)value).intValue();
+            if (Types3Switch.ON) {
+                if ((ival >= Byte.MIN_VALUE) && (ival <= Byte.MAX_VALUE))
+                    this.value = new Byte((byte)ival);
+                else if ((ival >= Short.MIN_VALUE) && (ival <= Short.MAX_VALUE))
+                    this.value = new Short((short)ival);
+                else
+                    this.value = value;
+                getPreptimeValue(); // So that toString() won't try to use AkType.
+            }
+            else {
+                this.value = new Long(ival);
+            }
+        }
+        else {
+            this.value = value;
+        }
     }
 
     public ConstantExpression(Object value, DataTypeDescriptor sqlType, ValueNode sqlSource) {

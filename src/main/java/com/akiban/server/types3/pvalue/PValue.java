@@ -374,6 +374,11 @@ public final class PValue implements PValueSource, PValueTarget {
         putInt16(val);
     }
 
+    public PValue(byte val) {
+        this(PUnderlying.INT_8);
+        putInt8(val);
+    }
+
     public PValue(String val) {
         this(PUnderlying.STRING);
         putString(val, null);
