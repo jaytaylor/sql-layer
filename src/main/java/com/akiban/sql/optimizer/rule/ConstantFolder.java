@@ -1096,7 +1096,7 @@ public class ConstantFolder extends BaseRule
             expressions.setDistinctState(distinct);
         }
 
-        public static boolean isParam(ExpressionNode expr) {
+        private static boolean isParam(ExpressionNode expr) {
             // CAST(? AS type) is okay, too.
             // (Actually, any function with only one param as arguments would be.)
             while (expr instanceof CastExpression)
