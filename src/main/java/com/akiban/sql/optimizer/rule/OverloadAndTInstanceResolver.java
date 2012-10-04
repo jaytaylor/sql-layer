@@ -635,7 +635,15 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             ColumnSource columnSource = expression.getTable();
             if (column != null) {
                 assert columnSource instanceof TableSource : columnSource;
-                expression.setPreptimeValue(new TPreptimeValue(column.tInstance()));
+                TInstance columnInstance = column.tInstance();
+                if ((Boolean.FALSE == columnInstance.nullability()) &&
+                    (expression.getSQLtype() != null) &&
+                    (expression.getSQLtype().isNullable())) {
+                    // With an outer join, the column can still be nullable.
+                    columnInstance = columnInstance.copy();
+                    columnInstance.setNullable(Boolean.TRUE);
+                }
+                expression.setPreptimeValue(new TPreptimeValue(columnInstance));
             }
             else if (columnSource instanceof AggregateSource) {
                 AggregateSource aggTable = (AggregateSource) columnSource;
