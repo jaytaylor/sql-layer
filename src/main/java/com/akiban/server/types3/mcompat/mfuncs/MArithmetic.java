@@ -108,7 +108,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt8();
-            int a1 = inputs.get(0).getInt8();
+            int a1 = inputs.get(1).getInt8();
             output.putInt32(a0 + a1);
         }
     };
@@ -117,7 +117,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt16();
-            int a1 = inputs.get(0).getInt16();
+            int a1 = inputs.get(1).getInt16();
             output.putInt32(a0 + a1);
         }
     };
@@ -177,7 +177,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt8();
-            int a1 = inputs.get(0).getInt8();
+            int a1 = inputs.get(1).getInt8();
             output.putInt32(a0 - a1);
         }
     };
@@ -186,7 +186,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt16();
-            int a1 = inputs.get(0).getInt16();
+            int a1 = inputs.get(1).getInt16();
             output.putInt32(a0 - a1);
         }
     };
