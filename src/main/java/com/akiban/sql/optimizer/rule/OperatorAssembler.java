@@ -30,6 +30,8 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -614,14 +616,15 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-                OverloadResolver resolver = rulesContext.getOverloadResolver();
+                T3RegistryService registry = rulesContext.getT3Registry();
+                OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                 TInstance instance = column.tInstance();
                 
                 List<TPreptimeValue> input = new ArrayList<TPreptimeValue>(2);
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
 
-                TValidatedScalar overload = resolver.get("NEXTVAL", input, TValidatedScalar.class).getOverload();
+                TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
 
                 List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
                 arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
@@ -632,8 +635,7 @@ public class OperatorAssembler extends BaseRule
 
                 if (!instance.equals(overload.resultStrategy().fixed())) {
                     RulesContext rulesContext = planContext.getRulesContext();
-                    OverloadResolver overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
-                    TCast tcast = overloadResolver.getTCast(seqExpr.resultType(), instance);
+                    TCast tcast = registry.getCastsResolver().cast(seqExpr.resultType(), instance);
                     seqExpr = 
                             new TCastExpression(seqExpr, tcast, instance, planContext.getQueryContext());
                 }
@@ -646,8 +648,8 @@ public class OperatorAssembler extends BaseRule
                     List<TPreptimeValue> ifNullInput = new ArrayList<TPreptimeValue>(2);
                     ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
                     ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
-                    
-                    OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput, TValidatedScalar.class);
+
+                    OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput);
                     TValidatedScalar ifNullOverload = ifNullResult.getOverload();
                     List<TPreparedExpression> ifNullArgs = new ArrayList<TPreparedExpression>(2);
                     ifNullArgs.add(expression);
@@ -832,9 +834,8 @@ public class OperatorAssembler extends BaseRule
                     row[pos] = insertsP.get(i);
                     
                     if (!instance.equals(row[pos].resultType())) {
-                        RulesContext rulesContext = planContext.getRulesContext();
-                        OverloadResolver overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
-                        TCast tcast = overloadResolver.getTCast(instance, row[pos].resultType());
+                        T3RegistryService registry = rulesContext.getT3Registry();
+                        TCast tcast = registry.getCastsResolver().cast(instance.typeClass(), row[pos].resultType().typeClass());
                         row[pos] = 
                                 new TCastExpression(row[pos], tcast, instance, planContext.getQueryContext());
                     }
