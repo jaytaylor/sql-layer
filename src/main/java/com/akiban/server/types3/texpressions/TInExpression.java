@@ -30,7 +30,6 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -49,7 +48,7 @@ public final class TInExpression {
         return new TPreparedFunction(overload, AkBool.INSTANCE.instance(), all, queryContext);
     }
     
-    private static TValidatedOverload overload = new TValidatedOverload(new TOverloadBase() {
+    private static TValidatedScalar overload = new TValidatedScalar(new TScalarBase() {
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
             builder.vararg(null, 0, 1);

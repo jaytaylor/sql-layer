@@ -27,20 +27,20 @@
 package com.akiban.server.types3.mcompat.aggr;
 
 import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TAggregatorBase;
-import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFixedTypeAggregator;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-public class MGroupConcat extends TAggregatorBase
+public class MGroupConcat extends TFixedTypeAggregator
 {
     public static final TAggregator INSTANCE = new MGroupConcat();
 
-    private MGroupConcat() {}
+    private MGroupConcat() {
+        super("group_concat", MString.TEXT);
+    }
 
     @Override
     public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state, Object del)
@@ -61,23 +61,5 @@ public class MGroupConcat extends TAggregatorBase
     public void emptyValue(PValueTarget state)
     {
         state.putNull();
-    }
-
-    @Override
-    public TInstance resultType(TPreptimeValue value)
-    {
-        return MString.TEXT.instance();
-    }
-
-    @Override
-    public TClass getTypeClass()
-    {
-        return MString.TEXT;
-    }
-
-    @Override
-    public String name()
-    {
-        return "group_concat";
     }
 }

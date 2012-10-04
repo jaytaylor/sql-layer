@@ -32,14 +32,14 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.sql.parser.TernaryOperatorNode;
 
-public abstract class MTimestampDiff extends TOverloadBase
+public abstract class MTimestampDiff extends TScalarBase
 {
-    public static TOverload[] create()
+    public static TScalar[] create()
     {
-        return new TOverload[]
+        return new TScalar[]
         {
             new MTimestampDiff(MDatetimes.DATE)
             {

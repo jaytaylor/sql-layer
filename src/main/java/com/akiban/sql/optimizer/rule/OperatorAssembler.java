@@ -30,13 +30,11 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
-import com.akiban.server.types3.common.funcs.SequenceCurrentValue;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -55,10 +53,8 @@ import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
@@ -70,7 +66,6 @@ import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedFunction;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -156,7 +151,8 @@ public class OperatorAssembler extends BaseRule
                                      ColumnExpressionToIndex fieldOffsets);
         T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets);
         void assembleExpressionInto(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets, T[] arr, int i);
-        Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex, List<String> names, List<Object> options);
+        Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
+                                    AggregateSource aggregateSource);
         T sequenceGenerator(Sequence sequence, Column column, T expression);
         T field(RowType rowType, int position);
         
@@ -215,7 +211,7 @@ public class OperatorAssembler extends BaseRule
 
         @Override
         public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                           List<String> names, List<Object> options) {
+                                           AggregateSource aggregateSource) {
             throw new AssertionError();
         }
 
@@ -310,8 +306,8 @@ public class OperatorAssembler extends BaseRule
             // Assemble an aggregate operator
             @Override
             public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
-                                               List<String> names, List<Object> options) {
-                return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, names, options);
+                                               AggregateSource aggregateSource) {
+                return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, aggregateSource);
             }
 
             protected abstract T existsExpression(Operator operator, RowType outerRowType,
@@ -625,7 +621,7 @@ public class OperatorAssembler extends BaseRule
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
 
-                TValidatedOverload overload = resolver.get("NEXTVAL", input).getOverload();
+                TValidatedScalar overload = resolver.get("NEXTVAL", input, TValidatedScalar.class).getOverload();
 
                 List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
                 arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
@@ -651,8 +647,8 @@ public class OperatorAssembler extends BaseRule
                     ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
                     ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
                     
-                    OverloadResult ifNullResult = resolver.get("IFNULL", ifNullInput);
-                    TValidatedOverload ifNullOverload = ifNullResult.getOverload();
+                    OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput, TValidatedScalar.class);
+                    TValidatedScalar ifNullOverload = ifNullResult.getOverload();
                     List<TPreparedExpression> ifNullArgs = new ArrayList<TPreparedExpression>(2);
                     ifNullArgs.add(expression);
                     ifNullArgs.add(seqExpr);
@@ -1514,7 +1510,7 @@ public class OperatorAssembler extends BaseRule
             }
             PartialAssembler<?> partialAssembler = usePValues ? newPartialAssembler : oldPartialAssembler;
             stream.operator = partialAssembler.assembleAggregates(stream.operator, stream.rowType, nkeys,
-                    aggregateSource.getAggregateFunctions(), aggregateSource.getOptions());
+                    aggregateSource);
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);

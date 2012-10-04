@@ -89,7 +89,7 @@ public final class TPreparedFunction implements TPreparedExpression {
         return overload.toString(inputs, resultType);
     }
 
-    public TPreparedFunction(TValidatedOverload overload,
+    public TPreparedFunction(TValidatedScalar overload,
                              TInstance resultType,
                              List<? extends TPreparedExpression> inputs,
                              QueryContext queryContext)
@@ -97,7 +97,7 @@ public final class TPreparedFunction implements TPreparedExpression {
         this(overload, resultType, inputs, queryContext, null);
     }
 
-    public TPreparedFunction(TValidatedOverload overload,
+    public TPreparedFunction(TValidatedScalar overload,
                              TInstance resultType,
                              List<? extends TPreparedExpression> inputs,
                              QueryContext queryContext,
@@ -114,7 +114,7 @@ public final class TPreparedFunction implements TPreparedExpression {
         this.preptimeContext = new TPreptimeContext(Arrays.asList(localInputTypes), resultType, queryContext, preptimeValues);
     }
 
-    private final TValidatedOverload overload;
+    private final TValidatedScalar overload;
     private final TInstance resultType;
     private final List<? extends TPreparedExpression> inputs;
     private final TPreptimeContext preptimeContext;
@@ -151,7 +151,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             overload.evaluate(context, evaluations, resultValue);
         }
 
-        public TEvaluatableFunction(TValidatedOverload overload,
+        public TEvaluatableFunction(TValidatedScalar overload,
                                     TInstance resultType,
                                     final List<? extends TEvaluatableExpression> inputs,
                                     TExecutionContext context)
@@ -181,7 +181,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             });
         }
 
-        private final TValidatedOverload overload;
+        private final TValidatedScalar overload;
         private final PValueSource[] inputValues;
         private final List<? extends TEvaluatableExpression> inputs;
         private final PValue resultValue;

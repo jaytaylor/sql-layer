@@ -32,16 +32,16 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class MRoundTruncateDecimal extends TOverloadBase {
+public class MRoundTruncateDecimal extends TScalarBase {
 
-    public static final Collection<TOverload> overloads = createAll();
+    public static final Collection<TScalar> overloads = createAll();
 
     private enum RoundingStrategy {
         ROUND {
@@ -117,8 +117,8 @@ public class MRoundTruncateDecimal extends TOverloadBase {
         this.roundingStrategy = roundingStrategy;
     }
 
-    private static Collection<TOverload> createAll() {
-        List<TOverload> results = new ArrayList<TOverload>();
+    private static Collection<TScalar> createAll() {
+        List<TScalar> results = new ArrayList<TScalar>();
         for (RoundingOverloadSignature signature : RoundingOverloadSignature.values()) {
             for (RoundingStrategy rounding : RoundingStrategy.values()) {
                 results.add(new MRoundTruncateDecimal(signature, rounding));

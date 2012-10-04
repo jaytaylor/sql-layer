@@ -26,7 +26,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 import com.akiban.util.SparseArray;
@@ -35,13 +36,14 @@ import java.util.List;
 
 /** A call to a function.
  */
-public class FunctionExpression extends BaseExpression
+public class FunctionExpression extends BaseExpression implements ResolvableExpression<TValidatedScalar>
 {
     private String function;
     private List<ExpressionNode> operands;
-    private TValidatedOverload overload;
+    private TValidatedScalar overload;
     private SparseArray<Object> preptimeValues;
-    
+    private TPreptimeContext preptimeContext;
+
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
@@ -49,7 +51,8 @@ public class FunctionExpression extends BaseExpression
         this.function = function;
         this.operands = operands;
     }
-                              
+
+    @Override
     public String getFunction() {
         return function;
     }
@@ -57,11 +60,14 @@ public class FunctionExpression extends BaseExpression
         return operands;
     }
 
-    public TValidatedOverload getOverload() {
-        return overload;
+    @Override
+    public void setResolved(TValidatedScalar resolved) {
+        this.overload = resolved;
     }
-    public void setOverload(TValidatedOverload overload) {
-        this.overload = overload;
+
+    @Override
+    public TValidatedScalar getResolved() {
+        return overload;
     }
 
     public SparseArray<Object> getPreptimeValues() {
@@ -70,6 +76,16 @@ public class FunctionExpression extends BaseExpression
 
     public void setPreptimeValues(SparseArray<Object> values) {
         this.preptimeValues = values;
+    }
+
+    @Override
+    public TPreptimeContext getPreptimeContext() {
+        return preptimeContext;
+    }
+
+    @Override
+    public void setPreptimeContext(TPreptimeContext context) {
+        this.preptimeContext = context;
     }
 
     @Override
