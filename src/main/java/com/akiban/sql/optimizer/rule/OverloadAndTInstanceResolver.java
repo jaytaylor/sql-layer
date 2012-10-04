@@ -86,6 +86,8 @@ import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.ResolvableExpression;
 import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.plan.Select;
+import com.akiban.sql.optimizer.plan.Sort;
 import com.akiban.sql.optimizer.plan.Subquery;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubquerySource;
@@ -192,6 +194,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 if (n instanceof TypedPlan)
                     return (TypedPlan) n;
                 if ( (n instanceof ResultSet)
+                        || (n instanceof Select)
+                        || (n instanceof Sort)
                         || (n instanceof Limit)
                         || (n instanceof Distinct))
                     n = ((BasePlanWithInput)n).getInput();
