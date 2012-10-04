@@ -26,7 +26,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.t3expressions.OverloadResolutionService;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
 import com.akiban.server.error.ServiceStartupException;
@@ -59,7 +59,7 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  TreeService treeService,
                                  FunctionsRegistry functionsRegistry,
                                  IndexStatisticsService indexStatisticsService,
-                                 OverloadResolutionService overloadResolutionService) {
+                                 T3RegistryService overloadResolutionService) {
         reqs = new ServerServiceRequirements(dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
                 config, indexStatisticsService, overloadResolutionService);
