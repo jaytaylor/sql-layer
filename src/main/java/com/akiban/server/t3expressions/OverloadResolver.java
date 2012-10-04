@@ -32,6 +32,8 @@ import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -158,8 +160,11 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     // else if (newCommon = common), we don't need this because there's nothing to do in this case
                 }
             }
-            if (common == null)
+            if (common == null) {
+                if (!inputSet.isPicking())
+                    return MString.VARCHAR.instance(0); // Unknown type and callee doesn't care.
                 throw new OverloadException("couldn't resolve type for " + inputSet + " with " + inputs);
+            }
             return (commonInst == null)
                 ? common.instance()
                 : commonInst;
