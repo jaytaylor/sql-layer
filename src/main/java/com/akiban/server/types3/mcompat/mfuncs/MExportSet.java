@@ -31,7 +31,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -40,22 +40,22 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import java.math.BigInteger;
 import java.util.List;
 
-public abstract class  MExportSet extends TOverloadBase
+public abstract class  MExportSet extends TScalarBase
 {
-    public static final TOverload INSTANCES[] 
+    public static final TScalar INSTANCES[]
             = createOverloads(MNumeric.INT, MString.VARCHAR, MNumeric.BIGINT_UNSIGNED);
     
     private static final BigInteger MASK = new BigInteger("ffffffffffffffff", 16);
     private static final int DEFAULT_LENGTH = 64;
     private static final String DEFAULT_DELIM = ",";
     
-    public static TOverload[] createOverloads(final TClass intType, final TClass stringType, final TClass uBigintType)
+    public static TScalar[] createOverloads(final TClass intType, final TClass stringType, final TClass uBigintType)
     {
-        return new TOverload[]
+        return new TScalar[]
         {
             new MExportSet(stringType) // 3 args case
             {

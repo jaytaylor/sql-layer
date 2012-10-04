@@ -33,7 +33,7 @@ import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
@@ -41,15 +41,15 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.google.common.base.Objects;
 
 import java.util.List;
 
-public class BoolLogic extends TOverloadBase
+public class BoolLogic extends TScalarBase
 {
-    public static final TOverload BINARIES[] = new TOverload[Op.values().length];
+    public static final TScalar BINARIES[] = new TScalar[Op.values().length];
     static
     {
         Op op[] = Op.values();
@@ -57,7 +57,7 @@ public class BoolLogic extends TOverloadBase
             BINARIES[n] = new BoolLogic(op[n]);
     }
 
-    public static final TOverload NOT = new TOverloadBase() {
+    public static final TScalar NOT = new TScalarBase() {
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
             builder.covers(AkBool.INSTANCE, 0);

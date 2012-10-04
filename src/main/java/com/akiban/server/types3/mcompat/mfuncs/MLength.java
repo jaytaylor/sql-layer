@@ -29,7 +29,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -38,7 +38,7 @@ import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.google.common.collect.ObjectArrays;
 
 import java.io.UnsupportedEncodingException;
@@ -47,9 +47,9 @@ import java.io.UnsupportedEncodingException;
  *
  * Implement the length (char_length and octet_length)
  */
-public abstract class MLength extends TOverloadBase
+public abstract class MLength extends TScalarBase
 {
-    public static final TOverload CHAR_LENGTH = new MLength("CHAR_LENGTH")
+    public static final TScalar CHAR_LENGTH = new MLength("CHAR_LENGTH")
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -63,8 +63,8 @@ public abstract class MLength extends TOverloadBase
         }
     };
 
-    public static final TOverload OCTET_LENGTH = new MBinaryLength("OCTET_LENGTH", 1, "getOctetLength");
-    public static final TOverload BIT_LENGTH = new MBinaryLength("BIT_LENGTH", 8);
+    public static final TScalar OCTET_LENGTH = new MBinaryLength("OCTET_LENGTH", 1, "getOctetLength");
+    public static final TScalar BIT_LENGTH = new MBinaryLength("BIT_LENGTH", 8);
 
     private static class MBinaryLength extends MLength
     {

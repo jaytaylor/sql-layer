@@ -28,10 +28,9 @@ package com.akiban.server.types3.mcompat.aggr;
 
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFixedTypeAggregator;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
@@ -41,7 +40,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
 
-public class MSum extends TAggregatorBase {
+public class MSum extends TFixedTypeAggregator {
 
     private final SumType sumType;
     
@@ -98,6 +97,7 @@ public class MSum extends TAggregatorBase {
     };
     
     private MSum(SumType sumType) {
+        super("sum", sumType.typeClass);
         this.sumType = sumType;
     }
     
@@ -114,25 +114,5 @@ public class MSum extends TAggregatorBase {
     @Override
     public void emptyValue(PValueTarget state) {
         state.putNull();
-    }
-
-    @Override
-    public TInstance resultType(TPreptimeValue value) {
-        return value.instance();
-    }
-
-    @Override
-    public TClass getTypeClass() {
-        return sumType.typeClass;
-    }
-
-    @Override
-    public String name() {
-        return "sum";
-    }
-
-    @Override
-    public String toString() {
-        return name();
     }
 }

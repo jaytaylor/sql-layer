@@ -135,7 +135,7 @@ public abstract class KeyUpdateBase extends ITBase {
                 // Records
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-                testStore.traverse(session(), groupRD, testVisitor, realVisitor);
+                testStore.traverse(session(), group, testVisitor, realVisitor);
                 assertEquals(testVisitor.records(), realVisitor.records());
                 assertEquals("records count", countAllRows(), testVisitor.records().size());
                 // Check indexes
@@ -196,7 +196,7 @@ public abstract class KeyUpdateBase extends ITBase {
             public Void call() throws Exception {
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-                testStore.traverse(session(), groupRD, testVisitor, realVisitor);
+                testStore.traverse(session(), group, testVisitor, realVisitor);
                 Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
                 Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
                 Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();

@@ -26,32 +26,20 @@
 
 package com.akiban.server.types3.texpressions;
 
-import com.akiban.server.explain.*;
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.ReversedLazyList;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.TOverload;
 import com.akiban.util.SparseArray;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class TValidatedOverload implements TOverload {
+public class TValidatedOverload implements TOverload {
 
-    public TOverload getUnderlying() {
-        return overload;
-    }
-
-    // TOverload methods (straight delegation)
+    // TResolvable methods (straight delegation)
 
     @Override
     public String displayName() {
@@ -65,32 +53,6 @@ public final class TValidatedOverload implements TOverload {
     }
 
     @Override
-    public TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs) {
-        return overload.evaluateConstant(context, inputs);
-    }
-
-    @Override
-    public void finishPreptimePhase(TPreptimeContext context) {
-        overload.finishPreptimePhase(context);
-    }
-
-    @Override
-    public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        overload.evaluate(context, inputs, output);
-    }
-
-    @Override
-    public String toString(List<? extends TPreparedExpression> inputs, TInstance resultType) {
-        return overload.toString(inputs, resultType);
-    }
-
-    @Override
-    public CompoundExplainer getExplainer(ExplainContext context, List<? extends TPreparedExpression> inputs, TInstance resultType)
-    {
-        return overload.getExplainer(context, inputs, resultType);
-    }
-
-    @Override
     public String id() {
         return overload.id();
     }
@@ -100,7 +62,7 @@ public final class TValidatedOverload implements TOverload {
         return overload.getPriorities();
     }
 
-    // TOverload methods (cached)
+    // TResolvable methods (cached)
 
     @Override
     public List<TInputSet> inputSets() {
@@ -112,21 +74,10 @@ public final class TValidatedOverload implements TOverload {
         return resultStrategy;
     }
 
-    // Redefine toString
+    // TValidatedResolvable methods
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(overload.displayName()).append('(');
-        for (int i = 0, nPos = positionalInputs(), nDesc = inputSetDescriptions.length; i < nDesc; ++i) {
-            sb.append(inputSetDescriptions[i]);
-            if (i == nPos)
-                sb.append("...");
-            if (i+1 < nDesc)
-                sb.append(", ");
-        }
-        sb.append(") -> ").append(resultStrategy);
-        return sb.toString();
+    public TOverload getUnderlying() {
+        return overload;
     }
 
     // TValidatedOverload methods
@@ -149,20 +100,6 @@ public final class TValidatedOverload implements TOverload {
         return varargs != null;
     }
 
-    public TInputSet inputSetAt(int index) {
-        if(index >= inputSetsByPos.size()) {
-            if(varargs == null) {
-                throw new IllegalArgumentException("No such input set: " + index);
-            }
-            return varargs;
-        }
-        return inputSetsByPos.get(index);
-    }
-
-    public TOverloadResult resultStrategy() {
-        return resultStrategy;
-    }
-
     public boolean coversNInputs(int nInputs) {
         /* no pos           : nInputs = 0
          * POS(N)           : nInputs = N+1
@@ -177,38 +114,52 @@ public final class TValidatedOverload implements TOverload {
         return inputSetsByPos.size();
     }
 
-    public <T> LazyList<? extends T> filterInputs(LazyList<? extends T> inputs) {
-        return commuted ? new ReversedLazyList<T>(inputs) : inputs;
+    public TInputSet inputSetAt(int index) {
+        if(index >= inputSetsByPos.size()) {
+            if(varargs == null) {
+                throw new IllegalArgumentException("No such input set: " + index);
+            }
+            return varargs;
+        }
+        return inputSetsByPos.get(index);
     }
 
-    public TValidatedOverload createCommuted() {
-        if (isVararg() || (inputSetsByPos.size() != 2))
-            throw new IllegalStateException("commuted overloads must take exactly two arguments: " + this);
-        if (inputSetsCached.size() != 2)
-            throw new IllegalStateException("two-arg overload has one input set, so commuting it makes no sense: "
-                    + this);
-        TClass origArg1 = inputSetAt(1).targetType();
-        TClass origArg0 = inputSetAt(0).targetType();
-        if (origArg0 == origArg1)
-            throw new IllegalStateException("two-arg overload has same target class for both operands, so commuting "
-                    + "it makes no sense: " + this);
-
-        TInputSetBuilder builder = new TInputSetBuilder();
-        builder.covers(origArg1, 0);
-        builder.covers(origArg0, 1);
-        List<TInputSet> commutedInputSets = builder.toList();
-        return new TValidatedOverload(overload, commutedInputSets, true);
+    public TOverloadResult resultStrategy() {
+        return resultStrategy;
     }
 
-    public TValidatedOverload(TOverload overload) {
-        this(overload, overload.inputSets(), false);
+    // Redefine toString
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(overload.displayName()).append('(');
+        for (int i = 0, nPos = positionalInputs(), nDesc = inputSetDescriptions.length; i < nDesc; ++i) {
+            sb.append(inputSetDescriptions[i]);
+            if (i == nPos)
+                sb.append("...");
+            if (i+1 < nDesc)
+                sb.append(", ");
+        }
+        sb.append(") -> ").append(resultStrategy);
+        return sb.toString();
     }
 
-    private TValidatedOverload(TOverload overload, List<TInputSet> inputSets, boolean commuted) {
+    // package-private
+
+    boolean coversExactlyNArgs(int nargs) {
+        return (!isVararg()) && inputSetsByPos.size() == nargs;
+    }
+
+    TValidatedOverload(TOverload overload) {
+        this(overload, overload.inputSets());
+    }
+
+    TValidatedOverload(TOverload overload, List<TInputSet> inputSets) {
         TInputSet localVarargInputs = null;
         TInputSet localPickingInputs = null;
         SparseArray<TInputSet> inputSetsArray = new SparseArray<TInputSet>();
-        this.inputSetsCached = inputSets;
+        this.inputSetsCached = new ArrayList<TInputSet>(inputSets);
         for (TInputSet inputSet : inputSetsCached) {
             if (inputSet.coversRemaining()) {
                 if (localVarargInputs != null)
@@ -236,7 +187,6 @@ public final class TValidatedOverload implements TOverload {
         this.resultStrategy = overload.resultType();
         this.pickingSet = localPickingInputs;
         this.inputSetDescriptions = createInputSetDescriptions(inputSetsByPos, pickingSet, varargs);
-        this.commuted = commuted;
     }
 
     private static String[] createInputSetDescriptions(List<TInputSet> inputSetsByPos,
@@ -271,14 +221,14 @@ public final class TValidatedOverload implements TOverload {
         }
         return result;
     }
-    
+
     private final TOverload overload;
     private final List<TInputSet> inputSetsCached;
     private final List<TInputSet> inputSetsByPos;
     private final TOverloadResult resultStrategy;
     private final TInputSet varargs;
     private final TInputSet pickingSet;
-    private final boolean commuted;
+
     /**
      * A description of each input, indexed by its position. If there is a vararg input, its index is
      * one greater than the 0-indexing of positions.

@@ -31,11 +31,11 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public abstract class MUnixTimestamp extends TOverloadBase {
+public abstract class MUnixTimestamp extends TScalarBase {
     
-    public static final TOverload[] INSTANCES =
+    public static final TScalar[] INSTANCES =
     {
         new MUnixTimestamp()
         {

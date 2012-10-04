@@ -30,7 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -38,17 +38,16 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 
-public final class MField extends TOverloadBase {
+public final class MField extends TScalarBase {
 
-    public static final Collection<? extends TOverload> exactOverloads = Collections2.transform(Arrays.asList(
+    public static final Collection<? extends TScalar> exactOverloads = Collections2.transform(Arrays.asList(
             MNumeric.TINYINT,
             MNumeric.TINYINT_UNSIGNED,
             MNumeric.SMALLINT,
@@ -68,14 +67,14 @@ public final class MField extends TOverloadBase {
             MString.TEXT,
             MString.MEDIUMTEXT,
             MString.LONGTEXT
-            ), new Function<TClass, TOverload>() {
+            ), new Function<TClass, TScalar>() {
                 @Override
-                public TOverload apply(TClass input) {
+                public TScalar apply(TClass input) {
                     return new MField(input, true, 0);
                 }
             }
     );
-    public static final TOverload doubleOverload = new MField(MApproximateNumber.DOUBLE, false, 1);
+    public static final TScalar doubleOverload = new MField(MApproximateNumber.DOUBLE, false, 1);
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {

@@ -28,9 +28,9 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public abstract class Abs extends TOverloadBase {
+public abstract class Abs extends TScalarBase {
 
     protected final TClass inputType;
 

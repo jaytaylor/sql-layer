@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.texpressions.TValidatedAggregator;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
  */
 public class AggregateSource extends BasePlanWithInput implements ColumnSource
 {
+
     public static enum Implementation {
         PRESORTED, PREAGGREGATE_RESORT, SORT, HASH, TREE, UNGROUPED,
         COUNT_STAR, COUNT_TABLE_STATUS, FIRST_FROM_INDEX
@@ -50,6 +52,7 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     private List<Object> options;
     private int nGroupBy;
     private List<String> aggregateFunctions;
+    private List<ResolvableExpression<TValidatedAggregator>> resolvedFunctions;
     
     private TableSource table;
 
@@ -128,6 +131,11 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         return aggregateFunctions;
     }
 
+    public List<ResolvableExpression<TValidatedAggregator>> getResolved() {
+        assert projectSplitOff;
+        return resolvedFunctions;
+    }
+
     public List<Object> getOptions()
     {
         assert projectSplitOff;
@@ -159,6 +167,7 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         nGroupBy = groupBy.size();
         groupBy = null;
         aggregateFunctions = new ArrayList<String>(aggregates.size());
+        resolvedFunctions = new ArrayList<ResolvableExpression<TValidatedAggregator>>(aggregates.size());
         for (AggregateFunctionExpression aggregate : aggregates) {
             String function = aggregate.getFunction();
             ExpressionNode operand = aggregate.getOperand();
@@ -169,6 +178,7 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
                 operand = new ConstantExpression(1l, AkType.LONG);
             }
             aggregateFunctions.add(function);
+            resolvedFunctions.add(aggregate);
             result.add(operand);
         }
         aggregates = null;

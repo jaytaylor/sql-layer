@@ -27,16 +27,14 @@
 package com.akiban.server.types3.mcompat.aggr;
 
 import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TAggregatorBase;
-import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFixedTypeAggregator;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-public abstract class MBit extends TAggregatorBase {
+public abstract class MBit extends TFixedTypeAggregator {
     
     public static final TAggregator[] INSTANCES = {
         // BIT_AND
@@ -82,33 +80,11 @@ public abstract class MBit extends TAggregatorBase {
     }
 
     @Override
-    public TInstance resultType(TPreptimeValue value) {
-        return value.instance();
-    }
-
-    @Override
-    public TClass getTypeClass() {
-        return MNumeric.BIGINT;
-    }
-
-    @Override
     public void emptyValue(PValueTarget state) {
         state.putNull();
     }
 
-    @Override
-    public String name() {
-        return name;
+    private MBit(String name) {
+        super(name, MNumeric.BIGINT);
     }
-
-    @Override
-    public String toString() {
-        return name().toLowerCase();
-    }
-
-    protected MBit(String name) {
-        this.name = name;
-    }
-
-    private final String name;
 }
