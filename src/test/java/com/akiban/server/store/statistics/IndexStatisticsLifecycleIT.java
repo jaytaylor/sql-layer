@@ -96,12 +96,8 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
                         break;
                     }
                 }
-            }
-            else {
-                GroupTable groupTable = ais.getGroupTable(tableId);
-                if (groupTable != null) {
-                    table = groupTable;
-                    for (GroupIndex gindex : groupTable.getGroup().getIndexes()) {
+                if (index == null) {
+                    for (GroupIndex gindex : userTable.getGroupIndexes()) {
                         if (gindex.getIndexId() == indexId) {
                             index = gindex;
                             break;

@@ -34,8 +34,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.t3expressions.OverloadResolutionService;
-import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.T3RegistryService;
 
 public final class ServerServiceRequirements {
 
@@ -47,7 +46,7 @@ public final class ServerServiceRequirements {
                                      FunctionsRegistry functionsRegistry,
                                      ConfigurationService config,
                                      IndexStatisticsService indexStatistics,
-                                     OverloadResolutionService overloadResolutionService) {
+                                     T3RegistryService t3RegistryService) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
@@ -56,7 +55,7 @@ public final class ServerServiceRequirements {
         this.functionsRegistry = functionsRegistry;
         this.config = config;
         this.indexStatistics = indexStatistics;
-        this.overloadResolutionService = overloadResolutionService;
+        this.t3RegistryService = t3RegistryService;
     }
 
     public InstrumentationService instrumentation() {
@@ -83,8 +82,8 @@ public final class ServerServiceRequirements {
         return functionsRegistry;
     }
 
-    public OverloadResolver overloadResolver() {
-        return overloadResolutionService.getResolver();
+    public T3RegistryService t3RegistryService() {
+        return t3RegistryService;
     }
 
     public ConfigurationService config() {
@@ -103,5 +102,5 @@ public final class ServerServiceRequirements {
     private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;
-    private final OverloadResolutionService overloadResolutionService;
+    private final T3RegistryService t3RegistryService;
 }

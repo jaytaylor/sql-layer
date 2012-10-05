@@ -26,8 +26,8 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 
 public class MCeil {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
+    public static final TScalar[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
 }

@@ -35,7 +35,7 @@ import com.akiban.server.expression.std.Matchers;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -44,10 +44,10 @@ import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.sql.types.CharacterTypeAttributes;
 
-public class TLike extends TOverloadBase
+public class TLike extends TScalarBase
 {
     /**
      * 
@@ -55,7 +55,7 @@ public class TLike extends TOverloadBase
      * @return an arrays of all OverLoads available for the LIKE function 
      * with this specifict string type (type: akString vs Mstring, etc)
      */
-    public static TOverload[] create(TClass stringType)
+    public static TScalar[] create(TClass stringType)
     {
         TLike ret[] = new TLike[LikeType.values().length * 2];
         

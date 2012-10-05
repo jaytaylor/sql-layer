@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.LazyList;
@@ -39,7 +40,6 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
 
 import static com.akiban.server.types3.mcompat.mtypes.MDatetimes.*;
 
@@ -376,7 +376,7 @@ public class MDateTimeDiff
         }
     }
     
-    private abstract static class DateTimeDiff extends TOverloadBase
+    private abstract static class DateTimeDiff extends TScalarBase
     {
         abstract int compute(long arg0[], long arg1[], TExecutionContext context);
         

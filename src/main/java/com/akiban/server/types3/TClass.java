@@ -70,8 +70,16 @@ public abstract class TClass {
             return true;
         TClass leftClass = left.typeClass();
         TClass rightClass = right.typeClass();
-        return  (leftClass != rightClass)
-                || (leftClass.normalizeInstancesBeforeComparison() && (!left.equalsExcludingNullable(right)));
+        if (leftClass.normalizeInstancesBeforeComparison())
+            return !left.equalsExcludingNullable(right);
+        else if (leftClass.getClass() == rightClass.getClass())
+            return !leftClass.compatibleForCompare(rightClass);
+        else
+            return true;
+    }
+
+    public boolean compatibleForCompare(TClass other) {
+        return (this == other);
     }
 
     public static int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {

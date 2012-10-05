@@ -29,86 +29,50 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public abstract class IsTrueFalseUnknownNull extends TOverloadBase
+public class IsNull extends TScalarBase
 {
-    public static TOverload[] create (TClass boolType)
+    public static TScalar create(TClass boolType)
     {
-        return new TOverload[]
-        {
-            new IsTrueFalseUnknownNull(boolType, "isTrue")
-            {
-                @Override
-                protected void evaluate(PValueSource source, PValueTarget target)
-                {
-                    target.putBool(source.getBoolean(false));
-                }
-            },
-            new IsTrueFalseUnknownNull(boolType, "isFalse")
-            {
-                @Override
-                protected void evaluate(PValueSource source, PValueTarget target)
-                {
-                    target.putBool(!source.getBoolean(true));
-                }
-            },
-            new IsTrueFalseUnknownNull(boolType, "isUnknown", "isNull")
-            {
-                @Override
-                protected void evaluate(PValueSource source, PValueTarget target)
-                {
-                    target.putBool(source.isNull());
-                }
-            }
-        };
+        return new IsNull(boolType);
     }
-   
-    protected abstract void evaluate(PValueSource source, PValueTarget target);
-    
+
     private final TClass boolType;
-    private final String names[];
     
-    private IsTrueFalseUnknownNull(TClass boolType, String...names)
+    private IsNull(TClass boolType)
     {
         this.boolType = boolType;
-        this.names = names;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(boolType, 0);
+        builder.covers(null, 0);
     }
 
      
     @Override
     public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) 
     {
-        evaluate(inputs.get(0), output);
+        output.putBool(inputs.get(0).isNull());
     }
     
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        // DOES NOTHING
-    }
-
-    @Override
-    public String[] registeredNames()
-    {
-        return names;
+        assert false : "should have called evaluate";
     }
 
     @Override
     public String displayName()
     {
-        return names[0];
+        return "IsNull";
     }
 
     @Override

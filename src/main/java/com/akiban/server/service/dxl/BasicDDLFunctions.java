@@ -339,7 +339,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     TInstance oldInst = oldCol.tInstance();
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                     if(oldInst.typeClass() != newInst.typeClass()) {
-                        TCast cast = t3Registry.cast(oldInst.typeClass(), newInst.typeClass());
+                        TCast cast = t3Registry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
                         pExp = new TCastExpression(pExp, cast, newInst, queryContext);
                     }
                     pProjections.add(pExp);
@@ -668,10 +668,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
         final Table table = group.getGroupTable();
-        final RowDef rowDef = getRowDef(table.getTableId());
         final TableName tableName = table.getName();
         try {
-            store().dropGroup(session, rowDef.getRowDefId());
+            store().dropGroup(session, group);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }

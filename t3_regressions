@@ -26,6 +26,7 @@ if [ -n "$OUT_FILE" ] && [ "$OUT_FILE" != "$INPUT_FAILURES" ]; then
     echo "...outputting to $OUT_FILE"
     echo "$KNOWN_FAILURES" > $OUT_FILE
 fi
+echo "There are $(echo "$KNOWN_FAILURES" | wc -l) known failures in trunk"
 
 if [ "$RUN_TESTS" = "yes" ]; then
     CMD='mvn test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
@@ -41,7 +42,6 @@ BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # the sed of '-' -> 'ZZZ' -> '-' is to ensure stable sorting across OSes
 FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sed 's/-/ZZZ/g' | sort | sed 's/ZZZ/-/g')
 FAILDIFF=$(echo "$FAILED" | diff <(echo "$KNOWN_FAILURES") <(echo "$FAILED"))
-echo "$FAILDIFF"
 REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
 FIXES=$(echo "$FAILDIFF" | grep '<')
 RESULT="neither"

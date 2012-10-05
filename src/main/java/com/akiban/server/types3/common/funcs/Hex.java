@@ -32,14 +32,15 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+
 import java.nio.charset.Charset;
 import java.util.List;
 
-public abstract class Hex extends TOverloadBase {
+public abstract class Hex extends TScalarBase {
 
-    public static TOverload[] create(TClass stringType, TClass numericType) {
-        TOverload stringHex =
+    public static TScalar[] create(TClass stringType, TClass numericType) {
+        TScalar stringHex =
                 new Hex(stringType, numericType) {
 
                     @Override
@@ -61,7 +62,7 @@ public abstract class Hex extends TOverloadBase {
                         output.putString(builder.toString(), null);
                     }
                 };
-        TOverload numericHex =
+        TScalar numericHex =
                 new Hex(stringType, numericType) {
 
                     @Override
@@ -74,7 +75,7 @@ public abstract class Hex extends TOverloadBase {
                         output.putString(Long.toHexString(inputs.get(0).getInt64()), null);
                     }
                 };
-        return new TOverload[]{stringHex, numericHex};
+        return new TScalar[]{stringHex, numericHex};
     }
     protected final TClass numericType;
     protected final TClass stringType;

@@ -225,5 +225,4 @@
 ---
 - Statement: INSERT INTO t1 VALUES ('m', 'f')
 - error: [42512]
-
 ...

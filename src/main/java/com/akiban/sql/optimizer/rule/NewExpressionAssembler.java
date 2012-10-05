@@ -36,6 +36,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
@@ -55,7 +56,9 @@ import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.types3.texpressions.TValidatedAggregator;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
@@ -66,6 +69,7 @@ import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.optimizer.plan.ResolvableExpression;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.util.SparseArray;
 import org.slf4j.Logger;
@@ -77,15 +81,15 @@ import java.util.List;
 public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedExpression> {
     private static final Logger logger = LoggerFactory.getLogger(NewExpressionAssembler.class);
 
-    private static final TValidatedOverload ifElseValidated = new TValidatedOverload(AkIfElse.INSTANCE);
+    private static final TValidatedScalar ifElseValidated = new TValidatedScalar(AkIfElse.INSTANCE);
 
-    private final OverloadResolver overloadResolver;
+    private final T3RegistryService registryService;
     private final QueryContext queryContext;
 
     public NewExpressionAssembler(PlanContext planContext) {
         super(planContext);
         RulesContext rulesContext = planContext.getRulesContext();
-        overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
+        registryService = ((SchemaRulesContext)rulesContext).getT3Registry();
         queryContext = planContext.getQueryContext();
     }
 
@@ -96,11 +100,11 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
                                                    SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
 
         List<TPreparedExpression> arguments = assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
-        TValidatedOverload overload;
+        TValidatedScalar overload;
         SparseArray<Object> preptimeValues = null;
         if (functionNode instanceof FunctionExpression) {
             FunctionExpression fexpr = (FunctionExpression) functionNode;
-            overload = fexpr.getOverload();
+            overload = fexpr.getResolved();
             preptimeValues = fexpr.getPreptimeValues();
         }
         else if (functionNode instanceof BooleanOperationExpression) {
@@ -108,7 +112,9 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             for (ExpressionNode argument : argumentNodes) {
                 inputPreptimeValues.add(argument.getPreptimeValue());
             }
-            OverloadResult overloadResult = overloadResolver.get(functionName, inputPreptimeValues);
+
+            OverloadResolver<TValidatedScalar> scalarsResolver = registryService.getScalarsResolver();
+            OverloadResult<TValidatedScalar> overloadResult = scalarsResolver.get(functionName, inputPreptimeValues);
             overload = overloadResult.getOverload();
         }
         else if (functionNode instanceof IfElseExpression) {
@@ -138,7 +144,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         else if (!toType.equals(sourceInstance))
         {
             // Do type conversion.
-            TCast tcast = overloadResolver.getTCast(sourceInstance, toType);
+            TCast tcast = registryService.getCastsResolver().cast(sourceInstance, toType);
             if (tcast == null) {
                 String castName = "CAST("
                         + sourceInstance.typeClass()
@@ -189,7 +195,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         TInstance leftInstance = left.resultType();
         TInstance rightInstance = right.resultType();
         TClass tClass = leftInstance.typeClass();
-        assert tClass.equals(rightInstance.typeClass())
+        assert tClass.compatibleForCompare(rightInstance.typeClass())
                 : tClass + " != " + rightInstance.typeClass();
         if (tClass.underlyingType() != PUnderlying.STRING)
             return null;
@@ -214,18 +220,15 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     }
 
     @Override
-    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names, List<Object> options) {
-        int naggrs = names.size();
+    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, AggregateSource aggregateSource) {
+        List<ResolvableExpression<TValidatedAggregator>> aggregates = aggregateSource.getResolved();
+        int naggrs = aggregates.size();
         List<TAggregator> aggregators = new ArrayList<TAggregator>(naggrs);
         List<TInstance> outputInstances = new ArrayList<TInstance>(naggrs);
         for (int i = 0; i < naggrs; ++i) {
-            int inputIndex = nkeys + i;
-            TInstance inputInstance = rowType.typeInstanceAt(inputIndex);
-            TAggregator aggr = overloadResolver.getAggregation(names.get(i), inputInstance.typeClass());
-            TPreptimeValue preptimeValue = new TPreptimeValue(inputInstance);
-            TInstance outputInstance = aggr.resultType(preptimeValue);
-            aggregators.add(aggr);
-            outputInstances.add(outputInstance);
+            ResolvableExpression<TValidatedAggregator> aggr = aggregates.get(i);
+            aggregators.add(aggr.getResolved());
+            outputInstances.add(aggr.getPreptimeValue().instance());
         }
         return API.aggregate_Partial(
                 inputOperator,
@@ -233,7 +236,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
                 nkeys,
                 aggregators,
                 outputInstances,
-                options);
+                aggregateSource.getOptions());
     }
 
     @Override

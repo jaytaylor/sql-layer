@@ -30,21 +30,21 @@ import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
-public abstract class MYearWeek extends TOverloadBase
+public abstract class MYearWeek extends TScalarBase
 {
-    public static final TOverload INSTANCES[] = new TOverload[]
+    public static final TScalar INSTANCES[] = new TScalar[]
     {
         new MYearWeek("YEARWEEK")
         {

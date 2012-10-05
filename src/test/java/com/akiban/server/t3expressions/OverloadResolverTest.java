@@ -27,7 +27,6 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.t3expressions.OverloadResolver.OverloadException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
@@ -36,7 +35,7 @@ import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TStrongCasts;
@@ -46,7 +45,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -101,7 +101,7 @@ public class OverloadResolverTest {
 
 
     private static final String MUL_NAME = "*";
-    private static class TestMulBase extends TOverloadBase {
+    private static class TestMulBase extends TScalarBase {
         private final TClass tLeft;
         private final TClass tRight;
         private final TClass tTarget;
@@ -142,7 +142,7 @@ public class OverloadResolverTest {
         }
     }
 
-    private static class TestGetBase extends TOverloadBase {
+    private static class TestGetBase extends TScalarBase {
         private final String name;
         private final TClass tResult;
         private final TInputSetBuilder builder = new TInputSetBuilder();
@@ -190,11 +190,11 @@ public class OverloadResolverTest {
     private final static TestMulBase MUL_DATE_INT = new TestMulBase(TDATE, TINT, TDATE);
 
 
-    private OverloadResolver resolver;
+    private T3RegistryService registry;
 
     private class Initializer {
-        public Initializer overloads(TOverload... overloads) {
-            finder.put(TOverload.class, overloads);
+        public Initializer overloads(TScalar... scalars) {
+            finder.put(TScalar.class, scalars);
             return this;
         }
 
@@ -222,7 +222,7 @@ public class OverloadResolverTest {
         private void init() {
             T3RegistryServiceImpl registryImpl = new T3RegistryServiceImpl();
             registryImpl.start(finder);
-            resolver = new OverloadResolver(registryImpl);
+            registry = registryImpl;
         }
 
         private InstanceFinderBuilder finder = new InstanceFinderBuilder();
@@ -245,16 +245,16 @@ public class OverloadResolverTest {
         return Arrays.asList(prepVals);
     }
 
-    private void checkResolved(String msg, TOverload expected, String overloadName, List<TPreptimeValue> prepValues) {
+    private void checkResolved(String msg, TScalar expected, String overloadName, List<TPreptimeValue> prepValues) {
         // result.getPickingClass() not checked, SimpleRegistry doesn't implement commonTypes()
-        OverloadResolver.OverloadResult result = resolver.get(overloadName, prepValues);
+        OverloadResolver.OverloadResult result = registry.getScalarsResolver().get(overloadName, prepValues);
         assertSame(msg, expected, result != null ? result.getOverload().getUnderlying() : null);
     }
 
     private void checkCommon(TClass a, TClass b, TClass common) {
         TClass actualCommon;
         try {
-            actualCommon = resolver.commonTClass(a, b);
+            actualCommon = registry.getCastsResolver().commonTClass(a, b);
         } catch (OverloadException e) {
             actualCommon = null;
         }
@@ -282,19 +282,19 @@ public class OverloadResolverTest {
     @Test(expected=NoSuchFunctionException.class)
     public void noSuchOverload() {
         new Initializer().init();
-        resolver.get("foo", Arrays.asList(prepVal(TINT)));
+        registry.getScalarsResolver().get("foo", Arrays.asList(prepVal(TINT)));
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooFewParams() {
         new Initializer().overloads(MUL_INTS).init();
-        resolver.get(MUL_NAME, prepVals(TINT));
+        registry.getScalarsResolver().get(MUL_NAME, prepVals(TINT));
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooManyParams() {
         new Initializer().overloads(MUL_INTS).init();
-        resolver.get(MUL_NAME, prepVals(TINT, TINT, TINT));
+        registry.getScalarsResolver().get(MUL_NAME, prepVals(TINT, TINT, TINT));
     }
 
     // default resolution, exact match
@@ -398,7 +398,7 @@ public class OverloadResolverTest {
         new Initializer().overloads(coalesce).init();
 
         try {
-            OverloadResolver.OverloadResult result = resolver.get(NAME, prepVals());
+            OverloadResolver.OverloadResult result = registry.getScalarsResolver().get(NAME, prepVals());
             fail("WrongArity expected but got: " + result);
         } catch(WrongExpressionArityException e) {
             // Expected

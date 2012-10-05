@@ -31,12 +31,14 @@ import com.akiban.server.types3.T3TestClass;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
@@ -45,12 +47,12 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public final class T3ScalarsRegistryTest {
@@ -93,7 +95,8 @@ public final class T3ScalarsRegistryTest {
     public void noOverloads() {
         T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
         registry.start(new InstanceFinderBuilder());
-        assertEquals("lookup for FOO", null, registry.getOverloads("foo"));
+        List<TPreptimeValue> args = Collections.emptyList();
+        assertEquals("lookup for FOO", null, registry.getScalarsResolver().getRegistry().get("foo"));
         test.noRunNeeded();
     }
 
@@ -108,8 +111,8 @@ public final class T3ScalarsRegistryTest {
 
         TInputSet createOverloadWithPriority(int priority, int... priorities) {
             priorities = Ints.concat(new int[] { priority }, priorities);
-            TOverload result = new DummyOverload(FUNC_NAME, priorities);
-            instanceFinder.put(TOverload.class, result);
+            TScalar result = new DummyScalar(FUNC_NAME, priorities);
+            instanceFinder.put(TScalar.class, result);
             return onlyInputSet(result);
         }
 
@@ -129,12 +132,13 @@ public final class T3ScalarsRegistryTest {
             T3RegistryServiceImpl registry = new T3RegistryServiceImpl();
             registry.start(instanceFinder);
 
-            Iterable<? extends ScalarsGroup> scalarsByPriority = registry.getOverloads(FUNC_NAME);
+            Iterable<? extends ScalarsGroup<TValidatedScalar>> scalarsByPriority
+                    = registry.getScalarsResolver().getRegistry().get(FUNC_NAME);
             List<Set<TInputSet>> actuals = new ArrayList<Set<TInputSet>>();
-            for (ScalarsGroup scalarsGroup : scalarsByPriority) {
+            for (ScalarsGroup<TValidatedScalar> scalarsGroup : scalarsByPriority) {
                 Set<TInputSet> actualInputs = new HashSet<TInputSet>();
-                for (TOverload overload : scalarsGroup.getOverloads()) {
-                    TInputSet overloadInput = onlyInputSet(overload);
+                for (TScalar scalar : scalarsGroup.getOverloads()) {
+                    TInputSet overloadInput = onlyInputSet(scalar);
                     actualInputs.add(overloadInput);
                 }
                 actuals.add(actualInputs);
@@ -143,7 +147,7 @@ public final class T3ScalarsRegistryTest {
             assertEquals("input sets not equal by identity", inputSetsByPriority, actuals);
         }
 
-        TInputSet onlyInputSet(TOverload result) {
+        TInputSet onlyInputSet(TScalar result) {
             TInputSet onlyInputSet = result.inputSets().get(0);
             assertEquals("input sets should have size 1", Arrays.asList(onlyInputSet), result.inputSets());
             return onlyInputSet;
@@ -156,7 +160,7 @@ public final class T3ScalarsRegistryTest {
         private static final String FUNC_NAME = "foo";
     }
 
-    private static class DummyOverload extends TOverloadBase {
+    private static class DummyScalar extends TScalarBase {
 
         @Override
         public List<TInputSet> inputSets() {
@@ -191,7 +195,7 @@ public final class T3ScalarsRegistryTest {
             return priorities;
         }
 
-        private DummyOverload(String name, int[] priorities) {
+        private DummyScalar(String name, int[] priorities) {
             this.name = name;
             this.priorities = priorities;
         }

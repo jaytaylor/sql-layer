@@ -28,15 +28,15 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public final class MUnaryPlus extends TOverloadBase {
+public final class MUnaryPlus extends TScalarBase {
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.pickingCovers(null, 0);
@@ -57,7 +57,7 @@ public final class MUnaryPlus extends TOverloadBase {
         return TOverloadResult.picking();
     }
 
-    public static final TOverload instance = new MUnaryPlus();
+    public static final TScalar instance = new MUnaryPlus();
 
     private MUnaryPlus() {
     }

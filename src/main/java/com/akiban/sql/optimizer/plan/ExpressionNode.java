@@ -28,7 +28,6 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;

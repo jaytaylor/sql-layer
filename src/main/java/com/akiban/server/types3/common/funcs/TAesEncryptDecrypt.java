@@ -32,14 +32,14 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.persistit.exception.InvalidKeyException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -53,14 +53,14 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-public class TAesEncryptDecrypt extends TOverloadBase
+public class TAesEncryptDecrypt extends TScalarBase
 {
     private static final int ENCRYPT_RATIO = 4;
     private static final int DECRYPT_RATIO = 3;
 
-    public static TOverload[] create (TClass stringType, TClass varbinType, int keyLength)
+    public static TScalar[] create (TClass stringType, TClass varbinType, int keyLength)
     {
-        return new TOverload[]
+        return new TScalar[]
         {
             new TAesEncryptDecrypt(stringType, varbinType, "AES_ENCRYPT", 
                                   Cipher.ENCRYPT_MODE, ENCRYPT_RATIO,  keyLength),
