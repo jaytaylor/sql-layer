@@ -216,7 +216,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public Object getObject(int parameterIndex, Map<String,Class<?>> map) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getObject(parameterIndex);
     }
 
     @Override
@@ -752,7 +752,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     //@Override // JDK 1.7
     public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
         try {
-            return values.getObject(parameterIndex, type);
+            return (T)values.getObject(parameterIndex, type);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);

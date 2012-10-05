@@ -332,8 +332,65 @@ public abstract class ServerJavaValues
         }
     }
 
-    public <T> T getObject(int index, Class<T> type) {
-        throw new UnsupportedOperationException();
+    public Object getObject(int index, Class<?> type) {
+        if (type == String.class)
+            return getString(index);
+        else if (type == BigDecimal.class)
+            return getBigDecimal(index);
+        else if ((type == Boolean.class) || (type == Boolean.TYPE)) {
+            boolean value = getBoolean(index);
+            return wasNull() ? null : Boolean.valueOf(value);
+        }
+        else if ((type == Byte.class) || (type == Byte.TYPE)) {
+            byte value = getByte(index);
+            return wasNull() ? null : Byte.valueOf(value);
+        }
+        else if ((type == Short.class) || (type == Short.TYPE)) {
+            short value = getShort(index);
+            return wasNull() ? null : Short.valueOf(value);
+        }
+        else if ((type == Integer.class) || (type == Integer.TYPE)) {
+            int value = getInt(index);
+            return wasNull() ? null : Integer.valueOf(value);
+        }
+        else if ((type == Long.class) || (type == Long.TYPE)) {
+            long value = getLong(index);
+            return wasNull() ? null : Long.valueOf(value);
+        }
+        else if ((type == Float.class) || (type == Float.TYPE)) {
+            float value = getFloat(index);
+            return wasNull() ? null : Float.valueOf(value);
+        }
+        else if ((type == Double.class) || (type == Double.TYPE)) {
+            double value = getDouble(index);
+            return wasNull() ? null : Double.valueOf(value);
+        }
+        else if (type == byte[].class)
+            return getBytes(index);
+        else if (type == Date.class)
+            return getDate(index);
+        else if (type == Time.class)
+            return getTime(index);
+        else if (type == Timestamp.class)
+            return getTimestamp(index);
+        else if (type == Array.class)
+            return getArray(index);
+        else if (type == Blob.class)
+            return getBlob(index);
+        else if (type == Clob.class)
+            return getClob(index);
+        else if (type == Ref.class)
+            return getRef(index);
+        else if (type == URL.class)
+            return getURL(index);
+        else if (type == RowId.class)
+            return getRowId(index);
+        else if (type == NClob.class)
+            return getNClob(index);
+        else if (type == SQLXML.class)
+            return getSQLXML(index);
+        else 
+            throw new UnsupportedOperationException("Unsupported type " + type);
     }
 
     public InputStream getAsciiStream(int index) {

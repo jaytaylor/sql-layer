@@ -918,7 +918,7 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public Object getObject(int columnIndex, Map<String,Class<?>> map) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getObject(columnIndex);
     }
 
     @Override
@@ -1488,7 +1488,7 @@ public class JDBCResultSet implements ResultSet
     //@Override // JDK 1.7
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         try {
-            return values.getObject(columnIndex, type);
+            return (T)values.getObject(columnIndex, type);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
