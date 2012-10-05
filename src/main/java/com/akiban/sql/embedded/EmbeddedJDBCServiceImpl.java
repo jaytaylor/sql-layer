@@ -26,7 +26,7 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.server.t3expressions.OverloadResolutionService;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
 import com.akiban.server.error.AkibanInternalException;
@@ -63,7 +63,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    TreeService treeService,
                                    FunctionsRegistry functionsRegistry,
                                    IndexStatisticsService indexStatisticsService,
-                                   OverloadResolutionService overloadResolutionService) {
+                                   T3RegistryService overloadResolutionService) {
         reqs = new ServerServiceRequirements(dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
                 config, indexStatisticsService, overloadResolutionService);
