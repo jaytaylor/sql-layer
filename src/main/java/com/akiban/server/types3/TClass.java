@@ -78,7 +78,7 @@ public abstract class TClass {
             return true;
     }
 
-    protected boolean compatibleForCompare(TClass other) {
+    public boolean compatibleForCompare(TClass other) {
         return (this == other);
     }
 

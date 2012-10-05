@@ -65,7 +65,7 @@ public class MString extends TString
     }
 
     @Override
-    protected boolean compatibleForCompare(TClass other) {
+    public boolean compatibleForCompare(TClass other) {
         return super.compatibleForCompare(other) ||
             ((this == CHAR) && (other == VARCHAR)) ||
             ((this == VARCHAR) && (other == CHAR));
