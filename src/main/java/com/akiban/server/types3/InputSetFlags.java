@@ -47,6 +47,17 @@ public final class InputSetFlags {
         this.varargs = varargs;
     }
 
+    @Override
+    public String toString() {
+        // for length, assume each is "false", and each also has a ", " afterwards. That's seven chars times
+        // positionals.length(), plus another 5 for the vararg, plus "..." after the vararg.
+        StringBuilder sb = new StringBuilder( (7 * positionals.length()) + 5 + 2);
+        for (int i = 0; i < nPositions; ++i)
+            sb.append(positionals.get(i)).append(", ");
+        sb.append(varargs).append("...");
+        return sb.toString();
+    }
+
     public InputSetFlags(boolean[] positionals, boolean varargs) {
         this(BitSets.of(positionals), positionals.length, varargs);
     }
