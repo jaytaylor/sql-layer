@@ -42,6 +42,7 @@ import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -233,9 +234,23 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
             commonTypes = new OverloadsFolder() {
                 @Override
                 protected TClass foldOne(TClass accumulated, TClass input) {
-                    return castResolver.commonTClass(accumulated, input);
+                    if (accumulated == differentTargetTypes || input == differentTargetTypes)
+                        return differentTargetTypes;
+                    try {
+                        return castResolver.commonTClass(accumulated, input);
+                    }
+                    catch (OverloadException e) {
+                        return differentTargetTypes;
+                    }
                 }
-            }.fold(overloads);
+            }
+            .fold(overloads)
+            .transform(new Function<TClass, TClass>() {
+                @Override
+                public TClass apply(TClass input) {
+                    return input == differentTargetTypes ? null : input;
+                }
+            });
         }
 
         @Override
