@@ -284,10 +284,16 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             TPreptimeValue inputTpv = inputs.get(i);
             TInstance inputInstance = (inputTpv == null) ? null : inputTpv.instance();
             // allow this input if...
-            // ... input's type it NULL or ?
+            // ... input set takes ANY
+            TInputSet inputSet = overload.inputSetAt(i);
+            if (inputSet.targetType() == null) {
+                continue;
+            }
+            // ... input can be strongly cast to input set
             TClass inputTypeClass;
             if (inputInstance == null) {
-                // input type is unknown -- NULL literal or parameter
+                // If input type is unknown (NULL literal or parameter), assume common type at this position among
+                // all overloads in this group.
                 inputTypeClass = scalarGroups.commonTypeAt(i);
                 if (inputTypeClass == null)
                     throw new OverloadException("couldn't resolve overload because of unknown input at position " + i);
@@ -295,12 +301,6 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             else {
                 inputTypeClass = inputInstance.typeClass();
             }
-            // ... input set takes ANY
-            TInputSet inputSet = overload.inputSetAt(i);
-            if (inputSet.targetType() == null) {
-                continue;
-            }
-            // ... input can be strongly cast to input set
             if (inputSet.isExact()) {
                 if (inputTypeClass == inputSet.targetType())
                     continue;
