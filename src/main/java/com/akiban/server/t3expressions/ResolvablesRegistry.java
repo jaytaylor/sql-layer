@@ -29,7 +29,10 @@ package com.akiban.server.t3expressions;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCommutativeOverloads;
+import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.aksql.AkBundle;
+import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.common.base.Function;
@@ -193,6 +196,26 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     // static classes
 
+    static final TClass differentTargetTypes
+            = new NoAttrTClass(AkBundle.INSTANCE.id(), "differentTargets", null, null, 0, 0, 0, null, null, null);
+
+    static final OverloadsFolder<TClass> sameInputSets = new OverloadsFolder<TClass>() {
+        @Override
+        protected TClass attribute(TInputSet inputSet) {
+            return inputSet.targetType();
+        }
+
+        @Override
+        protected TClass foldOne(TClass accumulated, TClass input) {
+            if (input == null)
+                return accumulated;
+            if (accumulated == null)
+                return input;
+            return (accumulated == input) ? accumulated : differentTargetTypes;
+        }
+    };
+
+
     protected static class ScalarsGroupImpl<V extends TValidatedOverload> implements ScalarsGroup<V> {
 
         @Override
@@ -202,20 +225,24 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
         public ScalarsGroupImpl(Collection<V> overloads) {
             this.overloads = Collections.unmodifiableCollection(overloads);
-            boolean outRange[] = new boolean[1];
-            int argc[] = new int[1];
-            sameType = doFindSameType(overloads, argc, outRange);
 
-            outOfRangeVal = outRange[0];
-            nArgs = argc[0];
+            // Compute the same-type-ats
+            OverloadsFolder.Result<TClass> sameTypeResults = sameInputSets.fold(overloads);
+            this.sameTypeBitsetLen = sameTypeResults.finiteArityList().size();
+            sameTypeBitSet = new BitSet(sameTypeBitsetLen);
+            for (int i = 0; i < sameTypeBitsetLen; ++i) {
+                if (sameTypeResults.finiteArityList().get(i) != differentTargetTypes)
+                    sameTypeBitSet.set(i);
+            }
+            sameTypeVarargs = (sameTypeResults.infiniteArityElement(null) != differentTargetTypes);
         }
 
         @Override
         public boolean hasSameTypeAt(int pos)
         {
-            return pos >= nArgs         // if pos is out of range
-                    ? outOfRangeVal
-                    : sameType.get(pos);
+            return pos >= sameTypeBitsetLen
+                    ? sameTypeVarargs
+                    : sameTypeBitSet.get(pos);
         }
 
         private static <V extends TValidatedOverload> int nArgsOf(V ovl)
@@ -229,103 +256,9 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
             return ovl.varargInputSet() != null;
         }
 
-        protected static <V extends TValidatedOverload>
-        BitSet doFindSameType(Collection<? extends V> overloads, int range[], boolean outRange[])
-        {
-            ArrayList<Integer> nArgs = new ArrayList<Integer>();
-
-            // overload with the longest argument list
-            V maxOvl = overloads.iterator().next();
-            int maxArgc = nArgsOf(maxOvl);
-            boolean hasVararg = hasVararg(maxOvl);
-            int n = 1;
-
-            // whether arg that's out of range should be 'same' or 'not same'
-            // false if all overloads in the group have fixed length
-            // true if all overloads with varargs in the group have the same targetType of vararg
-            // false otherwise
-            boolean outOfRange = false;
-            TClass firstVararg = null;
-
-            for (V ovl : overloads)
-            {
-                int curArgc = nArgsOf(ovl);
-                nArgs.add(curArgc);
-                boolean curHasVar = hasVararg(ovl);
-
-                if (curHasVar)
-                {
-                    if (firstVararg == null)
-                    {
-                        outOfRange = true;
-                        firstVararg = ovl.varargInputSet().targetType();
-                    }
-                    else
-                        outOfRange &= firstVararg.equals(ovl.varargInputSet().targetType());
-                }
-
-                if (curArgc > maxArgc
-                        || curArgc == maxArgc
-                        && hasVararg
-                        && !curHasVar)
-                {
-                    hasVararg = hasVararg(ovl);
-                    maxOvl = ovl;
-                    maxArgc = curArgc;
-                }
-                ++n;
-            }
-
-            outRange[0] = outOfRange;
-            range[0] = maxArgc;
-
-            // all the overloads in the group are vararg
-            if (hasVararg && maxArgc == 1)
-            {
-                BitSet ret = new BitSet(1);
-                ret.set(0, outOfRange);
-                return ret;
-            }
-
-            BitSet sameType = new BitSet(maxArgc);
-
-            Boolean same;
-            for (n = 0; n < maxArgc; ++n)
-            {
-                same = Boolean.TRUE;
-                TClass common = maxOvl.inputSetAt(n).targetType();
-                int index = 0;
-                for (V ovl : overloads)
-                {
-                    int curArgc = nArgs.get(index++);
-                    TClass targetType;
-
-                    // if the arg is absent
-                    if (n >= curArgc)
-                    {
-                        if (!hasVararg(ovl))
-                            continue;
-                        else
-                            targetType = ovl.varargInputSet().targetType();
-                    }
-                    else
-                        targetType = ovl.inputSetAt(n).targetType();
-
-                    if (targetType != null && !targetType.equals(common)
-                            || targetType == null && common != null)
-                    {
-                        same = Boolean.FALSE;
-                        break;
-                    }
-                }
-                sameType.set(n, same);
-            }
-
-            return sameType;
-        }
-        private final int nArgs;
-        private final boolean outOfRangeVal;
-        private final BitSet sameType;
+        private final int sameTypeBitsetLen;
+        private final boolean sameTypeVarargs;
+        private final BitSet sameTypeBitSet;
         private final Collection<? extends V> overloads;
 
     }

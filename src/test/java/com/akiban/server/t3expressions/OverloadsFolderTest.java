@@ -33,7 +33,6 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.T3TestClass;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -195,28 +194,10 @@ public final class OverloadsFolderTest {
     private final int pos;
     private final Boolean sameTypeAtExpected;
 
-    private static final TClass dummyClass = new T3TestClass("dummy");
-
-    private static final OverloadsFolder<TClass> sameInputsets = new OverloadsFolder<TClass>() {
-        @Override
-        protected TClass attribute(TInputSet inputSet) {
-            return inputSet.targetType();
-        }
-
-        @Override
-        protected TClass foldOne(TClass accumulated, TClass input) {
-            if (input == null)
-                return accumulated;
-            if (accumulated == null)
-                return input;
-            return (accumulated == input) ? accumulated : dummyClass;
-        }
-    };
-
     private static final Function<TClass, Boolean> notNull = new Function<TClass, Boolean>() {
         @Override
         public Boolean apply(TClass input) {
-            return input != dummyClass;
+            return input != ResolvablesRegistry.differentTargetTypes;
         }
     };
 
@@ -259,7 +240,7 @@ public final class OverloadsFolderTest {
                 TValidatedScalar validated = new TValidatedScalar(scalar);
                 overloads.add(validated);
             }
-            OverloadsFolder.Result<TClass> foldToClass = sameInputsets.fold(overloads);
+            OverloadsFolder.Result<TClass> foldToClass = ResolvablesRegistry.sameInputSets.fold(overloads);
             OverloadsFolder.Result<Boolean> foldResult = foldToClass.transform(notNull);
 
             StringBuilder overloadsDescBuilder = new StringBuilder();

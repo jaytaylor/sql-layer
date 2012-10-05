@@ -123,10 +123,8 @@ abstract class OverloadsFolder<T> {
             return finiteArityList;
         }
 
-        public T infiniteArityElement() {
-            if (!hasInfiniteArityElement)
-                throw new IllegalStateException("no infinite arity element");
-            return infiniteArityElement;
+        public T infiniteArityElement(T ifNone) {
+            return hasInfiniteArityElement ? infiniteArityElement : ifNone;
         }
 
         public T at(int i, T ifUndefined) {
