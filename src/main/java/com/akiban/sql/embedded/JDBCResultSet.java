@@ -28,7 +28,7 @@ package com.akiban.sql.embedded;
 
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
-import com.akiban.server.error.InvalidOperationException;
+import com.akiban.sql.server.ServerJavaValues;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -39,6 +39,7 @@ import com.akiban.util.ByteSource;
 
 import java.sql.*;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -48,11 +49,11 @@ import java.util.Map;
 
 public class JDBCResultSet implements ResultSet
 {
-    private JDBCStatement statement;
-    private JDBCResultSetMetaData metaData;
-    private Cursor cursor;
-    private Row row;
-    private boolean wasNull;
+    protected final JDBCStatement statement;
+    protected final JDBCResultSetMetaData metaData;
+    protected Cursor cursor;
+    protected Row row;
+    protected final Values values = new Values();
     
     protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData) {
         this.statement = statement;
@@ -72,34 +73,56 @@ public class JDBCResultSet implements ResultSet
         cursor.open();
     }
 
-    protected ValueSource value(int columnIndex) throws SQLException {
-        if (row == null) {
-            if (cursor == null)
-                throw new JDBCException("Already closed.");
-            else
-                throw new JDBCException("Past end.");
+    protected class Values extends ServerJavaValues {
+        @Override
+        protected ValueSource getValue(int columnIndex) {
+            if (row == null) {
+                if (cursor == null)
+                    JDBCException.throwWrapped("Already closed.");
+                else
+                    JDBCException.throwWrapped("Past end.");
+            }
+            if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
+                JDBCException.throwWrapped("Column index out of bounds");
+            return row.eval(columnIndex - 1);
         }
-        if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
-            throw new JDBCException("Column index out of bounds");
 
-        ValueSource value = row.eval(columnIndex - 1);
-        wasNull = value.isNull();
-        return value;
-    }
+        @Override
+        protected PValueSource getPValue(int columnIndex) {
+            if (row == null) {
+                if (cursor == null)
+                    JDBCException.throwWrapped("Already closed.");
+                else
+                    JDBCException.throwWrapped("Past end.");
+            }
+            if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
+                JDBCException.throwWrapped("Column index out of bounds");
 
-    protected PValueSource pvalue(int columnIndex) throws SQLException {
-        if (row == null) {
-            if (cursor == null)
-                throw new JDBCException("Already closed.");
-            else
-                throw new JDBCException("Past end.");
+            return row.pvalue(columnIndex - 1);
         }
-        if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
-            throw new JDBCException("Column index out of bounds");
 
-        PValueSource value = row.pvalue(columnIndex - 1);
-        wasNull = value.isNull();
-        return value;
+        @Override
+        protected ResultSet toResultSet(int columnIndex, Cursor resultSet) {
+            if (resultSet == null)
+                return null;
+            else
+                return new JDBCResultSet(statement, metaData.getNestedResultSet(columnIndex), resultSet);
+        }
+
+        @Override
+        protected AkType getTargetType(int columnIndex) {
+            return metaData.getColumn(columnIndex).getAkType();
+        }
+
+        @Override
+        protected void setValue(int index, ValueSource source, AkType akType) {
+            throw new UnsupportedOperationException("Row update not suported");
+        }
+
+        @Override
+        protected void setPValue(int index, PValueSource source) {
+            throw new UnsupportedOperationException("Row update not suported");
+        }
     }
 
     /* Wrapper */
@@ -130,8 +153,8 @@ public class JDBCResultSet implements ResultSet
             row = cursor.next();
             return (row != null);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -144,165 +167,93 @@ public class JDBCResultSet implements ResultSet
                 cursor = null;
             }
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
     
     @Override
     public boolean wasNull() throws SQLException {
-        return wasNull;
+        return values.wasNull();
     }
 
     @Override
     public String getString(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return Extractors.getStringExtractor().getObject(value);
-            }
+            return values.getString(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return false;
-                else
-                    return Extractors.getBooleanExtractor().getBoolean(value, false);
-            }
+            return values.getBoolean(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public byte getByte(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return 0;
-                else
-                    return (byte)Extractors.getLongExtractor(AkType.INT).getLong(value);
-            }
+            return values.getByte(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public short getShort(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return 0;
-                else
-                    return (short)Extractors.getLongExtractor(AkType.INT).getLong(value);
-            }
+            return values.getShort(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return 0;
-                else
-                    return (int)Extractors.getLongExtractor(AkType.INT).getLong(value);
-            }
+            return values.getInt(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return 0;
-                else
-                    return Extractors.getLongExtractor(AkType.LONG).getLong(value);
-            }
+            return values.getLong(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return 0.0f;
-                else
-                    return (float)Extractors.getDoubleExtractor().getDouble(value);
-            }
+            return values.getFloat(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return 0.0;
-                else
-                    return Extractors.getDoubleExtractor().getDouble(value);
-            }
+            return values.getDouble(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -314,92 +265,71 @@ public class JDBCResultSet implements ResultSet
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return Extractors.getByteSourceExtractor().getObject(value).toByteSubarray();
-            }
+            return values.getBytes(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public Date getDate(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-            }
+            return values.getDate(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public Time getTime(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-            }
+            return values.getTime(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-            }
+            return values.getTimestamp(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getAsciiStream(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getUnicodeStream(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getBinaryStream(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -504,32 +434,10 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Object getObject(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return null;
-                else {
-                    switch (value.getConversionType()) {
-                    case DATE:
-                        return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-                    case TIME:
-                        return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-                    case DATETIME:
-                    case TIMESTAMP:
-                        return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-                    case RESULT_SET:
-                        return new JDBCResultSet(statement, metaData.getNestedResultSet(columnIndex), value.getResultSet());
-                    default:
-                        return new ToObjectValueTarget().convertFromSource(value);
-                    }
-                }
-            }
+            return values.getObject(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -550,7 +458,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getCharacterStream(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -561,19 +474,10 @@ public class JDBCResultSet implements ResultSet
     @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(columnIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return Extractors.getDecimalExtractor().getObject(value);
-            }
+            return values.getBigDecimal(columnIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -689,97 +593,196 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateNull(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNull(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateBoolean(int columnIndex, boolean x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBoolean(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateByte(int columnIndex, byte x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setByte(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateShort(int columnIndex, short x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setShort(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateInt(int columnIndex, int x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setInt(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateLong(int columnIndex, long x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setLong(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateFloat(int columnIndex, float x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setFloat(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateDouble(int columnIndex, double x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setDouble(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBigDecimal(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateString(int columnIndex, String x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setString(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateBytes(int columnIndex, byte x[]) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBytes(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateDate(int columnIndex, Date x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setDate(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateTime(int columnIndex, Time x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setTime(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setTimestamp(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setAsciiStream(columnIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBinaryStream(columnIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setCharacterStream(columnIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateObject(int columnIndex, Object x, int scaleOrLength) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        updateObject(columnIndex, x);
     }
 
     @Override
     public void updateObject(int columnIndex, Object x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setObject(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -924,22 +927,42 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public Ref getRef(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getRef(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Blob getBlob(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getBlob(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Clob getClob(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getClob(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Array getArray(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getArray(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -969,7 +992,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-        return getDate(columnIndex);
+        try {
+            return values.getDate(columnIndex, cal);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -979,7 +1007,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-        return getTime(columnIndex);
+        try {
+            return values.getTime(columnIndex, cal);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -989,7 +1022,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-        return getTimestamp(columnIndex);
+        try {
+            return values.getTimestamp(columnIndex, cal);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -999,7 +1037,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public URL getURL(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getURL(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1009,7 +1052,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateRef(int columnIndex, Ref x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setRef(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1019,7 +1067,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateBlob(int columnIndex, Blob x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBlob(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1029,7 +1082,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateClob(int columnIndex, Clob x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setClob(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1039,7 +1097,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateArray(int columnIndex, Array x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setArray(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1049,7 +1112,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public RowId getRowId(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getRowId(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1059,7 +1127,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateRowId(int columnIndex, RowId x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setRowId(columnIndex, x);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1079,7 +1152,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateNString(int columnIndex, String nString) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNString(columnIndex, nString);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1089,7 +1167,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNClob(columnIndex, nClob);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1099,7 +1182,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public NClob getNClob(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getNClob(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1109,7 +1197,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getSQLXML(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1119,7 +1212,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setSQLXML(columnIndex, xmlObject);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1129,7 +1227,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public String getNString(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getNString(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1139,7 +1242,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getNCharacterStream(columnIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1149,7 +1257,15 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNCharacterStream(columnIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1159,17 +1275,41 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setAsciiStream(columnIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBinaryStream(columnIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setCharacterStream(columnIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1189,7 +1329,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateBlob(int columnIndex, InputStream inputStream, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBlob(columnIndex, inputStream, length);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1199,7 +1344,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateClob(int columnIndex,  Reader reader, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setClob(columnIndex, reader, length);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1209,7 +1359,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateNClob(int columnIndex,  Reader reader, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNClob(columnIndex, reader, length);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1219,7 +1374,15 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNCharacterStream(columnIndex, x);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1229,17 +1392,41 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setAsciiStream(columnIndex, x);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBinaryStream(columnIndex, x);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setCharacterStream(columnIndex, x);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1259,7 +1446,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBlob(columnIndex, inputStream);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1269,7 +1461,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateClob(int columnIndex,  Reader reader) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setClob(columnIndex, reader);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1279,7 +1476,12 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public void updateNClob(int columnIndex,  Reader reader) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNClob(columnIndex, reader);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -1289,7 +1491,12 @@ public class JDBCResultSet implements ResultSet
 
     //@Override // JDK 1.7
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getObject(columnIndex, type);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     //@Override // JDK 1.7

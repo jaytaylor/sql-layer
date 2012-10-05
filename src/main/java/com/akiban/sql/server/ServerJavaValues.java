@@ -239,10 +239,6 @@ public abstract class ServerJavaValues
         }
     }
 
-    public BigDecimal getBigDecimal(int index, int scale) {
-        return getBigDecimal(index).setScale(scale);
-    }
-
     public byte[] getBytes(int index) {
         if (Types3Switch.ON) {
             throw new UnsupportedOperationException();
@@ -370,6 +366,18 @@ public abstract class ServerJavaValues
     }
 
     public Clob getClob(int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    public NClob getNClob(int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    public SQLXML getSQLXML(int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    public RowId getRowId(int index) {
         throw new UnsupportedOperationException();
     }
 

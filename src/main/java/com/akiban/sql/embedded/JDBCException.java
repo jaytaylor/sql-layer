@@ -29,6 +29,7 @@ package com.akiban.sql.embedded;
 import com.akiban.server.error.InvalidOperationException;
 
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 
 public class JDBCException extends SQLException
 {
@@ -52,5 +53,26 @@ public class JDBCException extends SQLException
     }
 
     public JDBCException(String reason, Throwable cause) {
+    }
+
+    // Allow outer layer to throw SQLException throw inner layer that does not.
+    private static class Wrapper extends RuntimeException {
+        public Wrapper(SQLException cause) {
+            super(cause);
+        }
+    }
+
+    protected static void throwWrapped(String reason) {
+        throw new Wrapper(new JDBCException(reason));
+    }
+
+    protected static RuntimeException throwUnwrapped(RuntimeException ex) throws SQLException {
+        if (ex instanceof Wrapper)
+            throw (SQLException)ex.getCause();
+        if (ex instanceof InvalidOperationException)
+            throw new JDBCException(ex);
+        if (ex instanceof UnsupportedOperationException)
+            throw new SQLFeatureNotSupportedException(ex.getMessage());
+        return ex;
     }
 }
