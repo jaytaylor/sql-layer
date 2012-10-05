@@ -1,9 +1,9 @@
-SelectQuery@7f1fc4b8
-  ResultSet@7eac4d3b[name]
-    Project@62029d75[customers.name]
-      Select@19af9e98[ANY(Subquery@58d51a54)]
-        TableSource@4977fa9a(customers)
+SelectQuery@2d164deb
+  ResultSet@1355966d[name]
+    Project@5806d805[customers.name]
+      Select@29505d69[ANY(Subquery@5b24adaf)]
+        TableSource@c9d8918(customers)
 
-Subquery@58d51a54
-  Project@eb3ae5c[customers.cid == VALUES[0]]
-    ExpressionsSource@63e5ba24([[$0], [f(1)], [g(2)]])
+Subquery@5b24adaf
+  Project@4506eae8[customers.cid == VALUES[0]]
+    ExpressionsSource@3a938d20([[1], [2], [$0]])

@@ -1,0 +1,9 @@
+SelectQuery@9eb67cb
+  ResultSet@3deb4583[name]
+    Project@2120bb37[customers.name]
+      Select@6be328de[ANY(Subquery@e903e28)]
+        TableSource@f35b47c(customers)
+
+Subquery@e903e28
+  Project@1fe0bb90[Cast(customers.cid AS MCOMPAT_ BIGINT(21) NOT NULL) == VALUES[0]]
+    ExpressionsSource@edc40b1([[1], [2], [$0]])

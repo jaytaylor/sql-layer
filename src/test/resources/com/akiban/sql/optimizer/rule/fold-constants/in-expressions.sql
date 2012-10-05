@@ -1,2 +1,2 @@
 SELECT name FROM customers
- WHERE cid IN (F(1),G(2),?)
+ WHERE cid IN (SIGN(1),ABS(2),?)
