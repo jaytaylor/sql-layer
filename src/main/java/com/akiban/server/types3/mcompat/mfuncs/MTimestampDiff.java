@@ -122,8 +122,6 @@ public class MTimestampDiff extends TOverloadBase
                 {
                     StringType strType = MDatetimes.parseDateOrTime(source.getString(), ymd);
                                 
-//                    javax.swing.JOptionPane.showMessageDialog(null,
-//                                                              source.getString());
                     if (strType == StringType.TIME_ST)
                         error = new InvalidDateFormatException("DATETIME",
                                                                source.getString());
@@ -206,9 +204,6 @@ public class MTimestampDiff extends TOverloadBase
                     output.putNull();
                 else
                     output.putInt64((unix2 - unix1) / MILLIS_DIV[unit - MILLIS_BASE]);
-//                javax.swing.JOptionPane.showMessageDialog(null, "unix1: " + unix1
-//                        + "\nunix2: " + unix2
-//                        + "\n\nunit: " + (MILLIS_DIV[unit - MILLIS_BASE]));
                 break;
             default:
                         throw new UnsupportedOperationException("Unknown UNIT: " + unit);
