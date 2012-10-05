@@ -46,6 +46,7 @@
 ---
 - Statement: SELECT IF(bigint_field, double_field, double_field) FROM all_types;
 - output_types: [DOUBLE]
+
 ---
 - Statement: SELECT IF(bigint_field, varchar_field, varchar_field) FROM all_types;
 - output_types: [VARCHAR]
@@ -53,14 +54,14 @@
 ---
 - Statement: SELECT IF(bigint_field, date_field, date_field) FROM all_types;
 - output_types: [DATE]
-OAT
+
 ---
 - Statement: SELECT IF(bigint_field, double_field, integer_field) FROM all_types;
 - output_types: [DOUBLE]
 
 ---
 - Statement: SELECT IF(bigint_field, integer_field, decimal_field) FROM all_types;
-- output_types: !select-engine { all: [NUMERIC], newtypes: [DECIMAL] }
+- output_types: [NUMERIC]
 
 ---
 - Statement: SELECT IF(bigint_field, double_field, decimal_field) FROM all_types;

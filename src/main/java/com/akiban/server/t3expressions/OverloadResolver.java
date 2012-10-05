@@ -278,9 +278,10 @@ public final class OverloadResolver<V extends TValidatedOverload> {
 
         InputSetFlags exactInputs = overload.exactInputs();
         for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
-            // alow this input if
+            // allow this input if
             // all overloads of this name have the same at this position
-            if (scalarGroups.hasSameTypeAt(i)) {
+            boolean requireExact = exactInputs.get(i);
+            if ( (!requireExact) && scalarGroups.hasSameTypeAt(i)) {
                 continue;
             }
 
@@ -305,7 +306,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             else {
                 inputTypeClass = inputInstance.typeClass();
             }
-            if (exactInputs.get(i)) {
+            if (requireExact) {
                 if (inputTypeClass == inputSet.targetType())
                     continue;
             }

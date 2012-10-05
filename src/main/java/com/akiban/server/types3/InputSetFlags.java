@@ -69,7 +69,9 @@ public final class InputSetFlags {
     public static class Builder {
 
         public void set(int pos, boolean value) {
-            maxPositional = Math.max(maxPositional, pos);
+            if(pos < 0)
+                throw new IllegalArgumentException("out of range: " + pos);
+            nPositions = Math.max(nPositions, pos+1);
             bitSet.set(pos, value);
         }
 
@@ -80,11 +82,11 @@ public final class InputSetFlags {
         public InputSetFlags get() {
             if ( (!varargValue) && (bitSet.length() == 0))
                 return ALL_OFF;
-            return new InputSetFlags(bitSet, maxPositional, varargValue);
+            return new InputSetFlags(bitSet, nPositions, varargValue);
         }
 
         private boolean varargValue;
-        private int maxPositional = 0;
+        private int nPositions = 0;
         private BitSet bitSet = new BitSet();
     }
 }

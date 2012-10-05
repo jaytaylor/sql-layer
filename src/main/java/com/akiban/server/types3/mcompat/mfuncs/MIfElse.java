@@ -60,7 +60,7 @@ public final class MIfElse extends TScalarBase {
         builder.covers(AkBool.INSTANCE, 0).pickingCovers(targetClass, 1, 2);
         if(exactInput == ExactInput.BOTH || exactInput == ExactInput.LEFT)
             builder.setExact(1, true);
-        if(exactInput == ExactInput.BOTH || exactInput == ExactInput.LEFT)
+        if(exactInput == ExactInput.BOTH || exactInput == ExactInput.RIGHT)
             builder.setExact(2, true);
     }
 
