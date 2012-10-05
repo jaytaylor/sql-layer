@@ -43,16 +43,22 @@ import com.akiban.util.WrappingByteSource;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Date;
+import java.sql.NClob;
 import java.sql.Ref;
 import java.sql.ResultSet;
+import java.sql.RowId;
+import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -372,6 +378,240 @@ public abstract class ServerJavaValues
     }
 
     public URL getURL(int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setNull(int index) {
+        setValue(index, null, AkType.NULL);
+    }
+
+    public void setBoolean(int index, boolean x) {
+        setValue(index, x, AkType.BOOL);
+    }
+
+    public void setByte(int index, byte x) {
+        setValue(index, (int)x, AkType.INT); // TODO: Types3 has separate type.
+    }
+
+    public void setShort(int index, short x) {
+        setValue(index, (int)x, AkType.INT); // TODO: Types3 has separate type.
+    }
+
+    public void setInt(int index, int x) {
+        setValue(index, x, AkType.INT);
+    }
+
+    public void setLong(int index, long x) {
+        setValue(index, x, AkType.LONG);
+    }
+
+    public void setFloat(int index, float x) {
+        setValue(index, x, AkType.FLOAT);
+    }
+
+    public void setDouble(int index, double x) {
+        setValue(index, x, AkType.DOUBLE);
+    }
+
+    public void setBigDecimal(int index, BigDecimal x) {
+        setValue(index, x, AkType.DECIMAL);
+    }
+
+    public void setString(int index, String x) {
+        setValue(index, x, AkType.VARCHAR);
+    }
+
+    public void setBytes(int index, byte x[]) {
+        setValue(index, new WrappingByteSource(x), AkType.VARBINARY);
+    }
+
+    public void setDate(int index, Date x) {
+        // TODO: Aren't there system routines to do this someplace?
+        DateTime dt = new DateTime(x, DateTimeZone.getDefault());
+        long encoded = dt.getYear() * 512 + dt.getMonthOfYear() * 32 + dt.getDayOfMonth();
+        setValue(index, encoded, AkType.DATE);
+    }
+
+    public void setTime(int index, Time x) {
+        DateTime dt = new DateTime(x, DateTimeZone.getDefault());
+        long encoded = dt.getHourOfDay() * 10000 + dt.getMinuteOfHour() * 100 + dt.getSecondOfMinute();
+        setValue(index, encoded, AkType.TIME);
+    }
+
+    public void setTimestamp(int index, Timestamp x) {
+        setValue(index, x.getTime() / 1000, AkType.TIMESTAMP);
+    }
+
+    public void setDate(int index, Date x, Calendar cal) {
+        cal.setTime(x);
+        DateTime dt = new DateTime(cal);
+        long encoded = dt.getYear() * 512 + dt.getMonthOfYear() * 32 + dt.getDayOfMonth();
+        setValue(index, encoded, AkType.DATE);
+    }
+
+    public void setTime(int index, Time x, Calendar cal) {
+        cal.setTime(x);
+        DateTime dt = new DateTime(cal);
+        long encoded = dt.getHourOfDay() * 10000 + dt.getMinuteOfHour() * 100 + dt.getSecondOfMinute();
+        setValue(index, encoded, AkType.TIME);
+    }
+
+    public void setTimestamp(int index, Timestamp x, Calendar cal) {
+        setTimestamp(index, x);
+    }
+
+    public void setObject(int index, Object x) {
+        setObject(index, x);
+    }
+
+    public void setNString(int index, String value) {
+        setString(index, value);
+    }
+
+    public void setAsciiStream(int index, InputStream x, int length) throws IOException {
+        String value;
+        byte[] b = new byte[length];
+        int l = x.read(b);
+        value = new String(b, 0, l, "ASCII");
+        setValue(index, value, AkType.VARCHAR);
+    }
+
+    public void setUnicodeStream(int index, InputStream x, int length) throws IOException {
+        String value;
+        byte[] b = new byte[length];
+        int l = x.read(b);
+        value = new String(b, 0, l, "UTF-8");
+        setValue(index, value, AkType.VARCHAR);
+    }
+
+    public void setBinaryStream(int index, InputStream x, int length) throws IOException {
+        WrappingByteSource value;
+        byte[] b = new byte[length];
+        int l = x.read(b);
+        value = new WrappingByteSource().wrap(b, 0, l);
+        setValue(index, value, AkType.VARBINARY);
+    }
+
+    public void setCharacterStream(int index, Reader reader, int length) throws IOException {
+        String value;
+        char[] c = new char[length];
+        int l = reader.read(c);
+        value = new String(c, 0, l);
+        setValue(index, value, AkType.VARCHAR);
+    }
+
+    public void setNCharacterStream(int index, Reader value, long length) throws IOException {
+        setCharacterStream(index, value, length);
+    }
+
+    public void setAsciiStream(int index, InputStream x, long length) throws IOException {
+        setAsciiStream(index, x, (int)length);
+    }
+
+    public void setBinaryStream(int index, InputStream x, long length) throws IOException {
+        setBinaryStream(index, x, (int)length);
+    }
+
+    public void setCharacterStream(int index, Reader reader, long length) throws IOException {
+        setCharacterStream(index, reader, (int)length);
+    }
+
+    public void setAsciiStream(int index, InputStream x) throws IOException {
+        String value;
+        ByteArrayOutputStream ostr = new ByteArrayOutputStream();
+        byte[] buf = new byte[1024];
+        while (true) {
+            int len = x.read(buf);
+            if (len < 0) break;
+            ostr.write(buf, 0, len);
+        }
+        value = new String(ostr.toByteArray(), "ASCII");
+        setValue(index, value, AkType.VARCHAR);
+    }
+
+    public void setBinaryStream(int index, InputStream x) throws IOException {
+        WrappingByteSource value;
+        ByteArrayOutputStream ostr = new ByteArrayOutputStream();
+        byte[] buf = new byte[1024];
+        while (true) {
+            int len = x.read(buf);
+            if (len < 0) break;
+            ostr.write(buf, 0, len);
+        }
+        value = new WrappingByteSource(ostr.toByteArray());
+        setValue(index, value, AkType.VARBINARY);
+    }
+
+    public void setCharacterStream(int index, Reader reader) throws IOException {
+        String value;
+        StringWriter ostr = new StringWriter();
+        char[] buf = new char[1024];
+        while (true) {
+            int len = reader.read(buf);
+            if (len < 0) break;
+            ostr.write(buf, 0, len);
+        }
+        value = ostr.toString();
+        setValue(index, value, AkType.VARCHAR);
+    }
+
+    public void setNCharacterStream(int index, Reader value) throws IOException {
+        setCharacterStream(index, value);
+    }
+
+    public void setRef(int index, Ref x) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setBlob(int index, Blob x) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setClob(int index, Clob x) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setClob(int index, Reader reader) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setBlob(int index, InputStream inputStream) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setNClob(int index, Reader reader) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setNClob(int index, NClob value) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setClob(int index, Reader reader, long length) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setBlob(int index, InputStream inputStream, long length) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setNClob(int index, Reader reader, long length) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setSQLXML(int index, SQLXML xmlObject) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setURL(int index, URL x) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setRowId(int index, RowId x) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setArray(int index, Array x) {
         throw new UnsupportedOperationException();
     }
 }
