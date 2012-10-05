@@ -96,12 +96,9 @@ abstract class OverloadsFolder {
 
         @Override
         public TInputSet apply(TValidatedOverload input) {
-            if (pos < input.positionalInputs())
-                return input.inputSetAt(pos);
-            else if (input.isVararg())
-                return input.varargInputSet();
-            else
-                return null;
+            return pos < input.positionalInputs()
+                    ? input.inputSetAt(pos)
+                    : input.varargInputSet();
         }
 
         public FoldByPositionalArity(int pos) {
