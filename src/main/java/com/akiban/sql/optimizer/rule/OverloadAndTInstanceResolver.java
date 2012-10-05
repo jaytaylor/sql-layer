@@ -926,7 +926,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression;
         }
 
-        if (equalForCast(tinst(expression), targetInstance))
+        if (equalForCast(targetInstance, tinst(expression)))
             return expression;
         DataTypeDescriptor sqlType = expression.getSQLtype();
         targetInstance = targetInstance.copy();
@@ -939,16 +939,18 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return result;
     }
     
-    private static boolean equalForCast(TInstance source, TInstance target) {
-        if (!source.typeClass().equals(target.typeClass()))
+    private static boolean equalForCast(TInstance target, TInstance source) {
+        if (source == null)
             return false;
-        if (source.typeClass() instanceof TString) {
+        if (!target.typeClass().equals(source.typeClass()))
+            return false;
+        if (target.typeClass() instanceof TString) {
             // Operations between strings do not require that the
             // charsets / collations be the same.
-            return (source.attribute(StringAttribute.LENGTH) == 
-                    target.attribute(StringAttribute.LENGTH));
+            return (target.attribute(StringAttribute.LENGTH) == 
+                    source.attribute(StringAttribute.LENGTH));
         }
-        return source.equalsExcludingNullable(target);
+        return target.equalsExcludingNullable(source);
     }
 
     private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
