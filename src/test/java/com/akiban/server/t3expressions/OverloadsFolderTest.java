@@ -160,6 +160,23 @@ public final class OverloadsFolderTest {
                 "E")
                 .differentAt(0).sameAt(1).differentAt(2).sameAt(3).sameAt(100);
 
+        // overloads take ANY
+        test.overloads(
+                "?",
+                "?")
+                .sameAt(0).undefinedAt(1);
+        test.overloads(
+                "A",
+                "?")
+                .sameAt(0).undefinedAt(1);
+        test.overloads(
+                "?",
+                "A")
+                .sameAt(0).undefinedAt(1);
+        test.overloads(
+                "?...")
+                .sameAt(0).sameAt(1).sameAt(100);
+
         return test.build();
     }
 
@@ -178,6 +195,8 @@ public final class OverloadsFolderTest {
     private final int pos;
     private final Boolean sameTypeAtExpected;
 
+    private static final TClass dummyClass = new T3TestClass("dummy");
+
     private static final OverloadsFolder<TClass> sameInputsets = new OverloadsFolder<TClass>() {
         @Override
         protected TClass attribute(TInputSet inputSet) {
@@ -186,15 +205,18 @@ public final class OverloadsFolderTest {
 
         @Override
         protected TClass foldOne(TClass accumulated, TClass input) {
-            assert input != null;
-            return (accumulated == input) ? accumulated : null;
+            if (input == null)
+                return accumulated;
+            if (accumulated == null)
+                return input;
+            return (accumulated == input) ? accumulated : dummyClass;
         }
     };
 
-    private static final Function<Object, Boolean> notNull = new Function<Object, Boolean>() {
+    private static final Function<TClass, Boolean> notNull = new Function<TClass, Boolean>() {
         @Override
-        public Boolean apply(Object input) {
-            return input != null;
+        public Boolean apply(TClass input) {
+            return input != dummyClass;
         }
     };
 
@@ -269,11 +291,19 @@ public final class OverloadsFolderTest {
                             isVararg = true;
                             arg = arg.substring(0, arg.length() - 3);
                         }
-                        assert arg.length() == 1 && Character.isLetter(arg.charAt(0)) : arg;
-                        TClass tClass = tClasses.get(arg);
-                        if (tClass == null) {
-                            tClass = new T3TestClass(arg);
-                            tClasses.put(arg, tClass);
+                        assert arg.length() == 1 : arg;
+                        char argChar = arg.charAt(0);
+                        TClass tClass;
+                        if (argChar == '?') {
+                            tClass = null;
+                        }
+                        else {
+                            assert Character.isLetter(argChar) : arg;
+                            tClass = tClasses.get(arg);
+                            if (tClass == null) {
+                                tClass = new T3TestClass(arg);
+                                tClasses.put(arg, tClass);
+                            }
                         }
                         if (isVararg)
                             builder.vararg(tClass);
