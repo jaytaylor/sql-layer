@@ -34,6 +34,7 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -45,14 +46,55 @@ import com.akiban.server.types3.texpressions.TScalarBase;
 public final class MIfElse extends TScalarBase {
 
     public static final TScalar[] overloads = new TScalar[] {
+            // If both inputs are of the same type (that's what an ANY-exact means), always use that
+            new MIfElse(null, ExactInput.BOTH, -20),
+
+            // Else, if either side is a string, use that. Note that each one of these are in their own cast group,
+            // because we want the deciding type (e.g. LONGTEXT on the left side, in the first case below) to
+            // unquestionably force the other input to be of its same type. If we put, for instance, all of the
+            // left-is-stringy overloads into one group, then strongs-based considerations come into play, and since
+            // virtually nothing is strongly castable to a varchar, none of these would get picked.
             new MIfElse(MString.LONGTEXT, ExactInput.LEFT, -10),
             new MIfElse(MString.LONGTEXT, ExactInput.RIGHT, -9),
             new MIfElse(MString.VARCHAR, ExactInput.LEFT, -8),
             new MIfElse(MString.VARCHAR, ExactInput.RIGHT, -7),
+
+            // Ditto for the double types.
             new MIfElse(MApproximateNumber.DOUBLE, ExactInput.LEFT, -6),
             new MIfElse(MApproximateNumber.DOUBLE, ExactInput.RIGHT, -5),
-            new MIfElse(null, ExactInput.BOTH, -4),
-            new MIfElse(MString.VARCHAR, ExactInput.NEITHER, -3),
+
+            // Next, exact-precision types. Note that now we do put them into groups, since we actually want the
+            // usual casting rules
+            new MIfElse(MNumeric.DECIMAL, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.BIGINT, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.MEDIUMINT, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.INT, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.SMALLINT, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.TINYINT, ExactInput.LEFT, -4),
+
+            new MIfElse(MNumeric.DECIMAL_UNSIGNED, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.BIGINT_UNSIGNED, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.MEDIUMINT_UNSIGNED, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.INT_UNSIGNED, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.SMALLINT_UNSIGNED, ExactInput.LEFT, -4),
+            new MIfElse(MNumeric.TINYINT_UNSIGNED, ExactInput.LEFT, -4),
+            
+            new MIfElse(MNumeric.DECIMAL, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.BIGINT, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.MEDIUMINT, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.INT, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.SMALLINT, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.TINYINT, ExactInput.RIGHT, -4),
+            
+            new MIfElse(MNumeric.DECIMAL_UNSIGNED, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.BIGINT_UNSIGNED, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.MEDIUMINT_UNSIGNED, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.INT_UNSIGNED, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.SMALLINT_UNSIGNED, ExactInput.RIGHT, -4),
+            new MIfElse(MNumeric.TINYINT_UNSIGNED, ExactInput.RIGHT, -4),
+
+            // Lastly, if nothing else works, treat both as varchar
+            new MIfElse(MString.VARCHAR, ExactInput.NEITHER, -2),
     };
 
     @Override

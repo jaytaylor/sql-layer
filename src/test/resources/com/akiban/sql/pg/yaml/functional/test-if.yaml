@@ -56,6 +56,10 @@
 - output_types: [DATE]
 
 ---
+- Statement: SELECT IF(bigint_field, integer_field, date_field) FROM all_types;
+- output_types: [VARCHAR]
+
+---
 - Statement: SELECT IF(bigint_field, double_field, integer_field) FROM all_types;
 - output_types: [DOUBLE]
 
@@ -70,4 +74,9 @@
 ---
 - Statement: SELECT IF(bigint_field, double_field, varchar_field) FROM all_types;
 - output_types: [VARCHAR]
+
+---
+- Statement: SELECT IF(bigint_field, integer_field, smallint_field) FROM all_types;
+- output_types: [INTEGER]
+
 ...
