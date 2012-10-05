@@ -1642,8 +1642,9 @@ public class ASTStatementLoader extends BaseRule
             ExpressionNode expression = toExpression(valueNode, projects);
             if (expression.isConstant()) {
                 Object value = ((ConstantExpression)expression).getValue();
-                if (value instanceof Long) {
-                    int i = ((Long)value).intValue();
+                if ((value instanceof Long) || (value instanceof Integer) ||
+                    (value instanceof Short) || (value instanceof Byte)) {
+                    int i = ((Number)value).intValue();
                     if ((i <= 0) || (i > projects.size()))
                         throw new OrderGroupByIntegerOutOfRange(which, i, projects.size());
                     expression = (ExpressionNode)projects.get(i-1);
