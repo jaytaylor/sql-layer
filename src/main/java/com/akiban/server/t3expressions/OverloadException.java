@@ -26,6 +26,9 @@
 
 package com.akiban.server.t3expressions;
 
-public interface OverloadResolutionService {
-    OverloadResolver getResolver();
+// TODO replace with InvalidOperationExceptions
+class OverloadException extends RuntimeException {
+    OverloadException(String message) {
+        super(message);
+    }
 }

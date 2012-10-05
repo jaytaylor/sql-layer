@@ -1,5 +1,5 @@
 PhysicalUpdate
   Insert_Returning(INTO customers(customer_id, customer_name, customer_title, primary_payment_code, payment_status, comment))
-   Project_Default([ifnull(Field(0), NEXTVAL('test', '_sequence-1615118567'])), Field(1), Field(2), Field(3), Field(4), Field(5))
+    Project_Default(ifnull(Field(0), NEXTVAL('test', '_sequence-1615118567')), Field(1), Field(2), Field(3), Field(4), Field(5))
       ValuesScan_Default([1, 'YLKDZIWHQHCHLMUZEVIWGCKBQKRUFBITCI', 'QUPGQ', 'CHRG', 'C', 'Lorem ipsum dolor'])
 

@@ -37,7 +37,7 @@ public class BooleanCastExpression extends CastExpression
                                  DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(inner, sqlType, AkType.BOOL, sqlSource);
     }
-    
+
     @Override
     public Implementation getImplementation() {
         return Implementation.NORMAL;

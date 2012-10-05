@@ -533,97 +533,101 @@ public class ASTStatementLoader extends BaseRule
                                     ValueNode condition,
                                     List<ExpressionNode> projects)
                 throws StandardException {
+            DataTypeDescriptor conditionType = null;
             switch (condition.getNodeType()) {
             case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
                 addComparisonCondition(conditions, projects,
                                        (BinaryOperatorNode)condition, Comparison.EQ);
-                break;
+                return;
             case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
                 addComparisonCondition(conditions, projects,
                                        (BinaryOperatorNode)condition, Comparison.GT);
-                break;
+                return;
             case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
                 addComparisonCondition(conditions, projects,
                                        (BinaryOperatorNode)condition, Comparison.GE);
-                break;
+                return;
             case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
                 addComparisonCondition(conditions, projects,
                                        (BinaryOperatorNode)condition, Comparison.LT);
-                break;
+                return;
             case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
                 addComparisonCondition(conditions, projects,
                                        (BinaryOperatorNode)condition, Comparison.LE);
-                break;
+                return;
             case NodeTypes.BINARY_NOT_EQUALS_OPERATOR_NODE:
                 addComparisonCondition(conditions, projects,
                                        (BinaryOperatorNode)condition, Comparison.NE);
-                break;
+                return;
             case NodeTypes.BETWEEN_OPERATOR_NODE:
                 addBetweenCondition(conditions, projects,
                                     (BetweenOperatorNode)condition);
-                break;
-
+                return;
             case NodeTypes.IN_LIST_OPERATOR_NODE:
                 addInCondition(conditions, projects,
                                (InListOperatorNode)condition);
-                break;
-
+                return;
             case NodeTypes.SUBQUERY_NODE:
                 addSubqueryCondition(conditions, projects,
                                      (SubqueryNode)condition);
-                break;
-
+                return;
             case NodeTypes.LIKE_OPERATOR_NODE:
                 addFunctionCondition(conditions, projects,
                                      (TernaryOperatorNode)condition);
-                break;
+                return;
             case NodeTypes.IS_NULL_NODE:
             case NodeTypes.IS_NOT_NULL_NODE:
                 addIsNullCondition(conditions, projects,
                                    (IsNullNode)condition);
-                break;
-
+                return;
             case NodeTypes.IS_NODE:
                 addIsCondition(conditions, projects,
                                (IsNode)condition);
-                break;
-
+                return;
             case NodeTypes.OR_NODE:
             case NodeTypes.AND_NODE:
             case NodeTypes.NOT_NODE:
                 addLogicalFunctionCondition(conditions, projects, condition);
-                break;
-
+                return;
             case NodeTypes.BOOLEAN_CONSTANT_NODE:
                 conditions.add(new BooleanConstantExpression(((BooleanConstantNode)condition).getBooleanValue()));
-                break;
+                return;
             case NodeTypes.UNTYPED_NULL_CONSTANT_NODE:
                 conditions.add(new BooleanConstantExpression(null));
-                break;
+                return;
             case NodeTypes.PARAMETER_NODE:
-                if (condition.getType() == null)
-                    condition.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, true));
+                conditionType = condition.getType();
+                if (conditionType == null) {
+                    conditionType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
+                    condition.setType(conditionType);
+                }
                 conditions.add(new ParameterCondition(((ParameterNode)condition)
                                                       .getParameterNumber(),
-                                                      condition.getType(), condition));
-                break;
+                                                      conditionType, condition));
+                return;
             case NodeTypes.CAST_NODE:
-                assert condition.getType().getTypeId().isBooleanTypeId();
-                conditions.add(new BooleanCastExpression(toExpression(((CastNode)condition)
-                                                                      .getCastOperand(),
-                                                                      projects),
-                                                         condition.getType(), condition));
+                // Use given cast type if it's suitable for a condition.
+                conditionType = condition.getType();
+                // CAST inside to BOOLEAN below.
+                condition = ((CastNode)condition).getCastOperand();
                 break;
             case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
                 conditions.add((ConditionExpression)
                                toExpression(((JavaToSQLValueNode)condition).getJavaValueNode(), 
                                             condition, true,
                                             projects));
-                break;
-            default:
-                throw new UnsupportedSQLException("Unsupported WHERE predicate",
-                                                  condition);
+                return;
             }
+            // Anything else gets CAST to BOOLEAN, which may fail
+            // later due to lack of a suitable cast.
+            if (conditionType == null)
+                conditionType = condition.getType();
+            if (conditionType == null)
+                conditionType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
+            else if (!conditionType.getTypeId().isBooleanTypeId())
+                    conditionType = new DataTypeDescriptor(TypeId.BOOLEAN_ID, conditionType.isNullable());
+            conditions.add(new BooleanCastExpression(toExpression(condition, projects),
+                                                     conditionType, condition));
         }
 
         protected void addComparisonCondition(List<ConditionExpression> conditions,
