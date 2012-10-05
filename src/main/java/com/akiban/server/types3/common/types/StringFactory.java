@@ -83,7 +83,8 @@ public class StringFactory implements TFactory
     
     public static final Charset DEFAULT_CHARSET = Charset.UTF8;
     
-    protected static final int DEFAULT_COLLATION_ID = 0; // TODO:
+    public static final int DEFAULT_COLLATION_ID = 0; // UCS_BINARY
+    public static final int NULL_COLLATION_ID = -1; // String literals
     
     //--------------------------------------------------------------------------
     
