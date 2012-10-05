@@ -26,16 +26,6 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.ByteSource;
-
 import java.sql.*;
 
 import java.io.InputStream;
@@ -47,23 +37,9 @@ import java.util.Map;
 
 public class JDBCCallableStatement extends JDBCPreparedStatement implements CallableStatement
 {
-    private boolean wasNull;
-
     protected JDBCCallableStatement(JDBCConnection connection, 
                                     InternalStatement internalStatement) {
         super(connection, internalStatement);
-    }
-
-    protected ValueSource value(int parameterIndex) throws SQLException {
-        ValueSource value = context.getValue(parameterIndex - 1);
-        wasNull = value.isNull();
-        return value;
-    }
-
-    protected PValueSource pvalue(int parameterIndex) throws SQLException {
-        PValueSource value = context.getPValue(parameterIndex - 1);
-        wasNull = value.isNull();
-        return value;
     }
 
     protected int findParameter(String parameterName) throws SQLException {
@@ -90,158 +66,86 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public boolean wasNull() throws SQLException {
-        return wasNull;
+        return values.wasNull();
     }
 
     @Override
     public String getString(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return Extractors.getStringExtractor().getObject(value);
-            }
+            return values.getString(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public boolean getBoolean(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return false;
-                else
-                    return Extractors.getBooleanExtractor().getBoolean(value, false);
-            }
+            return values.getBoolean(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public byte getByte(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return 0;
-                else
-                    return (byte)Extractors.getLongExtractor(AkType.INT).getLong(value);
-            }
+            return values.getByte(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public short getShort(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return 0;
-                else
-                    return (short)Extractors.getLongExtractor(AkType.INT).getLong(value);
-            }
+            return values.getShort(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public int getInt(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return 0;
-                else
-                    return (int)Extractors.getLongExtractor(AkType.INT).getLong(value);
-            }
+            return values.getInt(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public long getLong(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return 0;
-                else
-                    return Extractors.getLongExtractor(AkType.LONG).getLong(value);
-            }
+            return values.getLong(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public float getFloat(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return 0.0f;
-                else
-                    return (float)Extractors.getDoubleExtractor().getDouble(value);
-            }
+            return values.getFloat(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public double getDouble(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return 0.0;
-                else
-                    return Extractors.getDoubleExtractor().getDouble(value);
-            }
+            return values.getDouble(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -253,125 +157,60 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public byte[] getBytes(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return Extractors.getByteSourceExtractor().getObject(value).toByteSubarray();
-            }
+            return values.getBytes(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public Date getDate(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-            }
+            return values.getDate(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public Time getTime(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-            }
+            return values.getTime(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public Timestamp getTimestamp(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-            }
+            return values.getTimestamp(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public Object getObject(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return null;
-                else {
-                    switch (value.getConversionType()) {
-                    case DATE:
-                        return new Date(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-                    case TIME:
-                        return new Time(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-                    case DATETIME:
-                    case TIMESTAMP:
-                        return new Timestamp(Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000);
-                    default:
-                        return new ToObjectValueTarget().convertFromSource(value);
-                    }
-                }
-            }
+            return values.getObject(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
     @Override
     public BigDecimal getBigDecimal(int parameterIndex) throws SQLException {
         try {
-            if (Types3Switch.ON) {
-                throw new SQLFeatureNotSupportedException();
-            }
-            else {
-                ValueSource value = value(parameterIndex);
-                if (wasNull)
-                    return null;
-                else
-                    return Extractors.getDecimalExtractor().getObject(value);
-            }
+            return values.getBigDecimal(parameterIndex);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -382,37 +221,72 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public Ref getRef(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getRef(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Blob getBlob(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getBlob(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Clob getClob(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getClob(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Array getArray(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getArray(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Date getDate(int parameterIndex, Calendar cal) throws SQLException {
-        return getDate(parameterIndex);
+        try {
+            return values.getDate(parameterIndex, cal);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Time getTime(int parameterIndex, Calendar cal) throws SQLException {
-        return getTime(parameterIndex);
+        try {
+            return values.getTime(parameterIndex, cal);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException {
-        return getTimestamp(parameterIndex);
+        try {
+            return values.getTimestamp(parameterIndex, cal);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -437,7 +311,12 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public URL getURL(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getURL(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -682,7 +561,12 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public RowId getRowId(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getRowId(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -727,7 +611,12 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public NClob getNClob(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getNClob(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -742,7 +631,12 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public SQLXML getSQLXML(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getSQLXML(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -752,7 +646,12 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public String getNString(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getNString(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -762,7 +661,12 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public Reader getNCharacterStream(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getNCharacterStream(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -772,7 +676,12 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     @Override
     public Reader getCharacterStream(int parameterIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getCharacterStream(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -842,7 +751,12 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
 
     //@Override // JDK 1.7
     public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            return values.getObject(parameterIndex, type);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     //@Override // JDK 1.7

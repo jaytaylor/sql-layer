@@ -26,16 +26,10 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.WrappingByteSource;
-
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import com.akiban.sql.server.ServerJavaValues;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -48,7 +42,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 {
     protected InternalStatement internalStatement;
     protected EmbeddedQueryContext context;
-    protected FromObjectValueSource objectSource;
+    protected final Values values = new Values();
 
     protected JDBCPreparedStatement(JDBCConnection connection, 
                                     InternalStatement internalStatement) {
@@ -57,27 +51,35 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
         context = new EmbeddedQueryContext(connection, this);
     }
 
-    protected void setParameter(int parameterIndex, Object value, AkType sourceType) throws SQLException {
-        AkType targetType = internalStatement.getParameterMetaData().getParameter(parameterIndex).getAkType();
-        try {
-            if (Types3Switch.ON) {
-                if (sourceType == null)
-                    sourceType = targetType;
-                PValueSource source = PValueSources.fromObject(value, sourceType).value();
-                context.setPValue(parameterIndex - 1, source);
-            }
-            else {
-                if (objectSource == null)
-                    objectSource = new FromObjectValueSource();
-                if (sourceType != null)
-                    objectSource.setExplicitly(value, sourceType);
-                else
-                    objectSource.setReflectively(value);
-                context.setValue(parameterIndex - 1, objectSource, targetType);
-            }
+    protected class Values extends ServerJavaValues {
+        @Override
+        protected ValueSource getValue(int parameterIndex) {
+            return context.getValue(parameterIndex - 1);
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+
+        @Override
+        protected void setValue(int parameterIndex, ValueSource source, AkType akType) {
+            context.setValue(parameterIndex - 1, source, akType);
+        }
+
+        @Override
+        protected PValueSource getPValue(int parameterIndex) {
+            return context.getPValue(parameterIndex - 1);
+        }
+
+        @Override
+        protected void setPValue(int parameterIndex, PValueSource source) {
+            context.setPValue(parameterIndex - 1, source);
+        }
+
+        @Override
+        protected ResultSet toResultSet(int parameterIndex, Object resultSet) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected AkType getTargetType(int parameterIndex) {
+            return internalStatement.getParameterMetaData().getParameter(parameterIndex).getAkType();
         }
     }
 
@@ -95,119 +97,181 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public void setNull(int parameterIndex, int sqlType) throws SQLException {
-        setParameter(parameterIndex, null, AkType.NULL);
+        try {
+            values.setNull(parameterIndex);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-        setParameter(parameterIndex, x, AkType.BOOL);
+        try {
+            values.setBoolean(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setByte(int parameterIndex, byte x) throws SQLException {
-        setParameter(parameterIndex, (int)x, AkType.INT);
+        try {
+            values.setByte(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setShort(int parameterIndex, short x) throws SQLException {
-        setParameter(parameterIndex, (int)x, AkType.INT);
+        try {
+            values.setShort(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setInt(int parameterIndex, int x) throws SQLException {
-        setParameter(parameterIndex, x, AkType.INT);
+        try {
+            values.setInt(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setLong(int parameterIndex, long x) throws SQLException {
-        setParameter(parameterIndex, x, AkType.LONG);
+        try {
+            values.setLong(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setFloat(int parameterIndex, float x) throws SQLException {
-        setParameter(parameterIndex, x, AkType.FLOAT);
+        try {
+            values.setFloat(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setDouble(int parameterIndex, double x) throws SQLException {
-        setParameter(parameterIndex, x, AkType.DOUBLE);
+        try {
+            values.setDouble(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
-        setParameter(parameterIndex, x, AkType.DECIMAL);
+        try {
+            values.setBigDecimal(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setString(int parameterIndex, String x) throws SQLException {
-        setParameter(parameterIndex, x, AkType.VARCHAR);
+        try {
+            values.setString(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBytes(int parameterIndex, byte x[]) throws SQLException {
-        setParameter(parameterIndex, new WrappingByteSource(x), AkType.VARBINARY);
+        try {
+            values.setBytes(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setDate(int parameterIndex, Date x) throws SQLException {
-        // TODO: Aren't there system routines to do this someplace?
-        DateTime dt = new DateTime(x, DateTimeZone.getDefault());
-        long encoded = dt.getYear() * 512 + dt.getMonthOfYear() * 32 + dt.getDayOfMonth();
-        setParameter(parameterIndex, encoded, AkType.DATE);
+        try {
+            values.setDate(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setTime(int parameterIndex, Time x) throws SQLException {
-        DateTime dt = new DateTime(x, DateTimeZone.getDefault());
-        long encoded = dt.getHourOfDay() * 10000 + dt.getMinuteOfHour() * 100 + dt.getSecondOfMinute();
-        setParameter(parameterIndex, encoded, AkType.TIME);
+        try {
+            values.setTime(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
-        setParameter(parameterIndex, x.getTime() / 1000, AkType.TIMESTAMP);
+        try {
+            values.setTimestamp(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
-        String value;
         try {
-            byte[] b = new byte[length];
-            int l = x.read(b);
-            value = new String(b, 0, l, "ASCII");
+            values.setAsciiStream(parameterIndex, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
         }
-        setParameter(parameterIndex, value, AkType.VARCHAR);
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
-        String value;
         try {
-            byte[] b = new byte[length];
-            int l = x.read(b);
-            value = new String(b, 0, l, "UTF-8");
+            values.setUnicodeStream(parameterIndex, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
         }
-        setParameter(parameterIndex, value, AkType.VARCHAR);
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
-        WrappingByteSource value;
         try {
-            byte[] b = new byte[length];
-            int l = x.read(b);
-            value = new WrappingByteSource().wrap(b, 0, l);
+            values.setBinaryStream(parameterIndex, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
         }
-        setParameter(parameterIndex, value, AkType.VARBINARY);
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -222,7 +286,12 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public void setObject(int parameterIndex, Object x) throws SQLException {
-        setParameter(parameterIndex, x, null);
+        try {
+            values.setObject(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -237,36 +306,55 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
-        String value;
         try {
-            char[] c = new char[length];
-            int l = reader.read(c);
-            value = new String(c, 0, l);
+            values.setCharacterStream(parameterIndex, reader, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
         }
-        setParameter(parameterIndex, value, AkType.VARCHAR);
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setRef(int parameterIndex, Ref x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setRef(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBlob(int parameterIndex, Blob x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBlob(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setClob(int parameterIndex, Clob x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setClob(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setArray(int parameterIndex, Array x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setArray(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -276,23 +364,32 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
-        cal.setTime(x);
-        DateTime dt = new DateTime(cal);
-        long encoded = dt.getYear() * 512 + dt.getMonthOfYear() * 32 + dt.getDayOfMonth();
-        setParameter(parameterIndex, encoded, AkType.DATE);
+        try {
+            values.setDate(parameterIndex, x, cal);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
-        cal.setTime(x);
-        DateTime dt = new DateTime(cal);
-        long encoded = dt.getHourOfDay() * 10000 + dt.getMinuteOfHour() * 100 + dt.getSecondOfMinute();
-        setParameter(parameterIndex, encoded, AkType.TIME);
+        try {
+            values.setTime(parameterIndex, x, cal);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-        setTimestamp(parameterIndex, x);
+        try {
+            values.setTimestamp(parameterIndex, x, cal);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -302,7 +399,12 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public void setURL(int parameterIndex, URL x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setURL(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -312,42 +414,85 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public void setRowId(int parameterIndex, RowId x) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setRowId(parameterIndex, x);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setNString(int parameterIndex, String value) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNString(parameterIndex, value);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNCharacterStream(parameterIndex, value, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setNClob(int parameterIndex, NClob value) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNClob(parameterIndex, value);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setClob(parameterIndex, reader, length);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBlob(parameterIndex, inputStream, length);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNClob(parameterIndex, reader, length);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setSQLXML(parameterIndex, xmlObject);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
@@ -357,93 +502,122 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
-        setAsciiStream(parameterIndex, x, (int)length);
+        try {
+            values.setAsciiStream(parameterIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
-        setBinaryStream(parameterIndex, x, (int)length);
+        try {
+            values.setBinaryStream(parameterIndex, x, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
-        setCharacterStream(parameterIndex, reader, (int)length);
+        try {
+            values.setCharacterStream(parameterIndex, reader, length);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
-        String value;
         try {
-            ByteArrayOutputStream ostr = new ByteArrayOutputStream();
-            byte[] buf = new byte[1024];
-            while (true) {
-                int len = x.read(buf);
-                if (len < 0) break;
-                ostr.write(buf, 0, len);
-            }
-            value = new String(ostr.toByteArray(), "ASCII");
+            values.setAsciiStream(parameterIndex, x);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
         }
-        setParameter(parameterIndex, value, AkType.VARCHAR);
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
-        WrappingByteSource value;
         try {
-            ByteArrayOutputStream ostr = new ByteArrayOutputStream();
-            byte[] buf = new byte[1024];
-            while (true) {
-                int len = x.read(buf);
-                if (len < 0) break;
-                ostr.write(buf, 0, len);
-            }
-            value = new WrappingByteSource(ostr.toByteArray());
+            values.setBinaryStream(parameterIndex, x);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
         }
-        setParameter(parameterIndex, value, AkType.VARBINARY);
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-        String value;
         try {
-            StringWriter ostr = new StringWriter();
-            char[] buf = new char[1024];
-            while (true) {
-                int len = reader.read(buf);
-                if (len < 0) break;
-                ostr.write(buf, 0, len);
-            }
-            value = ostr.toString();
+            values.setCharacterStream(parameterIndex, reader);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
         }
-        setParameter(parameterIndex, value, AkType.VARCHAR);
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-        setCharacterStream(parameterIndex, value);
+        try {
+            values.setNCharacterStream(parameterIndex, value);
+        }
+        catch (IOException ex) {
+            throw new JDBCException(ex);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setClob(int parameterIndex, Reader reader) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setClob(parameterIndex, reader);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setBlob(parameterIndex, inputStream);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 
     @Override
     public void setNClob(int parameterIndex, Reader reader) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            values.setNClob(parameterIndex, reader);
+        }
+        catch (RuntimeException ex) {
+            JDBCException.throwUnwrapped(ex);
+        }
     }
 }

@@ -26,7 +26,6 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.qp.operator.Cursor;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -78,7 +77,7 @@ public abstract class ServerJavaValues
     protected abstract AkType getTargetType(int index);
     protected abstract void setValue(int index, ValueSource source, AkType akType);
     protected abstract void setPValue(int index, PValueSource source);
-    protected abstract ResultSet toResultSet(int index, Cursor resultSet);
+    protected abstract ResultSet toResultSet(int index, Object resultSet);
 
     private boolean wasNull;
     private FromObjectValueSource objectSource;

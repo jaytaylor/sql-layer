@@ -30,12 +30,8 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.sql.server.ServerJavaValues;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.ByteSource;
 
 import java.sql.*;
 
@@ -102,11 +98,11 @@ public class JDBCResultSet implements ResultSet
         }
 
         @Override
-        protected ResultSet toResultSet(int columnIndex, Cursor resultSet) {
+        protected ResultSet toResultSet(int columnIndex, Object resultSet) {
             if (resultSet == null)
                 return null;
             else
-                return new JDBCResultSet(statement, metaData.getNestedResultSet(columnIndex), resultSet);
+                return new JDBCResultSet(statement, metaData.getNestedResultSet(columnIndex), (Cursor)resultSet);
         }
 
         @Override
