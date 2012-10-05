@@ -151,8 +151,10 @@
     ('Infinity'), ('-Infinity'), ('NaN')
 ---
 - Statement: SELECT double_field FROM all_types WHERE double_field IS NOT NULL
-- output: [[0.0], [1.0], [-1.0], [1.7976931348623157E308], [4.9E-324],
-           [Infinity], [-Infinity], [NaN]]
+- output: !select-engine { 
+          all: [[0.0], [1.0], [-1.0], [1.7976931348623157E308], [4.9E-324], [Infinity], [-Infinity], [NaN]],
+          newtypes: [[0.0], [1.0], [-1.0], [1.7976931348623157E308], [4.9E-324], [0.0], [0.0], [0.0]]
+          }
 ---
 - Statement: DELETE FROM all_types
 
@@ -172,8 +174,10 @@
     ('Infinity'), ('-Infinity'), ('NaN')
 ---
 - Statement: SELECT float_field FROM all_types WHERE float_field IS NOT NULL
-- output: [[0.0], [1.0], [-1.0], [3.4028234663852886E38],
-          [1.401298464324817E-45], [Infinity], [-Infinity], [NaN]]
+- output: !select-engine {
+      all: [[0.0], [1.0], [-1.0], [3.4028234663852886E38], [1.401298464324817E-45], [Infinity], [-Infinity], [NaN]],
+      newtypes: [[0.0], [1.0], [-1.0], [3.4028234663852886E38], [1.401298464324817E-45], [0.0], [0.0], [0.0]]
+      }
 ---
 - Statement: DELETE FROM all_types
 
@@ -224,9 +228,10 @@
     ('Infinity'), ('-Infinity'), ('NaN')
 ---
 - Statement: SELECT real_field FROM all_types WHERE real_field IS NOT NULL
-- output: [[0.0], [1.0], [-1.0],
-#          [3.4028234663852886E38], [1.401298464324817E-45],
-           [Infinity], [-Infinity], [NaN]]
+- output: !select-engine {
+    all: [[0.0], [1.0], [-1.0], [Infinity], [-Infinity], [NaN]],
+    newtypes: [[0.0], [1.0], [-1.0], [0.0], [0.0], [0.0]]
+    }
 ---
 - Statement: DELETE FROM all_types
 

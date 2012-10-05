@@ -10,13 +10,13 @@
 - Include: all-datetime-schema.yaml
 ---
 - Statement: select id,DATE(time_field) from datetime_matrix where DATE(time_field) is not null;
-- row_count: 0
+- row_count: !select-engine { all: 0, newtypes: 840 } 
 ---
 - Statement: select id,DATE(timestamp_field) from datetime_matrix where DATE(timestamp_field) <> DATE(CONCAT(expected_year,'-',expected_month,'-',expected_day));
 - row_count: 0
 ---
 - Statement: select id,DATE(date_field) from datetime_matrix where DATE(date_field) <> DATE(CONCAT(expected_year,'-',expected_month,'-',expected_day));
-- row_count: 0
+- row_count:  0
 ---
 - Statement: select DATE('A') from all_types;
 - output: [[null]]
