@@ -33,9 +33,9 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public class Exp extends TOverloadBase
+public class Exp extends TScalarBase
 {
     private final TClass doubleType;
     public Exp(TClass doubleType)

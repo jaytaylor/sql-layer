@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringAttribute;
@@ -61,6 +62,13 @@ public class MString extends TString
     private MString(TypeId typeId, String name)
     {       
         super(typeId, MBundle.INSTANCE, name, -1);
+    }
+
+    @Override
+    public boolean compatibleForCompare(TClass other) {
+        return super.compatibleForCompare(other) ||
+            ((this == CHAR) && (other == VARCHAR)) ||
+            ((this == VARCHAR) && (other == CHAR));
     }
 
     @Override

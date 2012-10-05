@@ -26,13 +26,13 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.common.funcs.TLog;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MLogBase
 {
-    public static final TOverload INSTANCES[] = TLog.create(MApproximateNumber.DOUBLE.instance());
+    public static final TScalar INSTANCES[] = TLog.create(MApproximateNumber.DOUBLE.instance());
 
-    public static final TOverload TWO_ARG = new MLog(MApproximateNumber.DOUBLE);
+    public static final TScalar TWO_ARG = new MLog(MApproximateNumber.DOUBLE);
 }

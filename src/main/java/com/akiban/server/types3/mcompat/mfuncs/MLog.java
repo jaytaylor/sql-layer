@@ -30,9 +30,9 @@ import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public class MLog extends TOverloadBase
+public class MLog extends TScalarBase
 {
     private final TClass argType;
     public MLog(TClass argType)

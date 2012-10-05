@@ -654,46 +654,32 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void dropGroup(Session session, int rowDefId) throws PersistitException {
-        RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
-        if (!groupRowDef.isGroupTable()) {
-            groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
-        }
-        for(RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-            removeTrees(session, userRowDef.table());
+    public void dropGroup(Session session, Group group) throws PersistitException {
+        for(Table table : group.getRoot().getAIS().getUserTables().values()) {
+            if(table.getGroup() == group) {
+                removeTrees(session, table);
+            }
         }
         // tableStatusCache entries updated elsewhere
     }
 
     @Override
-    public void truncateGroup(final Session session, final int rowDefId) throws PersistitException {
-        RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
-        if (!groupRowDef.isGroupTable()) {
-            groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
-        }
-
-        //
-        // Truncate the index trees
-        //
-        for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-            for (Index index : userRowDef.getIndexes()) {
-                truncateIndexes(session, Collections.singleton(index));
+    public void truncateGroup(final Session session, final Group group) throws PersistitException {
+        List<Index> indexes = new ArrayList<Index>();
+        // Collect indexes, truncate table statuses
+        for(UserTable table : group.getRoot().getAIS().getUserTables().values()) {
+            if(table.getGroup() == group) {
+                indexes.addAll(table.getIndexesIncludingInternal());
+                tableStatusCache.truncate(table.getTableId());
             }
         }
-        for (Index index : groupRowDef.getGroupIndexes()) {
-            truncateIndexes(session, Collections.singleton(index));
-        }
+        indexes.addAll(group.getIndexes());
+        truncateIndexes(session, indexes);
 
-        //
         // Truncate the group tree
-        //
-        final Exchange hEx = getExchange(session, groupRowDef);
+        final Exchange hEx = getExchange(session, group);
         hEx.removeAll();
         releaseExchange(session, hEx);
-        for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
-            final int childRowDefId = groupRowDef.getUserTableRowDefs()[i].getRowDefId();
-            tableStatusCache.truncate(childRowDefId);
-        }
     }
 
     // This is to avoid circular dependencies in Guicer.  
@@ -892,13 +878,8 @@ public class PersistitStore implements Store, Service {
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = rowDef.getTableStatus();
         try {
-            if (rowDef.isGroupTable()) {
-                ts.setRowCount(2);
-                ts.setAutoIncrementValue(-1);
-            } else {
-                ts.setAutoIncrementValue(status.getAutoIncrement());
-                ts.setRowCount(status.getRowCount());
-            }
+            ts.setAutoIncrementValue(status.getAutoIncrement());
+            ts.setRowCount(status.getRowCount());
             // TODO - get correct values
             ts.setMeanRecordLength(100);
             ts.setBlockSize(8192);
@@ -1225,8 +1206,8 @@ public class PersistitStore implements Store, Service {
 
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         flushIndexes(session);
+        Set<Group> groups = new HashSet<Group>();
         Set<RowDef> userRowDefs = new HashSet<RowDef>();
-        Set<RowDef> groupRowDefs = new HashSet<RowDef>();
         Set<Index> indexesToBuild = new HashSet<Index>();
         for(Index index : indexes) {
             IndexDef indexDef = index.indexDef();
@@ -1236,31 +1217,16 @@ public class PersistitStore implements Store, Service {
             indexesToBuild.add(index);
             RowDef rowDef = indexDef.getRowDef();
             userRowDefs.add(rowDef);
-            RowDef groupDef = rowDefCache.getRowDef(rowDef.getGroupRowDefId());
-            if(groupDef != null) {
-                groupRowDefs.add(groupDef);
-            }
+            groups.add(rowDef.table().getGroup());
         }
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
-        for (RowDef rowDef : groupRowDefs) {
+        for (Group group : groups) {
             RowData rowData = new RowData(new byte[MAX_ROW_SIZE]);
-            rowData.createRow(rowDef, new Object[0]);
 
-            byte[] columnBitMap = new byte[(rowDef.getFieldCount() + 7) / 8];
-            // Project onto all columns of selected user tables
-            for (RowDef user : rowDef.getUserTableRowDefs()) {
-                if (userRowDefs.contains(user)) {
-                    for (int bit = 0; bit < user.getFieldCount(); bit++) {
-                        int c = bit + user.getColumnOffset();
-                        columnBitMap[c / 8] |= (1 << (c % 8));
-                    }
-                }
-            }
             int indexKeyCount = 0;
-            Exchange hEx = getExchange(session, rowDef);
-            hEx.getKey().clear();
-            // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
+            Exchange hEx = getExchange(session, group);
             try {
+                hEx.clear();
                 while (hEx.next(true)) {
                     expandRowData(hEx, rowData);
                     int tableId = rowData.getRowDefId();
@@ -1281,7 +1247,7 @@ public class PersistitStore implements Store, Service {
                 throw new PersistitAdapterException(e);
             }
             flushIndexes(session);
-            LOG.debug("Inserted {} index keys into {}", indexKeyCount, rowDef.table().getName());
+            LOG.debug("Inserted {} index keys into group {}", indexKeyCount, group.getName());
         }
     }
 
@@ -1419,12 +1385,10 @@ public class PersistitStore implements Store, Service {
         deferIndexes = defer;
     }
 
-    public void traverse(Session session, RowDef rowDef, TreeRecordVisitor visitor)
-            throws PersistitException, InvalidOperationException {
-        assert rowDef.isGroupTable() : rowDef;
-        Exchange exchange = getExchange(session, rowDef).append(
-                Key.BEFORE);
+    public void traverse(Session session, Group group, TreeRecordVisitor visitor) throws PersistitException {
+        Exchange exchange = getExchange(session, group);
         try {
+            exchange.clear().append(Key.BEFORE);
             visitor.initialize(this, exchange);
             while (exchange.next(true)) {
                 visitor.visit();
@@ -1434,8 +1398,7 @@ public class PersistitStore implements Store, Service {
         }
     }
 
-    public <V extends IndexVisitor> V traverse(Session session, Index index, V visitor)
-            throws PersistitException, InvalidOperationException {
+    public <V extends IndexVisitor> V traverse(Session session, Index index, V visitor) throws PersistitException {
         Exchange exchange = getExchange(session, index).append(Key.BEFORE);
         try {
             visitor.initialize(exchange);

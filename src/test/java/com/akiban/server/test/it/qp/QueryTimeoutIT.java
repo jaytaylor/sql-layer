@@ -110,7 +110,7 @@ public class QueryTimeoutIT extends OperatorITBase
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
         long elapsedSec = (stop - start) / 1000;
-        assertTrue(closeEnough(timeoutSec, elapsedSec));
+        assertTrue("Time: " + timeoutSec + " Not equal to " + elapsedSec, closeEnough(timeoutSec, elapsedSec));
     }
 
     @Test

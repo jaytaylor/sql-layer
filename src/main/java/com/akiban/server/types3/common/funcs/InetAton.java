@@ -36,9 +36,9 @@ import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public class InetAton extends TOverloadBase
+public class InetAton extends TScalarBase
 {
     private static final long FACTORS[] = {16777216L,  65536, 256};        
     

@@ -26,20 +26,13 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.types.AkType;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 
-public class CastCondition extends CastExpression implements ConditionExpression 
-{
-    public CastCondition(ExpressionNode inner, 
-                         DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(inner, sqlType, AkType.BOOL, sqlSource);
-    }
-
-    @Override
-    public Implementation getImplementation() {
-        return null;
-    }
-
+public interface ResolvableExpression<T> extends ExpressionNode {
+    String getFunction();
+    void setResolved(T resolved);
+    T getResolved();
+    TPreptimeContext getPreptimeContext();
+    void setPreptimeContext(TPreptimeContext context);
 }

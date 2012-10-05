@@ -29,7 +29,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.StringFactory;
@@ -38,13 +38,14 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+
 import java.io.UnsupportedEncodingException;
 import java.util.zip.CRC32;
 
-public class MCRC32 extends TOverloadBase
+public class MCRC32 extends TScalarBase
 {
-    public static final TOverload INSTANCE = new MCRC32();
+    public static final TScalar INSTANCE = new MCRC32();
     
     private MCRC32() {}
 

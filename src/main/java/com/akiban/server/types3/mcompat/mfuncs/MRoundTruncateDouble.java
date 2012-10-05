@@ -29,7 +29,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -38,7 +38,7 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -47,9 +47,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class MRoundTruncateDouble extends TOverloadBase {
+public class MRoundTruncateDouble extends TScalarBase {
 
-    public static final Collection<TOverload> overloads = createAll();
+    public static final Collection<TScalar> overloads = createAll();
 
     private enum RoundingStrategy {
         ROUND(RoundingMode.HALF_UP),
@@ -109,8 +109,8 @@ public class MRoundTruncateDouble extends TOverloadBase {
         this.roundingStrategy = roundingStrategy;
     }
 
-    private static Collection<TOverload> createAll() {
-        List<TOverload> results = new ArrayList<TOverload>();
+    private static Collection<TScalar> createAll() {
+        List<TScalar> results = new ArrayList<TScalar>();
         for (RoundingOverloadSignature signature : RoundingOverloadSignature.values()) {
             for (RoundingStrategy rounding : RoundingStrategy.values()) {
                 results.add(new MRoundTruncateDouble(signature, rounding));

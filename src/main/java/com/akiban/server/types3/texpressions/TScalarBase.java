@@ -33,7 +33,7 @@ import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
@@ -46,7 +46,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-public abstract class TOverloadBase implements TOverload {
+public abstract class TScalarBase implements TScalar {
 
     @Override
     public List<TInputSet> inputSets() {

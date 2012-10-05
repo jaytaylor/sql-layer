@@ -1,3 +1,5 @@
+and-tree: Multiple ANDs flattened into Select.
+
 case-1: CASE condition already worked out.
 
 case-2: CASE only partially worked out.

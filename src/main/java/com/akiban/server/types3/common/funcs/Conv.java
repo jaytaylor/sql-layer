@@ -39,11 +39,12 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+
 import java.math.BigInteger;
 import java.util.List;
 
-public class Conv extends TOverloadBase
+public class Conv extends TScalarBase
 {
     static final int MIN_BASE = 2 ;
     static final int MAX_BASE = 36;

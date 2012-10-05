@@ -39,10 +39,10 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.sql.parser.TernaryOperatorNode;
 
-public class MTimestampDiff extends TOverloadBase
+public class MTimestampDiff extends TScalarBase
 {
     public static TOverload[] create()
     {
