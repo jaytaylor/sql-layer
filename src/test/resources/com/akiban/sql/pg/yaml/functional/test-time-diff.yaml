@@ -6,12 +6,23 @@
 #
 # bug: 921124 (not valid / opinion)
 ---
+- Statement: SET newtypes to 'true'
+#---
+#- Statement: SELECT FOO();
+#- output: [['838:59:59']]
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, time_field, timestamp_field, varchar_field) VALUES (1, '01:05:06', '2012-01-01 12:31:00', '2012-03-04 18:22:15')
+#---
+#- Statement: SELECT TIMEDIFF('2012-03-04 18:22:15', '2006-11-07 00:00:01')
+#- output: [['838:59:59 ']]
+#---
+#- Statement: select TIMEDIFF(time_field, '00:00:01') from all_types;
+#- output_types: [TIME]
 ---
-- Statement: select TIMEDIFF(time_field, '00:00:01') from all_types;
-- output_types: [TIME]
+- Statement: SELECT TIMEDIFF(timestamp_field, '00:00:01') from all_types;
+- output: [[null]]
 ---
 - Statement: select TIMEDIFF('12:31:15', '00:00:01') from all_types;
 - output: [['12:31:14']]
