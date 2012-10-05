@@ -33,7 +33,6 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collection;
