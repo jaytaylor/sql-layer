@@ -808,11 +808,11 @@ public class MDatetimes
      * @param tz
      * @return a unix timestamp (w/o range-checking)
      */
-    public static long getTimestamp(long val[], String tz)
+    public static int getTimestamp(long val[], String tz)
     {
-        return new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],
+        return (int)(new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],
                             (int)val[HOUR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX], 0,
-                            DateTimeZone.forID(tz)).getMillis() / 1000L;
+                            DateTimeZone.forID(tz)).getMillis() / 1000L);
     }
 
     public static String timestampToString(long ts, String tz)
