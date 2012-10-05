@@ -29,7 +29,6 @@ package com.akiban.server.t3expressions;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCommutativeOverloads;
-import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
@@ -67,11 +66,13 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     public static <R extends TOverload, V extends TValidatedOverload>
     ResolvablesRegistry<V> create(InstanceFinder finder,
+                                  TCastResolver castResolver,
                                   Class<R> plainClass,
                                   Function<R, V> validator,
                                   Function<V, V> commutor)
     {
-        ListMultimap<String, ScalarsGroup<V>> overloadsByName = createScalars(finder, plainClass, validator, commutor);
+        ListMultimap<String, ScalarsGroup<V>> overloadsByName = createScalars(finder, castResolver, plainClass,
+                                                                              validator, commutor);
         return new ResolvablesRegistry<V>(overloadsByName);
     }
 
@@ -81,6 +82,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     private static <R extends TOverload, V extends TValidatedOverload>
     ListMultimap<String, ScalarsGroup<V>> createScalars(InstanceFinder finder,
+                                                        TCastResolver castResolver,
                                                         Class<R> plainClass,
                                                         Function<R, V> validator,
                                                         Function<V, V> commutor)
@@ -141,7 +143,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
             String overloadName = entry.getKey();
             Collection<V> allOverloads = entry.getValue();
             for (Collection<V> priorityGroup : scalarsByPriority(allOverloads)) {
-                ScalarsGroup<V> scalarsGroup = new ScalarsGroupImpl<V>(priorityGroup);
+                ScalarsGroup<V> scalarsGroup = new ScalarsGroupImpl<V>(priorityGroup, castResolver);
                 results.put(overloadName, scalarsGroup);
             }
         }
@@ -199,22 +201,12 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
     static final TClass differentTargetTypes
             = new NoAttrTClass(AkBundle.INSTANCE.id(), "differentTargets", null, null, 0, 0, 0, null, null, null);
 
-    static final OverloadsFolder<TClass> sameInputSets = new OverloadsFolder<TClass>() {
-        @Override
-        protected TClass attribute(TInputSet inputSet) {
-            return inputSet.targetType();
-        }
-
+    static final OverloadsFolder sameInputSets = new OverloadsFolder() {
         @Override
         protected TClass foldOne(TClass accumulated, TClass input) {
-            if (input == null)
-                return accumulated;
-            if (accumulated == null)
-                return input;
             return (accumulated == input) ? accumulated : differentTargetTypes;
         }
     };
-
 
     protected static class ScalarsGroupImpl<V extends TValidatedOverload> implements ScalarsGroup<V> {
 
@@ -223,10 +215,11 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
             return overloads;
         }
 
-        public ScalarsGroupImpl(Collection<V> overloads) {
+        public ScalarsGroupImpl(Collection<V> overloads, final TCastResolver castResolver) {
             this.overloads = Collections.unmodifiableCollection(overloads);
 
             // Compute the same-type-ats
+            // Tranform the map to a BitSet for efficiency
             OverloadsFolder.Result<TClass> sameTypeResults = sameInputSets.fold(overloads);
             this.sameTypeBitsetLen = sameTypeResults.finiteArityList().size();
             sameTypeBitSet = new BitSet(sameTypeBitsetLen);
@@ -235,6 +228,19 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
                     sameTypeBitSet.set(i);
             }
             sameTypeVarargs = (sameTypeResults.infiniteArityElement(null) != differentTargetTypes);
+
+            // compute common types
+            commonTypes = new OverloadsFolder() {
+                @Override
+                protected TClass foldOne(TClass accumulated, TClass input) {
+                    return castResolver.commonTClass(accumulated, input);
+                }
+            }.fold(overloads);
+        }
+
+        @Override
+        public TClass commonTypeAt(int pos) {
+            return commonTypes.at(pos, null);
         }
 
         @Override
@@ -245,20 +251,10 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
                     : sameTypeBitSet.get(pos);
         }
 
-        private static <V extends TValidatedOverload> int nArgsOf(V ovl)
-        {
-            return ovl.positionalInputs()
-                    + (ovl.varargInputSet() == null ? 0 : 1);
-        }
-
-        private static <V extends TValidatedOverload> boolean hasVararg(V ovl)
-        {
-            return ovl.varargInputSet() != null;
-        }
-
         private final int sameTypeBitsetLen;
         private final boolean sameTypeVarargs;
         private final BitSet sameTypeBitSet;
+        private final OverloadsFolder.Result<TClass> commonTypes;
         private final Collection<? extends V> overloads;
 
     }

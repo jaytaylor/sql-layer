@@ -26,6 +26,7 @@
 
 package com.akiban.server.t3expressions;
 
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.Strings;
@@ -36,12 +37,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-abstract class OverloadsFolder<T> {
+abstract class OverloadsFolder {
 
-    protected abstract T attribute(TInputSet inputSet);
-    protected abstract T foldOne(T accumulated, T input);
+    protected abstract TClass foldOne(TClass accumulated, TClass input);
 
-    public Result<T> fold(Collection<? extends TValidatedOverload> overloads) {
+    public Result<TClass> fold(Collection<? extends TValidatedOverload> overloads) {
         int nFinites = 0;
         boolean anyVarargs = false;
         for (TValidatedOverload overload : overloads) {
@@ -51,13 +51,13 @@ abstract class OverloadsFolder<T> {
                 anyVarargs = true;
         }
 
-        List<T> finitesList = new ArrayList<T>(nFinites);
+        List<TClass> finitesList = new ArrayList<TClass>(nFinites);
         for (int pos = 0; pos < nFinites; ++pos) {
-            T result = foldBy(overloads, new FoldByPositionalArity(pos));
+            TClass result = foldBy(overloads, new FoldByPositionalArity(pos));
             finitesList.add(result);
         }
 
-        T infiniteArityElement;
+        TClass infiniteArityElement;
         boolean hasInfiniteArityElement;
         if (anyVarargs) {
             infiniteArityElement = foldBy(overloads, foldByVarags);
@@ -67,18 +67,20 @@ abstract class OverloadsFolder<T> {
             infiniteArityElement = null;
             hasInfiniteArityElement = false;
         }
-        return new Result<T>(finitesList, infiniteArityElement, hasInfiniteArityElement);
+        return new Result<TClass>(finitesList, infiniteArityElement, hasInfiniteArityElement);
     }
 
-    private T foldBy(Collection<? extends TValidatedOverload> overloads, Function<TValidatedOverload, TInputSet> f) {
-        T result = null;
+    private TClass foldBy(Collection<? extends TValidatedOverload> overloads, Function<TValidatedOverload, TInputSet> f) {
+        TClass result = null;
         boolean seenOne = false;
         for (TValidatedOverload overload : overloads) {
             TInputSet inputSet = f.apply(overload);
             if (inputSet != null) {
-                T attribute = attribute(inputSet);
+                TClass attribute = inputSet.targetType();
                 if (seenOne) {
-                    result = foldOne(result, attribute);
+                    if (attribute != null) {
+                        result = (result == null) ? attribute : foldOne(result, attribute);
+                    }
                 }
                 else {
                     result = attribute;
