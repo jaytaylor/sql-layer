@@ -51,7 +51,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
             usePValues = server.getBooleanProperty("newtypes", Types3Switch.SET_ON);
             initCostEstimator(server.costEstimator(this, server.getTreeService()), usePValues);
             if (usePValues)
-                initOverloadResolver(server.overloadResolver());
+                initT3Registry(server.t3RegistryService());
         }
         else {
             initCostEstimator(null, false);

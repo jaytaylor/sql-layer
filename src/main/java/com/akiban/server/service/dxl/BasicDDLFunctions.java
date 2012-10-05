@@ -342,7 +342,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     TInstance oldInst = oldCol.tInstance();
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                     if(oldInst.typeClass() != newInst.typeClass()) {
-                        TCast cast = t3Registry.cast(oldInst.typeClass(), newInst.typeClass());
+                        TCast cast = t3Registry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
                         pExp = new TCastExpression(pExp, cast, newInst, queryContext);
                     }
                     pProjections.add(pExp);

@@ -24,22 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types.AkType;
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.parser.ValueNode;
+import com.akiban.server.types3.TScalar;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.common.funcs.IsTrueFalseUnknown;
 
-public class CastCondition extends CastExpression implements ConditionExpression 
+public class AkIsTrueFalseUnknown
 {
-    public CastCondition(ExpressionNode inner, 
-                         DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(inner, sqlType, AkType.BOOL, sqlSource);
-    }
-
-    @Override
-    public Implementation getImplementation() {
-        return null;
-    }
-
+    public static final TScalar INSTANCES[] = IsTrueFalseUnknown.create(AkBool.INSTANCE);
 }
