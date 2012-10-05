@@ -219,7 +219,7 @@ public final class PValueSources {
         }
         else if (object instanceof String) {
             String s = (String) object;
-            tInstance = MString.VARCHAR.instance(s.length(), StringFactory.DEFAULT_CHARSET.ordinal(), -1);
+            tInstance = MString.VARCHAR.instance(s.length(), StringFactory.DEFAULT_CHARSET.ordinal(), StringFactory.NULL_COLLATION_ID);
             value = new PValue(s);
         }
         else if (object instanceof Double) {

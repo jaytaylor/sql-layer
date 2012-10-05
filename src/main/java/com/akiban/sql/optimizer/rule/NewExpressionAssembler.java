@@ -195,7 +195,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         TInstance leftInstance = left.resultType();
         TInstance rightInstance = right.resultType();
         TClass tClass = leftInstance.typeClass();
-        assert tClass.equals(rightInstance.typeClass())
+        assert tClass.compatibleForCompare(rightInstance.typeClass())
                 : tClass + " != " + rightInstance.typeClass();
         if (tClass.underlyingType() != PUnderlying.STRING)
             return null;

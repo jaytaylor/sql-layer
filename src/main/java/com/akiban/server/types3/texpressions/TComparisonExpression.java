@@ -100,7 +100,7 @@ public final class TComparisonExpression implements TPreparedExpression {
                                  AkCollator collator) {
         TClass oneClass = left.resultType().typeClass();
         TClass twoClass = right.resultType().typeClass();
-        if (!oneClass.equals(twoClass))
+        if (!oneClass.compatibleForCompare(twoClass))
             throw new IllegalArgumentException("can't compare expressions of different types: " + left + " != " + right);
         if (collator != null && oneClass.underlyingType() != PUnderlying.STRING) {
             throw new IllegalArgumentException("collator provided, but " + oneClass + " is not a string type");
@@ -123,7 +123,7 @@ public final class TComparisonExpression implements TPreparedExpression {
                                    PValue value)
     {
         TClass tClass = leftInstance.typeClass();
-        assert rightInstance.typeClass() == tClass
+        assert rightInstance.typeClass().compatibleForCompare(tClass)
                 : "type class mismatch: " + leftInstance + " != " + rightInstance;
         final int cmpI;
         if (collator != null) {
