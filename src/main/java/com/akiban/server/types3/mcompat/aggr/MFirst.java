@@ -33,6 +33,7 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 public class MFirst extends TAggregatorBase {
 
@@ -48,7 +49,14 @@ public class MFirst extends TAggregatorBase {
     @Override
     public void input(TInstance instance, PValueSource source,
             TInstance stateType, PValue state, Object option) {
-        // TODO: Implement this function
+        if (source.isNull())
+            return;
+        
+        if (!first) {
+            PValueTargets.copyFrom(source, state);
+            first = true;
+            return;
+        }
     }
 
     @Override
@@ -62,6 +70,4 @@ public class MFirst extends TAggregatorBase {
     }
     
     private boolean first; 
-    private PValueSource source; 
-
 }
