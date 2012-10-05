@@ -57,10 +57,11 @@ public final class MIfElse extends TScalarBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(AkBool.INSTANCE, 0);
-        
-        builder.setExact(exactInput == ExactInput.BOTH || exactInput == ExactInput.LEFT).covers(targetClass, 1);
-        builder.setExact(exactInput == ExactInput.BOTH || exactInput == ExactInput.RIGHT).covers(targetClass, 2);
+        builder.covers(AkBool.INSTANCE, 0).pickingCovers(targetClass, 1, 2);
+        if(exactInput == ExactInput.BOTH || exactInput == ExactInput.LEFT)
+            builder.setExact(0, true);
+        if(exactInput == ExactInput.BOTH || exactInput == ExactInput.LEFT)
+            builder.setExact(1, true);
     }
 
     @Override

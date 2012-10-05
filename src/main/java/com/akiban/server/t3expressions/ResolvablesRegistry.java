@@ -27,6 +27,7 @@
 package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCommutativeOverloads;
 import com.akiban.server.types3.TOverload;
@@ -35,6 +36,7 @@ import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
@@ -43,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -221,13 +222,12 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
             // Compute the same-type-ats
             // Tranform the map to a BitSet for efficiency
             OverloadsFolder.Result<TClass> sameTypeResults = sameInputSets.fold(overloads);
-            this.sameTypeBitsetLen = sameTypeResults.finiteArityList().size();
-            sameTypeBitSet = new BitSet(sameTypeBitsetLen);
-            for (int i = 0; i < sameTypeBitsetLen; ++i) {
-                if (sameTypeResults.finiteArityList().get(i) != differentTargetTypes)
-                    sameTypeBitSet.set(i);
-            }
-            sameTypeVarargs = (sameTypeResults.infiniteArityElement(null) != differentTargetTypes);
+            sameTypeAt = sameTypeResults.toInputSetFlags(new Predicate<TClass>() {
+                @Override
+                public boolean apply(TClass input) {
+                    return input != differentTargetTypes;
+                }
+            });
 
             // compute common types
             commonTypes = new OverloadsFolder() {
@@ -260,14 +260,10 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
         @Override
         public boolean hasSameTypeAt(int pos)
         {
-            return pos >= sameTypeBitsetLen
-                    ? sameTypeVarargs
-                    : sameTypeBitSet.get(pos);
+            return sameTypeAt.get(pos);
         }
 
-        private final int sameTypeBitsetLen;
-        private final boolean sameTypeVarargs;
-        private final BitSet sameTypeBitSet;
+        private final InputSetFlags sameTypeAt;
         private final OverloadsFolder.Result<TClass> commonTypes;
         private final Collection<? extends V> overloads;
 

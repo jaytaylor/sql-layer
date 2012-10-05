@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverloadResult;
@@ -72,6 +73,11 @@ public class TValidatedOverload implements TOverload {
     @Override
     public TOverloadResult resultType() {
         return resultStrategy;
+    }
+
+    @Override
+    public InputSetFlags exactInputs() {
+        return exactInputs;
     }
 
     // TValidatedResolvable methods
@@ -187,6 +193,7 @@ public class TValidatedOverload implements TOverload {
         this.resultStrategy = overload.resultType();
         this.pickingSet = localPickingInputs;
         this.inputSetDescriptions = createInputSetDescriptions(inputSetsByPos, pickingSet, varargs);
+        this.exactInputs = overload.exactInputs();
     }
 
     private static String[] createInputSetDescriptions(List<TInputSet> inputSetsByPos,
@@ -228,6 +235,7 @@ public class TValidatedOverload implements TOverload {
     private final TOverloadResult resultStrategy;
     private final TInputSet varargs;
     private final TInputSet pickingSet;
+    private final InputSetFlags exactInputs;
 
     /**
      * A description of each input, indexed by its position. If there is a vararg input, its index is

@@ -27,6 +27,7 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
@@ -275,11 +276,13 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         if (!overload.coversNInputs(inputs.size()))
             return false;
 
+        InputSetFlags exactInputs = overload.exactInputs();
         for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
             // alow this input if
             // all overloads of this name have the same at this position
-            if (scalarGroups.hasSameTypeAt(i))
+            if (scalarGroups.hasSameTypeAt(i)) {
                 continue;
+            }
 
             TPreptimeValue inputTpv = inputs.get(i);
             TInstance inputInstance = (inputTpv == null) ? null : inputTpv.instance();
@@ -295,13 +298,14 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 // If input type is unknown (NULL literal or parameter), assume common type at this position among
                 // all overloads in this group.
                 inputTypeClass = scalarGroups.commonTypeAt(i);
-                if (inputTypeClass == null)
+                if (inputTypeClass == null) {
                     throw new OverloadException("couldn't resolve overload because of unknown input at position " + i);
+                }
             }
             else {
                 inputTypeClass = inputInstance.typeClass();
             }
-            if (inputSet.isExact()) {
+            if (exactInputs.get(i)) {
                 if (inputTypeClass == inputSet.targetType())
                     continue;
             }
