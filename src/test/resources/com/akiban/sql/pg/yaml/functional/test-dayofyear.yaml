@@ -23,8 +23,8 @@
 - output: [[19001231.5]]
 ---
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
-- row_count: !select-engine { all: 1, newtypes: 0 } 
-#- output: !select-engine { all: [[19001231]], newtypes: [[]] }
+#- row_count: !select-engine { all: 1, newtypes: 0 } 
+- output: [[19001231]]
 ---
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(null) IS NULL;
 - output: [[19001231]]
