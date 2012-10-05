@@ -47,6 +47,7 @@ import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -949,7 +950,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression;
         }
 
-        if (targetInstance.equalsExcludingNullable(tinst(expression)))
+        if (equalForCast(targetInstance, tinst(expression)))
             return expression;
         DataTypeDescriptor sqlType = expression.getSQLtype();
         targetInstance = targetInstance.copy();
@@ -962,6 +963,20 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return result;
     }
     
+    private static boolean equalForCast(TInstance target, TInstance source) {
+        if (source == null)
+            return false;
+        if (!target.typeClass().equals(source.typeClass()))
+            return false;
+        if (target.typeClass() instanceof TString) {
+            // Operations between strings do not require that the
+            // charsets / collations be the same.
+            return (target.attribute(StringAttribute.LENGTH) == 
+                    source.attribute(StringAttribute.LENGTH));
+        }
+        return target.equalsExcludingNullable(source);
+    }
+
     private static CastExpression newCastExpression(ExpressionNode expression, TInstance targetInstance) {
         if (targetInstance.typeClass() == AkBool.INSTANCE)
             // Allow use as a condition.
