@@ -53,7 +53,7 @@
 ---
 - Statement: SELECT IF(bigint_field, date_field, date_field) FROM all_types;
 - output_types: [DATE]
-
+OAT
 ---
 - Statement: SELECT IF(bigint_field, double_field, integer_field) FROM all_types;
 - output_types: [DOUBLE]
