@@ -164,8 +164,13 @@ public abstract class TString extends TClass
         case COLLATION:
             AkCollator collator = AkCollatorFactory.getAkCollator((int)value);
             if (collator == null) {
-                logger.warn("unknown collator for id " + value + " (" + ((int)value) + ')');
-                output.append(value);
+                if (value == StringFactory.NULL_COLLATION_ID) {
+                    output.append("NONE");
+                }
+                else {
+                    logger.warn("unknown collator for id " + value + " (" + ((int)value) + ')');
+                    output.append(value);
+                }
             }
             else {
                 output.append(collator.getName());
