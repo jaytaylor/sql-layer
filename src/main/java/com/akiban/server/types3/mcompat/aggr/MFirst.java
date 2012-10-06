@@ -38,7 +38,7 @@ import com.akiban.server.types3.pvalue.PValueTargets;
 public class MFirst extends TAggregatorBase {
 
     public static final TAggregator[] INSTANCES = {
-        new MFirst ("first"),
+        new MFirst ("FIRST"),
     };
     
     protected MFirst(String name) {
