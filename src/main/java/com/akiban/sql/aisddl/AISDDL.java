@@ -27,11 +27,13 @@
 package com.akiban.sql.aisddl;
 
 import com.akiban.sql.parser.AlterTableNode;
+import com.akiban.sql.parser.CreateAliasNode;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.CreateViewNode;
+import com.akiban.sql.parser.DropAliasNode;
 import com.akiban.sql.parser.DropGroupNode;
 import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.DropSequenceNode;
@@ -62,57 +64,69 @@ public class AISDDL
         switch (ddl.getNodeType()) {
         case NodeTypes.CREATE_SCHEMA_NODE:
             SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl, context);
-            break;
+            return;
         case NodeTypes.DROP_SCHEMA_NODE:
             SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl, context);
-            break;
+            return;
         case NodeTypes.CREATE_TABLE_NODE:
             TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl, context);
-            break;
+            return;
         case NodeTypes.DROP_TABLE_NODE:
             TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl, context);
-            break;
+            return;
         case NodeTypes.DROP_GROUP_NODE:
             TableDDL.dropGroup(ddlFunctions, session, schema, (DropGroupNode)ddl, context);
-            break;
+            return;
         case NodeTypes.CREATE_VIEW_NODE:
             ViewDDL.createView(ddlFunctions, session, schema, (CreateViewNode)ddl,
                                server.getBinderContext(), context);
-            break;
+            return;
         case NodeTypes.DROP_VIEW_NODE:
             ViewDDL.dropView(ddlFunctions, session, schema, (DropViewNode)ddl,
                              server.getBinderContext(), context);
-            break;
+            return;
         case NodeTypes.CREATE_INDEX_NODE:
             IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
-            break;
+            return;
         case NodeTypes.DROP_INDEX_NODE:
             IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl, context);
-            break;
+            return;
         case NodeTypes.ALTER_TABLE_NODE:
             AlterTableDDL.alterTable(ddlFunctions, server.getDXL().dmlFunctions(), session, schema, (AlterTableNode)ddl, context);
-            break;
+            return;
         case NodeTypes.RENAME_NODE:
             switch (((RenameNode)ddl).getRenameType()) {
             case INDEX:
                 IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
-                break;
+                return;
             case TABLE:
                 TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
-                break;
-            default:
-                throw new UnsupportedSQLException(ddl.statementToString(), ddl);
+                return;
             }
             break;
         case NodeTypes.CREATE_SEQUENCE_NODE:
             SequenceDDL.createSequence(ddlFunctions, session, schema, (CreateSequenceNode)ddl);
-            break;
+            return;
         case NodeTypes.DROP_SEQUENCE_NODE:
             SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl, context);
+            return;
+        case NodeTypes.CREATE_ALIAS_NODE:
+            switch (((CreateAliasNode)ddl).getAliasType()) {
+            case PROCEDURE:
+            case FUNCTION:
+                RoutineDDL.createRoutine(ddlFunctions, session, schema, (CreateAliasNode)ddl);
+                return;
+            }
             break;
-        case NodeTypes.REVOKE_NODE:
-        default:
-            throw new UnsupportedSQLException(ddl.statementToString(), ddl);
+        case NodeTypes.DROP_ALIAS_NODE:
+            switch (((DropAliasNode)ddl).getAliasType()) {
+            case PROCEDURE:
+            case FUNCTION:
+                RoutineDDL.dropRoutine(ddlFunctions, session, schema, (DropAliasNode)ddl, context);
+                return;
+            }
+            break;
         }
+        throw new UnsupportedSQLException(ddl.statementToString(), ddl);
     }
 }

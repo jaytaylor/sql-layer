@@ -34,8 +34,11 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -79,6 +82,10 @@ public class BasicInfoSchemaTablesServiceImpl
     static final TableName VIEWS = new TableName(SCHEMA_NAME, "views");
     static final TableName VIEW_TABLE_USAGE = new TableName(SCHEMA_NAME, "view_table_usage");
     static final TableName VIEW_COLUMN_USAGE = new TableName(SCHEMA_NAME, "view_column_usage");
+    static final TableName ROUTINES = new TableName(SCHEMA_NAME, "routines");
+    static final TableName PARAMETERS = new TableName(SCHEMA_NAME, "parameters");
+    static final TableName JARS = new TableName(SCHEMA_NAME, "jars");
+    static final TableName ROUTINE_JAR_USAGE = new TableName(SCHEMA_NAME, "routine_jar_usage");
 
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
@@ -267,13 +274,13 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
 
                 // TODO: This should come from type attributes when new types go in
-                Integer scale = null;
                 Integer precision = null;
+                Integer scale = null;
                 CharsetAndCollation charAndColl = null;
                 switch(column.getType().akType()) {
                     case DECIMAL:
-                        scale = column.getTypeParameter1().intValue();
-                        precision = column.getTypeParameter2().intValue();
+                        precision = column.getTypeParameter1().intValue();
+                        scale = column.getTypeParameter2().intValue();
                     break;
                     case VARCHAR:
                     case TEXT:
@@ -299,8 +306,8 @@ public class BasicInfoSchemaTablesServiceImpl
                                      column.getType().name(),
                                      boolResult(column.getNullable()),
                                      length,
-                                     scale,
                                      precision,
+                                     scale,
                                      column.getPrefixSize(),
                                      column.getInitialAutoIncrementValue(),
                                      charAndColl != null ? CHARSET_SCHEMA : null,
@@ -1007,7 +1014,218 @@ public class BasicInfoSchemaTablesServiceImpl
             return curTable;
         }
     }
-    
+
+    private class RoutinesFactory extends BasicFactoryBase {
+        public RoutinesFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return aisHolder.getAis().getRoutines().size() ;
+        }
+
+        private class Scan extends BaseScan {
+            final Iterator<Routine> it = aisHolder.getAis().getRoutines().values().iterator();
+
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                if(it.hasNext()) {
+                    Routine routine = it.next();
+                    return new ValuesRow(rowType,
+                                         routine.getName().getSchemaName(),
+                                         routine.getName().getTableName(),
+                                         routine.isProcedure() ? "PROCEDURE" : "FUNCTION",
+                                         routine.getDefinition(),
+                                         routine.getExternalName(),
+                                         routine.getLanguage(),
+                                         routine.getCallingConvention().name(),
+                                         boolResult(false),
+                                         "NO SQL",
+                                         boolResult(true),
+                                         0L,
+                                         ++rowCounter /*hidden pk*/);
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
+    private class ParametersFactory extends BasicFactoryBase {
+        public ParametersFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            long count = 0;
+            for (Routine routine : aisHolder.getAis().getRoutines().values()) {
+                if (routine.getReturnValue() != null) {
+                    count++;
+                }
+                count += routine.getParameters().size();
+            }
+            return count;
+        }
+
+        private class Scan extends BaseScan {
+            final Iterator<Routine> routinesIt = aisHolder.getAis().getRoutines().values().iterator();
+            Iterator<Parameter> paramsIt;
+            long ordinal;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                Parameter param = null;
+                while (true) {
+                    if (paramsIt != null) {
+                        if (paramsIt.hasNext()) {
+                            param = paramsIt.next();
+                            ordinal++;
+                            break;
+                        }
+                    }
+                    if (!routinesIt.hasNext())
+                        return null;
+                    Routine routine = routinesIt.next();
+                    paramsIt = routine.getParameters().iterator();
+                    ordinal = 0;
+                    param = routine.getReturnValue();
+                    if (param != null) {
+                        ordinal++;
+                        break;
+                    }
+                }
+                Long length = null;
+                Long precision = null;
+                Long scale = null;
+                switch(param.getType().akType()) {
+                    case DECIMAL:
+                        precision = param.getTypeParameter1();
+                        scale = param.getTypeParameter2();
+                    break;
+                    case VARCHAR:
+                        length = param.getTypeParameter1();
+                    break;
+                }
+                return new ValuesRow(rowType,
+                                     param.getRoutine().getName().getSchemaName(),
+                                     param.getRoutine().getName().getTableName(),
+                                     param.getName(),
+                                     ordinal,
+                                     param.getType().name(),
+                                     length, 
+                                     precision, 
+                                     scale,
+                                     (param.getDirection() == Parameter.Direction.RETURN) ? "OUT" : param.getDirection().name(),
+                                     boolResult(param.getDirection() == Parameter.Direction.RETURN),
+                                     ++rowCounter /*hidden pk*/);
+            }
+        }
+    }
+
+    private class JarsFactory extends BasicFactoryBase {
+        public JarsFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return aisHolder.getAis().getSQLJJars().size() ;
+        }
+
+        private class Scan extends BaseScan {
+            final Iterator<SQLJJar> it = aisHolder.getAis().getSQLJJars().values().iterator();
+
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                if(it.hasNext()) {
+                    SQLJJar jar = it.next();
+                    return new ValuesRow(rowType,
+                                         jar.getName().getSchemaName(),
+                                         jar.getName().getTableName(),
+                                         jar.getURL().toExternalForm(),
+                                         ++rowCounter /*hidden pk*/);
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
+    private class RoutineJarUsageFactory extends BasicFactoryBase {
+        public RoutineJarUsageFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            long count = 0;
+            for (Routine routine : aisHolder.getAis().getRoutines().values()) {
+                if (routine.getSQLJJar() != null) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private class Scan extends BaseScan {
+            final Iterator<Routine> it = aisHolder.getAis().getRoutines().values().iterator();
+
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                while (it.hasNext()) {
+                    Routine routine = it.next();
+                    SQLJJar jar = routine.getSQLJJar();
+                    if (jar != null) {
+                        return new ValuesRow(rowType,
+                                             routine.getName().getSchemaName(),
+                                             routine.getName().getTableName(),
+                                             jar.getName().getSchemaName(),
+                                             jar.getName().getTableName(),
+                                             ++rowCounter /*hidden pk*/);
+                    }
+                }
+                return null;
+            }
+        }
+    }
 
     //
     // Package, for testing
@@ -1164,6 +1382,49 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(view_schema, view_name) references VIEWS (schema_name, table_name)
         //foreign key(table_schema, table_name) references TABLES (schema_name, table_name)
 
+        builder.userTable(ROUTINES)
+                .colString("routine_schema", IDENT_MAX, false)
+                .colString("routine_name", IDENT_MAX, false)
+                .colString("routine_type", IDENT_MAX, false)
+                .colText("routine_definition", true)
+                .colString("external_name", PATH_MAX, true)
+                .colString("language", IDENT_MAX, false)
+                .colString("calling_convention", IDENT_MAX, false)
+                .colString("is_deterministic", YES_NO_MAX, false)
+                .colString("sql_data_access", IDENT_MAX, false)
+                .colString("is_null_call", YES_NO_MAX, false)
+                .colBigInt("max_dynamic_result_sets", false);
+        //primary key(routine_schema, routine_name)
+
+        builder.userTable(PARAMETERS)
+                .colString("routine_schema", IDENT_MAX, false)
+                .colString("routine_name", IDENT_MAX, false)
+                .colString("parameter_name", IDENT_MAX, true)
+                .colBigInt("position", false)
+                .colString("type", 32, false)
+                .colBigInt("length", true)
+                .colBigInt("precision", true)
+                .colBigInt("scale", true)
+                .colString("parameter_mode", IDENT_MAX, false)
+                .colString("is_result", YES_NO_MAX, false);
+        //primary key(routine_schema, routine_name, parameter_name)
+        //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
+        //foreign key (type) references TYPES (type_name)
+
+        builder.userTable(JARS)
+                .colString("jar_schema", IDENT_MAX, false)
+                .colString("jar_name", IDENT_MAX, false)
+                .colString("java_path", PATH_MAX, true);
+        //primary key(jar_schema, jar_name)
+
+        builder.userTable(ROUTINE_JAR_USAGE)
+                .colString("routine_schema", IDENT_MAX, false)
+                .colString("routine_name", IDENT_MAX, false)
+                .colString("jar_schema", IDENT_MAX, false)
+                .colString("jar_name", IDENT_MAX, false);
+        //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
+        //foreign key(jar_schema, jar_name) references JARS (jar_schema, jar_name)
+
         return builder.ais(false);
     }
 
@@ -1181,5 +1442,9 @@ public class BasicInfoSchemaTablesServiceImpl
         attach(ais, doRegister, VIEWS, ViewsFactory.class);
         attach(ais, doRegister, VIEW_TABLE_USAGE, ViewTableUsageFactory.class);
         attach(ais, doRegister, VIEW_COLUMN_USAGE, ViewColumnUsageFactory.class);
+        attach(ais, doRegister, ROUTINES, RoutinesFactory.class);
+        attach(ais, doRegister, PARAMETERS, ParametersFactory.class);
+        attach(ais, doRegister, JARS, JarsFactory.class);
+        attach(ais, doRegister, ROUTINE_JAR_USAGE, RoutineJarUsageFactory.class);
     }
 }

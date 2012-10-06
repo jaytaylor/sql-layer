@@ -44,7 +44,9 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -88,6 +90,7 @@ import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
@@ -647,6 +650,26 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 return o2.getTableId().compareTo(o1.getTableId());
             }
         });
+        List<Routine> routinesToDrop = new ArrayList<Routine>();
+        for (Routine routine : ais.getRoutines().values()) {
+            if (routine.getName().getSchemaName().equals(schemaName)) {
+                routinesToDrop.add(routine);
+            }
+        }
+        List<SQLJJar> jarsToDrop = new ArrayList<SQLJJar>();
+        for (SQLJJar jar : ais.getSQLJJars().values()) {
+            if (jar.getName().getSchemaName().equals(schemaName)) {
+                boolean anyOutside = false;
+                for (Routine routine : jar.getRoutines()) {
+                    if (!routine.getName().getSchemaName().equals(schemaName)) {
+                        anyOutside = true;
+                        break;
+                    }
+                }
+                if (!anyOutside)
+                    jarsToDrop.add(jar);
+            }
+        }
         // Do the actual dropping
         for(UserTable table : tablesToDrop) {
             dropTable(session, table.getName());
@@ -656,6 +679,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         for (Sequence sequence : sequencesToDrop) {
             dropSequence(session, sequence.getSequenceName());
+        }
+        for (Routine routine : routinesToDrop) {
+            dropRoutine(session, routine.getName());
+        }
+        for (SQLJJar jar : jarsToDrop) {
+            dropSQLJJar(session, jar.getName());
         }
     }
 
@@ -937,6 +966,33 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void dropView(Session session, TableName viewName)
     {
         schemaManager().dropView(session, viewName);
+    }
+
+    @Override
+    public void createRoutine(Session session, Routine routine)
+    {
+        schemaManager().createRoutine(session, routine);
+    }
+
+    @Override
+    public void dropRoutine(Session session, TableName routineName)
+    {
+        schemaManager().dropRoutine(session, routineName);
+    }
+
+    @Override
+    public void createSQLJJar(Session session, SQLJJar sqljJar) {
+        schemaManager().createSQLJJar(session, sqljJar);
+    }
+    
+    @Override
+    public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
+        schemaManager().replaceSQLJJar(session, sqljJar);
+    }
+    
+    @Override
+    public void dropSQLJJar(Session session, TableName jarName) {
+        schemaManager().dropSQLJJar(session, jarName);
     }
 
     private void checkCursorsForDDLModification(Session session, Table table) {

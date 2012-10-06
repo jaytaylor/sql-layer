@@ -33,7 +33,9 @@ import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
@@ -198,6 +200,21 @@ public interface SchemaManager {
     
     /** Drop the given sequence from the current AIS. */
     void dropSequence(Session session, Sequence sequence);
+
+    /** Add the Routine to the current AIS */
+    void createRoutine(Session session, Routine routine);
+    
+    /** Drop the given routine from the current AIS. */
+    void dropRoutine(Session session, TableName routineName);
+
+    /** Add an SQL/J jar to the current AIS. */
+    void createSQLJJar(Session session, SQLJJar sqljJar);
+    
+    /** Update an SQL/J jar in the current AIS. */
+    void replaceSQLJJar(Session session, SQLJJar sqljJar);
+    
+    /** Drop the given SQL/J jar from the current AIS. */
+    void dropSQLJJar(Session session, TableName jarName);
 
     // TODO: PSSM should handle this itself...
     void rollbackAIS(Session session, AkibanInformationSchema replacementAIS,

@@ -658,4 +658,22 @@ public class AISMerge {
         newAIS.freeze();
         return newAIS;
     }    
+
+    public static AkibanInformationSchema mergeRoutine(AkibanInformationSchema oldAIS,
+                                                       Routine routine) {
+        AkibanInformationSchema newAIS = copyAISForAdd(oldAIS);
+        newAIS.addRoutine(routine);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
+
+    public static AkibanInformationSchema mergeSQLJJar(AkibanInformationSchema oldAIS,
+                                                       SQLJJar sqljJar) {
+        AkibanInformationSchema newAIS = copyAISForAdd(oldAIS);
+        newAIS.addSQLJJar(sqljJar);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
 }

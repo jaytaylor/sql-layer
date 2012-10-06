@@ -26,6 +26,8 @@
 
 package com.akiban.ais.model;
 
+import java.net.URL;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -276,6 +278,56 @@ public class AISBuilder {
                                     childColumnName));
             join.addJoinColumn(parentColumn, childColumn);
         }
+    }
+
+    public void routine(String schemaName, String routineName,
+                        String language, Routine.CallingConvention callingConvention) {
+        LOG.info("routine: {}.{} ", schemaName, routineName);
+        Routine routine = Routine.create(ais, schemaName, routineName,
+                                               language, callingConvention);
+    }
+    
+    public void parameter(String schemaName, String routineName, 
+                          String parameterName, Parameter.Direction direction, 
+                          String typeName, Long typeParameter1, Long typeParameter2) {
+        LOG.info("parameter: {} {}", concat(schemaName, routineName), parameterName);
+        Routine routine = ais.getRoutine(schemaName, routineName);
+        checkFound(routine, "creating parameter", "routine", 
+                   concat(schemaName, routineName));
+        Type type = ais.getType(typeName);
+        checkFound(type, "creating parameter", "type", typeName);
+        Parameter parameter = Parameter.create(routine, parameterName, direction,
+                                               type, typeParameter1, typeParameter2);
+    }
+
+    public void routineExternalName(String schemaName, String routineName,
+                                    String jarSchema, String jarName, 
+                                    String className, String methodName) {
+        LOG.info("external name: {} {}", concat(schemaName, routineName), concat(jarName, className, methodName));
+        Routine routine = ais.getRoutine(schemaName, routineName);
+        checkFound(routine, "external name", "routine", 
+                   concat(schemaName, routineName));
+        SQLJJar sqljJar = null;
+        if (jarName != null) {
+            sqljJar = ais.getSQLJJar(jarSchema, jarName);
+            checkFound(sqljJar, "external name", "SQJ/J jar", 
+                       concat(jarSchema, jarName));
+        }
+        routine.setExternalName(sqljJar, className, methodName);
+    }
+
+    public void routineDefinition(String schemaName, String routineName,
+                                  String definition) {
+        LOG.info("external name: {} {}", concat(schemaName, routineName), definition);
+        Routine routine = ais.getRoutine(schemaName, routineName);
+        checkFound(routine, "external name", "routine", 
+                   concat(schemaName, routineName));
+        routine.setDefinition(definition);
+    }
+
+    public void sqljJar(String schemaName, String jarName, URL url) {
+        LOG.info("SQL/J jar: {}.{} ", schemaName, jarName);
+        SQLJJar sqljJar = SQLJJar.create(ais, schemaName, jarName, url);
     }
 
     public void basicSchemaIsComplete() {

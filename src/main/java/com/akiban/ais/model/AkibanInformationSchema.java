@@ -262,6 +262,35 @@ public class AkibanInformationSchema implements Traversable
         return sequences.get(sequenceName);
     }
     
+    public Map<TableName, Routine> getRoutines()
+    {
+        return routines;
+    }
+    
+    public Routine getRoutine(final String schemaName, final String routineName)
+    {
+        return getRoutine(new TableName(schemaName, routineName));
+    }
+    
+    public Routine getRoutine(final TableName routineName)
+    {
+        return routines.get(routineName);
+    }
+    
+    public Map<TableName, SQLJJar> getSQLJJars() {
+        return sqljJars;
+    }
+    
+    public SQLJJar getSQLJJar(final String schemaName, final String jarName)
+    {
+        return getSQLJJar(new TableName(schemaName, jarName));
+    }
+    
+    public SQLJJar getSQLJJar(final TableName name)
+    {
+        return sqljJars.get(name);
+    }
+    
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
@@ -398,6 +427,33 @@ public class AkibanInformationSchema implements Traversable
         schema.addSequence(seq);
     }
     
+    public void addRoutine(Routine routine)
+    {
+        TableName routineName = routine.getName();
+        routines.put(routineName, routine);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(routineName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(routineName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addRoutine(routine);
+    }
+    
+    public void addSQLJJar(SQLJJar sqljJar) {
+        TableName jarName = sqljJar.getName();
+        sqljJars.put(jarName, sqljJar);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(jarName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(jarName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addSQLJJar(sqljJar);
+    }
+
     public void deleteGroupAndGroupTable(Group group)
     {
         Group removedGroup = groups.remove(group.getName());
@@ -655,11 +711,27 @@ public class AkibanInformationSchema implements Traversable
         }
     }
 
+    public void removeRoutine(TableName name) {
+        routines.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeRoutine(name.getTableName());
+        }
+    }
+
     public void removeView(TableName name) {
         views.remove(name);
         Schema schema = getSchema(name.getSchemaName());
         if (schema != null) {
             schema.removeView(name.getTableName());
+        }
+    }
+
+    public void removeSQLJJar(TableName jarName) {
+        sqljJars.remove(jarName);
+        Schema schema = getSchema(jarName.getSchemaName());
+        if (schema != null) {
+            schema.removeRoutine(jarName.getTableName());
         }
     }
 
@@ -673,6 +745,8 @@ public class AkibanInformationSchema implements Traversable
     private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
     private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
     private final Map<TableName, View> views = new TreeMap<TableName, View>();
+    private final Map<TableName, Routine> routines = new TreeMap<TableName, Routine>();
+    private final Map<TableName, SQLJJar> sqljJars = new TreeMap<TableName, SQLJJar>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();

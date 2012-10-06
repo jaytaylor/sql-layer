@@ -39,7 +39,10 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -55,6 +58,8 @@ import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -158,11 +163,14 @@ public class ProtobufReader {
             // Requires no tables, does not load indexes
             loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
             loadViews(pbSchema.getSchemaName(), pbSchema.getViewsList());
+            loadRoutines(pbSchema.getSchemaName(), pbSchema.getRoutinesList());
+            loadSQLJJars(pbSchema.getSchemaName(), pbSchema.getSqljJarsList());
         }
 
         // Assume no ordering of schemas or tables, load joins and view refs second
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             loadTableJoins(pbSchema.getSchemaName(), pbSchema.getTablesList());
+            loadExternalRoutines(pbSchema.getSchemaName(), pbSchema.getRoutinesList());
         }
 
         // Hook up groups, create group tables and indexes after all in place
@@ -459,6 +467,108 @@ public class ProtobufReader {
         return Index.KEY_CONSTRAINT;
     }
 
+    private void loadRoutines(String schema, Collection<AISProtobuf.Routine> pbRoutines) {
+        for (AISProtobuf.Routine pbRoutine : pbRoutines) {
+            hasRequiredFields(pbRoutine);
+            Routine routine = Routine.create(
+                    destAIS,
+                    schema,
+                    pbRoutine.getRoutineName(),
+                    pbRoutine.getLanguage(),
+                    convertRoutineCallingConvention(pbRoutine.getCallingConvention())
+            );
+            loadParameters(routine, pbRoutine.getParametersList());
+            if (pbRoutine.hasDefinition())
+                routine.setDefinition(pbRoutine.getDefinition());
+        }
+    }
+    
+    private void loadParameters(Routine routine, Collection<AISProtobuf.Parameter> pbParameters) {
+        for (AISProtobuf.Parameter pbParameter : pbParameters) {
+            hasRequiredFields(pbParameter);
+            Parameter parameter = Parameter.create(
+                routine,
+                pbParameter.getParameterName(),
+                convertParameterDirection(pbParameter.getDirection()),
+                destAIS.getType(pbParameter.getTypeName()),
+                pbParameter.hasTypeParam1() ? pbParameter.getTypeParam1() : null,
+                pbParameter.hasTypeParam2() ? pbParameter.getTypeParam2() : null
+            );
+        }
+    }
+
+    private static Routine.CallingConvention convertRoutineCallingConvention(AISProtobuf.RoutineCallingConvention routineCallingConvention) {
+        switch (routineCallingConvention) {
+        case JAVA:
+        default:
+            return Routine.CallingConvention.JAVA;
+        case LOADABLE_PLAN: 
+            return Routine.CallingConvention.LOADABLE_PLAN;
+        }
+    }
+
+    private static Parameter.Direction convertParameterDirection(AISProtobuf.ParameterDirection parameterDirection) {
+        switch (parameterDirection) {
+        case IN:
+        default:
+            return Parameter.Direction.IN;
+        case OUT:
+            return Parameter.Direction.OUT;
+        case INOUT:
+            return Parameter.Direction.INOUT;
+        case RETURN:
+            return Parameter.Direction.RETURN;
+        }
+    }
+
+    private void loadSQLJJars(String schema, Collection<AISProtobuf.SQLJJar> pbJars) {
+        for (AISProtobuf.SQLJJar pbJar : pbJars) {
+            hasRequiredFields(pbJar);
+            try {
+                SQLJJar sqljJar = SQLJJar.create(destAIS, 
+                                                 schema,
+                                                 pbJar.getJarName(),
+                                                 new URL(pbJar.getUrl()));
+            }
+            catch (MalformedURLException ex) {
+                throw new ProtobufReadException(
+                       pbJar.getDescriptorForType().getFullName(),
+                       ex.toString()
+                );
+            }
+        }        
+    }
+
+    private void loadExternalRoutines(String schema, Collection<AISProtobuf.Routine> pbRoutines) {
+        for (AISProtobuf.Routine pbRoutine : pbRoutines) {
+            if (pbRoutine.hasClassName()) {
+                SQLJJar sqljJar = null;
+                String className = pbRoutine.getClassName();
+                String methodName = null;
+                Routine routine = destAIS.getRoutine(schema, pbRoutine.getRoutineName());
+                if (routine == null) {
+                    throw new ProtobufReadException(
+                            pbRoutine.getDescriptorForType().getFullName(),
+                            String.format("%s not found", pbRoutine.getRoutineName())
+                    );
+                }
+                if (pbRoutine.hasJarName()) {
+                    sqljJar = destAIS.getSQLJJar(pbRoutine.getJarName().getSchemaName(),
+                                                 pbRoutine.getJarName().getTableName());
+                    if (sqljJar == null) {
+                        throw new ProtobufReadException(
+                               pbRoutine.getDescriptorForType().getFullName(),
+                               String.format("%s references JAR %s", pbRoutine.getRoutineName(), pbRoutine.getJarName())
+                        );
+                    }
+                }
+                if (pbRoutine.hasMethodName())
+                    methodName = pbRoutine.getMethodName();
+                routine.setExternalName(sqljJar, className, methodName);
+            }
+        }
+    }
+
     private PendingOSC loadPendingOSC(AISProtobuf.PendingOSC pbPendingOSC) {
         hasRequiredFields(pbPendingOSC);
         List<TableChange> columnChanges = new ArrayList<TableChange>();
@@ -552,6 +662,8 @@ public class ProtobufReader {
                 AISProtobuf.Schema.GROUPS_FIELD_NUMBER,
                 AISProtobuf.Schema.SEQUENCES_FIELD_NUMBER,
                 AISProtobuf.Schema.VIEWS_FIELD_NUMBER,
+                AISProtobuf.Schema.ROUTINES_FIELD_NUMBER,
+                AISProtobuf.Schema.SQLJJARS_FIELD_NUMBER,
                 AISProtobuf.Schema.CHARCOLL_FIELD_NUMBER
         );
     }
@@ -645,6 +757,36 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbReference,
                 AISProtobuf.ColumnReference.COLUMNS_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.Routine pbRoutine) {
+        requireAllFieldsExcept(
+                pbRoutine,
+                AISProtobuf.Routine.PARAMETERS_FIELD_NUMBER,
+                AISProtobuf.Routine.JARNAME_FIELD_NUMBER,
+                AISProtobuf.Routine.CLASSNAME_FIELD_NUMBER,
+                AISProtobuf.Routine.METHODNAME_FIELD_NUMBER,
+                AISProtobuf.Routine.DEFINITION_FIELD_NUMBER,
+                AISProtobuf.Routine.DESCRIPTION_FIELD_NUMBER,
+                AISProtobuf.Routine.PROTECTED_FIELD_NUMBER,
+                AISProtobuf.Routine.SQLALLOWED_FIELD_NUMBER,
+                AISProtobuf.Routine.DYNAMICRESULTSETS_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.Parameter pbParameter) {
+        requireAllFieldsExcept(
+                pbParameter,
+                AISProtobuf.Parameter.TYPEPARAM1_FIELD_NUMBER,
+                AISProtobuf.Parameter.TYPEPARAM2_FIELD_NUMBER,
+                AISProtobuf.Parameter.PARAMETERNAME_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.SQLJJar pbJar) {
+        requireAllFieldsExcept(
+                pbJar
         );
     }
 

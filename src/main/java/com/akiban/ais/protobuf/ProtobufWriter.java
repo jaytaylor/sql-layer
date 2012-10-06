@@ -36,8 +36,11 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
@@ -62,6 +65,8 @@ public class ProtobufWriter {
         /** Called for all GroupIndexes and all table indexes where getSelected(UserTable) is not null **/
         boolean isSelected(Index index);
         boolean isSelected(Sequence sequence);
+        boolean isSelected(Routine routine);
+        boolean isSelected(SQLJJar sqljJar);
     }
 
     public static final WriteSelector ALL_SELECTOR = new WriteSelector() {
@@ -89,6 +94,16 @@ public class ProtobufWriter {
         public boolean isSelected(Sequence sequence) {
             return true;
         }
+
+        @Override
+        public boolean isSelected(Routine routine) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(SQLJJar sqljJar) {
+            return true;
+        }
     };
 
     public static abstract class TableFilterSelector implements WriteSelector {
@@ -109,6 +124,16 @@ public class ProtobufWriter {
 
         @Override
         public boolean isSelected(Sequence sequence) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(Routine routine) {
+            return true;
+        }
+
+        @Override
+        public boolean isSelected(SQLJJar sqljJar) {
             return true;
         }
     }
@@ -156,6 +181,16 @@ public class ProtobufWriter {
         @Override 
         public boolean isSelected(Sequence sequence) {
             return schemaName.equals(sequence.getSequenceName().getSchemaName());
+        }
+        
+        @Override 
+        public boolean isSelected(Routine routine) {
+            return schemaName.equals(routine.getName().getSchemaName());
+        }
+
+        @Override
+        public boolean isSelected(SQLJJar sqljJar) {
+            return schemaName.equals(sqljJar.getName().getSchemaName());
         }
     }
 
@@ -262,6 +297,14 @@ public class ProtobufWriter {
             }
         }
         
+        for(View view : schema.getViews().values()) {
+            view = (View)selector.getSelected(view);
+            if(view != null) {
+                writeView(schemaBuilder, view);
+                isEmpty = false;
+            }
+        }
+
         for (Sequence sequence : schema.getSequences().values()) {
             if (selector.isSelected (sequence)) { 
                 writeSequence(schemaBuilder, sequence);
@@ -269,10 +312,16 @@ public class ProtobufWriter {
             }
         }
 
-        for(View view : schema.getViews().values()) {
-            view = (View)selector.getSelected(view);
-            if(view != null) {
-                writeView(schemaBuilder, view);
+        for (Routine routine : schema.getRoutines().values()) {
+            if (selector.isSelected(routine)) { 
+                writeRoutine(schemaBuilder, routine);
+                isEmpty = false;
+            }
+        }
+
+        for (SQLJJar sqljJar : schema.getSQLJJars().values()) {
+            if (selector.isSelected(sqljJar)) { 
+                writeSQLJJar(schemaBuilder, sqljJar);
                 isEmpty = false;
             }
         }
@@ -567,4 +616,79 @@ public class ProtobufWriter {
         }
         schemaBuilder.addSequences (sequenceBuilder.build());
     }
+
+    private static void writeRoutine(AISProtobuf.Schema.Builder schemaBuilder, Routine routine) {
+        AISProtobuf.Routine.Builder routineBuilder = AISProtobuf.Routine.newBuilder()
+            .setRoutineName(routine.getName().getTableName())
+            .setLanguage(routine.getLanguage())
+            .setCallingConvention(convertRoutineCallingConvention(routine.getCallingConvention()));
+        for (Parameter parameter : routine.getParameters()) {
+            writeParameter(routineBuilder, parameter);
+        }
+        if (routine.getReturnValue() != null) {
+            writeParameter(routineBuilder, routine.getReturnValue());
+        }
+        SQLJJar sqljJar = routine.getSQLJJar();
+        if (sqljJar != null) {
+            routineBuilder.setJarName(AISProtobuf.TableName.newBuilder()
+                                      .setSchemaName(sqljJar.getName().getSchemaName())
+                                      .setTableName(sqljJar.getName().getTableName())
+                                      .build());
+        }
+        if (routine.getClassName() != null)
+            routineBuilder.setClassName(routine.getClassName());
+        if (routine.getMethodName() != null)
+            routineBuilder.setMethodName(routine.getMethodName());
+        if (routine.getDefinition() != null)
+            routineBuilder.setDefinition(routine.getDefinition());
+        schemaBuilder.addRoutines(routineBuilder.build());
+    }
+
+    private static void writeParameter(AISProtobuf.Routine.Builder routineBuilder, Parameter parameter) {
+        AISProtobuf.Parameter.Builder parameterBuilder = AISProtobuf.Parameter.newBuilder()
+            .setDirection(convertParameterDirection(parameter.getDirection()))
+            .setTypeName(parameter.getType().name());
+        if (parameter.getTypeParameter1() != null) {
+            parameterBuilder.setTypeParam1(parameter.getTypeParameter1());
+        }
+        if (parameter.getTypeParameter2() != null) {
+            parameterBuilder.setTypeParam2(parameter.getTypeParameter2());
+        }
+        if (parameter.getName() != null) {
+            parameterBuilder.setParameterName(parameter.getName());
+        }
+        routineBuilder.addParameters(parameterBuilder.build());
+    }
+
+    private static AISProtobuf.RoutineCallingConvention convertRoutineCallingConvention(Routine.CallingConvention routineCallingConvention) {
+        switch (routineCallingConvention) {
+        case JAVA:
+        default:
+            return AISProtobuf.RoutineCallingConvention.JAVA;
+        case LOADABLE_PLAN:
+            return AISProtobuf.RoutineCallingConvention.LOADABLE_PLAN;
+        }
+    }
+
+    private static AISProtobuf.ParameterDirection convertParameterDirection(Parameter.Direction parameterDirection) {
+        switch (parameterDirection) {
+        case IN:
+        default:
+            return AISProtobuf.ParameterDirection.IN;
+        case OUT:
+            return AISProtobuf.ParameterDirection.OUT;
+        case INOUT:
+            return AISProtobuf.ParameterDirection.INOUT;
+        case RETURN:
+            return AISProtobuf.ParameterDirection.RETURN;
+        }
+    }
+
+    private static void writeSQLJJar(AISProtobuf.Schema.Builder schemaBuilder, SQLJJar sqljJar) {
+        AISProtobuf.SQLJJar.Builder jarBuilder = AISProtobuf.SQLJJar.newBuilder()
+            .setJarName(sqljJar.getName().getTableName())
+            .setUrl(sqljJar.getURL().toExternalForm());
+        schemaBuilder.addSqljJars(jarBuilder.build());
+    }
+
 }
