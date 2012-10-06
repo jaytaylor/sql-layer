@@ -31,6 +31,13 @@ import com.akiban.sql.server.ServerSession;
 
 public class SQLJJarDeployer
 {
+    public static final String MANIFEST_ATTRIBUTE = "SQLJDeploymentDescriptor";
+    public static final String DESCRIPTOR_FILE = "SQLActions [] = { "...", ... }";
+    public static final String BEGIN_INSTALL = "BEGIN INSTALL";
+    public static final String END_INSTALL = "END INSTALL";
+    public static final String BEGIN_REMOVE = "BEGIN REMOVE";
+    public static final String END_REMOVE = "END REMOVE";
+
     private ServerSession server;
     private TableName jarName;
 
@@ -43,5 +50,25 @@ public class SQLJJarDeployer
     }
    
     public void undeploy() {
+    }
+
+    private String[] parseDeploymentDescriptor() {
+        ClassLoader classLoader = server.getRoutineLoader().loadSQLJJar(jarName);
+        InputStream mstr = classLoader.getResourceAsStream("META-INF/MANIFEST.MF");
+        if (mstr == null) return null;
+        Manifest manifest = new Manifest(mstr);
+        for (Map.Entry<String,Attributes> entry : manifest.getEntries()) {
+            String val = entry.getValue().getValue(MANIFEST_ATTRIBUTE);
+            if ((val != null) && Boolean.parseBoolean(val)) {
+                InputStream istr = classLoader.getResourceAsStream(entry.getKey());
+                if (istr != null) {
+                    return parseDeploymentDescriptor(istr);
+                }
+            }
+        }
+        return null;
+    }
+
+    private String[] parseDeploymentDescriptor(InputStream istr) {
     }
 }
