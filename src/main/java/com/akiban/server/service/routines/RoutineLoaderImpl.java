@@ -26,12 +26,22 @@
 
 package com.akiban.server.service.routines;
 
+import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.model.aisb2.NewRoutineBuilder;
 import com.akiban.server.service.Service;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
 
+import com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan;
+import com.akiban.qp.loadableplan.std.PersistitCLILoadablePlan;
+
 import javax.inject.Inject;
 import com.google.inject.Singleton;
+
+import java.util.Collection;
 
 @Singleton
 public final class RoutineLoaderImpl implements RoutineLoader, Service {
@@ -50,14 +60,46 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
     @Override
     public void start() {
+        registerSystemProcedures();
     }
 
     @Override
     public void stop() {
+        if (false)              // Only started once for server and AIS wiped for tests.
+            unregisterSystemProcedures();
     }
 
     @Override
     public void crash() {
         stop();
+    }
+
+    public static final int IDENT_MAX = 128;
+    public static final int COMMAND_MAX = 1024;
+
+    private void registerSystemProcedures() {
+        NewAISBuilder aisb = AISBBasedBuilder.create();
+
+        aisb.defaultSchema(TableName.SYS_SCHEMA);
+        aisb.procedure("dump_group")
+            .paramStringIn("SCHEMA_NAME", IDENT_MAX)
+            .paramStringIn("TABLE_NAME", IDENT_MAX)
+            .paramLongIn("INSERT_MAX_ROW_COUNT")
+            .externalName("com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan");
+        aisb.procedure("persistitcli")
+            .paramStringIn("COMMAND", COMMAND_MAX)
+            .externalName("com.akiban.qp.loadableplan.std.PersistitCLILoadablePlan");
+
+        Collection<Routine> procs = aisb.ais().getRoutines().values();
+        for (Routine proc : procs) {
+            schemaManager.registerSystemRoutine(proc);
+        }
+    }
+
+    private void unregisterSystemProcedures() {
+        schemaManager.unRegisterSystemRoutine(new TableName(TableName.SYS_SCHEMA,
+                                                            "dump_group"));
+        schemaManager.unRegisterSystemRoutine(new TableName(TableName.SYS_SCHEMA,
+                                                            "persistitcli"));
     }
 }
