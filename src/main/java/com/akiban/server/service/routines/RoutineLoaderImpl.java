@@ -28,9 +28,11 @@ package com.akiban.server.service.routines;
 
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewRoutineBuilder;
+import com.akiban.server.error.NoSuchSQLJJarException;
 import com.akiban.server.service.Service;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
@@ -41,19 +43,51 @@ import com.akiban.qp.loadableplan.std.PersistitCLILoadablePlan;
 import javax.inject.Inject;
 import com.google.inject.Singleton;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @Singleton
 public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
-    private AisHolder aisHolder;
-    private SchemaManager schemaManager;
+    private final AisHolder aisHolder;
+    private final SchemaManager schemaManager;
+    private final Map<TableName,ClassLoader> classLoaders = new HashMap<TableName,ClassLoader>();
 
     @Inject @SuppressWarnings("unused")
     public RoutineLoaderImpl(AisHolder aisHolder, 
                              SchemaManager schemaManager) {
         this.aisHolder = aisHolder;
         this.schemaManager = schemaManager;
+    }
+
+    /* RoutineLoader */
+
+    @Override
+    public ClassLoader loadSQLJJar(TableName jarName) {
+        if (jarName == null)
+            return getClass().getClassLoader();
+        synchronized (classLoaders) {
+            ClassLoader loader = classLoaders.get(jarName);
+            if (loader != null)
+                return loader;
+
+            SQLJJar sqljJar = aisHolder.getAis().getSQLJJar(jarName);
+            if (sqljJar == null)
+                throw new NoSuchSQLJJarException(jarName);
+            loader = new URLClassLoader(new URL[] { sqljJar.getURL() });
+            classLoaders.put(jarName, loader);
+            return loader;
+        }
+    }
+
+    @Override
+    public void unloadSQLJJar(TableName jarName) {
+        synchronized (classLoaders) {
+            classLoaders.remove(jarName);
+        }        
     }
 
     /* Service */
@@ -75,6 +109,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     public static final int IDENT_MAX = 128;
+    public static final int PATH_MAX = 1024;
     public static final int COMMAND_MAX = 1024;
 
     private void registerSystemProcedures() {
@@ -82,13 +117,33 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
         aisb.defaultSchema(TableName.SYS_SCHEMA);
         aisb.procedure("dump_group")
-            .paramStringIn("SCHEMA_NAME", IDENT_MAX)
-            .paramStringIn("TABLE_NAME", IDENT_MAX)
-            .paramLongIn("INSERT_MAX_ROW_COUNT")
+            .language("java", Routine.CallingConvention.LOADABLE_PLAN)
+            .paramStringIn("schema_name", IDENT_MAX)
+            .paramStringIn("table_name", IDENT_MAX)
+            .paramLongIn("insert_max_row_count")
             .externalName("com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan");
         aisb.procedure("persistitcli")
-            .paramStringIn("COMMAND", COMMAND_MAX)
+            .language("java", Routine.CallingConvention.LOADABLE_PLAN)
+            .paramStringIn("command", COMMAND_MAX)
             .externalName("com.akiban.qp.loadableplan.std.PersistitCLILoadablePlan");
+
+        aisb.defaultSchema(TableName.SQLJ_SCHEMA);
+        aisb.procedure("install_jar")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramStringIn("url", PATH_MAX)
+            .paramStringIn("jar", PATH_MAX)
+            .paramLongIn("deploy")
+            .externalName("com.akiban.server.service.routines.SQLJJarRoutines", "install");
+        aisb.procedure("replace_jar")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramStringIn("url", PATH_MAX)
+            .paramStringIn("jar", PATH_MAX)
+            .externalName("com.akiban.server.service.routines.SQLJJarRoutines", "replace");
+        aisb.procedure("remove_jar")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramStringIn("jar", PATH_MAX)
+            .paramLongIn("undeploy")
+            .externalName("com.akiban.server.service.routines.SQLJJarRoutines", "remove");
 
         Collection<Routine> procs = aisb.ais().getRoutines().values();
         for (Routine proc : procs) {

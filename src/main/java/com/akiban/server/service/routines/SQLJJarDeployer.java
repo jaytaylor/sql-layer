@@ -27,9 +27,21 @@
 package com.akiban.server.service.routines;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.sql.server.ServerSession;
 
-public interface RoutineLoader
+public class SQLJJarDeployer
 {
-    public ClassLoader loadSQLJJar(TableName jarName);
-    public void unloadSQLJJar(TableName jarName);
+    private ServerSession server;
+    private TableName jarName;
+
+    public SQLJJarDeployer(ServerSession server, TableName jarName) {
+        this.server = server;
+        this.jarName = jarName;
+    }
+
+    public void deploy() {
+    }
+   
+    public void undeploy() {
+    }
 }

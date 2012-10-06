@@ -42,6 +42,7 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
@@ -159,4 +160,7 @@ public interface ServerSession
 
     /** Get the overload resolver */
     public T3RegistryService t3RegistryService();
+
+    /** Get the stored procedure cache */
+    public RoutineLoader getRoutineLoader();
 }
