@@ -35,7 +35,6 @@ import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
@@ -115,9 +114,6 @@ public interface ServerSession
 
     /** Return the tree service. */
     public TreeService getTreeService();
-
-    /** Return the LoadablePlan with the given name. */
-    public LoadablePlan<?> loadablePlan(String planName);
 
     /** Is a transaction open? */
     public boolean isTransactionActive();
