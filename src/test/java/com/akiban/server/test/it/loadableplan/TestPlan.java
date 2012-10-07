@@ -42,27 +42,15 @@ import static com.akiban.qp.operator.API.project_Default;
 
 /** A loadable operator plan.
  * <code><pre>
-psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
 DROP TABLE test;
 CREATE TABLE test(id INT PRIMARY KEY NOT NULL, value VARCHAR(10));
 INSERT INTO test VALUES(1, 'aaa'), (2, 'bbb');
-EOF
-java -jar jmxterm-1.0-alpha-4-uber.jar -l localhost:8082 -n <<EOF
-run -b com.akiban:type=PostgresServer loadPlan `pwd`/`ls target/akiban-server-*-SNAPSHOT-tests.jar` com.akiban.server.test.it.loadableplan.TestPlan
-EOF
-psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
-call test('666')
-EOF
+CREATE PROCEDURE test(IN n BIGINT) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'com.akiban.server.test.it.loadableplan.Plan';
+CALL test(666)
  * </pre></code> 
  */
 public class TestPlan extends LoadableOperator
 {
-    @Override
-    public String name()
-    {
-        return "test";
-    }
-
     @Override
     public Operator plan()
     {

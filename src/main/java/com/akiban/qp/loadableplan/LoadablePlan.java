@@ -35,8 +35,6 @@ import java.util.List;
 
 public abstract class LoadablePlan<T>
 {
-    public abstract String name();
-
     public abstract T plan();
 
     public abstract int[] jdbcTypes();
