@@ -145,6 +145,29 @@ public class RoutineDDL {
                                       createAlias.getDefinition());
         }
 
+        if (aliasInfo.getSQLAllowed() != null) {
+            Routine.SQLAllowed sqlAllowed;
+            switch (aliasInfo.getSQLAllowed()) {
+            case MODIFIES_SQL_DATA:
+                sqlAllowed = Routine.SQLAllowed.MODIFIES_SQL_DATA;
+                break;
+            case READS_SQL_DATA:
+                sqlAllowed = Routine.SQLAllowed.READS_SQL_DATA;
+                break;
+            case CONTAINS_SQL:
+                sqlAllowed = Routine.SQLAllowed.CONTAINS_SQL;
+                break;
+            case NO_SQL:
+                sqlAllowed = Routine.SQLAllowed.NO_SQL;
+                break;
+            default:
+                throw new InvalidRoutineException(schemaName, routineName, "unsupported " + aliasInfo.getSQLAllowed().getSQL());
+            }
+            builder.routineSQLAllowed(schemaName, routineName, sqlAllowed);
+        }
+        builder.routineDynamicResultSets(schemaName, routineName,
+                                         aliasInfo.getMaxDynamicResultSets());
+        
         Routine routine = builder.akibanInformationSchema().getRoutine(tableName);
         ddlFunctions.createRoutine(session, routine);
     }

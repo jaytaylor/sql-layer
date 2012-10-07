@@ -36,6 +36,10 @@ public class Routine
         JAVA, LOADABLE_PLAN
     }
 
+    public static enum SQLAllowed {
+        MODIFIES_SQL_DATA, READS_SQL_DATA, CONTAINS_SQL, NO_SQL
+    }
+
     public static Routine create(AkibanInformationSchema ais, 
                                  String schemaName, String name,
                                  String language, CallingConvention callingConvention) {
@@ -114,6 +118,14 @@ public class Routine
         return definition;
     }
 
+    public SQLAllowed getSQLAllowed() {
+        return sqlAllowed;
+    }
+
+    public int getDynamicResultSets() {
+        return dynamicResultSets;
+    }
+
     protected void checkMutability() {
         ais.checkMutability();
     }
@@ -161,6 +173,14 @@ public class Routine
         this.definition = definition;
     }
 
+    public void setSQLAllowed(SQLAllowed sqlAllowed) {
+        this.sqlAllowed = sqlAllowed;
+    }
+
+    public void setDynamicResultSets(int dynamicResultSets) {
+        this.dynamicResultSets = dynamicResultSets;
+    }
+
     // State
     protected final AkibanInformationSchema ais;
     protected final TableName name;
@@ -171,4 +191,6 @@ public class Routine
     protected SQLJJar sqljJar;
     protected String className, methodName;
     protected String definition;
+    protected SQLAllowed sqlAllowed;
+    protected int dynamicResultSets = 0;
 }
