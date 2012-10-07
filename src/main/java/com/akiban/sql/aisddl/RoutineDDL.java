@@ -121,6 +121,11 @@ public class RoutineDDL {
                     jarSchema = jarName.substring(0, idx);
                     jarName = jarName.substring(idx + 1);
                 }
+                else if (jarName.equals("thisjar")) {
+                    TableName thisJar = (TableName)createAlias.getUserData();
+                    jarSchema = thisJar.getSchemaName();
+                    jarName = thisJar.getTableName();
+                }
             }
             if (jarName != null) {
                 AkibanInformationSchema ais = ddlFunctions.getAIS(session);

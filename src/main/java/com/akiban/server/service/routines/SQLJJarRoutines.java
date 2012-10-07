@@ -50,7 +50,7 @@ public class SQLJJarRoutines
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
         server.getDXL().ddlFunctions().createSQLJJar(server.getSession(), sqljJar);
         if (deploy != 0) {
-            new SQLJJarDeployer(server, jarName).deploy();
+            new SQLJJarDeployer(context, jarName).deploy();
         }
     }
 
@@ -72,7 +72,7 @@ public class SQLJJarRoutines
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
         if (undeploy != 0) {
-            new SQLJJarDeployer(server, jarName).undeploy();
+            new SQLJJarDeployer(context, jarName).undeploy();
         }
         server.getRoutineLoader().unloadSQLJJar(jarName);
         server.getDXL().ddlFunctions().dropSQLJJar(server.getSession(), jarName);
