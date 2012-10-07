@@ -106,11 +106,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 Routine routine = aisHolder.getAis().getRoutine(routineName);
                 if (routine == null)
                     throw new NoSuchRoutineException(routineName);
-                SQLJJar sqljJar = routine.getSQLJJar();
-                if ((sqljJar == null) || 
-                    (routine.getCallingConvention() != Routine.CallingConvention.LOADABLE_PLAN))
+                if (routine.getCallingConvention() != Routine.CallingConvention.LOADABLE_PLAN)
                     throw new SQLJInstanceException(routineName, "Routine was not loadable plan");
-                ClassLoader classLoader = loadSQLJJar(sqljJar.getName());
+                TableName jarName = null;
+                if (routine.getSQLJJar() != null)
+                    jarName = routine.getSQLJJar().getName();
+                ClassLoader classLoader = loadSQLJJar(jarName);
                 try {
                     loadablePlan = (LoadablePlan<?>)
                         Class.forName(routine.getClassName(), true, classLoader).newInstance();
@@ -137,11 +138,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             Routine routine = aisHolder.getAis().getRoutine(routineName);
             if (routine == null)
                 throw new NoSuchRoutineException(routineName);
-            SQLJJar sqljJar = routine.getSQLJJar();
-            if ((sqljJar == null) || 
-                (routine.getCallingConvention() != Routine.CallingConvention.JAVA))
+            if (routine.getCallingConvention() != Routine.CallingConvention.JAVA)
                 throw new SQLJInstanceException(routineName, "Routine was not SQL/J");
-            ClassLoader classLoader = loadSQLJJar(sqljJar.getName());
+            TableName jarName = null;
+            if (routine.getSQLJJar() != null)
+                jarName = routine.getSQLJJar().getName();
+            ClassLoader classLoader = loadSQLJJar(jarName);
             Class<?> clazz;
             try {
                 clazz = Class.forName(routine.getClassName(), true, classLoader);

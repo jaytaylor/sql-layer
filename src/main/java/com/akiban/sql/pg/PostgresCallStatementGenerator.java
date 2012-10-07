@@ -28,9 +28,10 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerRoutineInvocation;
 
-import com.akiban.server.error.StalePlanException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.sql.parser.*;
+import com.akiban.sql.parser.CallStatementNode;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.StaticMethodCallNode;
 
 import java.util.List;
 

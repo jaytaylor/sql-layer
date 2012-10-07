@@ -57,10 +57,18 @@ public class ServerRoutineInvocation
 
     public static ServerRoutineInvocation of(ServerSession server,
                                              StaticMethodCallNode methodCall) {
-        String schemaName = methodCall.getJavaClassName();
-        if (schemaName == null)
+        String schemaName, routineName;
+        if (methodCall.getProcedureName() == null) {
+            schemaName = null;
+            routineName = methodCall.getMethodName();
+        }
+        else {
+            schemaName = methodCall.getProcedureName().getSchemaName();
+            routineName = methodCall.getProcedureName().getTableName();
+        }
+        if (schemaName == null) {
             schemaName = server.getDefaultSchemaName();
-        String routineName = methodCall.getMethodName();
+        }
         Routine routine = server.getAIS().getRoutine(schemaName, routineName);
         if (routine == null) return null;
         Object[] constantArgs = null;
@@ -136,11 +144,11 @@ public class ServerRoutineInvocation
             FromObjectValueSource value = new FromObjectValueSource();
             for (int i = 0; i < parameterArgs.length; i++) {
                 if (parameterArgs[i] < 0) {
-                    target.setValue(i, source.getValue(parameterArgs[i]));
-                }
-                else {
                     value.setReflectively(constantArgs[i]);
                     target.setValue(i, value);
+                }
+                else {
+                    target.setValue(i, source.getValue(parameterArgs[i]));
                 }
             }
         }

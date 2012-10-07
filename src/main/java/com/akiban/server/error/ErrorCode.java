@@ -230,7 +230,6 @@ public enum ErrorCode {
     // Class 35 - invalid condition number
     // Class 36 - cursor sensitivity exception
     // Class 38 - external routine exception
-    STALE_PLAN              ("38", "000", Importance.ERROR, StalePlanException.class),
     // Class 39 - external routine invocation
     // Class 3B - savepoint exception
     // Class 3C - ambiguous cursor name
