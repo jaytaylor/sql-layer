@@ -24,10 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
+
 package com.akiban.server.error;
 
-public class StalePlanException extends InvalidOperationException {
-    public StalePlanException(String planName) {
-        super (ErrorCode.STALE_PLAN, planName);
+import com.akiban.ais.model.TableName;
+
+public class InvalidSQLJDeploymentDescriptorException extends InvalidOperationException
+{
+    public InvalidSQLJDeploymentDescriptorException(String schemaName, String jarName, String msg)
+    {
+        super(ErrorCode.INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR, schemaName, jarName, msg);
+    }
+
+    public InvalidSQLJDeploymentDescriptorException(TableName name, String msg) 
+    {
+        this(name.getSchemaName(), name.getTableName(), msg);
+    }
+
+    public InvalidSQLJDeploymentDescriptorException(TableName name, Throwable cause) 
+    {
+        this(name, cause.toString());
+        initCause(cause);
     }
 }

@@ -49,7 +49,7 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
     }
 
     protected PostgresDMLStatement(RowType resultsRowType,
-                                    List<String> columnNames, 
+                                   List<String> columnNames, 
                                    List<PostgresType> columnTypes,
                                    PostgresType[] parameterTypes,
                                    boolean usesPValues) {

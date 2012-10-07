@@ -29,7 +29,6 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerStatementCache;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.server.error.InvalidPortException;
 
 import org.slf4j.Logger;
@@ -39,8 +38,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -75,7 +72,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private volatile long aisTimestamp = -1;
     private volatile int statementCacheCapacity;
     private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
-    private final Map<String, LoadablePlan<?>> loadablePlans = new HashMap<String, LoadablePlan<?>>();
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
 
@@ -241,10 +237,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return statementCache;
     }
 
-    public LoadablePlan<?> loadablePlan(String planName) {
-        return loadablePlans.get(planName);
-    }
-
     /** This is the version for use by connections. */
     public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
         synchronized (statementCaches) {
@@ -253,7 +245,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                 for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
                     statementCache.invalidate();
                 }
-                clearPlans();
                 aisTimestamp = timestamp;
             }
         }
@@ -375,61 +366,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public long getUptime()
     {
         return (System.nanoTime() - startTime);
-    }
-    
-    @Override
-    public void clearPlans()
-    {
-        loadablePlans.clear();
-        loadInitialPlans();
-    }
-
-    // (Re-)load any initial plans.
-    private void loadInitialPlans() {
-        String plans = properties.getProperty("loadablePlans");
-        if (plans.length() > 0) {
-            for (String className : plans.split(",")) {
-                try {
-                    Class<?> klass = Class.forName(className);
-                    LoadablePlan<?> loadablePlan = (LoadablePlan<?>)klass.newInstance();
-                    LoadablePlan<?> prev = loadablePlans.put(loadablePlan.name(), loadablePlan);
-                    assert (prev == null) : className;
-                }
-                catch (ClassNotFoundException ex) {
-                    logger.error("Failed to load plan", ex);
-                }
-                catch (InstantiationException ex) {
-                    logger.error("Failed to create plan", ex);
-                }
-                catch (IllegalAccessException ex) {
-                    logger.error("Failed to create plan", ex);
-                }
-            }
-        }
-    }
-
-    @Override
-    public String loadPlan(String jarFilePath, String className) {
-        String status;
-        try {
-            File jarFile = new File(jarFilePath);
-            if (!jarFile.isAbsolute()) {
-                throw new IOException(String.format("jar file name does not specify an absolute path: %s",
-                                                    jarFilePath));
-            }
-            URL url = new URL(String.format("file://%s", jarFilePath));
-            URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
-            Class<?> klass = classLoader.loadClass(className);
-            LoadablePlan<?> loadablePlan = (LoadablePlan<?>) klass.newInstance();
-            LoadablePlan<?> previousPlan = loadablePlans.put(loadablePlan.name(), loadablePlan);
-            status = String.format("%s %s -> %s",
-                                   (previousPlan == null ? "Loaded" : "Reloaded"),
-                                   loadablePlan.name(),
-                                   className);
-        } catch (Exception e) {
-            status = e.toString();
-        }
-        return status;
     }
 
     /** For testing, set the server's idea of the current time. */

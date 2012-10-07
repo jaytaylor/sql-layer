@@ -41,8 +41,7 @@ public class SQLJJarRoutines
     }
 
     public static void install(String url, String jar, long deploy) {
-        ServerQueryContext context = ServerCallContextStack.current();
-        assert (context != null) : "invoked by CALL";
+        ServerQueryContext context = ServerCallContextStack.current().getContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
         NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName());
@@ -50,13 +49,12 @@ public class SQLJJarRoutines
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
         server.getDXL().ddlFunctions().createSQLJJar(server.getSession(), sqljJar);
         if (deploy != 0) {
-            new SQLJJarDeployer(server, jarName).deploy();
+            new SQLJJarDeployer(context, jarName).deploy();
         }
     }
 
     public static void replace(String url, String jar) {
-        ServerQueryContext context = ServerCallContextStack.current();
-        assert (context != null) : "invoked by CALL";
+        ServerQueryContext context = ServerCallContextStack.current().getContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
         server.getRoutineLoader().unloadSQLJJar(jarName);
@@ -67,12 +65,11 @@ public class SQLJJarRoutines
     }
 
     public static void remove(String jar, long undeploy) {
-        ServerQueryContext context = ServerCallContextStack.current();
-        assert (context != null) : "invoked by CALL";
+        ServerQueryContext context = ServerCallContextStack.current().getContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
         if (undeploy != 0) {
-            new SQLJJarDeployer(server, jarName).undeploy();
+            new SQLJJarDeployer(context, jarName).undeploy();
         }
         server.getRoutineLoader().unloadSQLJJar(jarName);
         server.getDXL().ddlFunctions().dropSQLJJar(server.getSession(), jarName);

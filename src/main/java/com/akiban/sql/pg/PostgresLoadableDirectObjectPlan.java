@@ -26,6 +26,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerCallContextStack;
+import com.akiban.sql.server.ServerRoutineInvocation;
+
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
@@ -40,20 +43,20 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
 
-    private Object[] args;
+    private ServerRoutineInvocation invocation;
     private DirectObjectPlan plan;
     private DirectObjectPlan.OutputMode outputMode;
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
+                                               ServerRoutineInvocation invocation,
                                                List<String> columnNames, List<PostgresType> columnTypes, 
-                                               Object[] args, boolean usePVals)
+                                               PostgresType[] parameterTypes,
+                                               boolean usesPValues)
     {
         super(null,
-              columnNames,
-              columnTypes,
-              null,
-              usePVals);
-        this.args = args;
+              columnNames, columnTypes,
+              parameterTypes, usesPValues);
+        this.invocation = invocation;
 
         plan = loadablePlan.plan();
         outputMode = plan.getOutputMode();
@@ -97,7 +100,8 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
-        PostgresLoadablePlan.setParameters(context, args, usesPValues());
+        context = PostgresLoadablePlan.setParameters(context, invocation, usesPValues());
+        ServerCallContextStack.push(context, invocation);
         try {
             cursor = plan.cursor(context);
             cursor.open();
@@ -131,6 +135,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
             if (cursor != null) {
                 cursor.close();
             }
+            ServerCallContextStack.pop(context, invocation);
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
