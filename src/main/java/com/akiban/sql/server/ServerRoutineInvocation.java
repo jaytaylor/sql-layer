@@ -101,6 +101,13 @@ public class ServerRoutineInvocation
         return new ServerRoutineInvocation(routine, constantArgs, parameterArgs);
     }
 
+    public int size() {
+        if (constantArgs == null)
+            return 0;
+        else
+            return constantArgs.length;
+    }
+
     public Routine getRoutine() {
         return routine;
     }
@@ -111,6 +118,17 @@ public class ServerRoutineInvocation
 
     public TableName getRoutineName() {
         return routine.getName();
+    }
+
+    public int parameterUsage(int param) {
+        if (parameterArgs != null) {
+            for (int i = 0; i < parameterArgs.length; i++) {
+                if (parameterArgs[i] == param) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     public boolean hasParameters() {

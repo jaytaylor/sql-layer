@@ -26,10 +26,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerJavaValues;
 import com.akiban.sql.server.ServerRoutineInvocation;
 
+import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.types3.Types3Switch;
@@ -53,12 +55,23 @@ public class PostgresJavaMethod extends PostgresDMLStatement
 
     public static PostgresStatement statement(PostgresServerSession server, 
                                               ServerRoutineInvocation invocation,
-                                              int[] paramTypes) {
+                                              List<ParameterNode> params, int[] paramTypes) {
         Method method = server.getRoutineLoader().loadJavaMethod(invocation.getRoutineName());
         Routine routine = invocation.getRoutine();
-        List<String> columnNames = columnNames(routine);
         List<PostgresType> columnTypes = columnTypes(routine);
-        PostgresType[] parameterTypes = parameterTypes(routine, paramTypes);
+        List<String> columnNames;
+        if (columnTypes.isEmpty()) {
+            columnTypes = null;
+            columnNames = null;
+        }
+        else {
+            columnNames = columnNames(routine);
+        }
+        PostgresType[] parameterTypes;
+        if (params.isEmpty())
+            parameterTypes = null;
+        else
+            parameterTypes = parameterTypes(invocation, params.size(), paramTypes);
         boolean usesPValues = server.getBooleanProperty("newtypes", Types3Switch.ON);
         return new PostgresJavaMethod(method, invocation,
                                       columnNames, columnTypes,
@@ -106,7 +119,8 @@ public class PostgresJavaMethod extends PostgresDMLStatement
         ServerCallContextStack.push(context, invocation);
         try {
             Object[] methodArgs = methodArgs(method);
-            setMethodInputs(method, invocation.asValues(context));
+            setMethodInputs(methodArgs, method, 
+                            invocation.asValues(context), invocation.size());
             method.invoke(null, methodArgs);
             if (getColumnTypes() != null) {
                 PostgresOutputter<Object[]> outputter = new PostgresJavaMethodResultsOutputter(context, this);
@@ -136,14 +150,51 @@ public class PostgresJavaMethod extends PostgresDMLStatement
     }
 
     public static List<String> columnNames(Routine routine) {
-        return null;
+        List<String> result = new ArrayList<String>();
+        for (Parameter param : routine.getParameters()) {
+            if (param.getDirection() == Parameter.Direction.IN) continue;
+            String name = param.getName();
+            if (name == null)
+                name = String.format("col%d", result.size() + 1);
+            result.add(name);
+        }
+        return result;
     }
 
     public static List<PostgresType> columnTypes(Routine routine) {
-        return null;
+        List<PostgresType> result = new ArrayList<PostgresType>();
+        for (Parameter param : routine.getParameters()) {
+            if (param.getDirection() == Parameter.Direction.IN) continue;
+            result.add(parameterType(param));
+        }
+        return result;
     }
 
-    public static PostgresType[] parameterTypes(Routine routine, int[] paramTypes) {
+    public static PostgresType[] parameterTypes(ServerRoutineInvocation invocation,
+                                                int nparams, int[] paramTypes) {
+        PostgresType[] result = new PostgresType[nparams];
+        for (int i = 0; i < nparams; i++) {
+            int usage = invocation.parameterUsage(i);
+            if (usage < 0) continue;
+            PostgresType pgType = parameterType(invocation.getRoutine().getParameters().get(i));
+            if ((paramTypes != null) && (i < paramTypes.length)) {
+                // Adjust to match what client proposed.
+                PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
+                if (oid != null) {
+                    if (pgType == null)
+                        pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                    else
+                        pgType = new PostgresType(oid,  (short)-1, -1, 
+                                                  pgType.getAkType(),
+                                                  pgType.getInstance());
+                }
+            }
+            result[i] = pgType;
+        }
+        return result;
+    }
+
+    public static PostgresType parameterType(Parameter param) {
         return null;
     }
 
@@ -159,7 +210,18 @@ public class PostgresJavaMethod extends PostgresDMLStatement
         return result;
     }
 
-    public static void setMethodInputs(Method method, ServerJavaValues inputs) {
+    public static void setMethodInputs(Object[] methodArgs, Method method, 
+                                       ServerJavaValues inputs, int nargs) {
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        for (int i = 0; i < nargs; i++) {
+            Class<?> clazz = parameterTypes[i];
+            if (clazz.isArray()) {
+                Array.set(methodArgs[i], 0, inputs.getObject(i, clazz.getComponentType()));
+            }
+            else {
+                methodArgs[i] = inputs.getObject(i, clazz);
+            }
+        }        
     }
 
 }
