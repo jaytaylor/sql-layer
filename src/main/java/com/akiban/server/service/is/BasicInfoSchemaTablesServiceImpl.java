@@ -1391,7 +1391,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("language", IDENT_MAX, false)
                 .colString("calling_convention", IDENT_MAX, false)
                 .colString("is_deterministic", YES_NO_MAX, false)
-                .colString("sql_data_access", IDENT_MAX, false)
+                .colString("sql_data_access", IDENT_MAX, true)
                 .colString("is_null_call", YES_NO_MAX, false)
                 .colBigInt("max_dynamic_result_sets", false);
         //primary key(routine_schema, routine_name)
