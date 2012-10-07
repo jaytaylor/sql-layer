@@ -47,6 +47,7 @@ import javax.inject.Inject;
 import com.google.inject.Singleton;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
@@ -117,6 +118,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 catch (Exception ex) {
                     throw new SQLJInstanceException(routineName, ex);
                 }
+                loadablePlans.put(routineName, loadablePlan);
             }
         }
         synchronized (loadablePlan) {
@@ -128,6 +130,45 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
     @Override
     public Method loadJavaMethod(TableName routineName) {
+        synchronized (javaMethods) {
+            Method javaMethod = javaMethods.get(routineName);
+            if (javaMethod != null)
+                return javaMethod;
+            Routine routine = aisHolder.getAis().getRoutine(routineName);
+            if (routine == null)
+                throw new NoSuchRoutineException(routineName);
+            SQLJJar sqljJar = routine.getSQLJJar();
+            if ((sqljJar == null) || 
+                (routine.getCallingConvention() != Routine.CallingConvention.JAVA))
+                throw new SQLJInstanceException(routineName, "Routine was not SQL/J");
+            ClassLoader classLoader = loadSQLJJar(sqljJar.getName());
+            Class<?> clazz;
+            try {
+                clazz = Class.forName(routine.getClassName(), true, classLoader);
+            }
+            catch (Exception ex) {
+                throw new SQLJInstanceException(routineName, ex);
+            }
+            String methodName = routine.getMethodName();
+            String methodArgs = null;
+            int idx = methodName.indexOf('(');
+            if (idx >= 0) {
+                methodArgs = methodName.substring(idx+1);
+                methodName = methodName.substring(0, idx);
+            }
+            for (Method method : clazz.getMethods()) {
+                if (((method.getModifiers() & (Modifier.PUBLIC | Modifier.STATIC)) ==
+                                              (Modifier.PUBLIC | Modifier.STATIC)) &&
+                    method.getName().equals(methodName) &&
+                    ((methodArgs == null) ||
+                     (method.toString().indexOf(methodArgs) > 0))) {
+                    javaMethod = method;
+                    break;
+                }
+            }
+            javaMethods.put(routineName, javaMethod);
+            return javaMethod;
+        }
     }
 
     @Override
