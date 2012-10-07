@@ -1050,9 +1050,9 @@ public class BasicInfoSchemaTablesServiceImpl
                                          routine.getLanguage(),
                                          routine.getCallingConvention().name(),
                                          boolResult(false),
-                                         "NO SQL",
+                                         (routine.getSQLAllowed() == null) ? null : routine.getSQLAllowed().name().replace('_', ' '),
                                          boolResult(true),
-                                         0L,
+                                         routine.getDynamicResultSets(),
                                          ++rowCounter /*hidden pk*/);
                 } else {
                     return null;

@@ -325,6 +325,24 @@ public class AISBuilder {
         routine.setDefinition(definition);
     }
 
+    public void routineSQLAllowed(String schemaName, String routineName,
+                                  Routine.SQLAllowed sqlAllowed) {
+        LOG.info("SQL allowed: {} {}", concat(schemaName, routineName), sqlAllowed);
+        Routine routine = ais.getRoutine(schemaName, routineName);
+        checkFound(routine, "SQL allowed", "routine", 
+                   concat(schemaName, routineName));
+        routine.setSQLAllowed(sqlAllowed);
+    }
+
+    public void routineDynamicResultSets(String schemaName, String routineName,
+                                         int dynamicResultSets) {
+        LOG.info("dynamic result sets: {} {}", concat(schemaName, routineName), dynamicResultSets);
+        Routine routine = ais.getRoutine(schemaName, routineName);
+        checkFound(routine, "dynamic result sets", "routine", 
+                   concat(schemaName, routineName));
+        routine.setDynamicResultSets(dynamicResultSets);
+    }
+
     public void sqljJar(String schemaName, String jarName, URL url) {
         LOG.info("SQL/J jar: {}.{} ", schemaName, jarName);
         SQLJJar sqljJar = SQLJJar.create(ais, schemaName, jarName, url);

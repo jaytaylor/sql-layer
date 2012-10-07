@@ -26,7 +26,7 @@
 
 package com.akiban.ais.model.aisb2;
 
-import com.akiban.ais.model.Routine.CallingConvention;
+import static com.akiban.ais.model.Routine.*;
 
 public interface NewRoutineBuilder {
     NewRoutineBuilder language(String language, CallingConvention callingConvention);
@@ -53,4 +53,8 @@ public interface NewRoutineBuilder {
                                    String className, String methodName);
 
     NewRoutineBuilder procDef(String definition);
+
+    NewRoutineBuilder sqlAllowed(SQLAllowed sqlAllowed);
+
+    NewRoutineBuilder dynamicResultSets(int dynamicResultSets);
 }

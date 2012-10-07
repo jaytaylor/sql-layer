@@ -490,7 +490,9 @@ public class ProtobufReaderWriterTest {
             .paramLongIn("x1")
             .paramLongIn("x2")
             .paramDoubleOut("d")
-            .externalName("myjar", "com.acme.Procs", "proc1");
+            .externalName("myjar", "com.acme.Procs", "proc1")
+            .sqlAllowed(Routine.SQLAllowed.READS_SQL_DATA)
+            .dynamicResultSets(2);
         
         AkibanInformationSchema inAIS = builder.ais();
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
@@ -517,6 +519,8 @@ public class ProtobufReaderWriterTest {
         assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
         assertEquals("com.acme.Procs", proc.getClassName());
         assertEquals("proc1", proc.getMethodName());
+        assertEquals(Routine.SQLAllowed.READS_SQL_DATA, proc.getSQLAllowed());
+        assertEquals(2, proc.getDynamicResultSets());
     }
 
     @Test
