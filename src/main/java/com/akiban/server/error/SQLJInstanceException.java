@@ -24,47 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.loadableplan;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.util.SchemaCache;
+package com.akiban.server.error;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.akiban.ais.model.TableName;
 
-public abstract class LoadablePlan<T>
+public class SQLJInstanceException extends InvalidOperationException
 {
-    public abstract String name();
-
-    public abstract T plan();
-
-    public abstract int[] jdbcTypes();
-
-    public List<String> columnNames()
+    public SQLJInstanceException(String schemaName, String jarName, String msg)
     {
-        List<String> columnNames = new ArrayList<String>();
-        int columns = jdbcTypes().length;
-        for (int c = 0; c < columns; c++) {
-            columnNames.add(String.format("c%d", c));
-        }
-        return columnNames;
+        super(ErrorCode.SQLJ_INSTANCE_EXCEPTION, schemaName, jarName, msg);
     }
 
-    public final void ais(AkibanInformationSchema ais)
+    public SQLJInstanceException(TableName name, String msg)
     {
-        this.ais = ais;
+        this(name.getSchemaName(), name.getTableName(), msg);
     }
 
-    public final AkibanInformationSchema ais()
+    public SQLJInstanceException(TableName name, Throwable cause)
     {
-        return ais;
+        this(name, cause.toString());
+        initCause(cause);
     }
-
-    protected Schema schema()
-    {
-        return SchemaCache.globalSchema(ais);
-    }
-
-    private AkibanInformationSchema ais;
 }

@@ -32,7 +32,10 @@ import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewRoutineBuilder;
+import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.server.error.SQLJInstanceException;
 import com.akiban.server.error.NoSuchSQLJJarException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.Service;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
@@ -43,6 +46,7 @@ import com.akiban.qp.loadableplan.std.PersistitCLILoadablePlan;
 import javax.inject.Inject;
 import com.google.inject.Singleton;
 
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
@@ -55,6 +59,8 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private final AisHolder aisHolder;
     private final SchemaManager schemaManager;
     private final Map<TableName,ClassLoader> classLoaders = new HashMap<TableName,ClassLoader>();
+    private final Map<TableName,LoadablePlan<?>> loadablePlans = new HashMap<TableName,LoadablePlan<?>>();
+    private final Map<TableName,Method> javaMethods = new HashMap<TableName,Method>();
 
     @Inject @SuppressWarnings("unused")
     public RoutineLoaderImpl(AisHolder aisHolder, 
@@ -88,6 +94,50 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
         synchronized (classLoaders) {
             classLoaders.remove(jarName);
         }        
+    }
+
+    @Override
+    public LoadablePlan<?> loadLoadablePlan(TableName routineName) {
+        LoadablePlan<?> loadablePlan;
+        synchronized (loadablePlans) {
+            loadablePlan = loadablePlans.get(routineName);
+            if (loadablePlan == null) {
+                Routine routine = aisHolder.getAis().getRoutine(routineName);
+                if (routine == null)
+                    throw new NoSuchRoutineException(routineName);
+                SQLJJar sqljJar = routine.getSQLJJar();
+                if ((sqljJar == null) || 
+                    (routine.getCallingConvention() != Routine.CallingConvention.LOADABLE_PLAN))
+                    throw new SQLJInstanceException(routineName, "Routine was not loadable plan");
+                ClassLoader classLoader = loadSQLJJar(sqljJar.getName());
+                try {
+                    loadablePlan = (LoadablePlan<?>)
+                        Class.forName(routine.getClassName(), true, classLoader).newInstance();
+                }
+                catch (Exception ex) {
+                    throw new SQLJInstanceException(routineName, ex);
+                }
+            }
+        }
+        synchronized (loadablePlan) {
+            if (loadablePlan.ais() != aisHolder.getAis())
+                loadablePlan.ais(aisHolder.getAis());
+        }
+        return loadablePlan;
+    }
+
+    @Override
+    public Method loadJavaMethod(TableName routineName) {
+    }
+
+    @Override
+    public void unloadRoutine(TableName routineName) {
+        synchronized (loadablePlans) {
+            loadablePlans.remove(routineName);
+        }
+        synchronized (javaMethods) {
+            javaMethods.remove(routineName);
+        }
     }
 
     /* Service */

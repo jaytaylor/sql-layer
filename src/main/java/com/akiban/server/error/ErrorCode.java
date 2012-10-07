@@ -280,6 +280,7 @@ public enum ErrorCode {
     DUPLICATE_SQLJ_JAR      ("46", "002", Importance.DEBUG, DuplicateSQLJJarNameException.class),
     REFERENCED_SQLJ_JAR     ("46", "003", Importance.DEBUG, ReferencedSQLJJarException.class),
     NO_SUCH_SQLJ_JAR        ("46", "00B", Importance.DEBUG, NoSuchSQLJJarException.class),
+    SQLJ_INSTANCE_EXCEPTION ("46", "103", Importance.DEBUG, SQLJInstanceException.class),
     INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR ("46", "200", Importance.DEBUG, InvalidSQLJDeploymentDescriptorException.class),
 
     // Class 50 - DDL definition failure

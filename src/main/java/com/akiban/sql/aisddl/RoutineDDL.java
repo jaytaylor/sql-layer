@@ -37,9 +37,11 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidRoutineException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSQLJJarException;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateAliasNode;
 import com.akiban.sql.parser.DropAliasNode;
+
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.RoutineAliasInfo;
 import java.sql.ParameterMetaData;
@@ -148,6 +150,7 @@ public class RoutineDDL {
     }
 
     public static void dropRoutine(DDLFunctions ddlFunctions,
+                                   RoutineLoader routineLoader,
                                    Session session,
                                    String defaultSchemaName,
                                    DropAliasNode dropRoutine,
@@ -158,6 +161,7 @@ public class RoutineDDL {
         if (routine == null) {
             throw new NoSuchRoutineException(routineName);
         } 
+        routineLoader.unloadRoutine(routineName);
         ddlFunctions.dropRoutine(session, routineName);
     }
 }
