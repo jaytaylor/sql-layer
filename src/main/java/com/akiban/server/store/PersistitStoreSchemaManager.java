@@ -205,7 +205,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public TableName registerStoredInformationSchemaTable(final UserTable newTable, final int version) {
         final TableName newName = newTable.getName();
-        checkAISSchema(newName, true);
+        checkSystemSchema(newName, true);
         UserTable curTable = getAis().getUserTable(newName);
         if(curTable != null) {
             Integer oldVersion = curTable.getVersion();
@@ -572,7 +572,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public void createView(Session session, View view) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(view.getName(), false);
+        checkSystemSchema(view.getName(), false);
         if (oldAIS.getView(view.getName()) != null)
             throw new DuplicateViewException(view.getName());
         AkibanInformationSchema newAIS = AISMerge.mergeView(oldAIS, view);
@@ -583,7 +583,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public void dropView(Session session, TableName viewName) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(viewName, false);
+        checkSystemSchema(viewName, false);
         if (oldAIS.getView(viewName) == null)
             throw new UndefinedViewException(viewName);
         final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
@@ -594,19 +594,51 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public void createRoutine(Session session, Routine routine) {
+        createRoutineCommon(session, routine, false);
+    }
+
+    @Override
+    public void dropRoutine(Session session, TableName routineName) {
+        dropRoutineCommon(session, routineName, false);
+    }
+
+    @Override
+    public void registerSystemRoutine(final Routine routine) {
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+            @Override
+            public void run(Session session) throws PersistitException {
+                createRoutineCommon(session, routine, true);
+            }
+        });
+    }
+
+    @Override
+    public void unRegisterSystemRoutine(final TableName routineName) {
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+            @Override
+            public void run(Session session) throws PersistitException {
+                dropRoutineCommon(session, routineName, false);
+            }
+        });
+    }
+
+    private void createRoutineCommon(Session session, Routine routine, boolean inSystem) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(routine.getName(), false);
+        checkSystemSchema(routine.getName(), inSystem);
         if (oldAIS.getRoutine(routine.getName()) != null)
             throw new DuplicateRoutineNameException(routine.getName());
         final AkibanInformationSchema newAIS = AISMerge.mergeRoutine(oldAIS, routine);
-        final String schemaName = routine.getName().getSchemaName();
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        if (inSystem)
+            buildRowDefCache(newAIS);
+        else {
+            final String schemaName = routine.getName().getSchemaName();
+            saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        }
     }
     
-    @Override
-    public void dropRoutine(Session session, TableName routineName) {
+    private void dropRoutineCommon(Session session, TableName routineName, boolean inSystem) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(routineName, false);
+        checkSystemSchema(routineName, inSystem);
         Routine routine = oldAIS.getRoutine(routineName);
         if (routine == null)
             throw new NoSuchRoutineException(routineName);
@@ -615,14 +647,18 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         newAIS.removeRoutine(routineName);
         if (routine.getSQLJJar() != null)
             routine.getSQLJJar().removeRoutine(routine); // Keep accurate in memory.
-        final String schemaName = routineName.getSchemaName();
-        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        if (inSystem)
+            buildRowDefCache(newAIS);
+        else {
+            final String schemaName = routineName.getSchemaName();
+            saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+        }
     }
 
     @Override
     public void createSQLJJar(Session session, SQLJJar sqljJar) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(sqljJar.getName(), false);
+        checkSystemSchema(sqljJar.getName(), false);
         if (oldAIS.getSQLJJar(sqljJar.getName()) != null)
             throw new DuplicateSQLJJarNameException(sqljJar.getName());
         final AkibanInformationSchema newAIS = AISMerge.mergeSQLJJar(oldAIS, sqljJar);
@@ -633,7 +669,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(sqljJar.getName(), false);
+        checkSystemSchema(sqljJar.getName(), false);
         SQLJJar oldJar = oldAIS.getSQLJJar(sqljJar.getName());
         if (sqljJar == null)
             throw new NoSuchSQLJJarException(sqljJar.getName());
@@ -650,7 +686,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public void dropSQLJJar(Session session, TableName jarName) {
         final AkibanInformationSchema oldAIS = getAis();
-        checkAISSchema(jarName, false);
+        checkSystemSchema(jarName, false);
         SQLJJar sqljJar = oldAIS.getSQLJJar(jarName);
         if (sqljJar == null)
             throw new NoSuchSQLJJarException(jarName);
@@ -942,6 +978,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     return columnar;
                 }
             };
+        } else if(TableName.SYS_SCHEMA.equals(schema) ||
+                  TableName.SQLJ_SCHEMA.equals(schema)) {
+            selector = new ProtobufWriter.SingleSchemaSelector(schema) {
+                    @Override
+                    public boolean isSelected(Routine routine) {
+                        return false;
+                    }
+            };
         } else {
             selector = new ProtobufWriter.SingleSchemaSelector(schema);
         }
@@ -1102,12 +1146,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return getAis().getUserTable(newName).getName();
     }
 
-    private static void checkAISSchema(TableName tableName, boolean shouldBeIS) {
-        final boolean inIS = TableName.INFORMATION_SCHEMA.equals(tableName.getSchemaName());
-        if(shouldBeIS && !inIS) {
+    private static void checkSystemSchema(TableName tableName, boolean shouldBeSystem) {
+        String schemaName = tableName.getSchemaName();
+        final boolean inSystem = TableName.INFORMATION_SCHEMA.equals(schemaName) ||
+                                 TableName.SYS_SCHEMA.equals(schemaName) ||
+                                 TableName.SQLJ_SCHEMA.equals(schemaName);
+        if(shouldBeSystem && !inSystem) {
             throw new IllegalArgumentException("Table required to be in "+TableName.INFORMATION_SCHEMA +" schema");
         }
-        if(!shouldBeIS && inIS) {
+        if(!shouldBeSystem && inSystem) {
             throw new ProtectedTableDDLException(tableName);
         }
     }
@@ -1125,7 +1172,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void checkTableName(TableName tableName, boolean shouldExist, boolean inIS) {
-        checkAISSchema(tableName, inIS);
+        checkSystemSchema(tableName, inIS);
         final boolean tableExists = getAis().getTable(tableName) != null;
         if(shouldExist && !tableExists) {
             throw new NoSuchTableException(tableName);
@@ -1136,7 +1183,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void checkSequenceName (TableName sequenceName, boolean shouldExist) {
-        checkAISSchema (sequenceName, false);
+        checkSystemSchema (sequenceName, false);
         final boolean exists = getAis().getSequence(sequenceName) != null;
         if (shouldExist && !exists) {
             throw new NoSuchSequenceException(sequenceName);

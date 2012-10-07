@@ -37,9 +37,11 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidRoutineException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSQLJJarException;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateAliasNode;
 import com.akiban.sql.parser.DropAliasNode;
+
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.RoutineAliasInfo;
 import java.sql.ParameterMetaData;
@@ -121,6 +123,11 @@ public class RoutineDDL {
                     jarSchema = jarName.substring(0, idx);
                     jarName = jarName.substring(idx + 1);
                 }
+                else if (jarName.equals("thisjar")) {
+                    TableName thisJar = (TableName)createAlias.getUserData();
+                    jarSchema = thisJar.getSchemaName();
+                    jarName = thisJar.getTableName();
+                }
             }
             if (jarName != null) {
                 AkibanInformationSchema ais = ddlFunctions.getAIS(session);
@@ -138,11 +145,35 @@ public class RoutineDDL {
                                       createAlias.getDefinition());
         }
 
+        if (aliasInfo.getSQLAllowed() != null) {
+            Routine.SQLAllowed sqlAllowed;
+            switch (aliasInfo.getSQLAllowed()) {
+            case MODIFIES_SQL_DATA:
+                sqlAllowed = Routine.SQLAllowed.MODIFIES_SQL_DATA;
+                break;
+            case READS_SQL_DATA:
+                sqlAllowed = Routine.SQLAllowed.READS_SQL_DATA;
+                break;
+            case CONTAINS_SQL:
+                sqlAllowed = Routine.SQLAllowed.CONTAINS_SQL;
+                break;
+            case NO_SQL:
+                sqlAllowed = Routine.SQLAllowed.NO_SQL;
+                break;
+            default:
+                throw new InvalidRoutineException(schemaName, routineName, "unsupported " + aliasInfo.getSQLAllowed().getSQL());
+            }
+            builder.routineSQLAllowed(schemaName, routineName, sqlAllowed);
+        }
+        builder.routineDynamicResultSets(schemaName, routineName,
+                                         aliasInfo.getMaxDynamicResultSets());
+        
         Routine routine = builder.akibanInformationSchema().getRoutine(tableName);
         ddlFunctions.createRoutine(session, routine);
     }
 
     public static void dropRoutine(DDLFunctions ddlFunctions,
+                                   RoutineLoader routineLoader,
                                    Session session,
                                    String defaultSchemaName,
                                    DropAliasNode dropRoutine,
@@ -153,6 +184,7 @@ public class RoutineDDL {
         if (routine == null) {
             throw new NoSuchRoutineException(routineName);
         } 
+        routineLoader.unloadRoutine(routineName);
         ddlFunctions.dropRoutine(session, routineName);
     }
 }

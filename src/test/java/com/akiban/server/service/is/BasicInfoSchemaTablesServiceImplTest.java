@@ -622,7 +622,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void routinesScan() {
         final Object[][] expected = {
-            { "test", "proc1", "PROCEDURE", null, "com.akiban.procs.Proc1.call", "java", "JAVA", "NO", "NO SQL", "YES", 0L, LONG },
+            { "test", "proc1", "PROCEDURE", null, "com.akiban.procs.Proc1.call", "java", "JAVA", "NO", null, "YES", 0L, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

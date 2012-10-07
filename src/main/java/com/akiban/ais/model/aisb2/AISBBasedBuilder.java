@@ -499,6 +499,18 @@ public class AISBBasedBuilder
             return this;
         }
 
+        @Override
+        public NewRoutineBuilder sqlAllowed(Routine.SQLAllowed sqlAllowed) {
+            aisb.routineSQLAllowed(schema, userTable, sqlAllowed);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder dynamicResultSets(int dynamicResultSets) {
+            aisb.routineDynamicResultSets(schema, userTable, dynamicResultSets);
+            return this;
+        }
+
         // NewSQLJJarBuilder
 
         @Override

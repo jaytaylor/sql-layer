@@ -43,22 +43,12 @@ import java.io.*;
 /** A loadable direct object plan that returns asynchronous results.
  * Needs to use copy mode to get results out as it goes.
  * <code><pre>
-java -jar jmxterm-1.0-alpha-4-uber.jar -l localhost:8082 -n <<EOF
-run -b com.akiban:type=PostgresServer loadPlan `pwd`/`ls target/akiban-server-*-SNAPSHOT-tests.jar` com.akiban.server.test.it.loadableplan.TestDirectAsync
-EOF
-psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
-call "system.exec"('tail', '-f', '/tmp/akiban_server/server.log');
-EOF
+CREATE PROCEDURE system.`exec`(IN cmd VARCHAR(1024)) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'com.akiban.server.test.it.loadableplan.TestDirectAsync';
+CALL system.`exec`('tail', '-f', '/tmp/akiban_server/server.log');
  * </pre></code> 
  */
 public class TestDirectAsync extends LoadableDirectObjectPlan
 {
-    @Override
-    public String name()
-    {
-        return "system.exec";
-    }
-
     @Override
     public DirectObjectPlan plan()
     {

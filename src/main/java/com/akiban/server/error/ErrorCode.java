@@ -230,7 +230,6 @@ public enum ErrorCode {
     // Class 35 - invalid condition number
     // Class 36 - cursor sensitivity exception
     // Class 38 - external routine exception
-    STALE_PLAN              ("38", "000", Importance.ERROR, StalePlanException.class),
     // Class 39 - external routine invocation
     // Class 3B - savepoint exception
     // Class 3C - ambiguous cursor name
@@ -280,6 +279,8 @@ public enum ErrorCode {
     DUPLICATE_SQLJ_JAR      ("46", "002", Importance.DEBUG, DuplicateSQLJJarNameException.class),
     REFERENCED_SQLJ_JAR     ("46", "003", Importance.DEBUG, ReferencedSQLJJarException.class),
     NO_SUCH_SQLJ_JAR        ("46", "00B", Importance.DEBUG, NoSuchSQLJJarException.class),
+    SQLJ_INSTANCE_EXCEPTION ("46", "103", Importance.DEBUG, SQLJInstanceException.class),
+    INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR ("46", "200", Importance.DEBUG, InvalidSQLJDeploymentDescriptorException.class),
 
     // Class 50 - DDL definition failure
     PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 

@@ -641,6 +641,10 @@ public class ProtobufWriter {
             routineBuilder.setMethodName(routine.getMethodName());
         if (routine.getDefinition() != null)
             routineBuilder.setDefinition(routine.getDefinition());
+        if (routine.getSQLAllowed() != null)
+            routineBuilder.setSqlAllowed(convertRoutineSQLAllowed(routine.getSQLAllowed()));
+        if (routine.getDynamicResultSets() > 0)
+            routineBuilder.setDynamicResultSets(routine.getDynamicResultSets());
         schemaBuilder.addRoutines(routineBuilder.build());
     }
 
@@ -660,13 +664,27 @@ public class ProtobufWriter {
         routineBuilder.addParameters(parameterBuilder.build());
     }
 
-    private static AISProtobuf.RoutineCallingConvention convertRoutineCallingConvention(Routine.CallingConvention routineCallingConvention) {
-        switch (routineCallingConvention) {
+    private static AISProtobuf.RoutineCallingConvention convertRoutineCallingConvention(Routine.CallingConvention callingConvention) {
+        switch (callingConvention) {
         case JAVA:
         default:
             return AISProtobuf.RoutineCallingConvention.JAVA;
         case LOADABLE_PLAN:
             return AISProtobuf.RoutineCallingConvention.LOADABLE_PLAN;
+        }
+    }
+
+    private static AISProtobuf.RoutineSQLAllowed convertRoutineSQLAllowed(Routine.SQLAllowed sqlAllowed) {
+        switch (sqlAllowed) {
+        case MODIFIES_SQL_DATA:
+        default:
+            return AISProtobuf.RoutineSQLAllowed.MODIFIES_SQL_DATA;
+        case READS_SQL_DATA:
+            return AISProtobuf.RoutineSQLAllowed.READS_SQL_DATA;
+        case CONTAINS_SQL:
+            return AISProtobuf.RoutineSQLAllowed.CONTAINS_SQL;
+        case NO_SQL:
+            return AISProtobuf.RoutineSQLAllowed.NO_SQL;
         }
     }
 

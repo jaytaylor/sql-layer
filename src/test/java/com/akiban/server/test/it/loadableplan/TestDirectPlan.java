@@ -38,22 +38,12 @@ import java.util.List;
 
 /** A loadable direct object plan.
  * <code><pre>
-java -jar jmxterm-1.0-alpha-4-uber.jar -l localhost:8082 -n <<EOF
-run -b com.akiban:type=PostgresServer loadPlan `pwd`/`ls target/akiban-server-*-SNAPSHOT-tests.jar` com.akiban.server.test.it.loadableplan.TestDirectPlan
-EOF
-psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
-call test_direct(10)
-EOF
+CREATE PROCEDURE test_direct(IN n BIGINT) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'com.akiban.server.test.it.loadableplan.TestDirectPlan';
+CALL test_direct(10)
  * </pre></code> 
  */
 public class TestDirectPlan extends LoadableDirectObjectPlan
 {
-    @Override
-    public String name()
-    {
-        return "test_direct";
-    }
-
     @Override
     public DirectObjectPlan plan()
     {

@@ -26,6 +26,8 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.ais.model.Routine;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -34,27 +36,49 @@ public class ServerCallContextStack
     private ServerCallContextStack() {
     }
 
-    private static final ThreadLocal<Deque<ServerQueryContext>> tl = new ThreadLocal<Deque<ServerQueryContext>>() {
+    public static class Entry {
+        private ServerQueryContext context;
+        private ServerRoutineInvocation invocation;
+
+        private Entry(ServerQueryContext context, ServerRoutineInvocation invocation) {
+            this.context = context;
+            this.invocation = invocation;
+        }
+
+        public ServerQueryContext getContext() {
+            return context;
+        }
+
+        public ServerRoutineInvocation getInvocation() {
+            return invocation;
+        }
+
+        public Routine getRoutine() {
+            return invocation.getRoutine();
+        }
+    }
+
+    private static final ThreadLocal<Deque<Entry>> tl = new ThreadLocal<Deque<Entry>>() {
         @Override
-        protected Deque<ServerQueryContext> initialValue() {
-            return new ArrayDeque<ServerQueryContext>();
+        protected Deque<Entry> initialValue() {
+            return new ArrayDeque<Entry>();
         }
     };
 
-    public static Deque<ServerQueryContext> stack() {
+    public static Deque<Entry> stack() {
         return tl.get();
     }
     
-    public static ServerQueryContext current() {
+    public static Entry current() {
         return stack().peekLast();
     }
     
-    public static void push(ServerQueryContext call) {
-        stack().addLast(call);
+    public static void push(ServerQueryContext context, ServerRoutineInvocation invocation) {
+        stack().addLast(new Entry(context, invocation));
     }
     
-    public static void pop(ServerQueryContext call) {
-        ServerQueryContext last = stack().removeLast();
-        assert (call == last);
+    public static void pop(ServerQueryContext context, ServerRoutineInvocation invocation) {
+        Entry last = stack().removeLast();
+        assert (last.getContext() == context);
     }
 }

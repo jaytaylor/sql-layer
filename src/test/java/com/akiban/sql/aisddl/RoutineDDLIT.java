@@ -73,7 +73,7 @@ public class RoutineDDLIT extends PostgresServerITBase {
 
     @Test
     public void testCreateJava() throws Exception {
-        stmt.executeUpdate("CREATE PROCEDURE proca(IN x INT, OUT d DOUBLE) LANGUAGE JAVA PARAMETER STYLE JAVA EXTERNAL NAME 'ajar:com.acme.Procs.aproc'");
+        stmt.executeUpdate("CREATE PROCEDURE proca(IN x INT, OUT d DOUBLE) LANGUAGE JAVA PARAMETER STYLE JAVA READS SQL DATA DYNAMIC RESULT SETS 1 EXTERNAL NAME 'ajar:com.acme.Procs.aproc'");
         Routine proc = ddl().getAIS(session()).getRoutine(SCHEMA_NAME, "proca");
         assertNotNull(proc);
         assertEquals("java", proc.getLanguage());
@@ -85,6 +85,8 @@ public class RoutineDDLIT extends PostgresServerITBase {
         assertEquals("d", proc.getParameters().get(1).getName());
         assertEquals(Types.DOUBLE, proc.getParameters().get(1).getType());
         assertEquals(Parameter.Direction.OUT, proc.getParameters().get(1).getDirection());
+        assertEquals(Routine.SQLAllowed.READS_SQL_DATA, proc.getSQLAllowed());
+        assertEquals(1, proc.getDynamicResultSets());
     }
 
     @Test(expected=SQLException.class)

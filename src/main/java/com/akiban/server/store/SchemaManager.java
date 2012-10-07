@@ -216,6 +216,12 @@ public interface SchemaManager {
     /** Drop the given SQL/J jar from the current AIS. */
     void dropSQLJJar(Session session, TableName jarName);
 
+    /** Add the Routine to live AIS */
+    void registerSystemRoutine(Routine routine);
+    
+    /** Drop a system routine from the live AIS. */
+    void unRegisterSystemRoutine(TableName routineName);
+
     // TODO: PSSM should handle this itself...
     void rollbackAIS(Session session, AkibanInformationSchema replacementAIS,
                      Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames);

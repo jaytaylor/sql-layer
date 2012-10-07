@@ -480,6 +480,10 @@ public class ProtobufReader {
             loadParameters(routine, pbRoutine.getParametersList());
             if (pbRoutine.hasDefinition())
                 routine.setDefinition(pbRoutine.getDefinition());
+            if (pbRoutine.hasSqlAllowed())
+                routine.setSQLAllowed(convertRoutineSQLAllowed(pbRoutine.getSqlAllowed()));
+            if (pbRoutine.hasDynamicResultSets())
+                routine.setDynamicResultSets(pbRoutine.getDynamicResultSets());
         }
     }
     
@@ -497,13 +501,27 @@ public class ProtobufReader {
         }
     }
 
-    private static Routine.CallingConvention convertRoutineCallingConvention(AISProtobuf.RoutineCallingConvention routineCallingConvention) {
-        switch (routineCallingConvention) {
+    private static Routine.CallingConvention convertRoutineCallingConvention(AISProtobuf.RoutineCallingConvention callingConvention) {
+        switch (callingConvention) {
         case JAVA:
         default:
             return Routine.CallingConvention.JAVA;
         case LOADABLE_PLAN: 
             return Routine.CallingConvention.LOADABLE_PLAN;
+        }
+    }
+
+    private static Routine.SQLAllowed convertRoutineSQLAllowed(AISProtobuf.RoutineSQLAllowed sqlAllowed) {
+        switch (sqlAllowed) {
+        case MODIFIES_SQL_DATA:
+        default:
+            return Routine.SQLAllowed.MODIFIES_SQL_DATA;
+        case READS_SQL_DATA:
+            return Routine.SQLAllowed.READS_SQL_DATA;
+        case CONTAINS_SQL:
+            return Routine.SQLAllowed.CONTAINS_SQL;
+        case NO_SQL:
+            return Routine.SQLAllowed.NO_SQL;
         }
     }
 

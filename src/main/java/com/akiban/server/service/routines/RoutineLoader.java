@@ -26,6 +26,17 @@
 
 package com.akiban.server.service.routines;
 
+import com.akiban.ais.model.TableName;
+
+import com.akiban.qp.loadableplan.LoadablePlan;
+import java.lang.reflect.Method;
+
 public interface RoutineLoader
 {
+    public ClassLoader loadSQLJJar(TableName jarName);
+    public void unloadSQLJJar(TableName jarName);
+
+    public LoadablePlan<?> loadLoadablePlan(TableName routineName);
+    public Method loadJavaMethod(TableName routineName);
+    public void unloadRoutine(TableName routineName);
 }
