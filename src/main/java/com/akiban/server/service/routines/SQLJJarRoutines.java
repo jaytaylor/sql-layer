@@ -41,8 +41,7 @@ public class SQLJJarRoutines
     }
 
     public static void install(String url, String jar, long deploy) {
-        ServerQueryContext context = ServerCallContextStack.current();
-        assert (context != null) : "invoked by CALL";
+        ServerQueryContext context = ServerCallContextStack.current().getContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
         NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName());
@@ -55,8 +54,7 @@ public class SQLJJarRoutines
     }
 
     public static void replace(String url, String jar) {
-        ServerQueryContext context = ServerCallContextStack.current();
-        assert (context != null) : "invoked by CALL";
+        ServerQueryContext context = ServerCallContextStack.current().getContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
         server.getRoutineLoader().unloadSQLJJar(jarName);
@@ -67,8 +65,7 @@ public class SQLJJarRoutines
     }
 
     public static void remove(String jar, long undeploy) {
-        ServerQueryContext context = ServerCallContextStack.current();
-        assert (context != null) : "invoked by CALL";
+        ServerQueryContext context = ServerCallContextStack.current().getContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
         if (undeploy != 0) {

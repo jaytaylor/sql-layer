@@ -26,6 +26,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerRoutineInvocation;
+
 import com.akiban.server.error.StalePlanException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
@@ -46,33 +48,19 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
                                       StatementNode stmt,
                                       List<ParameterNode> params, int[] paramTypes)
     {
-        PostgresStatement statement = null;
         if (stmt instanceof CallStatementNode) {
             CallStatementNode call = (CallStatementNode)stmt;
             StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
-            String planName = methodCall.getMethodName();
-            Object[] args = null;
-            JavaValueNode[] margs = methodCall.getMethodParameters();
-            if (margs != null) {
-                args = new Object[margs.length];
-                for (int i = 0; i < margs.length; i++) {
-                    JavaValueNode marg = margs[i];
-                    if (marg instanceof SQLToJavaValueNode) {
-                        ValueNode sqlArg = ((SQLToJavaValueNode)marg).getSQLValueNode();
-                        if (sqlArg instanceof ConstantNode) {
-                            args[i] = ((ConstantNode)sqlArg).getValue();
-                            continue;
-                        }
-                    }
-                    throw new UnsupportedSQLException("CALL parameter must be constant",
-                                                      marg);
+            ServerRoutineInvocation invocation =
+                ServerRoutineInvocation.of(server, methodCall);
+            if (invocation != null) {
+                switch (invocation.getCallingConvention()) {
+                case LOADABLE_PLAN:
+                    return PostgresLoadablePlan.statement(server, invocation, paramTypes);
                 }
             }
-            statement = PostgresLoadablePlan.statement(server, planName, args);
-            if (statement == null) {
-                throw new StalePlanException(planName);
-            }
         }
-        return statement;
+        return null;
     }
+
 }
