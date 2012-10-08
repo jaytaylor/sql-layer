@@ -39,7 +39,11 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 
@@ -209,37 +213,35 @@ public class ServerRoutineInvocation
 
         @Override
         protected PValueSource getPValue(int index) {
+            TInstance tinstance = getTInstance(index);
+            TClass tclass = tinstance.typeClass();
+            PValueSource source;
             if (parameterArgs[index] < 0) {
-                return PValueSources.fromObject(constantArgs[index], null).value();
+                TPreptimeValue value = PValueSources.fromObject(constantArgs[index], null);
+                source = value.value();
+                if (value.instance().typeClass().equals(tclass))
+                    return source; // Literal value matches.
             }
             else {
-                return parameters.getPValue(parameterArgs[index]);
+                source = parameters.getPValue(parameterArgs[index]);
             }
+            // Constants passed or parameters bound may not be of the
+            // type specified in the signature.
+            PValue pvalue = new PValue(tclass.underlyingType());
+            TExecutionContext executionContext = 
+                new TExecutionContext(null, null, tinstance,
+                                      parameters, null, null, null);
+            tclass.fromObject(executionContext, source, pvalue);
+            return pvalue;
         }
 
         @Override
-        protected AkType getSourceType(int index) {
-            return getValue(index).getConversionType();
-        }
-
-        @Override
-        protected AkType getTargetType(int index) {
+        protected AkType getAkType(int index) {
             return routine.getParameters().get(index).getType().akType();
         }
 
         @Override
-        protected TInstance getSourceInstance(int index) {
-            if (parameterArgs[index] < 0) {
-                return PValueSources.fromObject(constantArgs[index], null).instance();
-            }
-            else {
-                // Can assume paramters have been converted properly?
-                return getTargetInstance(index);
-            }
-        }
-
-        @Override
-        protected TInstance getTargetInstance(int index) {
+        protected TInstance getTInstance(int index) {
             return routine.getParameters().get(index).tInstance();
         }
 
