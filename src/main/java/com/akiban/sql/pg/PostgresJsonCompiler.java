@@ -30,11 +30,13 @@ import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
+import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.operator.Operator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -152,4 +154,26 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                                          usesPValues());
     }
     
+    @Override
+    protected PostgresStatement generateUpdate(PhysicalUpdate update, String statementType,
+                                               PostgresType[] parameterTypes) {
+        if (!update.isReturning()) {
+            return super.generateUpdate(update, statementType, parameterTypes);
+        }
+        else {
+            int ncols = update.getResultColumns().size();
+            List<JsonResultColumn> resultColumns = new ArrayList<JsonResultColumn>(ncols);
+            for (PhysicalResultColumn physColumn : update.getResultColumns()) {
+                JsonResultColumn resultColumn = (JsonResultColumn)physColumn;
+                resultColumns.add(resultColumn);
+            }
+            return new PostgresJsonModifyStatement(statementType, 
+                                                   (Operator)update.getPlannable(),
+                                                   update.getResultRowType(),
+                                                   resultColumns,
+                                                   parameterTypes,
+                                                   usesPValues(),
+                                                   update.isRequireStepIsolation());
+        }
+    }
 }
