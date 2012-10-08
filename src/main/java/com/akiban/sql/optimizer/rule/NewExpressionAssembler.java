@@ -32,6 +32,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.NoSuchCastException;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.t3expressions.OverloadResolver;
@@ -146,10 +147,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             // Do type conversion.
             TCast tcast = registryService.getCastsResolver().cast(sourceInstance, toType);
             if (tcast == null) {
-                String castName = "CAST("
-                        + sourceInstance.typeClass()
-                        + " to " + toType.typeClass() + ')';
-                throw new NoSuchMethodError(castName); // TODO should be a NoSuchCastError
+                throw new NoSuchCastException(sourceInstance, toType);
             }
             expr = new TCastExpression(expr, tcast, toType, queryContext);
         }

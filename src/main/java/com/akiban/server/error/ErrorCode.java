@@ -271,6 +271,8 @@ public enum ErrorCode {
     NO_SUCH_UNIQUE          ("42", "517", Importance.DEBUG, NoSuchUniqueException.class),
     NO_SUCH_GROUPING_FK     ("42", "518", Importance.DEBUG, NoSuchGroupingFKException.class),
     NO_SUCH_ROUTINE         ("42", "519", Importance.DEBUG, NoSuchRoutineException.class),
+    NO_SUCH_CAST            ("42", "51A", Importance.DEBUG, NoSuchCastException.class),
+
 
     // Class 44 - with check option violation
     

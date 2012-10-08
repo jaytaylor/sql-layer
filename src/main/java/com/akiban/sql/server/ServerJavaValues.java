@@ -27,13 +27,26 @@
 package com.akiban.sql.server;
 
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchCastException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.aksql.aktypes.AkInterval;
+import com.akiban.server.types3.aksql.aktypes.AkResultSet;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ByteSource;
@@ -61,6 +74,7 @@ import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Map;
 
 /** Make something like an array of typed values (for instance, a
@@ -72,6 +86,7 @@ import java.util.Map;
  */
 public abstract class ServerJavaValues
 {
+    protected abstract int size();
     protected abstract ServerQueryContext getContext();
     protected abstract ValueSource getValue(int index);
     protected abstract PValueSource getPValue(int index);
@@ -83,6 +98,7 @@ public abstract class ServerJavaValues
 
     private boolean wasNull;
     private FromObjectValueSource objectSource;
+    private CachedCast[] cachedCasts;
 
     protected ValueSource value(int index) {
         ValueSource value = getValue(index);
@@ -91,9 +107,58 @@ public abstract class ServerJavaValues
     }
 
     protected PValueSource pvalue(int index) {
-        PValueSource value = getPValue(index);
-        wasNull = value.isNull();
-        return value;
+        PValueSource pvalue = getPValue(index);
+        wasNull = pvalue.isNull();
+        return pvalue;
+    }
+
+    protected static class CachedCast {
+        TClass targetClass;
+        TCast tcast;
+        TExecutionContext tcontext;
+        PValue target;
+
+        protected CachedCast(TInstance sourceInstance, TClass targetClass, 
+                             ServerQueryContext context) {
+            this.targetClass = targetClass;
+            TInstance targetInstance = targetClass.instance();
+            tcast = context.getServer().t3RegistryService().getCastsResolver()
+                .cast(sourceInstance, targetInstance);
+            if (tcast == null)
+                throw new NoSuchCastException(sourceInstance, targetInstance);
+            tcontext = new TExecutionContext(Collections.singletonList(sourceInstance),
+                                             targetInstance,
+                                             context);
+            target = new PValue(targetClass.underlyingType());
+        }
+
+        protected boolean matches(TClass required) {
+            return required.equals(targetClass);
+        }
+
+        protected PValueSource apply(PValueSource pvalue) {
+            tcast.evaluate(tcontext, pvalue, target);
+            return target;
+        }
+    }
+
+    /** Cast as necessary to <code>requiredClass</code>.
+     * A cache is maintained for each index with the last class, on
+     * the assumption the caller will be applying the same
+     * <code>getXxx</code> to the same field each time.
+     */
+    protected PValueSource cachedCast(int index, PValueSource pvalue, TClass required) {
+        TInstance current = getInstance(index);
+        if (required.equals(current.typeClass()))
+            return pvalue;      // Already of the required class.
+        if (cachedCasts == null)
+            cachedCasts = new CachedCast[size()];
+        CachedCast cast = cachedCasts[index];
+        if ((cast == null) || !cast.matches(required)) {
+            cast = new CachedCast(current, required, getContext());
+            cachedCasts[index] = cast;
+        }
+        return cast.apply(pvalue);
     }
 
     protected void setValue(int index, Object value, AkType sourceType) {
@@ -121,7 +186,11 @@ public abstract class ServerJavaValues
 
     public String getString(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return null;
+            else
+                return cachedCast(index, pvalue, MString.VARCHAR).getString();
         }
         else {
             ValueSource value = value(index);
@@ -138,7 +207,11 @@ public abstract class ServerJavaValues
 
     public boolean getBoolean(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return false;
+            else
+                return cachedCast(index, pvalue, AkBool.INSTANCE).getBoolean();
         }
         else {
             ValueSource value = value(index);
@@ -151,7 +224,11 @@ public abstract class ServerJavaValues
 
     public byte getByte(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return 0;
+            else
+                return cachedCast(index, pvalue, MNumeric.TINYINT).getInt8();
         }
         else {
             ValueSource value = value(index);
@@ -164,7 +241,11 @@ public abstract class ServerJavaValues
 
     public short getShort(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return 0;
+            else
+                return cachedCast(index, pvalue, MNumeric.SMALLINT).getInt16();
         }
         else {
             ValueSource value = value(index);
@@ -177,7 +258,11 @@ public abstract class ServerJavaValues
 
     public int getInt(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return 0;
+            else
+                return cachedCast(index, pvalue, MNumeric.INT).getInt32();
         }
         else {
             ValueSource value = value(index);
@@ -190,7 +275,11 @@ public abstract class ServerJavaValues
 
     public long getLong(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return 0;
+            else
+                return cachedCast(index, pvalue, MNumeric.BIGINT).getInt64();
         }
         else {
             ValueSource value = value(index);
@@ -203,7 +292,11 @@ public abstract class ServerJavaValues
 
     public float getFloat(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return 0.0f;
+            else
+                return cachedCast(index, pvalue, MApproximateNumber.FLOAT).getFloat();
         }
         else {
             ValueSource value = value(index);
@@ -216,7 +309,11 @@ public abstract class ServerJavaValues
 
     public double getDouble(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return 0.0;
+            else
+                return cachedCast(index, pvalue, MApproximateNumber.DOUBLE).getDouble();
         }
         else {
             ValueSource value = value(index);
@@ -229,7 +326,11 @@ public abstract class ServerJavaValues
 
     public BigDecimal getBigDecimal(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return null;
+            else
+                return (BigDecimal)cachedCast(index, pvalue, MNumeric.DECIMAL).getObject();
         }
         else {
             ValueSource value = value(index);
@@ -242,7 +343,11 @@ public abstract class ServerJavaValues
 
     public byte[] getBytes(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return null;
+            else
+                return cachedCast(index, pvalue, MBinary.VARBINARY).getBytes();
         }
         else {
             ValueSource value = value(index);
@@ -255,7 +360,11 @@ public abstract class ServerJavaValues
 
     public Date getDate(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return null;
+            else
+                return new Date(timestampMillis(index, pvalue));
         }
         else {
             ValueSource value = value(index);
@@ -268,7 +377,11 @@ public abstract class ServerJavaValues
 
     public Time getTime(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return null;
+            else
+                return new Time(timestampMillis(index, pvalue));
         }
         else {
             ValueSource value = value(index);
@@ -281,7 +394,11 @@ public abstract class ServerJavaValues
 
     public Timestamp getTimestamp(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return null;
+            else
+                return new Timestamp(timestampMillis(index, pvalue));
         }
         else {
             ValueSource value = value(index);
@@ -308,9 +425,45 @@ public abstract class ServerJavaValues
         return Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(value) * 1000;
     }
 
+    protected long timestampMillis(int index, PValueSource pvalue) {
+        return cachedCast(index, pvalue, MDatetimes.TIMESTAMP).getInt32() * 1000L;
+    }
+
     public Object getObject(int index) {
         if (Types3Switch.ON) {
-            throw new UnsupportedOperationException();
+            PValueSource pvalue = pvalue(index);
+            if (wasNull)
+                return null;
+            else {
+                TClass tclass = getInstance(index).typeClass();
+                if (tclass.equals(AkBool.INSTANCE))
+                    return pvalue.getBoolean();
+                else if (tclass.equals(MNumeric.TINYINT))
+                    return pvalue.getInt8();
+                else if (tclass.equals(MNumeric.SMALLINT))
+                    return pvalue.getInt16();
+                else if (tclass.equals(MNumeric.INT))
+                    return pvalue.getInt32();
+                else if (tclass.equals(MNumeric.BIGINT))
+                    return pvalue.getInt64();
+                else if (tclass.equals(MApproximateNumber.FLOAT))
+                    return pvalue.getFloat();
+                else if (tclass.equals(MApproximateNumber.DOUBLE))
+                    return pvalue.getDouble();
+                else if (tclass.equals(MBinary.VARBINARY))
+                    return pvalue.getBytes();
+                else if (tclass.equals(MDatetimes.DATE))
+                    return new Date(timestampMillis(index, pvalue));
+                else if (tclass.equals(MDatetimes.TIME))
+                    return new Time(timestampMillis(index, pvalue));
+                else if (tclass.equals(MDatetimes.DATETIME) ||
+                         tclass.equals(MDatetimes.TIMESTAMP))
+                    return new Timestamp(timestampMillis(index, pvalue));
+                else if (tclass.equals(AkResultSet.INSTANCE))
+                    return toResultSet(index, pvalue.getObject());
+                else
+                    return pvalue.getObject();
+            }
         }
         else {
             ValueSource value = value(index);

@@ -188,6 +188,11 @@ public class ServerRoutineInvocation
         }
 
         @Override
+        protected int size() {
+            return routine.getParameters().size();
+        }
+
+        @Override
         protected ServerQueryContext getContext() {
             return parameters;
         }
