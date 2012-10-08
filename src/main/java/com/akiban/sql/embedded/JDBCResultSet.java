@@ -89,12 +89,12 @@ public class JDBCResultSet implements ResultSet
         protected ValueSource getValue(int index) {
             if (row == null) {
                 if (cursor == null)
-                    JDBCException.throwWrapped("Already closed.");
+                    throw JDBCException.wrapped("Already closed.");
                 else
-                    JDBCException.throwWrapped("Past end.");
+                    throw JDBCException.wrapped("Past end.");
             }
             if ((index < 0) || (index >= row.rowType().nFields()))
-                JDBCException.throwWrapped("Column index out of bounds");
+                throw JDBCException.wrapped("Column index out of bounds");
             return row.eval(index);
         }
 
@@ -102,12 +102,12 @@ public class JDBCResultSet implements ResultSet
         protected PValueSource getPValue(int index) {
             if (row == null) {
                 if (cursor == null)
-                    JDBCException.throwWrapped("Already closed.");
+                    throw JDBCException.wrapped("Already closed.");
                 else
-                    JDBCException.throwWrapped("Past end.");
+                    throw JDBCException.wrapped("Past end.");
             }
             if ((index < 0) || (index >= row.rowType().nFields()))
-                JDBCException.throwWrapped("Column index out of bounds");
+                throw JDBCException.wrapped("Column index out of bounds");
 
             return row.pvalue(index);
         }
