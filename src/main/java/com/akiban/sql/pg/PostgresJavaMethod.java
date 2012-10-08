@@ -68,7 +68,7 @@ public class PostgresJavaMethod extends PostgresDMLStatement
             columnNames = columnNames(routine);
         }
         PostgresType[] parameterTypes;
-        if (params.isEmpty())
+        if ((params == null) || params.isEmpty())
             parameterTypes = null;
         else
             parameterTypes = parameterTypes(invocation, params.size(), paramTypes);

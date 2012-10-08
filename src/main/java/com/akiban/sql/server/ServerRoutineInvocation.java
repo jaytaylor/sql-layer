@@ -181,7 +181,6 @@ public class ServerRoutineInvocation
 
     protected class Values extends ServerJavaValues {
         private ServerQueryContext parameters;
-        private FromObjectValueSource objectValue;
 
         protected Values(ServerQueryContext parameters) {
             this.parameters = parameters;
@@ -190,8 +189,7 @@ public class ServerRoutineInvocation
         @Override
         protected ValueSource getValue(int index) {
             if (parameterArgs[index] < 0) {
-                objectValue.setReflectively(constantArgs[index]);
-                return objectValue;
+                return new FromObjectValueSource().setReflectively(constantArgs[index]);
             }
             else {
                 return parameters.getValue(parameterArgs[index]);
