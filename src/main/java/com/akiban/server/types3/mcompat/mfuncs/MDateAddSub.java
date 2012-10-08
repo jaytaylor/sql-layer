@@ -135,7 +135,12 @@ public class MDateAddSub extends TScalarBase
                 case DATE_ST:
                     dt = MDatetimes.toJodaDatetime(ymd, "UTC");
                     helper.compute(dt, millis);
-                    output.putString(dt.toString("YYYY-MM-dd"), null);
+                    
+                    if (FirstType.DATE.adjustFirstArg(context.inputTInstanceAt(1)) == FirstType.DATE)
+                        output.putString(dt.toString("YYYY-MM-dd"), null);
+                    else
+                        output.putString(dt.toString("YYYY-MM-dd HH:mm:ss"), null);
+                    
                     break;
                 case DATETIME_ST:
                     dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
@@ -224,21 +229,21 @@ public class MDateAddSub extends TScalarBase
         DATE(MDatetimes.DATE)
         {
             @Override
-            FirstType adjustFirstArg(TClass ins)
+            FirstType adjustFirstArg(TInstance ins)
             {
                 if (ins != null
-                    && ins instanceof AkInterval
-                    && ((AkInterval) ins).isTime())
+                    && ins.typeClass() instanceof AkInterval
+                    && ((AkInterval)ins.typeClass()).isTime(ins))
                     return FirstType.DATETIME;
                 else
                     return this;
-
             }
             
             @Override
             long[] decode(PValueSource val, TExecutionContext context)
             {
                 long ret[] = MDatetimes.decodeDate(val.getInt32());
+         
                 return  MDatetimes.isValidDayMonth(ret) // zero dates are considered 'valid'
                             && !MDatetimes.isZeroDayMonth(ret) // but here we don't want them to be
                         ? ret 
@@ -313,7 +318,7 @@ public class MDateAddSub extends TScalarBase
         abstract long[] decode (PValueSource val, TExecutionContext context);
         protected abstract void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context);
         
-        FirstType adjustFirstArg(TClass ins) // to be overriden in DATE
+        FirstType adjustFirstArg(TInstance ins) // to be overriden in DATE
         {
             // only needs adjusting if <first arg> is DATE
             return this;
@@ -425,7 +430,7 @@ public class MDateAddSub extends TScalarBase
         {
             MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, "UTC"); // calculations should be done
             helper.compute(dt, secondArg.toMillis(inputs.get(1)));      // in UTC (to avoid daylight-saving side effects)
-            firstArg.adjustFirstArg(context.inputTInstanceAt(1).typeClass()).putResult(output, dt, context);
+            firstArg.adjustFirstArg(context.inputTInstanceAt(1)).putResult(output, dt, context);
         }
     }
 
@@ -455,7 +460,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                return firstArg.adjustFirstArg(inputs.get(1).instance().typeClass()).type;
+                return firstArg.adjustFirstArg(inputs.get(1).instance()).type;
             }
         });
     }
