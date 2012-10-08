@@ -39,6 +39,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 
@@ -187,6 +188,11 @@ public class ServerRoutineInvocation
         }
 
         @Override
+        protected ServerQueryContext getContext() {
+            return parameters;
+        }
+
+        @Override
         protected ValueSource getValue(int index) {
             if (parameterArgs[index] < 0) {
                 return new FromObjectValueSource().setReflectively(constantArgs[index]);
@@ -208,7 +214,12 @@ public class ServerRoutineInvocation
 
         @Override
         protected AkType getTargetType(int index) {
-            throw new UnsupportedOperationException();
+            return routine.getParameters().get(index).getType().akType();
+        }
+
+        @Override
+        protected TInstance getInstance(int index) {
+            return routine.getParameters().get(index).tInstance();
         }
 
         @Override

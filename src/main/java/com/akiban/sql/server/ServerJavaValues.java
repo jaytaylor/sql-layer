@@ -32,7 +32,7 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -72,9 +72,11 @@ import java.util.Map;
  */
 public abstract class ServerJavaValues
 {
+    protected abstract ServerQueryContext getContext();
     protected abstract ValueSource getValue(int index);
     protected abstract PValueSource getPValue(int index);
     protected abstract AkType getTargetType(int index);
+    protected abstract TInstance getInstance(int index);
     protected abstract void setValue(int index, ValueSource source, AkType akType);
     protected abstract void setPValue(int index, PValueSource source);
     protected abstract ResultSet toResultSet(int index, Object resultSet);
