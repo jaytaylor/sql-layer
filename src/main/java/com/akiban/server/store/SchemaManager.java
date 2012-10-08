@@ -42,6 +42,15 @@ import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
+    /** Flags indicating behavior regarding contained objects in DROP calls **/
+    static enum DropBehavior {
+        /** Reject if there are contained objects **/
+        RESTRICT,
+
+        /** Allow and also drop contained objects **/
+        CASCADE
+    }
+
     /**
      * <p>
      * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
@@ -125,8 +134,9 @@ public interface SchemaManager {
      * @param session The session to operate under.
      * @param schemaName The name of the schema the table is in.
      * @param tableName The name of the table.
+     * @param dropBehavior How to handle child tables.
      */
-    void deleteTableDefinition(Session session, String schemaName, String tableName);
+    void deleteTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior);
 
     /**
      * Change an existing table definition to be new value specified.
