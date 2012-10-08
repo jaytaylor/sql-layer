@@ -72,7 +72,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public String getString(int parameterIndex) throws SQLException {
         try {
-            return values.getString(parameterIndex);
+            return values.getString(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -82,7 +82,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public boolean getBoolean(int parameterIndex) throws SQLException {
         try {
-            return values.getBoolean(parameterIndex);
+            return values.getBoolean(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -92,7 +92,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public byte getByte(int parameterIndex) throws SQLException {
         try {
-            return values.getByte(parameterIndex);
+            return values.getByte(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -102,7 +102,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public short getShort(int parameterIndex) throws SQLException {
         try {
-            return values.getShort(parameterIndex);
+            return values.getShort(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -112,7 +112,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public int getInt(int parameterIndex) throws SQLException {
         try {
-            return values.getInt(parameterIndex);
+            return values.getInt(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -122,7 +122,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public long getLong(int parameterIndex) throws SQLException {
         try {
-            return values.getLong(parameterIndex);
+            return values.getLong(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -132,7 +132,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public float getFloat(int parameterIndex) throws SQLException {
         try {
-            return values.getFloat(parameterIndex);
+            return values.getFloat(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -142,7 +142,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public double getDouble(int parameterIndex) throws SQLException {
         try {
-            return values.getDouble(parameterIndex);
+            return values.getDouble(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -157,7 +157,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public byte[] getBytes(int parameterIndex) throws SQLException {
         try {
-            return values.getBytes(parameterIndex);
+            return values.getBytes(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -167,7 +167,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Date getDate(int parameterIndex) throws SQLException {
         try {
-            return values.getDate(parameterIndex);
+            return values.getDate(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -177,7 +177,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Time getTime(int parameterIndex) throws SQLException {
         try {
-            return values.getTime(parameterIndex);
+            return values.getTime(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -187,7 +187,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Timestamp getTimestamp(int parameterIndex) throws SQLException {
         try {
-            return values.getTimestamp(parameterIndex);
+            return values.getTimestamp(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -197,7 +197,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Object getObject(int parameterIndex) throws SQLException {
         try {
-            return values.getObject(parameterIndex);
+            return values.getObject(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -207,7 +207,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public BigDecimal getBigDecimal(int parameterIndex) throws SQLException {
         try {
-            return values.getBigDecimal(parameterIndex);
+            return values.getBigDecimal(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -222,7 +222,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Ref getRef(int parameterIndex) throws SQLException {
         try {
-            return values.getRef(parameterIndex);
+            return values.getRef(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -232,7 +232,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Blob getBlob(int parameterIndex) throws SQLException {
         try {
-            return values.getBlob(parameterIndex);
+            return values.getBlob(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -242,7 +242,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Clob getClob(int parameterIndex) throws SQLException {
         try {
-            return values.getClob(parameterIndex);
+            return values.getClob(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -252,7 +252,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Array getArray(int parameterIndex) throws SQLException {
         try {
-            return values.getArray(parameterIndex);
+            return values.getArray(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -262,7 +262,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Date getDate(int parameterIndex, Calendar cal) throws SQLException {
         try {
-            return values.getDate(parameterIndex, cal);
+            return values.getDate(parameterIndex - 1, cal);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -272,7 +272,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Time getTime(int parameterIndex, Calendar cal) throws SQLException {
         try {
-            return values.getTime(parameterIndex, cal);
+            return values.getTime(parameterIndex - 1, cal);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -282,7 +282,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException {
         try {
-            return values.getTimestamp(parameterIndex, cal);
+            return values.getTimestamp(parameterIndex - 1, cal);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -312,7 +312,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public URL getURL(int parameterIndex) throws SQLException {
         try {
-            return values.getURL(parameterIndex);
+            return values.getURL(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -562,7 +562,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public RowId getRowId(int parameterIndex) throws SQLException {
         try {
-            return values.getRowId(parameterIndex);
+            return values.getRowId(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -612,7 +612,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public NClob getNClob(int parameterIndex) throws SQLException {
         try {
-            return values.getNClob(parameterIndex);
+            return values.getNClob(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -632,7 +632,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public SQLXML getSQLXML(int parameterIndex) throws SQLException {
         try {
-            return values.getSQLXML(parameterIndex);
+            return values.getSQLXML(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -647,7 +647,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public String getNString(int parameterIndex) throws SQLException {
         try {
-            return values.getNString(parameterIndex);
+            return values.getNString(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -662,7 +662,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Reader getNCharacterStream(int parameterIndex) throws SQLException {
         try {
-            return values.getNCharacterStream(parameterIndex);
+            return values.getNCharacterStream(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -677,7 +677,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     @Override
     public Reader getCharacterStream(int parameterIndex) throws SQLException {
         try {
-            return values.getCharacterStream(parameterIndex);
+            return values.getCharacterStream(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -752,7 +752,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     //@Override // JDK 1.7
     public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
         try {
-            return (T)values.getObject(parameterIndex, type);
+            return (T)values.getObject(parameterIndex - 1, type);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
