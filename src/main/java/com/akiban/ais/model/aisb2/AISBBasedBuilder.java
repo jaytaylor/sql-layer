@@ -43,6 +43,8 @@ import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.InvalidSQLJJarURLException;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
@@ -514,24 +516,42 @@ public class AISBBasedBuilder
         // NewSQLJJarBuilder
 
         @Override
-        public NewSQLJJarBuilder url(String url) {
+        public NewSQLJJarBuilder url(String value, boolean checkReadable) {
+            URL url;
             try {
-                aisb.sqljJar(schema, userTable, new URL(url));
+                url = new URL(value);
             }
-            catch (MalformedURLException ex) {
-                throw new InvalidSQLJJarURLException(schema, userTable, ex.toString());
+            catch (MalformedURLException ex1) {
+                File file = new File(value);
+                try {
+                    url = file.toURL();
+                }
+                catch (MalformedURLException ex2) {
+                    // Report original failure.
+                    throw new InvalidSQLJJarURLException(schema, userTable, ex1);
+                }
+                if (checkReadable && file.canRead())
+                    checkReadable = false; // Can tell quickly.
             }
-            return this;
-        }
-
-        @Override
-        public NewSQLJJarBuilder file(String file) {
-            try {
-                aisb.sqljJar(schema, userTable, new File(file).toURL());
+            if (checkReadable) {
+                InputStream istr = null;
+                try {
+                    istr = url.openStream(); // Must be able to load it.
+                }
+                catch (IOException ex) {
+                    throw new InvalidSQLJJarURLException(schema, userTable, ex);
+                }
+                finally {
+                    if (istr != null) {
+                        try {
+                            istr.close();
+                        }
+                        catch (IOException ex) {
+                        }
+                    }
+                }
             }
-            catch (MalformedURLException ex) {
-                throw new InvalidSQLJJarURLException(schema, userTable, ex.toString());
-            }
+            aisb.sqljJar(schema, userTable, url);
             return this;
         }
 

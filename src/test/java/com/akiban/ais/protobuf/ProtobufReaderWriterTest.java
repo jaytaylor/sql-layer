@@ -483,8 +483,8 @@ public class ProtobufReaderWriterTest {
     public void procedureJava() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.sqljJar("myjar")
-            // A file URL would vary by testing system.
-            .url("http://software.akiban.com/procs.jar");
+            // A file URL would vary by testing system. But don't check exists.
+            .url("http://software.akiban.com/procs.jar", false);
         builder.procedure("PROC1")
             .language("java", Routine.CallingConvention.JAVA)
             .paramLongIn("x1")
