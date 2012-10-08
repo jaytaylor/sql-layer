@@ -43,7 +43,6 @@ public class MFirst extends TAggregatorBase {
     
     protected MFirst(String name) {
         super(name, null);
-        first = false;
     }
 
     @Override
@@ -51,12 +50,9 @@ public class MFirst extends TAggregatorBase {
             TInstance stateType, PValue state, Object option) {
         if (source.isNull())
             return;
-        
-        if (!first) {
+
+        if (!state.hasAnyValue())
             PValueTargets.copyFrom(source, state);
-            first = true;
-            return;
-        }
     }
 
     @Override
@@ -68,6 +64,4 @@ public class MFirst extends TAggregatorBase {
     public TOverloadResult resultType() {
         return TOverloadResult.picking();
     }
-    
-    private boolean first; 
 }
