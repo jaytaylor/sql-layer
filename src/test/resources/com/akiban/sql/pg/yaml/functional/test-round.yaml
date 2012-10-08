@@ -43,15 +43,15 @@
 - Statement: SELECT ROUND(76543, -2);
 - output: [[76500]]
 ---
-- Statement: SELECT ROUND(76550, -3);
+- Statement: SELECT ROUND(76543, -3);
 - output: [[77000]]
 ---
-- Statement: SELECT ROUND(76550, -4);
+- Statement: SELECT ROUND(76543, -4);
 - output: [[80000]]
 ---
-- Statement: SELECT ROUND(76550, -5);
+- Statement: SELECT ROUND(76543, -5);
 - output: [[100000]]
 ---
-- Statement: SELECT ROUND(76550, -6);
+- Statement: SELECT ROUND(76543, -6);
 - output: [[0]]
 ...
