@@ -11,12 +11,9 @@
 - output: [[!re '2563-12-31 01:15:33(\.0)?']]
 ---
 - Include: all-datetime-schema.yaml
-#--- # The predicate in WHERE would always return TRUE because
-# TIMESTAMP(<time>) ==> null
-# timestamp_field   ==> TIMESTAMP
-# These two aren't equal to each other
-#- Statement: select id,timestamp(time_field) from datetime_matrix where timestamp(time_field) <> timestamp_field;
-#- row_count: 840
+---
+- Statement: select id,timestamp(time_field) from datetime_matrix where timestamp(time_field) <> timestamp_field;
+- row_count: 0
 ---
 - Statement: select id from datetime_matrix 
 - row_count: 0
