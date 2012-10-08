@@ -238,7 +238,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
-                deleteTableCommon(session, tableName, DropBehavior.RESTRICT, true, true);
+                dropTableCommon(session, tableName, DropBehavior.RESTRICT, true, true);
             }
         });
     }
@@ -439,8 +439,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public void deleteTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior) {
-        deleteTableCommon(session, new TableName(schemaName, tableName), dropBehavior, false, false);
+    public void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior) {
+        dropTableCommon(session, new TableName(schemaName, tableName), dropBehavior, false, false);
     }
 
     @Override
@@ -481,8 +481,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         saveAISChangeWithRowDefs(session, newAIS, schemas);
     }
 
-    private void deleteTableCommon(Session session, TableName tableName, final DropBehavior dropBehavior,
-                                   final boolean isInternal, final boolean mustBeMemory) {
+    private void dropTableCommon(Session session, TableName tableName, final DropBehavior dropBehavior,
+                                 final boolean isInternal, final boolean mustBeMemory) {
         checkTableName(tableName, true, isInternal);
         final UserTable table = getAis().getUserTable(tableName);
         assert table != null : tableName + " is a GroupTable";
@@ -499,9 +499,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 if(mustBeMemory && !userTable.hasMemoryTableFactory()) {
                     throw new IllegalArgumentException("Cannot un-register non-memory table");
                 }
+
                 if((dropBehavior == DropBehavior.RESTRICT) && !userTable.getChildJoins().isEmpty()) {
                     throw new ReferencedTableException (table);
                 }
+
                 TableName name = userTable.getName();
                 tables.add(name);
                 schemas.add(name.getSchemaName());

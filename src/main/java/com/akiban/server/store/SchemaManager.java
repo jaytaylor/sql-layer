@@ -136,7 +136,7 @@ public interface SchemaManager {
      * @param tableName The name of the table.
      * @param dropBehavior How to handle child tables.
      */
-    void deleteTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior);
+    void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior);
 
     /**
      * Change an existing table definition to be new value specified.

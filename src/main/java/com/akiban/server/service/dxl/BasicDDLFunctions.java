@@ -239,8 +239,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 store().deleteSequences(session, sequences);
             }
         }
-        schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
-                                              SchemaManager.DropBehavior.RESTRICT);
+        schemaManager().dropTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
+                                            SchemaManager.DropBehavior.RESTRICT);
         checkCursorsForDDLModification(session, table);
     }
 
@@ -674,8 +674,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new PersistitAdapterException(ex);
         }
         final UserTable root = group.getRoot();
-        schemaManager().deleteTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
-                                              SchemaManager.DropBehavior.CASCADE);
+        schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
+                                            SchemaManager.DropBehavior.CASCADE);
         checkCursorsForDDLModification(session, root);
     }
 

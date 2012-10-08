@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -114,7 +113,7 @@ public final class SchemaManagerIT extends ITBase {
     private void deleteTableDef(final String schema, final String table) throws Exception {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
-                schemaManager.deleteTableDefinition(session(), schema, table);
+                schemaManager.dropTableDefinition(session(), schema, table, SchemaManager.DropBehavior.RESTRICT);
                 return null;
             }
         });
