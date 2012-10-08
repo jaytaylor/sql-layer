@@ -174,6 +174,8 @@ public class PostgresJavaMethod extends PostgresDMLStatement
                                                 int nparams, int[] paramTypes) {
         PostgresType[] result = new PostgresType[nparams];
         for (int i = 0; i < nparams; i++) {
+            // See what method argument index this parameter is (first) used for.
+            // That will determine its type.
             int usage = invocation.parameterUsage(i);
             if (usage < 0) continue;
             PostgresType pgType = PostgresType.fromAIS(invocation.getRoutine().getParameters().get(i));

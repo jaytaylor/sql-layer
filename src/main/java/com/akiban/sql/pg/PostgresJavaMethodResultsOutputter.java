@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,7 +49,7 @@ public class PostgresJavaMethodResultsOutputter extends PostgresOutputter<Object
         int fieldIndex = 0;
         for (int paramIndex = 0; paramIndex < parameterTypes.length; paramIndex++) {
             if (!parameterTypes[paramIndex].isArray()) continue;
-            Object field = row[paramIndex];
+            Object field = Array.get(row[paramIndex], 0);
             PostgresType type = columnTypes.get(fieldIndex);
             boolean binary = context.isColumnBinary(fieldIndex);
             ByteArrayOutputStream bytes;
