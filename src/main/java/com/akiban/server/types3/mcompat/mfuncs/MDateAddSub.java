@@ -67,8 +67,8 @@ public class MDateAddSub extends TScalarBase
         new MDateAddSub(Helper.DO_ADD_MONTH, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE", "plus"),
         new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE", "plus"),
         new MDateAddSub(Helper.DO_ADD_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE", "plus"),
-        new AddSubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE"),
-        new AddSubWithVarchar(Helper.DO_ADD_MONTH, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE", "plus"),
+        new AddSubWithVarchar(Helper.DO_ADD_MONTH, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE", "plus"),
 
         // SUBDATE
         new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.DAY, "SUBDATE"),
@@ -81,6 +81,8 @@ public class MDateAddSub extends TScalarBase
         new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
         new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
         new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
+        new AddSubWithVarchar(Helper.DO_SUB_MONTH, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
         
         // ADDTIME
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
@@ -138,7 +140,7 @@ public class MDateAddSub extends TScalarBase
                 case DATETIME_ST:
                     dt = MDatetimes.toJodaDatetime(ymd, context.getCurrentTimezone());
                     helper.compute(dt, millis);
-                    output.putString(dt.toString("YYYY-MM-dd hh:mm:ss"), null);
+                    output.putString(dt.toString("YYYY-MM-dd HH:mm:ss"), null);
                     break;
                 case TIME_ST:
                     long arg0Millis = timeToMillis(ymd);
@@ -162,11 +164,6 @@ public class MDateAddSub extends TScalarBase
                 default:
                     throw new AkibanInternalException("unexpected argument: " + stType);
             }
-        }
-
-        @Override
-        public int[] getPriorities() {
-            return new int[] { 2 };
         }
     }
     
