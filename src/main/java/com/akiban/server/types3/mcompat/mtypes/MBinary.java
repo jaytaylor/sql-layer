@@ -51,6 +51,7 @@ import java.util.Arrays;
 
 public final class MBinary extends SimpleDtdTClass {
 
+    private static final int MAX_BYTE_BUF = 4096;
     private static final TParser parser = new BinaryParser();
 
     public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
@@ -132,7 +133,10 @@ public final class MBinary extends SimpleDtdTClass {
 
     @Override
     public TInstance instance() {
-        return instance(defaultLength);
+        // 'defaultLength' doesn't always mean "LENGTH"
+        // -1 simply means a (VAR)BINARY type, in which case, you don't want
+        // to create an instance with length -1, but with MAX_BYTE_BUF (4096)
+        return instance(defaultLength < 0 ? MAX_BYTE_BUF : defaultLength);
     }
 
     @Override
