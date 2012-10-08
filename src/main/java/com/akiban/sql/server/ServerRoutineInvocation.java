@@ -36,7 +36,10 @@ import com.akiban.sql.parser.ValueNode;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 
 import java.util.Arrays;
@@ -98,6 +101,13 @@ public class ServerRoutineInvocation
         return new ServerRoutineInvocation(routine, constantArgs, parameterArgs);
     }
 
+    public int size() {
+        if (constantArgs == null)
+            return 0;
+        else
+            return constantArgs.length;
+    }
+
     public Routine getRoutine() {
         return routine;
     }
@@ -108,6 +118,17 @@ public class ServerRoutineInvocation
 
     public TableName getRoutineName() {
         return routine.getName();
+    }
+
+    public int parameterUsage(int param) {
+        if (parameterArgs != null) {
+            for (int i = 0; i < parameterArgs.length; i++) {
+                if (parameterArgs[i] == param) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     public boolean hasParameters() {
@@ -153,5 +174,67 @@ public class ServerRoutineInvocation
             }
         }
     }
+
+    public ServerJavaValues asValues(ServerQueryContext parameters) {
+        return new Values(parameters);
+    }
+
+    protected class Values extends ServerJavaValues {
+        private ServerQueryContext parameters;
+
+        protected Values(ServerQueryContext parameters) {
+            this.parameters = parameters;
+        }
+
+        @Override
+        protected ValueSource getValue(int index) {
+            if (parameterArgs[index] < 0) {
+                return new FromObjectValueSource().setReflectively(constantArgs[index]);
+            }
+            else {
+                return parameters.getValue(parameterArgs[index]);
+            }
+        }
+
+        @Override
+        protected PValueSource getPValue(int index) {
+            if (parameterArgs[index] < 0) {
+                return PValueSources.fromObject(constantArgs[index], null).value();
+            }
+            else {
+                return parameters.getPValue(parameterArgs[index]);
+            }
+        }
+
+        @Override
+        protected AkType getTargetType(int index) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected void setValue(int index, ValueSource source, AkType akType) {
+            if (parameterArgs[index] < 0) {
+                throw new UnsupportedOperationException();
+            }
+            else {
+                parameters.setValue(parameterArgs[index], source, akType);
+            }
+        }
+
+        @Override
+        protected void setPValue(int index, PValueSource source) {
+            if (parameterArgs[index] < 0) {
+                throw new UnsupportedOperationException();
+            }
+            else {
+                parameters.setPValue(parameterArgs[index], source);
+            }
+        }
+
+        @Override
+        protected java.sql.ResultSet toResultSet(int index, Object resultSet) {
+            throw new UnsupportedOperationException();
+        }
+    }    
 
 }

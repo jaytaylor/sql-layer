@@ -45,7 +45,7 @@ public class SQLJJarRoutines
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
         NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName());
-        aisb.sqljJar(jarName).url(url);
+        aisb.sqljJar(jarName).url(url, true);
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
         server.getDXL().ddlFunctions().createSQLJJar(server.getSession(), sqljJar);
         if (deploy != 0) {
@@ -59,7 +59,7 @@ public class SQLJJarRoutines
         TableName jarName = jarName(server, jar);
         server.getRoutineLoader().unloadSQLJJar(jarName);
         NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName());
-        aisb.sqljJar(jarName).url(url);
+        aisb.sqljJar(jarName).url(url, true);
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
         server.getDXL().ddlFunctions().replaceSQLJJar(server.getSession(), sqljJar);
     }

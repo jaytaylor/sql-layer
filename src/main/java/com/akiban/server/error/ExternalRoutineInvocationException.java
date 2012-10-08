@@ -27,16 +27,23 @@
 
 package com.akiban.server.error;
 
-public class InvalidSQLJJarURLException extends InvalidOperationException
+import com.akiban.ais.model.TableName;
+
+public class ExternalRoutineInvocationException extends InvalidOperationException
 {
-    public InvalidSQLJJarURLException(String schemaName, String jarName, String msg)
+    public ExternalRoutineInvocationException(String schemaName, String routineName, String msg)
     {
-        super(ErrorCode.INVALID_SQLJ_JAR_URL, schemaName, jarName, msg);
+        super(ErrorCode.EXTERNAL_ROUTINE_INVOCATION, schemaName, routineName, msg);
     }
 
-    public InvalidSQLJJarURLException(String schemaName, String jarName, Throwable cause)
+    public ExternalRoutineInvocationException(TableName name, String msg)
     {
-        super(ErrorCode.INVALID_SQLJ_JAR_URL, schemaName, jarName, cause.toString());
+        this(name.getSchemaName(), name.getTableName(), msg);
+    }
+
+    public ExternalRoutineInvocationException(TableName name, Throwable cause)
+    {
+        this(name, cause.toString());
         initCause(cause);
     }
 }

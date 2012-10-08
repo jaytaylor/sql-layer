@@ -231,6 +231,7 @@ public enum ErrorCode {
     // Class 36 - cursor sensitivity exception
     // Class 38 - external routine exception
     // Class 39 - external routine invocation
+    EXTERNAL_ROUTINE_INVOCATION ("39", "000", Importance.DEBUG, ExternalRoutineInvocationException.class),
     // Class 3B - savepoint exception
     // Class 3C - ambiguous cursor name
     // Class 3D - invalid catalog name

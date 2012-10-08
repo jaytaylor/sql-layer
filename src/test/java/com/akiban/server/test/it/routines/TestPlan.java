@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.test.it.loadableplan;
+package com.akiban.server.test.it.routines;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
@@ -45,7 +45,8 @@ import static com.akiban.qp.operator.API.project_Default;
 DROP TABLE test;
 CREATE TABLE test(id INT PRIMARY KEY NOT NULL, value VARCHAR(10));
 INSERT INTO test VALUES(1, 'aaa'), (2, 'bbb');
-CREATE PROCEDURE test(IN n BIGINT) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'com.akiban.server.test.it.loadableplan.Plan';
+CALL sqlj.install_jar('target/akiban-server-1.4.2-SNAPSHOT-tests.jar', 'testjar', 0);
+CREATE PROCEDURE test(IN n BIGINT) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'testjar:com.akiban.server.test.it.routines.TestPlan';
 CALL test(666)
  * </pre></code> 
  */
