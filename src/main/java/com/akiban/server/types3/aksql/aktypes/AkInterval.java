@@ -342,11 +342,11 @@ public class AkInterval extends TClassBase {
         return secondsRawFrom(source, TimeUnit.NANOSECONDS);
     }
 
-    public static enum SecondsAttrs implements Attribute {
+    private static enum SecondsAttrs implements Attribute {
         FORMAT
     }
 
-    public static enum MonthsAttrs implements Attribute {
+    private static enum MonthsAttrs implements Attribute {
         FORMAT
     }
 
