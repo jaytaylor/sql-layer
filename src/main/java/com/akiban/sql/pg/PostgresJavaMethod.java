@@ -165,7 +165,7 @@ public class PostgresJavaMethod extends PostgresDMLStatement
         List<PostgresType> result = new ArrayList<PostgresType>();
         for (Parameter param : routine.getParameters()) {
             if (param.getDirection() == Parameter.Direction.IN) continue;
-            result.add(parameterType(param));
+            result.add(PostgresType.fromAIS(param));
         }
         return result;
     }
@@ -176,7 +176,7 @@ public class PostgresJavaMethod extends PostgresDMLStatement
         for (int i = 0; i < nparams; i++) {
             int usage = invocation.parameterUsage(i);
             if (usage < 0) continue;
-            PostgresType pgType = parameterType(invocation.getRoutine().getParameters().get(i));
+            PostgresType pgType = PostgresType.fromAIS(invocation.getRoutine().getParameters().get(i));
             if ((paramTypes != null) && (i < paramTypes.length)) {
                 // Adjust to match what client proposed.
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
@@ -192,10 +192,6 @@ public class PostgresJavaMethod extends PostgresDMLStatement
             result[i] = pgType;
         }
         return result;
-    }
-
-    public static PostgresType parameterType(Parameter param) {
-        return null;
     }
 
     public static Object[] methodArgs(Method method) {
