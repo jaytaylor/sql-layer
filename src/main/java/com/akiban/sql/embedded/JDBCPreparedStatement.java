@@ -28,8 +28,10 @@ package com.akiban.sql.embedded;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.server.ServerJavaValues;
+import com.akiban.sql.server.ServerQueryContext;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -48,10 +50,20 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
                                     InternalStatement internalStatement) {
         super(connection);
         this.internalStatement = internalStatement;
-        context = new EmbeddedQueryContext(connection, this);
+        context = new EmbeddedQueryContext(this);
     }
 
     protected class Values extends ServerJavaValues {
+        @Override
+        protected int size() {
+            return internalStatement.getParameterMetaData().getParameters().size();
+        }
+
+        @Override
+        protected ServerQueryContext getContext() {
+            return context;
+        }
+
         @Override
         protected ValueSource getValue(int parameterIndex) {
             return context.getValue(parameterIndex - 1);
@@ -73,13 +85,18 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
         }
 
         @Override
-        protected ResultSet toResultSet(int parameterIndex, Object resultSet) {
-            throw new UnsupportedOperationException();
+        protected AkType getAkType(int parameterIndex) {
+            return internalStatement.getParameterMetaData().getParameter(parameterIndex).getAkType();
         }
 
         @Override
-        protected AkType getTargetType(int parameterIndex) {
-            return internalStatement.getParameterMetaData().getParameter(parameterIndex).getAkType();
+        protected TInstance getTInstance(int parameterIndex) {
+            return internalStatement.getParameterMetaData().getParameter(parameterIndex).getTInstance();
+        }
+
+        @Override
+        protected ResultSet toResultSet(int parameterIndex, Object resultSet) {
+            throw new UnsupportedOperationException();
         }
     }
 

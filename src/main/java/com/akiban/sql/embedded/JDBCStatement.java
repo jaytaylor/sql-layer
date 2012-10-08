@@ -35,7 +35,7 @@ import java.util.List;
 
 public class JDBCStatement implements Statement
 {
-    private JDBCConnection connection;
+    protected final JDBCConnection connection;
     private boolean closed;
     private JDBCWarning warnings;
     private JDBCResultSet currentResultSet;
@@ -51,7 +51,7 @@ public class JDBCStatement implements Statement
         if (context == null) {
             if (stmt.getParameterMetaData() != null)
                 throw new JDBCException("Statement required parameters; must prepare");
-            context = new EmbeddedQueryContext(connection, this);
+            context = new EmbeddedQueryContext(this);
         }
         JDBCResultSet resultSet = new JDBCResultSet(this, stmt.getResultSetMetaData());
         boolean success = false;

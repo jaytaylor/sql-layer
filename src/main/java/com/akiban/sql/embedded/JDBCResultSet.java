@@ -29,8 +29,10 @@ package com.akiban.sql.embedded;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.sql.server.ServerJavaValues;
+import com.akiban.sql.server.ServerQueryContext;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 import java.sql.*;
@@ -49,17 +51,20 @@ public class JDBCResultSet implements ResultSet
     protected final JDBCResultSetMetaData metaData;
     protected Cursor cursor;
     protected Row row;
-    protected final Values values = new Values();
-    
+    private final EmbeddedQueryContext context;
+    private final Values values;
+    private JDBCWarning warnings;
+
     protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData) {
         this.statement = statement;
         this.metaData = metaData;
+        context = new EmbeddedQueryContext(this);
+        values = new Values();
     }
 
     protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData,
                             Cursor cursor) {
-        this.statement = statement;
-        this.metaData = metaData;
+        this(statement, metaData);
         this.cursor = cursor;
         statement.openingResultSet(this);
     }
@@ -70,6 +75,16 @@ public class JDBCResultSet implements ResultSet
     }
 
     protected class Values extends ServerJavaValues {
+        @Override
+        protected int size() {
+            return metaData.getColumns().size();
+        }
+
+        @Override
+        protected ServerQueryContext getContext() {
+            return context;
+        }
+
         @Override
         protected ValueSource getValue(int columnIndex) {
             if (row == null) {
@@ -106,8 +121,13 @@ public class JDBCResultSet implements ResultSet
         }
 
         @Override
-        protected AkType getTargetType(int columnIndex) {
+        protected AkType getAkType(int columnIndex) {
             return metaData.getColumn(columnIndex).getAkType();
+        }
+
+        @Override
+        protected TInstance getTInstance(int columnIndex) {
+            return metaData.getColumn(columnIndex).getTInstance();
         }
 
         @Override
@@ -119,6 +139,13 @@ public class JDBCResultSet implements ResultSet
         protected void setPValue(int index, PValueSource source) {
             throw new UnsupportedOperationException("Row update not suported");
         }
+    }
+
+    protected void addWarning(JDBCWarning warning) {
+        if (warnings == null)
+            warnings = warning;
+        else
+            warnings.setNextWarning(warning);
     }
 
     /* Wrapper */
