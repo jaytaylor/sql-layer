@@ -37,10 +37,11 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
+
 import java.util.List;
 
-public class Mid extends TOverloadBase
+public class Mid extends TScalarBase
 {
     private final TClass strType;
     private final TClass int32Type;

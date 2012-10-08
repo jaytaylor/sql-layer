@@ -26,7 +26,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.T3RegistryServiceImpl;
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
@@ -56,7 +55,7 @@ public class RulesTestContext extends SchemaRulesContext
         context.initFunctionsRegistry(new FunctionsRegistryImpl());
         T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
         t3Registry.start();
-        context.initOverloadResolver(new OverloadResolver(t3Registry));
+        context.initT3Registry(t3Registry);
         context.initCostEstimator(new TestCostEstimator(ais, context.getSchema(), 
                                                         statsFile, statsIgnoreMissingIndexes,
                                                         properties), false);

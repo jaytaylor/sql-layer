@@ -26,20 +26,21 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
-import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
+import static com.akiban.server.types3.mcompat.mtypes.MNumeric.*;
 
-public class Cast_From_Date
+public abstract class Cast_From_Date extends TCastBase
 {
     /**
      * TODO:
@@ -60,30 +61,114 @@ public class Cast_From_Date
      * LONTTEXT
      * 
      */
-   public static final TCast TO_TINYINT = new FromInt32ToInt8(MDatetimes.DATE, MNumeric.TINYINT, false, Constantness.UNKNOWN);
+    public static final TCast TO_TINYINT = new Cast_From_Date(TINYINT)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt8((byte) CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, val, context));
+        }
+    };
+    
+    public static final TCast TO_UNSIGNED_TINYINT = new Cast_From_Date(TINYINT_UNSIGNED)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, 0, val, context));
+        }   
+    };
 
-    public static final TCast TO_UNSIGNED_TINYINT = new FromInt32ToUnsignedInt8(MDatetimes.DATE, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_SMALLINT = new Cast_From_Date(SMALLINT)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, val, context));
+        }
+    };
+
+    public static final TCast TO_UNSIGNED_SMALINT = new Cast_From_Date(SMALLINT_UNSIGNED)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, 0, val, context));
+        }
+    };
     
-    public static final TCast TO_SMALLINT = new FromInt32ToInt16(MDatetimes.DATE, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
+    public static final TCast TO_MEDIUMINT = new Cast_From_Date(MEDIUMINT)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt32(val);
+        }
+    };
+
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new Cast_From_Date(MEDIUMINT_UNSIGNED)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, val, context));
+        }
+    };
+
+    public static final TCast TO_INT = new Cast_From_Date(INT)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt32(val);
+        }
+    };
     
-    public static final TCast TO_UNSIGNED_SMALINT = new FromInt32ToUnsignedInt16(MDatetimes.DATE, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_INT = new Cast_From_Date(INT_UNSIGNED)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt64(CastUtils.getInRange(Long.MAX_VALUE, 0, val, context));
+        }
+    };
     
-    public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MDatetimes.DATE, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
+    public static final TCast TO_BIGINT = new Cast_From_Date(BIGINT)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt64(val);
+        }
+    };
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToUnsignedInt32(MDatetimes.DATE, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_BIGINT = new Cast_From_Date(BIGINT_UNSIGNED)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putInt64(val);
+        }
+    };
     
-    public static final TCast TO_INT = new FromInt32ToInt32(MDatetimes.DATE, MNumeric.INT, false, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new Cast_From_Date(MApproximateNumber.DOUBLE)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putDouble(val);
+        }
+    };
     
-    public static final TCast TO_UNSIGNED_INT = new FromInt32ToUnsignedInt32(MDatetimes.DATE, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
-    
-    public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT, false, Constantness.UNKNOWN);
-    
-    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT_UNSIGNED, false, Constantness.UNKNOWN);
-    
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.DATE, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
-    
-    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.DATE, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
-    
+    public static final TCast TO_DECIMAL = new Cast_From_Date(MNumeric.DECIMAL)
+    {
+        @Override
+        protected void putOut(int val, PValueTarget out, TExecutionContext context)
+        {
+            out.putObject(new MBigDecimalWrapper(val));
+        }
+    };
+
     public static final TCast TO_DATETIME = new TCastBase(MDatetimes.DATE, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 
@@ -120,4 +205,26 @@ public class Cast_From_Date
                                                        context));
         }
     };
+    
+    protected abstract void putOut(int val, PValueTarget out, TExecutionContext context);
+    
+    private Cast_From_Date(TClass targetType)
+    {
+        super(MDatetimes.DATE, targetType);
+    }
+    
+    @Override
+    protected void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+    {
+        putOut(packYMD(MDatetimes.decodeDate(source.getInt32())),
+               target,
+               context);
+    }
+    
+    private static int packYMD(long ymd[])
+    {
+        return (int) (ymd[MDatetimes.YEAR_INDEX] * 10000
+                       + ymd[MDatetimes.MONTH_INDEX] * 100
+                       + ymd[MDatetimes.DAY_INDEX]);
+    }
 }

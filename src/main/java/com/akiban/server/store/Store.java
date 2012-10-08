@@ -26,6 +26,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
@@ -136,16 +137,16 @@ public interface Store {
     TableStatistics getTableStatistics(Session session, int tableId);
 
     /**
-     * Delete all tree data associated with the group of rowDefId. This includes
+     * Delete all data associated with the group. This includes
      * all indexes from all tables, group indexes, and the group itself.
      */
-    void dropGroup(Session session, int rowDefId) throws PersistitException;
+    void dropGroup(Session session, Group group) throws PersistitException;
 
     /**
-     * Truncate the group of rowDefId. This includes indexes from all tables, group
+     * Truncate the given group. This includes indexes from all tables, group
      * indexes, the group itself, and all table statuses.
      */
-    void truncateGroup(Session session, int rowDefId) throws PersistitException;
+    void truncateGroup(Session session, Group group) throws PersistitException;
 
     void truncateTableStatus(Session session, int rowDefId) throws RollbackException, PersistitException;
 

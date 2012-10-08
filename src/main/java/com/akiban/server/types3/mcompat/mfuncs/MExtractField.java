@@ -31,7 +31,7 @@ import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -39,13 +39,13 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public abstract class MExtractField extends TOverloadBase
+public abstract class MExtractField extends TScalarBase
 {
     private static int MAX_YEAR = 9999;
 
-    public static final TOverload INSTANCES[] = new TOverload[]
+    public static final TScalar INSTANCES[] = new TScalar[]
     {
         new MExtractField("YEAR", MDatetimes.DATE, Decoder.DATE)
         {
@@ -117,6 +117,9 @@ public abstract class MExtractField extends TOverloadBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
+                if (MDatetimes.isZeroDayMonth(ymd))
+                    return -1;
+                
                 ymd[2] = MDatetimes.getLastDay(ymd);
                 return MDatetimes.encodeDate(ymd);
             }
@@ -175,7 +178,7 @@ public abstract class MExtractField extends TOverloadBase
                 return (int) ymd[MDatetimes.SEC_INDEX];
             }
         },
-        new TOverloadBase() // DAYNAME
+        new TScalarBase() // DAYNAME
         {
             @Override
             protected void buildInputSets(TInputSetBuilder builder)
@@ -212,7 +215,7 @@ public abstract class MExtractField extends TOverloadBase
                 return TOverloadResult.fixed(MString.VARCHAR.instance(9));
             }
         },
-        new TOverloadBase() // MONTHNAME
+        new TScalarBase() // MONTHNAME
         {
             @Override
             protected void buildInputSets(TInputSetBuilder builder)

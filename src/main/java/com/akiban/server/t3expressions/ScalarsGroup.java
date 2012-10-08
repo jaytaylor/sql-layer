@@ -30,7 +30,7 @@ import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.Collection;
 
-public interface ScalarsGroup {
-    Collection<? extends TValidatedOverload> getOverloads();
+public interface ScalarsGroup<V extends TValidatedOverload> {
+    Collection<? extends V> getOverloads();
     boolean hasSameTypeAt(int pos);
 }

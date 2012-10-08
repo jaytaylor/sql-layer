@@ -26,8 +26,8 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 
 public class MFloor {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.FLOOR);
+    public static final TScalar[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.FLOOR);
 }

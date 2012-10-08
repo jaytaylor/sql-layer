@@ -29,7 +29,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
@@ -38,11 +38,11 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public class MDistanceLatLon extends TOverloadBase
+public class MDistanceLatLon extends TScalarBase
 {
-    public static final TOverload INSTANCE = new MDistanceLatLon();
+    public static final TScalar INSTANCE = new MDistanceLatLon();
 
     private MDistanceLatLon(){}
     

@@ -29,13 +29,13 @@ import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public abstract class Trim extends TOverloadBase {
+public abstract class Trim extends TScalarBase {
 
     // Described by TRIM(<trim_spec>, <char_to_trim>, <string_to_trim>
-    public static TOverload[] create(TClass stringType, TClass intType) {
-        TOverload rtrim = new Trim(stringType, intType) {
+    public static TScalar[] create(TClass stringType, TClass intType) {
+        TScalar rtrim = new Trim(stringType, intType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -55,7 +55,7 @@ public abstract class Trim extends TOverloadBase {
             }
         };
 
-        TOverload ltrim = new Trim(stringType, intType) {
+        TScalar ltrim = new Trim(stringType, intType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -75,7 +75,7 @@ public abstract class Trim extends TOverloadBase {
             }
         };
 
-        TOverload trim = new Trim(stringType, intType) {
+        TScalar trim = new Trim(stringType, intType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -101,7 +101,7 @@ public abstract class Trim extends TOverloadBase {
             }
         };
         
-        return new TOverload[]{ltrim, rtrim, trim};
+        return new TScalar[]{ltrim, rtrim, trim};
     }
 
     protected final int RTRIM = 0;

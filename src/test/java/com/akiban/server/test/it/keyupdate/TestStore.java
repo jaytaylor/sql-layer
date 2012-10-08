@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -72,10 +73,10 @@ public class TestStore
         map.put(mergedRow.hKey(), mergedRow);
     }
 
-    public void traverse(Session session, RowDef rowDef, TreeRecordVisitor testVisitor, TreeRecordVisitor realVisitor)
+    public void traverse(Session session, Group group, TreeRecordVisitor testVisitor, TreeRecordVisitor realVisitor)
         throws Exception
     {
-        persistitStore.traverse(session, rowDef, realVisitor);
+        persistitStore.traverse(session, group, realVisitor);
         for (Map.Entry<HKey, TestRow> entry : map.entrySet()) {
             testVisitor.visit(entry.getKey().objectArray(), entry.getValue());
         }

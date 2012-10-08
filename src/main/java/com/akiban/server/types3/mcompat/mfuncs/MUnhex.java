@@ -34,13 +34,13 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.util.Strings;
 import java.util.List;
 
-public class MUnhex extends TOverloadBase {
+public class MUnhex extends TScalarBase {
 
-    public static final TOverload INSTANCE = new MUnhex();
+    public static final TScalar INSTANCE = new MUnhex();
     
     private static final int VARBINARY_MAX_LENGTH = 65;
     

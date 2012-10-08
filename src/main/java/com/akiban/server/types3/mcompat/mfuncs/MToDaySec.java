@@ -29,20 +29,20 @@ import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-public abstract class MToDaySec extends TOverloadBase
+public abstract class MToDaySec extends TScalarBase
 {
-    public static final TOverload TO_DAYS = new MToDaySec(MDatetimes.DATETIME, "TO_DAYS")
+    public static final TScalar TO_DAYS = new MToDaySec(MDatetimes.DATETIME, "TO_DAYS")
     {
         @Override
         protected int computeDaySec(long[] ymd)
@@ -52,7 +52,7 @@ public abstract class MToDaySec extends TOverloadBase
         }
     };
 
-    public static final TOverload TO_SECS = new MToDaySec(MDatetimes.DATETIME, "TO_SECONDS")
+    public static final TScalar TO_SECS = new MToDaySec(MDatetimes.DATETIME, "TO_SECONDS")
     {
         @Override
         protected int computeDaySec(long[] ymd)
@@ -62,7 +62,7 @@ public abstract class MToDaySec extends TOverloadBase
         }    
     };
     
-    public static final TOverload TIME_TO_SEC = new MToDaySec(MDatetimes.TIME, "TIME_TO_SEC")
+    public static final TScalar TIME_TO_SEC = new MToDaySec(MDatetimes.TIME, "TIME_TO_SEC")
     {
         @Override
         public TOverloadResult resultType()

@@ -26,42 +26,25 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastIdentifier;
-import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCommutativeOverloads;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TStrongCasts;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.service.ReflectiveInstanceFinder;
-import com.akiban.server.types3.texpressions.Constantness;
+import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
-import com.akiban.util.DagChecker;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.base.Objects;
-import com.google.common.base.Predicate;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -69,63 +52,32 @@ import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
 
     // T3RegistryService interface
-    
+
     @Override
-    public Iterable<? extends ScalarsGroup> getOverloads(String name) {
-        List<ScalarsGroup> result = overloadsByName.get(name.toLowerCase());
-        return result.isEmpty() ? null : result;
+    public OverloadResolver<TValidatedScalar> getScalarsResolver() {
+        return scalarsResolver;
     }
 
     @Override
-    public TCast cast(TClass source, TClass target) {
-        return cast(castsBySource, source, target);
+    public OverloadResolver<TValidatedAggregator> getAggregatesResolver() {
+        return aggregatesResolver;
     }
 
     @Override
-    public Set<TClass> stronglyCastableFrom(TClass tClass) {
-        Map<TClass, TCast> castsFrom = strongCastsBySource.get(tClass);
-        return castsFrom.keySet();
-    }
-
-    @Override
-    public Collection<? extends TAggregator> getAggregates(String name) {
-        name = name.toLowerCase();
-        Collection<? extends TAggregator> aggrs = aggregatorsByName.get(name);
-        if (aggrs == null)
-            throw new NoSuchFunctionException(name);
-        return aggrs;
-    }
-
-    @Override
-    public boolean isStrong(TCast cast) {
-        TClass source = cast.sourceClass();
-        TClass target = cast.targetClass();
-        return stronglyCastableFrom(source).contains(target);
-    }
-
-    @Override
-    public boolean isIndexFriendly(TClass source, TClass target) {
-        return Objects.equal(
-                source.name().categoryName(),
-                target.name().categoryName()
-        );
+    public TCastResolver getCastsResolver() {
+        return castsResolver;
     }
 
     // Service interface
@@ -144,10 +96,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     @Override
     public void stop() {
-        castsBySource = null;
-        strongCastsBySource = null;
-        overloadsByName = null;
-        aggregatorsByName = null;
+        castsResolver = null;
+        scalarsRegistry = null;
+        aggreatorsRegistry = null;
         tClasses = null;
     }
 
@@ -165,328 +116,41 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     // private methods
 
-    private static TCast cast(Map<TClass, Map<TClass, TCast>> castsBySource, TClass source, TClass target) {
-        TCast result = null;
-        Map<TClass,TCast> castsByTarget = castsBySource.get(source);
-        if (castsByTarget != null)
-            result = castsByTarget.get(target);
-        return result;
-    }
-
     void start(InstanceFinder finder) {
         tClasses = new HashSet<TClass>(finder.find(TClass.class));
 
-        castsBySource = createCasts(tClasses, finder);
-        createDerivedCasts(castsBySource, finder);
-        deriveCastsFromVarchar();
-        strongCastsBySource = createStrongCastsMap(castsBySource, finder);
-        checkDag(strongCastsBySource);
+        TCastsRegistry castsRegistry = new TCastsRegistry(tClasses, finder);
+        castsResolver = new TCastResolver(castsRegistry);
 
-        overloadsByName = createScalars(finder);
-
-        aggregatorsByName = createAggregates(finder);
-    }
-
-    private static Map<String, Collection<TAggregator>> createAggregates(InstanceFinder finder) {
-        Collection<? extends TAggregator> aggrs = finder.find(TAggregator.class);
-        Map<String, Collection<TAggregator>> local = new HashMap<String, Collection<TAggregator>>(aggrs.size());
-        for (TAggregator aggr : aggrs) {
-            String name = aggr.name().toLowerCase();
-            Collection<TAggregator> values = local.get(name);
-            if (values == null) {
-                values = new ArrayList<TAggregator>(2); // most aggrs don't have many overloads
-                local.put(name, values);
-            }
-            values.add(aggr);
-        }
-        return local;
-    }
-
-    private static ListMultimap<String, ScalarsGroup> createScalars(InstanceFinder finder) {
-
-        Set<TOverload> commutedOverloads = new HashSet<TOverload>();
-        for (TCommutativeOverloads commutativeOverloads : finder.find(TCommutativeOverloads.class)) {
-            commutativeOverloads.addTo(commutedOverloads);
-        }
-
-        Multimap<String, TValidatedOverload> overloadsByName = ArrayListMultimap.create();
-
-        int errors = 0;
-        for (TOverload scalar : finder.find(TOverload.class)) {
-            try {
-                TValidatedOverload validated = new TValidatedOverload(scalar);
-
-                String[] names = validated.registeredNames();
-                for (int i = 0; i < names.length; ++i)
-                    names[i] = names[i].toLowerCase();
-
-                for (String name : names)
-                    overloadsByName.put(name, validated);
-
-                if (commutedOverloads.remove(scalar)) {
-                    TValidatedOverload commuted = validated.createCommuted();
-                    for (String name : names)
-                        overloadsByName.put(name, commuted);
+        scalarsRegistry = ResolvablesRegistry.create(
+                finder,
+                TScalar.class,
+                new Function<TScalar, TValidatedScalar>() {
+                    @Override
+                    public TValidatedScalar apply(TScalar input) {
+                        return new TValidatedScalar(input);
+                    }
+                }, new Function<TValidatedScalar, TValidatedScalar>() {
+                    @Override
+                    public TValidatedScalar apply(TValidatedScalar input) {
+                        return input.createCommuted();
+                    }
                 }
-            } catch (RuntimeException e) {
-                rejectTOverload(scalar, e);
-                ++errors;
-            } catch (AssertionError e) {
-                rejectTOverload(scalar, e);
-                ++errors;
-            }
-        }
-        if (!commutedOverloads.isEmpty()) {
-            logger.error("overload(s) were marked as commutative, but not found: {}", commutedOverloads);
-            ++errors;
-        }
+        );
+        scalarsResolver = new OverloadResolver<TValidatedScalar>(scalarsRegistry, castsResolver);
 
-        if (errors > 0) {
-            StringBuilder sb = new StringBuilder("Found ").append(errors).append(" error");
-            if (errors != 1)
-                sb.append('s');
-            sb.append(" while collecting scalar functions. Check logs for details.");
-            throw new AkibanInternalException(sb.toString());
-        }
-
-        ArrayListMultimap<String, ScalarsGroup> results = ArrayListMultimap.create();
-        for (Map.Entry<String, Collection<TValidatedOverload>> entry : overloadsByName.asMap().entrySet()) {
-            String overloadName = entry.getKey();
-            Collection<TValidatedOverload> allOverloads = entry.getValue();
-            for (Collection<TValidatedOverload> priorityGroup : scalarsByPriority(allOverloads)) {
-                ScalarsGroup scalarsGroup = new ScalarsGroupImpl(priorityGroup);
-                results.put(overloadName, scalarsGroup);
-            }
-        }
-        results.trimToSize();
-        return Multimaps.unmodifiableListMultimap(results);
-    }
-
-
-    private static List<Collection<TValidatedOverload>> scalarsByPriority(
-            Collection<TValidatedOverload> overloads)
-    {
-        // First, we'll put this into a SortedMap<Integer, Collection<TVO>> so that we have each subset of the
-        // overloads grouped by priority. Then we'll go over those collections; for each one, we'll wrap it in
-        // an unmodifiable Collection (so that users of the iterator() can't modify the Collections).
-        // Finally, we'll wrap the result in an unmodifiable Collection (so that users can't remove Collections
-        // from it via the Iterator).
-        SortedMap<Integer, ArrayList<TValidatedOverload>> byPriority
-                = new TreeMap<Integer, ArrayList<TValidatedOverload>>();
-        for (TValidatedOverload overload : overloads) {
-            for (int priority : overload.getPriorities()) {
-                ArrayList<TValidatedOverload> thisPriorityOverloads = byPriority.get(priority);
-                if (thisPriorityOverloads == null) {
-                    thisPriorityOverloads = new ArrayList<TValidatedOverload>();
-                    byPriority.put(priority, thisPriorityOverloads);
-                }
-                thisPriorityOverloads.add(overload);
-            }
-        }
-
-        List<Collection<TValidatedOverload>> results
-                = new ArrayList<Collection<TValidatedOverload>>(byPriority.size());
-        for (ArrayList<TValidatedOverload> priorityGroup : byPriority.values()) {
-            priorityGroup.trimToSize();
-            results.add(Collections.unmodifiableCollection(priorityGroup));
-        }
-        return results;
-    }
-
-    private static void rejectTOverload(TOverload overload, Throwable e) {
-        StringBuilder sb = new StringBuilder("rejecting overload ");
-        Class<?> overloadClass = overload == null ? null : overload.getClass();
-        try {
-            sb.append(overload).append(' ');
-        } catch (Exception e1) {
-            logger.error("couldn't toString overload: " + overload);
-        }
-        sb.append("from ").append(overloadClass);
-        logger.error(sb.toString(), e);
-    }
-
-    static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
-                                                               InstanceFinder finder) {
-        Map<TClass, Map<TClass, TCast>> localCastsMap = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
-
-        // First, define the self casts
-        for (TClass tClass : tClasses) {
-            Map<TClass, TCast> map = new HashMap<TClass, TCast>();
-            map.put(tClass, new SelfCast(tClass));
-            localCastsMap.put(tClass, map);
-        }
-
-        Set<TCastIdentifier> duplicates = new TreeSet<TCastIdentifier>(tcastIdentifierComparator);
-
-        // Next, to/from varchar
-        for (TClass tClass : tClasses) {
-            putCast(localCastsMap, tClass.castToVarchar(), duplicates);
-            putCast(localCastsMap, tClass.castFromVarchar(), duplicates);
-        }
-
-        // Now the registered casts
-        for (TCast cast : finder.find(TCast.class)) {
-            putCast(localCastsMap, cast, duplicates);
-        }
-
-        if (!duplicates.isEmpty())
-            throw new AkibanInternalException("duplicate casts found for: " + duplicates);
-        return localCastsMap;
-    }
-
-    private static void putCast(Map<TClass, Map<TClass, TCast>> toMap, TCast cast, Set<TCastIdentifier> duplicates) {
-        if (cast == null)
-            return;
-        TClass source = cast.sourceClass();
-        TClass target = cast.targetClass();
-        Map<TClass,TCast> castsByTarget = toMap.get(source);
-        TCast old = castsByTarget.put(target, cast);
-        if (old != null) {
-            logger.error("CAST({} AS {}): {} replaced by {} ", new Object[]{
-                    source, target,  old.getClass(), cast.getClass()
-            });
-            if (duplicates == null)
-                throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
-            duplicates.add(new TCastIdentifier(source, target));
-        }
-    }
-
-    static void createDerivedCasts(Map<TClass,Map<TClass,TCast>> castsBySource, InstanceFinder finder) {
-        for (TCastPath castPath : finder.find(TCastPath.class)) {
-            List<? extends TClass> path = castPath.getPath();
-            // We need this loop to protect against "jumps." For instance, let's say the cast path is
-            // [ a, b, c, d, e ] and we have the following casts:
-            //  "single step" casts: (a -> b), (b -> c), (c -> d), (d -> e)
-            //  one "jump" cast: (a -> d),
-            // The first pass of this loop will create a derived cast (a -> d -> e), but we wouldn't have created
-            // (a -> c). This loop ensures that we will.
-            // We work from both ends, shrinking iteratively from the beginning and recursively (within deriveCast)
-            // from the end. A derived cast has to have at least three participants, so we can stop when we get
-            // to a path whose size is less than 3.
-            while (path.size() >= 3) {
-                for (int i = path.size() - 1; i > 0; --i) {
-                    deriveCast(castsBySource, path, i);
-                }
-                path = path.subList(1, path.size());
-            }
-        }
-    }
-
-    /**
-     * Add derived casts for any pair of TClasses (A, B) s.t. there is not a cast from A to B, but there are casts
-     * from A to VARCHAR and from VARCHAR to B. This essentially uses VARCHAR as a base type. Not pretty, but effective.
-     * Uses the instance variable #castsBySource for its input and output; it must be initialized with at least
-     * the self-casts and declared casts.
-     */
-    private void deriveCastsFromVarchar() {
-        final TClass COMMON = MString.VARCHAR;
-        Set<TClass> tClasses = castsBySource.keySet();
-        for (Map.Entry<TClass, Map<TClass, TCast>> entry : castsBySource.entrySet()) {
-            TClass source = entry.getKey();
-            Map<TClass, TCast> castsByTarget = entry.getValue();
-            for (TClass target : tClasses) {
-                if (target == source || castsByTarget.containsKey(target))
-                    continue;
-                TCast sourceToVarchar = cast(source, COMMON);
-                if (sourceToVarchar == null)
-                    continue;
-                TCast varcharToTarget = cast(COMMON, target);
-                if (varcharToTarget == null)
-                    continue;
-                TCast derived = new ChainedCast(sourceToVarchar, varcharToTarget);
-                castsByTarget.put(target, derived);
-            }
-        }
-    }
-
-    private static TCast deriveCast(Map<TClass,Map<TClass,TCast>> castsBySource,
-                                    List<? extends TClass> path, int targetIndex) {
-        TClass source = path.get(0);
-        TClass target = path.get(targetIndex);
-        TCast alreadyThere = cast(castsBySource, source,  target);
-        if (alreadyThere != null)
-            return alreadyThere;
-        int intermediateIndex = targetIndex - 1;
-        TClass intermediateClass = path.get(intermediateIndex);
-        TCast second = cast(castsBySource, intermediateClass, target);
-        if (second == null)
-            throw new AkibanInternalException("no explicit cast between " + intermediateClass + " and " + target
-                    + " while creating cast path: " + path);
-        TCast first = deriveCast(castsBySource, path, intermediateIndex);
-        if (first == null)
-            throw new AkibanInternalException("couldn't derive cast between " + source + " and " + intermediateClass
-                    + " while creating cast path: " + path);
-        TCast result = new ChainedCast(first, second);
-        putCast(castsBySource, result, null);
-        return result;
-    }
-
-    private static void checkDag(final Map<TClass, Map<TClass, TCast>> castsBySource) {
-        DagChecker<TClass> checker = new DagChecker<TClass>() {
-            @Override
-            protected Set<? extends TClass> initialNodes() {
-                return castsBySource.keySet();
-            }
-
-            @Override
-            protected Set<? extends TClass> nodesFrom(TClass starting) {
-                Set<TClass> result = new HashSet<TClass>(castsBySource.get(starting).keySet());
-                result.remove(starting);
-                return result;
-            }
-        };
-        if (!checker.isDag()) {
-            List<TClass> badPath = checker.getBadNodePath();
-            // create a List<String> where everything is lowercase except for the first and last instances
-            // of the offending node
-            List<String> names = new ArrayList<String>(badPath.size());
-            for (TClass tClass : badPath)
-                names.add(tClass.toString().toLowerCase());
-            String lastName = names.get(names.size() - 1);
-            String lastNameUpper = lastName.toUpperCase();
-            names.set(names.size() - 1, lastNameUpper);
-            names.set(names.indexOf(lastName), lastNameUpper);
-            throw new AkibanInternalException("non-DAG detected involving " + names);
-        }
-    }
-
-    // package-local; also used in testing
-
-    static Map<TClass, Map<TClass, TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource,
-                                                                final Set<TCastIdentifier> strongCasts) {
-        Map<TClass,Map<TClass,TCast>> result = new HashMap<TClass, Map<TClass, TCast>>();
-        for (Map.Entry<TClass, Map<TClass,TCast>> origEntry : castsBySource.entrySet()) {
-            final TClass source = origEntry.getKey();
-            Map<TClass, TCast> filteredView = Maps.filterKeys(origEntry.getValue(), new Predicate<TClass>() {
-                @Override
-                public boolean apply(TClass target) {
-                    return (source == target) || strongCasts.contains(new TCastIdentifier(source, target));
-                }
-            });
-            assert ! filteredView.isEmpty() : "no strong casts (including self casts) found for " + source;
-            result.put(source, new HashMap<TClass, TCast>(filteredView));
-        }
-        return result;
-    }
-
-    // private
-
-    private static Map<TClass,Map<TClass,TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource,
-                                                                      InstanceFinder finder)
-    {
-        Collection<? extends TStrongCasts> strongCastIds = finder.find(TStrongCasts.class);
-        Set<TCastIdentifier> strongCasts = new HashSet<TCastIdentifier>(strongCastIds.size()); // rough guess
-        for (TStrongCasts strongCastGenerator : strongCastIds) {
-            for (TCastIdentifier castId : strongCastGenerator.get(castsBySource.keySet())) {
-                TCast cast = cast(castsBySource, castId.getSource(), castId.getTarget());
-                if (cast == null)
-                    throw new AkibanInternalException("no cast defined for " + castId +", which is marked as strong");
-                if (!strongCasts.add(castId)) {
-                    logger.warn("multiple sources have listed cast {} as strong", castId);
-                }
-            }
-        }
-        return createStrongCastsMap(castsBySource, strongCasts);
+        aggreatorsRegistry = ResolvablesRegistry.create(
+                finder,
+                TAggregator.class,
+                new Function<TAggregator, TValidatedAggregator>() {
+                    @Override
+                    public TValidatedAggregator apply(TAggregator input) {
+                        return new TValidatedAggregator(input);
+                    }
+                },
+                null
+        );
+        aggregatesResolver = new OverloadResolver<TValidatedAggregator>(aggreatorsRegistry, castsResolver);
     }
 
     // class state
@@ -494,251 +158,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
     // object state
 
-    private volatile Map<TClass,Map<TClass,TCast>> castsBySource;
-    private volatile Map<TClass,Map<TClass,TCast>> strongCastsBySource;
-    private volatile ListMultimap<String, ScalarsGroup> overloadsByName;
-    private volatile Map<String,Collection<TAggregator>> aggregatorsByName;
+    private volatile TCastResolver castsResolver;
+    private volatile ResolvablesRegistry<TValidatedAggregator> aggreatorsRegistry;
+    private volatile OverloadResolver<TValidatedAggregator> aggregatesResolver;
+    private volatile ResolvablesRegistry<TValidatedScalar> scalarsRegistry;
+    private volatile OverloadResolver<TValidatedScalar> scalarsResolver;
 
     private volatile Collection<? extends TClass> tClasses;
-    private static final Comparator<TCastIdentifier> tcastIdentifierComparator = new Comparator<TCastIdentifier>() {
-        @Override
-        public int compare(TCastIdentifier o1, TCastIdentifier o2) {
-            String o1Str = o1.toString();
-            String o2Str = o2.toString();
-            return o1Str.compareTo(o2Str);
-        }
-    };
 
     // inner classes
-
-    protected static class ScalarsGroupImpl implements ScalarsGroup {
-
-        @Override
-        public Collection<? extends TValidatedOverload> getOverloads() {
-            return overloads;
-        }
-
-        public ScalarsGroupImpl(Collection<TValidatedOverload> overloads) {
-            this.overloads = Collections.unmodifiableCollection(overloads);
-            boolean outRange[] = new boolean[1];
-            int argc[] = new int[1];
-            sameType = doFindSameType(overloads, argc, outRange);
-            
-            outOfRangeVal = outRange[0];
-            nArgs = argc[0];
-        }
-
-        @Override
-        public boolean hasSameTypeAt(int pos)
-        {
-            return pos >= nArgs         // if pos is out of range
-                        ? outOfRangeVal
-                        : sameType.get(pos); 
-        }
-        
-        private static int nArgsOf(TValidatedOverload ovl)
-        {
-            return ovl.positionalInputs() 
-                   + (ovl.varargInputSet() == null ? 0 : 1);
-        }
-
-        private static boolean hasVararg(TValidatedOverload ovl)
-        {
-            return ovl.varargInputSet() != null;
-        }
-
-        protected static BitSet doFindSameType(Collection<? extends TValidatedOverload> overloads, int range[], boolean outRange[])
-        {
-            ArrayList<Integer> nArgs = new ArrayList<Integer>();
-
-            // overload with the longest argument list
-            TValidatedOverload maxOvl = overloads.iterator().next();
-            int maxArgc = nArgsOf(maxOvl);
-            boolean hasVararg = hasVararg(maxOvl);
-            int n = 1;
-            
-            // whether arg that's out of range should be 'same' or 'not same'
-                // false if all overloads in the group have fixed length
-                // true if all overloads with varargs in the group have the same targetType of vararg
-                // false otherwise
-            boolean outOfRange = false; 
-            TClass firstVararg = null;
-            
-            for (TValidatedOverload ovl : overloads)
-            {
-                int curArgc = nArgsOf(ovl);
-                nArgs.add(curArgc);
-                boolean curHasVar = hasVararg(ovl);
-                
-                if (curHasVar)
-                {
-                    if (firstVararg == null)
-                    {
-                        outOfRange = true;
-                        firstVararg = ovl.varargInputSet().targetType();
-                    }
-                    else
-                        outOfRange &= firstVararg.equals(ovl.varargInputSet().targetType());
-                }
-
-                if (curArgc > maxArgc
-                        || curArgc == maxArgc 
-                           && hasVararg 
-                           && !curHasVar)
-                {
-                    hasVararg = hasVararg(ovl);
-                    maxOvl = ovl;
-                    maxArgc = curArgc;
-                }
-                ++n;
-            }
-            
-            outRange[0] = outOfRange;
-            range[0] = maxArgc;
-            
-            // all the overloads in the group are vararg
-            if (hasVararg && maxArgc == 1)
-            {
-                BitSet ret = new BitSet(1);
-                ret.set(0, outOfRange);
-                return ret;
-            }
-            
-            BitSet sameType = new BitSet(maxArgc);
-
-            Boolean same;
-            for (n = 0; n < maxArgc; ++n)
-            {
-                same = Boolean.TRUE;
-                TClass common = maxOvl.inputSetAt(n).targetType();
-                int index = 0;
-                for (TValidatedOverload ovl : overloads)
-                {
-                    int curArgc = nArgs.get(index++);
-                    TClass targetType;
-
-                    // if the arg is absent  
-                    if (n >= curArgc)
-                    {
-                        if (!hasVararg(ovl))
-                            continue;
-                        else
-                            targetType = ovl.varargInputSet().targetType();
-                    }
-                    else
-                        targetType = ovl.inputSetAt(n).targetType();
-                    
-                    if (targetType != null && !targetType.equals(common)
-                            || targetType == null && common != null)
-                    {
-                        same = Boolean.FALSE;
-                        break;
-                    }
-                }
-                sameType.set(n, same);
-            }
-            
-            return sameType;
-        }
-        private final int nArgs;
-        private final boolean outOfRangeVal;
-        private final BitSet sameType;
-        private final Collection<? extends TValidatedOverload> overloads;
-
-    }
-
-    private static class SelfCast implements TCast {
-
-        @Override
-        public Constantness constness() {
-            return Constantness.UNKNOWN;
-        }
-
-        @Override
-        public TClass sourceClass() {
-            return tClass;
-        }
-
-        @Override
-        public TClass targetClass() {
-            return tClass;
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            if (source.isNull()) {
-                target.putNull();
-                return;
-            }
-            TInstance srcInst = context.inputTInstanceAt(0);
-            TInstance dstInst = context.outputTInstance();
-            tClass.selfCast(context, srcInst, source,  dstInst, target);
-        }
-
-        SelfCast(TClass tClass) {
-            this.tClass = tClass;
-        }
-
-        private final TClass tClass;
-    }
-
-    private static class ChainedCast implements TCast {
-
-        @Override
-        public Constantness constness() {
-            Constantness firstConst = first.constness();
-            return (firstConst == second.constness()) ? firstConst : Constantness.UNKNOWN;
-        }
-
-        @Override
-        public TClass sourceClass() {
-            return first.sourceClass();
-        }
-
-        @Override
-        public TClass targetClass() {
-            return second.targetClass();
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            if (source.isNull()) {
-                target.putNull();
-                return;
-            }
-            PValue tmp = (PValue) context.exectimeObjectAt(TMP_PVALUE);
-            if (tmp == null) {
-                tmp = new PValue(first.targetClass().underlyingType());
-                context.putExectimeObject(TMP_PVALUE, tmp);
-            }
-            // TODO cache
-            TExecutionContext firstContext = context.deriveContext(
-                    Collections.singletonList(context.inputTInstanceAt(0)),
-                    intermediateType
-            );
-            TExecutionContext secondContext = context.deriveContext(
-                    Collections.singletonList(intermediateType),
-                    context.outputTInstance()
-            );
-
-            first.evaluate(firstContext, source, tmp);
-            second.evaluate(secondContext, tmp, target);
-        }
-
-        private ChainedCast(TCast first, TCast second) {
-            if (first.targetClass() != second.sourceClass()) {
-                throw new IllegalArgumentException("can't chain casts: " + first + " and " + second);
-            }
-            this.first = first;
-            this.second = second;
-            this.intermediateType = first.targetClass().instance();
-        }
-
-        private final TCast first;
-        private final TCast second;
-        private final TInstance intermediateType;
-        private static final int TMP_PVALUE = 0;
-    }
 
     private class Bean implements T3RegistryMXBean {
 
@@ -754,12 +182,12 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         @Override
         public String describeScalars() {
-            return toYaml(scalarDescriptors());
+            return toYaml(describeOverloads(scalarsRegistry));
         }
 
         @Override
         public String describeAggregates() {
-            return toYaml(aggregateDescriptors());
+            return toYaml(describeOverloads(aggreatorsRegistry));
         }
 
         @Override
@@ -768,8 +196,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
             all.put("types", typesDescriptors());
             all.put("casts", castsDescriptors());
-            all.put("scalar_functions", scalarDescriptors());
-            all.put("aggregate_functions", aggregateDescriptors());
+            all.put("scalar_functions", describeOverloads(scalarsRegistry));
+            all.put("aggregate_functions", describeOverloads(aggreatorsRegistry));
 
             return toYaml(all);
         }
@@ -800,14 +228,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         private Object castsDescriptors() {
             // the starting size is just a guess
+            Collection<Map<TClass, TCast>> castsBySource = castsResolver.castsBySource();
             List<Map<String,Comparable<?>>> result = new ArrayList<Map<String,Comparable<?>>>(castsBySource.size() * 5);
-            for (Map<TClass,TCast> castsByTarget : castsBySource.values()) {
+            for (Map<TClass,TCast> castsByTarget : castsBySource) {
                 for (TCast tCast : castsByTarget.values()) {
                     Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
                     buildTName("source_bundle", "source_type", tCast.sourceClass(), map);
                     buildTName("target_bundle", "target_type", tCast.targetClass(), map);
-                    map.put("strong", isStrong(tCast));
-                    map.put("isDerived", tCast instanceof ChainedCast);
+                    map.put("strong", castsResolver.isStrong(tCast));
+                    map.put("isDerived", tCast instanceof TCastsRegistry.ChainedCast);
                     result.add(map);
                 }
             }
@@ -825,23 +254,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return result;
         }
 
-        private Object scalarDescriptors() {
-            Multimap<String, TValidatedOverload> flattenedOverloads = HashMultimap.create();
-            for (Map.Entry<String, ScalarsGroup> entry : overloadsByName.entries()) {
+        private <V extends TValidatedOverload> Object describeOverloads(ResolvablesRegistry<V> registry) {
+            Multimap<String, TOverload> flattenedOverloads = HashMultimap.create();
+            for (Map.Entry<String, ScalarsGroup<V>> entry : registry.entriesByName()) {
                 String overloadName = entry.getKey();
-                ScalarsGroup scalarsGroup = entry.getValue();
+                ScalarsGroup<V> scalarsGroup = entry.getValue();
                 flattenedOverloads.putAll(overloadName, scalarsGroup.getOverloads());
             }
             return describeOverloads(flattenedOverloads.asMap(), Functions.toStringFunction());
-        }
-
-        private Object aggregateDescriptors() {
-            return describeOverloads(aggregatorsByName, new Function<TAggregator, TClass>() {
-                @Override
-                public TClass apply(TAggregator aggr) {
-                    return aggr.getTypeClass();
-                }
-            });
         }
 
         private <T extends HasId,S> Object describeOverloads(

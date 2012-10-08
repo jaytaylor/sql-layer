@@ -31,11 +31,11 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.texpressions.TScalarBase;
 
-public abstract class MUnixTimestamp extends TOverloadBase {
+public abstract class MUnixTimestamp extends TScalarBase {
     
-    public static final TOverload[] INSTANCES =
+    public static final TScalar[] INSTANCES =
     {
         new MUnixTimestamp()
         {
@@ -49,18 +49,6 @@ public abstract class MUnixTimestamp extends TOverloadBase {
             {
                 output.putInt32(inputs.get(0).getInt32());
             }            
-        },
-        new MUnixTimestamp() {
-            @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
-                builder.covers(MDatetimes.DATETIME, 0);
-            }
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                long[] datetime = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
-                output.putInt32((int) MDatetimes.encodeTimestamp(datetime, context.getCurrentTimezone(), context));
-            }
         },
         new MUnixTimestamp() {
 

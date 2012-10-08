@@ -27,21 +27,24 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-import com.akiban.sql.parser.OrderByList;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
+
 import java.util.List;
 
 /** An expression representing the result (total) of an aggregate function.
  */
-public class AggregateFunctionExpression extends BaseExpression 
+public class AggregateFunctionExpression extends BaseExpression implements ResolvableExpression<TValidatedAggregator>
 {
     private String function;
     private ExpressionNode operand;
     private boolean distinct;
     private Object option;
     private List<OrderByExpression> orderBy;
+    private TValidatedAggregator tAggregator;
 
     public AggregateFunctionExpression(String function, ExpressionNode operand,
                                        boolean distinct, 
@@ -55,6 +58,7 @@ public class AggregateFunctionExpression extends BaseExpression
         this.orderBy = orderBy;
     }
 
+    @Override
     public String getFunction() {
         return function;
     }
@@ -77,6 +81,26 @@ public class AggregateFunctionExpression extends BaseExpression
     public List<OrderByExpression> getOrderBy()
     {
         return orderBy;
+    }
+
+    @Override
+    public void setResolved(TValidatedAggregator resolved) {
+        this.tAggregator = resolved;
+    }
+
+    @Override
+    public TValidatedAggregator getResolved() {
+        return tAggregator;
+    }
+
+    @Override
+    public TPreptimeContext getPreptimeContext() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setPreptimeContext(TPreptimeContext context) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
