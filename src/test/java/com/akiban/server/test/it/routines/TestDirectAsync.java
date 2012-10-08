@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.test.it.loadableplan;
+package com.akiban.server.test.it.routines;
 
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
@@ -43,7 +43,7 @@ import java.io.*;
 /** A loadable direct object plan that returns asynchronous results.
  * Needs to use copy mode to get results out as it goes.
  * <code><pre>
-CREATE PROCEDURE system.`exec`(IN cmd VARCHAR(1024)) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'com.akiban.server.test.it.loadableplan.TestDirectAsync';
+CREATE PROCEDURE system.`exec`(IN cmd VARCHAR(1024)) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'com.akiban.server.test.it.routines.TestDirectAsync';
 CALL system.`exec`('tail', '-f', '/tmp/akiban_server/server.log');
  * </pre></code> 
  */
