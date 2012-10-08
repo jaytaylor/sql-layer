@@ -32,6 +32,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
 import com.akiban.server.error.UnknownDataTypeException;
@@ -243,10 +244,17 @@ public class PostgresType extends ServerType
     }
 
     public static PostgresType fromAIS(Column aisColumn) {
-        return fromAIS(aisColumn.getType(), aisColumn, aisColumn.getNullable(), null);
+        return fromAIS(aisColumn.getType(), aisColumn.getTypeParameter1(), aisColumn.getTypeParameter2(),
+                       aisColumn.getNullable(), aisColumn.tInstance());
     }
         
-    public static PostgresType fromAIS(Type aisType, Column aisColumn, boolean nullable, TInstance tInstance)  {
+    public static PostgresType fromAIS(Parameter aisParameter) {
+        return fromAIS(aisParameter.getType(), aisParameter.getTypeParameter1(), aisParameter.getTypeParameter2(),
+                       true, aisParameter.tInstance());
+    }
+        
+    public static PostgresType fromAIS(Type aisType, Long typeParameter1, Long typeParameter2, 
+                                       boolean nullable, TInstance tInstance)  {
         TypeOid oid;
         short length = -1;
         int modifier = -1;
@@ -309,28 +317,24 @@ public class PostgresType extends ServerType
         if (aisType.fixedSize())
             length = aisType.maxSizeBytes().shortValue();
 
-        TInstance instance;
-        if (tInstance != null) {
-            instance = tInstance;
-        }
-        else if (aisColumn != null) {
+        if (typeParameter1 != null) {
             switch (aisType.nTypeParameters()) {
             case 1:
                 // VARCHAR(n).
-                modifier = aisColumn.getTypeParameter1().intValue() + 4;
+                modifier = typeParameter1.intValue() + 4;
                 break;
             case 2:
                 // NUMERIC(n,m).
-                modifier = (aisColumn.getTypeParameter1().intValue() << 16) +
-                           aisColumn.getTypeParameter2().intValue() + 4;
+                modifier = (typeParameter1.intValue() << 16) +
+                           typeParameter2.intValue() + 4;
                 break;
             }
-            instance = aisColumn.tInstance();
         }
-        else {
-            instance = Column.generateTInstance(null, aisType, null, null, nullable);
-        }
-        return new PostgresType(oid, length, modifier, aisType.akType(), instance);
+
+        if (tInstance == null)
+            tInstance = Column.generateTInstance(null, aisType, typeParameter1, typeParameter2, nullable);
+
+        return new PostgresType(oid, length, modifier, aisType.akType(), tInstance);
     }
 
     public static PostgresType fromDerby(DataTypeDescriptor sqlType, final AkType akType, final TInstance tInstance)  {
@@ -422,7 +426,7 @@ public class PostgresType extends ServerType
                 String name = typeId.getSQLTypeName();
                 for (Type aisType : Types.types()) {
                     if (aisType.name().equalsIgnoreCase(name)) {
-                        return fromAIS(aisType, null, sqlType.isNullable(), tInstance);
+                        return fromAIS(aisType, null, null, sqlType.isNullable(), tInstance);
                     }
                 }
             }
