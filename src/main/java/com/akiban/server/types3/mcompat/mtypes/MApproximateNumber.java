@@ -171,24 +171,31 @@ public class MApproximateNumber extends SimpleDtdTClass
         return new DoubleFactory();
     }
 
+
     @Override
-    protected TInstance doPickInstance(TInstance instanceL, TInstance instanceR)
-    {
-        int precisionL = instanceL.attribute(DoubleAttribute.PRECISION);
-        if (precisionL <= 0)
-            return instance();
-        int precisionR = instanceR.attribute(DoubleAttribute.PRECISION);
-        if (precisionR <= 0)
-            return instance();
-
-        int scaleL = instanceL.attribute(DoubleAttribute.SCALE);
-        int scaleR = instanceR.attribute(DoubleAttribute.SCALE);
-
-        return MBigDecimal.pickPrecisionAndScale(this, precisionL, scaleL, precisionR, scaleR);
+    protected TInstancePicker defaultPicker() {
+        return picker;
     }
 
     @Override
     protected void validate(TInstance instance) {
         // TODO
     }
+
+    private final TInstancePicker picker = new TInstancePicker() {
+        @Override
+        protected TInstance apply(TInstance left, TInstance right) {
+            int precisionL = left.attribute(DoubleAttribute.PRECISION);
+            if (precisionL <= 0)
+                return instance();
+            int precisionR = right.attribute(DoubleAttribute.PRECISION);
+            if (precisionR <= 0)
+                return instance();
+
+            int scaleL = left.attribute(DoubleAttribute.SCALE);
+            int scaleR = right.attribute(DoubleAttribute.SCALE);
+
+            return MBigDecimal.pickPrecisionAndScale(MApproximateNumber.this, precisionL, scaleL, precisionR, scaleR);
+        }
+    };
 }

@@ -28,6 +28,7 @@ package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -135,8 +136,9 @@ public class AkResultSet extends TClassBase {
     protected void validate(TInstance instance) {
     }
 
+
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+    protected TInstancePicker defaultPicker() {
         throw new UnsupportedOperationException();
     }
 

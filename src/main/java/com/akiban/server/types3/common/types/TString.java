@@ -28,7 +28,6 @@ package com.akiban.server.types3.common.types;
 
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.expression.std.ExpressionTypes;
@@ -241,32 +240,8 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instanceA, TInstance instanceB)
-    {
-        final int pickLen, pickCharset, pickCollation;
-
-        int aCharset = instanceA.attribute(StringAttribute.CHARSET);
-        int bCharset = instanceB.attribute(StringAttribute.CHARSET);
-        if (aCharset == bCharset)
-            pickCharset = aCharset;
-        else
-            throw new InvalidArgumentTypeException("can't combine strings " + instanceA + " and " + instanceB);
-        int aCollation = instanceA.attribute(StringAttribute.COLLATION);
-        int bCollation = instanceB.attribute(StringAttribute.COLLATION);
-        if (aCollation == bCollation) {
-            pickCollation = aCollation;
-        }
-        else {
-            CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
-            CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
-            AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
-            pickCollation = (collator == null) ? -1 : collator.getCollationId();
-        }
-        pickLen = Math.max(
-                instanceA.attribute(StringAttribute.LENGTH),
-                instanceB.attribute(StringAttribute.LENGTH)
-        );
-        return instance(pickLen, pickCharset, pickCollation);
+    protected TInstancePicker defaultPicker() {
+        return PICK_COMBINING_LENGTHS;
     }
 
     @Override
@@ -290,4 +265,49 @@ public abstract class TString extends TClass
     private final int fixedLength;
     private final TypeId typeId;
     private static final Logger logger = LoggerFactory.getLogger(TString.class);
+
+    public final TInstancePicker PICK_COMBINING_LENGTHS = new Picker(true);
+    public final TInstancePicker PICK_RIGHT_LENGTH = new Picker(false);
+
+
+    private class Picker extends TInstancePicker {
+        @Override
+        protected TInstance apply(TInstance left, TInstance right) {
+            final int pickLen, pickCharset, pickCollation;
+
+            int aCharset = left.attribute(StringAttribute.CHARSET);
+            int bCharset = right.attribute(StringAttribute.CHARSET);
+            if (aCharset == bCharset)
+                pickCharset = aCharset;
+            else
+                throw new InvalidArgumentTypeException("can't combine strings " + left + " and " + right);
+            int aCollation = left.attribute(StringAttribute.COLLATION);
+            int bCollation = right.attribute(StringAttribute.COLLATION);
+            if (aCollation == bCollation) {
+                pickCollation = aCollation;
+            }
+            else {
+                CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(left);
+                CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(right);
+                AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
+                pickCollation = (collator == null) ? -1 : collator.getCollationId();
+            }
+            if (normalizeLens) {
+                pickLen = Math.max(
+                        left.attribute(StringAttribute.LENGTH),
+                        right.attribute(StringAttribute.LENGTH)
+                );
+            }
+            else {
+                pickLen = right.attribute(StringAttribute.LENGTH);
+            }
+            return instance(pickLen, pickCharset, pickCollation);
+        }
+
+        protected Picker(boolean normalizeLens) {
+            this.normalizeLens = normalizeLens;
+        }
+
+        private final boolean normalizeLens;
+    }
 }

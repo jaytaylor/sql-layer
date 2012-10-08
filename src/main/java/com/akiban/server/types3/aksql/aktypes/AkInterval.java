@@ -358,8 +358,8 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        return instance();
+    protected TInstancePicker defaultPicker() {
+        return picker;
     }
 
     @Override
@@ -434,6 +434,12 @@ public class AkInterval extends TClassBase {
     private final IntervalFormat[] formatters;
     private final Attribute formatAttribute;
     private final Map<TypeId,IntervalFormat> typeIdToFormat;
+    private final TInstancePicker picker = new TInstancePicker() {
+        @Override
+        protected TInstance apply(TInstance left, TInstance right) {
+            return instance();
+        }
+    };
 
     interface IntervalFormat {
         long parse(String string);

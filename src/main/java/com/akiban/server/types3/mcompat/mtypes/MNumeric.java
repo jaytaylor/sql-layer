@@ -92,7 +92,7 @@ public class MNumeric extends SimpleDtdTClass {
     {
        // going away soon
     }
-        
+
     @Override
     protected void validate(TInstance instance) {
         int m = instance.attribute(NumericAttribute.WIDTH);
@@ -105,40 +105,49 @@ public class MNumeric extends SimpleDtdTClass {
         return new MNumericFactory(this);
     }
 
+
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        return instance0; // TODO we currently don't care about attributes, though we actually should when casting to varchar
+    protected TInstancePicker defaultPicker() {
+        return picker;
     }
-    
+
     private final int defaultWidth;
-    
+    private final TInstancePicker picker = new TInstancePicker() {
+        @Override
+        protected TInstance apply(TInstance left, TInstance right) {
+            int leftWidth = left.attribute(NumericAttribute.WIDTH);
+            int rightWidth = right.attribute(NumericAttribute.WIDTH);
+            return instance(Math.max(leftWidth, rightWidth));
+        }
+    };
+
     // numeric types
     // TODO verify default widths
-    public static final MNumeric TINYINT 
-            = new MNumeric("tinyint", NumericFormatter.FORMAT.INT_8, 1, PUnderlying.INT_8, 5, TParsers.TINYINT); 
+    public static final MNumeric TINYINT
+            = new MNumeric("tinyint", NumericFormatter.FORMAT.INT_8, 1, PUnderlying.INT_8, 5, TParsers.TINYINT);
 
-    public static final MNumeric TINYINT_UNSIGNED 
+    public static final MNumeric TINYINT_UNSIGNED
             = new MNumeric("tinyint unsigned", NumericFormatter.FORMAT.INT_16, 4, PUnderlying.INT_16, 4, TParsers.UNSIGNED_TINYINT);
 
-    public static final MNumeric SMALLINT 
+    public static final MNumeric SMALLINT
             = new MNumeric("smallint", NumericFormatter.FORMAT.INT_16, 2, PUnderlying.INT_16, 7, TParsers.SMALLINT);
 
-    public static final MNumeric SMALLINT_UNSIGNED 
+    public static final MNumeric SMALLINT_UNSIGNED
             = new MNumeric("smallint unsigned", NumericFormatter.FORMAT.INT_32, 4, PUnderlying.INT_32, 6, TParsers.UNSIGNED_SMALLINT);
 
-    public static final MNumeric MEDIUMINT 
+    public static final MNumeric MEDIUMINT
             = new MNumeric("mediumint", NumericFormatter.FORMAT.INT_32, 3, PUnderlying.INT_32, 9, TParsers.MEDIUMINT);
 
-    public static final MNumeric MEDIUMINT_UNSIGNED 
+    public static final MNumeric MEDIUMINT_UNSIGNED
             = new MNumeric("mediumint unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 8, TParsers.UNSIGNED_MEDIUMINT);
 
-    public static final MNumeric INT 
+    public static final MNumeric INT
             = new MNumeric("integer", NumericFormatter.FORMAT.INT_32, 4, PUnderlying.INT_32, 11, TParsers.INT);
 
-    public static final MNumeric INT_UNSIGNED 
+    public static final MNumeric INT_UNSIGNED
             = new MNumeric("integer unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 10, TParsers.UNSIGNED_INT);
 
-    public static final MNumeric BIGINT 
+    public static final MNumeric BIGINT
             = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 21, TParsers.BIGINT);
     public static final MNumeric BIGINT_UNSIGNED
             = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.UINT_64, 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT);

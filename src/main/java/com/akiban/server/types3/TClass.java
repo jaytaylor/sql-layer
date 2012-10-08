@@ -193,34 +193,6 @@ public abstract class TClass {
         writeCanonical(inValue, typeInstance, out);
     }
 
-    public TInstance pickInstance(TInstance instance0, TInstance instance1) {
-        if (instance0.typeClass() != this || instance1.typeClass() != this)
-            throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);
-
-        TInstance result = doPickInstance(instance0, instance1);
-
-        // set nullability
-        Boolean resultIsNullable = result.nullability();
-        final Boolean resultDesiredNullability;
-        Boolean leftIsNullable = instance0.nullability();
-        if (leftIsNullable == null) {
-            resultDesiredNullability = null;
-        }
-        else {
-            Boolean rightIsNullable = instance0.nullability();
-            resultDesiredNullability = (rightIsNullable == null)
-                    ? null
-                    : (leftIsNullable || rightIsNullable);
-        }
-        if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
-            // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
-            if ( (result == instance0) || (result == instance1) )
-                result = new TInstance(result);
-            result.setNullable(resultDesiredNullability);
-        }
-        return result;
-    }
-
     public PUnderlying underlyingType() {
         return pUnderlying;
     }
@@ -295,11 +267,15 @@ public abstract class TClass {
             formatter.formatAsJson(instance, source, out);
     }
 
+    public TInstance pickInstance(TInstance left, TInstance right) {
+        return defaultPicker().apply(left, right);
+    }
+
     // for use by subclasses
 
-    protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);
-        
+    protected abstract TInstancePicker defaultPicker();
     protected abstract void validate(TInstance instance);
+
     // for use by this class
 
     protected TInstance createInstanceNoArgs() {
@@ -360,7 +336,6 @@ public abstract class TClass {
                 pUnderlying);
 
      }
-
     private final TName name;
     private final Class<?> enumClass;
     protected final TClassFormatter formatter;
@@ -368,8 +343,47 @@ public abstract class TClass {
     private final int internalRepVersion;
     private final int serializationVersion;
     private final int serializationSize;
+
     private final PUnderlying pUnderlying;
 
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
+
     private static final int EMPTY = -1;
+
+    public abstract class TInstancePicker {
+        public final TInstance combine(TInstance left, TInstance right) {
+            if (left.typeClass() != TClass.this || right.typeClass() != TClass.this)
+                throw new IllegalArgumentException("can't combine " + left + " and " + right + " using " + this);
+
+            TInstance result = apply(left, right);
+
+            // set nullability
+            Boolean resultIsNullable = result.nullability();
+            final Boolean resultDesiredNullability;
+            Boolean leftIsNullable = left.nullability();
+            if (leftIsNullable == null) {
+                resultDesiredNullability = null;
+            }
+            else {
+                Boolean rightIsNullable = left.nullability();
+                resultDesiredNullability = (rightIsNullable == null)
+                        ? null
+                        : (leftIsNullable || rightIsNullable);
+            }
+            if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
+                // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
+                if ( (result == left) || (result == right) )
+                    result = new TInstance(result);
+                result.setNullable(resultDesiredNullability);
+            }
+            return result;
+        }
+
+        protected abstract TInstance apply(TInstance left, TInstance right);
+
+        @Override
+        public String toString() {
+            return name() + " picker";
+        }
+    }
 }
