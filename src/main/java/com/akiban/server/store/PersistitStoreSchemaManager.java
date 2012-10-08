@@ -54,6 +54,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.NopVisitor;
+import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.View;
@@ -627,29 +628,18 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public List<String> schemaStrings(Session session, boolean withISTables, boolean withGroupTables) {
+    public List<String> schemaStrings(Session session, boolean withISTables) {
         final AkibanInformationSchema ais = getAis();
         final DDLGenerator generator = new DDLGenerator();
         final List<String> ddlList = new ArrayList<String>();
-        final Set<String> sawSchemas = new HashSet<String>();
-        Collection<? extends Table> tableCollection = ais.getUserTables().values();
-        boolean firstPass = true;
-        while(firstPass || tableCollection != null) {
-            for(Table table : tableCollection) {
-                if(!withISTables && TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
-                    continue;
-                }
-                final String schemaName = table.getName().getSchemaName();
-                if(!sawSchemas.contains(schemaName)) {
-                    final String createSchema = String.format(CREATE_SCHEMA_FORMATTER, schemaName);
-                    ddlList.add(createSchema);
-                    sawSchemas.add(schemaName);
-                }
-                final String ddl = generator.createTable(table);
-                ddlList.add(ddl);
+        for(Schema schema : ais.getSchemas().values()) {
+            if(!withISTables && TableName.INFORMATION_SCHEMA.equals(schema.getName())) {
+                continue;
             }
-            tableCollection = (firstPass && withGroupTables) ? ais.getGroupTables().values() : null;
-            firstPass = false;
+            ddlList.add(String.format(CREATE_SCHEMA_FORMATTER, schema.getName()));
+            for(UserTable table : schema.getUserTables().values()) {
+                ddlList.add(generator.createTable(table));
+            }
         }
         return ddlList;
     }

@@ -127,10 +127,10 @@ public final class SchemaManagerIT extends ITBase {
         });
     }
 
-    private List<String> getSchemaStringsWithoutAIS(final boolean withGroupTables) throws Exception {
+    private List<String> getSchemaStringsWithoutAIS() throws Exception {
         return transactionally(new Callable<List<String>>() {
             public List<String> call() throws Exception {
-                return schemaManager.schemaStrings(session(), false, withGroupTables);
+                return schemaManager.schemaStrings(session(), false);
             }
         });
     }
@@ -385,7 +385,7 @@ public final class SchemaManagerIT extends ITBase {
         final String SCHEMA_DDL = "create schema if not exists `foo`;";
         final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
         createTableDef("foo", "bar", TABLE_DDL);
-        final List<String> ddls = getSchemaStringsWithoutAIS(false);
+        final List<String> ddls = getSchemaStringsWithoutAIS();
         assertEquals("ddl count", 2, ddls.size()); // schema and table
         assertTrue("create schema", ddls.get(0).startsWith("create schema"));
         assertEquals("create schema is canonical", SCHEMA_DDL, ddls.get(0));
@@ -395,10 +395,12 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void schemaStringsSingleGroup() throws Exception {
+        final String SCHEMA = "s1";
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
         Map<String, List<String>> schemaAndTables = new HashMap<String, List<String>>();
         schemaAndTables.put(SCHEMA, Arrays.asList(T1_NAME, T3_CHILD_T1_NAME));
+        assertSchemaStrings(schemaAndTables);
     }
 
     @Test
@@ -742,7 +744,7 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     /**
-     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean, boolean)} is correct for
+     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
      * the given tables. The only guarantees are that schemas are created with 'if not exists',
      * a schema statement comes before any table in it, and a create table statement is fully qualified.
      * @param schemaAndTables Map of schema names to table names that should exist
@@ -751,7 +753,7 @@ public final class SchemaManagerIT extends ITBase {
     private void assertSchemaStrings(Map<String, List<String>> schemaAndTables) throws Exception {
         final String CREATE_SCHEMA = "create schema if not exists `";
         final String CREATE_TABLE = "create table `";
-        final List<String> ddls = getSchemaStringsWithoutAIS(false);
+        final List<String> ddls = getSchemaStringsWithoutAIS();
         final Set<String> sawSchemas = new HashSet<String>();
         for(String statement : ddls) {
             if(statement.startsWith(CREATE_SCHEMA)) {

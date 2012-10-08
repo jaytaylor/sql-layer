@@ -171,16 +171,15 @@ public interface SchemaManager {
     AkibanInformationSchema getAis(Session session);
 
     /**
-     * Generate DDL statements for every schema, user, and, optionally, group tables.
+     * Generate DDL statements for every schema and table.
      * The format of the 'create schema' contains if not exists and will occur before
      * any table in that schema. No other guarantees are given about ordering.
      *
      * @param session The Session to operate under.
-     * @param withGroupTables If true, include 'create table' statements for tables in the I_S.
-     * @param withGroupTables If true, include 'create table' statements for every GroupTable.
+     * @param withISTables  true, include 'create table' statements for tables in the I_S.
      * @return List of every create statement request.
      */
-    List<String> schemaStrings(Session session, boolean withISTables, boolean withGroupTables);
+    List<String> schemaStrings(Session session, boolean withISTables);
 
     /**
      * Return the last timestamp for the last successful change through the SchemaManager.
