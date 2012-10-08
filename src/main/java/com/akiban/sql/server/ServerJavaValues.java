@@ -64,7 +64,7 @@ import java.util.Calendar;
 import java.util.Map;
 
 /** Make something like an array of typed values (for instance, a
- * <code>Row</code> or a <code>QueryContext</code> accessible using
+ * <code>Row</code> or a <code>QueryContext</code>) accessible using
  * standard Java types, includings ones from the <code>java.sql</code>
  * package.
  * 
