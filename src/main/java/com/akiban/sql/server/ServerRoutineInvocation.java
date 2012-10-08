@@ -218,12 +218,28 @@ public class ServerRoutineInvocation
         }
 
         @Override
+        protected AkType getSourceType(int index) {
+            return getValue(index).getConversionType();
+        }
+
+        @Override
         protected AkType getTargetType(int index) {
             return routine.getParameters().get(index).getType().akType();
         }
 
         @Override
-        protected TInstance getInstance(int index) {
+        protected TInstance getSourceInstance(int index) {
+            if (parameterArgs[index] < 0) {
+                return PValueSources.fromObject(constantArgs[index], null).instance();
+            }
+            else {
+                // Can assume paramters have been converted properly?
+                return getTargetInstance(index);
+            }
+        }
+
+        @Override
+        protected TInstance getTargetInstance(int index) {
             return routine.getParameters().get(index).tInstance();
         }
 

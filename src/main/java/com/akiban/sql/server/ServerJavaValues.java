@@ -90,8 +90,10 @@ public abstract class ServerJavaValues
     protected abstract ServerQueryContext getContext();
     protected abstract ValueSource getValue(int index);
     protected abstract PValueSource getPValue(int index);
+    protected abstract AkType getSourceType(int index);
     protected abstract AkType getTargetType(int index);
-    protected abstract TInstance getInstance(int index);
+    protected abstract TInstance getSourceInstance(int index);
+    protected abstract TInstance getTargetInstance(int index);
     protected abstract void setValue(int index, ValueSource source, AkType akType);
     protected abstract void setPValue(int index, PValueSource source);
     protected abstract ResultSet toResultSet(int index, Object resultSet);
@@ -148,14 +150,14 @@ public abstract class ServerJavaValues
      * <code>getXxx</code> to the same field each time.
      */
     protected PValueSource cachedCast(int index, PValueSource pvalue, TClass required) {
-        TInstance current = getInstance(index);
-        if (required.equals(current.typeClass()))
+        TInstance sourceInstance = getSourceInstance(index);
+        if (required.equals(sourceInstance.typeClass()))
             return pvalue;      // Already of the required class.
         if (cachedCasts == null)
             cachedCasts = new CachedCast[size()];
         CachedCast cast = cachedCasts[index];
         if ((cast == null) || !cast.matches(required)) {
-            cast = new CachedCast(current, required, getContext());
+            cast = new CachedCast(sourceInstance, required, getContext());
             cachedCasts[index] = cast;
         }
         return cast.apply(pvalue);
@@ -435,7 +437,7 @@ public abstract class ServerJavaValues
             if (wasNull)
                 return null;
             else {
-                TClass tclass = getInstance(index).typeClass();
+                TClass tclass = getSourceInstance(index).typeClass();
                 if (tclass.equals(AkBool.INSTANCE))
                     return pvalue.getBoolean();
                 else if (tclass.equals(MNumeric.TINYINT))
