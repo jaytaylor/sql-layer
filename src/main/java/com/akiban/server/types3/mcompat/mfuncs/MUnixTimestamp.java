@@ -51,18 +51,6 @@ public abstract class MUnixTimestamp extends TScalarBase {
             }            
         },
         new MUnixTimestamp() {
-            @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
-                builder.covers(MDatetimes.DATETIME, 0);
-            }
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                long[] datetime = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
-                output.putInt32((int) MDatetimes.encodeTimestamp(datetime, context.getCurrentTimezone(), context));
-            }
-        },
-        new MUnixTimestamp() {
 
             @Override
             protected void buildInputSets(TInputSetBuilder builder) 
