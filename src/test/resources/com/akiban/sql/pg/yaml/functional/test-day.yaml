@@ -10,7 +10,7 @@
 - Include: all-datetime-schema.yaml
 ---
 - Statement: select id,DAY(time_field),expected_DAY from datetime_matrix where DAY(time_field) is not null;
-- row_count: !select-engine { all: 0, newtypes: 840 }
+- row_count: 0
 ---
 - Statement: select id,DAY(timestamp_field),expected_DAY from datetime_matrix where DAY(timestamp_field) <> expected_DAY;
 - row_count: 0
