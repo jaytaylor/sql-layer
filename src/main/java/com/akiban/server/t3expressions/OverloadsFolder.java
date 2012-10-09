@@ -26,11 +26,13 @@
 
 package com.akiban.server.t3expressions;
 
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.Strings;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
@@ -139,6 +141,15 @@ abstract class OverloadsFolder {
             List<M> mappedFinites = Lists.transform(finiteArityList, mapFunction);
             M mappedInfinite = hasInfiniteArityElement ? mapFunction.apply(infiniteArityElement) : null;
             return new Result<M>(mappedFinites, mappedInfinite, hasInfiniteArityElement);
+        }
+
+        public InputSetFlags toInputSetFlags(Predicate<? super T> predicate) {
+            boolean[] finites = new boolean[finiteArityList.size()];
+            for (int i = 0; i < finites.length; ++i) {
+                finites[i] = predicate.apply(finiteArityList.get(i));
+            }
+            boolean infinite = predicate.apply(infiniteArityElement);
+            return new InputSetFlags(finites, infinite);
         }
 
         // Object interface
