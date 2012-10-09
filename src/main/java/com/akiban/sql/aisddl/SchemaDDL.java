@@ -27,7 +27,6 @@
 package com.akiban.sql.aisddl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.DropSchemaNotAllowedException;
@@ -53,7 +52,7 @@ public class SchemaDDL {
         final String schemaName = createSchema.getSchemaName();
         ExistenceCheck condition = createSchema.getExistenceCheck();
         
-        if (checkSchema (ais, schemaName))
+        if (ais.getSchema(schemaName) != null)
             switch(condition)
             {
                 case IF_NOT_EXISTS:
@@ -81,7 +80,7 @@ public class SchemaDDL {
         final String schemaName = dropSchema.getSchemaName();
         ExistenceCheck condition = dropSchema.getExistenceCheck();
         
-        if (checkSchema(ais, schemaName))
+        if (ais.getSchema(schemaName) != null)
         {
             // 1 == RESTRICT, meaning no drop if the schema isn't empty 
             if (dropSchema.getDropBehavior() == StatementType.DROP_RESTRICT ||
@@ -108,16 +107,4 @@ public class SchemaDDL {
         
     }
     
-    /**
-     * Check if a schema exists, by checking all the user/group tables names if the schema
-     * is used for any of them..
-     */
-    public static boolean checkSchema (AkibanInformationSchema ais, String schemaName) {
-        for (TableName t : ais.getUserTables().keySet()) {
-            if (t.getSchemaName().compareToIgnoreCase(schemaName) == 0) {
-                return true;
-            }
-        }
-        return false;
-    }
 }
