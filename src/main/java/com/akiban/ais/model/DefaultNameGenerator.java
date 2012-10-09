@@ -192,7 +192,7 @@ public class DefaultNameGenerator implements NameGenerator {
                 tableName = ((TableIndex)index).getTable().getName();
             break;
             case GROUP:
-                UserTable root = ((GroupIndex)index).getGroup().getGroupTable().getRoot();
+                UserTable root = ((GroupIndex)index).getGroup().getRoot();
                 if(root == null) {
                     throw new IllegalArgumentException("Grouping incomplete (no root)");
                 }
@@ -208,11 +208,10 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public String generateGroupTreeName(Group group) {
+    public String generateGroupTreeName(String schemaName, String groupName) {
         // schema.group_name
-        TableName tableName = group.getGroupTable().getName();
-        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
-                          escapeForTreeName(group.getName());
+        String proposed = escapeForTreeName(schemaName) + TREE_NAME_SEPARATOR +
+                          escapeForTreeName(groupName);
         return makeUnique(treeNames, proposed);
     }
 
@@ -243,17 +242,13 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     public static String schemaNameForIndex(Index index) {
-        final Table table;
         switch(index.getIndexType()) {
             case TABLE:
-                table = ((TableIndex)index).getTable();
-                break;
+                return ((TableIndex)index).getTable().getName().getSchemaName();
             case GROUP:
-                table = ((GroupIndex)index).getGroup().getGroupTable();
-                break;
+                return ((GroupIndex)index).getGroup().getSchemaName();
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
         }
-        return table.getName().getSchemaName();
     }
 }
