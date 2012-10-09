@@ -30,7 +30,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
@@ -83,18 +82,6 @@ class ReferencesCorrect implements AISValidation,Visitor {
         } else if (column.getTable() != visitingTable) {
             output.reportFailure(new AISValidationFailure(
                     new BadAISReferenceException ("column", column.getName(), "table", visitingTable.getName().toString())));
-        }
-    }
-
-    @Override
-    public void visitGroupTable(GroupTable groupTable) {
-        visitingTable = groupTable;
-        if (groupTable == null) {
-            output.reportFailure(new AISValidationFailure(
-                    new AISNullReferenceException("ais", "", "group table")));
-        } else if (groupTable.isUserTable()) {
-            output.reportFailure(new AISValidationFailure(
-                    new BadAISInternalSettingException ("Group table", groupTable.getName().toString(), "isUserTable")));
         }
     }
 
