@@ -128,6 +128,23 @@ public class TValidatedOverload implements TOverload {
         return resultStrategy;
     }
 
+    public int firstInput(TInputSet inputSet) {
+        int result = inputSet.firstPosition();
+        if (result < 0 && inputSet.isPicking())
+            result = firstVarargInput();
+        assert result >= 0 : result + " in " + inputSet + " within " + this;
+        return result;
+    }
+
+    public int nextInput(TInputSet inputSet, int i, int max) {
+        if (i >= max)
+            return -1;
+        int result = inputSet.nextPosition(i);
+        if (result < 0 && inputSet.isPicking())
+            result = Math.max(i, inputSetsByPos.size()) + 1;
+        return result;
+    }
+
     // Redefine toString
 
     @Override
@@ -188,7 +205,6 @@ public class TValidatedOverload implements TOverload {
         this.pickingSet = localPickingInputs;
         this.inputSetDescriptions = createInputSetDescriptions(inputSetsByPos, pickingSet, varargs);
     }
-
     private static String[] createInputSetDescriptions(List<TInputSet> inputSetsByPos,
                                                        TInputSet pickingSet, TInputSet varargInputSet)
     {
@@ -221,12 +237,13 @@ public class TValidatedOverload implements TOverload {
         }
         return result;
     }
-
     private final TOverload overload;
     private final List<TInputSet> inputSetsCached;
     private final List<TInputSet> inputSetsByPos;
     private final TOverloadResult resultStrategy;
+
     private final TInputSet varargs;
+
     private final TInputSet pickingSet;
 
     /**

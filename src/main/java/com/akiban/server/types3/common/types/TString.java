@@ -37,11 +37,15 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TInstanceAdjuster;
+import com.akiban.server.types3.TInstanceNormalizer;
 import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -267,7 +271,33 @@ public abstract class TString extends TClass
     private static final Logger logger = LoggerFactory.getLogger(TString.class);
 
     public final TInstancePicker PICK_COMBINING_LENGTHS = new Picker(true);
-    public final TInstancePicker PICK_RIGHT_LENGTH = new Picker(false);
+    private final TInstancePicker PICKER_KEEPS_LENGTHS = new Picker(false);
+    public final TInstanceNormalizer PICK_RIGHT_LENGTH = new TInstanceNormalizer() {
+        @Override
+        public void apply(TInstanceAdjuster adapter, TValidatedOverload overload, TInputSet inputSet, int max) {
+            // TODO rework this to inline stuff
+            TInstance result = null;
+            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                TInstance input = adapter.get(i);
+                result = (result == null)
+                        ? input
+                        : PICKER_KEEPS_LENGTHS.combine(result, input);
+            }
+            assert result != null;
+            int resultCharset = result.attribute(StringAttribute.CHARSET);
+            int resultCollation = result.attribute(StringAttribute.COLLATION);
+            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                TInstance input = adapter.get(i);
+                int inputCharset = input.attribute(StringAttribute.CHARSET);
+                int inputCollation = input.attribute(StringAttribute.COLLATION);
+                if ( (inputCharset != resultCharset) || (inputCollation != resultCollation)) {
+                    TInstance adjusted = adapter.adjust(i);
+                    adjusted.setAttribute(StringAttribute.CHARSET, resultCharset);
+                    adjusted.setAttribute(StringAttribute.COLLATION, resultCollation);
+                }
+            }
+        }
+    };
 
 
     private class Picker extends TInstancePicker {

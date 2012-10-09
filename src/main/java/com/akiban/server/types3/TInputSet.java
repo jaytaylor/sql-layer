@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.texpressions.TValidatedOverload;
+
 import java.util.BitSet;
 
 public final class TInputSet {
@@ -62,19 +64,25 @@ public final class TInputSet {
         return covering.nextSetBit(from);
     }
 
-    public TClass.TInstancePicker instancePicker() {
-        return (picker == null) ? targetType.defaultPicker()  : picker;
+    public TInstanceNormalizer instanceAdjuster() {
+        assert normalizer != null;
+        return normalizer;
     }
 
     public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining, boolean isPicking, boolean isExact,
-                     TClass.TInstancePicker picker)
+                     TInstanceNormalizer normalizer)
     {
         this.targetType = targetType;
         this.covering = covering.get(0, covering.length());
         this.coversRemaining = coversRemaining;
         this.isPicking = isPicking;
         this.isExact = isExact;
-        this.picker = picker;
+        if (normalizer != null)
+            this.normalizer = normalizer;
+        else if (targetType != null)
+            this.normalizer = new PickingNormalizer(targetType);
+        else
+            this.normalizer = null;
     }
 
     @Override
@@ -108,5 +116,19 @@ public final class TInputSet {
     private final boolean coversRemaining;
     private final boolean isPicking;
     private final boolean isExact;
-    private final TClass.TInstancePicker picker;
+    private final TInstanceNormalizer normalizer;
+
+    private static class PickingNormalizer implements TInstanceNormalizer {
+        @Override
+        public void apply(TInstanceAdjuster adjuster, TValidatedOverload overload, TInputSet inputSet, int max) {
+
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        private PickingNormalizer(TClass tclass) {
+            this.tclass = tclass;
+        }
+
+        private final TClass tclass;
+    }
 }

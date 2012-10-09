@@ -28,6 +28,7 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
+import com.akiban.server.types3.TInstanceNormalizer;
 import com.akiban.util.BitSets;
 
 import java.util.ArrayList;
@@ -36,26 +37,26 @@ import java.util.List;
 public final class TInputSetBuilder {
 
     public TInputSetBuilder covers(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, false, exact, nextPicker));
-        nextPicker = null;
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, false, exact, nextNormalizer));
+        nextNormalizer = null;
         return this;
     }
 
     public TInputSetBuilder pickingCovers(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, true, exact, nextPicker));
-        nextPicker = null;
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, true, exact, nextNormalizer));
+        nextNormalizer = null;
         return this;
     }
     
     public TInputSetBuilder vararg(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, false, exact, nextPicker));
-        nextPicker = null;
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, false, exact, nextNormalizer));
+        nextNormalizer = null;
         return this;
     }
 
     public TInputSetBuilder pickingVararg(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, true, exact, nextPicker));
-        nextPicker = null;
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, true, exact, nextNormalizer));
+        nextNormalizer = null;
         return this;
     }
 
@@ -69,8 +70,8 @@ public final class TInputSetBuilder {
         return this;
     }
 
-    public TInputSetBuilder nextInputPicksWith(TClass.TInstancePicker nextPicker) {
-        this.nextPicker = nextPicker;
+    public TInputSetBuilder nextInputPicksWith(TInstanceNormalizer nextNormalizer) {
+        this.nextNormalizer = nextNormalizer;
         return this;
     }
 
@@ -78,7 +79,7 @@ public final class TInputSetBuilder {
         return new ArrayList<TInputSet>(inputSets);
     }
     private boolean exact;
-    private TClass.TInstancePicker nextPicker;
+    private TInstanceNormalizer nextNormalizer;
 
     private List<TInputSet> inputSets = new ArrayList<TInputSet>(4);
 }

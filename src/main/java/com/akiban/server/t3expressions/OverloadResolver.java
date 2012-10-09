@@ -31,64 +31,181 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TInstanceAdjuster;
+import com.akiban.server.types3.TInstanceNormalizer;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public final class OverloadResolver<V extends TValidatedOverload> {
 
     public static class OverloadResult<V extends TValidatedOverload> {
         private V overload;
-        private Map<TInputSet, TInstance> instances;
+        private TInstance[] naturalInstances;
+        private TInstance[] generatedInstances;
+        private TInstance pickedInstance;
+
+        private class AdjusterImpl implements TInstanceAdjuster {
+
+            void setInputSet(TInputSet inputSet) {
+                this.inputSet = inputSet;
+                assert (adjusted == null) || (adjusted.length() == 0) : "unverified adjustments: " + adjusted;
+            }
+
+            void verify() {
+                if (adjusted != null) {
+                    for (int i = adjusted.nextSetBit(0); i >= 0; i =adjusted.nextSetBit(i+1)) {
+                        assert generatedInstances != null;
+                        generatedInstances[i].validate();
+                        adjusted.clear(i);
+                    }
+                }
+            }
+
+            @Override
+            public TInstance get(int i) {
+                check(i);
+                return getTInstance(i);
+            }
+
+            @Override
+            public TInstance adjust(int i) {
+                check(i);
+                if (generatedInstances == null)
+                    generatedInstances = new TInstance[naturalInstances.length]; // TODO what if this is also null?
+                TInstance result = generatedInstances[i];
+                if (result == null) {
+                    result = naturalInstances[i].copy();
+                    generatedInstances[i] = result;
+                }
+                if (adjusted == null)
+                    adjusted = new BitSet(naturalInstances.length);
+                adjusted.set(i);
+                return result;
+            }
+
+            @Override
+            public void replace(int i, TInstance replacement) {
+                if (replacement == null)
+                    throw new IllegalArgumentException("replacement can't be null");
+                if (replacement.typeClass() != inputSet.targetType())
+                    throw new IllegalArgumentException(
+                            "can't replace " + inputSet + " at " + i + " with " + replacement);
+                if (generatedInstances == null)
+                    generatedInstances = new TInstance[naturalInstances.length]; // TODO what if this also null?
+                generatedInstances[i] = replacement;
+            }
+
+            void check(int i) {
+                assert overload.inputSetAt(i) == inputSet
+                        : "input set at " + i + " is " + overload.inputSetAt(i) + ", expected " + inputSet;
+            }
+
+            private AdjusterImpl(TValidatedOverload overload) {
+                this.overload = overload;
+            }
+
+            private final TValidatedOverload overload;
+            private TInputSet inputSet;
+            private BitSet adjusted;
+        }
+
+        private class NullityAdjuster implements TInstanceNormalizer {
+            @Override
+            public void apply(TInstanceAdjuster adjuster, TValidatedOverload o, TInputSet inputSet, int max) {
+                for (int i = o.firstInput(inputSet); i >= 0; i = o.nextInput(inputSet, i+1, max)) {
+                    if (adjuster.get(i).nullability() == null) {
+                        TPreptimeValue input = inputs.get(i);
+                        boolean isNullable = input == null || input.isNullable();
+                        adjuster.adjust(i).setNullable(isNullable);
+                    }
+                }
+            }
+
+            private NullityAdjuster(List<? extends TPreptimeValue> inputs) {
+                this.inputs = inputs;
+            }
+
+            private final List<? extends TPreptimeValue> inputs;
+        }
 
         private OverloadResult(V overload, List<? extends TPreptimeValue> inputs, TCastResolver resolver)
         {
             this.overload = overload;
             List<TInputSet> inputSets = overload.inputSets();
-            this.instances = new HashMap<TInputSet, TInstance>(inputSets.size());
+            AdjusterImpl adjuster = new AdjusterImpl(overload);
+            NullityAdjuster nullityAdjuster = new NullityAdjuster(inputs);
             for (TInputSet inputSet : inputSets) {
-                final TInstance instance;
                 TClass targetTClass = inputSet.targetType();
-                if (targetTClass == null)
-                    instance = findCommon(overload, inputSet, inputs, resolver);
-                else
-                    instance = findInstance(overload, inputSet, inputs, resolver);
-                if (instance != null) {
-                    boolean nullable = nullable(overload,  inputSet, inputs);
-                    instance.setNullable(nullable);
+                adjuster.setInputSet(inputSet);
+                if (targetTClass == null) {
+                    TInstance instance = findCommon(overload, inputSet, inputs, resolver);
+                    fillInstances(overload, inputSet, instance, inputs.size());
+                    nullityAdjuster.apply(adjuster, overload, inputSet, 0);
                 }
-                instances.put(inputSet, instance);
+                else {
+                    findInstance(overload, inputSet, inputs, resolver);
+                    nullityAdjuster.apply(adjuster, overload, inputSet, 0);
+                    inputSet.instanceAdjuster().apply(adjuster, overload, inputSet, 0);
+                    adjuster.verify();
+                }
+            }
+            pickedInstance = findPickedInstance(overload, inputs);
+        }
+
+        private TInstance findPickedInstance(V overload, List<? extends TPreptimeValue> inputs) {
+            TInputSet pickingSet = overload.pickingInputSet();
+            TInstance result = null;
+            if (pickingSet != null) {
+                for (int i = overload.firstInput(pickingSet), max = inputs.size();
+                     i >= 0;
+                     i = overload.nextInput(pickingSet, i+i, max))
+                {
+                    TInstance inputInstance = getTInstance(i);
+                    // if we need to pickInstance, we'll do it on the previous result's TClass. That covers the case
+                    // of a picking ANY, in which case findCommon would have found a TClass.
+                    result = (result == null)
+                            ? inputInstance
+                            : result.typeClass().pickInstance(result, inputInstance);
+                }
+            }
+            return result;
+        }
+
+        private TInstance getTInstance(int i) {
+            TInstance result;
+            if (generatedInstances != null && generatedInstances[i] != null)
+                result = generatedInstances[i];
+            else
+                result = naturalInstances[i];
+            assert result != null;
+            return result;
+        }
+
+        private void fillInstances(V func, TInputSet inputSet, TInstance instance, int inputsLen) {
+            if (generatedInstances == null)
+                generatedInstances = new TInstance[inputsLen];
+            else assert inputsLen == generatedInstances.length
+                    : inputsLen + "not size of " + Arrays.toString(generatedInstances);
+            for (int i = func.firstInput(inputSet); i >= 0; i = func.nextInput(inputSet, i+1, inputsLen)) {
+                generatedInstances[i] = instance;
             }
         }
 
-        private boolean nullable(V overload, TInputSet inputSet,
-                                 List<? extends TPreptimeValue> inputs)
-        {
-            for (int i = 0, size = inputs.size(); i < size; ++i) {
-                if (overload.inputSetAt(i) != inputSet)
-                    continue;
-                TPreptimeValue input = inputs.get(i);
-                if (input == null || input.isNullable())
-                    return true;
-            }
-            return false;
-        }
-
-        private TInstance findInstance(V overload, TInputSet inputSet,
+        private void findInstance(V overload, TInputSet inputSet,
                                        List<? extends TPreptimeValue> inputs,
                                        TCastResolver resolver)
         {
             final TClass targetTClass = inputSet.targetType();
             assert targetTClass != null;
 
-            TInstance result = null;
             int lastPositionalInput = overload.positionalInputs();
             boolean notVararg = ! overload.isVararg();
             for (int i = 0, size = inputs.size(); i < size; ++i) {
@@ -100,24 +217,27 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 TInstance inputInstance = inputTpv.instance();
                 if (inputInstance != null) {
                     TClass inputTClass = inputInstance.typeClass();
-                    if (inputTClass != targetTClass) {
+                    if (inputTClass == targetTClass) {
+                        if (naturalInstances == null)
+                            naturalInstances = new TInstance[inputs.size()];
+                        naturalInstances[i] = inputInstance;
+                    }
+                    else {
                         TCast requiredCast = resolver.cast(inputTClass, targetTClass);
                         if (requiredCast == null)
                             throw new OverloadException("can't cast " + inputInstance + " to " + targetTClass);
                         inputInstance = requiredCast.preferredTarget(inputTpv);
-                    }
-                    if (result == null) {
-                        result = inputInstance;
-                    }
-                    else {
-                        TClass.TInstancePicker picker = inputSet.instancePicker();
-                        result = picker.combine(result, inputInstance);
+                        if (generatedInstances == null)
+                            generatedInstances = new TInstance[inputs.size()];
+                        generatedInstances[i] = inputInstance;
                     }
                 }
+                else {
+                    if (generatedInstances == null)
+                        generatedInstances = new TInstance[inputs.size()];
+                    generatedInstances[i] = targetTClass.instance();
+                }
             }
-            if (result == null)
-                result = targetTClass.instance();
-            return result;
         }
 
         private TInstance findCommon(V overload, TInputSet inputSet,
@@ -187,12 +307,13 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         }
 
         public TInstance getPickedInstance() {
-            return instances.get(overload.pickingInputSet());
+            if (pickedInstance == null)
+                throw new IllegalStateException("no picked instance");
+            return pickedInstance;
         }
 
         public TInstance getTypeClass(int inputIndex) {
-            TInputSet tInputSet = overload.inputSetAt(inputIndex);
-            return instances.get(tInputSet);
+            return getTInstance(inputIndex);
         }
     }
 
