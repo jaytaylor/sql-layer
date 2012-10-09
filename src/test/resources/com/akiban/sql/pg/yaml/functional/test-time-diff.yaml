@@ -29,7 +29,7 @@
 ## BUG 921117: TIMEDIFF of mis-matched args return NULL
 - Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
 - params: [['00:00:01']]
-- output: [[null]]
+- output: !select-engine { all: [[null]], newtypes: [['12:30:59']] }
 ---
 - Statement: select TIMEDIFF(varchar_field, ?) from all_types;
 - params: [['2012-03-04 00:00:01']]
