@@ -63,16 +63,18 @@ public final class TInputSet {
     }
 
     public TClass.TInstancePicker instancePicker() {
-        return targetType.defaultPicker(); // TODO
+        return (picker == null) ? targetType.defaultPicker()  : picker;
     }
 
-    public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining, boolean isPicking, boolean isExact)
+    public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining, boolean isPicking, boolean isExact,
+                     TClass.TInstancePicker picker)
     {
         this.targetType = targetType;
         this.covering = covering.get(0, covering.length());
         this.coversRemaining = coversRemaining;
         this.isPicking = isPicking;
         this.isExact = isExact;
+        this.picker = picker;
     }
 
     @Override
@@ -106,4 +108,5 @@ public final class TInputSet {
     private final boolean coversRemaining;
     private final boolean isPicking;
     private final boolean isExact;
+    private final TClass.TInstancePicker picker;
 }

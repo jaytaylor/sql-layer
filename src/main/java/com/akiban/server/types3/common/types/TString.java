@@ -292,14 +292,13 @@ public abstract class TString extends TClass
                 AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
                 pickCollation = (collator == null) ? -1 : collator.getCollationId();
             }
+            int leftLen = left.attribute(StringAttribute.LENGTH);
+            int rightLen = right.attribute(StringAttribute.LENGTH);
             if (normalizeLens) {
-                pickLen = Math.max(
-                        left.attribute(StringAttribute.LENGTH),
-                        right.attribute(StringAttribute.LENGTH)
-                );
+                pickLen = Math.max(leftLen,rightLen);
             }
             else {
-                pickLen = right.attribute(StringAttribute.LENGTH);
+                pickLen = rightLen;
             }
             return instance(pickLen, pickCharset, pickCollation);
         }

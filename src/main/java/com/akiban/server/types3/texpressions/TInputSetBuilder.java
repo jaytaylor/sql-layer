@@ -36,22 +36,26 @@ import java.util.List;
 public final class TInputSetBuilder {
 
     public TInputSetBuilder covers(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, false, exact));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, false, exact, nextPicker));
+        nextPicker = null;
         return this;
     }
 
     public TInputSetBuilder pickingCovers(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, true, exact));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, true, exact, nextPicker));
+        nextPicker = null;
         return this;
     }
     
     public TInputSetBuilder vararg(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, false, exact));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, false, exact, nextPicker));
+        nextPicker = null;
         return this;
     }
 
     public TInputSetBuilder pickingVararg(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, true, exact));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, true, exact, nextPicker));
+        nextPicker = null;
         return this;
     }
 
@@ -65,10 +69,16 @@ public final class TInputSetBuilder {
         return this;
     }
 
+    public TInputSetBuilder nextInputPicksWith(TClass.TInstancePicker nextPicker) {
+        this.nextPicker = nextPicker;
+        return this;
+    }
+
     List<TInputSet> toList() {
         return new ArrayList<TInputSet>(inputSets);
     }
-
     private boolean exact;
+    private TClass.TInstancePicker nextPicker;
+
     private List<TInputSet> inputSets = new ArrayList<TInputSet>(4);
 }
