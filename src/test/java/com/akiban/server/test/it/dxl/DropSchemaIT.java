@@ -93,13 +93,9 @@ public final class DropSchemaIT extends ITBase {
     }
 
     @Test
-    public void unknownSchemaIsError() throws InvalidOperationException {
+    public void unknownSchemaIsNoOp() throws InvalidOperationException {
         createTable("one", "t", "id int not null primary key");
-        try {
-            ddl().dropSchema(session(), "not_a_real_schema");
-        } catch (NoSuchSchemaException ex) {
-            // expected
-        }
+        ddl().dropSchema(session(), "not_a_real_schema");
         expectTables("one", "t");
     }
 

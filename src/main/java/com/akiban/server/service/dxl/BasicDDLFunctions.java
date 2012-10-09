@@ -604,7 +604,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
         if (schema == null)
-            throw new NoSuchSchemaException(schemaName);
+            return; // NOT throw new NoSuchSchemaException(schemaName); adapter does it.
 
         List<View> viewsToDrop = new ArrayList<View>();
         Set<View> seen = new HashSet<View>();
