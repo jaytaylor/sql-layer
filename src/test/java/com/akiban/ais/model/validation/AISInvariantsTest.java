@@ -80,8 +80,8 @@ public class AISInvariantsTest {
     @Test (expected=InvalidOperationException.class)
     public void testDuplicateGroup() {
         builder = new AISBuilder();
-        builder.createGroup("test", "test", "t1");
-        builder.createGroup("test", "test", "t2");
+        builder.createGroup("test", "test");
+        builder.createGroup("test", "test");
     }
 
     @Test (expected=DuplicateIndexColumnException.class)
@@ -124,7 +124,7 @@ public class AISInvariantsTest {
         builder.column("test", "t2", "y", 2, "INT", null, null, false, false, null, null);
         builder.basicSchemaIsComplete();
 
-        builder.createGroup("t1", "test", "ak_" + "t1");
+        builder.createGroup("t1", "test");
         builder.addTableToGroup("t1", "test", "t1");
         builder.joinTables("t2/t1", "test", "t1", "test", "t2");
         builder.joinColumns("t2/t1", "test", "t2", "c1", "test", "t2", "c2");

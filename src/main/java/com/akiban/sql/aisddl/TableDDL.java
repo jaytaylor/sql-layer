@@ -434,7 +434,6 @@ public class TableDDL
         }
         final String groupName;
         final String groupSchema;
-        final String groupTableName;
         if(parentTable.getGroup() == null) {
             groupName = parentName.getTableName();
             groupSchema = parentName.getSchemaName();
@@ -442,8 +441,7 @@ public class TableDDL
             groupName = parentTable.getGroup().getName();
             groupSchema = parentTable.getGroup().getRoot().getName().getSchemaName();
         }
-        groupTableName = "_akiban_" + groupName;
-        builder.createGroup(groupName, groupSchema, groupTableName);
+        builder.createGroup(groupName, groupSchema);
         builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
     }
 

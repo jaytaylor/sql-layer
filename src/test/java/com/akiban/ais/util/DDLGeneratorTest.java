@@ -41,7 +41,7 @@ public final class DDLGeneratorTest {
         builder.userTable("schema", "table");
         builder.column("schema", "table", "col", 0, "decimal unsigned", 11L, 3L, true, false, null, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("myGroup", "some_group_schema", "_group0");
+        builder.createGroup("myGroup", "some_group_schema");
         builder.addTableToGroup("myGroup", "schema", "table");
         builder.groupingIsComplete();
 

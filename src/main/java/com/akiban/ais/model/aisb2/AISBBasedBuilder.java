@@ -106,7 +106,7 @@ public class AISBBasedBuilder
             TableName tableName= new TableName (schema, table);
             aisb.userTable(schema, table);
             String groupName = nameGenerator.generateGroupName(aisb.akibanInformationSchema().getUserTable(tableName));
-            aisb.createGroup(groupName, schema, nameGenerator.generateGroupTableName(groupName));
+            aisb.createGroup(groupName, schema);
             aisb.addTableToGroup(groupName, schema, table);
             tablesToGroups.put(TableName.create(schema, table), groupName);
             uTableColumnPos = 0;

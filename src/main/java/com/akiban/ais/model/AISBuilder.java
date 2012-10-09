@@ -311,11 +311,7 @@ public class AISBuilder {
 
     // API for describing groups
 
-    public void createGroup(String groupName, String groupSchemaName, String groupTableName) {
-        createGroup(groupName, groupSchemaName, groupTableName, tableIdGenerator++);
-    }
-
-    public void createGroup(String groupName, String groupSchemaName, String groupTableName, int groupTableID) {
+    public void createGroup(String groupName, String groupSchemaName) {
         LOG.info("createGroup: {} in {}", groupName, groupSchemaName);
         Group group = Group.create(ais, groupName);
         group.setTreeName(nameGenerator.generateGroupTreeName(groupSchemaName, groupName));

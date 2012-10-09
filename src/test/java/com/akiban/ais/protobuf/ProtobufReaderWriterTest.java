@@ -202,7 +202,7 @@ public class ProtobufReaderWriterTest {
         builder.userTable(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "valid", 0, "TINYINT", null, null, true, false, null, null);
         builder.column(SCHEMA, TABLE, "state", 1, "CHAR", 2L, null, true, false, null, null);
-        builder.createGroup(TABLE, SCHEMA, "akiban_"+TABLE);
+        builder.createGroup(TABLE, SCHEMA);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
@@ -421,7 +421,7 @@ public class ProtobufReaderWriterTest {
         builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", 32L, null, false, false, null, null);
         builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, INDEXED_LENGTH);
-        builder.createGroup(TABLE, SCHEMA, "_akiban"+TABLE);
+        builder.createGroup(TABLE, SCHEMA);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
