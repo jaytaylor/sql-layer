@@ -48,9 +48,6 @@ class TableIDsUnique implements AISValidation {
         for (UserTable table : ais.getUserTables().values()) {
             checkTableID (table);
         }
-        for (GroupTable table : ais.getGroupTables().values()) {
-            checkTableID (table);
-        }
     }
     
     private void checkTableID (Table table) {

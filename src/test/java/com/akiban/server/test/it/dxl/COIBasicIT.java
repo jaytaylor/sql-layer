@@ -42,13 +42,11 @@ import org.junit.Test;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NewRowBuilder;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.UnsupportedDropException;
 
 public final class COIBasicIT extends ITBase {

@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.api.dml.scan.NewRow;

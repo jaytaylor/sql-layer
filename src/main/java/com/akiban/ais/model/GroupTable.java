@@ -37,7 +37,6 @@ public class GroupTable extends Table
                                         Integer tableId)
     {
         GroupTable groupTable = new GroupTable(ais, schemaName, tableName, tableId);
-        ais.addGroupTable(groupTable);
         return groupTable;
     }
 

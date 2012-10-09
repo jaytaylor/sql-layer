@@ -421,7 +421,6 @@ public final class SchemaManagerIT extends ITBase {
     public void manyTablesAndRestart() throws Exception {
         final int TABLE_COUNT = 50;
         final int UT_COUNT = schemaManager.getAis(session()).getUserTables().size();
-        final int GT_COUNT = schemaManager.getAis(session()).getGroupTables().size();
 
         String tableNames[] = new String[TABLE_COUNT];
         for(int i = 0; i < TABLE_COUNT; ++i) {
@@ -432,7 +431,6 @@ public final class SchemaManagerIT extends ITBase {
         AkibanInformationSchema ais = schemaManager.getAis(session());
         Collection<UserTable> before = new ArrayList<UserTable>(ais.getUserTables().values());
         assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count before", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
         safeRestart();
@@ -451,7 +449,6 @@ public final class SchemaManagerIT extends ITBase {
             }
         }
         assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count after", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
     }
 
@@ -460,7 +457,6 @@ public final class SchemaManagerIT extends ITBase {
         final int TABLE_COUNT = 3;
         AkibanInformationSchema ais = schemaManager.getAis(session());
         final int UT_COUNT = ais.getUserTables().size();
-        final int GT_COUNT = ais.getGroupTables().size();
 
         createTable(SCHEMA+"1", "t1", "id int not null primary key");
         createTable(SCHEMA+"2", "t2", "id int not null primary key");
@@ -468,7 +464,6 @@ public final class SchemaManagerIT extends ITBase {
 
         ais = schemaManager.getAis(session());
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
@@ -478,7 +473,6 @@ public final class SchemaManagerIT extends ITBase {
         assertNotNull("ais exists", ais);
 
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
