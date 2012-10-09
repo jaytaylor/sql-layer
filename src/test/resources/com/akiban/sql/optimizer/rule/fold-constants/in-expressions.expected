@@ -6,4 +6,4 @@ SelectQuery@2d164deb
 
 Subquery@5b24adaf
   Project@4506eae8[customers.cid == VALUES[0]]
-    ExpressionsSource@743be8a9([[$0], [now()], [now()]])
+    ExpressionsSource@743be8a9([[$0], [minute(now())], [second(now())]])

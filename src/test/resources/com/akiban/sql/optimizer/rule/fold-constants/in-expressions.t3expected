@@ -5,5 +5,5 @@ SelectQuery@9eb67cb
         TableSource@f35b47c(customers)
 
 Subquery@e903e28
-  Project@5e4338fa[Cast(customers.cid AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL) == VALUES[0]]
-    ExpressionsSource@38a83930([[Cast($0 AS MCOMPAT_ DOUBLE(-1, -1) NULL)], [Cast(now() AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL)], [Cast(now() AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL)]])
+  Project@30d46770[customers.cid == VALUES[0]]
+    ExpressionsSource@44aab8fd([[$0], [minute(Cast(now() AS MCOMPAT_ TIME))], [second(Cast(now() AS MCOMPAT_ TIME))]])
