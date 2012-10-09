@@ -75,6 +75,8 @@ import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.AlterMadeNoChangeException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidAlterException;
+import com.akiban.server.error.NoSuchSchemaException;
+import com.akiban.server.error.ViewReferencesExist;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -600,38 +602,43 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("dropping schema {}", schemaName);
 
+        final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
+        if (schema == null)
+            throw new NoSuchSchemaException(schemaName);
+
+        List<View> viewsToDrop = new ArrayList<View>();
+        Set<View> seen = new HashSet<View>();
+        for (View view : schema.getViews().values()) {
+            addView(view, viewsToDrop, seen, schema, schemaName);
+        }
+
         // Find all groups and tables in the schema
         Set<Group> groupsToDrop = new HashSet<Group>();
         List<UserTable> tablesToDrop = new ArrayList<UserTable>();
 
-        final AkibanInformationSchema ais = getAIS(session);
-        for(UserTable table : ais.getUserTables().values()) {
-            final TableName tableName = table.getName();
-            if(tableName.getSchemaName().equals(schemaName)) {
-                groupsToDrop.add(table.getGroup());
-                // Cannot drop entire group of parent is not in the same schema
-                final Join parentJoin = table.getParentJoin();
-                if(parentJoin != null) {
-                    final UserTable parentTable = parentJoin.getParent();
-                    if(!parentTable.getName().getSchemaName().equals(schemaName)) {
-                        tablesToDrop.add(table);
-                    }
+        for(UserTable table : schema.getUserTables().values()) {
+            groupsToDrop.add(table.getGroup());
+            // Cannot drop entire group if parent is not in the same schema
+            final Join parentJoin = table.getParentJoin();
+            if(parentJoin != null) {
+                final UserTable parentTable = parentJoin.getParent();
+                if(!parentTable.getName().getSchemaName().equals(schemaName)) {
+                    tablesToDrop.add(table);
                 }
-                // All children must be in the same schema
-                for(Join childJoin : table.getChildJoins()) {
-                    final TableName childName = childJoin.getChild().getName();
-                    if(!childName.getSchemaName().equals(schemaName)) {
-                        throw new ForeignConstraintDDLException(tableName, childName);
-                    }
+            }
+            // All children must be in the same schema
+            for(Join childJoin : table.getChildJoins()) {
+                final TableName childName = childJoin.getChild().getName();
+                if(!childName.getSchemaName().equals(schemaName)) {
+                    throw new ForeignConstraintDDLException(table.getName(), childName);
                 }
             }
         }
         List<Sequence> sequencesToDrop = new ArrayList<Sequence>();
-        for (Sequence sequence : ais.getSequences().values()) {
+        for (Sequence sequence : schema.getSequences().values()) {
             // Drop the sequences in this schema, but not the 
             // generator sequences, which will be dropped with the table. 
-            if (sequence.getSchemaName().equals(schemaName) &&
-                 !(sequence.getSequenceName().getTableName().startsWith("_sequence-"))) {
+            if (!(sequence.getSequenceName().getTableName().startsWith("_sequence-"))) {
                 sequencesToDrop.add(sequence);
             }
         }
@@ -648,6 +655,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
         });
         // Do the actual dropping
+        for(View view : viewsToDrop) {
+            dropView(session, view.getName());
+        }
         for(UserTable table : tablesToDrop) {
             dropTable(session, table.getName());
         }
@@ -656,6 +666,26 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         for (Sequence sequence : sequencesToDrop) {
             dropSequence(session, sequence.getSequenceName());
+        }
+    }
+
+    private void addView(View view, Collection<View> into, Collection<View> seen, 
+                         com.akiban.ais.model.Schema schema, String schemaName) {
+        if (seen.add(view)) {
+            for (TableName reference : view.getTableReferences()) {
+                if (reference.getSchemaName() != schemaName) {
+                    throw new ViewReferencesExist(schemaName, 
+                                                  view.getName().getTableName(),
+                                                  reference.getSchemaName(),
+                                                  reference.getTableName());
+                }
+                // If reference is to another view, it must come first.
+                View refView = schema.getView(reference.getTableName());
+                if (refView != null) {
+                    addView(view, into, seen, schema, schemaName);
+                }
+            }
+            into.add(view);
         }
     }
 
