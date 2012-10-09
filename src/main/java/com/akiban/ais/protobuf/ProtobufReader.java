@@ -164,7 +164,7 @@ public class ProtobufReader {
 
         // Hook up groups, create group tables and indexes after all in place
         for(List<NewGroupInfo> newGroups : allNewGroups) {
-            createGroupTablesAndIndexes(newGroups);
+            hookUpGroupAndCreateGroupIndexes(newGroups);
         }
     }
     
@@ -180,7 +180,7 @@ public class ProtobufReader {
         return newGroups;
     }
 
-    private void createGroupTablesAndIndexes(List<NewGroupInfo> newGroups) {
+    private void hookUpGroupAndCreateGroupIndexes(List<NewGroupInfo> newGroups) {
         List<Join> joinsNeedingGroup = new ArrayList<Join>();
         
         for(NewGroupInfo newGroupInfo : newGroups) {
