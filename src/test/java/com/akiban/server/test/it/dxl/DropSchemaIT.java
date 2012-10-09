@@ -30,8 +30,11 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchSchemaException;
+import com.akiban.server.error.ViewReferencesExist;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -73,10 +76,30 @@ public final class DropSchemaIT extends ITBase {
         }
     }
 
+    private void expectViews(String schemaName, String... viewNames) {
+        final AkibanInformationSchema ais = ddl().getAIS(session());
+        for (String name : viewNames) {
+            final View view = ais.getView(new TableName(schemaName, name));
+            assertNotNull (schemaName + "." + name + " doesn't exist", view);
+        }
+        
+    }
+    private void expectNotViews(String schemaName, String... viewNames) {
+        final AkibanInformationSchema ais = ddl().getAIS(session());
+        for (String name : viewNames) {
+            final View view = ais.getView(new TableName(schemaName, name));
+            assertNull (schemaName + "." + name + " still exists", view);
+        }
+    }
+
     @Test
-    public void unknownSchemaIsNoOp() throws InvalidOperationException {
+    public void unknownSchemaIsError() throws InvalidOperationException {
         createTable("one", "t", "id int not null primary key");
-        ddl().dropSchema(session(), "not_a_real_schema");
+        try {
+            ddl().dropSchema(session(), "not_a_real_schema");
+        } catch (NoSuchSchemaException ex) {
+            // expected
+        }
         expectTables("one", "t");
     }
 
@@ -165,6 +188,55 @@ public final class DropSchemaIT extends ITBase {
         expectNotTables("one", "o");
         expectSequences("two", "seq2");
         
+    }
+
+    @Test
+    public void dropViewValidInSchema() throws Exception {
+        createTable("one", "t1",
+                    "id int not null primary key", "name varchar(128)");
+        createTable("two", "t2",
+                    "id int not null primary key", "name varchar(128)");
+        createView("one", "v1",
+                   "SELECT * FROM t1");
+        createView("two", "v2",
+                   "SELECT * FROM t2");
+        ddl().dropSchema(session(), "one");
+        expectNotTables("one", "t1");
+        expectNotViews("one", "v1");
+        expectTables("two", "t2");
+        expectViews("two", "v2");
+    }
+
+    @Test
+    public void dropViewInvalidOutsideSchema() throws Exception {
+        createTable("one", "t1",
+                    "id int not null primary key", "name varchar(128)");
+        createTable("two", "t2",
+                    "id int not null primary key", "name varchar(128)");
+        createView("one", "crossview",
+                   "SELECT t1.id,t1.name,t2.name AS name2 FROM one.t1 t1, two.t2 t2 WHERE t1.id = t2.id");
+        try {
+            ddl().dropSchema(session(), "one");
+        } catch (ViewReferencesExist ex) {
+            // expected
+        }
+        expectTables("one", "t1");
+        expectTables("two", "t2");
+        expectViews("one", "crossview");
+    }
+
+    @Test
+    public void dropViewsInOrder() throws Exception {
+        createTable("test", "t1",
+                    "id int not null primary key", "name varchar(128)");
+        createView("test", "v1",
+                   "SELECT * FROM t1");
+        createView("test", "v3",
+                   "SELECT * FROM v1");
+        createView("test", "v2",
+                   "SELECT * FROM v3");
+        ddl().dropSchema(session(), "test");
+        expectNotViews("test", "v1", "v2", "v3");
     }
 
     @Test
