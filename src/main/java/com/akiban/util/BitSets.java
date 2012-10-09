@@ -37,5 +37,14 @@ public final class BitSets {
         return bs;
     }
 
+    public static BitSet of(boolean[] flags) {
+        BitSet bs = new BitSet(flags.length);
+        for (int i = 0, max = flags.length; i < max; ++i) {
+            if (flags[i])
+                bs.set(i);
+        }
+        return bs;
+    }
+
     private BitSets() {}
 }

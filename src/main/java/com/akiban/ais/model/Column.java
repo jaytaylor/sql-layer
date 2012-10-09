@@ -220,6 +220,9 @@ public class Column implements ColumnContainer
     {
         StringBuilder columnType = new StringBuilder();
         columnType.append(type.name());
+        boolean unsigned = type.name().endsWith(" unsigned");
+        if (unsigned)
+            columnType.setLength(columnType.length() - 9);
         switch (type.nTypeParameters()) {
             case 0:
                 break;
@@ -232,6 +235,8 @@ public class Column implements ColumnContainer
                 columnType.append(str2);
                 break;
         }
+        if (unsigned)
+            columnType.append(" unsigned");
         return columnType.toString();
     }
 

@@ -4,7 +4,7 @@ SelectQuery@1900f17
       Select@1be3d02[]
         JoinNode@16dc3e6(INNER/NESTED_LOOPS)
           JoinNode@158539f(INNER/NESTED_LOOPS)
-            TableGroupJoinTree@1567dcef(TableGroup@6a305c4d(parent), child - GroupScan@6aade(Group(parent -> test._akiban_parent), rows = 1, cost = 1224.00))
+            TableGroupJoinTree@1567dcef(TableGroup@6a305c4d(parent), child - GroupScan@6aade(Group(parent -> test.parent), rows = 1, cost = 1224.00))
               TableSource@1ea25aa(child - TableGroup@17777a1(parent))
             TableGroupJoinTree@72c61bc6(TableGroup@6cca9d97(customers), customers INNER orders - SingleIndexScan@1b9658e(Index(test.orders.PRIMARY[IndexColumn(oid)]), NONE, =child.pid, rows = 1, cost = 108.608))
               TableSource@5e6a13(customers - TableGroup@ede19e(customers))

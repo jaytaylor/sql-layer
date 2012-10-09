@@ -975,18 +975,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        final int tableId;
-        final int gTableId;
-        {
-            if (table.isUserTable()) {
-                tableId = table.getTableId();
-                gTableId = table.getGroup().getGroupTable().getTableId();
-            }
-            else {
-                tableId = gTableId = table.getTableId();
-            }
-        }
-
+        final int tableId = table.getTableId();
         for (BasicDXLMiddleman.ScanData scanData : cursorsMap.values()) {
             Cursor cursor = scanData.getCursor();
             if (cursor.isClosed()) {
@@ -994,7 +983,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
             ScanRequest request = cursor.getScanRequest();
             int scanTableId = request.getTableId();
-            if (scanTableId == tableId || scanTableId == gTableId) {
+            if (scanTableId == tableId) {
                 cursor.setDDLModified();
             }
         }
