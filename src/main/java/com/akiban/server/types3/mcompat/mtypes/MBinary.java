@@ -159,7 +159,8 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, parser, typeId);
+        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class,
+                1, 1, -1, PUnderlying.BYTES, parser, (defaultLength < 0 ? MAX_BYTE_BUF : defaultLength), typeId);
         this.defaultLength = defaultLength;
     }
 

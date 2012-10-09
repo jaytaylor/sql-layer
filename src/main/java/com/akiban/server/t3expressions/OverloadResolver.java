@@ -27,6 +27,7 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
@@ -58,7 +59,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 if (targetTClass == null)
                     instance = findCommon(overload, inputSet, inputs, resolver);
                 else
-                    instance = findInstance(overload, inputSet, inputs);
+                    instance = findInstance(overload, inputSet, inputs, resolver);
                 if (instance != null) {
                     boolean nullable = nullable(overload,  inputSet, inputs);
                     instance.setNullable(nullable);
@@ -81,7 +82,8 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         }
 
         private TInstance findInstance(V overload, TInputSet inputSet,
-                                       List<? extends TPreptimeValue> inputs)
+                                       List<? extends TPreptimeValue> inputs,
+                                       TCastResolver resolver)
         {
             final TClass targetTClass = inputSet.targetType();
             assert targetTClass != null;
@@ -94,12 +96,23 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     continue;
                 if (notVararg && (i >= lastPositionalInput))
                     break;
-                TInstance inputInstance = inputs.get(i).instance();
-                TClass inputClass = (inputInstance == null) ? null : inputInstance.typeClass();
-                if (inputClass == targetTClass) {
-                    result = (result == null)
-                            ? inputInstance
-                            : targetTClass.pickInstance(result, inputInstance);
+                TPreptimeValue inputTpv = inputs.get(i);
+                TInstance inputInstance = inputTpv.instance();
+                if (inputInstance != null) {
+                    TClass inputTClass = inputInstance.typeClass();
+                    if (inputTClass != targetTClass) {
+                        TCast requiredCast = resolver.cast(inputTClass, targetTClass);
+                        if (requiredCast == null)
+                            throw new OverloadException("can't cast " + inputInstance + " to " + targetTClass);
+                        inputInstance = requiredCast.preferredTarget(inputTpv);
+                    }
+                    if (result == null) {
+                        result = inputInstance;
+                    }
+                    else {
+                        TClass.TInstancePicker picker = inputSet.instancePicker();
+                        result = picker.combine(result, inputInstance);
+                    }
                 }
             }
             if (result == null)

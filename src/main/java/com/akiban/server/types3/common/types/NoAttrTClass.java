@@ -60,9 +60,10 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     public NoAttrTClass(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, int internalRepVersion,
-                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
+                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser,
+                           int defaultVarcharLen, TypeId typeId) {
         super(bundle, name, category, formatter, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
-                pUnderlying, parser, typeId);
+                pUnderlying, parser, defaultVarcharLen, typeId);
     }
 
     @Override

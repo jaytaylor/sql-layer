@@ -104,7 +104,8 @@ public class AkResultSet extends TClassBase {
               1,
               0,
               null, // PUnderlying.XXX
-              NO_PARSER);
+              NO_PARSER,
+              -1);
     }
 
     public TInstance instance(List<Column> columns) {

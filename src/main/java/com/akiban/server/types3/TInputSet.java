@@ -62,6 +62,10 @@ public final class TInputSet {
         return covering.nextSetBit(from);
     }
 
+    public TClass.TInstancePicker instancePicker() {
+        return targetType.defaultPicker(); // TODO
+    }
+
     public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining, boolean isPicking, boolean isExact)
     {
         this.targetType = targetType;

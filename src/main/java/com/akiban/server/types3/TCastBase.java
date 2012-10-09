@@ -57,6 +57,11 @@ public abstract class TCastBase implements TCast
             doEvaluate(context, source, target);
     }
 
+    @Override
+    public TInstance preferredTarget(TPreptimeValue source) {
+        return targetClass().instance(); // you will often want to override this, especially for varchars
+    }
+
     protected abstract void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target);
 
     @Override

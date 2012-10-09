@@ -56,7 +56,7 @@ public class MNumeric extends SimpleDtdTClass {
                 formatter,
                 NumericAttribute.class,
                 1, 1, serializationSize, 
-                pUnderlying, parser, inferTypeid(name));
+                pUnderlying, parser, defaultWidth, inferTypeid(name));
         this.defaultWidth = defaultWidth;
     }
 
@@ -152,7 +152,7 @@ public class MNumeric extends SimpleDtdTClass {
     public static final MNumeric BIGINT_UNSIGNED
             = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.UINT_64, 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT);
 
-    public static final TClass DECIMAL = new MBigDecimal("decimal");
+    public static final TClass DECIMAL = new MBigDecimal("decimal", 11);
 
-    public static final TClass DECIMAL_UNSIGNED = new MBigDecimal("decimal unsigned");
+    public static final TClass DECIMAL_UNSIGNED = new MBigDecimal("decimal unsigned", 10);
 }
