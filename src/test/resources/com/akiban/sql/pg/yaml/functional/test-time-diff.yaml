@@ -27,6 +27,8 @@
 # Or one is a DATE/TIME/DATETIME/TIMESTAMP and the other is a VARCHAR that is
 # convertible to the other's type
 ## BUG 921117: TIMEDIFF of mis-matched args return NULL
+- Message: 'The following test is wrong with newtypes! see bug 1064446'
+---
 - Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
 - params: [['00:00:01']]
 - output: !select-engine { all: [[null]], newtypes: [['12:30:59']] }
