@@ -5,7 +5,7 @@ SelectQuery@78f6e005
         Product@2804f2ec
           Flatten@5ce8787a(customers LEFT orders)
             Select@223dc13d[orders.order_date != Cast(2011-01-01 AS DATE NOT NULL)]
-              GroupScan@4599d5b(Group(customers -> test._akiban_customers))
+              GroupScan@4599d5b(Group(customers -> test.customers))
                 TableSource@52ec1f9e(customers - TableGroup@1769c398(customers))
                 TableSource@686fdca5(orders - TableGroupJoin@20a83c2a(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
           Flatten@505fa26(customers LEFT addresses)

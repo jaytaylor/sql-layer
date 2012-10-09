@@ -3,7 +3,7 @@ SelectQuery@31702b90
     Project@6558664e[orders.order_date, child.name]
       Select@ea4bedd[]
         JoinNode@7b00da15(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@55cae047(TableGroup@4f3ca424(customers), customers INNER orders - GroupScan@74edd7c9(Group(customers -> test._akiban_customers), rows = 1000, cost = 59715.0))
+          TableGroupJoinTree@55cae047(TableGroup@4f3ca424(customers), customers INNER orders - GroupScan@74edd7c9(Group(customers -> test.customers), rows = 1000, cost = 59715.0))
             TableSource@60331a36(customers - TableGroup@4f3ca424(customers))
               TableSource@3afe0091(orders - TableGroupJoin@2af20918(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
           TableGroupJoinTree@7a4a8151(TableGroup@163c6020(parent), parent INNER child - SingleIndexScan@78331cae(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 426.731))

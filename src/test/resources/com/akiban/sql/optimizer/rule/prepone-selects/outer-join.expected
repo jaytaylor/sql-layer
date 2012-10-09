@@ -4,7 +4,7 @@ SelectQuery@7d4bf659
       Select@17336201[isNull(customers.name), isNull(items.sku)]
         Flatten@4d6a54b0(customers RIGHT orders LEFT items)
           Select@6427854d[month(orders.order_date) == 1]
-            GroupScan@5e0dc0(Group(customers -> test._akiban_customers), rows = 20000, cost = 929254)
+            GroupScan@5e0dc0(Group(customers -> test.customers), rows = 20000, cost = 929254)
               TableSource@560d7606(customers - TableGroup@316ba47c(customers))
               TableSource@5c2a3157(orders - TableGroupJoin@11fbe23d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
               TableSource@dbfb00d(items - TableGroupJoin@2fc21c04(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

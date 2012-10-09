@@ -2,7 +2,7 @@ SelectQuery@1dca8c4a
   ResultSet@5cc05d8d[order_date, name]
     MapJoin@1c513060()
       Flatten@29f684ea(customers INNER orders)
-        GroupScan@163efd26(Group(customers -> test._akiban_customers), rows = 1000, cost = 59715.0)
+        GroupScan@163efd26(Group(customers -> test.customers), rows = 1000, cost = 59715.0)
           TableSource@2fa1b2ca(customers - TableGroup@3693e4d1(customers))
           TableSource@58973716(orders - TableGroupJoin@15dd533(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
       Project@593e038d[orders.order_date, child.name]

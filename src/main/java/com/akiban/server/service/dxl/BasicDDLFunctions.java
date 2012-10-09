@@ -945,7 +945,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        assert table.isUserTable() : "Scanned GroupTable " + table;
         final int tableId = table.getTableId();
         for (BasicDXLMiddleman.ScanData scanData : cursorsMap.values()) {
             Cursor cursor = scanData.getCursor();

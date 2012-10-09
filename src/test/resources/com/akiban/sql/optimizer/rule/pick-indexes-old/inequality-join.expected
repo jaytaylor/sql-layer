@@ -3,7 +3,7 @@ SelectQuery@7dc21ece
     Project@f786a3c[items.sku, books.name]
       Select@2a869113[items.quan > books.bid]
         JoinNode@689e8c34(INNER/NESTED_LOOPS)
-          TableJoins@2a63b2e6(TableGroup@77762fc7(books) - GroupScan@5898bbf6(Group(books -> test._akiban_books)))
+          TableJoins@2a63b2e6(TableGroup@77762fc7(books) - GroupScan@5898bbf6(Group(books -> test.books)))
             TableSource@6a40afb9(books - TableGroup@77762fc7(books))
-          TableJoins@703aef16(TableGroup@2d26c6ea(customers) - GroupScan@135c40eb(Group(customers -> test._akiban_customers)))
+          TableJoins@703aef16(TableGroup@2d26c6ea(customers) - GroupScan@135c40eb(Group(customers -> test.customers)))
             TableSource@106df95(items - TableGroup@2d26c6ea(customers))
