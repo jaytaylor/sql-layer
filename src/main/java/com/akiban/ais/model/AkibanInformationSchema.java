@@ -106,13 +106,6 @@ public class AkibanInformationSchema implements Traversable
 
     public void removeGroup(Group group) {
         groups.remove(group.getName());
-        GroupTable groupTable = group.getGroupTable();
-        GroupTable removed = groupTables.remove(groupTable.getName());
-        assert removed == groupTable : removed + " != " + groupTable;
-        if (groupTablesById != null && groupTable.getTableId() != null) {
-            removed = groupTablesById.remove(groupTable.getTableId());
-        }
-        assert removed == groupTable : removed + " != " + groupTable;
     }
 
     public Table getTable(String schemaName, String tableName)
@@ -398,14 +391,10 @@ public class AkibanInformationSchema implements Traversable
         schema.addSequence(seq);
     }
     
-    public void deleteGroupAndGroupTable(Group group)
+    public void deleteGroup(Group group)
     {
         Group removedGroup = groups.remove(group.getName());
         assert removedGroup == group;
-        GroupTable groupTable = group.getGroupTable();
-        assert groupTable.getRoot() == null;
-        GroupTable removedGroupTable = groupTables.remove(groupTable.getName());
-        assert removedGroupTable == groupTable;
     }
 
     private String normalizeTypename(String typename)
@@ -433,16 +422,7 @@ public class AkibanInformationSchema implements Traversable
             else if (!name.equals(group.getName())) {
                 out.add("name mismatch, expected <" + name + "> for group " + group);
             }
-            GroupTable groupTable = group.getGroupTable();
-            if (groupTable == null) {
-                out.add("null group table for group: " + name);
-            }
-            else if (!groupTables.containsKey(groupTable.getName())) {
-                out.add("group tables didn't contain group's getGroupTable(): " + groupTable.getName());
-            }
-            else {
-                group.checkIntegrity(out);
-            }
+            group.checkIntegrity(out);
         }
     }
 

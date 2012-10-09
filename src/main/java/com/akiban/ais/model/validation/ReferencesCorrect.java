@@ -104,12 +104,8 @@ class ReferencesCorrect implements AISValidation,Visitor {
         if (group == null) {
             output.reportFailure(new AISValidationFailure(
                     new AISNullReferenceException("ais", "", "group")));
-        } else  if (group.getGroupTable() == null) {
-            output.reportFailure(new AISValidationFailure(
-                    new AISNullReferenceException("group", group.getName(), "group table")));
         }
     }
-
 
     @Override
     public void visitIndex(Index index) {

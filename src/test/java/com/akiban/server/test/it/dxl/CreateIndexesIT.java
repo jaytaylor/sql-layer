@@ -227,11 +227,6 @@ public final class CreateIndexesIT extends ITBase {
         UserTable uTable = getUserTable("test", "t");
         assertNotNull(uTable);
         assertNotNull(uTable.getIndex("name"));
-        
-        // Index should exist on the GroupTable
-        GroupTable gTable = uTable.getGroup().getGroupTable();
-        assertNotNull(gTable);
-        assertNotNull(gTable.getIndex("t$name"));
     }
 
     @Test

@@ -90,7 +90,6 @@ public class AISMergeTest {
         // merge will have created a group table for the user table we merged.
         assertEquals (t.getGroups().keySet().size(), 1);
         assertNotNull(t.getGroup(TABLE));
-        checkColumns (t.getGroup(TABLE).getGroupTable().getColumns(), "t1$c1", "t1$c2", "t1$"+Column.AKIBAN_PK_NAME);
     }
 
     @Test
@@ -112,7 +111,6 @@ public class AISMergeTest {
         checkColumns(targetTable.getPrimaryKey().getColumns(), "c1");
         
         assertNotNull(t.getGroup(TABLE));
-        assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$PRIMARY"));
     }
     
     @Test
@@ -134,7 +132,6 @@ public class AISMergeTest {
         assertNotNull (targetTable.getIndex("c1"));
         checkIndexColumns (targetTable.getIndex("c1").getKeyColumns(), "c1");
         assertNotNull(t.getGroup(TABLE));
-        assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$c1"));
         assertNull (targetTable.getPrimaryKey());
 
     }
@@ -154,8 +151,7 @@ public class AISMergeTest {
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
         assertEquals (TABLE, t.getUserTable(TABLENAME).getGroup().getName());
-        assertEquals ("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
-        
+
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
         b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
@@ -173,7 +169,6 @@ public class AISMergeTest {
         assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));
         assertEquals (TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
-        assertEquals (5, t.getGroupTable(SCHEMA, "_akiban_t1").getColumnsIncludingInternal().size());
     }
     
     @Test
@@ -221,7 +216,6 @@ public class AISMergeTest {
         assertEquals (2, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));
         assertEquals (TABLE, t.getUserTable(SCHEMA, "t3").getGroup().getName());
-        assertEquals (8, t.getGroupTable(SCHEMA, "_akiban_t1").getColumnsIncludingInternal().size());
     }
 
     
@@ -367,7 +361,6 @@ public class AISMergeTest {
         t = merge.merge().getAIS();
         assertTrue(t.isFrozen());
         assertEquals(TABLE, t.getUserTable(TABLENAME).getGroup().getName());
-        assertEquals("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
 
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);
@@ -405,7 +398,6 @@ public class AISMergeTest {
         t = merge.merge().getAIS();
         assertTrue(t.isFrozen());
         assertEquals(TABLE, t.getUserTable(TABLENAME).getGroup().getName());
-        assertEquals("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
 
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);

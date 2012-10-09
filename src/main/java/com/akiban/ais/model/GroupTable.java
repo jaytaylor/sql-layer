@@ -81,7 +81,6 @@ public class GroupTable extends Table
     {
         if (group != null) {
             super.setGroup(group);
-            group.setGroupTable(this);
         }
     }
 

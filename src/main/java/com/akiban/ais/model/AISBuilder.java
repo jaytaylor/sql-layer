@@ -332,7 +332,7 @@ public class AISBuilder {
             }
         }
         if (groupEmpty) {
-            ais.deleteGroupAndGroupTable(group);
+            ais.deleteGroup(group);
         } else {
             throw new GroupNotEmptyException(group);
         }

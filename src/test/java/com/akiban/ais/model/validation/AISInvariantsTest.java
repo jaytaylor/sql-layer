@@ -45,27 +45,7 @@ public class AISInvariantsTest {
         
         builder.userTable("test", "t1");
     }
-    
-    @Test (expected=InvalidOperationException.class)
-    public void testDuplicateTables2() {
-        builder = new AISBuilder();
-        builder.userTable("test", "t1");
-        builder.createGroup("test", "test", "t1");
-    }
-    
-    @Test (expected=InvalidOperationException.class)
-    public void testDuplicateTables3() {
-        builder = new AISBuilder();
-        builder.createGroup("test", "test", "t1");
-        builder.userTable("test", "t1");
-    }
-    
-    @Test (expected=InvalidOperationException.class)
-    public void testDuplicateTables4() {
-        builder = new AISBuilder();
-        builder.createGroup ("test", "test", "t1");
-        builder.createGroup ("fred", "test", "t1");
-    }
+
     @Test (expected=InvalidOperationException.class)
     public void testDuplicateColumns() {
         builder = new AISBuilder();

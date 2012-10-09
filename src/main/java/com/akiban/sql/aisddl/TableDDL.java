@@ -438,16 +438,15 @@ public class TableDDL
         if(parentTable.getGroup() == null) {
             groupName = parentName.getTableName();
             groupSchema = parentName.getSchemaName();
-            groupTableName = "_akiban_" + groupName;
         } else {
-            TableName gtName = parentTable.getGroup().getGroupTable().getName();
             groupName = parentTable.getGroup().getName();
-            groupSchema = gtName.getSchemaName();
-            groupTableName = gtName.getTableName();
+            groupSchema = parentTable.getGroup().getRoot().getName().getSchemaName();
         }
+        groupTableName = "_akiban_" + groupName;
         builder.createGroup(groupName, groupSchema, groupTableName);
         builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
     }
+
 
     private static String[] columnNamesFromListOrPK(ResultColumnList list, PrimaryKey pk) {
         String[] names = (list == null) ? null: list.getColumnNames();

@@ -93,11 +93,6 @@ public final class DropIndexesIT extends ITBase {
         UserTable uTable = getUserTable("test", "t");
         assertNotNull(uTable);
         assertNull(uTable.getIndex("name"));
-
-        // Index should be gone from GroupTable
-        GroupTable gTable = uTable.getGroup().getGroupTable();
-        assertNotNull(gTable);
-        assertNull(gTable.getIndex("t$name"));
     }
     
     @Test

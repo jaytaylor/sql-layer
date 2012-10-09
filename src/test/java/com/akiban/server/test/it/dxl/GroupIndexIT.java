@@ -86,7 +86,6 @@ public class GroupIndexIT extends ITBase {
 
         checkGroupIndexes(getUserTable("test", "c"), index);
         checkGroupIndexes(getUserTable("test", "o"), index);
-        checkGroupIndexes(group.getGroupTable(), index);
         // and just to double check...
         assertEquals("c group", group, getUserTable("test", "c").getGroup());
         assertEquals("o group", group, getUserTable("test", "o").getGroup());
@@ -102,7 +101,6 @@ public class GroupIndexIT extends ITBase {
 
         checkGroupIndexes(getUserTable("test", "c"));
         checkGroupIndexes(getUserTable("test", "o"));
-        checkGroupIndexes(getUserTable("test", "o").getGroup().getGroupTable());
         // and just to double check...
         assertEquals("c group vs o group", getUserTable("test", "o").getGroup(), getUserTable("test", "c").getGroup());
     }
@@ -115,7 +113,6 @@ public class GroupIndexIT extends ITBase {
         assertNull("name_date_sku does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date_sku"));
         checkGroupIndexes(getUserTable("test", "c"));
         checkGroupIndexes(getUserTable("test", "o"));
-        checkGroupIndexes(getUserTable("test", "c").getGroup().getGroupTable());
     }
 
     @Test
