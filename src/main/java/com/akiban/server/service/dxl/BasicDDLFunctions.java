@@ -673,7 +673,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                          com.akiban.ais.model.Schema schema, String schemaName) {
         if (seen.add(view)) {
             for (TableName reference : view.getTableReferences()) {
-                if (reference.getSchemaName() != schemaName) {
+                if (!reference.getSchemaName().equals(schemaName)) {
                     throw new ViewReferencesExist(schemaName, 
                                                   view.getName().getTableName(),
                                                   reference.getSchemaName(),
