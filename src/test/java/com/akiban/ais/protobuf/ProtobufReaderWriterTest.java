@@ -204,18 +204,20 @@ public class ProtobufReaderWriterTest {
         builder.column(SCHEMA, TABLE, "state", 1, "CHAR", 2L, null, true, false, null, null);
         builder.createGroup(TABLE, SCHEMA, "akiban_"+TABLE);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
 
         // AIS does not have to be validate-able to be serialized (this is how it comes from adapter)
         final AkibanInformationSchema inAIS = builder.akibanInformationSchema();
         final UserTable t1_1 = inAIS.getUserTable(SCHEMA, TABLE);
         assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
-        assertNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
+        assertNotNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
 
         // Serialized AIS did not create an internal column, PK
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         UserTable t1_2 = outAIS.getUserTable(SCHEMA, TABLE);
         assertNull("Deserialized should not have declared PK", t1_2.getPrimaryKey());
-        assertNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
+        assertNotNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
 
         compareAndAssert(inAIS, outAIS, false);
 

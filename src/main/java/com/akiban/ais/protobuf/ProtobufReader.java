@@ -207,6 +207,7 @@ public class ProtobufReader {
                     nameGenerator.generateGroupTableName(rootTableName),
                     computeNewTableID(currentIDs, rootUserTable.getTableId() + 1)
             );
+            newGroupInfo.group.setRootTable(rootUserTable);
             newGroupInfo.group.setGroupTable(groupTable);
             groupTable.setGroup(newGroupInfo.group);
         }

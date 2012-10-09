@@ -166,6 +166,7 @@ public class AISBuilder {
         LOG.info("groupIndex: " + groupName + "." + indexName);
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
+        setRootIfNeeded(group);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
         Index index = GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
         index.setTreeName(nameGenerator.generateIndexTreeName(index));
@@ -323,7 +324,7 @@ public class AISBuilder {
         Group group = Group.create(ais, groupName);
         GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, groupTableID);
         groupTable.setGroup(group);
-        group.setTreeName(nameGenerator.generateGroupTreeName(group));
+        group.setTreeName(nameGenerator.generateGroupTreeName(groupSchemaName, groupTableName));
         if(tableIdGenerator <= groupTableID) {
             tableIdGenerator = groupTableID + 1;
         }
@@ -631,6 +632,11 @@ public class AISBuilder {
                 generateGroupTableIndexes(group);
             }
         }
+
+        // Hook up root tables
+        for(Group group : ais.getGroups().values()) {
+            setRootIfNeeded(group);
+        }
     }
 
     public void clearGroupings() {
@@ -677,6 +683,25 @@ public class AISBuilder {
         groupTable.dropColumns();
         if (root != null && !multipleRoots) {
             generateGroupTableColumns(groupTable, root);
+        }
+    }
+
+    private UserTable findRoot(Group group) {
+        UserTable root = null;
+        for(UserTable table : ais.getUserTables().values()) {
+            if((table.getGroup() == group) && table.isRoot()) {
+                if(root != null) {
+                    return null; // Multiple roots
+                }
+                root = table;
+            }
+        }
+        return root;
+    }
+
+    private void setRootIfNeeded(Group group) {
+        if(group.getRoot() == null) {
+            group.setRootTable(findRoot(group));
         }
     }
 
