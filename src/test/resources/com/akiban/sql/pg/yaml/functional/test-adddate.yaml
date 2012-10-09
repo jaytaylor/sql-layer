@@ -5,7 +5,7 @@
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 ---
 - Statement: select ADDDATE(DATE('2008-01-02'), INTERVAL 31 DAY) from all_types;
-- output: [[!re '2008-02-02 00:00:00([.]0)?']]
+- output: !select-engine { all: [[!re '2008-02-02 00:00:00([.]0)?']], newtypes: [[2008-02-02]] }
 ---
 - Statement: select ADDDATE(DATE('2008-01-02'), 31.5) from all_types;
 - output: !select-engine { all: [[!re '2008-02-02 12:00:00([.]0)?']], newtypes: [[!re '2008-02-03 00:00:00([.]0)?']] }
