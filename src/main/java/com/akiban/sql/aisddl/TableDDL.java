@@ -439,7 +439,7 @@ public class TableDDL
             groupSchema = parentName.getSchemaName();
         } else {
             groupName = parentTable.getGroup().getName();
-            groupSchema = parentTable.getGroup().getRoot().getName().getSchemaName();
+            groupSchema = parentTable.getGroup().getSchemaName();
         }
         builder.createGroup(groupName, groupSchema);
         builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
