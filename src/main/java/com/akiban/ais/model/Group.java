@@ -72,14 +72,14 @@ public class Group implements Traversable, TreeLink
         return name;
     }
 
-    public void setGroupTable(GroupTable groupTable)
-    {
-        this.groupTable = groupTable;
-    }
-
     public GroupTable getGroupTable()
     {
         return groupTable;
+    }
+
+    public void setGroupTable(GroupTable groupTable)
+    {
+        this.groupTable = groupTable;
     }
 
     public void setRootTable(UserTable rootTable)
