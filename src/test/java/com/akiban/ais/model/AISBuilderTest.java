@@ -1291,19 +1291,5 @@ public class AISBuilderTest
         Assert.assertEquals(1, vResults.failures().size());
         AISValidationFailure fail = vResults.failures().iterator().next();
         Assert.assertEquals(ErrorCode.SEQUENCE_MIN_GE_MAX, fail.errorCode());
-        
-    }
-
-    @Test
-    public void tableIdOffsetAfterExplicit() {
-        AISBuilder builder = new AISBuilder();
-        builder.setTableIdOffset(10);
-        builder.userTable("test", "t1");
-        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.basicSchemaIsComplete();
-        builder.createGroup("group", "test", "_akiban_t1", 15);
-        builder.addTableToGroup("group", "test", "t1");
-        builder.groupingIsComplete();
-        assertTrue("tableIdOffset above 15", builder.getTableIdOffset() > 15);
     }
 }

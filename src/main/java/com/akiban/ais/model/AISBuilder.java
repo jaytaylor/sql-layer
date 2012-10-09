@@ -318,7 +318,7 @@ public class AISBuilder {
     public void createGroup(String groupName, String groupSchemaName, String groupTableName, int groupTableID) {
         LOG.info("createGroup: {} in {}", groupName, groupSchemaName);
         Group group = Group.create(ais, groupName);
-        group.setTreeName(nameGenerator.generateGroupTreeName(groupSchemaName, groupTableName));
+        group.setTreeName(nameGenerator.generateGroupTreeName(groupSchemaName, groupName));
     }
 
     public void deleteGroup(String groupName) {
@@ -540,9 +540,6 @@ public class AISBuilder {
         ais.getGroups().clear();
         for (UserTable table : ais.getUserTables().values()) {
             setTablesGroup(table, null);
-            for (Column column : table.getColumnsIncludingInternal()) {
-                column.setGroupColumn(null);
-            }
         }
         for (Join join : ais.getJoins().values()) {
             join.setGroup(null);
