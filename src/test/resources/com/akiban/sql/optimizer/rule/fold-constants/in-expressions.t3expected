@@ -6,4 +6,4 @@ SelectQuery@9eb67cb
 
 Subquery@e903e28
   Project@5e4338fa[Cast(customers.cid AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL) == VALUES[0]]
-    ExpressionsSource@38a83930([[Cast($0 AS MCOMPAT_ DOUBLE(-1, -1) NULL)], [Cast(now() AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL)], [Cast(now() AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL)]])    
+    ExpressionsSource@38a83930([[Cast($0 AS MCOMPAT_ DOUBLE(-1, -1) NULL)], [Cast(now() AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL)], [Cast(now() AS MCOMPAT_ DOUBLE(-1, -1) NOT NULL)]])

@@ -33,6 +33,5 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public class MElt
 {
-    // TODO define all overloads of ELT here ?
     public static final TScalar INSTANCE = new Elt(MNumeric.INT, MString.VARCHAR);
 }

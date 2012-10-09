@@ -29,7 +29,6 @@ package com.akiban.server.types3.mcompat.mcasts;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.Constantness;
 
 import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;

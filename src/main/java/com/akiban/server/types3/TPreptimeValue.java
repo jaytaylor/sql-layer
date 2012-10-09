@@ -80,7 +80,7 @@ public final class TPreptimeValue {
     @Override
     public String toString() {
         if (tInstance == null)
-            return "NULL";
+            return "<unknown>";
         String result = tInstance.toString();
         if (value != null)
             result = result + '=' + value;

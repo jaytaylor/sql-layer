@@ -7,13 +7,13 @@
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 ---
 - Statement: select '2008-12-31 23:59:59' - INTERVAL 1 SECOND from all_types;
-- output: [[!re '2008-12-31 23:59:58([.]0)?']] 
+- output: [[!re '2008-12-31 23:59:58([.]0)?']]
 ---
 - Statement: SELECT INTERVAL 1 DAY + '2008-12-31' from all_types;
 - output: [['2009-01-01']] 
 ---
 - Statement: SELECT '2005-01-01' - INTERVAL 1 SECOND from all_types;
-- output: [['2004-12-31']] 
+- output: !select-engine {all: [['2004-12-31']], newtypes: [[!re '2004-12-31 23:59:59([.]0)?']]} 
 ---
 - Statement: SELECT DATE_SUB('2000-01-01 00:00:00', INTERVAL 1 SECOND) from all_types;
 - output: [[!re '1999-12-31 23:59:59([.]0)?']] 
@@ -37,7 +37,14 @@
 # Right now, INTERVAL DAY gets translated to INTERVAL_MILLIS thus the result would be a DATETIME
 # Could be fixed, but it isn't going to be pretty.
 - Statement: SELECT DATE_SUB('1998-01-02', INTERVAL 31 DAY) from all_types;
-- output: [[!re '1997-12-02 00:00:00([.]0)?']] 
+## types3 can see the difference betwee INTERVAL DAY and INTERVAL HOUR/MINUTE/SECOND even if they all have the same TClass
+- output: !select-engine {all: [[!re '1997-12-02 00:00:00([.]0)?']], newtypes: [['1997-12-02']]}
+---
+- Statement: SELECT DATE_SUB('1998-01-02', INTERVAL 1 MINUTE);
+- output: [[!re '1998-01-01 23:59:00([.]0)?']]
+---
+- Statement: SELECT DATE_SUB('1998-01-02', INTERVAL 1 MONTH);
+- output: [['1997-12-02']]
 #bug 889300: (Timestamp with fractional seconds) 
 #- Statement: SELECT DATE_SUB('1992-12-31 23:59:59.000002', INTERVAL '1.999999' SECOND_MICROSECOND) from all_types;
 #- output: [['1993-01-01 00:00:01.000001']] 

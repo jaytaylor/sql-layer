@@ -13,5 +13,5 @@ SelectQuery@52d03a00
           Select@69d4c4b7[]
             Flatten@77310e0a(child)
               Select@3590efa8[customers.name == child.name, child.pid == 1]
-                GroupScan@3e661a11(Group(parent -> test._akiban_parent), rows = 1, cost = 1225.64)
+                GroupScan@3e661a11(Group(parent -> test.parent), rows = 1, cost = 1225.64)
                   TableSource@7378aae2(child - TableGroup@21397218(parent))

@@ -506,6 +506,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.basicSchemaIsComplete();
         builder.createGroup("c", SCHEMA, "_akiba_c");
         builder.addTableToGroup("c", SCHEMA, "c");
+        builder.groupingIsComplete();
         UserTable newTable = builder.akibanInformationSchema().getUserTable(SCHEMA, "c");
 
         List<TableChange> changes = new ArrayList<TableChange>();
