@@ -162,7 +162,7 @@ public class TValidatedOverload implements TOverload {
             return -1;
         int result = inputSet.nextPosition(i);
         if (result < 0 && inputSet.isPicking())
-            result = Math.max(i, inputSetsByPos.size()) + 1;
+            result = Math.max(i, inputSetsByPos.size());
         return result;
     }
 
