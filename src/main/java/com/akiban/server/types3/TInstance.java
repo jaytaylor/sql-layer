@@ -103,6 +103,12 @@ public final class TInstance {
         return metaData;
     }
 
+    public TInstance withNullable(boolean isNullable) {
+        return (isNullable == this.isNullable)
+                ? this
+                : new TInstance(tclass, enumClass, attr0, attr1, attr2, attr3, isNullable);
+    }
+
     /**
      * Convenience method for <tt>typeClass().dataTypeDescriptor(this)</tt>.
      * @return this instance's DataTypeDescriptor
@@ -198,6 +204,7 @@ public final class TInstance {
     TInstance(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3,
               boolean isNullable)
     {
+        this(tclass, enumClass, attr0, attr1, attr2, attr3, isNullable);
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
         // normalize inputs past nattrs
         switch (nAttrs) {
@@ -214,6 +221,11 @@ public final class TInstance {
         default:
             throw new IllegalArgumentException("too many nattrs: " + nAttrs + " (" + enumClass.getSimpleName() + ')');
         }
+    }
+
+    private TInstance(TClass tclass, Class<?> enumClass, int attr0, int attr1, int attr2, int attr3,
+                      boolean isNullable)
+    {
         this.tclass = tclass;
         this.attr0 = attr0;
         this.attr1 = attr1;

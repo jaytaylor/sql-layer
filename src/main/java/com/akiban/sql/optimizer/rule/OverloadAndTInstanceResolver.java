@@ -272,10 +272,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     n.setPreptimeValue(tpv);
                 }
                 if (tInstance != null) {
-                    if (tInstance.nullability() == null) {
-                        assert n.getSQLtype() != null : "ExpressionNode.SQLType is incorrectly null";
-                        tInstance.setNullable(n.getSQLtype().isNullable());
-                    }
                     DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
                     n.setSQLtype(newDtd);
                 }

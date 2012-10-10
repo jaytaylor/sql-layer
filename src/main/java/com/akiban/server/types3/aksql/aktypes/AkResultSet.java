@@ -106,7 +106,7 @@ public class AkResultSet extends TClassBase {
     }
 
     public TInstance instance(List<Column> columns) {
-        TInstance instance = createInstanceNoArgs();
+        TInstance instance = createInstanceNoArgs(false);
         instance.setMetaData(columns);
         return instance;
     }
@@ -126,7 +126,7 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
-    public TInstance instance() {
+    public TInstance instance(boolean nullable) {
         throw new UnsupportedOperationException();
     }
 

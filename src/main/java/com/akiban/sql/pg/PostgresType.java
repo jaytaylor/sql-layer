@@ -293,7 +293,7 @@ public class PostgresType extends ServerType
         else if ("U_BIGINT".equals(encoding)) {
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
             return new PostgresType(TypeOid.NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
-                                    aisType.akType(), MNumeric.BIGINT_UNSIGNED.instance());
+                                    aisType.akType(), MNumeric.BIGINT_UNSIGNED.instance(nullable));
         }
         else if ("DATE".equals(encoding))
             oid = TypeOid.DATE_TYPE_OID;

@@ -32,6 +32,7 @@ import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
+import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -52,8 +53,6 @@ import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
-
-import java.util.List;
 
 public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 {
@@ -148,11 +147,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
                 this.akTypes = null;
                 this.akCollators = null;
                 this.tInstances = new TInstance[nIndexFields];
-                List<IndexColumn> declaredKeys = index.getKeyColumns();
-                assert declaredKeys.size() == 2 : "covering spatial index discovered, need to update code" + index;
-                boolean nullable =
-                        declaredKeys.get(0).getColumn().getNullable() || declaredKeys.get(1).getColumn().getNullable();
-                this.tInstances[0] = MNumeric.BIGINT.instance(nullable);
+                this.tInstances[0] = MNumeric.BIGINT.instance(SpatialHelper.isNullable(index));
             }
             else {
                 this.akTypes = new AkType[nIndexFields];

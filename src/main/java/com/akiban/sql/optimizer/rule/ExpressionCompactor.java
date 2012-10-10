@@ -128,17 +128,21 @@ public class ExpressionCompactor extends BaseRule
             List<ConditionExpression> entry = byTable.get(table);
             ConditionExpression condition;
             int size = entry.size();
-            if (size == 1)
+            if (size == 1) {
                 condition = entry.get(0);
+            }
             else {
                 Collections.sort(entry, conditionBySelectivity);
                 condition = entry.get(--size);
+                boolean nullable = condition.getPreptimeValue().isNullable();
                 while (size > 0) {
+                    ConditionExpression left = entry.get(--size);
+                    nullable |= left.getPreptimeValue().isNullable();
                     condition = new BooleanOperationExpression(Operation.AND,
-                                                               entry.get(--size),
+                                                               left,
                                                                condition,
                                                                null, null);
-                    condition.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
+                    condition.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(nullable)));
                 }
             }
             conditions.add(condition);

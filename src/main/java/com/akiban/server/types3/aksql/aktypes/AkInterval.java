@@ -360,12 +360,12 @@ public class AkInterval extends TClassBase {
 
     @Override
     protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
-        return instance();
+        return instance(suggestedNullability);
     }
 
     @Override
-    public TInstance instance() {
-        return instance(formatAttribute.ordinal());
+    public TInstance instance(boolean nullable) {
+        return instance(formatAttribute.ordinal(), nullable);
     }
 
     @Override
@@ -400,9 +400,7 @@ public class AkInterval extends TClassBase {
         IntervalFormat format = typeIdToFormat.get(typeId);
         if (format == null)
             throw new IllegalArgumentException("couldn't convert " + type + " to " + name());
-        TInstance result = instance(format.ordinal());
-        result.setNullable(type.isNullable());
-        return result;
+        return instance(format.ordinal(), type.isNullable());
     }
 
     private <A extends Enum<A> & Attribute> AkInterval(TBundleID bundle, String name,
