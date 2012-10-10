@@ -236,11 +236,6 @@ public class RowDefCache {
             root = root.getParentJoin().getParent();
         }
 
-        // group table name
-        final GroupTable groupTable = root.getGroup().getGroupTable();
-        final String groupTableName = groupTable.getName().getTableName();
-        assert groupTableName != null : root;
-
         // Secondary indexes
         List<TableIndex> indexList = new ArrayList<TableIndex>();
         for (TableIndex index : table.getIndexesIncludingInternal()) {

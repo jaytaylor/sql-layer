@@ -8,7 +8,7 @@
 - output: [[12]]
 ---
 - Statement: SELECT extract(year from time_field) from all_types;
-- output: [[null]]
+- output: !select-engine { all: [[null]], newtypes: [[0]] }
 ---
 - Statement: SELECT extract (minute from time_field) from all_types;
 - output: [[5]]

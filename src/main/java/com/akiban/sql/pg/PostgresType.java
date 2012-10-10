@@ -255,8 +255,7 @@ public class PostgresType extends ServerType
 
         if ("VARCHAR".equals(encoding))
             oid = TypeOid.VARCHAR_TYPE_OID;
-        else if ("INT".equals(encoding) ||
-                 "U_INT".equals(encoding)) {
+        else if ("INT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
                 oid = TypeOid.INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
@@ -269,6 +268,22 @@ public class PostgresType extends ServerType
                 oid = TypeOid.INT4_TYPE_OID;
                 break;
             case 8:
+                oid = TypeOid.INT8_TYPE_OID;
+                break;
+            default:
+                throw new UnknownTypeSizeException (aisType);
+            }
+        }
+        else if ("U_INT".equals(encoding)) {
+            switch (aisType.maxSizeBytes().intValue()) {
+            case 1:
+                oid = TypeOid.INT2_TYPE_OID; // No INT1.
+                break;
+            case 2:
+            case 3:
+                oid = TypeOid.INT4_TYPE_OID;
+                break;
+            case 4:
                 oid = TypeOid.INT8_TYPE_OID;
                 break;
             default:
@@ -367,7 +382,10 @@ public class PostgresType extends ServerType
             oid = TypeOid.FLOAT8_TYPE_OID;
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
-            oid = TypeOid.INT4_TYPE_OID;
+            if (typeId.isUnsigned())
+                oid = TypeOid.INT8_TYPE_OID;
+            else
+                oid = TypeOid.INT4_TYPE_OID;
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned()) {
@@ -386,7 +404,10 @@ public class PostgresType extends ServerType
             oid = TypeOid.FLOAT4_TYPE_OID;
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            oid = TypeOid.INT2_TYPE_OID;
+            if (typeId.isUnsigned())
+                oid = TypeOid.INT4_TYPE_OID;
+            else
+                oid = TypeOid.INT2_TYPE_OID;
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TypeOid.TIME_TYPE_OID;
@@ -398,7 +419,7 @@ public class PostgresType extends ServerType
             oid = TypeOid.TIMESTAMP_TYPE_OID;
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            oid = TypeOid.INT2_TYPE_OID; // No INT1
+            oid = TypeOid.INT2_TYPE_OID; // No INT1, room for unsigned
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             oid = TypeOid.BYTEA_TYPE_OID;

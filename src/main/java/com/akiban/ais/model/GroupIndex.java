@@ -52,7 +52,7 @@ public class GroupIndex extends Index
     @Override
     public void checkMutability()
     {
-        group.getGroupTable().checkMutability();
+        group.getRoot().checkMutability();
     }
 
     @Override

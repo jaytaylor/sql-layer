@@ -52,5 +52,6 @@ public interface TOverload extends HasId {
 
     TOverloadResult resultType();
     List<TInputSet> inputSets();
+    InputSetFlags exactInputs();
     int[] getPriorities();
 }

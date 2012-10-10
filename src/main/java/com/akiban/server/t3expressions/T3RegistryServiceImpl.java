@@ -124,6 +124,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         scalarsRegistry = ResolvablesRegistry.create(
                 finder,
+                castsResolver,
                 TScalar.class,
                 new Function<TScalar, TValidatedScalar>() {
                     @Override
@@ -141,6 +142,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         aggreatorsRegistry = ResolvablesRegistry.create(
                 finder,
+                castsResolver,
                 TAggregator.class,
                 new Function<TAggregator, TValidatedAggregator>() {
                     @Override

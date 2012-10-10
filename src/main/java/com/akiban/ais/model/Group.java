@@ -58,7 +58,8 @@ public class Group implements Traversable, TreeLink
     @Override
     public String toString()
     {
-        return "Group(" + name + " -> " + groupTable.getName() + ")";
+        TableName tableName = (rootTable != null) ? rootTable.getName() : null;
+        return "Group(" + name + " -> " + tableName + ")";
     }
 
     public String getName()
@@ -81,9 +82,14 @@ public class Group implements Traversable, TreeLink
         this.groupTable = groupTable;
     }
 
+    public void setRootTable(UserTable rootTable)
+    {
+        this.rootTable = rootTable;
+    }
+
     public UserTable getRoot()
     {
-        return groupTable.getRoot();
+        return rootTable;
     }
 
     public Collection<GroupIndex> getIndexes()
@@ -172,7 +178,7 @@ public class Group implements Traversable, TreeLink
 
     @Override
     public String getSchemaName() {
-        return groupTable.getName().getSchemaName(); // TODO: Will be root.getName()
+        return (rootTable != null) ? rootTable.getName().getSchemaName() : null;
     }
 
     @Override
@@ -196,5 +202,6 @@ public class Group implements Traversable, TreeLink
     private final Map<String, GroupIndex> indexMap;
     private final AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
     private String treeName;
+    private UserTable rootTable;
     private GroupTable groupTable;
 }

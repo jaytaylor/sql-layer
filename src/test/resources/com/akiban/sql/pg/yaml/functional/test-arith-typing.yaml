@@ -14,7 +14,7 @@
 ---
 #command number: 4
 - Statement: SELECT numeric_field + double_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE] , newtypes: [DOUBLE], all: [NUMERIC] }
 ---
 #command number: 5
 - Statement: SELECT numeric_field + bigint_field FROM all_types;
@@ -26,11 +26,11 @@
 ---
 #command number: 7
 - Statement: SELECT numeric_field + varchar_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE] , newtypes: [DOUBLE],  all: [NUMERIC] }
 ---
 #command number: 8
 - Statement: SELECT varchar_field + numeric_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE],  all: [NUMERIC] }
 ---
 #command number: 9
 - Statement: SELECT numeric_field - numeric_field FROM all_types;
@@ -38,7 +38,7 @@
 ---
 #command number: 10
 - Statement: SELECT numeric_field - double_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE] ,  newtypes: [DOUBLE], all: [NUMERIC] }
 ---
 #command number: 11
 - Statement: SELECT numeric_field - bigint_field FROM all_types;
@@ -50,11 +50,11 @@
 ---
 #command number: 13
 - Statement: SELECT numeric_field - varchar_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE] , all: [NUMERIC] }
 ---
 #command number: 14
 - Statement: SELECT varchar_field - numeric_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE] , all: [NUMERIC] }
 ---
 #command number: 15
 - Statement: SELECT numeric_field * numeric_field FROM all_types;
@@ -62,7 +62,7 @@
 ---
 #command number: 16
 - Statement: SELECT numeric_field * double_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE],newtypes: [DOUBLE] , all: [NUMERIC] }
 ---
 #command number: 17
 - Statement: SELECT numeric_field * bigint_field FROM all_types;
@@ -74,11 +74,11 @@
 ---
 #command number: 19
 - Statement: SELECT numeric_field * varchar_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE] , newtypes: [DOUBLE], all: [NUMERIC] }
 ---
 #command number: 20
 - Statement: SELECT varchar_field * numeric_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE] , all: [NUMERIC] }
 ---
 #command number: 21
 - Statement: SELECT numeric_field % numeric_field FROM all_types;
@@ -86,7 +86,7 @@
 ---
 #command number: 22
 - Statement: SELECT numeric_field % double_field FROM all_types;
-- output_types:  !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types:  !select-engine {sys-mysql: [DOUBLE] , newtypes: [DOUBLE] ,  all: [NUMERIC] }
 ---
 #command number: 23
 - Statement: SELECT numeric_field % bigint_field FROM all_types;
@@ -98,11 +98,11 @@
 ---
 #command number: 25
 - Statement: SELECT numeric_field % varchar_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE] ,newtypes: [DOUBLE],  all: [NUMERIC] }
 ---
 #command number: 26
 - Statement: SELECT varchar_field % numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE] , all: [NUMERIC] }
 ---
 #command number: 27
 - Statement: SELECT numeric_field mod numeric_field FROM all_types;
@@ -110,7 +110,7 @@
 ---
 #command number: 28
 - Statement: SELECT numeric_field mod double_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE] ,  all: [NUMERIC] }
 ---
 #command number: 29
 - Statement: SELECT numeric_field mod bigint_field FROM all_types;
@@ -122,11 +122,11 @@
 ---
 #command number: 31
 - Statement: SELECT numeric_field mod varchar_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE],  newtypes: [DOUBLE], all: [NUMERIC] }
 ---
 #command number: 32
 - Statement: SELECT varchar_field mod numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE]  , all: [NUMERIC] }
 ---
 #command number: 33
 - Statement: SELECT numeric_field / numeric_field FROM all_types;
@@ -134,7 +134,7 @@
 ---
 #command number: 34
 - Statement: SELECT numeric_field / double_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE],  newtypes: [DOUBLE] , all: [NUMERIC] }
 ---
 #command number: 35
 - Statement: SELECT numeric_field / bigint_field FROM all_types;
@@ -146,11 +146,11 @@
 ---
 #command number: 37
 - Statement: SELECT numeric_field / varchar_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE],  newtypes: [DOUBLE] , all: [NUMERIC] }
 ---
 #command number: 38
 - Statement: SELECT varchar_field / numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE] , all: [NUMERIC] }
 #---
 #- Statement: SELECT numeric_field + INTERVAL 1 YEAR FROM all_types;
 #- error: [22503]
@@ -346,7 +346,7 @@
 ---
 #command number: 39
 - Statement: SELECT double_field + numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE] , newtypes: [DOUBLE], all: [NUMERIC] }
 ---
 #command number: 40
 - Statement: SELECT double_field + double_field FROM all_types;
@@ -370,7 +370,7 @@
 ---
 #command number: 45
 - Statement: SELECT double_field - numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE],  newtypes: [DOUBLE]  , all: [NUMERIC] }
 ---
 #command number: 46
 - Statement: SELECT double_field - double_field FROM all_types;
@@ -394,7 +394,7 @@
 ---
 #command number: 51
 - Statement: SELECT double_field * numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE]  , all: [NUMERIC] }
 ---
 #command number: 52
 - Statement: SELECT double_field * double_field FROM all_types;
@@ -418,7 +418,7 @@
 ---
 #command number: 57
 - Statement: SELECT double_field % numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE]  , all: [NUMERIC] }
 ---
 #command number: 58
 - Statement: SELECT double_field % double_field FROM all_types;
@@ -442,7 +442,7 @@
 ---
 #command number: 63
 - Statement: SELECT double_field mod numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE]  , all: [NUMERIC] }
 ---
 #command number: 64
 - Statement: SELECT double_field mod double_field FROM all_types;
@@ -466,7 +466,7 @@
 ---
 #command number: 69
 - Statement: SELECT double_field / numeric_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DOUBLE] , all: [NUMERIC] }
+- output_types: !select-engine {sys-mysql: [DOUBLE], newtypes: [DOUBLE] , all: [NUMERIC] }
 ---
 #command number: 70
 - Statement: SELECT double_field / double_field FROM all_types;
@@ -1030,7 +1030,7 @@
 ---
 #command number: 114
 - Statement: SELECT integer_field + integer_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [BIGINT] , all: [INTEGER] }
+- output_types: !select-engine {sys-mysql: [BIGINT], newtypes: [BIGINT] , all: [INTEGER] }
 ---
 #command number: 115
 - Statement: SELECT integer_field + varchar_field FROM all_types;
@@ -1054,7 +1054,7 @@
 ---
 #command number: 120
 - Statement: SELECT integer_field - integer_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [BIGINT] , all: [INTEGER] }
+- output_types: !select-engine {sys-mysql: [BIGINT],  newtypes: [BIGINT] , all: [INTEGER] }
 ---
 #command number: 121
 - Statement: SELECT integer_field - varchar_field FROM all_types;
@@ -1078,7 +1078,7 @@
 ---
 #command number: 126
 - Statement: SELECT integer_field * integer_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [BIGINT] , all: [INTEGER] }
+- output_types: !select-engine {sys-mysql: [BIGINT], newtypes: [BIGINT] , all: [INTEGER] }
 ---
 #command number: 127
 - Statement: SELECT integer_field * varchar_field FROM all_types;
@@ -1358,7 +1358,7 @@
 ---
 #command number: 148
 - Statement: SELECT time_field + INTERVAL 1 YEAR FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR],  newtypes: [VARCHAR], all: [TIME] }
 ---
 #command number: 149
 - Statement: SELECT timestamp_field + INTERVAL 1 YEAR FROM all_types;

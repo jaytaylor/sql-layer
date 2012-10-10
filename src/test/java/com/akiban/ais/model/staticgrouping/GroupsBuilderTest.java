@@ -145,6 +145,7 @@ public class GroupsBuilderTest {
         aisBuilder.addJoinToGroup("group1", "join2", 1);
         aisBuilder.createGroup("group2", "group_schema", "_akiban_customer$1");
         aisBuilder.addTableToGroup("group2", "s2", "customer");
+        aisBuilder.groupingIsComplete();
 
         GroupsBuilder expectedGrouping = new GroupsBuilder("s");
         expectedGrouping.rootTable("s", "customer", "group1");

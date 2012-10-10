@@ -2,7 +2,7 @@ DMLStatement@d3b0cd9(t, HALLOWEEN)
   DeleteStatement@3a285d0b(t)
     Select@2ff49b01[EXISTS(Subquery@4b3055)]
       Flatten@33a3e32e(t)
-        GroupScan@4c97fb7e(Group(t -> test._akiban_t), rows = 1, cost = 0.820000)
+        GroupScan@4c97fb7e(Group(t -> test.t), rows = 1, cost = 0.820000)
           TableSource@48521c99(t - TableGroup@e00347b(t))
 
 Subquery@45061ea3

@@ -42,9 +42,14 @@
 ---
 - Statement: SELECT DEGREES(double_field), DEGREES(float_field), DEGREES(real_field)
     FROM all_types
-- output: [['Infinity', 'Infinity', 'Infinity'], 
-          ['-Infinity', '-Infinity', '-Infinity'], 
-          [NaN, NaN, NaN]]
+- output: !select-engine { 
+          all: [['Infinity', 'Infinity', 'Infinity'], 
+              ['-Infinity', '-Infinity', '-Infinity'], 
+              [NaN, NaN, NaN]], 
+          newtypes: [[0.0, 0.0, 0.0], 
+              [0.0, 0.0, 0.0], 
+              [0.0, 0.0, 0.0]] 
+          }
 # Literals
 ---
 - Statement: SELECT DEGREES(0) from all_types
