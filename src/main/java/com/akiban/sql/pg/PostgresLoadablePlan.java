@@ -46,7 +46,8 @@ public class PostgresLoadablePlan
                                               ServerRoutineInvocation invocation,
                                               int[] paramTypes) {
         LoadablePlan<?> loadablePlan = 
-            server.getRoutineLoader().loadLoadablePlan(invocation.getRoutineName());
+            server.getRoutineLoader().loadLoadablePlan(server.getSession(),
+                                                       invocation.getRoutineName());
         List<String> columnNames = loadablePlan.columnNames();
         List<PostgresType> columnTypes = columnTypes(loadablePlan);
         boolean usesPValues = server.getBooleanProperty("newtypes", Types3Switch.ON);

@@ -184,7 +184,7 @@ public class RoutineDDL {
         if (routine == null) {
             throw new NoSuchRoutineException(routineName);
         } 
-        routineLoader.unloadRoutine(routineName);
+        routineLoader.unloadRoutine(session, routineName);
         ddlFunctions.dropRoutine(session, routineName);
     }
 }
