@@ -120,7 +120,7 @@ public abstract class AbstractScanBase extends ITBase {
             for (int i = 0; i < k; i++) {
                 rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8, i + "X" });
                 rowWrapper.setRowData(rowData);
-                // output.println(rowData.toString(rowDefCache));
+                // output.println(rowData.toString(aisWithRowDefs));
                 dml.writeRow(session(), rowWrapper);
             }
         }

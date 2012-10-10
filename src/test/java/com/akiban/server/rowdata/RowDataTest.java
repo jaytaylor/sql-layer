@@ -28,7 +28,6 @@ package com.akiban.server.rowdata;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.server.encoding.EncodingException;
 import com.google.common.base.Strings;
 import org.junit.Test;
 
@@ -64,8 +63,8 @@ public final class RowDataTest {
         Object[] valuesArray = values.toArray(new Object[values.size()]);
         RowData rowData = new RowData(new byte[500]);
 
-        RowDefCache rdc = new SchemaFactory().rowDefCache(ais);
-        RowDef rowDef = rdc.getRowDef("myschema", "mytable");
+        new SchemaFactory().buildRowDefs(ais);
+        RowDef rowDef = ais.getTable("myschema", "mytable").rowDef();
         assertNotNull("RowDef", rowDef);
 
         try {
@@ -93,8 +92,8 @@ public final class RowDataTest {
                 .colString("bigstring", 32769)
                 .ais();
 
-        RowDefCache rdc = new SchemaFactory().rowDefCache(ais);
-        RowDef rowDef = rdc.getRowDef("myschema", "mytable2");
+        new SchemaFactory().buildRowDefs(ais);
+        RowDef rowDef = ais.getTable("myschema", "mytable2").rowDef();
         assertNotNull("RowDef", rowDef);
 
         for (int pass = 1; pass <= 2; pass++) {

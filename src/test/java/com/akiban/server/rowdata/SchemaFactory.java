@@ -74,9 +74,10 @@ public class SchemaFactory {
         this.defaultSchema = defaultSchema;
     }
 
-    public RowDefCache rowDefCache(String... ddl) throws Exception {
+    public AkibanInformationSchema aisWithRowDefs(String... ddl) {
         AkibanInformationSchema ais = ais(ddl);
-        return rowDefCache(ais);
+        buildRowDefs(ais);
+        return ais;
     }
 
     public AkibanInformationSchema ais(String... ddl) {
@@ -124,14 +125,13 @@ public class SchemaFactory {
         return ddlFunctions.getAIS(null);
     }
 
-    public RowDefCache rowDefCache(AkibanInformationSchema ais) {
+    public void buildRowDefs(AkibanInformationSchema ais) {
         RowDefCache rowDefCache = new FakeRowDefCache();
         try {
             rowDefCache.setAIS(ais);
         } catch(PersistitInterruptedException e) {
             throw new PersistitAdapterException(e);
         }
-        return rowDefCache;
     }
 
     private static class FakeRowDefCache extends RowDefCache {
