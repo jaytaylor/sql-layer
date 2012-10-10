@@ -121,6 +121,11 @@ public class Schema {
         sqljJars.remove(sqljJarName);
     }
     
+    @Override
+    public String toString() {
+        return name;
+    }
+
     Schema(String name) {
         this.name = name;
     }

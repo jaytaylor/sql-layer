@@ -4,7 +4,7 @@ SelectQuery@6f539d49
       Select@2edad4b8[o2.order_date == o1.order_date, o2.oid < o1.oid, o3.order_date == o2.order_date, o3.oid < o2.oid]
         Product@485b701a(customers)
           Flatten@6b1ce012(customers INNER o1)
-            GroupScan@8244f74(Group(customers -> test._akiban_customers), rows = 1000000000, cost = 4.49201e+10)
+            GroupScan@8244f74(Group(customers -> test.customers), rows = 1000000000, cost = 4.49201e+10)
               TableSource@69fa10da(customers - TableGroup@6bad186f(customers))
               TableSource@20688e91(o1 - TableGroupJoin@54373e38(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
           Flatten@34baf4ae(customers INNER o2)

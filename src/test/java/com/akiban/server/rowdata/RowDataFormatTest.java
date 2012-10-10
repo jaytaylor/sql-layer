@@ -184,7 +184,6 @@ public final class RowDataFormatTest {
         AkibanInformationSchema ais = aisBuilder.ais();
         UserTable table = ais.getUserTable(SCHEMA, TABLE);
         table.setTableId(1);
-        table.getGroup().getGroupTable().setTableId(2);
         RowDefCache rdc = new SchemaFactory().rowDefCache(ais);
         rowDef = rdc.getRowDef(SCHEMA, TABLE);
         this.fields = Arrays.copyOf(fields, fields.length);

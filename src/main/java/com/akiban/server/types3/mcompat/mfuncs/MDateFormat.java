@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.expression.std.DateTimeField;
@@ -40,6 +41,7 @@ import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -76,17 +78,28 @@ public abstract class MDateFormat extends TScalarBase
                 @Override
                 protected long[] getYMDHMS(PValueSource source)
                 {
-                    long ret[] = MDatetimes.decodeTime(source.getInt32());
-
-                    if (!MDatetimes.isValidHrMinSec(ret, false))
+                    // input cannot be a TIME
+                    // explicity define this so TIMEs wouldn't get cast to other things
+                    return null;
+                }
+            },
+            new MDateFormat(MString.VARCHAR)
+            {
+                @Override
+                protected long[] getYMDHMS(PValueSource source)
+                {
+                    long ret[] = new long[6];
+                    try
+                    {
+                        if(MDatetimes.parseDateOrTime(source.getString(), ret) == StringType.TIME_ST)
+                            return null;
+                        else
+                            return ret;
+                    }
+                    catch (InvalidDateFormatException e)
+                    {
                         return null;
-
-                    // adjust the date part to 0s
-                    ret[MDatetimes.YEAR_INDEX] = 2009;
-                    ret[MDatetimes.MONTH_INDEX] = 1;
-                    ret[MDatetimes.DAY_INDEX] = 1;
-                    
-                    return ret;
+                    }
                 }
             }
         };
@@ -109,7 +122,7 @@ public abstract class MDateFormat extends TScalarBase
     {
         builder.covers(dateType, 0).covers(MString.VARCHAR, 1);
     }
-
+    
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
