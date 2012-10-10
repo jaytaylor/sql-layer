@@ -26,10 +26,7 @@
 
 package com.akiban.ais;
 
-import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -63,9 +60,5 @@ public class AISCloner {
                 }
             }
         }
-        // TODO: Limp along GroupTables, again. The rest of this can go away when they do.
-        AISBuilder builder = new AISBuilder(destAIS);
-        builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
     }
 }

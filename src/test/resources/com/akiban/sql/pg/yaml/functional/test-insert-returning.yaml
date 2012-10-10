@@ -42,7 +42,8 @@
 - Statement: INSERT INTO all_types (decimal_field) VALUES (1.0), (123456.0),
     (-123456.0), (1234567.0), (-1234567.0)
     returning decimal_field
-- output: [[1.0], [123456.0], [-123456.0], [1234567.0], [-1234567.0]]
+- output: !select-engine { all: [[1.0], [123456.0], [-123456.0], [1234567.0], [-1234567.0]],
+      newtypes: [[1], [123456], [-123456], [1234567], [-1234567]] } 
 - output_types: [NUMERIC]     
 ---
 - Statement: SELECT (decimal_field) from all_types
@@ -53,7 +54,8 @@
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES
     ('Infinity'), ('-Infinity'), ('NaN') returning double_field
-- output: [[Infinity], [-Infinity], [NaN]]
+- output: !select-engine { all: [[Infinity], [-Infinity], [NaN]],
+      newtypes: [[0.0], [0.0], [0.0]] } 
 - output_types: [DOUBLE]
 ---
 - Statement: DELETE from all_types

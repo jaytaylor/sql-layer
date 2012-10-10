@@ -38,7 +38,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
@@ -227,11 +226,6 @@ public final class CreateIndexesIT extends ITBase {
         UserTable uTable = getUserTable("test", "t");
         assertNotNull(uTable);
         assertNotNull(uTable.getIndex("name"));
-        
-        // Index should exist on the GroupTable
-        GroupTable gTable = uTable.getGroup().getGroupTable();
-        assertNotNull(gTable);
-        assertNotNull(gTable.getIndex("t$name"));
     }
 
     @Test

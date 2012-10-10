@@ -3,5 +3,5 @@ DMLStatement@40959106(t)
     Project@f4bb557[t2.id, charLength(t2.s)]
       Select@336e6a99[]
         Flatten@272c4f4(t2)
-          GroupScan@3ce0706d(Group(t2 -> test._akiban_t2), rows = 1, cost = 0.00000)
+          GroupScan@3ce0706d(Group(t2 -> test.t2), rows = 1, cost = 0.00000)
             TableSource@769fb521(t2 - TableGroup@32f52354(t2))

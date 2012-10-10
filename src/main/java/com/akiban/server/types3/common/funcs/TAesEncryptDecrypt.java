@@ -62,10 +62,10 @@ public class TAesEncryptDecrypt extends TScalarBase
     {
         return new TScalar[]
         {
-            new TAesEncryptDecrypt(stringType, varbinType, "AES_ENCRYPT", 
-                                  Cipher.ENCRYPT_MODE, ENCRYPT_RATIO,  keyLength),
+            new TAesEncryptDecrypt(stringType, varbinType, "AES_ENCRYPT",
+                                   Cipher.ENCRYPT_MODE, ENCRYPT_RATIO,  keyLength),
             new TAesEncryptDecrypt(stringType, varbinType, "AES_DECRYPT",
-                                  Cipher.DECRYPT_MODE, DECRYPT_RATIO, keyLength)
+                                   Cipher.DECRYPT_MODE, DECRYPT_RATIO, keyLength)
         };
     }
 

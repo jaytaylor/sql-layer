@@ -32,7 +32,6 @@ import com.akiban.server.types3.texpressions.Constantness;
 
 import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public class Cast_From_Unsigned_Bigint
 {

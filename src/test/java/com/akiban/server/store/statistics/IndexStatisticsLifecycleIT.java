@@ -30,7 +30,6 @@ import com.akiban.sql.pg.PostgresServerFilesITBase;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;

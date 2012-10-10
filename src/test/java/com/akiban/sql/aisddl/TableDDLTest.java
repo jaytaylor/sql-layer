@@ -427,7 +427,7 @@ public class TableDDLTest {
             b.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
             b.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", "c1", 0, true, 0);
             b.basicSchemaIsComplete();
-            b.createGroup("t1", DEFAULT_SCHEMA, "_akiban_t1");
+            b.createGroup("t1", DEFAULT_SCHEMA);
             b.addTableToGroup("t1", DEFAULT_SCHEMA, DEFAULT_TABLE);
             b.groupingIsComplete();
         }

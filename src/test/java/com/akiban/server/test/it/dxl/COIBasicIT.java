@@ -42,13 +42,11 @@ import org.junit.Test;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NewRowBuilder;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.UnsupportedDropException;
 
 public final class COIBasicIT extends ITBase {
@@ -56,13 +54,11 @@ public final class COIBasicIT extends ITBase {
         public final int c;
         public final int o;
         public final int i;
-        public final int coi;
 
-        private TableIds(int c, int o, int i, int coi) {
+        private TableIds(int c, int o, int i) {
             this.c = c;
             this.o = o;
             this.i = i;
-            this.coi = coi;
         }
     }
 
@@ -116,18 +112,13 @@ public final class COIBasicIT extends ITBase {
             assertSame("parent join", oTable.getChildJoins().get(0), iTable.getParentJoin());
             assertEquals("child joins.size", 0, iTable.getChildJoins().size());
         }
-        final GroupTable gTable;
         {
             Group group = cTable.getGroup();
             assertSame("o's group", group, oTable.getGroup());
             assertSame("i's group", group, iTable.getGroup());
-            gTable = group.getGroupTable();
-
-            assertEquals("group table's columns size", 7, gTable.getColumns().size());
-            assertEquals("group table's indexes size", 5, gTable.getIndexes().size());
         }
 
-        return new TableIds(cId, oId, iId, gTable.getTableId());
+        return new TableIds(cId, oId, iId);
     }
 
     @Test
@@ -147,8 +138,6 @@ public final class COIBasicIT extends ITBase {
         expectFullRows(tids.c, NewRowBuilder.copyOf(cRow, store()).row());
         expectFullRows(tids.o, NewRowBuilder.copyOf(oRow, store()).row());
         expectFullRows(tids.i, NewRowBuilder.copyOf(iRow, store()).row());
-
-//        expectFullRows(tids.coi, cRow, oRow, iRow); // TODO - commented out per 751883
     }
 
     @Test
@@ -167,8 +156,6 @@ public final class COIBasicIT extends ITBase {
         assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
         assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
         assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
-
-//        expectFullRows(tids.coi, cRow, oRow, iRow); // TODO - commented out per 751883
     }
 
     @Test(expected=UnsupportedDropException.class)
@@ -200,23 +187,14 @@ public final class COIBasicIT extends ITBase {
         assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
         assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
 
-//        expectFullRows(tids.coi, cRow, oRow, iRow); // TODO - commented out per 751883
-
         ddl().dropTable(session(), tableName(tids.i));
-//        expectFullRows(tids.coi, cRow, oRow); // TODO - commented out per 751883
+        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
+        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
 
         ddl().dropTable(session(), tableName(tids.o));
-//        expectFullRows(tids.coi, cRow); // TODO - commented out per 751883
+        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
 
         ddl().dropTable(session(), tableName(tids.c));
-
-        try {
-            expectFullRows(tids.coi);
-            assertTrue("group table exists", false);
-        }
-        catch(NoSuchTableIdException e) {
-            // Expected, deleting root table should remove group table
-        }
     }
 
     @Test
