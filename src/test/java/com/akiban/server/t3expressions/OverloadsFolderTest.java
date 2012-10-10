@@ -40,6 +40,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.google.common.base.Function;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -51,7 +52,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class ScalarsGroupImplTest {
+public final class OverloadsFolderTest {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
@@ -158,23 +159,47 @@ public final class ScalarsGroupImplTest {
                 "E")
                 .differentAt(0).sameAt(1).differentAt(2).sameAt(3).sameAt(100);
 
+        // overloads take ANY
+        test.overloads(
+                "?",
+                "?")
+                .sameAt(0).undefinedAt(1);
+        test.overloads(
+                "A",
+                "?")
+                .sameAt(0).undefinedAt(1);
+        test.overloads(
+                "?",
+                "A")
+                .sameAt(0).undefinedAt(1);
+        test.overloads(
+                "?...")
+                .sameAt(0).sameAt(1).sameAt(100);
+
         return test.build();
     }
 
     @Test
     public void sameTypeAt() {
-        assertEquals(sameTypeAtExpected, scalarsGroup.hasSameTypeAt(pos));
+        assertEquals(sameTypeAtExpected, foldResult.at(pos, null));
     }
 
-    public ScalarsGroupImplTest(ScalarsGroup<TValidatedScalar> scalarsGroup, int pos, boolean sameTypeAtExpected) {
-        this.scalarsGroup = scalarsGroup;
+    public OverloadsFolderTest(OverloadsFolder.Result<Boolean> foldResult, int pos, Boolean sameTypeAtExpected) {
+        this.foldResult = foldResult;
         this.pos = pos;
         this.sameTypeAtExpected = sameTypeAtExpected;
     }
 
-    private final ScalarsGroup<TValidatedScalar> scalarsGroup;
+    private final OverloadsFolder.Result<Boolean> foldResult;
     private final int pos;
-    private final boolean sameTypeAtExpected;
+    private final Boolean sameTypeAtExpected;
+
+    private static final Function<TClass, Boolean> notNull = new Function<TClass, Boolean>() {
+        @Override
+        public Boolean apply(TClass input) {
+            return input != ResolvablesRegistry.differentTargetTypes;
+        }
+    };
 
     private static class Cases {
         public Cases overloads(String... overloads) {
@@ -185,17 +210,18 @@ public final class ScalarsGroupImplTest {
         }
 
         public Cases sameAt(int pos) {
-            expectations.put(pos, true);
+            expectations.put(pos, Boolean.TRUE);
             return this;
         }
 
         public Cases differentAt(int pos) {
-            expectations.put(pos, false);
+            expectations.put(pos, Boolean.FALSE);
             return this;
         }
 
         public Cases undefinedAt(int pos) {
-            return differentAt(pos); // This is subject to change
+            expectations.put(pos, null);
+            return this;
         }
 
         public Collection<Parameterization> build() {
@@ -214,8 +240,8 @@ public final class ScalarsGroupImplTest {
                 TValidatedScalar validated = new TValidatedScalar(scalar);
                 overloads.add(validated);
             }
-            ScalarsGroup<TValidatedScalar> scalarsGroup
-                    = new ResolvablesRegistry.ScalarsGroupImpl<TValidatedScalar>(overloads);
+            OverloadsFolder.Result<TClass> foldToClass = ResolvablesRegistry.sameInputSets.fold(overloads);
+            OverloadsFolder.Result<Boolean> foldResult = foldToClass.transform(notNull);
 
             StringBuilder overloadsDescBuilder = new StringBuilder();
             for (int i = 0; i < overloadDefs.length; i++) {
@@ -228,9 +254,9 @@ public final class ScalarsGroupImplTest {
 
             for (Map.Entry<Integer, Boolean> expected : expectations.entrySet()) {
                 int pos = expected.getKey();
-                boolean sameTypeAt = expected.getValue();
+                Boolean sameTypeAt = expected.getValue();
                 String caseName = overloadsDescr + " at " + pos;
-                pb.add(caseName, scalarsGroup, pos, sameTypeAt);
+                pb.add(caseName, foldResult, pos, sameTypeAt);
             }
         }
 
@@ -246,11 +272,19 @@ public final class ScalarsGroupImplTest {
                             isVararg = true;
                             arg = arg.substring(0, arg.length() - 3);
                         }
-                        assert arg.length() == 1 && Character.isLetter(arg.charAt(0)) : arg;
-                        TClass tClass = tClasses.get(arg);
-                        if (tClass == null) {
-                            tClass = new T3TestClass(arg);
-                            tClasses.put(arg, tClass);
+                        assert arg.length() == 1 : arg;
+                        char argChar = arg.charAt(0);
+                        TClass tClass;
+                        if (argChar == '?') {
+                            tClass = null;
+                        }
+                        else {
+                            assert Character.isLetter(argChar) : arg;
+                            tClass = tClasses.get(arg);
+                            if (tClass == null) {
+                                tClass = new T3TestClass(arg);
+                                tClasses.put(arg, tClass);
+                            }
                         }
                         if (isVararg)
                             builder.vararg(tClass);

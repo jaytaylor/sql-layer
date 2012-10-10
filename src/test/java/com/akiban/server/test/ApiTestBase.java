@@ -556,6 +556,14 @@ public class ApiTestBase {
         updateAISGeneration();
     }
 
+    protected final void createView(String schema, String name, String definition) {
+        String ddl = String.format("CREATE VIEW %s AS %s", name, definition);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
+        View view = tempAIS.getView(new TableName(schema, name));
+        ddl().createView(session(), view);
+        updateAISGeneration();
+    }
+
     protected final int createTable(TableName tableName, String... definitions) throws InvalidOperationException {
         return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
     }

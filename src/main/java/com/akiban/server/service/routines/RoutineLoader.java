@@ -29,14 +29,15 @@ package com.akiban.server.service.routines;
 import com.akiban.ais.model.TableName;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.server.service.session.Session;
 import java.lang.reflect.Method;
 
 public interface RoutineLoader
 {
-    public ClassLoader loadSQLJJar(TableName jarName);
-    public void unloadSQLJJar(TableName jarName);
+    public ClassLoader loadSQLJJar(Session session, TableName jarName);
+    public void unloadSQLJJar(Session session, TableName jarName);
 
-    public LoadablePlan<?> loadLoadablePlan(TableName routineName);
-    public Method loadJavaMethod(TableName routineName);
-    public void unloadRoutine(TableName routineName);
+    public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName);
+    public Method loadJavaMethod(Session session, TableName routineName);
+    public void unloadRoutine(Session session, TableName routineName);
 }

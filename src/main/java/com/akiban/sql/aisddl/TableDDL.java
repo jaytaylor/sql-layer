@@ -441,20 +441,17 @@ public class TableDDL
         }
         final String groupName;
         final String groupSchema;
-        final String groupTableName;
         if(parentTable.getGroup() == null) {
             groupName = parentName.getTableName();
             groupSchema = parentName.getSchemaName();
-            groupTableName = "_akiban_" + groupName;
         } else {
-            TableName gtName = parentTable.getGroup().getGroupTable().getName();
             groupName = parentTable.getGroup().getName();
-            groupSchema = gtName.getSchemaName();
-            groupTableName = gtName.getTableName();
+            groupSchema = parentTable.getGroup().getSchemaName();
         }
-        builder.createGroup(groupName, groupSchema, groupTableName);
+        builder.createGroup(groupName, groupSchema);
         builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
     }
+
 
     private static String[] columnNamesFromListOrPK(ResultColumnList list, PrimaryKey pk) {
         String[] names = (list == null) ? null: list.getColumnNames();

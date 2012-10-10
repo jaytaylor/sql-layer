@@ -56,7 +56,8 @@ public class PostgresJavaMethod extends PostgresDMLStatement
     public static PostgresStatement statement(PostgresServerSession server, 
                                               ServerRoutineInvocation invocation,
                                               List<ParameterNode> params, int[] paramTypes) {
-        Method method = server.getRoutineLoader().loadJavaMethod(invocation.getRoutineName());
+        Method method = server.getRoutineLoader().loadJavaMethod(server.getSession(),
+                                                                 invocation.getRoutineName());
         Routine routine = invocation.getRoutine();
         List<PostgresType> columnTypes = columnTypes(routine);
         List<String> columnNames;

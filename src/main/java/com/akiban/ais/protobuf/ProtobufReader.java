@@ -33,7 +33,6 @@ import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
@@ -43,7 +42,6 @@ import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
@@ -67,7 +65,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 public class ProtobufReader {
     private final AkibanInformationSchema destAIS;
@@ -175,7 +172,7 @@ public class ProtobufReader {
 
         // Hook up groups, create group tables and indexes after all in place
         for(List<NewGroupInfo> newGroups : allNewGroups) {
-            createGroupTablesAndIndexes(newGroups);
+            hookUpGroupAndCreateGroupIndexes(newGroups);
         }
     }
     
@@ -191,16 +188,7 @@ public class ProtobufReader {
         return newGroups;
     }
 
-    private void createGroupTablesAndIndexes(List<NewGroupInfo> newGroups) {
-        Set<Integer> currentIDs = new HashSet<Integer>();
-        // Cannot assert ID uniqueness here, no such restriction from proto (e.g. from adapter)
-        for(Table table : destAIS.getUserTables().values()) {
-            currentIDs.add(table.getTableId());
-        }
-        for(Table table : destAIS.getGroupTables().values()) {
-            currentIDs.add((table.getTableId()));
-        }
-
+    private void hookUpGroupAndCreateGroupIndexes(List<NewGroupInfo> newGroups) {
         List<Join> joinsNeedingGroup = new ArrayList<Join>();
         
         for(NewGroupInfo newGroupInfo : newGroups) {
@@ -208,15 +196,7 @@ public class ProtobufReader {
             UserTable rootUserTable = destAIS.getUserTable(newGroupInfo.schema, rootTableName);
             rootUserTable.setGroup(newGroupInfo.group);
             joinsNeedingGroup.addAll(rootUserTable.getCandidateChildJoins());
-
-            GroupTable groupTable = GroupTable.create(
-                    destAIS,
-                    newGroupInfo.schema,
-                    nameGenerator.generateGroupTableName(rootTableName),
-                    computeNewTableID(currentIDs, rootUserTable.getTableId() + 1)
-            );
-            newGroupInfo.group.setGroupTable(groupTable);
-            groupTable.setGroup(newGroupInfo.group);
+            newGroupInfo.group.setRootTable(rootUserTable);
         }
         
         for(int i = 0; i < joinsNeedingGroup.size(); ++i) {
@@ -602,7 +582,6 @@ public class ProtobufReader {
     private void loadPendingOSChanges(Collection<TableChange> changes, Collection<AISProtobuf.PendingOSChange> pbChanges) {
         for (AISProtobuf.PendingOSChange pbChange : pbChanges) {
             hasRequiredFields(pbChange);
-            TableChange.ChangeType changeType;
             switch (pbChange.getType()) {
             case ADD:
                 changes.add(TableChange.createAdd(pbChange.getNewName()));
@@ -647,13 +626,6 @@ public class ProtobufReader {
             return new TableName(tableName.getSchemaName(), tableName.getTableName());
         }
         return null;
-    }
-
-    private static int computeNewTableID(Set<Integer> currentIDs, int starting) {
-        while(!currentIDs.add(starting)) {
-            ++starting;
-        }
-        return starting;
     }
 
     /**

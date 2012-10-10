@@ -80,7 +80,7 @@ public class SQLJJarDeployer
     }
 
     private void loadDeploymentDescriptor(boolean undeploy) {
-        ClassLoader classLoader = server.getRoutineLoader().loadSQLJJar(jarName);
+        ClassLoader classLoader = server.getRoutineLoader().loadSQLJJar(context.getSession(), jarName);
         InputStream mstr = classLoader.getResourceAsStream("META-INF/MANIFEST.MF");
         if (mstr == null) return;
         Manifest manifest;

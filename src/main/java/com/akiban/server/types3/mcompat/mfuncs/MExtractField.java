@@ -117,6 +117,9 @@ public abstract class MExtractField extends TScalarBase
             @Override
             protected int getField(long[] ymd, TExecutionContext context)
             {
+                if (MDatetimes.isZeroDayMonth(ymd))
+                    return -1;
+                
                 ymd[2] = MDatetimes.getLastDay(ymd);
                 return MDatetimes.encodeDate(ymd);
             }

@@ -44,7 +44,7 @@ public class IndexColumnIsNotPartialTest {
         builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", fullLen, null, false, false, null, null);
         builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, indexedLength);
-        builder.createGroup(TABLE, SCHEMA, "_akiban"+TABLE);
+        builder.createGroup(TABLE, SCHEMA);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();

@@ -122,7 +122,7 @@ public class PostgresSessionStatement implements PostgresStatement
                 SetSchemaNode node = (SetSchemaNode)statement;
                 String schemaName = (node.statementType() == StatementType.SET_SCHEMA_USER ? 
                                      server.getProperty("user") : node.getSchemaName());
-                if (SchemaDDL.checkSchema(server.getAIS(), schemaName)) {
+                if (server.getAIS().getSchema(schemaName) != null) {
                     server.setDefaultSchemaName(schemaName);
                 } 
                 else {
