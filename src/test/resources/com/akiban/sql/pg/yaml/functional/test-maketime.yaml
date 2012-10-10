@@ -4,10 +4,10 @@
 ---
 # Test arity
 - Statement: SELECT MAKETIME() FROM all_types
-- error: [4250C]
+- error: !select-engine { all: [4250C], sys-mysql: [1582] }
 ---
 - Statement: SELECT MAKETIME(1, 2, 3, 4) FROM all_types
-- error: [4250C]
+- error: !select-engine { all: [4250C], sys-mysql: [1582] } 
 # Test null
 ---
 - Statement: SELECT MAKETIME(null,null,null)
@@ -16,7 +16,8 @@
 ---
 - Statement: INSERT INTO all_types (float_field, bigint_field) VALUES (90, 90)
 ---
-# BUG 1007163
+- Message:  BUG 1007163
+#---
 #- Statement: SELECT MAKETIME(float_field, 2, 2) from all_types
 #- output: [['90:02:02']]
 #---

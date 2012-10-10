@@ -11,16 +11,16 @@
 - output: [['yup']]
 ---
 - Statement: SELECT IF() FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1064] }
 ---
 - Statement: SELECT IF(bigint_field = 1) FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1064] }
 ---
 - Statement: SELECT IF(bigint_field = 1, double_field) FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1064] }
 ---
 - Statement: SELECT IF(bigint_field = 1, double_field,) FROM all_types
-- error: [42000]
+- error: !select-engine {all: [42000], sys-mysql: [1064] }
 
 ---
 - Statement: INSERT INTO all_types
