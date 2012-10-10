@@ -109,7 +109,7 @@ public final class MField extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.INT.instance(3));
+        return TOverloadResult.fixed(MNumeric.INT, 3);
     }
 
     @Override

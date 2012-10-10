@@ -410,7 +410,7 @@ public final class TCastsRegistry {
             }
             this.first = first;
             this.second = second;
-            this.intermediateType = first.targetClass().instance();
+            this.intermediateType = first.targetClass().instance(true);
         }
 
         private final TCast first;

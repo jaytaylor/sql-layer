@@ -33,7 +33,6 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TInstanceAdjuster;
-import com.akiban.server.types3.TInstanceNormalizer;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -120,43 +119,23 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             private BitSet adjusted;
         }
 
-        private class NullityAdjuster implements TInstanceNormalizer {
-            @Override
-            public void apply(TInstanceAdjuster adjuster, TValidatedOverload o, TInputSet inputSet, int max) {
-                for (int i = o.firstInput(inputSet); i >= 0; i = o.nextInput(inputSet, i+1, max)) {
-                    if (adjuster.get(i).nullability() == null) {
-                        TPreptimeValue input = inputs.get(i);
-                        boolean isNullable = input == null || input.isNullable();
-                        adjuster.adjust(i).setNullable(isNullable);
-                    }
-                }
-            }
-
-            private NullityAdjuster(List<? extends TPreptimeValue> inputs) {
-                this.inputs = inputs;
-            }
-
-            private final List<? extends TPreptimeValue> inputs;
-        }
-
         private OverloadResult(V overload, List<? extends TPreptimeValue> inputs, TCastResolver resolver)
         {
             this.overload = overload;
             List<TInputSet> inputSets = overload.inputSets();
             int nInputs = inputs.size();
-            AdjusterImpl adjuster = new AdjusterImpl(overload, nInputs);
-            NullityAdjuster nullityAdjuster = new NullityAdjuster(inputs);
+            AdjusterImpl adjuster = null;
             for (TInputSet inputSet : inputSets) {
                 TClass targetTClass = inputSet.targetType();
-                adjuster.setInputSet(inputSet);
                 if (targetTClass == null) {
                     TInstance instance = findCommon(overload, inputSet, inputs, resolver);
                     fillInstances(overload, inputSet, instance, nInputs);
-                    nullityAdjuster.apply(adjuster, overload, inputSet, nInputs);
                 }
                 else {
+                    if (adjuster == null)
+                        adjuster = new AdjusterImpl(overload, nInputs);
+                    adjuster.setInputSet(inputSet);
                     findInstance(overload, inputSet, inputs, resolver);
-                    nullityAdjuster.apply(adjuster, overload, inputSet, nInputs);
                     inputSet.instanceAdjuster().apply(adjuster, overload, inputSet, nInputs);
                     adjuster.verify();
                 }
@@ -239,7 +218,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 else {
                     if (generatedInstances == null)
                         generatedInstances = new TInstance[inputs.size()];
-                    generatedInstances[i] = targetTClass.instance();
+                    generatedInstances[i] = targetTClass.instance(inputTpv.isNullable());
                 }
             }
         }
@@ -252,12 +231,15 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             TInstance commonInst = null;
             int lastPositionalInput = overload.positionalInputs();
             boolean notVararg = ! overload.isVararg();
+            boolean nullable = false;
             for (int i = 0, size = inputs.size(); i < size; ++i) {
                 if (overload.inputSetAt(i) != inputSet)
                     continue;
                 if (notVararg && (i >= lastPositionalInput))
                     break;
-                TInstance inputInstance = inputs.get(i).instance();
+                TPreptimeValue inputTpv = inputs.get(i);
+                nullable |= inputTpv.isNullable();
+                TInstance inputInstance = inputTpv.instance();
                 if (inputInstance == null) {
                     // unknown type, like a NULL literal or parameter
                     continue;
@@ -298,11 +280,11 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             }
             if (common == null) {
                 if (!inputSet.isPicking())
-                    return MString.VARCHAR.instance(0); // Unknown type and callee doesn't care.
+                    return MString.VARCHAR.instance(0, nullable); // Unknown type and callee doesn't care.
                 throw new OverloadException("couldn't resolve type for " + inputSet + " with " + inputs);
             }
             return (commonInst == null)
-                ? common.instance()
+                ? common.instance(nullable)
                 : commonInst;
         }
 

@@ -30,7 +30,6 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -360,7 +359,7 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance left, TInstance right) {
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         return instance();
     }
 

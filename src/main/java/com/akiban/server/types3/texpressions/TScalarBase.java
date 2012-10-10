@@ -204,6 +204,14 @@ public abstract class TScalarBase implements TScalar {
         return false;
     }
 
+    protected boolean anyContaminatingNulls(List<? extends TPreptimeValue> inputs) {
+        for (int i = 0, max = inputs.size(); i < max; ++i) {
+            if (nullContaminates(i) && inputs.get(i).isNullable())
+                return true;
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(displayName());

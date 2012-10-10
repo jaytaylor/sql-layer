@@ -95,7 +95,7 @@ public class MRoundTruncateDecimal extends TScalarBase {
                     precision += scale;
 
                 }
-                return MNumeric.DECIMAL.instance(precision, scale);
+                return MNumeric.DECIMAL.instance(precision, scale, anyContaminatingNulls(inputs));
             }
         });
     }

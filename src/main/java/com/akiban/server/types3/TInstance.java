@@ -30,7 +30,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.util.AkibanAppender;
-import com.google.common.base.Objects;
 
 public final class TInstance {
 
@@ -96,13 +95,8 @@ public final class TInstance {
         return tclass;
     }
 
-    public Boolean nullability() {
+    public boolean nullability() {
         return isNullable;
-    }
-
-    public TInstance setNullable(Boolean nullable) {
-        isNullable = nullable;
-        return this;
     }
 
     public Object getMetaData() {
@@ -132,7 +126,7 @@ public final class TInstance {
     }
 
     public TInstance copy() {
-        return new TInstance(tclass, enumClass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
+        return new TInstance(tclass, enumClass, tclass.nAttributes(), attr0, attr1, attr2, attr3, isNullable);
     }
 
     // object interface
@@ -154,11 +148,10 @@ public final class TInstance {
                 sb.append(", ");
         }
         sb.append(')');
-        if (Boolean.TRUE.equals(isNullable))
+        if (isNullable)
             sb.append(" NULL");
-        else if (Boolean.FALSE.equals(isNullable))
+        else
             sb.append(" NOT NULL");
-        // else, nullability is not known
         return sb.toString();
     }
 
@@ -185,7 +178,7 @@ public final class TInstance {
                 && attr1 == other.attr1
                 && attr2 == other.attr2
                 && attr3 == other.attr3
-                && ((!withNullable) || Objects.equal(isNullable, other.isNullable))
+                && ((!withNullable) || (isNullable == other.isNullable))
                 && tclass.equals(other.tclass);
     }
 
@@ -196,13 +189,15 @@ public final class TInstance {
         result = 31 * result + attr2;
         result = 31 * result + attr1;
         result = 31 * result + attr3;
-        result = 31 * result + (isNullable != null ? isNullable.hashCode() : 0);
+        result = 31 * result + (isNullable ? 0 : 1);
         return result;
     }
 
     // state
 
-    TInstance(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+    TInstance(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3,
+              boolean isNullable)
+    {
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
         // normalize inputs past nattrs
         switch (nAttrs) {
@@ -225,6 +220,7 @@ public final class TInstance {
         this.attr2 = attr2;
         this.attr3 = attr3;
         this.enumClass = enumClass;
+        this.isNullable = isNullable;
     }
 
     public TInstance(TInstance copyFrom) {
@@ -239,7 +235,7 @@ public final class TInstance {
 
     private final TClass tclass;
     private int attr0, attr1, attr2, attr3;
-    private Boolean isNullable;
+    private final boolean isNullable;
     private Object metaData;
     private final Class<?> enumClass;
 }

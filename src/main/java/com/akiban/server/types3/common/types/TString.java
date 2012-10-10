@@ -189,10 +189,10 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public TInstance instance(int charsetId, int collationId) {
+    public TInstance instance(int charsetId, int collationId, boolean nullable) {
         return fixedLength < 0
-                ? super.instance(charsetId, StringFactory.DEFAULT_CHARSET.ordinal(), collationId)
-                : super.instance(fixedLength, charsetId, collationId);
+                ? super.instance(charsetId, StringFactory.DEFAULT_CHARSET.ordinal(), collationId, nullable)
+                : super.instance(fixedLength, charsetId, collationId, nullable);
     }
 
     @Override
@@ -222,19 +222,21 @@ public abstract class TString extends TClass
     }
      
     @Override
-    public TInstance instance()
+    public TInstance instance(boolean nullable)
     {
         return instance(fixedLength >= 0 ? fixedLength : StringFactory.DEFAULT_LENGTH,
                         StringFactory.DEFAULT_CHARSET.ordinal(),
-                        StringFactory.DEFAULT_COLLATION_ID);
+                        StringFactory.DEFAULT_COLLATION_ID,
+                        nullable);
     }
 
     @Override
-    public TInstance instance(int length)
+    public TInstance instance(int length, boolean nullable)
     {
         return instance(length < 0 ? 0 : length, 
                         StringFactory.DEFAULT_CHARSET.ordinal(),
-                        StringFactory.DEFAULT_COLLATION_ID);
+                        StringFactory.DEFAULT_COLLATION_ID,
+                        nullable);
     }
     
     @Override
@@ -244,8 +246,8 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance left, TInstance right) {
-        return doPickInstance(left, right, false);
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
+        return doPickInstance(left, right, false, suggestedNullability);
     }
 
     @Override
@@ -266,7 +268,7 @@ public abstract class TString extends TClass
         return null;
     }
 
-    private TInstance doPickInstance(TInstance left, TInstance right, boolean useRightLength) {
+    private TInstance doPickInstance(TInstance left, TInstance right, boolean useRightLength, boolean nullable) {
         final int pickLen, pickCharset, pickCollation;
 
         int aCharset = left.attribute(StringAttribute.CHARSET);
@@ -294,7 +296,7 @@ public abstract class TString extends TClass
         else {
             pickLen = Math.max(leftLen,rightLen);
         }
-        return instance(pickLen, pickCharset, pickCollation);
+        return instance(pickLen, pickCharset, pickCollation, nullable);
     }
 
     private final int fixedLength;
@@ -305,11 +307,13 @@ public abstract class TString extends TClass
         @Override
         public void apply(TInstanceAdjuster adapter, TValidatedOverload overload, TInputSet inputSet, int max) {
             TInstance result = null;
+            boolean nullable = false;
             for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
                 TInstance input = adapter.get(i);
+                nullable |= input.nullability();
                 result = (result == null)
                         ? input
-                        : doPickInstance(result, input, true);
+                        : doPickInstance(result, input, true, nullable);
             }
             assert result != null;
             int resultCharset = result.attribute(StringAttribute.CHARSET);

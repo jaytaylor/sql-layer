@@ -42,16 +42,16 @@ public class NoAttrTClass extends SimpleDtdTClass {
 
     @Override
     public TFactory factory() {
-        return new NoAttrFactory(instance());
+        return new NoAttrFactory(instance(true)); // TODO
     }
 
     @Override
-    public TInstance instance() {
-        return createInstanceNoArgs();
+    public TInstance instance(boolean nullable) {
+        return createInstanceNoArgs(nullable);
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance left, TInstance right) {
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         return right; // doesn't matter which!
     }
 

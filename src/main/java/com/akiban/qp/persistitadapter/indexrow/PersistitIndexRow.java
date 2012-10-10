@@ -53,6 +53,8 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
+import java.util.List;
+
 public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 {
     // Object interface
@@ -146,7 +148,11 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
                 this.akTypes = null;
                 this.akCollators = null;
                 this.tInstances = new TInstance[nIndexFields];
-                this.tInstances[0] = MNumeric.BIGINT.instance();
+                List<IndexColumn> declaredKeys = index.getKeyColumns();
+                assert declaredKeys.size() == 2 : "covering spatial index discovered, need to update code" + index;
+                boolean nullable =
+                        declaredKeys.get(0).getColumn().getNullable() || declaredKeys.get(1).getColumn().getNullable();
+                this.tInstances[0] = MNumeric.BIGINT.instance(nullable);
             }
             else {
                 this.akTypes = new AkType[nIndexFields];

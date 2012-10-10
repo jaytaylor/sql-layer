@@ -26,38 +26,33 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.util.ArgumentValidation;
 
 public class TOverloadResult {
-    
-    public static TOverloadResult fixed(NoAttrTClass plainTClass) {
-        return new TOverloadResult(Category.FIXED, plainTClass.instance(), null, null);
-    }
 
-    public static TOverloadResult fixed(TInstance tInstance) {
-        return new TOverloadResult(Category.FIXED, tInstance, null, null);
+    public static TOverloadResult fixed(TClass tClass, int... attrs) {
+        return new TOverloadResult(Category.FIXED, tClass, attrs, null, null);
     }
 
     public static TOverloadResult picking() {
-        return new TOverloadResult(Category.PICKING, null, null, null);
+        return new TOverloadResult(Category.PICKING, null, null, null, null);
     }
 
-    public static TOverloadResult custom(TInstance castSource, TCustomOverloadResult rule) {
-        return new TOverloadResult(Category.CUSTOM, null, rule, castSource);
+    public static TOverloadResult custom(TInstanceGenerator castSource, TCustomOverloadResult rule) {
+        return new TOverloadResult(Category.CUSTOM, null, null, rule, castSource);
     }
 
     public static TOverloadResult custom(TCustomOverloadResult rule) {
-        return new TOverloadResult(Category.CUSTOM, null, rule, null);
+        return new TOverloadResult(Category.CUSTOM, null, null, rule, null);
     }
 
     public Category category() {
         return category;
     }
 
-    public TInstance fixed() {
+    public TInstance fixed(boolean nullable) {
         check(Category.FIXED);
-        return fixedInstance;
+        return fixedInstance.setNullable(nullable);
     }
 
     public TCustomOverloadResult customRule() {
@@ -65,8 +60,8 @@ public class TOverloadResult {
         return customRule;
     }
     
-    public TInstance customRuleCastSource() {
-        return castSource;
+    public TInstance customRuleCastSource(boolean nullable) {
+        return castSource.setNullable(nullable);
     }
 
     // object interface
@@ -90,12 +85,13 @@ public class TOverloadResult {
     // state
 
     private TOverloadResult(Category category,
-                            TInstance fixedInstance,
+                            TClass fixedTClass,
+                            int[] fixedInstanceAttrs,
                             TCustomOverloadResult customRule,
-                            TInstance castSource)
+                            TInstanceGenerator castSource)
     {
         this.category = category;
-        this.fixedInstance = fixedInstance;
+        this.fixedInstance = (fixedTClass == null) ? null : new TInstanceGenerator(fixedTClass, fixedInstanceAttrs);
         this.customRule = customRule;
         this.castSource = castSource;
         switch (category) {
@@ -103,7 +99,8 @@ public class TOverloadResult {
             ArgumentValidation.notNull("custom rule", customRule);
             break;
         case FIXED:
-            ArgumentValidation.notNull("fixed type", fixedInstance);
+            ArgumentValidation.notNull("fixed type", fixedTClass);
+            ArgumentValidation.notNull("fixed type attributes", fixedInstanceAttrs);
             break;
         case PICKING:
             break;
@@ -113,9 +110,9 @@ public class TOverloadResult {
     }
 
     private final Category category;
-    private final TInstance fixedInstance;
+    private final TInstanceGenerator fixedInstance;
     private final TCustomOverloadResult customRule;
-    private final TInstance castSource;
+    private final TInstanceGenerator castSource;
 
     public enum Category {
         CUSTOM, FIXED, PICKING

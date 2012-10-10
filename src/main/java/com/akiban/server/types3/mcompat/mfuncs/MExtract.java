@@ -132,6 +132,6 @@ public abstract class MExtract extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(type.instance());
+        return TOverloadResult.fixed(type);
     }
 }

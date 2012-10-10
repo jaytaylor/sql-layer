@@ -24,47 +24,33 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.funcs;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TScalarBase;
+import java.util.Arrays;
 
-public class TPow extends TScalarBase {
-    
-    private final TClass inputType;
-    
-    protected TPow(TClass inputType) {
-        this.inputType = inputType;
-    }
-    
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(inputType, 0, 1);
-    }
-        
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        double a0 = inputs.get(0).getDouble();
-        double a1 = inputs.get(1).getDouble();
-        output.putDouble(Math.pow(a0, a1));
-    }
-        
-    @Override
-    public String displayName() {
-        return "POW";
+public final class TInstanceGenerator {
+    public TInstance setNullable(boolean isNullable) {
+        switch (attrs.length) {
+        case 0:
+            return tclass.instance(isNullable);
+        case 1:
+            return tclass.instance(attrs[0], isNullable);
+        case 2:
+            return tclass.instance(attrs[0], attrs[1], isNullable);
+        case 3:
+            return tclass.instance(attrs[0], attrs[1], attrs[2], isNullable);
+        case 4:
+            return tclass.instance(attrs[0], attrs[1], attrs[2], attrs[3], isNullable);
+        default:
+            throw new AssertionError("too many attrs!: " + Arrays.toString(attrs) + " with " + tclass);
+        }
     }
 
-    @Override
-    public String[] registeredNames()
-    {
-        return new String[]{"pow", "power"};
+    public TInstanceGenerator(TClass tclass, int... attrs) {
+        this.tclass = tclass;
+        this.attrs = Arrays.copyOf(attrs, attrs.length);
     }
-    
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(inputType);
-    }
+
+    private final TClass tclass;
+    private final int[] attrs;
 }

@@ -134,7 +134,7 @@ public abstract class MWeek extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT.instance());
+        return TOverloadResult.fixed(MNumeric.INT);
     }
 
     //------------ static helper------------------------------------------------
