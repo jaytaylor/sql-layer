@@ -40,10 +40,6 @@ public class NopVisitor implements Visitor {
     }
 
     @Override
-    public void visitGroupTable(GroupTable groupTable) {
-    }
-
-    @Override
     public void visitColumn(Column column) {
     }
 

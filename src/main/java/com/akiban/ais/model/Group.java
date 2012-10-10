@@ -72,16 +72,6 @@ public class Group implements Traversable, TreeLink
         return name;
     }
 
-    public GroupTable getGroupTable()
-    {
-        return groupTable;
-    }
-
-    public void setGroupTable(GroupTable groupTable)
-    {
-        this.groupTable = groupTable;
-    }
-
     public void setRootTable(UserTable rootTable)
     {
         this.rootTable = rootTable;
@@ -137,7 +127,6 @@ public class Group implements Traversable, TreeLink
     public void addIndex(GroupIndex index)
     {
         indexMap.put(index.getIndexName().getName().toLowerCase(), index);
-        groupTable.addGroupIndex(index);
         GroupIndexHelper.actOnGroupIndexTables(index, GroupIndexHelper.ADD);
     }
 
@@ -145,7 +134,6 @@ public class Group implements Traversable, TreeLink
     {
         indexMap.values().removeAll(indexesToDrop);
         for (GroupIndex groupIndex : indexesToDrop) {
-            groupTable.removeGroupIndex(groupIndex);
             GroupIndexHelper.actOnGroupIndexTables(groupIndex, GroupIndexHelper.REMOVE);
         }
     }
@@ -203,5 +191,4 @@ public class Group implements Traversable, TreeLink
     private final AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
     private String treeName;
     private UserTable rootTable;
-    private GroupTable groupTable;
 }

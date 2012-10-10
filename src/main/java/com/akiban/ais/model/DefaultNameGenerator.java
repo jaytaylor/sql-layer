@@ -26,87 +26,20 @@
 
 package com.akiban.ais.model;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import com.akiban.ais.model.AISBuilder.ColumnName;
 import com.akiban.util.Strings;
 
 public class DefaultNameGenerator implements NameGenerator {
     public static final String TREE_NAME_SEPARATOR = ".";
 
-    /**
-     * For truncated columns [only], we record a mapping of the original
-     * column to truncated name. This lets us ensure that unique columns
-     * have unique truncated names. We use HashMap instead of Map to make
-     * life easier for GWT.
-     */
-    private final HashMap<ColumnName, String> generatedColumnNames = new HashMap<ColumnName, String>();
     private final Set<String> groupNames = new HashSet<String>();
     private final Set<String> indexNames = new HashSet<String>();
     private final Set<String> treeNames = new HashSet<String>();
     private final Set<String> sequenceNames = new HashSet<String>();
-    
-    @Override
-    public String generateColumnName(Column column) {
-        UserTable table = (UserTable) column.getTable();
-
-        // Return existing if we've already generated one for this column
-        final ColumnName id = new ColumnName(table.getName(), column.getName());
-        {
-            String possible = generatedColumnNames.get(id);
-            if (possible != null) {
-                return possible;
-            }
-        }
-
-        StringBuilder ret = new StringBuilder(table.getName().getTableName()).append("$").append(column.getName());
-        if (ret.length() > AISBuilder.MAX_COLUMN_NAME_LENGTH) {
-            ret.delete(0, ret.length() - AISBuilder.MAX_COLUMN_NAME_LENGTH);
-        }
-
-        int anonId = 0;
-        int keepLen = ret.length();
-        String retValue;
-        while (generatedColumnNames.containsValue(retValue = ret.toString())) {
-            ret.setLength(keepLen);
-            int digits = countDigits(++anonId);
-            int newLenOverflow = AISBuilder.MAX_COLUMN_NAME_LENGTH - (keepLen + digits + 1);
-            if (newLenOverflow < 0) {
-                keepLen += newLenOverflow;
-                ret.setLength(keepLen);
-            }
-            ret.append('$').append(anonId);
-        }
-
-        generatedColumnNames.put(id, retValue);
-
-        return retValue;
-    }
-    
-    /**
-     * Counts the number of digits in the int
-     * 
-     * @param number
-     *            {@code >= 0}
-     * @return number of digits
-     */
-    private int countDigits(int number) {
-        int ret = 1;
-        while ((number /= 10) > 0) {
-            ++ret;
-        }
-        return ret;
-    }
-
-    @Override
-    public String generateGroupTableIndexName(TableIndex userTableIndex) {
-        return userTableIndex.getTable().getName().getTableName() + "$"
-        + userTableIndex.getIndexName().getName();
-    }
 
     @Override
     public String generateGroupName(UserTable userTable) {
@@ -117,11 +50,6 @@ public class DefaultNameGenerator implements NameGenerator {
     public String generateGroupName(final String tableName) {
         String proposed = tableName;
         return makeUnique(groupNames, proposed);
-    }
-
-    @Override
-    public String generateGroupTableName (final String groupName) {
-        return "_akiban_" + groupName;
     }
 
     public DefaultNameGenerator setDefaultGroupNames (Set<String> initialSet) {

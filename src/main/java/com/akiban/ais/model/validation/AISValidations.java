@@ -36,7 +36,7 @@ public final class AISValidations {
     public static final AISValidation COLLATION_SUPPORTED = new CollationSupported();
     public static final AISValidation COLUMN_POSITION_DENSE = new ColumnPositionDense();
     public static final AISValidation GROUP_INDEX_NOT_UNIQUE = new GroupIndexesNotUnique();
-    public static final AISValidation GROUP_TABLE_SINGLE_ROOT = new GroupTableSingleRoot();
+    public static final AISValidation GROUP_SINGLE_ROOT = new GroupSingleRoot();
     public static final AISValidation INDEX_HAS_COLUMNS = new IndexHasColumns();
     public static final AISValidation INDEX_IDS_UNIQUE = new IndexIDsUnique();
     public static final AISValidation INDEX_SIZES = new IndexSizes();
@@ -47,8 +47,6 @@ public final class AISValidations {
     public static final AISValidation PRIMARY_KEY_IS_NOT_NULL = new PrimaryKeyIsNotNull();
     public static final AISValidation REFERENCES_CORRECT = new ReferencesCorrect();
     public static final AISValidation SUPPORTED_COLUMN_TYPES = new SupportedColumnTypes();    
-    public static final AISValidation TABLE_COLUMNS_MATCH_GROUP = new TableColumnsMatchGroupColumns();
-    public static final AISValidation TABLE_INDEXES_MATCH_GROUP = new TableIndexesMatchGroupIndexes();
     public static final AISValidation TABLE_HAS_PRIMARY_KEY = new TableHasPrimaryKey();
     public static final AISValidation TABLEID_UNIQUE = new TableIDsUnique();
     public static final AISValidation TABLES_IN_A_GROUP = new TablesInAGroup();
@@ -77,9 +75,7 @@ public final class AISValidations {
                 TABLES_IN_A_GROUP,
                 INDEX_HAS_COLUMNS,
                 INDEX_SIZES,
-                TABLE_COLUMNS_MATCH_GROUP,
-                TABLE_INDEXES_MATCH_GROUP,
-                GROUP_TABLE_SINGLE_ROOT,
+                GROUP_SINGLE_ROOT,
                 GROUP_INDEX_NOT_UNIQUE,
                 JOIN_TO_ONE_PARENT,
                 JOIN_TO_PARENT_PK,

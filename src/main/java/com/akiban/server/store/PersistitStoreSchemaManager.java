@@ -304,7 +304,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     
     public static Collection<Index> createIndexes(AkibanInformationSchema newAIS,
                                                   Collection<? extends Index> indexesToAdd) {
-        final AISBuilder builder = new AISBuilder(newAIS);
         final List<Index> newIndexes = new ArrayList<Index>();
         final NameGenerator nameGen = new DefaultNameGenerator().setDefaultTreeNames(AISMerge.computeTreeNames(newAIS));
 
@@ -396,7 +395,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             if (index.getIndexMethod() != Index.IndexMethod.NORMAL)
                 ((TableIndex)newIndex).setIndexMethod(index.getIndexMethod());
             newIndexes.add(newIndex);
-            builder.generateGroupTableIndexes(newGroup);
         }
         return newIndexes;
     }
