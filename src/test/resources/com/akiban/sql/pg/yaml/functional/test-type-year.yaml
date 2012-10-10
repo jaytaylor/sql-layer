@@ -1,0 +1,36 @@
+# Test the type3's YEAR type after the change in <VARCHAR --> YEAR> cast
+# Also compare  types2's behaviour with that of types3
+# Note:, types3 is doing the correct thing!
+---
+- Statement: SET newtypes to 'true'
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(year_field)
+             VALUES (0),
+                    (1),
+                    (69),
+                    (70),
+                    (99),
+                    (100);
+---
+- Statement: SELECT year_field from all_types;
+- output: [[0], [2001], [2069], [1970], [1999], [0]]
+---
+- Statement: DELETE FROM all_types;
+---
+- Statement: SET newtypes to 'false'
+---
+- Statement: INSERT INTO all_types(year_field)
+             VALUES (0),
+                    (1),
+                    (69),
+                    (70),
+                    (99),
+                    (100);
+---
+- Statement: SELECT year_field from all_types;
+- output: [[0], [1901], [1969], [1970], [1999], [2000]]
+---
+- Statement: SET newtypes to DEFAULT;
+...

@@ -39,14 +39,22 @@
 ---
 - Statement: SELECT 7 % -2.3 from all_types;
 - output: [[0.1]]
+# test with params
+---
+- Statement: SELECT 2 mod ? FROM all_types;
+- params: [[1]]
+- output: [[0.0]]
+############### types2's behaviour #############################
+---
+- Statement: SET newtypes to 'false'
 # test division by zero
 ---
-- Statement: SELECT 2 % 0 FROM all_types;
+- Statement: SELECT 2 % 0;
 - error: [22012]
-# test invalid argument type
 ---
 - Statement: SELECT '2' % '3' FROM all_types;
 - error: [22503]
+# test invalid argument type
 ---
 - Statement: SELECT DATE('2006-11-07') % 3 FROM all_types;
 - error: [22503]
@@ -59,10 +67,32 @@
 ---
 - Statement: SELECT year_field % time_field FROM all_types;
 - error: [22503]
-# test with params
+############### types3's behaviour #############################
 ---
-- Statement: SELECT 2 mod ? FROM all_types;
-- params: [[1]]
+- Statement: SET newtypes to 'true'
+---
+- Statement: SELECT 2 % 0;
+- output: [[null]]
+---
+- Statement: SELECT '3' % '5';
+- output_types: [DOUBLE]
+- output: [[3.0]]
+# test invalid argument type
+---
+- Statement: SELECT DATE('2006-11-07') % 3 FROM all_types;
+- output_types: [DOUBLE]
+- output: [[2.0]]
+---
+- Statement: SELECT bigint_field % date_field FROM all_types;
+- output: [[2.0]]
+---
+- Statement: SELECT year_field % 3 FROM all_types;
 - output: [[0.0]]
+---
+- Statement: SELECT year_field % time_field FROM all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT year_field from all_types;
+- output: [[0]]
 ...
 
