@@ -1,7 +1,5 @@
 ## Test DAYOFYEAR function
 ---
-- Statement: SET newtypes to 'true'
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types(bigint_field, double_field, date_field, datetime_field)
