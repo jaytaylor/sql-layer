@@ -46,4 +46,6 @@
 ---
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) IS NULL;
 - output: [[19001231]]
+---
+- Statement: SET newtypes to DEFAULT
 ...
