@@ -152,11 +152,6 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
         delegate.removeTrees(session, table);
     }
 
-    @Override
-    public void buildAllIndexes(Session session, boolean deferIndexes) {
-        delegate.buildAllIndexes(session, deferIndexes);
-    }
-
     public boolean isDeferIndexes() {
         return delegate.isDeferIndexes();
     }

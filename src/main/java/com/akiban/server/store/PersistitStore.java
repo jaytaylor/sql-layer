@@ -1193,17 +1193,6 @@ public class PersistitStore implements Store, Service {
         AkServerUtil.putInt(rowData.getBytes(), RowData.O_ROW_DEF_ID, rowDefId);
     }
 
-    @Override
-    public void buildAllIndexes(Session session, boolean deferIndexes) {
-        Collection<Index> indexes = new HashSet<Index>();
-        for(RowDef rowDef : rowDefCache.getRowDefs()) {
-            if(rowDef.isUserTable()) {
-                indexes.addAll(Arrays.asList(rowDef.getIndexes()));
-            }
-        }
-        buildIndexes(session, indexes, deferIndexes);
-    }
-
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         flushIndexes(session);
         Set<Group> groups = new HashSet<Group>();
@@ -1413,9 +1402,8 @@ public class PersistitStore implements Store, Service {
 
     public TableStatus getTableStatus(Table table) {
         TableStatus ts = null;
-        RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
-        if (rowDef != null) {
-            ts = rowDef.getTableStatus();
+        if(table.rowDef() != null) {
+            ts = table.rowDef().getTableStatus();
         }
         return ts;
     }

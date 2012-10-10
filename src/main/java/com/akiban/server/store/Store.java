@@ -154,7 +154,6 @@ public interface Store {
     void setDeferIndexes(boolean b);
     void flushIndexes(Session session);
     void deleteIndexes(Session session, Collection<? extends Index> indexes);
-    void buildAllIndexes(Session session, boolean deferIndexes);
     void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
 
     void deleteSequences (Session session, Collection<? extends Sequence> sequences);
