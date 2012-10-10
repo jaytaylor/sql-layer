@@ -38,6 +38,14 @@ import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
 
+/**
+ * <p>A function for describing the prepare-time type information of other expression. If/when we divide bundles into
+ * modular packages, this should go into a testing or debug package. Its primary purpose, at least for now, is to verify
+ * in our yaml tests that expressions have the right type.</p>
+ *
+ * <p>The usage is <code>DESCRIBE_EXPRESSION(<i>expr</i>)</code>, and the result is a constant {@code VARCHAR(255)} which
+ * describes the TInstance and constantness of <i>expr</i>.</p>
+ */
 public final class DescribeExpression extends TScalarBase {
 
     public static final TScalar instance = new DescribeExpression();
