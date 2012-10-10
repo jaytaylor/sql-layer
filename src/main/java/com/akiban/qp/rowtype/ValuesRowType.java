@@ -58,7 +58,7 @@ public class ValuesRowType extends DerivedRowType
 
     @Override
     public TInstance typeInstanceAt(int index) {
-        return tInstances != null ? tInstances[index] : PValueSources.fromAkType(types[index]);
+        return tInstances != null ? tInstances[index] : PValueSources.fromAkType(types[index], true); // TODO yeah?
     }
 
     // ValuesRowType interface

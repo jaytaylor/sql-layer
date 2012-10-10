@@ -108,6 +108,6 @@ public abstract class IsTrueFalseUnknown extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(boolType.instance());
+        return TOverloadResult.fixed(boolType);
     }
 }

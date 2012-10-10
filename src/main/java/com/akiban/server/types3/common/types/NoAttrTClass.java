@@ -47,7 +47,25 @@ public class NoAttrTClass extends SimpleDtdTClass {
 
     @Override
     public TInstance instance(boolean nullable) {
-        return createInstanceNoArgs(nullable);
+        TInstance result;
+        // These two blocks are obviously racy. However, the race will not create incorrectness, it'll just
+        // allow there to be multiple copies of the TInstance floating around, each of which is correct, immutable
+        // and equivalent.
+        if (nullable) {
+            result = nullableTInstance;
+            if (result == null) {
+                result = createInstanceNoArgs(true);
+                nullableTInstance = result;
+            }
+        }
+        else {
+            result = notNullableTInstance;
+            if (result == null) {
+                result = createInstanceNoArgs(false);
+                notNullableTInstance = result;
+            }
+        }
+        return result;
     }
 
     @Override
@@ -75,4 +93,7 @@ public class NoAttrTClass extends SimpleDtdTClass {
     {
         // about to delete...
     }
+
+    private volatile TInstance nullableTInstance;
+    private volatile TInstance notNullableTInstance;
 }

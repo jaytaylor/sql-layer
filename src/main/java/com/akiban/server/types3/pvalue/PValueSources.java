@@ -61,8 +61,8 @@ public final class PValueSources {
      * @param akType the input type
      * @return its TInstance equivalent, ish.
      */
-    public static TInstance fromAkType(AkType akType) {
-        return fromAkType(akType, 32);
+    public static TInstance fromAkType(AkType akType, boolean nullable) {
+        return fromAkType(akType, 32, nullable);
     }
     /**
      * Converts AkType to TInstance. Doesn't actually have to do with PValueSources, but this is a convenient place
@@ -71,7 +71,7 @@ public final class PValueSources {
      * @param defaultStringLen the default length for character or binary strings
      * @return its TInstance equivalent, ish.
      */
-    public static TInstance fromAkType(AkType akType, int defaultStringLen) {
+    public static TInstance fromAkType(AkType akType, int defaultStringLen, boolean nullable) {
         TInstance tInstance = null;
         TClass tClass = null;
         switch (akType) {
@@ -97,7 +97,7 @@ public final class PValueSources {
             tClass = MNumeric.BIGINT;
             break;
         case VARCHAR:
-            tInstance = MString.VARCHAR.instance(defaultStringLen);
+            tInstance = MString.VARCHAR.instance(defaultStringLen, nullable);
             break;
         case TEXT:
             tClass = MString.TEXT;
@@ -121,13 +121,13 @@ public final class PValueSources {
             tClass = MNumeric.INT_UNSIGNED;
             break;
         case VARBINARY:
-            tInstance = MBinary.VARBINARY.instance(defaultStringLen);
+            tInstance = MBinary.VARBINARY.instance(defaultStringLen, nullable);
             break;
         case YEAR:
             tClass = MDatetimes.YEAR;
             break;
         case BOOL:
-            tInstance = MNumeric.TINYINT.instance(1);
+            tInstance = MNumeric.TINYINT.instance(1, nullable);
             break;
         case NULL:
             tInstance = null;
@@ -141,7 +141,7 @@ public final class PValueSources {
         case INTERVAL_MILLIS:
             break;
         }
-        return (tClass == null) ? tInstance : tClass.instance();
+        return (tClass == null) ? tInstance : tClass.instance(nullable);
     }
 
     /**
@@ -159,7 +159,7 @@ public final class PValueSources {
         if (object == null) {
             if (akType == null)
                 throw new UnsupportedOperationException("can't infer type of null object");
-            tInstance = fromAkType(akType, 0);
+            tInstance = fromAkType(akType, 0, true);
             if (tInstance == null) {
                 value = null;
             }
@@ -169,12 +169,12 @@ public final class PValueSources {
             }
         }
         else if (object instanceof Integer) {
-            tInstance = MNumeric.INT.instance();
+            tInstance = MNumeric.INT.instance(false);
             value = new PValue((Integer)object);
         }
         else if (object instanceof Long) {
             if (akType == null) {
-                tInstance = MNumeric.BIGINT.instance();
+                tInstance = MNumeric.BIGINT.instance(false);
             }
             else {
                 TClass tClass;
@@ -212,22 +212,23 @@ public final class PValueSources {
                 default:
                     throw new IllegalArgumentException("can't convert longs of AkType " + akType);
                 }
-                tInstance = tClass.instance();
+                tInstance = tClass.instance(false);
             }
             value = new PValue(tInstance.typeClass().underlyingType());
             pvalueFromLong((Long)object, value);
         }
         else if (object instanceof String) {
             String s = (String) object;
-            tInstance = MString.VARCHAR.instance(s.length(), StringFactory.DEFAULT_CHARSET.ordinal(), StringFactory.NULL_COLLATION_ID);
+            tInstance = MString.VARCHAR.instance(
+                    s.length(), StringFactory.DEFAULT_CHARSET.ordinal(), StringFactory.NULL_COLLATION_ID, false);
             value = new PValue(s);
         }
         else if (object instanceof Double) {
-            tInstance = MApproximateNumber.DOUBLE.instance();
+            tInstance = MApproximateNumber.DOUBLE.instance(false);
             value = new PValue((Double)object);
         }
         else if (object instanceof Float) {
-            tInstance = MApproximateNumber.FLOAT.instance();
+            tInstance = MApproximateNumber.FLOAT.instance(false);
             value = new PValue((Float)object);
         }
         else if (object instanceof BigDecimal) {
@@ -238,7 +239,7 @@ public final class PValueSources {
                 // BigDecimal interprets something like "0.01" as having a scale of 2 and precision of 1.
                 precision = scale;
             }
-            tInstance = MNumeric.DECIMAL.instance(precision, scale);
+            tInstance = MNumeric.DECIMAL.instance(precision, scale, false);
             value = new PValue(PUnderlying.BYTES);
             value.putObject(new MBigDecimalWrapper(bd));
         }
@@ -254,25 +255,25 @@ public final class PValueSources {
                 int end = offset + source.byteArrayLength();
                 bytes = Arrays.copyOfRange(srcArray, offset, end);
             }
-            tInstance = MBinary.VARBINARY.instance(bytes.length);
+            tInstance = MBinary.VARBINARY.instance(bytes.length, false);
             value = new PValue(PUnderlying.BYTES);
             value.putBytes(bytes);
         }
         else if (object instanceof BigInteger) {
-            tInstance = MNumeric.BIGINT_UNSIGNED.instance();
+            tInstance = MNumeric.BIGINT_UNSIGNED.instance(false);
             BigInteger bi = (BigInteger) object;
             value = new PValue(bi.longValue());
         }
         else if (object instanceof Boolean) {
-            tInstance = AkBool.INSTANCE.instance();
+            tInstance = AkBool.INSTANCE.instance(false);
             value = new PValue((Boolean)object);
         }
         else if (object instanceof Character) {
-            tInstance = MString.VARCHAR.instance(1);
+            tInstance = MString.VARCHAR.instance(1, false);
             value = new PValue(object.toString());
         }
         else if (object instanceof Short) {
-            tInstance = MNumeric.SMALLINT.instance();
+            tInstance = MNumeric.SMALLINT.instance(false);
             value = new PValue((Short)object);
         }
         else {

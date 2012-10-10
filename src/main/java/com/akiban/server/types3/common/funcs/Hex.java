@@ -97,7 +97,7 @@ public abstract class Hex extends TScalarBase {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 int attributeLength = inputs.get(0).instance().attribute(StringAttribute.LENGTH);
-                return MString.VARCHAR.instance(attributeLength*2);
+                return MString.VARCHAR.instance(attributeLength*2, anyContaminatingNulls(inputs));
             }
             
         });
