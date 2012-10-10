@@ -5,10 +5,10 @@
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 ---
 - Statement: select ADDDATE(DATE('2008-01-02'), INTERVAL 31 DAY) from all_types;
-- output: !select-engine { all: [[!re '2008-02-02 00:00:00([.]0)?']], newtypes: [[2008-02-02]] }
+- output: !select-engine { all: [[!re '2008-02-02 00:00:00([.]0)?']], newtypes: [['2008-02-02']] }
 ---
 - Statement: select ADDDATE(DATE('2008-01-02'), 31.5) from all_types;
-- output: !select-engine { all: [[!re '2008-02-02 12:00:00([.]0)?']], newtypes: [[!re '2008-02-03 00:00:00([.]0)?']] }
+- output: !select-engine { all: [[!re '2008-02-02 12:00:00([.]0)?']], newtypes: [['2008-02-03']] }
 ---
 - Statement: SELECT ADDDATE(DATE('2008-01-02'), 31) from all_types;
 - output: [['2008-02-02']]
@@ -22,7 +22,7 @@
 ---
 # <DATE-like VARCHAR expr> + floating point ===> result in DATETIME
 - Statement: SELECT ADDDATE('2007-02-28', 2.5) from all_types;
-- output: !select-engine { all: [[!re '2007-03-02 12:00:00([.]0)?']], newtypes: [[!re '2007-03-03 00:00:00([.]0)?']] }
+- output: !select-engine { all: [[!re '2007-03-02 12:00:00([.]0)?']], newtypes: [['2007-03-03']] }
 ---
 # <DATETIME-like VARCHAR expr>
 - Statement: SELECT ADDDATE('2008-02-29 12:30:00', 2) from all_types;
@@ -30,5 +30,5 @@
 ---
 # Even 30 minutes make it a new day!
 - Statement: SELECT ADDDATE('2008-02-29 12:30:00', 2.5) from all_types;
-- output: !select-engine { all: [[!re '2008-03-03 00:30:00([.]0)?']], newtypes: [[!re '2008-03-03 12:30:00([.]0)?']] }
+- output: !select-engine { all: [[!re '2008-03-03 00:30:00([.]0)?']], newtypes: [['2008-03-03 12:30:00']] }
 ...
