@@ -107,7 +107,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         if(parentName == null) {
-            builder.createGroup(group, schema, "_akiban_"+table);
+            builder.createGroup(group, schema);
         } else {
             String joinName = table + "/" + parentName;
             builder.joinTables(joinName, schema, parentName, schema, table);
@@ -125,7 +125,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.userTable(schema, table);
         builder.column(schema, table, "c1", 0, "INT", null, null, false, false, null, null);
         builder.column(schema, table, "c2", 1, "DOUBLE", null, null, true, false, null, null);
-        builder.createGroup(table, schema, "_akiban_"+table);
+        builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         // no defined pk or indexes
         }
@@ -138,7 +138,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.column(schema, table, "name", 1, "INT", null, null, false, false, null, null);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
-        builder.createGroup(table, schema, "_akiban_"+table);
+        builder.createGroup(table, schema);
 
         schema = "test";
         String childTable = table + "2";
@@ -167,7 +167,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.index(schema, table, indexName, true, Index.UNIQUE_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, indexName, "name", 0, true, null);
         builder.indexColumn(schema, table, indexName, "value", 1, true, null);
-        builder.createGroup(table, schema, "_akiban_"+table);
+        builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         // no defined pk
         }
@@ -180,7 +180,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.column(schema, table, "id", 0, "INT", null, null, false, false, null, null);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
-        builder.createGroup(table, schema, "_akiban_"+table);
+        builder.createGroup(table, schema);
 
         String childTable = schema + "2";
         builder.userTable(schema, childTable);
@@ -230,7 +230,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
         builder.sequence(schema, sequence, 1, 1, 0, 1000, false);
         builder.columnAsIdentity(schema, table, "col", sequence, true);
-        builder.createGroup(table, schema, "_akiban_"+table);
+        builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         }
 

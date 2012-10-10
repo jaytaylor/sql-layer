@@ -89,6 +89,11 @@ public class Schema {
         views.remove(viewName);
     }
 
+    @Override
+    public String toString() {
+        return name;
+    }
+
     Schema(String name) {
         this.name = name;
     }

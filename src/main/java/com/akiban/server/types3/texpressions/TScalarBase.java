@@ -28,6 +28,7 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.TExpressionExplainer;
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -53,6 +54,13 @@ public abstract class TScalarBase implements TScalar {
         TInputSetBuilder builder = new TInputSetBuilder();
         buildInputSets(builder);
         return builder.toList();
+    }
+
+    @Override
+    public InputSetFlags exactInputs() {
+        TInputSetBuilder builder = new TInputSetBuilder();
+        buildInputSets(builder);
+        return builder.exactInputs();
     }
 
     @Override

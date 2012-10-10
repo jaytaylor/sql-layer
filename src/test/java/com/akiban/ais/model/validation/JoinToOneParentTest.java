@@ -61,7 +61,7 @@ public class JoinToOneParentTest {
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);
         builder.groupingIsComplete();
         

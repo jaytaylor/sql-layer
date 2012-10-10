@@ -4,6 +4,6 @@ SelectQuery@355ccfb1
       Select@7102be12[]
         Flatten@2594e776(customers INNER orders)
           Select@1710278e[upper(customers.name) == SMITH, or(date(orders.order_date) == Cast(2011-01-01 AS DATE NOT NULL),date(orders.order_date) == Cast(2012-01-01 AS DATE NOT NULL))]
-            GroupScan@52e80740(Group(customers -> test._akiban_customers), rows = 1000, cost = 61645.0)
+            GroupScan@52e80740(Group(customers -> test.customers), rows = 1000, cost = 61645.0)
               TableSource@23e45a5c(customers - TableGroup@7f342545(customers))
               TableSource@64e8606c(orders - TableGroupJoin@387b1641(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

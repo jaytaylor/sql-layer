@@ -3,7 +3,7 @@ SelectQuery@718ddc48
     Project@3d9478c7[orders.order_date, child.name]
       Select@5e857066[]
         JoinNode@a966905(INNER/NESTED_LOOPS)
-          TableJoins@18c8ccb1(TableGroup@8c1e4d5(customers) - GroupScan@71966070(Group(customers -> test._akiban_customers)))
+          TableJoins@18c8ccb1(TableGroup@8c1e4d5(customers) - GroupScan@71966070(Group(customers -> test.customers)))
             JoinNode@26f6852d(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@47959352(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
               TableSource@4b61cd25(customers - TableGroup@8c1e4d5(customers))
               TableSource@1e35ecd(orders - TableGroupJoin@47959352(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

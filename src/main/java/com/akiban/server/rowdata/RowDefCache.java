@@ -48,7 +48,6 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
@@ -235,11 +234,6 @@ public class RowDefCache {
         while (root.getParentJoin() != null) {
             root = root.getParentJoin().getParent();
         }
-
-        // group table name
-        final GroupTable groupTable = root.getGroup().getGroupTable();
-        final String groupTableName = groupTable.getName().getTableName();
-        assert groupTableName != null : root;
 
         // Secondary indexes
         List<TableIndex> indexList = new ArrayList<TableIndex>();

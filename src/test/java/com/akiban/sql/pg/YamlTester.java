@@ -248,6 +248,7 @@ class YamlTester {
     }
 
     private void test(Reader in) {
+    List<Object> sequence = null;
 	try {
 	    Yaml yaml = new Yaml(new RegisterTags());
 	    Iterator<Object> documents = yaml.loadAll(in).iterator();
@@ -255,7 +256,7 @@ class YamlTester {
 		++commandNumber;
 		commandName = null;
 		Object document = documents.next();
-		List<Object> sequence = nonEmptySequence(document,
+		sequence = nonEmptySequence(document,
 			"command document");
 		Entry<Object, Object> firstEntry = firstEntry(sequence.get(0),
 			"first element of the document");
@@ -292,7 +293,7 @@ class YamlTester {
 	    throw e;
 	} catch (Throwable e) {
 	    /* Add context */
-	    throw new ContextAssertionError(null, e.toString(), e);
+	    throw new ContextAssertionError(String.valueOf(sequence), e.toString(), e);
 	}
     }
 

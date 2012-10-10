@@ -27,6 +27,7 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
@@ -409,29 +410,69 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         if (!overload.coversNInputs(inputs.size()))
             return false;
 
+        InputSetFlags exactInputs = overload.exactInputs();
+        TClass[] pickSameType = null;
         for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
-            // alow this input if
+            // allow this input if
             // all overloads of this name have the same at this position
-            if (scalarGroups.hasSameTypeAt(i))
+            boolean requireExact = exactInputs.get(i);
+            if ( (!requireExact) && scalarGroups.hasSameTypeAt(i)) {
                 continue;
+            }
 
             TPreptimeValue inputTpv = inputs.get(i);
             TInstance inputInstance = (inputTpv == null) ? null : inputTpv.instance();
             // allow this input if...
-            // ... input's type it NULL or ?
-            if (inputInstance == null)       // input
-                continue;
-            // ... input set takes ANY
+            // ... input set takes ANY, and it isn't marked as an exact. If it's marked as an exact, we'll figure it
+            // out later
             TInputSet inputSet = overload.inputSetAt(i);
-            if (inputSet.targetType() == null)
+            if ((!requireExact) && inputSet.targetType() == null) {
                 continue;
+            }
             // ... input can be strongly cast to input set
-            if (inputSet.isExact()) {
-                if (inputInstance.typeClass() == inputSet.targetType())
-                    continue;
+            TClass inputTypeClass;
+            if (requireExact) {
+                inputTypeClass = (inputInstance == null) ? null : inputInstance.typeClass();
+            }
+            else if (inputInstance == null) {
+                // If input type is unknown (NULL literal or parameter), assume common type at this position among
+                // all overloads in this group.
+                inputTypeClass = scalarGroups.commonTypeAt(i);
+                if (inputTypeClass == null) {
+                    throw new OverloadException("couldn't resolve overload because of unknown input at position " + i);
+                }
             }
             else {
-                if (castsResolver.strongCastExists(inputInstance.typeClass(), inputSet.targetType()))
+                inputTypeClass = inputInstance.typeClass();
+            }
+
+            if (requireExact) {
+                if (inputSet.targetType() == null) {
+                    // We're in an ANY-exact input set. The semantics are:
+                    // - unknown types are always allowed
+                    // - the first known type defines the type of the input set
+                    // - subsequent known types must equal this known type
+                    if (inputTypeClass == null) {
+                        continue;
+                    }
+                    if (pickSameType == null)
+                        pickSameType = new TClass[overload.inputSetIndexCount()];
+                    int inputSetIndex = overload.inputSetIndexAtPos(i);
+                    TClass definedType = pickSameType[inputSetIndex];
+                    if (definedType == null) {
+                        pickSameType[inputSetIndex] = inputTypeClass;
+                        continue;
+                    }
+                    else if (definedType == inputTypeClass) {
+                        continue;
+                    }
+                }
+                else if (inputTypeClass == inputSet.targetType()) {
+                    continue;
+                }
+            }
+            else {
+                if (castsResolver.strongCastExists(inputTypeClass, inputSet.targetType()))
                     continue;
             }
             // This input precludes the use of the overload
