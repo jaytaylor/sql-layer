@@ -613,7 +613,7 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         builder.index(SCHEMA, I_TABLE, "ii", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, I_TABLE, "ii", "ii", 0, true, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup(O_TABLE, SCHEMA, "__akiban_o");
+        builder.createGroup(O_TABLE, SCHEMA);
         builder.addTableToGroup(O_TABLE, SCHEMA, O_TABLE);
         builder.joinTables("o/i", SCHEMA, O_TABLE, SCHEMA, I_TABLE);
         builder.joinColumns("o/i", SCHEMA, O_TABLE, "id", SCHEMA, I_TABLE, "oid");

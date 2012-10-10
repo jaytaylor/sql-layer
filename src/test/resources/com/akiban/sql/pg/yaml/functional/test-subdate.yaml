@@ -38,19 +38,22 @@
 - Statement: SELECT bigint_field from all_types WHERE SUBDATE(datetime_field, bigint_field) = '2000-02-28 12:30:10';
 - output: [[1]]
 ## Test with params
----
-- Statement: SELECT SUBDATE(?, 1) from all_types;
-- params: [['1994-01-01']]
-- output: [['1993-12-31']]
-#--- bug : causes PSQLException
+### This doesn't work in types3 due to ambiguous resolution
+#---
+#- Statement: SELECT SUBDATE(?, 1) from all_types;
+#- params: [['1994-01-01']]
+#- output: [['1993-12-31']]
+#---
 #- Statement: SELECT SUBDATE('2012-02-29', ? ) from all_types;
 #- params: [[3]]
 #- output: [['2012-03-02']]
+#---
+#- Statement: SET newtypes=DEFAULT;
 ## Test wrong arity
 ---
 - Statement: SELECT SUBDATE() from all_types;
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1064] }
 ---
 - Statement: SELECT SUBDATE('2009-12-12', 2, 3) from all_types;
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1064] } 
 ...

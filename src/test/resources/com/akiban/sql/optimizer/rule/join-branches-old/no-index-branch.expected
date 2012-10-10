@@ -4,7 +4,7 @@ SelectQuery@449fea8a
       Select@39a2f02e[]
         Product@78467991
           Flatten@5ad75c47(customers INNER orders)
-            GroupScan@70eb67e8(Group(customers -> test._akiban_customers))
+            GroupScan@70eb67e8(Group(customers -> test.customers))
               TableSource@2a48f675(customers - TableGroup@6ef2ea42(customers))
               TableSource@31e46a68(orders - TableGroupJoin@df1cbf6(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
           Flatten@7d858aa0(customers INNER addresses)

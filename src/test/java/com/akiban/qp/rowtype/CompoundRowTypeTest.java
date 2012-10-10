@@ -183,11 +183,11 @@ public class CompoundRowTypeTest {
         builder.joinColumns("ca", "schema", "customer", "customer_id", "schema", "address", "customer_id");
         
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
         builder.addJoinToGroup("group", "ca", 0);
-        builder.createGroup("state", "schema", "_akiba_state");
+        builder.createGroup("state", "schema");
         builder.addTableToGroup("state", "schema", "state");
         builder.groupingIsComplete();
         

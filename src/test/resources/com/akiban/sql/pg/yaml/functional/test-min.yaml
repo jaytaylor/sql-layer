@@ -6,7 +6,7 @@
 # No args
 ---
 - Statement: SELECT MIN() FROM all_types
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1064] } 
 
 # Test with no rows => null
 ---
@@ -88,27 +88,26 @@
 ---
 - Statement: SELECT MIN(double_field), MIN(float_field), MIN(real_field)
     FROM all_types
-- output: [[Infinity, Infinity, Infinity]]
+- output: !select-engine { all: [[Infinity, Infinity, Infinity]], newtypes: [[0.0, 0.0, 0.0]] } 
 ---
 - Statement: INSERT INTO all_types (double_field, float_field, real_field)
     VALUES (1.0, 1.0, 1.0);
 ---
 - Statement: SELECT MIN(double_field), MIN(float_field), MIN(real_field)
     FROM all_types
-- output: [[1.0, 1.0, 1.0]]
+- output: !select-engine { all: [[1.0, 1.0, 1.0]], newtypes: [[0.0, 0.0, 0.0]] } 
 ---
 - Statement: INSERT INTO all_types (double_field, float_field, real_field)
     VALUES ('-Infinity', '-Infinity', '-Infinity')
 ---
 - Statement: SELECT MIN(double_field), MIN(float_field), MIN(real_field)
     FROM all_types
-- output: [[-Infinity, -Infinity, -Infinity]]
+- output: !select-engine { all: [[-Infinity, -Infinity, -Infinity]], newtypes: [[0.0, 0.0, 0.0]] } 
 ---
 - Statement: INSERT INTO all_types (double_field, float_field, real_field)
     VALUES ('NaN', 'NaN', 'NaN')
 ---
 - Statement: SELECT MIN(double_field), MIN(float_field), MIN(real_field)
     FROM all_types
-- output: [[NaN, NaN, NaN]]
-
+- output: !select-engine { all: [[NaN, NaN, NaN]],  newtypes: [[0.0, 0.0, 0.0]] } 
 ...

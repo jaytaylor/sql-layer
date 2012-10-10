@@ -214,13 +214,13 @@ public class TreeServiceImpl
                     String.valueOf(DEFAULT_BUFFER_SIZE));
         }
         /*
-         * The following is intended to be temporary.  As of Persistit 3.1.8 the default
+         * The following is intended to be temporary.  As of Persistit 3.2.0 the default
          * format of the IV (Identify Volume) journal record has changed.  The change is
          * forward-, but not backward-compatible, meaning that journal files created
-         * post-3.1.8 are not readable by earlier versions.  As a consequence, a site would
+         * post-3.2.0 are not readable by earlier versions.  As a consequence, a site would
          * be unable to revert Akiban Server to an earlier version in the event of a problem.
          * 
-         * This property causes Persistit 3.1.8 and above to write old-style volume
+         * This property causes Persistit 3.2.0 and above to write old-style volume
          * identifiers so that journal files are backward-compatible.  The intention is
          * to enable this property for two Akiban Server release cycles so that at least one
          * updrade will be capable of being reverted in the event of a problem.  Once no

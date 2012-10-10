@@ -33,14 +33,14 @@ import com.akiban.server.types3.texpressions.TScalarBase;
 
 public abstract class Trim extends TScalarBase {
 
-    // Described by TRIM(<trim_spec>, <char_to_trim>, <string_to_trim>
-    public static TScalar[] create(TClass stringType, TClass intType) {
-        TScalar rtrim = new Trim(stringType, intType) {
+    // Described by {L,R,}TRIM(<string_to_trim>, <char_to_trim>)
+    public static TScalar[] create(TClass stringType) {
+        TScalar rtrim = new Trim(stringType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                String st = inputs.get(0).getString();
                 String trim = inputs.get(1).getString();
-                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
                     output.putString(st, null);
@@ -55,12 +55,12 @@ public abstract class Trim extends TScalarBase {
             }
         };
 
-        TScalar ltrim = new Trim(stringType, intType) {
+        TScalar ltrim = new Trim(stringType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                String st = inputs.get(0).getString();
                 String trim = inputs.get(1).getString();
-                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
                     output.putString(st, null);
@@ -75,23 +75,19 @@ public abstract class Trim extends TScalarBase {
             }
         };
 
-        TScalar trim = new Trim(stringType, intType) {
+        TScalar trim = new Trim(stringType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                int trimType = inputs.get(0).getInt32();
+                String st = inputs.get(0).getString();
                 String trim = inputs.get(1).getString();
-                String st = inputs.get(2).getString();
                 
                 if (!isValidInput(trim.length(), st.length())) {
                     output.putString(st, null);
                     return;
                 }
 
-                if (trimType != RTRIM)
-                    st = ltrim(st, trim);
-                if (trimType != LTRIM)
-                    st = rtrim(st, trim);
+                st = rtrim(ltrim(st, trim), trim);
                 output.putString(st, null);
             }
 
@@ -104,21 +100,15 @@ public abstract class Trim extends TScalarBase {
         return new TScalar[]{ltrim, rtrim, trim};
     }
 
-    protected final int RTRIM = 0;
-    protected final int LTRIM = 1;
-    
     protected final TClass stringType;
-    protected final TClass intType;
 
-    private Trim(TClass stringType, TClass intType) {
+    private Trim(TClass stringType) {
         this.stringType = stringType;
-        this.intType = intType;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(intType, 0);
-        builder.covers(stringType, 1, 2);
+        builder.covers(stringType, 0, 1);
     }
 
     @Override

@@ -1,5 +1,8 @@
 # Test statement cache
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 # Set the CBO to the setting this test requires. 
 - Statement: SET cbo TO 'false'
 ---

@@ -4,10 +4,10 @@
 ---
 # Test arity
 - Statement: SELECT DEGREES() FROM all_types
-- error: [4250C]
+- error: !select-engine { all: [4250C], sys-mysql: [1582] } 
 ---
 - Statement: SELECT DEGREES(1, 2) from all_types;
-- error: [4250C]
+- error: !select-engine { all: [4250C], sys-mysql: [1582] }
 ---
 # Test NULL
 - Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
@@ -42,9 +42,14 @@
 ---
 - Statement: SELECT DEGREES(double_field), DEGREES(float_field), DEGREES(real_field)
     FROM all_types
-- output: [['Infinity', 'Infinity', 'Infinity'], 
-          ['-Infinity', '-Infinity', '-Infinity'], 
-          [NaN, NaN, NaN]]
+- output: !select-engine { 
+          all: [['Infinity', 'Infinity', 'Infinity'], 
+              ['-Infinity', '-Infinity', '-Infinity'], 
+              [NaN, NaN, NaN]], 
+          newtypes: [[0.0, 0.0, 0.0], 
+              [0.0, 0.0, 0.0], 
+              [0.0, 0.0, 0.0]] 
+          }
 # Literals
 ---
 - Statement: SELECT DEGREES(0) from all_types
