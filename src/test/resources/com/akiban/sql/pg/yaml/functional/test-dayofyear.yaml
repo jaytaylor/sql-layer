@@ -1,5 +1,7 @@
 ## Test DAYOFYEAR function
 ---
+- Statement: SET newtypes to 'true'
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types(bigint_field, double_field, date_field, datetime_field)
@@ -22,13 +24,6 @@
 - Statement: SELECT double_field from all_types WHERE DAYOFYEAR(double_field) IS NULL;
 - output: [[19001231.5]]
 ---
-- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19962028.5) IS NULL;
-- output: !select-engine { newtypes: [[19001231]] }
----
-- Statement: SELECT DAYOFYEAR(double_field) from all_types;
-- output: [[null]]
-- warnings: !select-engine { newtypes: [[22007, 'Invalid date format: 1.90012315E7']] }
----
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(null) IS NULL;
 - output: [[19001231]]
 ---
@@ -43,4 +38,14 @@
 ---
 - Statement: SELECT DAYOFYEAR('2009-12-12', 23) FROM all_types;
 - error: !select-engine { sys-mysql: [1582], all: [4250C] }
+---
+- Statement: SET newtypes to 'false';
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
+- output: [[19001231]]
+---
+- Statement: SET newtypes to 'true'
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) IS NULL;
+- output: [[19001231]]
 ...
