@@ -562,9 +562,6 @@ public class MDatetimes
 
     public static long[] decodeDatetime (long val)
     {
-        if (val < 100000000)
-            // this is a YYYY-MM-DD int -- need to pad it with 0's for HH-MM-SS
-            val *= 1000000;
         return new long[]
         {
             val / DATETIME_YEAR_SCALE,
