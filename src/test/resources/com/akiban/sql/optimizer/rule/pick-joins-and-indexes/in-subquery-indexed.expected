@@ -3,7 +3,7 @@ SelectQuery@6589dd14
     Project@6ef2d4b5[items.iid, items.oid, items.sku, items.quan]
       Select@86aeffb[]
         JoinNode@39a111fd(SEMI/NESTED_LOOPS[])
-          TableGroupJoinTree@7c81d14c(TableGroup@7da41699(customers), items - GroupScan@1fc7d740(Group(customers -> test._akiban_customers), rows = 1, cost = 18666.0))
+          TableGroupJoinTree@7c81d14c(TableGroup@7da41699(customers), items - GroupScan@1fc7d740(Group(customers -> test.customers), rows = 1, cost = 18666.0))
             TableSource@61c30eb3(items - TableGroup@7da41699(customers))
           TableGroupJoinTree@731e7fef(TableGroup@4073657a(customers), customers INNER orders INNER i2 - SingleIndexScan@7904bb0c(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/NONE, =Smith, =items.sku, rows = 1, cost = 6.45720))
             TableSource@2b4ed974(customers - TableGroup@4073657a(customers))

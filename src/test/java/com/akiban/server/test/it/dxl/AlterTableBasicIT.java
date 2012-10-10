@@ -504,8 +504,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.index(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "c", Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("c", SCHEMA, "_akiba_c");
+        builder.createGroup("c", SCHEMA);
         builder.addTableToGroup("c", SCHEMA, "c");
+        builder.groupingIsComplete();
         UserTable newTable = builder.akibanInformationSchema().getUserTable(SCHEMA, "c");
 
         List<TableChange> changes = new ArrayList<TableChange>();
@@ -991,7 +992,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.index(SCHEMA, C_TABLE, "c2", true, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, C_TABLE, "c2", "c2", 0, true, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup(C_TABLE, SCHEMA, "__akiban_c");
+        builder.createGroup(C_TABLE, SCHEMA);
         builder.addTableToGroup(C_TABLE, SCHEMA, C_TABLE);
         builder.groupingIsComplete();
 

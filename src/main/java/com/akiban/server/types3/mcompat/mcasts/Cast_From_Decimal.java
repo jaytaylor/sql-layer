@@ -31,11 +31,9 @@ import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 

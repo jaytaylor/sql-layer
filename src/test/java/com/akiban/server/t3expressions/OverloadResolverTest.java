@@ -321,8 +321,8 @@ public class OverloadResolverTest {
     // input resolution, no casts
     @Test(expected = OverloadException.class)
     public void mulIntMulBigIntWithIntsNoCasts() {
-        new Initializer().overloads(MUL_INTS, MUL_BIGINTS).init();
-        checkResolved("INT*INT", null, MUL_NAME, prepVals(TINT, TINT));
+        new Initializer().types(TINT, TBIGINT, TDATE).overloads(MUL_INTS, MUL_BIGINTS).init();
+        checkResolved("INT*INT", null, MUL_NAME, prepVals(TDATE, TDATE));
     }
 
     // input resolution, type only casts, only one candidate

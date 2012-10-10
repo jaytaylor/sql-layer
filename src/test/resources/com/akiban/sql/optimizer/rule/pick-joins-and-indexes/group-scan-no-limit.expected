@@ -2,6 +2,6 @@ SelectQuery@333668ed
   ResultSet@3922b9df[order_date, sku, quan]
     Project@16d8fcc7[orders.order_date, items.sku, items.quan]
       Select@7fbb7888[]
-        TableGroupJoinTree@6ce66a3b(TableGroup@b487f58(customers), orders INNER items - GroupScan@44a07031(Group(customers -> test._akiban_customers), rows = 20000, cost = 838715))
+        TableGroupJoinTree@6ce66a3b(TableGroup@b487f58(customers), orders INNER items - GroupScan@44a07031(Group(customers -> test.customers), rows = 20000, cost = 838715))
           TableSource@491b1d45(orders - TableGroup@b487f58(customers))
             TableSource@131ec282(items - TableGroupJoin@125c42a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
