@@ -13,7 +13,7 @@
 - output: [[null]]
 ---
 - Statement: select crc32('hello, world');
-- output_types: !select-engine { all: [BIGINT], newtypes: [INTEGER] } 
+- output_types: [BIGINT]
 - output: [['4289425978']]
 ---
 - Statement: SELECT CRC32(1) = CRC32('1');
