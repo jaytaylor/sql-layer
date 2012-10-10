@@ -1196,7 +1196,7 @@ public class PersistitStore implements Store, Service {
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         flushIndexes(session);
         Set<Group> groups = new HashSet<Group>();
-        Set<RowDef> userRowDefs = new HashSet<RowDef>();
+        Map<Integer,RowDef> userRowDefs = new HashMap<Integer,RowDef>();
         Set<Index> indexesToBuild = new HashSet<Index>();
         for(Index index : indexes) {
             IndexDef indexDef = index.indexDef();
@@ -1205,7 +1205,7 @@ public class PersistitStore implements Store, Service {
             }
             indexesToBuild.add(index);
             RowDef rowDef = indexDef.getRowDef();
-            userRowDefs.add(rowDef);
+            userRowDefs.put(rowDef.getRowDefId(), rowDef);
             groups.add(rowDef.table().getGroup());
         }
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
@@ -1219,8 +1219,8 @@ public class PersistitStore implements Store, Service {
                 while (hEx.next(true)) {
                     expandRowData(hEx, rowData);
                     int tableId = rowData.getRowDefId();
-                    RowDef userRowDef = rowDefCache.getRowDef(tableId);
-                    if (userRowDefs.contains(userRowDef)) {
+                    RowDef userRowDef = userRowDefs.get(tableId);
+                    if (userRowDef != null) {
                         for (Index index : userRowDef.getIndexes()) {
                             if(indexesToBuild.contains(index)) {
                                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, defer);
