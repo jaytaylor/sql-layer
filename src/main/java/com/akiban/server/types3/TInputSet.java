@@ -113,8 +113,18 @@ public final class TInputSet {
     private static class PickingNormalizer implements TInstanceNormalizer {
         @Override
         public void apply(TInstanceAdjuster adjuster, TValidatedOverload overload, TInputSet inputSet, int max) {
-
-            throw new UnsupportedOperationException(); // TODO
+            assert tclass != null : inputSet + " for " + overload;
+            TInstance result = null;
+            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                TInstance input = adjuster.get(i);
+                result = (result == null)
+                        ? input
+                        : tclass.pickInstance(result, input);
+            }
+            assert result != null : " no TInstance for " + inputSet + " in " + overload;
+            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                adjuster.replace(i, result);
+            }
         }
 
         private PickingNormalizer(TClass tclass) {

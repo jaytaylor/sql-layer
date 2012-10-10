@@ -143,18 +143,19 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             List<TInputSet> inputSets = overload.inputSets();
             AdjusterImpl adjuster = new AdjusterImpl(overload);
             NullityAdjuster nullityAdjuster = new NullityAdjuster(inputs);
+            int nInputs = inputs.size();
             for (TInputSet inputSet : inputSets) {
                 TClass targetTClass = inputSet.targetType();
                 adjuster.setInputSet(inputSet);
                 if (targetTClass == null) {
                     TInstance instance = findCommon(overload, inputSet, inputs, resolver);
-                    fillInstances(overload, inputSet, instance, inputs.size());
-                    nullityAdjuster.apply(adjuster, overload, inputSet, 0);
+                    fillInstances(overload, inputSet, instance, nInputs);
+                    nullityAdjuster.apply(adjuster, overload, inputSet, nInputs);
                 }
                 else {
                     findInstance(overload, inputSet, inputs, resolver);
-                    nullityAdjuster.apply(adjuster, overload, inputSet, 0);
-                    inputSet.instanceAdjuster().apply(adjuster, overload, inputSet, 0);
+                    nullityAdjuster.apply(adjuster, overload, inputSet, nInputs);
+                    inputSet.instanceAdjuster().apply(adjuster, overload, inputSet, nInputs);
                     adjuster.verify();
                 }
             }
@@ -167,7 +168,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             if (pickingSet != null) {
                 for (int i = overload.firstInput(pickingSet), max = inputs.size();
                      i >= 0;
-                     i = overload.nextInput(pickingSet, i+i, max))
+                     i = overload.nextInput(pickingSet, i+1, max))
                 {
                     TInstance inputInstance = getTInstance(i);
                     // if we need to pickInstance, we'll do it on the previous result's TClass. That covers the case

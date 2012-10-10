@@ -304,7 +304,6 @@ public abstract class TString extends TClass
     public final TInstanceNormalizer PICK_RIGHT_LENGTH = new TInstanceNormalizer() {
         @Override
         public void apply(TInstanceAdjuster adapter, TValidatedOverload overload, TInputSet inputSet, int max) {
-            // TODO rework this to inline stuff
             TInstance result = null;
             for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
                 TInstance input = adapter.get(i);
