@@ -39,7 +39,7 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
 
     @Override
     public TInstance resultType() {
-        return AkBool.INSTANCE.instance();
+        return AkBool.INSTANCE.instance(true);
     }
 
     @Override

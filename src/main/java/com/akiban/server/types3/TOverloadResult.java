@@ -30,6 +30,12 @@ import com.akiban.util.ArgumentValidation;
 
 public class TOverloadResult {
 
+    public static TOverloadResult fixed(TInstanceGenerator tInstanceGenerator) {
+        // This is not the most efficient in that it requires an extra/pointless allocation, but it's only invoked
+        // at startup.
+        return new TOverloadResult(Category.FIXED, tInstanceGenerator.tClass(), tInstanceGenerator.attrs(), null, null);
+    }
+
     public static TOverloadResult fixed(TClass tClass, int... attrs) {
         return new TOverloadResult(Category.FIXED, tClass, attrs, null, null);
     }

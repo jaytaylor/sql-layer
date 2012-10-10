@@ -46,11 +46,19 @@ public final class TInstanceGenerator {
         }
     }
 
+    int[] attrs() {
+        return Arrays.copyOf(attrs, attrs.length);
+    }
+
+    TClass tClass() {
+        return tclass;
+    }
+
     public TInstanceGenerator(TClass tclass, int... attrs) {
         this.tclass = tclass;
         this.attrs = Arrays.copyOf(attrs, attrs.length);
     }
-
     private final TClass tclass;
+
     private final int[] attrs;
 }
