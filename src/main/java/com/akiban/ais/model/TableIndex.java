@@ -213,24 +213,7 @@ public class TableIndex extends Index
     public HKey hKey()
     {
         if (hKey == null) {
-            if (table.isUserTable()) {
-                hKey = ((UserTable) table).hKey();
-            } else {
-                // Find the user table corresponding to this index. Currently, the columns of a group table index all
-                // correspond to the same user table.
-                UserTable userTable = null;
-                for (IndexColumn indexColumn : getKeyColumns()) {
-                    Column userColumn = indexColumn.getColumn().getUserColumn();
-                    if (userTable == null) {
-                        userTable = (UserTable) userColumn.getTable();
-                    } else {
-                        assert userTable == userColumn.getTable();
-                    }
-                }
-                // Construct an hkey like userTable.hKey(), but with group columns replacing user columns.
-                assert userTable != null : this;
-                hKey = userTable.branchHKey();
-            }
+            hKey = ((UserTable) table).hKey();
         }
         return hKey;
     }

@@ -191,20 +191,6 @@ public class Column implements ColumnContainer
         }
     }
 
-    public void setGroupColumn(Column column)
-    {
-        assert column == null || groupColumn == null : groupColumn;
-        groupColumn = column;
-    }
-
-    public void setUserColumn(Column column)
-    {
-        assert userColumn == null
-                : "this may happen because you have two tables with the same column name, but different schemas: "
-                + userColumn;
-        userColumn = column;
-    }
-
     public String getDescription()
     {
         StringBuilder buffer = new StringBuilder();
@@ -220,6 +206,9 @@ public class Column implements ColumnContainer
     {
         StringBuilder columnType = new StringBuilder();
         columnType.append(type.name());
+        boolean unsigned = type.name().endsWith(" unsigned");
+        if (unsigned)
+            columnType.setLength(columnType.length() - 9);
         switch (type.nTypeParameters()) {
             case 0:
                 break;
@@ -232,6 +221,8 @@ public class Column implements ColumnContainer
                 columnType.append(str2);
                 break;
         }
+        if (unsigned)
+            columnType.append(" unsigned");
         return columnType.toString();
     }
 
@@ -263,16 +254,6 @@ public class Column implements ColumnContainer
     public Long getTypeParameter2()
     {
         return typeParameter2;
-    }
-
-    public Column getGroupColumn()
-    {
-        return groupColumn;
-    }
-
-    public Column getUserColumn()
-    {
-        return userColumn;
     }
 
     public Columnar getColumnar()
@@ -736,8 +717,6 @@ public class Column implements ColumnContainer
     private Long maxStorageSize;
     private Integer prefixSize;
 
-    private Column groupColumn; // Non-null iff this is a user table column
-    private Column userColumn; // Non-null iff this is a group table column
     private FieldDef fieldDef;
     private Boolean defaultIdentity;
     private Sequence identityGenerator;

@@ -398,22 +398,6 @@ public class UserTable extends Table
         return hKey;
     }
 
-    // An HKey in terms of group table columns, for a branch of a group, terminating with this user table.
-    public HKey branchHKey()
-    {
-        if (branchHKey == null) {
-            // Construct an hkey in which group columns replace user columns.
-            branchHKey = new HKey(this);
-            for (HKeySegment userHKeySegment : hKey().segments()) {
-                HKeySegment branchHKeySegment = branchHKey.addSegment(userHKeySegment.table());
-                for (HKeyColumn userHKeyColumn : userHKeySegment.columns()) {
-                    branchHKeySegment.addColumn(userHKeyColumn.column().getGroupColumn());
-                }
-            }
-        }
-        return branchHKey;
-    }
-
     public List<Column> allHKeyColumns()
     {
         assert getGroup() != null;

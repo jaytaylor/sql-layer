@@ -8,5 +8,5 @@ SelectQuery@771c9fcc
           Select@4226c7da[]
             Flatten@efa0bf4(child)
               Select@1c869e8f[customers.name == child.name, child.pid == 1]
-                GroupScan@4a13ccea(Group(parent -> test._akiban_parent), rows = 1, cost = 1225.64)
+                GroupScan@4a13ccea(Group(parent -> test.parent), rows = 1, cost = 1225.64)
                   TableSource@295bc68c(child - TableGroup@59f23ca4(parent))

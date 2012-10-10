@@ -51,7 +51,7 @@ public class MConcatWS extends TScalarBase
     protected void buildInputSets(TInputSetBuilder builder)
     {
         // the function should have at least 2 args
-        builder.covers(MString.VARCHAR, 0, 1).vararg(MString.VARCHAR, 2);
+        builder.vararg(MString.VARCHAR, 0, 1);
     }
     
     @Override

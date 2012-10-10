@@ -27,4 +27,31 @@
 ---
 - Statement: SELECT ROUND(0, 0);
 - output: [[0]]
+---
+- Statement: SELECT ROUND(76543, 1);
+- output: [[76543]]
+---
+- Statement: SELECT ROUND(76543, 2);
+- output: [[76543]]
+---
+- Statement: SELECT ROUND(76543, 0);
+- output: [[76543]]
+---
+- Statement: SELECT ROUND(76543, -1);
+- output: [[76540]]
+---
+- Statement: SELECT ROUND(76543, -2);
+- output: [[76500]]
+---
+- Statement: SELECT ROUND(76543, -3);
+- output: [[77000]]
+---
+- Statement: SELECT ROUND(76543, -4);
+- output: [[80000]]
+---
+- Statement: SELECT ROUND(76543, -5);
+- output: [[100000]]
+---
+- Statement: SELECT ROUND(76543, -6);
+- output: [[0]]
 ...

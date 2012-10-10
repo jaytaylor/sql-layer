@@ -44,6 +44,15 @@ import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
+    /** Flags indicating behavior regarding contained objects in DROP calls **/
+    static enum DropBehavior {
+        /** Reject if there are contained objects **/
+        RESTRICT,
+
+        /** Allow and also drop contained objects **/
+        CASCADE
+    }
+
     /**
      * <p>
      * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
@@ -127,8 +136,9 @@ public interface SchemaManager {
      * @param session The session to operate under.
      * @param schemaName The name of the schema the table is in.
      * @param tableName The name of the table.
+     * @param dropBehavior How to handle child tables.
      */
-    void deleteTableDefinition(Session session, String schemaName, String tableName);
+    void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior);
 
     /**
      * Change an existing table definition to be new value specified.
@@ -163,16 +173,15 @@ public interface SchemaManager {
     AkibanInformationSchema getAis(Session session);
 
     /**
-     * Generate DDL statements for every schema, user, and, optionally, group tables.
+     * Generate DDL statements for every schema and table.
      * The format of the 'create schema' contains if not exists and will occur before
      * any table in that schema. No other guarantees are given about ordering.
      *
      * @param session The Session to operate under.
-     * @param withGroupTables If true, include 'create table' statements for tables in the I_S.
-     * @param withGroupTables If true, include 'create table' statements for every GroupTable.
+     * @param withISTables  true, include 'create table' statements for tables in the I_S.
      * @return List of every create statement request.
      */
-    List<String> schemaStrings(Session session, boolean withISTables, boolean withGroupTables);
+    List<String> schemaStrings(Session session, boolean withISTables);
 
     /**
      * Return the last timestamp for the last successful change through the SchemaManager.
