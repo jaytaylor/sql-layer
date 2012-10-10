@@ -67,7 +67,7 @@ public class TOverloadResult {
     }
     
     public TInstance customRuleCastSource(boolean nullable) {
-        return castSource.setNullable(nullable);
+        return castSource == null ? null : castSource.setNullable(nullable);
     }
 
     // object interface
