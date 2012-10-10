@@ -241,7 +241,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 store().deleteSequences(session, sequences);
             }
         }
-        schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+        schemaManager().dropTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
+                                            SchemaManager.DropBehavior.RESTRICT);
         checkCursorsForDDLModification(session, table);
     }
 
@@ -697,15 +698,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(group == null) {
             return;
         }
-        final Table table = group.getGroupTable();
-        final TableName tableName = table.getName();
         try {
             store().dropGroup(session, group);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
-        schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
-        checkCursorsForDDLModification(session, table);
+        final UserTable root = group.getRoot();
+        schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
+                                            SchemaManager.DropBehavior.CASCADE);
+        checkCursorsForDDLModification(session, root);
     }
 
     @Override
@@ -771,7 +772,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public List<String> getDDLs(final Session session) {
         logger.trace("getting DDLs");
-        return schemaManager().schemaStrings(session, false, false);
+        return schemaManager().schemaStrings(session, false);
     }
 
     @Override
