@@ -175,8 +175,14 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected TInstancePicker defaultPicker() {
-        return picker;
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        int scaleL = left.attribute(Attrs.SCALE);
+        int scaleR = left.attribute(Attrs.SCALE);
+
+        int precisionL = left.attribute(Attrs.PRECISION);
+        int precisionR = right.attribute(Attrs.PRECISION);
+
+        return pickPrecisionAndScale(MBigDecimal.this, precisionL, scaleL, precisionR, scaleR);
     }
 
     public static TInstance pickPrecisionAndScale(TClass tclass,
@@ -227,19 +233,6 @@ public class MBigDecimal extends TClassBase {
             StringBuilder sb = new StringBuilder(precision + 2); // +2 for dot and minus sign
             ConversionHelperBigDecimal.decodeToString(bb, 0, precision, scale, AkibanAppender.of(sb));
             return new MBigDecimalWrapper(sb.toString());
-        }
-    };
-
-    private final TInstancePicker picker = new TInstancePicker() {
-        @Override
-        protected TInstance apply(TInstance left, TInstance right) {
-            int scaleL = left.attribute(Attrs.SCALE);
-            int scaleR = left.attribute(Attrs.SCALE);
-
-            int precisionL = left.attribute(Attrs.PRECISION);
-            int precisionR = right.attribute(Attrs.PRECISION);
-
-            return pickPrecisionAndScale(MBigDecimal.this, precisionL, scaleL, precisionR, scaleR);
         }
     };
 }

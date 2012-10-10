@@ -105,21 +105,14 @@ public class MNumeric extends SimpleDtdTClass {
         return new MNumericFactory(this);
     }
 
-
     @Override
-    protected TInstancePicker defaultPicker() {
-        return picker;
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        int leftWidth = left.attribute(NumericAttribute.WIDTH);
+        int rightWidth = right.attribute(NumericAttribute.WIDTH);
+        return instance(Math.max(leftWidth, rightWidth));
     }
 
     private final int defaultWidth;
-    private final TInstancePicker picker = new TInstancePicker() {
-        @Override
-        protected TInstance apply(TInstance left, TInstance right) {
-            int leftWidth = left.attribute(NumericAttribute.WIDTH);
-            int rightWidth = right.attribute(NumericAttribute.WIDTH);
-            return instance(Math.max(leftWidth, rightWidth));
-        }
-    };
 
     // numeric types
     // TODO verify default widths

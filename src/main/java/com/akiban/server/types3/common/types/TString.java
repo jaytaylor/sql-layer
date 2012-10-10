@@ -244,8 +244,8 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected TInstancePicker defaultPicker() {
-        return PICK_COMBINING_LENGTHS;
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        return doPickInstance(left, right, false);
     }
 
     @Override
@@ -266,12 +266,41 @@ public abstract class TString extends TClass
         return null;
     }
 
+    private TInstance doPickInstance(TInstance left, TInstance right, boolean useRightLength) {
+        final int pickLen, pickCharset, pickCollation;
+
+        int aCharset = left.attribute(StringAttribute.CHARSET);
+        int bCharset = right.attribute(StringAttribute.CHARSET);
+        if (aCharset == bCharset)
+            pickCharset = aCharset;
+        else
+            throw new InvalidArgumentTypeException("can't combine strings " + left + " and " + right);
+        int aCollation = left.attribute(StringAttribute.COLLATION);
+        int bCollation = right.attribute(StringAttribute.COLLATION);
+        if (aCollation == bCollation) {
+            pickCollation = aCollation;
+        }
+        else {
+            CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(left);
+            CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(right);
+            AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
+            pickCollation = (collator == null) ? -1 : collator.getCollationId();
+        }
+        int leftLen = left.attribute(StringAttribute.LENGTH);
+        int rightLen = right.attribute(StringAttribute.LENGTH);
+        if (useRightLength) {
+            pickLen = rightLen;
+        }
+        else {
+            pickLen = Math.max(leftLen,rightLen);
+        }
+        return instance(pickLen, pickCharset, pickCollation);
+    }
+
     private final int fixedLength;
     private final TypeId typeId;
     private static final Logger logger = LoggerFactory.getLogger(TString.class);
 
-    public final TInstancePicker PICK_COMBINING_LENGTHS = new Picker(true);
-    private final TInstancePicker PICKER_KEEPS_LENGTHS = new Picker(false);
     public final TInstanceNormalizer PICK_RIGHT_LENGTH = new TInstanceNormalizer() {
         @Override
         public void apply(TInstanceAdjuster adapter, TValidatedOverload overload, TInputSet inputSet, int max) {
@@ -281,7 +310,7 @@ public abstract class TString extends TClass
                 TInstance input = adapter.get(i);
                 result = (result == null)
                         ? input
-                        : PICKER_KEEPS_LENGTHS.combine(result, input);
+                        : doPickInstance(result, input, true);
             }
             assert result != null;
             int resultCharset = result.attribute(StringAttribute.CHARSET);
@@ -298,45 +327,4 @@ public abstract class TString extends TClass
             }
         }
     };
-
-
-    private class Picker extends TInstancePicker {
-        @Override
-        protected TInstance apply(TInstance left, TInstance right) {
-            final int pickLen, pickCharset, pickCollation;
-
-            int aCharset = left.attribute(StringAttribute.CHARSET);
-            int bCharset = right.attribute(StringAttribute.CHARSET);
-            if (aCharset == bCharset)
-                pickCharset = aCharset;
-            else
-                throw new InvalidArgumentTypeException("can't combine strings " + left + " and " + right);
-            int aCollation = left.attribute(StringAttribute.COLLATION);
-            int bCollation = right.attribute(StringAttribute.COLLATION);
-            if (aCollation == bCollation) {
-                pickCollation = aCollation;
-            }
-            else {
-                CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(left);
-                CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(right);
-                AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
-                pickCollation = (collator == null) ? -1 : collator.getCollationId();
-            }
-            int leftLen = left.attribute(StringAttribute.LENGTH);
-            int rightLen = right.attribute(StringAttribute.LENGTH);
-            if (normalizeLens) {
-                pickLen = Math.max(leftLen,rightLen);
-            }
-            else {
-                pickLen = rightLen;
-            }
-            return instance(pickLen, pickCharset, pickCollation);
-        }
-
-        protected Picker(boolean normalizeLens) {
-            this.normalizeLens = normalizeLens;
-        }
-
-        private final boolean normalizeLens;
-    }
 }

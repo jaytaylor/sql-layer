@@ -51,8 +51,8 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     @Override
-    protected TInstancePicker defaultPicker() {
-        return picker;
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        return right; // doesn't matter which!
     }
 
     @Override
@@ -75,11 +75,4 @@ public class NoAttrTClass extends SimpleDtdTClass {
     {
         // about to delete...
     }
-
-    private final TInstancePicker picker = new TInstancePicker() {
-        @Override
-        protected TInstance apply(TInstance left, TInstance right) {
-            return right;
-        }
-    };
 }

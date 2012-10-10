@@ -269,7 +269,31 @@ public abstract class TClass {
     }
 
     public TInstance pickInstance(TInstance left, TInstance right) {
-        return defaultPicker().apply(left, right);
+        if (left.typeClass() != TClass.this || right.typeClass() != TClass.this)
+            throw new IllegalArgumentException("can't combine " + left + " and " + right + " using " + this);
+
+        TInstance result = doPickInstance(left, right);
+
+        // set nullability
+        Boolean resultIsNullable = result.nullability();
+        final Boolean resultDesiredNullability;
+        Boolean leftIsNullable = left.nullability();
+        if (leftIsNullable == null) {
+            resultDesiredNullability = null;
+        }
+        else {
+            Boolean rightIsNullable = left.nullability();
+            resultDesiredNullability = (rightIsNullable == null)
+                    ? null
+                    : (leftIsNullable || rightIsNullable);
+        }
+        if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
+            // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
+            if ( (result == left) || (result == right) )
+                result = new TInstance(result);
+            result.setNullable(resultDesiredNullability);
+        }
+        return result;
     }
 
     public TInstanceNormalizer pickInstanceNormalizer() {
@@ -277,7 +301,7 @@ public abstract class TClass {
     }
 
     // for use by subclasses
-    protected abstract TInstancePicker defaultPicker();
+    protected abstract TInstance doPickInstance(TInstance left, TInstance right);
     protected abstract void validate(TInstance instance);
 
     // for use by this class
@@ -367,41 +391,4 @@ public abstract class TClass {
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
 
     private static final int EMPTY = -1;
-
-    public abstract class TInstancePicker {
-        public final TInstance combine(TInstance left, TInstance right) {
-            if (left.typeClass() != TClass.this || right.typeClass() != TClass.this)
-                throw new IllegalArgumentException("can't combine " + left + " and " + right + " using " + this);
-
-            TInstance result = apply(left, right);
-
-            // set nullability
-            Boolean resultIsNullable = result.nullability();
-            final Boolean resultDesiredNullability;
-            Boolean leftIsNullable = left.nullability();
-            if (leftIsNullable == null) {
-                resultDesiredNullability = null;
-            }
-            else {
-                Boolean rightIsNullable = left.nullability();
-                resultDesiredNullability = (rightIsNullable == null)
-                        ? null
-                        : (leftIsNullable || rightIsNullable);
-            }
-            if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
-                // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
-                if ( (result == left) || (result == right) )
-                    result = new TInstance(result);
-                result.setNullable(resultDesiredNullability);
-            }
-            return result;
-        }
-
-        protected abstract TInstance apply(TInstance left, TInstance right);
-
-        @Override
-        public String toString() {
-            return name() + " picker";
-        }
-    }
 }

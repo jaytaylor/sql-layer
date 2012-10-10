@@ -137,9 +137,8 @@ public class AkResultSet extends TClassBase {
     protected void validate(TInstance instance) {
     }
 
-
     @Override
-    protected TInstancePicker defaultPicker() {
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
         throw new UnsupportedOperationException();
     }
 

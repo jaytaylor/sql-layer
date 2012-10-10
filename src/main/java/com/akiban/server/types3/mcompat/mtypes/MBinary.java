@@ -140,8 +140,10 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     @Override
-    protected TInstancePicker defaultPicker() {
-        return picker;
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        int len0 = left.attribute(Attrs.LENGTH);
+        int len1 = left.attribute(Attrs.LENGTH);
+        return len0 > len1 ? left : right;
     }
 
     @Override
@@ -165,14 +167,6 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     private final int defaultLength;
-    private final TInstancePicker picker = new TInstancePicker() {
-        @Override
-        protected TInstance apply(TInstance left, TInstance right) {
-            int len0 = left.attribute(Attrs.LENGTH);
-            int len1 = left.attribute(Attrs.LENGTH);
-            return len0 > len1 ? left : right;
-        }
-    };
 
     public static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {
         int maxLen = context.outputTInstance().attribute(MBinary.Attrs.LENGTH);
