@@ -72,7 +72,7 @@ public class FlattenCT extends CostModelBase
                             "primary key(cid)",
                             String.format("grouping foreign key(pid, parent_instance) references %s(pid, parent_instance)", 
                                           parentTableName));
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         parentPKIndexType = indexType(parent, "pid", "parent_instance");

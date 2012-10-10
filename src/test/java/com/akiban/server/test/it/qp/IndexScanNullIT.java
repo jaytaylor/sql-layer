@@ -66,7 +66,7 @@ public class IndexScanNullIT extends OperatorITBase
             "a int",
             "b int");
         createIndex("schema", "t", "a", "a", "b", "id");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "id");
         db = new NewRow[]{

@@ -69,7 +69,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
             "z int",
             "grouping foreign key (pid) references p(pid)");
         createIndex("schema", "d", "dz", "z");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         pRowType = schema.userTableRowType(userTable(p));
         cRowType = schema.userTableRowType(userTable(c));
         dRowType = schema.userTableRowType(userTable(d));

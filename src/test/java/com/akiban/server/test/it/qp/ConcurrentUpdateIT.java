@@ -66,7 +66,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             "schema", "b",
             "bid int not null primary key",
             "bx int");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         aRowType = schema.userTableRowType(userTable(a));
         bRowType = schema.userTableRowType(userTable(b));
         aGroup = group(a);

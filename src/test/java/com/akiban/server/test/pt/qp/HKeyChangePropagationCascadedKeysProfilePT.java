@@ -83,7 +83,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
             "index(cid2_copy)",
             "primary key(gid, pid, cid2)",
             "constraint __akiban_c2p foreign key __akiban_c2p(gid, pid) references parent(gid, pid)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         grandparentRowType = schema.userTableRowType(userTable(grandparent));
         parentRowType = schema.userTableRowType(userTable(parent));
         child1RowType = schema.userTableRowType(userTable(child1));

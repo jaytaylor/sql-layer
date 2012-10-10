@@ -69,7 +69,7 @@ public class TestStore
                            columnSelector,
                            null);
         TestRow currentRow = map.remove(oldRow.hKey());
-        TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
+        TestRow mergedRow = mergeRows(session, currentRow, newRow, columnSelector);
         map.put(mergedRow.hKey(), mergedRow);
     }
 
@@ -113,7 +113,7 @@ public class TestStore
 
     // For use by this class
 
-    private TestRow mergeRows(TestRow currentRow, TestRow newRow, ColumnSelector columnSelector)
+    private TestRow mergeRows(Session session, TestRow currentRow, TestRow newRow, ColumnSelector columnSelector)
     {
         TestRow mergedRow;
         if (columnSelector == null) {
@@ -122,7 +122,7 @@ public class TestStore
             if (currentRow.getRowDef() != newRow.getRowDef()) {
                 throw new RuntimeException();
             }
-            mergedRow = new TestRow(newRow.getRowDef().getRowDefId(), currentRow.getStore());
+            mergedRow = new TestRow(session, newRow.getRowDef().getRowDefId(), currentRow.getStore());
             int n = newRow.getRowDef().getFieldCount();
             for (int i = 0; i < n; i++) {
                 mergedRow.put(i, columnSelector.includesColumn(i) ? newRow.get(i) : currentRow.get(i));

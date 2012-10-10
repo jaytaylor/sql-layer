@@ -79,7 +79,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
             "b varchar(10) collate latin1_swedish_ci");
         Index dIndex = createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
         Index fab = createIndex("schema", "filtering", "idx_fab", "a", "b");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
         dIndexRowType = dRowType.indexRowType(dIndex);

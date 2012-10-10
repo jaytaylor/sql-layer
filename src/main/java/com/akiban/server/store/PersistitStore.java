@@ -128,7 +128,7 @@ public class PersistitStore implements Store, Service {
         try {
             CoderManager cm = getDb().getCoderManager();
             Management m = getDb().getManagement();
-            cm.registerValueCoder(RowData.class, new RowDataValueCoder(this));
+            cm.registerValueCoder(RowData.class, new RowDataValueCoder());
             cm.registerKeyCoder(CString.class, new CStringKeyCoder());
             originalDisplayFilter = m.getDisplayFilter();
             m.setDisplayFilter(new RowDataDisplayFilter(originalDisplayFilter));
@@ -305,9 +305,17 @@ public class PersistitStore implements Store, Service {
 
     // --------------------- Implement Store interface --------------------
 
+    public AkibanInformationSchema getAIS(Session session) {
+        return rowDefCache.ais(); // TODO: From SchemaManager
+    }
+
+    public RowDef getRowDef(Session session, TableName tableName) {
+        return getAIS(session).getTable(tableName).rowDef();
+    }
+
     @Override
-    public RowDefCache getRowDefCache() {
-        return rowDefCache;
+    public RowDef getRowDef(Session session, int rowDefID) {
+        return getAIS(session).getUserTable(rowDefID).rowDef();
     }
 
     @Override
@@ -1346,7 +1354,7 @@ public class PersistitStore implements Store, Service {
 
     private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector) {
         NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
-        NewRow newRow = new LegacyRowWrapper(newRowData, this);
+        NewRow newRow = new LegacyRowWrapper(rowDef, newRowData);
         int fields = rowDef.getFieldCount();
         for (int i = 0; i < fields; i++) {
             if (columnSelector.includesColumn(i)) {
@@ -1378,7 +1386,7 @@ public class PersistitStore implements Store, Service {
         Exchange exchange = getExchange(session, group);
         try {
             exchange.clear().append(Key.BEFORE);
-            visitor.initialize(this, exchange);
+            visitor.initialize(session, this, exchange);
             while (exchange.next(true)) {
                 visitor.visit();
             }

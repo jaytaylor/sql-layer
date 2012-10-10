@@ -54,7 +54,7 @@ public class Union_OrderedIT extends OperatorITBase
             "pid int not null primary key",
             "x int");
         createIndex("schema", "t", "idx_x", "x");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         tPidIndexRowType = indexType(t, "pid");
         tXIndexRowType = indexType(t, "x");

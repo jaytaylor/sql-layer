@@ -60,7 +60,7 @@ public class UniqueIndexScanUnboundedIT extends OperatorITBase
             "b int",
             "c int");
         createUniqueIndex("schema", "t", "idx_abc", "a", "b", "c");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[]{

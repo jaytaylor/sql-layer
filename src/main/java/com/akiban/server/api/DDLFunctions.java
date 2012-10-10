@@ -164,11 +164,12 @@ public interface DDLFunctions {
 
     /**
      * Resolves the given table ID to its RowDef
+     * @param session the session
      * @param tableId the table to look up
      * @return the rowdef
      * @throws RowDefNotFoundException if the tableID has no associated RowDef.
      */
-    RowDef getRowDef(int tableId) throws RowDefNotFoundException;
+    RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException;
 
     /**
      * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>information_schema</tt>

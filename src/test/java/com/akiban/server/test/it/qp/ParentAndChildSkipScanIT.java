@@ -63,7 +63,7 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
             "y int",
             "grouping foreign key (pid) references parent(pid)");
         createIndex("schema", "child", "y", "y");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         parentPidIndexRowType = indexType(parent, "pid");

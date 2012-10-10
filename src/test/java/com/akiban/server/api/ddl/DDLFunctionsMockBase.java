@@ -114,7 +114,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public RowDef getRowDef(int tableId) throws RowDefNotFoundException {
+    public RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException {
         throw new UnsupportedOperationException();
     }
 

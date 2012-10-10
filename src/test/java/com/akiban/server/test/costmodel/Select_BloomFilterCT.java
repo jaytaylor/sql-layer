@@ -79,14 +79,14 @@ public class Select_BloomFilterCT extends CostModelBase
             "x int");
         Index dx = createIndex(schemaName, dTableName, "idx_dx", "x");
         Index fx = createIndex(schemaName, fTableName, "idx_fx", "x");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
         dIndexRowType = dRowType.indexRowType(dx);
         fIndexRowType = fRowType.indexRowType(fx);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }

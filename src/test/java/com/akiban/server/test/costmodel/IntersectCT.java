@@ -72,7 +72,7 @@ public class IntersectCT extends CostModelBase
             "c5 int not null",
             "primary key(c1, c2, c3, c4, c5)");
         Index index = createIndex(schemaName(), tableName, "idx", "index_key");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         indexRowType = schema.indexRowType(index);
         adapter = persistitAdapter(schema);

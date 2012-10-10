@@ -33,13 +33,10 @@ import com.akiban.ais.model.Table;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
-import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 
@@ -47,13 +44,13 @@ import java.util.Collection;
 
 /**
  * An abstraction for a layer that stores and retrieves data
- * 
+ *
  * @author peter
- * 
+ *
  */
 public interface Store {
 
-    RowDefCache getRowDefCache();
+    RowDef getRowDef(Session session, int rowDefID);
 
     void writeRow(Session session, RowData rowData) throws PersistitException;
 
@@ -126,7 +123,7 @@ public interface Store {
     /***
      * Remove a previously saved RowCollector. Must the the most recently added
      * RowCollector for a table.
-     * 
+     *
      * @param rc
      */
     void removeSavedRowCollector(Session session, RowCollector rc);

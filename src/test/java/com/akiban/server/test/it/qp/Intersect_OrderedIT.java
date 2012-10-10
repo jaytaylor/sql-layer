@@ -70,7 +70,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             "schema", "alien",
             "aid int not null primary key");
         createIndex("schema", "child", "z", "z");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         parentPidIndexRowType = indexType(parent, "pid");

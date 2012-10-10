@@ -274,22 +274,17 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public RowDef getRowDef(int tableId) {
-        Session session = sessionService.createSession();
+    public RowDef getRowDef(Session session, int tableId) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_ROWDEF);
-            return delegate.getRowDef(tableId);
+            return delegate.getRowDef(session, tableId);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.GET_ROWDEF, t);
             throw throwAlways(t);
         } finally {
-            try {
-                hook.hookFunctionFinally(session, DXLFunction.GET_ROWDEF, thrown);
-            } finally {
-                session.close();
-            }
+            hook.hookFunctionFinally(session, DXLFunction.GET_ROWDEF, thrown);
         }
     }
 

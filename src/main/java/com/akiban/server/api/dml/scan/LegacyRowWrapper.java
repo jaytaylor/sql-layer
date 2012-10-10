@@ -31,6 +31,7 @@ import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.DMLError;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
 import java.util.Map;
@@ -55,9 +56,15 @@ public final class LegacyRowWrapper extends NewRow
         setRowData(null);
     }
 
-    public LegacyRowWrapper(RowData rowData, Store store)
+    public LegacyRowWrapper(RowDef rowDef, RowData rowData)
     {
-        this(rowDef(rowData.getRowDefId(), store));
+        super(rowDef);
+        setRowData(rowData);
+    }
+
+    public LegacyRowWrapper(Session session, RowData rowData, Store store)
+    {
+        this(rowDef(session, rowData.getRowDefId(), store));
         setRowData(rowData);
     }
 

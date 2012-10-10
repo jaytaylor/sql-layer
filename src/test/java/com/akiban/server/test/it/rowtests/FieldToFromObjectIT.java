@@ -58,7 +58,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void signedIntTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              "tinyint", "smallint", "mediumint", "int", "bigint");
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, 0, 0, 0, 0, 0);                                              // zero
         testRow(def, 2, -128, -32768, -8388608, -2147483648, -9223372036854775808L); // min
         testRow(def, 3, 127, 32767, 8388607, 2147483647, 9223372036854775807L);      // max
@@ -69,7 +69,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void unsignedIntTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              "tinyint unsigned", "smallint unsigned", "mediumint unsigned", "int unsigned", "bigint unsigned");
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, 0, 0, 0, 0, BigInteger.ZERO);                                               // zero/min
         testRow(def, 2, 255, 65535, 16777215, 4294967295L, new BigInteger("18446744073709551615")); // max
         testRow(def, 3, 42, 9848, 2427090, 290174268L, new BigInteger("73957261119487228"));        // other
@@ -78,7 +78,7 @@ public class FieldToFromObjectIT extends ITBase {
     @Test
     public void signedRealTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "float", "double");
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, 0f, 0d);                            // zero
         testRow(def, 2, Float.MIN_VALUE, Double.MIN_VALUE); // min
         testRow(def, 3, Float.MAX_VALUE, Double.MAX_VALUE); // max
@@ -91,7 +91,7 @@ public class FieldToFromObjectIT extends ITBase {
     @Test
     public void unsignedRealTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "float unsigned","double unsigned");
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, 0f, 0d);                            // zero
         testRow(def, 2, Float.MAX_VALUE, Double.MAX_VALUE); // max
         testRow(def, 3, 12345f, 9876543210d);               // positive whole
@@ -102,7 +102,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void decimalTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              new SimpleColumn("c1", "decimal", 5L, 2L), new SimpleColumn("c2", "decimal unsigned", 5L, 2L));
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, BigDecimal.valueOf(0), BigDecimal.valueOf(0));                // zero
         testRow(def, 2, BigDecimal.valueOf(-99999L, 2), BigDecimal.valueOf(0));       // min
         testRow(def, 3, BigDecimal.valueOf(99999L, 2), BigDecimal.valueOf(99999, 2)); // max
@@ -116,7 +116,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void charTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              new SimpleColumn("c1", "char", 10L, null), new SimpleColumn("c2", "varchar", 26L, null));
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, "", "");                                     // empty
         testRow(def, 2, "0123456789", "abcdefghijklmnopqrstuvwxyz"); // full
         testRow(def, 3, "zebra", "see spot run");                    // other
@@ -126,7 +126,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void blobTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              "tinyblob", "blob", "mediumblob", "longblob");
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, "", "", "", "");            // empty
         testRow(def, 2, "a", "bc", "def", "hijk");  // other
     }
@@ -135,7 +135,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void textTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              "tinytext", "text", "mediumtext", "longtext");
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, "", "", "", "");            // empty
         testRow(def, 2, "1", "23", "456", "7890");  // other
     }
@@ -144,7 +144,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void binaryTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              new SimpleColumn("c1", "binary", 10L, null), new SimpleColumn("c2", "varbinary", 26L, null));
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         final byte[] emptyArr = {};
         final byte[] partialArr5 = {1, 2, 3, 4, 5};
         final byte[] partialArr15 = {-24, 8, -98, 45, 67, 127, 34, -34, -42, 9, 10, 100, 57, -20, 5};
@@ -160,7 +160,7 @@ public class FieldToFromObjectIT extends ITBase {
     public void dateAndTimeTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
                                              "date", "time", "datetime", "timestamp", "year");
-        final RowDef def = rowDefCache().getRowDef(tid);
+        final RowDef def = getRowDef(tid);
         testRow(def, 1, "0000-00-00", "00:00:00", "0000-00-00 00:00:00", 0L, "0000");           // zero
         testRow(def, 2, "1000-01-01", "-838:59:59", "1000-01-01 00:00:00", 0L, "1901");         // min
         testRow(def, 3, "9999-12-31", "838:59:59", "9999-12-31 23:59:59", 2147483647L, "2155"); // max

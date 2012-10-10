@@ -31,6 +31,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -71,8 +72,8 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
         delegate.crash();
     }
 
-    public RowDefCache getRowDefCache() {
-        return delegate.getRowDefCache();
+    public RowDef getRowDef(Session session, int rowDefID) {
+        return delegate.getRowDef(session, rowDefID);
     }
 
     public void writeRow(Session session, RowData rowData) throws PersistitException {

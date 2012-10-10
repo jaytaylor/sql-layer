@@ -56,7 +56,7 @@ public class SortPT extends QPProfilePTBase
             "rand int",
             "filler varchar(20)");
         group = group(t);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
         queryContext = queryContext((PersistitAdapter) adapter);

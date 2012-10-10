@@ -113,7 +113,7 @@ public abstract class AbstractScanBase extends ITBase {
         // their children.
         // PrintStream output = new PrintStream(new FileOutputStream(new File("/tmp/srt.out")));
         for (TableName name : tableMap.keySet()) {
-            final RowDef rowDef = rowDefCache().getRowDef(name);
+            final RowDef rowDef = getRowDef(name);
             final LegacyRowWrapper rowWrapper = new LegacyRowWrapper(rowDef);
             final int level = name.getTableName().length();
             int k = (int) Math.pow(10, level);
@@ -128,7 +128,7 @@ public abstract class AbstractScanBase extends ITBase {
     }
 
     protected RowDef rowDef(final String name) {
-        return rowDefCache().getRowDef(new TableName(SCHEMA, name));
+        return getRowDef(new TableName(SCHEMA, name));
     }
 
     protected int scanAllRows(final String test, final RowData start,
@@ -161,8 +161,7 @@ public abstract class AbstractScanBase extends ITBase {
                 scanCount++;
                 result.add(rowData);
                 if (VERBOSE) {
-                    System.out.println(String.format("%5d ", scanCount)
-                                       + rowData.toString(rowDefCache()));
+                    System.out.println(String.format("%5d ", scanCount) + rowData.toString());
                 }
                 p = rowData.getRowEnd();
             }
@@ -187,7 +186,7 @@ public abstract class AbstractScanBase extends ITBase {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         for (final RowData rowData : result) {
-            sb.append(rowData.toString(rowDefCache()));
+            sb.append(rowData.toString());
             sb.append(AkServerUtil.NEW_LINE);
         }
         return sb.toString();

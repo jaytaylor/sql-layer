@@ -77,7 +77,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
             "cid2_copy int," +
             "index(cid2_copy)",
             "constraint __akiban_c2p foreign key __akiban_c2p(pid) references parent(pid)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         grandparentRowType = schema.userTableRowType(userTable(grandparent));
         parentRowType = schema.userTableRowType(userTable(parent));
         child1RowType = schema.userTableRowType(userTable(child1));

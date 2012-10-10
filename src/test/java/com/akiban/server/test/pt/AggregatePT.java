@@ -128,7 +128,7 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void normalOperators() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
@@ -203,7 +203,7 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void bespokeOperator() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
@@ -541,7 +541,7 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void sorted() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
@@ -582,7 +582,7 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void parallel() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         ValuesRowType valuesType = schema.newValuesType(AkType.LONG, AkType.LONG);
         IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 0)))), new SetColumnSelector(0));

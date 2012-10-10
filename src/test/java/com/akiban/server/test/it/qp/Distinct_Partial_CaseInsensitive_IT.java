@@ -59,7 +59,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             "cs varchar(10)", // case sensitive
             "ci varchar(10) collate latin1_swedish_ci", // case insensitive
             "ns int"); // non-string
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);

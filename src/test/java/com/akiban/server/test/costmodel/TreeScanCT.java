@@ -109,7 +109,7 @@ public class TreeScanCT extends CostModelBase
                         indexedColumn.declaration(),
                         "primary key(id)");
         createIndex(schemaName, tableName, "idx", indexedColumn.name());
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, indexedColumn.name());
         adapter = persistitAdapter(schema);

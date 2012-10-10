@@ -93,7 +93,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             "pid int",
             "avalue varchar(20)",
             "grouping foreign key(pid) references parent(pid)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         ancestorRowType = schema.userTableRowType(userTable(ancestor));
         parentRowType = schema.userTableRowType(userTable(parent));
         beforeChildRowType = schema.userTableRowType(userTable(beforeChild));

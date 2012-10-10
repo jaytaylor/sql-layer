@@ -63,7 +63,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
             "pid2 int",
             "primary key(cid)",
             "grouping foreign key (pid1, pid2) references parent(pid1, pid2)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         childPKRowType = indexType(child, "cid");

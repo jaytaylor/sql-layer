@@ -35,6 +35,7 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -52,8 +53,9 @@ public abstract class TreeRecordVisitor
         visit(key, row);
     }
 
-    public final void initialize(PersistitStore store, Exchange exchange)
+    public final void initialize(Session session, PersistitStore store, Exchange exchange)
     {
+        this.session = session;
         this.store = store;
         this.exchange = exchange;
         for (RowDef rowDef : store.rowDefCache.getRowDefs()) {
@@ -72,7 +74,7 @@ public abstract class TreeRecordVisitor
     {
         RowData rowData = new RowData(EMPTY_BYTE_ARRAY);
         store.expandRowData(exchange, rowData);
-        return new LegacyRowWrapper(rowData, store);
+        return new LegacyRowWrapper(session, rowData, store);
     }
 
     private Object[] key(RowDef rowDef)
@@ -102,6 +104,7 @@ public abstract class TreeRecordVisitor
 
     private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
+    private Session session;
     private PersistitStore store;
     private Exchange exchange;
     private final Map<Integer, UserTable> ordinalToTable = new HashMap<Integer, UserTable>();

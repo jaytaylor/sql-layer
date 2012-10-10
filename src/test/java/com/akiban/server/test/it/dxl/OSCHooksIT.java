@@ -242,8 +242,8 @@ public class OSCHooksIT extends AlterTableITBase {
         }
 
         @Override
-        public RowDef getRowDef(int tableId) {
-            return delegate.getRowDef(tableId);
+        public RowDef getRowDef(Session session, int tableId) {
+            return delegate.getRowDef(session, tableId);
         }
 
         @Override
@@ -304,9 +304,4 @@ public class OSCHooksIT extends AlterTableITBase {
             wrappedDDL = new WrappedDDLFunctions(super.ddlForAlter());
         return wrappedDDL;
     }
-    
-    private AkibanInformationSchema ais() {
-        return ddl().getAIS(session());
-    }
-
 }
