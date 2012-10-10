@@ -80,14 +80,14 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             public TInstance adjust(int i) {
                 check(i);
                 if (generatedInstances == null)
-                    generatedInstances = new TInstance[naturalInstances.length]; // TODO what if this is also null?
+                    generatedInstances = new TInstance[nInputs];
                 TInstance result = generatedInstances[i];
                 if (result == null) {
                     result = naturalInstances[i].copy();
                     generatedInstances[i] = result;
                 }
                 if (adjusted == null)
-                    adjusted = new BitSet(naturalInstances.length);
+                    adjusted = new BitSet(nInputs);
                 adjusted.set(i);
                 return result;
             }
@@ -100,7 +100,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     throw new IllegalArgumentException(
                             "can't replace " + inputSet + " at " + i + " with " + replacement);
                 if (generatedInstances == null)
-                    generatedInstances = new TInstance[naturalInstances.length]; // TODO what if this also null?
+                    generatedInstances = new TInstance[nInputs];
                 generatedInstances[i] = replacement;
             }
 
@@ -109,10 +109,12 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                         : "input set at " + i + " is " + overload.inputSetAt(i) + ", expected " + inputSet;
             }
 
-            private AdjusterImpl(TValidatedOverload overload) {
+            private AdjusterImpl(TValidatedOverload overload, int nInputs) {
                 this.overload = overload;
+                this.nInputs = nInputs;
             }
 
+            private final int nInputs;
             private final TValidatedOverload overload;
             private TInputSet inputSet;
             private BitSet adjusted;
@@ -141,9 +143,9 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         {
             this.overload = overload;
             List<TInputSet> inputSets = overload.inputSets();
-            AdjusterImpl adjuster = new AdjusterImpl(overload);
-            NullityAdjuster nullityAdjuster = new NullityAdjuster(inputs);
             int nInputs = inputs.size();
+            AdjusterImpl adjuster = new AdjusterImpl(overload, nInputs);
+            NullityAdjuster nullityAdjuster = new NullityAdjuster(inputs);
             for (TInputSet inputSet : inputSets) {
                 TClass targetTClass = inputSet.targetType();
                 adjuster.setInputSet(inputSet);
