@@ -3,6 +3,9 @@
 - Properties: sys-aksql
 - suppressed: true
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types(bigint_field, date_field, decimal_field, double_field, time_field, timestamp_field, varchar_field)

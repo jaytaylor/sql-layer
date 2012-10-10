@@ -6,7 +6,7 @@
 # No args
 ---
 - Statement: SELECT MAX() FROM all_types
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
 
 # Test with no rows => null
 ---

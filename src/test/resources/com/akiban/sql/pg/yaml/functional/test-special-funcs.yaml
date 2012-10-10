@@ -1,5 +1,8 @@
 ## Test special functions with and without Parentheses
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: SET columnAsFunc TO 'true'
