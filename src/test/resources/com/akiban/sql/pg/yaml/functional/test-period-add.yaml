@@ -10,7 +10,7 @@
 - error: !select-engine {all: [4250C], sys-mysql: [1582] }
 ---
 - Statement: SELECT PERIOD_ADD(201105, 5, 15) FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1582] }
 --- # Month is not 1-12
 - Statement: SELECT PERIOD_ADD(199300, 0) FROM all_types
 - output: [[199212]]

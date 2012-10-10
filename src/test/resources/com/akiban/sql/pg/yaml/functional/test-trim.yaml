@@ -64,10 +64,10 @@
 - output: [['     ltrim']]
 --- # test wrong arity: empty list
 - Statement: SELECT TRIM() from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1582] }
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
 --- # test wrong arity: extraneous argument
 - Statement: SELECT TRIM('abc', 'def');
-- error: !select-engine { all: [42000], sys-mysql: [1582] }
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
 --- # test null
 - Statement: SELECT TRIM(null) from all_types;
 - output: [[null], [null], [null]]

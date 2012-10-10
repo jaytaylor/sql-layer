@@ -22,7 +22,7 @@
 - Statement: CREATE TABLE s.t (id int) # TODO: Work around, currently need a table in schema to materialize it
 ---
 - Statement: CREATE SCHEMA s
-- error: [5000N]
+- error: !select-engine { sys-mysql: [1007], all: [5000N] }
 ---
 - Statement: CREATE SCHEMA IF NOT EXISTS s;
 ---

@@ -152,7 +152,7 @@
 
 # clob
 ---
-- CreateTable: !select-engine: { all: "clobs (x clob, y clob)", sys-mysql: "clobs (x text, y text)" } 
+- CreateTable: !select-engine { all: "clobs (x clob, y clob)", sys-mysql: "clobs (x text, y text)" } 
 ---
 - Statement: INSERT INTO clobs VALUES (null, null)
 ---
