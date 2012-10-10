@@ -744,7 +744,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final DDLGenerator generator = new DDLGenerator();
         final List<String> ddlList = new ArrayList<String>();
         for(Schema schema : ais.getSchemas().values()) {
-            if(!withISTables && TableName.INFORMATION_SCHEMA.equals(schema.getName())) {
+            if(!withISTables && 
+               (TableName.INFORMATION_SCHEMA.equals(schema.getName()) ||
+                TableName.SYS_SCHEMA.equals(schema.getName()) ||
+                TableName.SQLJ_SCHEMA.equals(schema.getName()))) {
                 continue;
             }
             ddlList.add(String.format(CREATE_SCHEMA_FORMATTER, schema.getName()));
