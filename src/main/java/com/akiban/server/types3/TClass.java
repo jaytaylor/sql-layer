@@ -194,6 +194,34 @@ public abstract class TClass {
         writeCanonical(inValue, typeInstance, out);
     }
 
+    public TInstance pickInstance(TInstance left, TInstance right) {
+        if (left.typeClass() != TClass.this || right.typeClass() != TClass.this)
+            throw new IllegalArgumentException("can't combine " + left + " and " + right + " using " + this);
+
+        TInstance result = doPickInstance(left, right);
+
+        // set nullability
+        Boolean resultIsNullable = result.nullability();
+        final Boolean resultDesiredNullability;
+        Boolean leftIsNullable = left.nullability();
+        if (leftIsNullable == null) {
+            resultDesiredNullability = null;
+        }
+        else {
+            Boolean rightIsNullable = left.nullability();
+            resultDesiredNullability = (rightIsNullable == null)
+                    ? null
+                    : (leftIsNullable || rightIsNullable);
+        }
+        if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
+            // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
+            if ( (result == left) || (result == right) )
+                result = new TInstance(result);
+            result.setNullable(resultDesiredNullability);
+        }
+        return result;
+    }
+
     public PUnderlying underlyingType() {
         return pUnderlying;
     }
@@ -266,34 +294,6 @@ public abstract class TClass {
             out.append("null");
         else
             formatter.formatAsJson(instance, source, out);
-    }
-
-    public TInstance pickInstance(TInstance left, TInstance right) {
-        if (left.typeClass() != TClass.this || right.typeClass() != TClass.this)
-            throw new IllegalArgumentException("can't combine " + left + " and " + right + " using " + this);
-
-        TInstance result = doPickInstance(left, right);
-
-        // set nullability
-        Boolean resultIsNullable = result.nullability();
-        final Boolean resultDesiredNullability;
-        Boolean leftIsNullable = left.nullability();
-        if (leftIsNullable == null) {
-            resultDesiredNullability = null;
-        }
-        else {
-            Boolean rightIsNullable = left.nullability();
-            resultDesiredNullability = (rightIsNullable == null)
-                    ? null
-                    : (leftIsNullable || rightIsNullable);
-        }
-        if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
-            // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
-            if ( (result == left) || (result == right) )
-                result = new TInstance(result);
-            result.setNullable(resultDesiredNullability);
-        }
-        return result;
     }
 
     public TInstanceNormalizer pickInstanceNormalizer() {
