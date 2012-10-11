@@ -51,11 +51,6 @@ import java.util.*;
 public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
 {
     @Override
-    public String name() {
-        return "dump_group";
-    }
-
-    @Override
     public DirectObjectPlan plan() {
         return new DirectObjectPlan() {
 

@@ -61,7 +61,7 @@ public interface NewAISBuilder extends NewAISProvider {
 
     /**
      * create a new view 
-     * @param view
+     * @param view name of view
      * @return
      */
     NewViewBuilder view(String view);
@@ -69,4 +69,26 @@ public interface NewAISBuilder extends NewAISProvider {
     NewViewBuilder view(String schema, String view);
 
     NewViewBuilder view(TableName viewName);
+
+    /**
+     * create a new procedure 
+     * @param procedure name of procedure
+     * @return
+     */
+    NewRoutineBuilder procedure(String procedure);
+
+    NewRoutineBuilder procedure(String schema, String procedure);
+
+    NewRoutineBuilder procedure(TableName procedureName);
+
+    /**
+     * create a new SQL/J jar 
+     * @param jarName name of jar file
+     * @return
+     */
+    NewSQLJJarBuilder sqljJar(String jarName);
+
+    NewSQLJJarBuilder sqljJar(String schema, String jarName);
+
+    NewSQLJJarBuilder sqljJar(TableName name);
 }

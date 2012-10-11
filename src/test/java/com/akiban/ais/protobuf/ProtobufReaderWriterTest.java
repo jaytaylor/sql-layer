@@ -35,7 +35,10 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -476,6 +479,67 @@ public class ProtobufReaderWriterTest {
         outAIS = writeAndRead(inAIS);
         outCol = outAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
         assertEquals("defaultValue", inCol.getDefaultValue(), outCol.getDefaultValue());
+    }
+
+    @Test
+    public void procedureJava() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.sqljJar("myjar")
+            // A file URL would vary by testing system. But don't check exists.
+            .url("http://software.akiban.com/procs.jar", false);
+        builder.procedure("PROC1")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramLongIn("x1")
+            .paramLongIn("x2")
+            .paramDoubleOut("d")
+            .externalName("myjar", "com.acme.Procs", "proc1")
+            .sqlAllowed(Routine.SQLAllowed.READS_SQL_DATA)
+            .dynamicResultSets(2);
+        
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+
+        Routine proc = outAIS.getRoutine(SCHEMA, "PROC1");
+        assertNotNull(proc);
+        
+        SQLJJar jar = proc.getSQLJJar();
+        assertNotNull(jar);
+        assertEquals("myjar", jar.getName().getTableName());
+        assertEquals("http://software.akiban.com/procs.jar", jar.getURL().toString());
+
+        assertEquals("java", proc.getLanguage());
+        assertEquals(Routine.CallingConvention.JAVA, proc.getCallingConvention());
+        assertEquals(3, proc.getParameters().size());
+        assertEquals("x1", proc.getParameters().get(0).getName());
+        assertEquals(Parameter.Direction.IN, proc.getParameters().get(0).getDirection());
+        assertEquals(Types.BIGINT, proc.getParameters().get(0).getType());
+        assertEquals("x2", proc.getParameters().get(1).getName());
+        assertEquals(Types.BIGINT, proc.getParameters().get(1).getType());
+        assertEquals(Parameter.Direction.IN, proc.getParameters().get(1).getDirection());
+        assertEquals("d", proc.getParameters().get(2).getName());
+        assertEquals(Types.DOUBLE, proc.getParameters().get(2).getType());
+        assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
+        assertEquals("com.acme.Procs", proc.getClassName());
+        assertEquals("proc1", proc.getMethodName());
+        assertEquals(Routine.SQLAllowed.READS_SQL_DATA, proc.getSQLAllowed());
+        assertEquals(2, proc.getDynamicResultSets());
+    }
+
+    @Test
+    public void procedureLoadablePlan() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.procedure("PROC2")
+            .language("java", Routine.CallingConvention.LOADABLE_PLAN)
+            .externalName("com.acme.Procs", "proc1");
+        
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+
+        Routine proc = outAIS.getRoutine(SCHEMA, "PROC2");
+        
+        assertEquals("java", proc.getLanguage());
+        assertEquals(Routine.CallingConvention.LOADABLE_PLAN, proc.getCallingConvention());
+        assertEquals(0, proc.getParameters().size());
     }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {

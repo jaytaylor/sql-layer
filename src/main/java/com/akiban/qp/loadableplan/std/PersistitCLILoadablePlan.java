@@ -52,11 +52,6 @@ import com.persistit.Task;
 public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
 {
     @Override
-    public String name() {
-        return "persistitcli";
-    }
-
-    @Override
     public DirectObjectPlan plan() {
         return new DirectObjectPlan() {
 

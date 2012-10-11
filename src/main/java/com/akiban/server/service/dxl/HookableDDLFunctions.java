@@ -28,7 +28,9 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -150,6 +152,81 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_VIEW, thrown);
+        }
+    }
+
+    @Override
+    public void createRoutine(Session session, Routine routine) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CREATE_ROUTINE);
+            delegate.createRoutine(session, routine);
+        }catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_ROUTINE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_ROUTINE, thrown);
+        }
+    }
+
+    @Override
+    public void dropRoutine(Session session, TableName routineName) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.DROP_ROUTINE);
+            delegate.dropRoutine(session, routineName);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.DROP_ROUTINE, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.DROP_ROUTINE, thrown);
+        }
+    }
+
+    @Override
+    public void createSQLJJar(Session session, SQLJJar sqljJar) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CREATE_SQLJ_JAR);
+            delegate.createSQLJJar(session, sqljJar);
+        }catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CREATE_SQLJ_JAR, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_SQLJ_JAR, thrown);
+        }
+    }
+
+    @Override
+    public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.REPLACE_SQLJ_JAR);
+            delegate.replaceSQLJJar(session, sqljJar);
+        }catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.REPLACE_SQLJ_JAR, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.REPLACE_SQLJ_JAR, thrown);
+        }
+    }
+
+    @Override
+    public void dropSQLJJar(Session session, TableName jarName) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.DROP_SQLJ_JAR);
+            delegate.dropSQLJJar(session, jarName);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.DROP_SQLJ_JAR, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.DROP_SQLJ_JAR, thrown);
         }
     }
 

@@ -41,6 +41,7 @@ import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
@@ -257,6 +258,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public T3RegistryService t3RegistryService() {
         return reqs.t3RegistryService();
+    }
+
+    @Override
+    public RoutineLoader getRoutineLoader() {
+        return reqs.routineLoader();
     }
 
     @Override
