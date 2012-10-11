@@ -642,7 +642,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         private boolean isNullable(ExpressionNode node) {
-            return tinst(node).nullability();
+            TInstance tinst = tinst(node);
+            return tinst == null || tinst.nullability();
         }
 
         ExpressionNode handleColumnExpression(ColumnExpression expression) {
