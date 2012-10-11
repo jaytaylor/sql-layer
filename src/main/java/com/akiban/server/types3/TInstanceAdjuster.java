@@ -28,6 +28,5 @@ package com.akiban.server.types3;
 
 public interface TInstanceAdjuster {
     TInstance get(int i);
-    TInstance adjust(int i);
-    void replace(int i, TInstance replacement);
+    TInstanceBuilder adjust(int i);
 }

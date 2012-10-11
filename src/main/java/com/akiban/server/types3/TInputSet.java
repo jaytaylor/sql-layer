@@ -123,7 +123,7 @@ public final class TInputSet {
             }
             assert result != null : " no TInstance for " + inputSet + " in " + overload;
             for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
-                adjuster.replace(i, result);
+                adjuster.adjust(i).copyFrom(result);
             }
         }
 

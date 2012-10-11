@@ -289,11 +289,7 @@ public abstract class TClass {
     }
 
     protected TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3, boolean nullable) {
-        if (nAttributes() != nAttrs)
-            throw new AkibanInternalException(name() + " requires " + nAttributes() + " attributes, saw " + nAttrs);
-        TInstance result = new TInstance(this, enumClass, nAttrs, attr0, attr1, attr2, attr3, nullable);
-        validate(result);
-        return result;
+        return TInstance.create(this, enumClass, nAttrs, attr0, attr1, attr2, attr3, nullable);
     }
 
     public PValueCacher cacher() {
@@ -361,7 +357,7 @@ public abstract class TClass {
                 result = (result == null) ? inputInstance : pickInstance(result, inputInstance);
             }
             for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
-                adjuster.replace(i, result);
+                adjuster.adjust(i).copyFrom(result);
             }
         }
     };

@@ -40,6 +40,7 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TInstanceAdjuster;
+import com.akiban.server.types3.TInstanceBuilder;
 import com.akiban.server.types3.TInstanceNormalizer;
 import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -323,7 +324,7 @@ public abstract class TString extends TClass
                 int inputCharset = input.attribute(StringAttribute.CHARSET);
                 int inputCollation = input.attribute(StringAttribute.COLLATION);
                 if ( (inputCharset != resultCharset) || (inputCollation != resultCollation)) {
-                    TInstance adjusted = adapter.adjust(i);
+                    TInstanceBuilder adjusted = adapter.adjust(i);
                     adjusted.setAttribute(StringAttribute.CHARSET, resultCharset);
                     adjusted.setAttribute(StringAttribute.COLLATION, resultCollation);
                 }
