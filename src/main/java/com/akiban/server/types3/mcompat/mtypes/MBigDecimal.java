@@ -46,7 +46,6 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
@@ -97,8 +96,9 @@ public class MBigDecimal extends TClassBase {
         }
     }
 
-    public MBigDecimal(String name){
-        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8, PUnderlying.BYTES, TParsers.DECIMAL);
+    public MBigDecimal(String name, int defaultVarcharLen){
+        super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8,
+                PUnderlying.BYTES, TParsers.DECIMAL, defaultVarcharLen);
     }
 
     @Override
@@ -175,14 +175,14 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instanceL, TInstance instanceR) {
-        int scaleL = instanceL.attribute(Attrs.SCALE);
-        int scaleR = instanceL.attribute(Attrs.SCALE);
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        int scaleL = left.attribute(Attrs.SCALE);
+        int scaleR = left.attribute(Attrs.SCALE);
 
-        int precisionL = instanceL.attribute(Attrs.PRECISION);
-        int precisionR = instanceR.attribute(Attrs.PRECISION);
+        int precisionL = left.attribute(Attrs.PRECISION);
+        int precisionR = right.attribute(Attrs.PRECISION);
 
-        return pickPrecisionAndScale(this, precisionL, scaleL, precisionR, scaleR);
+        return pickPrecisionAndScale(MBigDecimal.this, precisionL, scaleL, precisionR, scaleR);
     }
 
     public static TInstance pickPrecisionAndScale(TClass tclass,

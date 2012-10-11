@@ -140,10 +140,10 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        int len0 = instance0.attribute(Attrs.LENGTH);
-        int len1 = instance0.attribute(Attrs.LENGTH);
-        return len0 > len1 ? instance0 : instance1;
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        int len0 = left.attribute(Attrs.LENGTH);
+        int len1 = left.attribute(Attrs.LENGTH);
+        return len0 > len1 ? left : right;
     }
 
     @Override
@@ -159,12 +159,13 @@ public final class MBinary extends SimpleDtdTClass {
             assert len == defaultLength : "expected length=" + defaultLength + " but was " + len;
         }
     }
-    
+
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, parser, typeId);
+        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class,
+                1, 1, -1, PUnderlying.BYTES, parser, (defaultLength < 0 ? MAX_BYTE_BUF : defaultLength), typeId);
         this.defaultLength = defaultLength;
     }
-        
+
     private final int defaultLength;
 
     public static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {

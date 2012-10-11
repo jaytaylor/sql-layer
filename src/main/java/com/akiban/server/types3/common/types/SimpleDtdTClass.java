@@ -37,15 +37,10 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 public abstract class SimpleDtdTClass extends TClassBase {
-    protected <A extends Enum<A> & Attribute> SimpleDtdTClass(TName name, TClassFormatter formatter, Class<A> enumClass, int internalRepVersion, int serializationVersion,
-                              int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
-        super(name, enumClass, formatter, internalRepVersion, serializationVersion, serializationSize, pUnderlying, parser);
-        this.typeId = typeId;
-    }
 
     protected <A extends Enum<A> & Attribute>SimpleDtdTClass(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, Class<A> enumClass, int internalRepVersion,
-                              int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
-        super(bundle, name, category, enumClass, formatter, internalRepVersion, serializationVersion, serializationSize, pUnderlying, parser);
+                              int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, int defaultVarcharLen, TypeId typeId) {
+        super(bundle, name, category, enumClass, formatter, internalRepVersion, serializationVersion, serializationSize, pUnderlying, parser, defaultVarcharLen);
         this.typeId = typeId;
     }
 

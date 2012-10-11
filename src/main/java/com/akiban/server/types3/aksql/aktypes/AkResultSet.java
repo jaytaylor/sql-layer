@@ -28,6 +28,7 @@ package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -103,7 +104,8 @@ public class AkResultSet extends TClassBase {
               1,
               0,
               null, // PUnderlying.XXX
-              NO_PARSER);
+              NO_PARSER,
+              -1);
     }
 
     public TInstance instance(List<Column> columns) {
@@ -136,7 +138,7 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
         throw new UnsupportedOperationException();
     }
 

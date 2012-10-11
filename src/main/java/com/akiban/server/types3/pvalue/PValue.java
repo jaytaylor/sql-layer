@@ -347,6 +347,11 @@ public final class PValue implements PValueSource, PValueTarget {
         underlying(underlying);
     }
 
+    public PValue(byte[] val) {
+        this(PUnderlying.BYTES);
+        putBytes(val);
+    }
+
     public PValue(long val) {
         this(PUnderlying.INT_64);
         putInt64(val);

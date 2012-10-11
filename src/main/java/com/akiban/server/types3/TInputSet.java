@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.texpressions.TValidatedOverload;
+
 import java.util.BitSet;
 
 public final class TInputSet {
@@ -58,12 +60,24 @@ public final class TInputSet {
         return covering.nextSetBit(from);
     }
 
-    public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining, boolean isPicking)
+    public TInstanceNormalizer instanceAdjuster() {
+        assert normalizer != null;
+        return normalizer;
+    }
+
+    public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining, boolean isPicking,
+                     TInstanceNormalizer normalizer)
     {
         this.targetType = targetType;
         this.covering = covering.get(0, covering.length());
         this.coversRemaining = coversRemaining;
         this.isPicking = isPicking;
+        if (normalizer != null)
+            this.normalizer = normalizer;
+        else if (targetType != null)
+            this.normalizer = new PickingNormalizer(targetType);
+        else
+            this.normalizer = null;
     }
 
     @Override
@@ -94,4 +108,29 @@ public final class TInputSet {
     private final BitSet covering;
     private final boolean coversRemaining;
     private final boolean isPicking;
+    private final TInstanceNormalizer normalizer;
+
+    private static class PickingNormalizer implements TInstanceNormalizer {
+        @Override
+        public void apply(TInstanceAdjuster adjuster, TValidatedOverload overload, TInputSet inputSet, int max) {
+            assert tclass != null : inputSet + " for " + overload;
+            TInstance result = null;
+            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                TInstance input = adjuster.get(i);
+                result = (result == null)
+                        ? input
+                        : tclass.pickInstance(result, input);
+            }
+            assert result != null : " no TInstance for " + inputSet + " in " + overload;
+            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                adjuster.replace(i, result);
+            }
+        }
+
+        private PickingNormalizer(TClass tclass) {
+            this.tclass = tclass;
+        }
+
+        private final TClass tclass;
+    }
 }

@@ -28,7 +28,6 @@ package com.akiban.server.types3.common.types;
 
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.expression.std.ExpressionTypes;
@@ -38,11 +37,15 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TInstanceAdjuster;
+import com.akiban.server.types3.TInstanceNormalizer;
 import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -241,32 +244,8 @@ public abstract class TString extends TClass
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instanceA, TInstance instanceB)
-    {
-        final int pickLen, pickCharset, pickCollation;
-
-        int aCharset = instanceA.attribute(StringAttribute.CHARSET);
-        int bCharset = instanceB.attribute(StringAttribute.CHARSET);
-        if (aCharset == bCharset)
-            pickCharset = aCharset;
-        else
-            throw new InvalidArgumentTypeException("can't combine strings " + instanceA + " and " + instanceB);
-        int aCollation = instanceA.attribute(StringAttribute.COLLATION);
-        int bCollation = instanceB.attribute(StringAttribute.COLLATION);
-        if (aCollation == bCollation) {
-            pickCollation = aCollation;
-        }
-        else {
-            CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
-            CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
-            AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
-            pickCollation = (collator == null) ? -1 : collator.getCollationId();
-        }
-        pickLen = Math.max(
-                instanceA.attribute(StringAttribute.LENGTH),
-                instanceB.attribute(StringAttribute.LENGTH)
-        );
-        return instance(pickLen, pickCharset, pickCollation);
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        return doPickInstance(left, right, false);
     }
 
     @Override
@@ -287,7 +266,64 @@ public abstract class TString extends TClass
         return null;
     }
 
+    private TInstance doPickInstance(TInstance left, TInstance right, boolean useRightLength) {
+        final int pickLen, pickCharset, pickCollation;
+
+        int aCharset = left.attribute(StringAttribute.CHARSET);
+        int bCharset = right.attribute(StringAttribute.CHARSET);
+        if (aCharset == bCharset)
+            pickCharset = aCharset;
+        else
+            throw new InvalidArgumentTypeException("can't combine strings " + left + " and " + right);
+        int aCollation = left.attribute(StringAttribute.COLLATION);
+        int bCollation = right.attribute(StringAttribute.COLLATION);
+        if (aCollation == bCollation) {
+            pickCollation = aCollation;
+        }
+        else {
+            CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(left);
+            CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(right);
+            AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
+            pickCollation = (collator == null) ? -1 : collator.getCollationId();
+        }
+        int leftLen = left.attribute(StringAttribute.LENGTH);
+        int rightLen = right.attribute(StringAttribute.LENGTH);
+        if (useRightLength) {
+            pickLen = rightLen;
+        }
+        else {
+            pickLen = Math.max(leftLen,rightLen);
+        }
+        return instance(pickLen, pickCharset, pickCollation);
+    }
+
     private final int fixedLength;
     private final TypeId typeId;
     private static final Logger logger = LoggerFactory.getLogger(TString.class);
+
+    public final TInstanceNormalizer PICK_RIGHT_LENGTH = new TInstanceNormalizer() {
+        @Override
+        public void apply(TInstanceAdjuster adapter, TValidatedOverload overload, TInputSet inputSet, int max) {
+            TInstance result = null;
+            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                TInstance input = adapter.get(i);
+                result = (result == null)
+                        ? input
+                        : doPickInstance(result, input, true);
+            }
+            assert result != null;
+            int resultCharset = result.attribute(StringAttribute.CHARSET);
+            int resultCollation = result.attribute(StringAttribute.COLLATION);
+            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                TInstance input = adapter.get(i);
+                int inputCharset = input.attribute(StringAttribute.CHARSET);
+                int inputCollation = input.attribute(StringAttribute.COLLATION);
+                if ( (inputCharset != resultCharset) || (inputCollation != resultCollation)) {
+                    TInstance adjusted = adapter.adjust(i);
+                    adjusted.setAttribute(StringAttribute.CHARSET, resultCharset);
+                    adjusted.setAttribute(StringAttribute.COLLATION, resultCollation);
+                }
+            }
+        }
+    };
 }

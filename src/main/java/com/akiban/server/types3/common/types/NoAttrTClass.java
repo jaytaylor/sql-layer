@@ -46,13 +46,13 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        return instance0; // doesn't matter which it is
+    public TInstance instance() {
+        return createInstanceNoArgs();
     }
 
     @Override
-    public TInstance instance() {
-        return createInstanceNoArgs();
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        return right; // doesn't matter which!
     }
 
     @Override
@@ -60,9 +60,10 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     public NoAttrTClass(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, int internalRepVersion,
-                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
+                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser,
+                           int defaultVarcharLen, TypeId typeId) {
         super(bundle, name, category, formatter, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
-                pUnderlying, parser, typeId);
+                pUnderlying, parser, defaultVarcharLen, typeId);
     }
 
     @Override
