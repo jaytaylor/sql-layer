@@ -42,5 +42,5 @@ public class AkBool
 {
     public static final NoAttrTClass INSTANCE 
             = new NoAttrTClass(AkBundle.INSTANCE.id(), "boolean", AkCategory.LOGIC, TFormatter.FORMAT.BOOL, 1, 1, 1,
-                               PUnderlying.BOOL, TParsers.BOOLEAN, TypeId.BOOLEAN_ID);
+                               PUnderlying.BOOL, TParsers.BOOLEAN, 5, TypeId.BOOLEAN_ID);
 }

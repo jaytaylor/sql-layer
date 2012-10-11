@@ -31,6 +31,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -193,28 +194,28 @@ public abstract class TClass {
         writeCanonical(inValue, typeInstance, out);
     }
 
-    public TInstance pickInstance(TInstance instance0, TInstance instance1) {
-        if (instance0.typeClass() != this || instance1.typeClass() != this)
-            throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);
+    public TInstance pickInstance(TInstance left, TInstance right) {
+        if (left.typeClass() != TClass.this || right.typeClass() != TClass.this)
+            throw new IllegalArgumentException("can't combine " + left + " and " + right + " using " + this);
 
-        TInstance result = doPickInstance(instance0, instance1);
+        TInstance result = doPickInstance(left, right);
 
         // set nullability
         Boolean resultIsNullable = result.nullability();
         final Boolean resultDesiredNullability;
-        Boolean leftIsNullable = instance0.nullability();
+        Boolean leftIsNullable = left.nullability();
         if (leftIsNullable == null) {
             resultDesiredNullability = null;
         }
         else {
-            Boolean rightIsNullable = instance0.nullability();
+            Boolean rightIsNullable = left.nullability();
             resultDesiredNullability = (rightIsNullable == null)
                     ? null
                     : (leftIsNullable || rightIsNullable);
         }
         if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
             // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
-            if ( (result == instance0) || (result == instance1) )
+            if ( (result == left) || (result == right) )
                 result = new TInstance(result);
             result.setNullable(resultDesiredNullability);
         }
@@ -295,11 +296,14 @@ public abstract class TClass {
             formatter.formatAsJson(instance, source, out);
     }
 
-    // for use by subclasses
+    public TInstanceNormalizer pickInstanceNormalizer() {
+        return pickInstanceNormalizer;
+    }
 
-    protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);
-        
+    // for use by subclasses
+    protected abstract TInstance doPickInstance(TInstance left, TInstance right);
     protected abstract void validate(TInstance instance);
+
     // for use by this class
 
     protected TInstance createInstanceNoArgs() {
@@ -360,7 +364,6 @@ public abstract class TClass {
                 pUnderlying);
 
      }
-
     private final TName name;
     private final Class<?> enumClass;
     protected final TClassFormatter formatter;
@@ -368,8 +371,24 @@ public abstract class TClass {
     private final int internalRepVersion;
     private final int serializationVersion;
     private final int serializationSize;
+
     private final PUnderlying pUnderlying;
 
+    private TInstanceNormalizer pickInstanceNormalizer = new TInstanceNormalizer() {
+        @Override
+        public void apply(TInstanceAdjuster adjuster, TValidatedOverload overload, TInputSet inputSet, int max) {
+            TInstance result = null;
+            for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
+                TInstance inputInstance = adjuster.get(i);
+                result = (result == null) ? inputInstance : pickInstance(result, inputInstance);
+            }
+            for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
+                adjuster.replace(i, result);
+            }
+        }
+    };
+
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
+
     private static final int EMPTY = -1;
 }

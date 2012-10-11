@@ -360,7 +360,7 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
         return instance();
     }
 
@@ -415,7 +415,7 @@ public class AkInterval extends TClassBase {
                                                IntervalFormat[] formatters)
     {
         super(bundle, name, category, enumClass, formatter, internalRepVersion, sVersion, sSize, pUnderlying,
-                createParser(formatAttribute, formatters));
+                createParser(formatAttribute, formatters), 128); // varchar len is arbitrary; I don't expect to use it
         this.formatters = formatters;
         this.formatAttribute = formatAttribute;
         this.typeIdToFormat = createTypeIdToFormatMap(formatters);

@@ -64,7 +64,7 @@ public class OverloadResolverTest {
         private static final TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
 
         public TestClassBase(String name, PUnderlying pUnderlying) {
-            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, null);
+            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, 64, null);
         }
 
         @Override
@@ -307,7 +307,7 @@ public class OverloadResolverTest {
     // default resolution, types don't match (no registered casts, int -> bigint)
     @Test
     public void mulBigIntWithInts() {
-        new Initializer().overloads(MUL_BIGINTS).init();
+        new Initializer().overloads(MUL_BIGINTS).casts(C_INT_BIGINT).init();
         checkResolved("INT*INT", MUL_BIGINTS, MUL_NAME, prepVals(TINT, TINT));
     }
 

@@ -36,6 +36,7 @@ import com.akiban.util.AkibanAppender;
 public abstract class TClassBase extends TClass
 {
     private final TParser parser;
+    private final int defaultVarcharLen;
     
     protected <A extends Enum<A> & Attribute> TClassBase(TBundleID bundle,
             String name,
@@ -44,7 +45,8 @@ public abstract class TClassBase extends TClass
             TClassFormatter formatter,
             int internalRepVersion, int sVersion, int sSize,
             PUnderlying pUnderlying,
-            TParser parser)
+            TParser parser,
+            int defaultVarcharLen)
      {
          super(bundle,
                name,
@@ -57,25 +59,7 @@ public abstract class TClassBase extends TClass
                pUnderlying);
          
          this.parser = parser;
-     }
-     
-     
-     protected <A extends Enum<A> & Attribute> TClassBase(TName name,
-            Class<A> enumClass,
-            TClassFormatter formatter,
-            int internalRepVersion, int sVersion, int sSize,
-            PUnderlying pUnderlying,
-            TParser parser)
-     {
-         super(name,
-               enumClass,
-               formatter,
-               internalRepVersion,
-               sVersion,
-               sSize,
-               pUnderlying);
-         
-         this.parser = parser;
+         this.defaultVarcharLen = defaultVarcharLen;
      }
      
     @Override
@@ -112,6 +96,20 @@ public abstract class TClassBase extends TClass
                     string = trunc;
                 }
                 target.putString(string, null);
+            }
+
+            @Override
+            public TInstance preferredTarget(TPreptimeValue source) {
+                int len;
+                if (source.value() == null) {
+                    len = defaultVarcharLen;
+                }
+                else {
+                    StringBuilder sb = new StringBuilder();
+                    format(source.instance(), source.value(), AkibanAppender.of(sb));
+                    len = sb.length();
+                }
+                return MString.VARCHAR.instance(len);
             }
         };
     }
