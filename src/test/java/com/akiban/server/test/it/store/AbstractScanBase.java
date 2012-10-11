@@ -120,7 +120,7 @@ public abstract class AbstractScanBase extends ITBase {
             for (int i = 0; i < k; i++) {
                 rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8, i + "X" });
                 rowWrapper.setRowData(rowData);
-                // output.println(rowData.toString(aisWithRowDefs));
+                // output.println(rowData.toString(rowDef));
                 dml.writeRow(session(), rowWrapper);
             }
         }
@@ -161,7 +161,8 @@ public abstract class AbstractScanBase extends ITBase {
                 scanCount++;
                 result.add(rowData);
                 if (VERBOSE) {
-                    System.out.println(String.format("%5d ", scanCount) + rowData.toString());
+                    System.out.println(String.format("%5d ", scanCount)
+                                       + rowData.toString(ais()));
                 }
                 p = rowData.getRowEnd();
             }
@@ -186,7 +187,7 @@ public abstract class AbstractScanBase extends ITBase {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         for (final RowData rowData : result) {
-            sb.append(rowData.toString());
+            sb.append(rowData.toString(ais()));
             sb.append(AkServerUtil.NEW_LINE);
         }
         return sb.toString();
