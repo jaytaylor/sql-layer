@@ -390,7 +390,7 @@ public class ConstantFolder extends BaseRule
                             // That can be NULL or 0 for COUNT.
                             Object value = null;
                             if (isAggregateZero(afun))
-                                value = Integer.valueOf(0);
+                                value = Long.valueOf(0);
                             return newConstant(value, col.getAkType(), col);
                         }
                     }
