@@ -17,6 +17,11 @@
          newtypes: "select id,timestamp(time_field) from datetime_matrix where timestamp(time_field) <> CONCAT('0000-00-00 ',time_field) " }
 - row_count: 0
 ---
+- Statement: !select-engine { 
+              all: "select id,CAST(time_field AS DATETIME) from datetime_matrix where CAST(time_field AS DATETIME) IS NOT NULL",
+         newtypes: "select id,CAST(time_field AS DATETIME) from datetime_matrix where CAST(time_field AS DATETIME) <> '0000-00-00 00:00:00.0' " }
+- row_count: 0
+---
 - Statement: select id,timestamp(timestamp_field) from datetime_matrix where timestamp(timestamp_field) <> timestamp_field;
 - row_count: 0
 ---
