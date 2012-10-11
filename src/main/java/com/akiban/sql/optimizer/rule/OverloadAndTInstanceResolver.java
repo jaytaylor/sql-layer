@@ -449,7 +449,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             default:
                 throw new AssertionError(overloadResultStrategy.category());
             }
-            resultInstance = resultInstance.copy(); // May change nullability.
             if (createPreptimeContext)
                 context.setOutputType(resultInstance);
 
@@ -656,7 +655,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     (expression.getSQLtype() != null) &&
                     (expression.getSQLtype().isNullable())) {
                     // With an outer join, the column can still be nullable.
-                    columnInstance = columnInstance.copy().withNullable(true);
+                    columnInstance = columnInstance.withNullable(true);
                 }
                 expression.setPreptimeValue(new TPreptimeValue(columnInstance));
             }
@@ -930,7 +929,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
         if (expression instanceof ParameterExpression) {
-            targetInstance = targetInstance.copy().withNullable(true);
+            targetInstance = targetInstance.withNullable(true);
             CastExpression castExpression = 
                 newCastExpression(expression, targetInstance);
             castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
@@ -946,7 +945,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         if (equalForCast(targetInstance, tinst(expression)))
             return expression;
         DataTypeDescriptor sqlType = expression.getSQLtype();
-        targetInstance = targetInstance.copy().withNullable(sqlType == null || sqlType.isNullable());
+        targetInstance = targetInstance.withNullable(sqlType == null || sqlType.isNullable());
         CastExpression castExpression = 
             newCastExpression(expression, targetInstance);
         castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));

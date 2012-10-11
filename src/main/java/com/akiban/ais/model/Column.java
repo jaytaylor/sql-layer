@@ -95,7 +95,7 @@ public class Column implements ColumnContainer
     }
 
     public TInstance tInstance() {
-        return new TInstance(tInstance(false));
+        return tInstance(false);
     }
 
     @Override

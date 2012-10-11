@@ -82,7 +82,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     generatedInstances = new TInstance[nInputs];
                 TInstance result = generatedInstances[i];
                 if (result == null) {
-                    result = naturalInstances[i].copy();
+                    result = naturalInstances[i];
                     generatedInstances[i] = result;
                 }
                 if (adjusted == null)
