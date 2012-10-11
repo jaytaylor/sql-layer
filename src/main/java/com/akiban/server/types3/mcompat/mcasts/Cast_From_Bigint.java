@@ -106,15 +106,29 @@ public class Cast_From_Bigint
         @Override
         public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            long raw = source.getInt64();
-            long ymd[] = MDatetimes.decodeDatetime(raw);
+            long val = source.getInt64();
+            boolean notime = false;
+            if (val < 100000000) {
+                // this is a YYYY-MM-DD int -- need to pad it with 0's for HH-MM-SS
+                val *= 1000000;
+                notime = true;
+            }
+            long ymd[] = MDatetimes.decodeDatetime(val);
+            if (notime && (ymd[0] < 100)) {
+                // no century given.
+                if (ymd[0] < 70)
+                    ymd[0] += 2000;
+                else
+                    ymd[0] += 1900;
+                val = MDatetimes.encodeDatetime(ymd);
+            }
             if (!MDatetimes.isValidDatetime(ymd))
             {
                 context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
                 target.putNull();
             }
             else
-                target.putInt64(raw);
+                target.putInt64(val);
         }
     };
     
