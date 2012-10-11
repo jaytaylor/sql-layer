@@ -58,7 +58,9 @@ public class ValuesRowType extends DerivedRowType
 
     @Override
     public TInstance typeInstanceAt(int index) {
-        return tInstances != null ? tInstances[index] : PValueSources.fromAkType(types[index], true); // TODO yeah?
+        // Hopefully we were created in a types3 way and therefore have tInstances. If not, we have no idea what
+        // our nullability is, so we have to be pessimistic and assume everything is nullable.
+        return tInstances != null ? tInstances[index] : PValueSources.fromAkType(types[index], true);
     }
 
     // ValuesRowType interface
