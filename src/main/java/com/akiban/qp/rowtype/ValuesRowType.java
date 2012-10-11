@@ -28,7 +28,6 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 
 import java.util.Arrays;
