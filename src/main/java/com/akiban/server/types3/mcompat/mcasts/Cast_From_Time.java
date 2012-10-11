@@ -82,7 +82,10 @@ public class Cast_From_Time {
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
     // Generally, TIME cannot be converted to DATE, DATETIME or TIMESTAMP
-    // Any cast from <TIME> --> <DATE> | <DATETIME> | <TIMESTAMP> should result in NULL
+    // Any cast from <TIME> --> <DATE> | <DATETIME> | <TIMESTAMP> should result in zeros
+    // and a warning.
+    // But contrast the similarly named _functions_, which do not give a warning and
+    // do preserve the time fields when appropriate.
     public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 
