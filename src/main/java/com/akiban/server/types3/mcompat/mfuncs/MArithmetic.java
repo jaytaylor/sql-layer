@@ -707,7 +707,7 @@ public abstract class MArithmetic extends TArithmetic {
 
         @Override
         protected boolean nullContaminates(int inputIndex) {
-            // We return false here so that TOverloadBase never tries to look at the inputs as part of evaluating
+            // We return false here so that TScalarBase never tries to look at the inputs as part of evaluating
             // a const, to see if they're null. If it did, a non-const input would cause an exception during const
             // evaluation. Returning false here means we'll always get to doEvaluate, which will then putNull.
             return false;

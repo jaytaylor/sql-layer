@@ -7,7 +7,7 @@
 ## Test with literals
 ---
 - Statement: SELECT DAYOFYEAR(20081231) from all_types;
-- output_types: [INTEGER]
+- output_types: !select-engine  {sys-mysql: [BIGINT], all: [INTEGER] }
 - output: [[366]]
 --- 
 - Statement: SELECT DAYOFYEAR(20081231.5) from all_types;
@@ -22,10 +22,6 @@
 - Statement: SELECT double_field from all_types WHERE DAYOFYEAR(double_field) IS NULL;
 - output: [[19001231.5]]
 ---
-- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
-#- row_count: !select-engine { all: 1, newtypes: 0 } 
-- output: [[19001231]]
----
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(null) IS NULL;
 - output: [[19001231]]
 ---
@@ -36,8 +32,20 @@
 - output: [[60]]
 ---
 - Statement: SELECT DAYOFYEAR() from all_types;
-- error: [4250C]
+- error: !select-engine { sys-mysql: [1582], all: [4250C] }
 ---
 - Statement: SELECT DAYOFYEAR('2009-12-12', 23) FROM all_types;
-- error: [4250C]
+- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+---
+- Statement: SET newtypes to 'false';
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
+- output: [[19001231]]
+---
+- Statement: SET newtypes to 'true'
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) IS NULL;
+- output: [[19001231]]
+---
+- Statement: SET newtypes to DEFAULT
 ...

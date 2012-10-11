@@ -27,7 +27,9 @@
 ---
 - Statement: SELECT right('abc', null);
 - output: [[null]]
-#--- BUG 943357
+---
+- Message: BUG 943357
+#---
 #- Statement: select right(null, null);
 #- output: [[null]]
 ## Test with fields
@@ -65,8 +67,8 @@
 ## Test arity
 ---
 - Statement: SELECT right();
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
 ---
 - Statement: SELECT right('abc', 1, 2);
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
 ...

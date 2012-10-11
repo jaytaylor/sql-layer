@@ -1,5 +1,8 @@
 # Test parser settings
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - Statement: SELECT true||false
 - output: [[truefalse]]
 ---
