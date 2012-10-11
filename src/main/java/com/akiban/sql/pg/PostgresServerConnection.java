@@ -870,12 +870,6 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public LoadablePlan<?> loadablePlan(String planName)
-    {
-        return server.loadablePlan(planName);
-    }
-
-    @Override
     public Date currentTime() {
         Date override = server.getOverrideCurrentTime();
         if (override != null)

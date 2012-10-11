@@ -32,13 +32,21 @@ import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.ais.model.validation.AISValidations;
+import com.akiban.server.error.InvalidSQLJJarURLException;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,7 +64,7 @@ public class AISBBasedBuilder
         return new ActualBuilder().defaultSchema(defaultSchema);
     }
 
-    private static class ActualBuilder implements NewAISBuilder, NewViewBuilder, NewAkibanJoinBuilder {
+    private static class ActualBuilder implements NewAISBuilder, NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
 
         // NewAISProvider interface
 
@@ -148,6 +156,44 @@ public class AISBBasedBuilder
         @Override
         public NewViewBuilder view(TableName viewName) {
             return view(viewName.getSchemaName(), viewName.getTableName());
+        }
+
+        @Override
+        public NewRoutineBuilder procedure(String procedure) {
+            return procedure(defaultSchema, procedure);
+        }
+
+        @Override
+        public NewRoutineBuilder procedure(String schema, String procedure) {
+            checkUsable();
+            AISInvariants.checkDuplicateRoutine(aisb.akibanInformationSchema(), schema, procedure);
+            this.schema = schema;
+            this.userTable = procedure;
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder procedure(TableName procedureName) {
+            return procedure(procedureName.getSchemaName(), procedureName.getTableName());
+        }
+
+        @Override
+        public NewSQLJJarBuilder sqljJar(String jarName) {
+            return sqljJar(defaultSchema, jarName);
+        }
+
+        @Override
+        public NewSQLJJarBuilder sqljJar(String schema, String jarName) {
+            checkUsable();
+            AISInvariants.checkDuplicateSQLJJar(aisb.akibanInformationSchema(), schema, jarName);
+            this.schema = schema;
+            this.userTable = jarName;
+            return this;
+        }
+
+        @Override
+        public NewSQLJJarBuilder sqljJar(TableName name) {
+            return sqljJar(name.getSchemaName(), name.getTableName());
         }
 
         @Override
@@ -377,6 +423,135 @@ public class AISBBasedBuilder
             for (String colname : columns) {
                 entry.add(colname);
             }
+            return this;
+        }
+
+        // NewRoutineBuilder
+
+        @Override
+        public NewRoutineBuilder language(String language, Routine.CallingConvention callingConvention) {
+            aisb.routine(schema, userTable, language, callingConvention);
+            return this;
+        }
+    
+        @Override
+        public NewRoutineBuilder paramLongIn(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "BIGINT", null, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder paramStringIn(String name, int length) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "VARCHAR", (long)length, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder paramDoubleIn(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.IN, "DOUBLE", null, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder paramLongOut(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "BIGINT", null, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder paramStringOut(String name, int length) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "VARCHAR", (long)length, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder paramDoubleOut(String name) {
+            aisb.parameter(schema, userTable, name, Parameter.Direction.OUT, "DOUBLE", null, null);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder externalName(String className) {
+            return externalName(className, null);
+        }
+
+        @Override
+        public NewRoutineBuilder externalName(String className, String methodName) {
+            return externalName(null, className, methodName);
+        }
+
+        @Override
+        public NewRoutineBuilder externalName(String jarName,
+                                              String className, String methodName) {
+            return externalName(defaultSchema, jarName, className, methodName);
+        }
+
+        @Override
+        public NewRoutineBuilder externalName(String jarSchema, String jarName, 
+                                              String className, String methodName) {
+            aisb.routineExternalName(schema, userTable, 
+                                     jarSchema, jarName, 
+                                     className, methodName);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder procDef(String definition) {
+            aisb.routineDefinition(schema, userTable, definition);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder sqlAllowed(Routine.SQLAllowed sqlAllowed) {
+            aisb.routineSQLAllowed(schema, userTable, sqlAllowed);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder dynamicResultSets(int dynamicResultSets) {
+            aisb.routineDynamicResultSets(schema, userTable, dynamicResultSets);
+            return this;
+        }
+
+        // NewSQLJJarBuilder
+
+        @Override
+        public NewSQLJJarBuilder url(String value, boolean checkReadable) {
+            URL url;
+            try {
+                url = new URL(value);
+            }
+            catch (MalformedURLException ex1) {
+                File file = new File(value);
+                try {
+                    url = file.toURL();
+                }
+                catch (MalformedURLException ex2) {
+                    // Report original failure.
+                    throw new InvalidSQLJJarURLException(schema, userTable, ex1);
+                }
+                if (checkReadable && file.canRead())
+                    checkReadable = false; // Can tell quickly.
+            }
+            if (checkReadable) {
+                InputStream istr = null;
+                try {
+                    istr = url.openStream(); // Must be able to load it.
+                }
+                catch (IOException ex) {
+                    throw new InvalidSQLJJarURLException(schema, userTable, ex);
+                }
+                finally {
+                    if (istr != null) {
+                        try {
+                            istr.close();
+                        }
+                        catch (IOException ex) {
+                        }
+                    }
+                }
+            }
+            aisb.sqljJar(schema, userTable, url);
             return this;
         }
 

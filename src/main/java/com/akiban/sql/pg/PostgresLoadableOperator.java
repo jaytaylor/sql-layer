@@ -26,6 +26,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerCallContextStack;
+import com.akiban.sql.server.ServerRoutineInvocation;
+
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
@@ -38,14 +41,16 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableOperator: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableOperator: acquire shared lock");
 
-    private Object[] args;
+    private ServerRoutineInvocation invocation;
 
     protected PostgresLoadableOperator(LoadableOperator loadableOperator, 
+                                       ServerRoutineInvocation invocation,
                                        List<String> columnNames, List<PostgresType> columnTypes, 
-                                       Object[] args, boolean usePVals)
+                                       PostgresType[] parameterTypes,
+                                       boolean usesPValues)
     {
-        super(loadableOperator.plan(), null, columnNames, columnTypes, null, usePVals);
-        this.args = args;
+        super(loadableOperator.plan(), null, columnNames, columnTypes, parameterTypes, usesPValues);
+        this.invocation = invocation;
     }
     
     @Override
@@ -62,9 +67,14 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
 
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
-        // Overwrite the query parameters with the call parameters.
-        PostgresLoadablePlan.setParameters(context, args, usesPValues());
-        return super.execute(context, maxrows);
+        context = PostgresLoadablePlan.setParameters(context, invocation, usesPValues());
+        ServerCallContextStack.push(context, invocation);
+        try {
+            return super.execute(context, maxrows);
+        }
+        finally {
+            ServerCallContextStack.pop(context, invocation);
+        }
     }
 
 }

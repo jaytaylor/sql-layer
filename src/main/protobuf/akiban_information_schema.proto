@@ -153,13 +153,62 @@ message View {
     optional bool    protected    = 7;  // View cannot be altered
 }
 
+enum ParameterDirection {
+    IN = 0;
+    OUT = 1;
+    INOUT = 2;
+    RETURN = 3;
+}
+
+message Parameter {
+    optional string  parameterName = 1;         // name if named
+    optional ParameterDirection direction = 2;  // IN / OUT
+    optional string  typeName      = 3;         // link to Types.typeName
+    optional int64   typeParam1    = 4;  
+    optional int64   typeParam2    = 5;
+}
+
+enum RoutineCallingConvention {
+    JAVA = 0;
+    LOADABLE_PLAN = 1;
+}
+
+enum RoutineSQLAllowed {
+    MODIFIES_SQL_DATA = 0;
+    READS_SQL_DATA = 1;
+    CONTAINS_SQL = 2;
+    NO_SQL = 3;
+}
+
+message Routine {
+    optional string    routineName = 1; // name of routine
+    repeated Parameter parameters    = 2; // list of columns in the view
+    optional string    language      = 3; // Java, ...
+    optional RoutineCallingConvention callingConvention = 4; // how invoked
+    optional TableName jarName       = 5; // location of .JAR file
+    optional string    className     = 6; // name of Java class
+    optional string    methodName    = 7; // name of Java method
+    optional string    definition    = 8; // inline definition
+    optional string    description   = 9; // Routine comment holder
+    optional bool      protected     = 10; // Routine cannot be altered
+    optional RoutineSQLAllowed sqlAllowed = 11; // whether database accessed
+    optional int32     dynamicResultSets = 12; // result set values
+}
+
+message SQLJJar {
+    optional string jarName = 1; // name of routine
+    optional string url     = 2; // location of JAR file
+}
+
 message Schema {
     optional string schemaName   = 1;
     repeated Table  tables       = 2;  // list of user tables in the schema
     repeated Group  groups       = 3;  // list of groups in the schema 
     optional CharCollation charColl = 4; // schema default character set & collation
     repeated View   views        = 5;  // list of views in the schema
-    repeated Sequence sequences  = 6;  // list of sequences 
+    repeated Sequence sequences  = 6;  // list of sequences
+    repeated Routine routines    = 7;  // list of routines
+    repeated SQLJJar sqljJars    = 8;  // list of SQLJ JAR files
 }
 
 message PendingOSC {

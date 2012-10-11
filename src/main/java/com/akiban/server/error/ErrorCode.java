@@ -230,8 +230,8 @@ public enum ErrorCode {
     // Class 35 - invalid condition number
     // Class 36 - cursor sensitivity exception
     // Class 38 - external routine exception
-    STALE_PLAN              ("38", "000", Importance.ERROR, StalePlanException.class),
     // Class 39 - external routine invocation
+    EXTERNAL_ROUTINE_INVOCATION ("39", "000", Importance.DEBUG, ExternalRoutineInvocationException.class),
     // Class 3B - savepoint exception
     // Class 3C - ambiguous cursor name
     // Class 3D - invalid catalog name
@@ -270,9 +270,20 @@ public enum ErrorCode {
     NO_SUCH_SEQUENCE        ("42", "516", Importance.DEBUG, NoSuchSequenceException.class),
     NO_SUCH_UNIQUE          ("42", "517", Importance.DEBUG, NoSuchUniqueException.class),
     NO_SUCH_GROUPING_FK     ("42", "518", Importance.DEBUG, NoSuchGroupingFKException.class),
+    NO_SUCH_ROUTINE         ("42", "519", Importance.DEBUG, NoSuchRoutineException.class),
+    NO_SUCH_CAST            ("42", "51A", Importance.DEBUG, NoSuchCastException.class),
+
 
     // Class 44 - with check option violation
     
+
+    // Class 46 - SQL/J
+    INVALID_SQLJ_JAR_URL    ("46", "001", Importance.DEBUG, InvalidSQLJJarURLException.class),
+    DUPLICATE_SQLJ_JAR      ("46", "002", Importance.DEBUG, DuplicateSQLJJarNameException.class),
+    REFERENCED_SQLJ_JAR     ("46", "003", Importance.DEBUG, ReferencedSQLJJarException.class),
+    NO_SUCH_SQLJ_JAR        ("46", "00B", Importance.DEBUG, NoSuchSQLJJarException.class),
+    SQLJ_INSTANCE_EXCEPTION ("46", "103", Importance.DEBUG, SQLJInstanceException.class),
+    INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR ("46", "200", Importance.DEBUG, InvalidSQLJDeploymentDescriptorException.class),
 
     // Class 50 - DDL definition failure
     PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 
@@ -305,6 +316,8 @@ public enum ErrorCode {
     INDISTINGUISHABLE_INDEX ("50", "00T", Importance.DEBUG, IndistinguishableIndexException.class),
     DROP_GROUP_NOT_ROOT     ("50", "00U", Importance.DEBUG, DropGroupNotRootException.class),
     BAD_SPATIAL_INDEX       ("50", "00V", Importance.DEBUG, BadSpatialIndexException.class),
+    DUPLICATE_ROUTINE       ("50", "00W", Importance.DEBUG, DuplicateRoutineNameException.class), 
+    DUPLICATE_PARAMETER     ("50", "00X", Importance.DEBUG, DuplicateParameterNameException.class),
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.
     GROUP_MULTIPLE_ROOTS    ("50", "010", Importance.DEBUG, GroupHasMultipleRootsException.class),
@@ -346,6 +359,7 @@ public enum ErrorCode {
     SEQUENCE_START_IN_RANGE ("50", "021", Importance.DEBUG, SequenceStartInRangeException.class),
     SEQUENCE_TREE_NAME_NULL ("50", "022", Importance.DEBUG, SequenceTreeNameIsNullException.class),
     ALTER_MADE_NO_CHANGE    ("50", "023", Importance.DEBUG, AlterMadeNoChangeException.class),
+    INVALID_ROUTINE         ("50", "024", Importance.DEBUG, InvalidRoutineException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
