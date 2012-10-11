@@ -109,7 +109,7 @@ public class StringFactory implements TFactory
         int charsetId = Enums.ordinalOf(Charset.class, charsetName);
         String collationName = values.stringAt(StringAttribute.COLLATION, AkCollatorFactory.UCS_BINARY);
         int collation = AkCollatorFactory.getAkCollator(collationName).getCollationId();
-        return tclass.instance(length, charsetId, collation);
+        return tclass.instance(length, charsetId, collation, values.nullable());
     }
 
 }

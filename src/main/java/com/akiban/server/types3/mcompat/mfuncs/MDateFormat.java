@@ -193,7 +193,7 @@ public abstract class MDateFormat extends TScalarBase
                             length = ((String)prepObjects[RET_INDEX]).length();
                     }
                 }
-                return MString.VARCHAR.instance(length);
+                return MString.VARCHAR.instance(length, anyContaminatingNulls(inputs));
             }
         });
     }

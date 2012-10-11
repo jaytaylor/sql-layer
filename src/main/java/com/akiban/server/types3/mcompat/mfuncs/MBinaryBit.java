@@ -207,6 +207,6 @@ public class MBinaryBit extends TScalarBase {
     }
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.BIGINT_UNSIGNED.instance());
+        return TOverloadResult.fixed(MNumeric.BIGINT_UNSIGNED);
     }
 }

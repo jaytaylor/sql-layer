@@ -73,6 +73,6 @@ public class MFromDays extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MDatetimes.DATE.instance());
+        return TOverloadResult.fixed(MDatetimes.DATE);
     }
 }

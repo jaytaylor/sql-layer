@@ -43,9 +43,9 @@ public class InetAton extends TScalarBase
     private static final long FACTORS[] = {16777216L,  65536, 256};        
     
     private final TClass argType;
-    private final TInstance returnType;
+    private final TClass returnType;
     
-    public InetAton(TClass tclass, TInstance returnType)
+    public InetAton(TClass tclass, TClass returnType)
     {
         assert tclass instanceof TString : "expecting a string class";
         this.argType = tclass;

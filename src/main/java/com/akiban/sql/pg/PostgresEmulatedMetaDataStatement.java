@@ -178,26 +178,28 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         this.usePVals = usePVals;
     }
 
+    private static final boolean FIELDS_NULLABLE = true;
+
     static final PostgresType BOOL_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID, (short)1, -1, AkType.BOOL, AkBool.INSTANCE.instance());
+        new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID, (short)1, -1, AkType.BOOL, AkBool.INSTANCE.instance(FIELDS_NULLABLE));
     static final PostgresType INT2_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID, (short)2, -1, AkType.LONG, MNumeric.SMALLINT.instance());
+        new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID, (short)2, -1, AkType.LONG, MNumeric.SMALLINT.instance(FIELDS_NULLABLE));
     static final PostgresType OID_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID, (short)4, -1, AkType.LONG, MNumeric.INT.instance());
+        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID, (short)4, -1, AkType.LONG, MNumeric.INT.instance(FIELDS_NULLABLE));
     static final PostgresType TYPNAME_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)255, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)255, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType IDENT_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)128, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)128, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType LIST_TYPE_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)13, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)13, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType CHAR0_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)0, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)0, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType CHAR1_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType INDEXDEF_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType VIEWDEF_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)32768, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)32768, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
 
     @Override
     public PostgresType[] getParameterTypes() {

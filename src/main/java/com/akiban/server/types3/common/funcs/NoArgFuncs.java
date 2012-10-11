@@ -28,8 +28,10 @@ package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TInstanceGenerator;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
@@ -46,7 +48,6 @@ public class NoArgFuncs
 {
     static final int USER_NAME_LENGTH = 77;
 
-    private static final TInstance SHORT_VERSION_INST = MString.VARCHAR.instance(AkServer.SHORT_VERSION_STRING.length());
     public static final TScalar SHORT_SERVER_VERSION = new NoArgExpression("version", true)
     {
         @Override
@@ -56,14 +57,16 @@ public class NoArgFuncs
         }
 
         @Override
-        protected TInstance tInstance()
-        {
-            return SHORT_VERSION_INST;
+        protected TClass resultTClass() {
+            return MString.VARCHAR;
         }
-        
+
+        @Override
+        protected int[] resultAttrs() {
+            return new int[] { AkServer.SHORT_VERSION_STRING.length() };
+        }
     };
 
-    private static final TInstance FULL_VERSION_INST = MString.VARCHAR.instance(AkServer.VERSION_STRING.length());
     public static final TScalar SERVER_FULL_VERSION = new NoArgExpression("version_full", true)
     {
 
@@ -74,9 +77,13 @@ public class NoArgFuncs
         }
 
         @Override
-        protected TInstance tInstance()
-        {
-            return FULL_VERSION_INST;
+        protected TClass resultTClass() {
+            return MString.VARCHAR;
+        }
+
+        @Override
+        protected int[] resultAttrs() {
+            return new int[] { AkServer.VERSION_STRING.length() };
         }
     };
     
@@ -104,7 +111,7 @@ public class NoArgFuncs
         @Override
         public TOverloadResult resultType()
         {
-            return TOverloadResult.fixed(MApproximateNumber.DOUBLE.instance());
+            return TOverloadResult.fixed(MApproximateNumber.DOUBLE);
         }
     };
  
@@ -117,9 +124,9 @@ public class NoArgFuncs
         }
         
         @Override
-        public TInstance tInstance()
+        public TClass resultTClass()
         {
-            return MDatetimes.DATE.instance();
+            return MDatetimes.DATE;
         }
 
         @Override
@@ -138,9 +145,9 @@ public class NoArgFuncs
         }
         
         @Override
-        public TInstance tInstance()
+        public TClass resultTClass()
         {
-            return MDatetimes.TIME.instance();
+            return MDatetimes.TIME;
         }
 
         @Override
@@ -159,9 +166,9 @@ public class NoArgFuncs
         }
 
         @Override
-        public TInstance tInstance()
+        public TClass resultTClass()
         {
-            return MDatetimes.DATETIME.instance();
+            return MDatetimes.DATETIME;
         }
 
         @Override
@@ -180,9 +187,9 @@ public class NoArgFuncs
         }
 
         @Override
-        protected TInstance tInstance()
+        protected TClass resultTClass()
         {
-            return MDatetimes.TIMESTAMP.instance();
+            return MDatetimes.TIMESTAMP;
         }
         
     };
@@ -190,9 +197,9 @@ public class NoArgFuncs
     public static final TScalar SYSDATE = new NoArgExpression("SYSDATE", false)
     {
         @Override
-        public TInstance tInstance()
+        public TClass resultTClass()
         {
-            return MDatetimes.DATETIME.instance();
+            return MDatetimes.DATETIME;
         }
 
         @Override
@@ -208,8 +215,13 @@ public class NoArgFuncs
         CUR_USER = new NoArgExpression("CURRENT_USER", true) {
 
             @Override
-            public TInstance tInstance() {
-                return MString.VARCHAR.instance(USER_NAME_LENGTH);
+            public TClass resultTClass() {
+                return MString.VARCHAR;
+            }
+
+            @Override
+            protected int[] resultAttrs() {
+                return new int[] { USER_NAME_LENGTH };
             }
 
             @Override
@@ -222,9 +234,13 @@ public class NoArgFuncs
     public static final TScalar SESSION_USER = new NoArgExpression("SESSION_USER", true)
     {
         @Override
-        public TInstance tInstance()
-        {
-            return MString.VARCHAR.instance(USER_NAME_LENGTH);
+        public TClass resultTClass() {
+            return MString.VARCHAR;
+        }
+
+        @Override
+        protected int[] resultAttrs() {
+            return new int[] { USER_NAME_LENGTH };
         }
 
         @Override
@@ -237,9 +253,13 @@ public class NoArgFuncs
     public static final TScalar SYSTEM_USER = new NoArgExpression("SYSTEM_USER", true)
     {
         @Override
-        public TInstance tInstance()
-        {
-            return MString.VARCHAR.instance(USER_NAME_LENGTH);
+        public TClass resultTClass() {
+            return MString.VARCHAR;
+        }
+
+        @Override
+        protected int[] resultAttrs() {
+            return new int[] { USER_NAME_LENGTH };
         }
 
         @Override

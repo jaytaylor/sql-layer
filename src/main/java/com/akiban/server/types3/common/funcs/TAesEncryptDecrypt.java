@@ -131,7 +131,7 @@ public class TAesEncryptDecrypt extends TScalarBase
                 if (text == null)
                     return inputs.get(0).instance();
                 int len = text.isNull() ? 0 : (text.getBytes().length * ratio);
-                return varbinType.instance(len);
+                return varbinType.instance(len, anyContaminatingNulls(inputs));
             }   
         });
     }

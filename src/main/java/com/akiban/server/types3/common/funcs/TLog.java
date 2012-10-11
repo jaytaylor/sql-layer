@@ -27,6 +27,7 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
@@ -40,13 +41,13 @@ public class TLog extends TScalarBase
 {
     static final double ln2 = Math.log(2);
     
-    public static TScalar[] create(TInstance ins)
+    public static TScalar[] create(TClass argType)
     {
         LogType values[] = LogType.values();
         TScalar ret[] = new TScalar[values.length];
         
         for (int n = 0; n < ret.length; ++n)
-            ret[n] = new TLog(values[n], ins);
+            ret[n] = new TLog(values[n], argType);
         return ret;
     }
 
@@ -94,9 +95,9 @@ public class TLog extends TScalarBase
     }
 
     private final LogType logType;
-    private final TInstance argType;
+    private final TClass argType;
     
-    TLog (LogType logType, TInstance argType)
+    TLog (LogType logType, TClass argType)
     {
         this.logType = logType;
         this.argType = argType;
@@ -105,7 +106,7 @@ public class TLog extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(argType.typeClass(), 0);
+        builder.covers(argType, 0);
     }
 
     @Override

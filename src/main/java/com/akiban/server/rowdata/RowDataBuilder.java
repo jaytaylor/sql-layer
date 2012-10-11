@@ -35,6 +35,7 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -315,14 +316,14 @@ public final class RowDataBuilder {
             if (stringInput != null) {
                 // turn the string input into a PValueSource, then give it to TClass.fromObject.
                 // Strings being inserted to binary types are a special, weird case.
-                if (pValue.getUnderlyingType() == PUnderlying.BYTES) {
+                if (instance.typeClass() instanceof MBinary) {
                     target.putStringBytes(stringInput);
                     return;
                 }
                 if (stringCache == null)
                     stringCache = new PValue(PUnderlying.STRING);
                 stringCache.putString(stringInput, null);
-                TExecutionContext context = null;
+                TExecutionContext context = new TExecutionContext(null, instance, null);
                 instance.typeClass().fromObject(context, stringCache, pValue);
             }
             instance.writeCanonical(pValue, target);

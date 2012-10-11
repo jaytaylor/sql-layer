@@ -96,7 +96,7 @@ public class MConvertTZ extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MDatetimes.DATETIME.instance());
+        return TOverloadResult.fixed(MDatetimes.DATETIME);
     }
     
     /**

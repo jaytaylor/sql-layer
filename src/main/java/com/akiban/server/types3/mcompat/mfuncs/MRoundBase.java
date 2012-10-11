@@ -109,20 +109,20 @@ public abstract class MRoundBase extends TScalarBase {
                         // Special case: DECIMAL(0,0)
                         if (precision + scale == 0) {
                             context.set(RET_TYPE_INDEX, MNumeric.BIGINT);
-                            return MNumeric.BIGINT.instance(ZERO_DEFAULT);
+                            return MNumeric.BIGINT.instance(ZERO_DEFAULT, preptimeValue.isNullable());
                         }
                         int length = precision - scale;
                         if (length >= 0 && length < 9) {
                             context.set(RET_TYPE_INDEX, MNumeric.INT);
-                            return MNumeric.INT.instance(length + 3);
+                            return MNumeric.INT.instance(length + 3, preptimeValue.isNullable());
                         }
                         if (length >= 9 && length < 14) {
                             context.set(RET_TYPE_INDEX, MNumeric.BIGINT);
-                            return MNumeric.BIGINT.instance(BIGINT_DEFAULT);
+                            return MNumeric.BIGINT.instance(BIGINT_DEFAULT, preptimeValue.isNullable());
                         }
 
                         context.set(RET_TYPE_INDEX, MNumeric.DECIMAL);
-                        return MNumeric.DECIMAL.instance(DECIMAL_DEFAULT, 0);
+                        return MNumeric.DECIMAL.instance(DECIMAL_DEFAULT, 0, preptimeValue.isNullable());
                     }
                 });
             }
@@ -138,11 +138,11 @@ public abstract class MRoundBase extends TScalarBase {
 
             @Override
             public TOverloadResult resultType() {
-                return TOverloadResult.custom(numericType.instance(), new TCustomOverloadResult() {
+                return TOverloadResult.custom(new TInstanceGenerator(numericType), new TCustomOverloadResult() {
 
                     @Override
                     public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                        return numericType.instance(DEFAULT_DOUBLE, 0);
+                        return numericType.instance(DEFAULT_DOUBLE, 0, anyContaminatingNulls(inputs));
                     }   
                 });
             }

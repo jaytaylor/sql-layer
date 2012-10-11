@@ -1366,7 +1366,7 @@
 ---
 #command number: 150
 - Statement: SELECT '2012-01-23' + INTERVAL 1 YEAR FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [CHAR], all: [DATE], newtypes: [VARCHAR] }
 ---
 #command number: 151
 - Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 YEAR FROM all_types;
