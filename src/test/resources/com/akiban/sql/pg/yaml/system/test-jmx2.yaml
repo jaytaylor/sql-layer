@@ -1,6 +1,6 @@
-#---
-#- Properties: sys-aksql
-#- suppressed: true
+---
+- Properties: sys-mysql
+- suppressed: true
 ---
 - CreateTable: t1 (c1 int);
 ---

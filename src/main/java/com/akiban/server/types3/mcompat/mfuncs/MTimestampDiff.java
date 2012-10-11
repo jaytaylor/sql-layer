@@ -30,8 +30,8 @@ import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -44,10 +44,10 @@ import com.akiban.sql.parser.TernaryOperatorNode;
 
 public class MTimestampDiff extends TScalarBase
 {
-    public static TOverload[] create()
+    public static TScalar[] create()
     {
         ArgType args[] = ArgType.values();
-        TOverload ret[] = new TOverload[args.length * args.length];
+        TScalar ret[] = new TScalar[args.length * args.length];
         int n = 0;
         
         for (ArgType arg1 : args)

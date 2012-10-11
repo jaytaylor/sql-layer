@@ -1,4 +1,7 @@
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - CreateTable: people (pid INT NOT NULL PRIMARY KEY, name VARCHAR(32) COLLATE utf8_bin);
 ---
 - CreateTable: addresses (

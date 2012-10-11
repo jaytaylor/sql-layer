@@ -2,6 +2,10 @@
 ## Related bug: 979073
 ## Status: fix committed
 ---
+- Properties: sys-mysql
+- suppressed: true
+# RAND() is mysql, RANDOM() is not
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: SELECT RAND();
