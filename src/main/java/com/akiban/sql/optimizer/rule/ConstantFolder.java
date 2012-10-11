@@ -451,6 +451,7 @@ public class ConstantFolder extends BaseRule
                 if (!emptyRow)
                     replacement = new NullSource();
                 else {
+                    // set iTinstance types? No. 
                     replacement = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
                 }
                 inOutput.replaceInput(toReplace, replacement);
