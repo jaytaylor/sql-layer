@@ -81,7 +81,7 @@ public class ConstantFolder extends BaseRule
         private Set<AggregateSource> changedAggregates = null;
         private enum State { FOLDING, AGGREGATES };
         private State state;
-        private boolean changed;
+        private boolean changed, piecemeal;
         private Map<ConditionExpression,Boolean> topLevelConditions = 
             new IdentityHashMap<ConditionExpression,Boolean>();
 
@@ -94,6 +94,7 @@ public class ConstantFolder extends BaseRule
             do {
                 state = State.FOLDING;
                 changed = false;
+                piecemeal = true;
                 topLevelConditions.clear();
                 fromNode = fromNode.accept(this);
             } while (changed);
@@ -106,6 +107,7 @@ public class ConstantFolder extends BaseRule
         public boolean foldConstants() {
             state = State.FOLDING;
             changed = false;
+            piecemeal = false;
             topLevelConditions.clear();
             planContext.accept(this);
             return changed;
@@ -665,7 +667,7 @@ public class ConstantFolder extends BaseRule
             }
             InCondition in = InCondition.of(cond);
             if (in != null) {
-                in.dedup(isTopLevelCondition(cond));
+                in.dedup(isTopLevelCondition(cond), !piecemeal);
                 switch (in.compareConstants(this)) {
                 case COMPARE_NULL:
                     return newBooleanConstant(null, cond);
@@ -1023,7 +1025,7 @@ public class ConstantFolder extends BaseRule
             }
         }
 
-        public void dedup(boolean topLevel) {
+        public void dedup(boolean topLevel, boolean setDistinct) {
             if (expressions.getDistinctState() != null)
                 return;
 
@@ -1084,16 +1086,18 @@ public class ConstantFolder extends BaseRule
             if (others != null)
                 rows.addAll(others);
 
-            DistinctState distinct;
-            if (others != null)
-                distinct = DistinctState.HAS_EXPRESSSIONS;
-            else if (parameters != null)
-                distinct = DistinctState.HAS_PARAMETERS;
-            else if (anyNull)
-                distinct = DistinctState.DISTINCT_WITH_NULL;
-            else
-                distinct = DistinctState.DISTINCT;
-            expressions.setDistinctState(distinct);
+            if (setDistinct) {
+                DistinctState distinct;
+                if (others != null)
+                    distinct = DistinctState.HAS_EXPRESSSIONS;
+                else if (parameters != null)
+                    distinct = DistinctState.HAS_PARAMETERS;
+                else if (anyNull)
+                    distinct = DistinctState.DISTINCT_WITH_NULL;
+                else
+                    distinct = DistinctState.DISTINCT;
+                expressions.setDistinctState(distinct);
+            }
         }
 
         private static boolean isParam(ExpressionNode expr) {
