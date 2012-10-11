@@ -47,24 +47,22 @@ public final class LegacyRowWrapper extends NewRow
     // For when a LegacyRowWrapper is being reused, e.g. WriteRowRequest.
     public LegacyRowWrapper()
     {
-        this((RowDef) null);
+        this(null, null);
     }
 
     public LegacyRowWrapper(RowDef rowDef)
     {
-        super(rowDef);
-        setRowData(null);
+        this(rowDef, null);
+    }
+
+    public LegacyRowWrapper(Session session, RowData rowData, Store store)
+    {
+        this(rowDef(session, rowData.getRowDefId(), store), rowData);
     }
 
     public LegacyRowWrapper(RowDef rowDef, RowData rowData)
     {
         super(rowDef);
-        setRowData(rowData);
-    }
-
-    public LegacyRowWrapper(Session session, RowData rowData, Store store)
-    {
-        this(rowDef(session, rowData.getRowDefId(), store));
         setRowData(rowData);
     }
 
