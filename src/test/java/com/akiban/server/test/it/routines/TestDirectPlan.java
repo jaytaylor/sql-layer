@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.test.it.loadableplan;
+package com.akiban.server.test.it.routines;
 
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
@@ -38,22 +38,13 @@ import java.util.List;
 
 /** A loadable direct object plan.
  * <code><pre>
-java -jar jmxterm-1.0-alpha-4-uber.jar -l localhost:8082 -n <<EOF
-run -b com.akiban:type=PostgresServer loadPlan `pwd`/`ls target/akiban-server-*-SNAPSHOT-tests.jar` com.akiban.server.test.it.loadableplan.TestDirectPlan
-EOF
-psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
-call test_direct(10)
-EOF
+CALL sqlj.install_jar('target/akiban-server-1.4.2-SNAPSHOT-tests.jar', 'testjar', 0);
+CREATE PROCEDURE test_direct(IN n BIGINT) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'testjar:com.akiban.server.test.it.routines.TestDirectPlan';
+CALL test_direct(10)
  * </pre></code> 
  */
 public class TestDirectPlan extends LoadableDirectObjectPlan
 {
-    @Override
-    public String name()
-    {
-        return "test_direct";
-    }
-
     @Override
     public DirectObjectPlan plan()
     {

@@ -301,7 +301,7 @@ public class OverloadResolverTest {
     // default resolution, types don't match (no registered casts, int -> bigint)
     @Test
     public void mulBigIntWithInts() {
-        new Initializer().overloads(MUL_BIGINTS).init();
+        new Initializer().overloads(MUL_BIGINTS).casts(C_INT_BIGINT).init();
         checkResolved("INT*INT", MUL_BIGINTS, MUL_NAME, prepVals(TINT, TINT));
     }
 

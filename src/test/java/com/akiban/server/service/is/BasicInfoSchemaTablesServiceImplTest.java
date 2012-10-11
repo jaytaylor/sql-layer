@@ -32,6 +32,8 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -46,6 +48,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -68,7 +71,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     private MemoryAdapter adapter;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         holder = new AisHolder() {
             final AkibanInformationSchema ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
 
@@ -116,7 +119,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
     }
 
-    private void createTables() {
+    private void createTables() throws Exception {
         AISBuilder builder = new AISBuilder(holder.getAis());
 
         {
@@ -276,6 +279,21 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.column(schema, view, "c1", 0, "DOUBLE", null, null, true, false, null, null);
         builder.column(schema, view, "c2", 1, "INT", null, null, false, false, null, null);
         }
+
+        builder.sqljJar("test", "ajar", 
+                        new URL("https://software.akiban.com/procs/ajar.jar"));
+
+        builder.routine("test", "proc1", "java", Routine.CallingConvention.JAVA);
+        builder.parameter("test", "proc1", "n1", Parameter.Direction.IN,
+                          "bigint", null, null);
+        builder.parameter("test", "proc1", "s1", Parameter.Direction.IN,
+                          "varchar", 16L, null);
+        builder.parameter("test", "proc1", "n2", Parameter.Direction.IN,
+                          "decimal", 10L, 5L);
+        builder.parameter("test", "proc1", null, Parameter.Direction.OUT,
+                          "varchar", 100L, null);
+        builder.routineExternalName("test", "proc1", "test", "ajar",
+                                    "com.akiban.procs.Proc1", "call");
     }
 
     private MemoryTableFactory getFactory(TableName name) {
@@ -398,7 +416,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S tables", 13, skipped);
+        assertEquals("Skip I_S tables", 17, skipped);
     }
 
     @Test
@@ -432,7 +450,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 99, skipped);
+        assertEquals("Skipped I_S columns", 127, skipped);
     }
 
     @Test
@@ -489,7 +507,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S grouping_constraints", 13, skipped);
+        assertEquals("Skipped I_S grouping_constraints", 17, skipped);
     }
 
     @Test
@@ -599,6 +617,49 @@ public class BasicInfoSchemaTablesServiceImplTest {
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_COLUMN_USAGE).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S views", 0, skipped);
+    }
+
+    @Test
+    public void routinesScan() {
+        final Object[][] expected = {
+            { "test", "proc1", "PROCEDURE", null, "com.akiban.procs.Proc1.call", "java", "JAVA", "NO", null, "YES", 0L, LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINES).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S routines", 0, skipped);
+    }
+
+    @Test
+    public void parametersScan() {
+        final Object[][] expected = {
+            { "test", "proc1", "n1", 1L, "bigint", null, null, null, "IN", "NO", LONG },
+            { "test", "proc1", "s1", 2L, "varchar", 16L, null, null, "IN", "NO", LONG },
+            { "test", "proc1", "n2", 3L, "decimal", null, 10L, 5L, "IN", "NO", LONG },
+            { "test", "proc1", null, 4L, "varchar", 100L, null, null, "OUT", "NO", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.PARAMETERS).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S parameters", 0, skipped);
+    }
+
+    @Test
+    public void jarsScan() {
+        final Object[][] expected = {
+            { "test", "ajar", "https://software.akiban.com/procs/ajar.jar", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.JARS).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S jars", 0, skipped);
+    }
+
+    @Test
+    public void routineJarUsageScan() {
+        final Object[][] expected = {
+                { "test", "proc1", "test", "ajar", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINE_JAR_USAGE).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S routines", 0, skipped);
     }
 
 }
