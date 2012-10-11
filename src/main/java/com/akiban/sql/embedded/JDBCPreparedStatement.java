@@ -28,8 +28,10 @@ package com.akiban.sql.embedded;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.server.ServerJavaValues;
+import com.akiban.sql.server.ServerQueryContext;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -48,38 +50,53 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
                                     InternalStatement internalStatement) {
         super(connection);
         this.internalStatement = internalStatement;
-        context = new EmbeddedQueryContext(connection, this);
+        context = new EmbeddedQueryContext(this);
     }
 
     protected class Values extends ServerJavaValues {
         @Override
-        protected ValueSource getValue(int parameterIndex) {
-            return context.getValue(parameterIndex - 1);
+        protected int size() {
+            return internalStatement.getParameterMetaData().getParameters().size();
         }
 
         @Override
-        protected void setValue(int parameterIndex, ValueSource source, AkType akType) {
-            context.setValue(parameterIndex - 1, source, akType);
+        protected ServerQueryContext getContext() {
+            return context;
         }
 
         @Override
-        protected PValueSource getPValue(int parameterIndex) {
-            return context.getPValue(parameterIndex - 1);
+        protected ValueSource getValue(int index) {
+            return context.getValue(index);
         }
 
         @Override
-        protected void setPValue(int parameterIndex, PValueSource source) {
-            context.setPValue(parameterIndex - 1, source);
+        protected void setValue(int index, ValueSource source, AkType akType) {
+            context.setValue(index, source, akType);
         }
 
         @Override
-        protected ResultSet toResultSet(int parameterIndex, Object resultSet) {
+        protected PValueSource getPValue(int index) {
+            return context.getPValue(index);
+        }
+
+        @Override
+        protected void setPValue(int index, PValueSource source) {
+            context.setPValue(index, source);
+        }
+
+        @Override
+        protected AkType getAkType(int index) {
+            return internalStatement.getParameterMetaData().getParameter(index + 1).getAkType();
+        }
+
+        @Override
+        protected TInstance getTInstance(int index) {
+            return internalStatement.getParameterMetaData().getParameter(index + 1).getTInstance();
+        }
+
+        @Override
+        protected ResultSet toResultSet(int index, Object resultSet) {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected AkType getTargetType(int parameterIndex) {
-            return internalStatement.getParameterMetaData().getParameter(parameterIndex).getAkType();
         }
     }
 
@@ -98,7 +115,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setNull(int parameterIndex, int sqlType) throws SQLException {
         try {
-            values.setNull(parameterIndex);
+            values.setNull(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -108,7 +125,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBoolean(int parameterIndex, boolean x) throws SQLException {
         try {
-            values.setBoolean(parameterIndex, x);
+            values.setBoolean(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -118,7 +135,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setByte(int parameterIndex, byte x) throws SQLException {
         try {
-            values.setByte(parameterIndex, x);
+            values.setByte(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -128,7 +145,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setShort(int parameterIndex, short x) throws SQLException {
         try {
-            values.setShort(parameterIndex, x);
+            values.setShort(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -138,7 +155,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setInt(int parameterIndex, int x) throws SQLException {
         try {
-            values.setInt(parameterIndex, x);
+            values.setInt(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -148,7 +165,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setLong(int parameterIndex, long x) throws SQLException {
         try {
-            values.setLong(parameterIndex, x);
+            values.setLong(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -158,7 +175,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setFloat(int parameterIndex, float x) throws SQLException {
         try {
-            values.setFloat(parameterIndex, x);
+            values.setFloat(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -168,7 +185,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setDouble(int parameterIndex, double x) throws SQLException {
         try {
-            values.setDouble(parameterIndex, x);
+            values.setDouble(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -178,7 +195,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
         try {
-            values.setBigDecimal(parameterIndex, x);
+            values.setBigDecimal(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -188,7 +205,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setString(int parameterIndex, String x) throws SQLException {
         try {
-            values.setString(parameterIndex, x);
+            values.setString(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -198,7 +215,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBytes(int parameterIndex, byte x[]) throws SQLException {
         try {
-            values.setBytes(parameterIndex, x);
+            values.setBytes(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -208,7 +225,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setDate(int parameterIndex, Date x) throws SQLException {
         try {
-            values.setDate(parameterIndex, x);
+            values.setDate(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -218,7 +235,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setTime(int parameterIndex, Time x) throws SQLException {
         try {
-            values.setTime(parameterIndex, x);
+            values.setTime(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -228,7 +245,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
         try {
-            values.setTimestamp(parameterIndex, x);
+            values.setTimestamp(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -238,7 +255,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
         try {
-            values.setAsciiStream(parameterIndex, x, length);
+            values.setAsciiStream(parameterIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -251,7 +268,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
         try {
-            values.setUnicodeStream(parameterIndex, x, length);
+            values.setUnicodeStream(parameterIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -264,7 +281,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
         try {
-            values.setBinaryStream(parameterIndex, x, length);
+            values.setBinaryStream(parameterIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -287,7 +304,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setObject(int parameterIndex, Object x) throws SQLException {
         try {
-            values.setObject(parameterIndex, x);
+            values.setObject(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -307,7 +324,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
         try {
-            values.setCharacterStream(parameterIndex, reader, length);
+            values.setCharacterStream(parameterIndex - 1, reader, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -320,7 +337,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setRef(int parameterIndex, Ref x) throws SQLException {
         try {
-            values.setRef(parameterIndex, x);
+            values.setRef(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -330,7 +347,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBlob(int parameterIndex, Blob x) throws SQLException {
         try {
-            values.setBlob(parameterIndex, x);
+            values.setBlob(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -340,7 +357,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setClob(int parameterIndex, Clob x) throws SQLException {
         try {
-            values.setClob(parameterIndex, x);
+            values.setClob(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -350,7 +367,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setArray(int parameterIndex, Array x) throws SQLException {
         try {
-            values.setArray(parameterIndex, x);
+            values.setArray(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -365,7 +382,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
         try {
-            values.setDate(parameterIndex, x, cal);
+            values.setDate(parameterIndex - 1, x, cal);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -375,7 +392,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
         try {
-            values.setTime(parameterIndex, x, cal);
+            values.setTime(parameterIndex - 1, x, cal);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -385,7 +402,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
         try {
-            values.setTimestamp(parameterIndex, x, cal);
+            values.setTimestamp(parameterIndex - 1, x, cal);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -400,7 +417,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setURL(int parameterIndex, URL x) throws SQLException {
         try {
-            values.setURL(parameterIndex, x);
+            values.setURL(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -415,7 +432,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setRowId(int parameterIndex, RowId x) throws SQLException {
         try {
-            values.setRowId(parameterIndex, x);
+            values.setRowId(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -425,7 +442,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setNString(int parameterIndex, String value) throws SQLException {
         try {
-            values.setNString(parameterIndex, value);
+            values.setNString(parameterIndex - 1, value);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -435,7 +452,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
         try {
-            values.setNCharacterStream(parameterIndex, value, length);
+            values.setNCharacterStream(parameterIndex - 1, value, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -448,7 +465,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setNClob(int parameterIndex, NClob value) throws SQLException {
         try {
-            values.setNClob(parameterIndex, value);
+            values.setNClob(parameterIndex - 1, value);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -458,7 +475,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
         try {
-            values.setClob(parameterIndex, reader, length);
+            values.setClob(parameterIndex - 1, reader, length);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -468,7 +485,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
         try {
-            values.setBlob(parameterIndex, inputStream, length);
+            values.setBlob(parameterIndex - 1, inputStream, length);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -478,7 +495,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
         try {
-            values.setNClob(parameterIndex, reader, length);
+            values.setNClob(parameterIndex - 1, reader, length);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -488,7 +505,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
         try {
-            values.setSQLXML(parameterIndex, xmlObject);
+            values.setSQLXML(parameterIndex - 1, xmlObject);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -503,7 +520,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
         try {
-            values.setAsciiStream(parameterIndex, x, length);
+            values.setAsciiStream(parameterIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -516,7 +533,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
         try {
-            values.setBinaryStream(parameterIndex, x, length);
+            values.setBinaryStream(parameterIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -529,7 +546,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
         try {
-            values.setCharacterStream(parameterIndex, reader, length);
+            values.setCharacterStream(parameterIndex - 1, reader, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -542,7 +559,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
         try {
-            values.setAsciiStream(parameterIndex, x);
+            values.setAsciiStream(parameterIndex - 1, x);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -555,7 +572,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
         try {
-            values.setBinaryStream(parameterIndex, x);
+            values.setBinaryStream(parameterIndex - 1, x);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -568,7 +585,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
         try {
-            values.setCharacterStream(parameterIndex, reader);
+            values.setCharacterStream(parameterIndex - 1, reader);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -581,7 +598,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
         try {
-            values.setNCharacterStream(parameterIndex, value);
+            values.setNCharacterStream(parameterIndex - 1, value);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -594,7 +611,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setClob(int parameterIndex, Reader reader) throws SQLException {
         try {
-            values.setClob(parameterIndex, reader);
+            values.setClob(parameterIndex - 1, reader);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -604,7 +621,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
         try {
-            values.setBlob(parameterIndex, inputStream);
+            values.setBlob(parameterIndex - 1, inputStream);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);
@@ -614,7 +631,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     @Override
     public void setNClob(int parameterIndex, Reader reader) throws SQLException {
         try {
-            values.setNClob(parameterIndex, reader);
+            values.setNClob(parameterIndex - 1, reader);
         }
         catch (RuntimeException ex) {
             JDBCException.throwUnwrapped(ex);

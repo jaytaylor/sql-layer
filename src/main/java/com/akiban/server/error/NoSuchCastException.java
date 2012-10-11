@@ -24,33 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model.validation;
+package com.akiban.server.error;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.GroupHasMultipleRootsException;
+import com.akiban.server.types3.TInstance;
 
-class GroupTableSingleRoot implements AISValidation {
-
-    @Override
-    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (Group group : ais.getGroups().values()) {
-            validateGroup (ais, group, output);
-        }
-    }
-    
-    private void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
-        UserTable root = null;
-        for (UserTable userTable : ais.getUserTables().values()) {
-            if (userTable.getGroup() == group && userTable.getParentJoin() == null) {
-                if (root == null) {
-                    root = userTable;
-                } else {
-                    output.reportFailure(new AISValidationFailure (
-                            new GroupHasMultipleRootsException (group.getName(), root.getName(),userTable.getName())));
-                }
-            }
-        }
+public final class NoSuchCastException extends InvalidOperationException {
+    public NoSuchCastException(TInstance source, TInstance target) {
+        super(ErrorCode.NO_SUCH_CAST, source.toString(), target.toString());
     }
 }

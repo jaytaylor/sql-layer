@@ -39,6 +39,11 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 
@@ -187,6 +192,16 @@ public class ServerRoutineInvocation
         }
 
         @Override
+        protected int size() {
+            return routine.getParameters().size();
+        }
+
+        @Override
+        protected ServerQueryContext getContext() {
+            return parameters;
+        }
+
+        @Override
         protected ValueSource getValue(int index) {
             if (parameterArgs[index] < 0) {
                 return new FromObjectValueSource().setReflectively(constantArgs[index]);
@@ -198,17 +213,36 @@ public class ServerRoutineInvocation
 
         @Override
         protected PValueSource getPValue(int index) {
+            TInstance tinstance = getTInstance(index);
+            TClass tclass = tinstance.typeClass();
+            PValueSource source;
             if (parameterArgs[index] < 0) {
-                return PValueSources.fromObject(constantArgs[index], null).value();
+                TPreptimeValue value = PValueSources.fromObject(constantArgs[index], null);
+                source = value.value();
+                if (value.instance().typeClass().equals(tclass))
+                    return source; // Literal value matches.
             }
             else {
-                return parameters.getPValue(parameterArgs[index]);
+                source = parameters.getPValue(parameterArgs[index]);
             }
+            // Constants passed or parameters bound may not be of the
+            // type specified in the signature.
+            PValue pvalue = new PValue(tclass.underlyingType());
+            TExecutionContext executionContext = 
+                new TExecutionContext(null, null, tinstance,
+                                      parameters, null, null, null);
+            tclass.fromObject(executionContext, source, pvalue);
+            return pvalue;
         }
 
         @Override
-        protected AkType getTargetType(int index) {
-            throw new UnsupportedOperationException();
+        protected AkType getAkType(int index) {
+            return routine.getParameters().get(index).getType().akType();
+        }
+
+        @Override
+        protected TInstance getTInstance(int index) {
+            return routine.getParameters().get(index).tInstance();
         }
 
         @Override

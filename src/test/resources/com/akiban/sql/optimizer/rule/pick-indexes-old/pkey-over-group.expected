@@ -4,7 +4,7 @@ SelectQuery@609903f4
       Select@4cc5aa00[]
         JoinNode@451c0d60(LEFT/NESTED_LOOPS[parent.id == orders.oid])
           JoinNode@34b23d12(LEFT/NESTED_LOOPS[])
-            TableJoins@2c22d166(TableGroup@21e1962d(customers) - GroupScan@79f03d7(Group(customers -> test._akiban_customers)))
+            TableJoins@2c22d166(TableGroup@21e1962d(customers) - GroupScan@79f03d7(Group(customers -> test.customers)))
               TableSource@21c783c5(customers - TableGroup@21e1962d(customers))
             TableJoins@614a75bb(TableGroup@5f7779e3(parent) - SingleIndexScan@58b51c29(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name))
               TableSource@319c0bd6(parent - TableGroup@5f7779e3(parent))

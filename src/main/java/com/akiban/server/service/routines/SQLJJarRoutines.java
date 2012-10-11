@@ -57,7 +57,7 @@ public class SQLJJarRoutines
         ServerQueryContext context = ServerCallContextStack.current().getContext();
         ServerSession server = context.getServer();
         TableName jarName = jarName(server, jar);
-        server.getRoutineLoader().unloadSQLJJar(jarName);
+        server.getRoutineLoader().unloadSQLJJar(server.getSession(), jarName);
         NewAISBuilder aisb = AISBBasedBuilder.create(server.getDefaultSchemaName());
         aisb.sqljJar(jarName).url(url, true);
         SQLJJar sqljJar = aisb.ais().getSQLJJar(jarName);
@@ -71,7 +71,7 @@ public class SQLJJarRoutines
         if (undeploy != 0) {
             new SQLJJarDeployer(context, jarName).undeploy();
         }
-        server.getRoutineLoader().unloadSQLJJar(jarName);
+        server.getRoutineLoader().unloadSQLJJar(server.getSession(), jarName);
         server.getDXL().ddlFunctions().dropSQLJJar(server.getSession(), jarName);
     }
 

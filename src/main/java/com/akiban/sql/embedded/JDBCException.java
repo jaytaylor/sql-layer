@@ -62,8 +62,8 @@ public class JDBCException extends SQLException
         }
     }
 
-    protected static void throwWrapped(String reason) {
-        throw new Wrapper(new JDBCException(reason));
+    protected static RuntimeException wrapped(String reason) {
+        return new Wrapper(new JDBCException(reason));
     }
 
     protected static RuntimeException throwUnwrapped(RuntimeException ex) throws SQLException {

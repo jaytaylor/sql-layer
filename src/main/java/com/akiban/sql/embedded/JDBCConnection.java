@@ -93,12 +93,6 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         else
             warnings.setNextWarning(warning);
     }
-
-    @Override
-    public LoadablePlan<?> loadablePlan(String planName)
-    {
-        return null;
-    }
     
     @Override
     public StoreAdapter getStore(final UserTable table) {

@@ -29,8 +29,10 @@ package com.akiban.sql.embedded;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.sql.server.ServerJavaValues;
+import com.akiban.sql.server.ServerQueryContext;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 import java.sql.*;
@@ -49,17 +51,20 @@ public class JDBCResultSet implements ResultSet
     protected final JDBCResultSetMetaData metaData;
     protected Cursor cursor;
     protected Row row;
-    protected final Values values = new Values();
-    
+    private final EmbeddedQueryContext context;
+    private final Values values;
+    private JDBCWarning warnings;
+
     protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData) {
         this.statement = statement;
         this.metaData = metaData;
+        context = new EmbeddedQueryContext(this);
+        values = new Values();
     }
 
     protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData,
                             Cursor cursor) {
-        this.statement = statement;
-        this.metaData = metaData;
+        this(statement, metaData);
         this.cursor = cursor;
         statement.openingResultSet(this);
     }
@@ -71,43 +76,58 @@ public class JDBCResultSet implements ResultSet
 
     protected class Values extends ServerJavaValues {
         @Override
-        protected ValueSource getValue(int columnIndex) {
-            if (row == null) {
-                if (cursor == null)
-                    JDBCException.throwWrapped("Already closed.");
-                else
-                    JDBCException.throwWrapped("Past end.");
-            }
-            if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
-                JDBCException.throwWrapped("Column index out of bounds");
-            return row.eval(columnIndex - 1);
+        protected int size() {
+            return metaData.getColumns().size();
         }
 
         @Override
-        protected PValueSource getPValue(int columnIndex) {
-            if (row == null) {
-                if (cursor == null)
-                    JDBCException.throwWrapped("Already closed.");
-                else
-                    JDBCException.throwWrapped("Past end.");
-            }
-            if ((columnIndex < 1) || (columnIndex > row.rowType().nFields()))
-                JDBCException.throwWrapped("Column index out of bounds");
-
-            return row.pvalue(columnIndex - 1);
+        protected ServerQueryContext getContext() {
+            return context;
         }
 
         @Override
-        protected ResultSet toResultSet(int columnIndex, Object resultSet) {
+        protected ValueSource getValue(int index) {
+            if (row == null) {
+                if (cursor == null)
+                    throw JDBCException.wrapped("Already closed.");
+                else
+                    throw JDBCException.wrapped("Past end.");
+            }
+            if ((index < 0) || (index >= row.rowType().nFields()))
+                throw JDBCException.wrapped("Column index out of bounds");
+            return row.eval(index);
+        }
+
+        @Override
+        protected PValueSource getPValue(int index) {
+            if (row == null) {
+                if (cursor == null)
+                    throw JDBCException.wrapped("Already closed.");
+                else
+                    throw JDBCException.wrapped("Past end.");
+            }
+            if ((index < 0) || (index >= row.rowType().nFields()))
+                throw JDBCException.wrapped("Column index out of bounds");
+
+            return row.pvalue(index);
+        }
+
+        @Override
+        protected ResultSet toResultSet(int index, Object resultSet) {
             if (resultSet == null)
                 return null;
             else
-                return new JDBCResultSet(statement, metaData.getNestedResultSet(columnIndex), (Cursor)resultSet);
+                return new JDBCResultSet(statement, metaData.getNestedResultSet(index + 1), (Cursor)resultSet);
         }
 
         @Override
-        protected AkType getTargetType(int columnIndex) {
-            return metaData.getColumn(columnIndex).getAkType();
+        protected AkType getAkType(int index) {
+            return metaData.getColumn(index + 1).getAkType();
+        }
+
+        @Override
+        protected TInstance getTInstance(int index) {
+            return metaData.getColumn(index + 1).getTInstance();
         }
 
         @Override
@@ -119,6 +139,13 @@ public class JDBCResultSet implements ResultSet
         protected void setPValue(int index, PValueSource source) {
             throw new UnsupportedOperationException("Row update not suported");
         }
+    }
+
+    protected void addWarning(JDBCWarning warning) {
+        if (warnings == null)
+            warnings = warning;
+        else
+            warnings.setNextWarning(warning);
     }
 
     /* Wrapper */
@@ -176,7 +203,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public String getString(int columnIndex) throws SQLException {
         try {
-            return values.getString(columnIndex);
+            return values.getString(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -186,7 +213,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
         try {
-            return values.getBoolean(columnIndex);
+            return values.getBoolean(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -196,7 +223,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public byte getByte(int columnIndex) throws SQLException {
         try {
-            return values.getByte(columnIndex);
+            return values.getByte(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -206,7 +233,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public short getShort(int columnIndex) throws SQLException {
         try {
-            return values.getShort(columnIndex);
+            return values.getShort(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -216,7 +243,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public int getInt(int columnIndex) throws SQLException {
         try {
-            return values.getInt(columnIndex);
+            return values.getInt(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -226,7 +253,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public long getLong(int columnIndex) throws SQLException {
         try {
-            return values.getLong(columnIndex);
+            return values.getLong(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -236,7 +263,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public float getFloat(int columnIndex) throws SQLException {
         try {
-            return values.getFloat(columnIndex);
+            return values.getFloat(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -246,7 +273,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public double getDouble(int columnIndex) throws SQLException {
         try {
-            return values.getDouble(columnIndex);
+            return values.getDouble(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -261,7 +288,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
         try {
-            return values.getBytes(columnIndex);
+            return values.getBytes(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -271,7 +298,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Date getDate(int columnIndex) throws SQLException {
         try {
-            return values.getDate(columnIndex);
+            return values.getDate(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -281,7 +308,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Time getTime(int columnIndex) throws SQLException {
         try {
-            return values.getTime(columnIndex);
+            return values.getTime(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -291,7 +318,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
         try {
-            return values.getTimestamp(columnIndex);
+            return values.getTimestamp(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -301,7 +328,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
         try {
-            return values.getAsciiStream(columnIndex);
+            return values.getAsciiStream(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -311,7 +338,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
         try {
-            return values.getUnicodeStream(columnIndex);
+            return values.getUnicodeStream(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -321,7 +348,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
         try {
-            return values.getBinaryStream(columnIndex);
+            return values.getBinaryStream(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -430,7 +457,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Object getObject(int columnIndex) throws SQLException {
         try {
-            return values.getObject(columnIndex);
+            return values.getObject(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -455,7 +482,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
         try {
-            return values.getCharacterStream(columnIndex);
+            return values.getCharacterStream(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -470,7 +497,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
         try {
-            return values.getBigDecimal(columnIndex);
+            return values.getBigDecimal(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -590,7 +617,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateNull(int columnIndex) throws SQLException {
         try {
-            values.setNull(columnIndex);
+            values.setNull(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -600,7 +627,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBoolean(int columnIndex, boolean x) throws SQLException {
         try {
-            values.setBoolean(columnIndex, x);
+            values.setBoolean(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -610,7 +637,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateByte(int columnIndex, byte x) throws SQLException {
         try {
-            values.setByte(columnIndex, x);
+            values.setByte(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -620,7 +647,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateShort(int columnIndex, short x) throws SQLException {
         try {
-            values.setShort(columnIndex, x);
+            values.setShort(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -630,7 +657,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateInt(int columnIndex, int x) throws SQLException {
         try {
-            values.setInt(columnIndex, x);
+            values.setInt(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -640,7 +667,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateLong(int columnIndex, long x) throws SQLException {
         try {
-            values.setLong(columnIndex, x);
+            values.setLong(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -650,7 +677,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateFloat(int columnIndex, float x) throws SQLException {
         try {
-            values.setFloat(columnIndex, x);
+            values.setFloat(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -660,7 +687,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateDouble(int columnIndex, double x) throws SQLException {
         try {
-            values.setDouble(columnIndex, x);
+            values.setDouble(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -670,7 +697,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
         try {
-            values.setBigDecimal(columnIndex, x);
+            values.setBigDecimal(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -680,7 +707,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateString(int columnIndex, String x) throws SQLException {
         try {
-            values.setString(columnIndex, x);
+            values.setString(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -690,7 +717,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBytes(int columnIndex, byte x[]) throws SQLException {
         try {
-            values.setBytes(columnIndex, x);
+            values.setBytes(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -700,7 +727,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateDate(int columnIndex, Date x) throws SQLException {
         try {
-            values.setDate(columnIndex, x);
+            values.setDate(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -710,7 +737,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateTime(int columnIndex, Time x) throws SQLException {
         try {
-            values.setTime(columnIndex, x);
+            values.setTime(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -720,7 +747,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
         try {
-            values.setTimestamp(columnIndex, x);
+            values.setTimestamp(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -730,7 +757,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
         try {
-            values.setAsciiStream(columnIndex, x, length);
+            values.setAsciiStream(columnIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -743,7 +770,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
         try {
-            values.setBinaryStream(columnIndex, x, length);
+            values.setBinaryStream(columnIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -756,7 +783,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
         try {
-            values.setCharacterStream(columnIndex, x, length);
+            values.setCharacterStream(columnIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -774,7 +801,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateObject(int columnIndex, Object x) throws SQLException {
         try {
-            values.setObject(columnIndex, x);
+            values.setObject(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -924,7 +951,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Ref getRef(int columnIndex) throws SQLException {
         try {
-            return values.getRef(columnIndex);
+            return values.getRef(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -934,7 +961,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Blob getBlob(int columnIndex) throws SQLException {
         try {
-            return values.getBlob(columnIndex);
+            return values.getBlob(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -944,7 +971,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Clob getClob(int columnIndex) throws SQLException {
         try {
-            return values.getClob(columnIndex);
+            return values.getClob(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -954,7 +981,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Array getArray(int columnIndex) throws SQLException {
         try {
-            return values.getArray(columnIndex);
+            return values.getArray(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -989,7 +1016,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
         try {
-            return values.getDate(columnIndex, cal);
+            return values.getDate(columnIndex - 1, cal);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1004,7 +1031,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
         try {
-            return values.getTime(columnIndex, cal);
+            return values.getTime(columnIndex - 1, cal);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1019,7 +1046,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
         try {
-            return values.getTimestamp(columnIndex, cal);
+            return values.getTimestamp(columnIndex - 1, cal);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1034,7 +1061,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public URL getURL(int columnIndex) throws SQLException {
         try {
-            return values.getURL(columnIndex);
+            return values.getURL(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1049,7 +1076,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateRef(int columnIndex, Ref x) throws SQLException {
         try {
-            values.setRef(columnIndex, x);
+            values.setRef(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1064,7 +1091,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBlob(int columnIndex, Blob x) throws SQLException {
         try {
-            values.setBlob(columnIndex, x);
+            values.setBlob(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1079,7 +1106,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateClob(int columnIndex, Clob x) throws SQLException {
         try {
-            values.setClob(columnIndex, x);
+            values.setClob(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1094,7 +1121,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateArray(int columnIndex, Array x) throws SQLException {
         try {
-            values.setArray(columnIndex, x);
+            values.setArray(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1109,7 +1136,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public RowId getRowId(int columnIndex) throws SQLException {
         try {
-            return values.getRowId(columnIndex);
+            return values.getRowId(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1124,7 +1151,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateRowId(int columnIndex, RowId x) throws SQLException {
         try {
-            values.setRowId(columnIndex, x);
+            values.setRowId(columnIndex - 1, x);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1149,7 +1176,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateNString(int columnIndex, String nString) throws SQLException {
         try {
-            values.setNString(columnIndex, nString);
+            values.setNString(columnIndex - 1, nString);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1164,7 +1191,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
         try {
-            values.setNClob(columnIndex, nClob);
+            values.setNClob(columnIndex - 1, nClob);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1179,7 +1206,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public NClob getNClob(int columnIndex) throws SQLException {
         try {
-            return values.getNClob(columnIndex);
+            return values.getNClob(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1194,7 +1221,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
         try {
-            return values.getSQLXML(columnIndex);
+            return values.getSQLXML(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1209,7 +1236,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException {
         try {
-            values.setSQLXML(columnIndex, xmlObject);
+            values.setSQLXML(columnIndex - 1, xmlObject);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1224,7 +1251,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public String getNString(int columnIndex) throws SQLException {
         try {
-            return values.getNString(columnIndex);
+            return values.getNString(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1239,7 +1266,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
         try {
-            return values.getNCharacterStream(columnIndex);
+            return values.getNCharacterStream(columnIndex - 1);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1254,7 +1281,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
         try {
-            values.setNCharacterStream(columnIndex, x, length);
+            values.setNCharacterStream(columnIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -1272,7 +1299,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
         try {
-            values.setAsciiStream(columnIndex, x, length);
+            values.setAsciiStream(columnIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -1285,7 +1312,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
         try {
-            values.setBinaryStream(columnIndex, x, length);
+            values.setBinaryStream(columnIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -1298,7 +1325,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
         try {
-            values.setCharacterStream(columnIndex, x, length);
+            values.setCharacterStream(columnIndex - 1, x, length);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -1326,7 +1353,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBlob(int columnIndex, InputStream inputStream, long length) throws SQLException {
         try {
-            values.setBlob(columnIndex, inputStream, length);
+            values.setBlob(columnIndex - 1, inputStream, length);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1341,7 +1368,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateClob(int columnIndex,  Reader reader, long length) throws SQLException {
         try {
-            values.setClob(columnIndex, reader, length);
+            values.setClob(columnIndex - 1, reader, length);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1356,7 +1383,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateNClob(int columnIndex,  Reader reader, long length) throws SQLException {
         try {
-            values.setNClob(columnIndex, reader, length);
+            values.setNClob(columnIndex - 1, reader, length);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1371,7 +1398,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
         try {
-            values.setNCharacterStream(columnIndex, x);
+            values.setNCharacterStream(columnIndex - 1, x);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -1389,7 +1416,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException {
         try {
-            values.setAsciiStream(columnIndex, x);
+            values.setAsciiStream(columnIndex - 1, x);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -1402,7 +1429,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
         try {
-            values.setBinaryStream(columnIndex, x);
+            values.setBinaryStream(columnIndex - 1, x);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -1415,7 +1442,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
         try {
-            values.setCharacterStream(columnIndex, x);
+            values.setCharacterStream(columnIndex - 1, x);
         }
         catch (IOException ex) {
             throw new JDBCException(ex);
@@ -1443,7 +1470,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
         try {
-            values.setBlob(columnIndex, inputStream);
+            values.setBlob(columnIndex - 1, inputStream);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1458,7 +1485,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateClob(int columnIndex,  Reader reader) throws SQLException {
         try {
-            values.setClob(columnIndex, reader);
+            values.setClob(columnIndex - 1, reader);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1473,7 +1500,7 @@ public class JDBCResultSet implements ResultSet
     @Override
     public void updateNClob(int columnIndex,  Reader reader) throws SQLException {
         try {
-            values.setNClob(columnIndex, reader);
+            values.setNClob(columnIndex - 1, reader);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
@@ -1488,7 +1515,7 @@ public class JDBCResultSet implements ResultSet
     //@Override // JDK 1.7
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         try {
-            return (T)values.getObject(columnIndex, type);
+            return (T)values.getObject(columnIndex - 1, type);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);

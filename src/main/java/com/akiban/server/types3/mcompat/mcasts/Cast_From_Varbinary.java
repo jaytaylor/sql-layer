@@ -25,21 +25,15 @@
  */
 package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 
 public final class Cast_From_Varbinary {
 
