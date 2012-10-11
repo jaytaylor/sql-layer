@@ -1,4 +1,4 @@
-PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NOT NULL]
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ TINYINT(5) NOT NULL]
   Project_Default(1)
     Filter_Default(items)
       Select_HKeyOrdered(items.sku == '1234')
