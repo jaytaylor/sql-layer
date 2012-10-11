@@ -30,6 +30,7 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
+import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.PlanToString;
@@ -39,6 +40,7 @@ import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
@@ -156,8 +158,11 @@ public class RulesTest extends OptimizerTestBase
                                         RulesTestHelper.loadRules(rulesFile), 
                                         properties);
         // Normally set as a consequence of OutputFormat.
-        binder.setAllowSubqueryMultipleColumns(Boolean.parseBoolean(properties.getProperty("allowSubqueryMultipleColumns",
-                                                                                           "false")));
+        if (Boolean.parseBoolean(properties.getProperty("allowSubqueryMultipleColumns",
+                                                        "false"))) {
+            binder.setAllowSubqueryMultipleColumns(true);
+            typeComputer = new NestedResultSetTypeComputer(new FunctionsRegistryImpl());
+        }
     }
 
     @Test
