@@ -32,7 +32,7 @@ public final class TInstanceBuilder {
         if (workingCopy != null) {
             if (workingCopy.nullability() == nullable)
                 return this;
-            workingCopy = null;
+            copyFromWorking();
         }
         this.nullable = nullable;
         return this;
@@ -42,11 +42,7 @@ public final class TInstanceBuilder {
         if (workingCopy != null) {
             if (workingCopy.attribute(attribute) == value)
                 return this;
-            attr0 = workingCopy.attrByPos(0);
-            attr1 = workingCopy.attrByPos(1);
-            attr2 = workingCopy.attrByPos(2);
-            attr3 = workingCopy.attrByPos(3);
-            workingCopy = null;
+            copyFromWorking();
         }
         switch (attribute.ordinal()) {
         case 0:
@@ -82,6 +78,15 @@ public final class TInstanceBuilder {
         this.orig = orig;
         this.workingCopy = orig;
         this.nullable = orig.nullability();
+    }
+
+    private void copyFromWorking() {
+        assert nullable == workingCopy.nullability();
+        attr0 = workingCopy.attrByPos(0);
+        attr1 = workingCopy.attrByPos(1);
+        attr2 = workingCopy.attrByPos(2);
+        attr3 = workingCopy.attrByPos(3);
+        workingCopy = null;
     }
 
     private final TInstance orig;
