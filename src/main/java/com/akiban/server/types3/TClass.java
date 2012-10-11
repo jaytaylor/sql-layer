@@ -352,12 +352,22 @@ public abstract class TClass {
         @Override
         public void apply(TInstanceAdjuster adjuster, TValidatedOverload overload, TInputSet inputSet, int max) {
             TInstance result = null;
+            boolean resultEverChanged = false;
             for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
                 TInstance inputInstance = adjuster.get(i);
-                result = (result == null) ? inputInstance : pickInstance(result, inputInstance);
+                if (result == null) {
+                    result = inputInstance;
+                }
+                else {
+                    TInstance picked = pickInstance(result, inputInstance);
+                    resultEverChanged |= (!picked.equalsIncludingNullable(picked));
+                    result = picked;
+                }
             }
-            for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
-                adjuster.adjust(i).copyFrom(result);
+            if (resultEverChanged) {
+                for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
+                    adjuster.replace(i, result);
+                }
             }
         }
     };
