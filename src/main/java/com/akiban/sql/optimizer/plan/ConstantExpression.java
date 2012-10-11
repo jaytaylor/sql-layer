@@ -71,7 +71,7 @@ public class ConstantExpression extends BaseExpression
 
     public ConstantExpression(TPreptimeValue preptimeValue) {
         this(preptimeValue.instance().dataTypeDescriptor());
-        // only store the preptimeValue if it's value is not null. If it's null, #value will just stay null.
+        // only store the preptimeValue if its value is not null. If it's null, #value will just stay null.
         this.preptimeValue = preptimeValue;
     }
 

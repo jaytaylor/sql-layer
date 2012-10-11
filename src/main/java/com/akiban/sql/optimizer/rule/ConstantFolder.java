@@ -35,7 +35,6 @@ import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.akiban.server.expression.std.Comparison;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
