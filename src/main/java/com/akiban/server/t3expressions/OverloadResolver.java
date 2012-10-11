@@ -85,8 +85,17 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 if (result == null) {
                     result = new TInstanceBuilder(instances[i]);
                     builders[i] = result;
+                    instances[i] = null;
                 }
                 return result;
+            }
+
+            @Override
+            public void replace(int i, TInstance tInstance) {
+                if (builders != null && builders[i] != null)
+                    builders[i].copyFrom(tInstance);
+                else
+                    instances[i] = tInstance;
             }
 
             void check(int i) {

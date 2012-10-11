@@ -115,15 +115,23 @@ public final class TInputSet {
         public void apply(TInstanceAdjuster adjuster, TValidatedOverload overload, TInputSet inputSet, int max) {
             assert tclass != null : inputSet + " for " + overload;
             TInstance result = null;
+            boolean resultEverChanged = false;
             for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
                 TInstance input = adjuster.get(i);
-                result = (result == null)
-                        ? input
-                        : tclass.pickInstance(result, input);
+                if (result == null) {
+                    result = input;
+                }
+                else {
+                    TInstance picked = tclass.pickInstance(result, input);
+                    resultEverChanged |= (!picked.equalsIncludingNullable(result));
+                    result = picked;
+                }
             }
             assert result != null : " no TInstance for " + inputSet + " in " + overload;
-            for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
-                adjuster.adjust(i).copyFrom(result);
+            if (resultEverChanged) {
+                for (int i = overload.firstInput(inputSet); i >= 0; i = overload.nextInput(inputSet, i+1, max)) {
+                    adjuster.replace(i, result);
+                }
             }
         }
 
