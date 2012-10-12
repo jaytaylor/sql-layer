@@ -85,6 +85,6 @@ public abstract class SortKeyAdapter<S, E> {
 
     public abstract S eval(Row row, int field);
 
-    public abstract void setOrderingMetadata(int orderingIndex, Ordering ordering, int tInstancesOffset,
+    public abstract void setOrderingMetadata(Ordering ordering, int index,
                                              TInstance[] tInstances);
 }
