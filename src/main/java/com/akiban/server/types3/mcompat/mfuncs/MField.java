@@ -39,75 +39,35 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-
-import java.util.Arrays;
-import java.util.Collection;
 
 public final class MField extends TScalarBase {
 
-    public static final TScalar[] exactOverloads = createExacts();
+    public static final TScalar[] exactOverloads = new TScalar[] {
+            // From the MySQL docs:
+            //
+            //     If all arguments to FIELD() are strings, all arguments are compared as strings.
+            //     If all arguments are numbers, they are compared as numbers.
+            //     Otherwise, the arguments are compared as double.
+            //
+            // We can accomplish this by having three ScalarsGroups. The first consist of VARCHAR and CHAR. We want
+            // more than one TScalar in this group, so that same-type-at is false and it's not automatically picked.
+            // Only the various string types are strongly castable to either of these, so that takes care of the first
+            // sentence in the FIELD spec (as quoted above). The second ScalarsGroup consists of exact numbers. We
+            // provide these in four flavors: signed and unsigned of BIGINT and DECIMAL. This lets us cover all of the
+            // exact precision types without expensive casts (casts between non-DECIMAL ints are cheap). Finally,
+            // the DOUBLE overload is in a ScalarsGroup by itself, so that same-type-at is true and the scalar
+            // is always picked.
 
-    private static TScalar[] createExacts() {
-        TClass[] tClasses = new TClass[] {
-                MNumeric.TINYINT,
-                MNumeric.TINYINT_UNSIGNED,
-                MNumeric.SMALLINT,
-                MNumeric.SMALLINT_UNSIGNED,
-                MNumeric.INT,
-                MNumeric.INT_UNSIGNED,
-                MNumeric.MEDIUMINT,
-                MNumeric.MEDIUMINT_UNSIGNED,
-                MNumeric.BIGINT,
-                MNumeric.BIGINT_UNSIGNED,
+            new MField(MString.VARCHAR, false, 1),
+            new MField(MString.CHAR, false, 1),
 
-                MNumeric.DECIMAL,
-                MNumeric.DECIMAL_UNSIGNED,
+            new MField(MNumeric.BIGINT, false, 2),
+            new MField(MNumeric.BIGINT_UNSIGNED, false, 2),
+            new MField(MNumeric.DECIMAL, false, 2),
+            new MField(MNumeric.DECIMAL_UNSIGNED, false, 2),
 
-                MString.VARCHAR,
-                MString.TINYTEXT,
-                MString.TEXT,
-                MString.MEDIUMTEXT,
-                MString.LONGTEXT
-        };
-        TScalar[] results = new TScalar[tClasses.length];
-        int count = -1;
-        for (int i = 0, tClassesLength = tClasses.length; i < tClassesLength; i++) {
-            TClass tClass = tClasses[i];
-            results[i] = new MField(tClass, true, count--);
-        }
-        return results;
-    }
-
-    //    public static final Collection<? extends TScalar> exactOverloads = Collections2.transform(Arrays.asList(
-//            MNumeric.TINYINT,
-//            MNumeric.TINYINT_UNSIGNED,
-//            MNumeric.SMALLINT,
-//            MNumeric.SMALLINT_UNSIGNED,
-//            MNumeric.INT,
-//            MNumeric.INT_UNSIGNED,
-//            MNumeric.MEDIUMINT,
-//            MNumeric.MEDIUMINT_UNSIGNED,
-//            MNumeric.BIGINT,
-//            MNumeric.BIGINT_UNSIGNED,
-//
-//            MNumeric.DECIMAL,
-//            MNumeric.DECIMAL_UNSIGNED,
-//
-//            MString.VARCHAR,
-//            MString.TINYTEXT,
-//            MString.TEXT,
-//            MString.MEDIUMTEXT,
-//            MString.LONGTEXT
-//            ), new Function<TClass, TScalar>() {
-//                @Override
-//                public TScalar apply(TClass input) {
-//                    return new MField(input, true, 0);
-//                }
-//            }
-//    );
-    public static final TScalar doubleOverload = new MField(MApproximateNumber.DOUBLE, false, 1);
+            new MField(MApproximateNumber.DOUBLE, false, 3)
+    };
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
