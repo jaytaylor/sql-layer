@@ -93,7 +93,7 @@ public final class MUnaryMinus extends TScalarBase {
             @Override
             protected TInstance resultType(TInstance operand) {
                 int operandWidth = operand.attribute(NumericAttribute.WIDTH);
-                return MNumeric.INT.instance(operandWidth + 1);
+                return MNumeric.INT.instance(operandWidth);
             }
         },
         BIGINT(MNumeric.BIGINT) {
@@ -106,7 +106,7 @@ public final class MUnaryMinus extends TScalarBase {
             @Override
             protected TInstance resultType(TInstance operand) {
                 int operandWidth = operand.attribute(NumericAttribute.WIDTH);
-                return MNumeric.BIGINT.instance(operandWidth + 1);
+                return MNumeric.BIGINT.instance(operandWidth);
             }
         },
         DOUBLE(MApproximateNumber.DOUBLE) {
