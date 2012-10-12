@@ -233,7 +233,8 @@ public class IndexDDL
                       index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
 
         int i = 0;
-        for (IndexColumn col : index.getColumnList()) {
+        IndexColumnList indexColumns = index.getColumnList();
+        for (IndexColumn col : indexColumns) {
             Column tableCol = ais.getTable(tableName).getColumn(col.getColumnName());
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
@@ -245,11 +246,12 @@ public class IndexDDL
         
         TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
 
-        if (index.getColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON) {
+        if (indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON) {
             if (!Index.isSpatialCompatible(tableIndex)) {
                 throw new BadSpatialIndexException(indexName, index);
             }
-            tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
+            tableIndex.markSpatial(indexColumns.firstFunctionArg(),
+                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
             assert tableIndex.isSpatial() : tableIndex;
         }
 

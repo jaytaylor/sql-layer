@@ -387,7 +387,14 @@ public class ProtobufReader {
             if (pbIndex.hasIndexMethod()) {
                 switch (pbIndex.getIndexMethod()) {
                 case Z_ORDER_LAT_LON:
-                    tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
+                    assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
+                    int firstSpatialArg = 0;
+                    int dimensions = 2;
+                    if (pbIndex.hasFirstSpatialArg()) {
+                        firstSpatialArg = pbIndex.getFirstSpatialArg();
+                        dimensions = pbIndex.getDimensions();
+                    }
+                    tableIndex.markSpatial(firstSpatialArg, dimensions);
                     break;
                 }
             }
@@ -708,7 +715,9 @@ public class ProtobufReader {
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Index.JOINTYPE_FIELD_NUMBER,
-                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER
+                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
+                AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
+                AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER
         );
     }
 
@@ -717,7 +726,9 @@ public class ProtobufReader {
                 pbIndex,
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
-                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER
+                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
+                AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
+                AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER
         );
     }
 

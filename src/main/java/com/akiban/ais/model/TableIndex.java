@@ -70,7 +70,9 @@ public class TableIndex extends Index
         TableIndex copy = create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(),
                                   index.isUnique(),
                                   index.getConstraint());
-        copy.setIndexMethod(index.getIndexMethod());
+        if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
+            copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
+        }
         return copy;
     }
 
@@ -188,17 +190,28 @@ public class TableIndex extends Index
             return IndexMethod.NORMAL;
     }
 
-    public void setIndexMethod(IndexMethod indexMethod)
+    public void markSpatial(int firstSpatialArgument, int dimensions)
     {
         checkMutability();
-        switch (indexMethod) {
-        case NORMAL:
-            space = null;
-            break;
-        case Z_ORDER_LAT_LON:
-            space = SpaceLatLon.create();
-            break;
+        if (dimensions != 2) {
+            // Only lat/lon for now
+            throw new IllegalArgumentException();
         }
+        this.firstSpatialArgument = firstSpatialArgument;
+        this.space = SpaceLatLon.create();
+    }
+
+    public int firstSpatialArgument()
+    {
+        assert space != null : this;
+        return firstSpatialArgument;
+    }
+
+    public int dimensions()
+    {
+        assert space != null : this;
+        // Only lat/lon for now
+        return 2;
     }
 
     public Space space()
@@ -225,4 +238,6 @@ public class TableIndex extends Index
     private boolean uniqueAndMayContainNulls;
     // For a spatial index
     private Space space;
+    private int firstSpatialArgument;
+
 }
