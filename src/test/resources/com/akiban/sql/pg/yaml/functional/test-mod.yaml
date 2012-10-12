@@ -94,5 +94,7 @@
 ---
 - Statement: SELECT year_field from all_types;
 - output: [[0]]
+---
+- Statement: SET newtypes to DEFAULT
 ...
 
