@@ -182,6 +182,10 @@ public abstract class TString extends TClass
         }
     }
 
+    public AkCollator getCollator(TInstance instance) {
+        return AkCollatorFactory.getAkCollator((int)instance.attribute(StringAttribute.COLLATION));
+    }
+
     @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         return new DataTypeDescriptor(
