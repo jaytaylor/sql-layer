@@ -47,7 +47,7 @@ public class ValuesRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return (types == null ) ? ((tInstances == null) ? 0 : tInstances.length) : types.length;
+        return (types == null) ? ((tInstances == null) ? 0 : tInstances.length) : types.length;
     }
 
     @Override
@@ -75,6 +75,7 @@ public class ValuesRowType extends DerivedRowType
         super(schema, typeId);
         this.types = null;
         this.tInstances = fields;
+        assert fields != null : "must have tInstance fields for the ValuesRowType";
     }
 
     // Object state
