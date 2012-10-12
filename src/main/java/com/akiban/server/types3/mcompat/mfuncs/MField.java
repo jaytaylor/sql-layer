@@ -47,33 +47,66 @@ import java.util.Collection;
 
 public final class MField extends TScalarBase {
 
-    public static final Collection<? extends TScalar> exactOverloads = Collections2.transform(Arrays.asList(
-            MNumeric.TINYINT,
-            MNumeric.TINYINT_UNSIGNED,
-            MNumeric.SMALLINT,
-            MNumeric.SMALLINT_UNSIGNED,
-            MNumeric.INT,
-            MNumeric.INT_UNSIGNED,
-            MNumeric.MEDIUMINT,
-            MNumeric.MEDIUMINT_UNSIGNED,
-            MNumeric.BIGINT,
-            MNumeric.BIGINT_UNSIGNED,
+    public static final TScalar[] exactOverloads = createExacts();
 
-            MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
+    private static TScalar[] createExacts() {
+        TClass[] tClasses = new TClass[] {
+                MNumeric.TINYINT,
+                MNumeric.TINYINT_UNSIGNED,
+                MNumeric.SMALLINT,
+                MNumeric.SMALLINT_UNSIGNED,
+                MNumeric.INT,
+                MNumeric.INT_UNSIGNED,
+                MNumeric.MEDIUMINT,
+                MNumeric.MEDIUMINT_UNSIGNED,
+                MNumeric.BIGINT,
+                MNumeric.BIGINT_UNSIGNED,
 
-            MString.VARCHAR,
-            MString.TINYTEXT,
-            MString.TEXT,
-            MString.MEDIUMTEXT,
-            MString.LONGTEXT
-            ), new Function<TClass, TScalar>() {
-                @Override
-                public TScalar apply(TClass input) {
-                    return new MField(input, true, 0);
-                }
-            }
-    );
+                MNumeric.DECIMAL,
+                MNumeric.DECIMAL_UNSIGNED,
+
+                MString.VARCHAR,
+                MString.TINYTEXT,
+                MString.TEXT,
+                MString.MEDIUMTEXT,
+                MString.LONGTEXT
+        };
+        TScalar[] results = new TScalar[tClasses.length];
+        int count = -1;
+        for (int i = 0, tClassesLength = tClasses.length; i < tClassesLength; i++) {
+            TClass tClass = tClasses[i];
+            results[i] = new MField(tClass, true, count--);
+        }
+        return results;
+    }
+
+    //    public static final Collection<? extends TScalar> exactOverloads = Collections2.transform(Arrays.asList(
+//            MNumeric.TINYINT,
+//            MNumeric.TINYINT_UNSIGNED,
+//            MNumeric.SMALLINT,
+//            MNumeric.SMALLINT_UNSIGNED,
+//            MNumeric.INT,
+//            MNumeric.INT_UNSIGNED,
+//            MNumeric.MEDIUMINT,
+//            MNumeric.MEDIUMINT_UNSIGNED,
+//            MNumeric.BIGINT,
+//            MNumeric.BIGINT_UNSIGNED,
+//
+//            MNumeric.DECIMAL,
+//            MNumeric.DECIMAL_UNSIGNED,
+//
+//            MString.VARCHAR,
+//            MString.TINYTEXT,
+//            MString.TEXT,
+//            MString.MEDIUMTEXT,
+//            MString.LONGTEXT
+//            ), new Function<TClass, TScalar>() {
+//                @Override
+//                public TScalar apply(TClass input) {
+//                    return new MField(input, true, 0);
+//                }
+//            }
+//    );
     public static final TScalar doubleOverload = new MField(MApproximateNumber.DOUBLE, false, 1);
 
     @Override
@@ -114,10 +147,7 @@ public final class MField extends TScalarBase {
 
     @Override
     public int[] getPriorities() {
-        int[] result = new int[maxPriority+1];
-        for (int i = 0; i < maxPriority; ++i)
-            result[i] = i;
-        return result;
+        return new int[] { priority };
     }
 
     @Override
@@ -128,10 +158,10 @@ public final class MField extends TScalarBase {
     private MField(TClass targetClass, boolean exact, int maxPriority) {
         this.targetClass = targetClass;
         this.exact = exact;
-        this.maxPriority = maxPriority;
+        this.priority = maxPriority;
     }
 
     private final TClass targetClass;
-    private final int maxPriority;
+    private final int priority;
     private final boolean exact;
 }
