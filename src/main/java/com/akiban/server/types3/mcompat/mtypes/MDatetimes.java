@@ -638,8 +638,17 @@ public class MDatetimes
 
         try
         {
-            switch (values.length)
+            if (values.length == 1) 
             {
+                long[] hms = decodeTime(Long.parseLong(values[offset]));
+                hours += hms[HOUR_INDEX];
+                minutes = (int)hms[MIN_INDEX];
+                seconds = (int)hms[SEC_INDEX];
+            }
+            else 
+            {
+                switch (values.length)
+                {
                 case 3:
                     hours += Integer.parseInt(values[offset++]); // fall
                 case 2:
@@ -649,17 +658,18 @@ public class MDatetimes
                     break;
                 default:
                     throw new InvalidDateFormatException("time", string);
+                }
+
+                minutes += seconds / 60;
+                seconds %= 60;
+                hours += minutes / 60;
+                minutes %= 60;
             }
         }
         catch (NumberFormatException ex)
         {
             throw new InvalidDateFormatException("time", string);
         }
-        
-        minutes += seconds / 60;
-        seconds %= 60;
-        hours += minutes / 60;
-        minutes %= 60;
 
         if (!isValidHrMinSec(hours, minutes, seconds, shortTime))
             throw new InvalidDateFormatException("time", string);
