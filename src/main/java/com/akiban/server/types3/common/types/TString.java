@@ -144,7 +144,7 @@ public abstract class TString extends TClass
         if (collator == null)
             // TODO in the future, we may want to use some default collator. For now, just use native comparison
             return sourceA.getString().compareTo(sourceB.getString());
-        return collator.compare(sourceA.getString(), sourceB.getString());
+        return collator.compare(sourceA, sourceB);
     }
 
     @Override

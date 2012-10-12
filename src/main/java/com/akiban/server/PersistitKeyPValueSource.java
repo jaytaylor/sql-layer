@@ -28,9 +28,11 @@ package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
 import com.persistit.Key;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import static java.lang.Math.min;
 
 public class PersistitKeyPValueSource implements PValueSource {
 
@@ -154,6 +156,28 @@ public class PersistitKeyPValueSource implements PValueSource {
         return decode().getObject();
     }
     
+    public int compare(PersistitKeyPValueSource that)
+    {
+        that.key.indexTo(that.depth);
+        int thatPosition = that.key.getIndex();
+        that.key.indexTo(that.depth + 1);
+        int thatEnd = that.key.getIndex();
+        return compareOneKeySegment(that.key.getEncodedBytes(), thatPosition, thatEnd);
+    }
+
+    public int compare(AkCollator collator, String string)
+    {
+        assert collator != null;
+        Key thatKey = new Key(key);
+        thatKey.clear();
+        collator.append(thatKey, string);
+        thatKey.indexTo(0);
+        int thatPosition = thatKey.getIndex();
+        thatKey.indexTo(1);
+        int thatEnd = thatKey.getIndex();
+        return compareOneKeySegment(thatKey.getEncodedBytes(), thatPosition, thatEnd);
+    }
+
     // for use by this class
     private PValueSource decode() {
         if (needsDecoding) {
@@ -182,6 +206,27 @@ public class PersistitKeyPValueSource implements PValueSource {
         return output;
     }
     
+    private int compareOneKeySegment(byte[] thatBytes, int thatPosition, int thatEnd)
+    {
+        this.key.indexTo(this.depth);
+        int thisPosition = this.key.getIndex();
+        this.key.indexTo(this.depth + 1);
+        int thisEnd = this.key.getIndex();
+        byte[] thisBytes = this.key.getEncodedBytes();
+        // Compare until end or mismatch
+        int thisN = thisEnd - thisPosition;
+        int thatN = thatEnd - thatPosition;
+        int n = min(thisN, thatN);
+        int end = thisPosition + n;
+        while (thisPosition < end) {
+            int c = thisBytes[thisPosition++] - thatBytes[thatPosition++];
+            if (c != 0) {
+                return c;
+            }
+        }
+        return thisN - thatN;
+    }
+
     private void clear() {
         needsDecoding = true;
     }

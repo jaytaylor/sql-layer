@@ -25,6 +25,7 @@
  */
 package com.akiban.server.collation;
 
+import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -90,7 +91,17 @@ public abstract class AkCollator {
      * Compare two string values: Comparable<PValueSource>
      */
     final public int compare(PValueSource value1, PValueSource value2) {
-        return compare(value1.getString(), value2.getString());
+        boolean persistit1 = value1 instanceof PersistitKeyPValueSource;
+        boolean persistit2 = value2 instanceof PersistitKeyPValueSource;
+        if (persistit1 && persistit2) {
+            return ((PersistitKeyPValueSource) value1).compare((PersistitKeyPValueSource) value2);
+        } else if (persistit1) {
+            return ((PersistitKeyPValueSource) value1).compare(this, value2.getString());
+        } else if (persistit2) {
+            return -((PersistitKeyPValueSource) value2).compare(this, value1.getString());
+        } else {
+            return compare(value1.getString(), value2.getString());
+        }
     }
 
     /**
