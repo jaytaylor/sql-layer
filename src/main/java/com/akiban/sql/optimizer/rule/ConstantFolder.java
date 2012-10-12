@@ -78,9 +78,9 @@ public class ConstantFolder extends BaseRule
         protected final ExpressionAssembler<?> expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
         private Set<AggregateSource> changedAggregates = null;
-        private enum State { FOLDING, AGGREGATES };
+        private enum State { FOLDING, AGGREGATES, FOLDING_PIECEMEAL };
         private State state;
-        private boolean changed, piecemeal;
+        private boolean changed;
         private Map<ConditionExpression,Boolean> topLevelConditions = 
             new IdentityHashMap<ConditionExpression,Boolean>();
 
@@ -91,9 +91,8 @@ public class ConstantFolder extends BaseRule
         
         public ExpressionNode foldConstants(ExpressionNode fromNode) {
             do {
-                state = State.FOLDING;
+                state = State.FOLDING_PIECEMEAL;
                 changed = false;
-                piecemeal = true;
                 topLevelConditions.clear();
                 fromNode = fromNode.accept(this);
             } while (changed);
@@ -106,7 +105,6 @@ public class ConstantFolder extends BaseRule
         public boolean foldConstants() {
             state = State.FOLDING;
             changed = false;
-            piecemeal = false;
             topLevelConditions.clear();
             planContext.accept(this);
             return changed;
@@ -151,7 +149,7 @@ public class ConstantFolder extends BaseRule
 
         @Override
         public ExpressionNode visit(ExpressionNode expr) {
-            if (state == State.FOLDING) {
+            if ((state == State.FOLDING) || (state == State.FOLDING_PIECEMEAL)) {
                 if (expr instanceof ComparisonCondition)
                     return comparisonCondition((ComparisonCondition)expr);
                 else if (expr instanceof CastExpression)
@@ -666,7 +664,7 @@ public class ConstantFolder extends BaseRule
             }
             InCondition in = InCondition.of(cond);
             if (in != null) {
-                in.dedup(isTopLevelCondition(cond), !piecemeal);
+                in.dedup(isTopLevelCondition(cond), (state == State.FOLDING));
                 switch (in.compareConstants(this)) {
                 case COMPARE_NULL:
                     return newBooleanConstant(null, cond);
