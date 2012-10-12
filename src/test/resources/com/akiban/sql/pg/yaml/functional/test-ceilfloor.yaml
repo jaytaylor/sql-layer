@@ -61,15 +61,21 @@
 ---
 - Statement: SELECT CEIL(double_field), CEIL(float_field), CEIL(real_field)
     FROM all_types
-- output: [['Infinity', 'Infinity', 'Infinity'], 
-          ['-Infinity', '-Infinity', '-Infinity'], 
-          [NaN, NaN, NaN]]
+- output: !select-engine { all: [['Infinity', 'Infinity', 'Infinity'], 
+                                 ['-Infinity', '-Infinity', '-Infinity'], 
+                                 [NaN, NaN, NaN]],
+                           newtypes: [[0.0, 0.0, 0.0],
+                                      [0.0, 0.0, 0.0],
+                                      [0.0, 0.0, 0.0]] }
 ---
 - Statement: SELECT FLOOR(double_field), FLOOR(float_field), FLOOR(real_field)
     FROM all_types
-- output: [['Infinity', 'Infinity', 'Infinity'], 
-          ['-Infinity', '-Infinity', '-Infinity'], 
-          [NaN, NaN, NaN]]
+- output: !select-engine { all: [['Infinity', 'Infinity', 'Infinity'], 
+                                ['-Infinity', '-Infinity', '-Infinity'], 
+                                [NaN, NaN, NaN]],
+                          newtypes: [[0.0, 0.0, 0.0],
+                                      [0.0, 0.0, 0.0],
+                                      [0.0, 0.0, 0.0]] }
 ---
 # Literals
 - Statement: SELECT FLOOR(4.2) FROM all_types
