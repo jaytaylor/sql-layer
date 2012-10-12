@@ -177,7 +177,7 @@ public class MBigDecimal extends TClassBase {
     @Override
     protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         int scaleL = left.attribute(Attrs.SCALE);
-        int scaleR = left.attribute(Attrs.SCALE);
+        int scaleR = right.attribute(Attrs.SCALE);
 
         int precisionL = left.attribute(Attrs.PRECISION);
         int precisionR = right.attribute(Attrs.PRECISION);
