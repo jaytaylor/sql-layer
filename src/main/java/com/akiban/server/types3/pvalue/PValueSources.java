@@ -491,7 +491,8 @@ public final class PValueSources {
     }
 
     public static PValueSource fromValueSource(ValueSource source, TInstance tInstance) {
-        PValue result = new PValue(tInstance.typeClass().underlyingType());
+        PValue result = new PValue(tInstance == null ? null :
+                                   tInstance.typeClass().underlyingType());
         plainConverter.convert(null, source, result, tInstance);
         return result;
     }
