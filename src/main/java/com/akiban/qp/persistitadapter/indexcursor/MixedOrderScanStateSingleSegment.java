@@ -137,6 +137,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         this.keyTarget.attach(cursor.exchange().getKey());
         this.keySource = sortKeyAdapter.createSource(cursor.tInstanceAt(field));
         this.sortKeyAdapter = sortKeyAdapter;
+        this.fieldTInstance = cursor.tInstanceAt(field);
     }
 
     private void setupEndComparison(Comparison comparison, S bound)
