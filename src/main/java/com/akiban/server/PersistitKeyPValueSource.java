@@ -84,6 +84,13 @@ public class PersistitKeyPValueSource implements PValueSource {
 
     @Override
     public boolean isNull() {
+        /*
+         * No need to decode the value to detect null
+         */
+        if (needsDecoding) {
+            key.indexTo(depth);
+            return key.isNull();
+        }
         return decode().isNull();
     }
 
