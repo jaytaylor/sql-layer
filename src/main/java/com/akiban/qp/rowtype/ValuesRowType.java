@@ -75,7 +75,6 @@ public class ValuesRowType extends DerivedRowType
         super(schema, typeId);
         this.types = null;
         this.tInstances = fields;
-        assert fields != null : "must have tInstance fields for the ValuesRowType";
     }
 
     // Object state

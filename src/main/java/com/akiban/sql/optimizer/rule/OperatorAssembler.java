@@ -31,7 +31,6 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -50,6 +49,13 @@ import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API.InputPreservationOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.collation.AkCollator;
@@ -97,14 +103,6 @@ import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 
 import com.akiban.server.explain.*;
-
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.tap.PointTap;
