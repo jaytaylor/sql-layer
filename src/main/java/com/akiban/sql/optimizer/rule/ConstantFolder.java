@@ -455,7 +455,7 @@ public class ConstantFolder extends BaseRule
                     // set iTinstance types? No. 
                     replacement = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
                     ResolvingVisitor visitor = (ResolvingVisitor)OverloadAndTInstanceResolver.getResolver(planContext);
-                    visitor.visitLeave(replacement);
+                    if (visitor != null) visitor.visitLeave(replacement);
                 }
                 inOutput.replaceInput(toReplace, replacement);
             }
