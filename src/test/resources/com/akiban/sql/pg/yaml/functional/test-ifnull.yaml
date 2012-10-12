@@ -17,7 +17,7 @@
 ---
 - Statement: SELECT IFNULL (2, 2.5) FROM all_types;
 - output: [[2]]
-- output_types: [NUMERIC]
+- output_types: !select-engine { sys-mysql: [DECIMAL], all: [NUMERIC] }
 ---
 - Statement: SELECT IFNULL ('', 3) FROM all_types;
 - output: [['']]
@@ -57,8 +57,8 @@
 ## Test wrong arity:
 --- # test empty list
 - Statement: SELECT IFNULL () FROM all_types;
-- error: [4250C]
+- error: !select-engine { sys-mysql: [1582], all: [4250C] }
 --- # test extraneous arg
 - Statement: SELECT IFNULL (1, 2, 3) FROM all_types;
-- error: [4250C]
+- error: !select-engine { sys-mysql: [1582], all: [4250C] }
 ...

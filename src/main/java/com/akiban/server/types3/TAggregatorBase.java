@@ -55,7 +55,13 @@ public abstract class TAggregatorBase implements TAggregator {
 
     @Override
     public List<TInputSet> inputSets() {
-        return Collections.singletonList(new TInputSet(inputClass, BitSets.of(0), false, inputClass == null, false));
+        return Collections.singletonList(
+                new TInputSet(inputClass, BitSets.of(0), false, inputClass == null, null));
+    }
+
+    @Override
+    public InputSetFlags exactInputs() {
+        return InputSetFlags.ALL_OFF;
     }
 
     @Override

@@ -27,12 +27,16 @@
 package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCommutativeOverloads;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.aksql.AkBundle;
+import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
@@ -41,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -64,11 +67,13 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     public static <R extends TOverload, V extends TValidatedOverload>
     ResolvablesRegistry<V> create(InstanceFinder finder,
+                                  TCastResolver castResolver,
                                   Class<R> plainClass,
                                   Function<R, V> validator,
                                   Function<V, V> commutor)
     {
-        ListMultimap<String, ScalarsGroup<V>> overloadsByName = createScalars(finder, plainClass, validator, commutor);
+        ListMultimap<String, ScalarsGroup<V>> overloadsByName = createScalars(finder, castResolver, plainClass,
+                                                                              validator, commutor);
         return new ResolvablesRegistry<V>(overloadsByName);
     }
 
@@ -78,6 +83,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     private static <R extends TOverload, V extends TValidatedOverload>
     ListMultimap<String, ScalarsGroup<V>> createScalars(InstanceFinder finder,
+                                                        TCastResolver castResolver,
                                                         Class<R> plainClass,
                                                         Function<R, V> validator,
                                                         Function<V, V> commutor)
@@ -138,7 +144,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
             String overloadName = entry.getKey();
             Collection<V> allOverloads = entry.getValue();
             for (Collection<V> priorityGroup : scalarsByPriority(allOverloads)) {
-                ScalarsGroup<V> scalarsGroup = new ScalarsGroupImpl<V>(priorityGroup);
+                ScalarsGroup<V> scalarsGroup = new ScalarsGroupImpl<V>(priorityGroup, castResolver);
                 results.put(overloadName, scalarsGroup);
             }
         }
@@ -193,6 +199,16 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     // static classes
 
+    static final TClass differentTargetTypes
+            = new NoAttrTClass(AkBundle.INSTANCE.id(), "differentTargets", null, null, 0, 0, 0, null, null, -1, null);
+
+    static final OverloadsFolder sameInputSets = new OverloadsFolder() {
+        @Override
+        protected TClass foldOne(TClass accumulated, TClass input) {
+            return (accumulated == input) ? accumulated : differentTargetTypes;
+        }
+    };
+
     protected static class ScalarsGroupImpl<V extends TValidatedOverload> implements ScalarsGroup<V> {
 
         @Override
@@ -200,132 +216,55 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
             return overloads;
         }
 
-        public ScalarsGroupImpl(Collection<V> overloads) {
+        public ScalarsGroupImpl(Collection<V> overloads, final TCastResolver castResolver) {
             this.overloads = Collections.unmodifiableCollection(overloads);
-            boolean outRange[] = new boolean[1];
-            int argc[] = new int[1];
-            sameType = doFindSameType(overloads, argc, outRange);
 
-            outOfRangeVal = outRange[0];
-            nArgs = argc[0];
+            // Compute the same-type-ats
+            // Tranform the map to a BitSet for efficiency
+            OverloadsFolder.Result<TClass> sameTypeResults = sameInputSets.fold(overloads);
+            sameTypeAt = sameTypeResults.toInputSetFlags(new Predicate<TClass>() {
+                @Override
+                public boolean apply(TClass input) {
+                    return input != differentTargetTypes;
+                }
+            });
+
+            // compute common types
+            commonTypes = new OverloadsFolder() {
+                @Override
+                protected TClass foldOne(TClass accumulated, TClass input) {
+                    if (accumulated == differentTargetTypes || input == differentTargetTypes)
+                        return differentTargetTypes;
+                    try {
+                        return castResolver.commonTClass(accumulated, input);
+                    }
+                    catch (OverloadException e) {
+                        return differentTargetTypes;
+                    }
+                }
+            }
+            .fold(overloads)
+            .transform(new Function<TClass, TClass>() {
+                @Override
+                public TClass apply(TClass input) {
+                    return input == differentTargetTypes ? null : input;
+                }
+            });
+        }
+
+        @Override
+        public TClass commonTypeAt(int pos) {
+            return commonTypes.at(pos, null);
         }
 
         @Override
         public boolean hasSameTypeAt(int pos)
         {
-            return pos >= nArgs         // if pos is out of range
-                    ? outOfRangeVal
-                    : sameType.get(pos);
+            return sameTypeAt.get(pos);
         }
 
-        private static <V extends TValidatedOverload> int nArgsOf(V ovl)
-        {
-            return ovl.positionalInputs()
-                    + (ovl.varargInputSet() == null ? 0 : 1);
-        }
-
-        private static <V extends TValidatedOverload> boolean hasVararg(V ovl)
-        {
-            return ovl.varargInputSet() != null;
-        }
-
-        protected static <V extends TValidatedOverload>
-        BitSet doFindSameType(Collection<? extends V> overloads, int range[], boolean outRange[])
-        {
-            ArrayList<Integer> nArgs = new ArrayList<Integer>();
-
-            // overload with the longest argument list
-            V maxOvl = overloads.iterator().next();
-            int maxArgc = nArgsOf(maxOvl);
-            boolean hasVararg = hasVararg(maxOvl);
-            int n = 1;
-
-            // whether arg that's out of range should be 'same' or 'not same'
-            // false if all overloads in the group have fixed length
-            // true if all overloads with varargs in the group have the same targetType of vararg
-            // false otherwise
-            boolean outOfRange = false;
-            TClass firstVararg = null;
-
-            for (V ovl : overloads)
-            {
-                int curArgc = nArgsOf(ovl);
-                nArgs.add(curArgc);
-                boolean curHasVar = hasVararg(ovl);
-
-                if (curHasVar)
-                {
-                    if (firstVararg == null)
-                    {
-                        outOfRange = true;
-                        firstVararg = ovl.varargInputSet().targetType();
-                    }
-                    else
-                        outOfRange &= firstVararg.equals(ovl.varargInputSet().targetType());
-                }
-
-                if (curArgc > maxArgc
-                        || curArgc == maxArgc
-                        && hasVararg
-                        && !curHasVar)
-                {
-                    hasVararg = hasVararg(ovl);
-                    maxOvl = ovl;
-                    maxArgc = curArgc;
-                }
-                ++n;
-            }
-
-            outRange[0] = outOfRange;
-            range[0] = maxArgc;
-
-            // all the overloads in the group are vararg
-            if (hasVararg && maxArgc == 1)
-            {
-                BitSet ret = new BitSet(1);
-                ret.set(0, outOfRange);
-                return ret;
-            }
-
-            BitSet sameType = new BitSet(maxArgc);
-
-            Boolean same;
-            for (n = 0; n < maxArgc; ++n)
-            {
-                same = Boolean.TRUE;
-                TClass common = maxOvl.inputSetAt(n).targetType();
-                int index = 0;
-                for (V ovl : overloads)
-                {
-                    int curArgc = nArgs.get(index++);
-                    TClass targetType;
-
-                    // if the arg is absent
-                    if (n >= curArgc)
-                    {
-                        if (!hasVararg(ovl))
-                            continue;
-                        else
-                            targetType = ovl.varargInputSet().targetType();
-                    }
-                    else
-                        targetType = ovl.inputSetAt(n).targetType();
-
-                    if (targetType != null && !targetType.equals(common)
-                            || targetType == null && common != null)
-                    {
-                        same = Boolean.FALSE;
-                        break;
-                    }
-                }
-                sameType.set(n, same);
-            }
-
-            return sameType;
-        }
-        private final int nArgs;
-        private final boolean outOfRangeVal;
-        private final BitSet sameType;
+        private final InputSetFlags sameTypeAt;
+        private final OverloadsFolder.Result<TClass> commonTypes;
         private final Collection<? extends V> overloads;
 
     }

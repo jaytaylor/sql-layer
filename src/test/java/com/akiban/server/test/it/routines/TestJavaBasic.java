@@ -24,32 +24,19 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model.validation;
+package com.akiban.server.test.it.routines;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.DefaultNameGenerator;
-import com.akiban.ais.model.NameGenerator;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.GroupMissingIndexException;
-
-/**
- * This validates a current limitation of the system which expects all of the 
- * UserTable indexes are also reflected in the group table. 
+/** Basic Java store procedures
+ * <code><pre>
+CALL sqlj.install_jar('target/akiban-server-1.4.2-SNAPSHOT-tests.jar', 'testjar', 0);
+CREATE PROCEDURE test.add_sub(IN x INT, IN y INT, OUT "sum" INT, out diff INT) LANGUAGE java PARAMETER STYLE java EXTERNAL NAME 'testjar:com.akiban.server.test.it.routines.TestJavaBasic.addSub';
+CALL test.add_sub(100,59);
+ * </pre></code> 
  */
-class TableIndexesMatchGroupIndexes implements AISValidation {
-
-    NameGenerator names = new DefaultNameGenerator();
-    @Override
-    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (UserTable table : ais.getUserTables().values()) {
-            if (table.getGroup() == null) { continue; }
-            for (TableIndex index : table.getIndexesIncludingInternal()) {
-                if (table.getGroup().getGroupTable().getIndex(names.generateGroupTableIndexName(index)) == null) {
-                    output.reportFailure(new AISValidationFailure (
-                            new GroupMissingIndexException (table.getGroup().getGroupTable().getName(), index.getIndexName().getName())));
-                }
-            }
-        }
+public class TestJavaBasic
+{
+    public static void addSub(int x, int y, int[] sum, int[] diff) {
+        sum[0] = x + y;
+        diff[0] = x - y;
     }
 }

@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverloadResult;
@@ -74,6 +75,11 @@ public class TValidatedOverload implements TOverload {
         return resultStrategy;
     }
 
+    @Override
+    public InputSetFlags exactInputs() {
+        return exactInputs;
+    }
+
     // TValidatedResolvable methods
 
     public TOverload getUnderlying() {
@@ -114,6 +120,21 @@ public class TValidatedOverload implements TOverload {
         return inputSetsByPos.size();
     }
 
+    public int inputSetIndexAtPos(int atPosition) {
+        if (atPosition < 0)
+            throw new IllegalArgumentException("atPosition must be non-negative: " + atPosition);
+        if (atPosition >= inputsToInputSetIndex.length) {
+            if (!isVararg())
+                throw new IllegalArgumentException("out of range for non-vararg: " + atPosition);
+            atPosition = inputsToInputSetIndex.length - 1;
+        }
+        return inputsToInputSetIndex[atPosition];
+    }
+
+    public int inputSetIndexCount() {
+        return inputsToInputSetIndex.length;
+    }
+
     public TInputSet inputSetAt(int index) {
         if(index >= inputSetsByPos.size()) {
             if(varargs == null) {
@@ -126,6 +147,23 @@ public class TValidatedOverload implements TOverload {
 
     public TOverloadResult resultStrategy() {
         return resultStrategy;
+    }
+
+    public int firstInput(TInputSet inputSet) {
+        int result = inputSet.firstPosition();
+        if (result < 0 && inputSet.isPicking())
+            result = firstVarargInput();
+        assert result >= 0 : result + " in " + inputSet + " within " + this;
+        return result;
+    }
+
+    public int nextInput(TInputSet inputSet, int i, int max) {
+        if (i >= max)
+            return -1;
+        int result = inputSet.nextPosition(i);
+        if (result < 0 && inputSet.coversRemaining())
+            result = Math.max(i, inputSetsByPos.size());
+        return result;
     }
 
     // Redefine toString
@@ -187,8 +225,32 @@ public class TValidatedOverload implements TOverload {
         this.resultStrategy = overload.resultType();
         this.pickingSet = localPickingInputs;
         this.inputSetDescriptions = createInputSetDescriptions(inputSetsByPos, pickingSet, varargs);
+        this.exactInputs = overload.exactInputs();
+        this.inputsToInputSetIndex = mapInputsToInputSetIndex(inputSetsByPos, inputSetsCached, varargs);
     }
 
+    private static int[] mapInputsToInputSetIndex(List<TInputSet> inputSetsByPos,
+                                                  List<TInputSet> inputSetsCached,
+                                                  TInputSet varargs)
+    {
+        int naturalPositions = inputSetsByPos.size();
+        int positions = naturalPositions;
+        if (varargs != null && varargs.positionsLength() == 0)
+            ++positions;
+        int[] results = new int[positions];
+        Map<TInputSet, Integer> inputSetsToIndex = new HashMap<TInputSet, Integer>(positions);
+        int indexCounter = 0;
+        for (int i = 0; i < positions; ++i) {
+            TInputSet inputSet = (i < naturalPositions) ? inputSetsByPos.get(i) : varargs;
+            Integer inputSetIndex = inputSetsToIndex.get(inputSet);
+            if (inputSetIndex == null) {
+                inputSetIndex = indexCounter++;
+                inputSetsToIndex.put(inputSet, inputSetIndex);
+            }
+            results[i] = inputSetIndex;
+        }
+        return results;
+    }
     private static String[] createInputSetDescriptions(List<TInputSet> inputSetsByPos,
                                                        TInputSet pickingSet, TInputSet varargInputSet)
     {
@@ -221,13 +283,16 @@ public class TValidatedOverload implements TOverload {
         }
         return result;
     }
-
     private final TOverload overload;
     private final List<TInputSet> inputSetsCached;
     private final List<TInputSet> inputSetsByPos;
     private final TOverloadResult resultStrategy;
+
     private final TInputSet varargs;
+
     private final TInputSet pickingSet;
+    private final InputSetFlags exactInputs;
+    private final int[] inputsToInputSetIndex;
 
     /**
      * A description of each input, indexed by its position. If there is a vararg input, its index is

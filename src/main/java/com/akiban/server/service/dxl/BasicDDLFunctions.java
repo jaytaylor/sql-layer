@@ -44,7 +44,9 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -75,6 +77,8 @@ import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.AlterMadeNoChangeException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidAlterException;
+import com.akiban.server.error.NoSuchSchemaException;
+import com.akiban.server.error.ViewReferencesExist;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -88,6 +92,7 @@ import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
@@ -239,7 +244,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 store().deleteSequences(session, sequences);
             }
         }
-        schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+        schemaManager().dropTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
+                                            SchemaManager.DropBehavior.RESTRICT);
         checkCursorsForDDLModification(session, table);
     }
 
@@ -600,38 +606,43 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("dropping schema {}", schemaName);
 
+        final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
+        if (schema == null)
+            return; // NOT throw new NoSuchSchemaException(schemaName); adapter does it.
+
+        List<View> viewsToDrop = new ArrayList<View>();
+        Set<View> seen = new HashSet<View>();
+        for (View view : schema.getViews().values()) {
+            addView(view, viewsToDrop, seen, schema, schemaName);
+        }
+
         // Find all groups and tables in the schema
         Set<Group> groupsToDrop = new HashSet<Group>();
         List<UserTable> tablesToDrop = new ArrayList<UserTable>();
 
-        final AkibanInformationSchema ais = getAIS(session);
-        for(UserTable table : ais.getUserTables().values()) {
-            final TableName tableName = table.getName();
-            if(tableName.getSchemaName().equals(schemaName)) {
-                groupsToDrop.add(table.getGroup());
-                // Cannot drop entire group of parent is not in the same schema
-                final Join parentJoin = table.getParentJoin();
-                if(parentJoin != null) {
-                    final UserTable parentTable = parentJoin.getParent();
-                    if(!parentTable.getName().getSchemaName().equals(schemaName)) {
-                        tablesToDrop.add(table);
-                    }
+        for(UserTable table : schema.getUserTables().values()) {
+            groupsToDrop.add(table.getGroup());
+            // Cannot drop entire group if parent is not in the same schema
+            final Join parentJoin = table.getParentJoin();
+            if(parentJoin != null) {
+                final UserTable parentTable = parentJoin.getParent();
+                if(!parentTable.getName().getSchemaName().equals(schemaName)) {
+                    tablesToDrop.add(table);
                 }
-                // All children must be in the same schema
-                for(Join childJoin : table.getChildJoins()) {
-                    final TableName childName = childJoin.getChild().getName();
-                    if(!childName.getSchemaName().equals(schemaName)) {
-                        throw new ForeignConstraintDDLException(tableName, childName);
-                    }
+            }
+            // All children must be in the same schema
+            for(Join childJoin : table.getChildJoins()) {
+                final TableName childName = childJoin.getChild().getName();
+                if(!childName.getSchemaName().equals(schemaName)) {
+                    throw new ForeignConstraintDDLException(table.getName(), childName);
                 }
             }
         }
         List<Sequence> sequencesToDrop = new ArrayList<Sequence>();
-        for (Sequence sequence : ais.getSequences().values()) {
+        for (Sequence sequence : schema.getSequences().values()) {
             // Drop the sequences in this schema, but not the 
             // generator sequences, which will be dropped with the table. 
-            if (sequence.getSchemaName().equals(schemaName) &&
-                 !(sequence.getSequenceName().getTableName().startsWith("_sequence-"))) {
+            if (!(sequence.getSequenceName().getTableName().startsWith("_sequence-"))) {
                 sequencesToDrop.add(sequence);
             }
         }
@@ -647,7 +658,23 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 return o2.getTableId().compareTo(o1.getTableId());
             }
         });
+        List<Routine> routinesToDrop = new ArrayList<Routine>(schema.getRoutines().values());
+        List<SQLJJar> jarsToDrop = new ArrayList<SQLJJar>();
+        for (SQLJJar jar : schema.getSQLJJars().values()) {
+            boolean anyOutside = false;
+            for (Routine routine : jar.getRoutines()) {
+                if (!routine.getName().getSchemaName().equals(schemaName)) {
+                    anyOutside = true;
+                    break;
+                }
+            }
+            if (!anyOutside)
+                jarsToDrop.add(jar);
+        }
         // Do the actual dropping
+        for(View view : viewsToDrop) {
+            dropView(session, view.getName());
+        }
         for(UserTable table : tablesToDrop) {
             dropTable(session, table.getName());
         }
@@ -656,6 +683,32 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         for (Sequence sequence : sequencesToDrop) {
             dropSequence(session, sequence.getSequenceName());
+        }
+        for (Routine routine : routinesToDrop) {
+            dropRoutine(session, routine.getName());
+        }
+        for (SQLJJar jar : jarsToDrop) {
+            dropSQLJJar(session, jar.getName());
+        }
+    }
+
+    private void addView(View view, Collection<View> into, Collection<View> seen, 
+                         com.akiban.ais.model.Schema schema, String schemaName) {
+        if (seen.add(view)) {
+            for (TableName reference : view.getTableReferences()) {
+                if (!reference.getSchemaName().equals(schemaName)) {
+                    throw new ViewReferencesExist(schemaName, 
+                                                  view.getName().getTableName(),
+                                                  reference.getSchemaName(),
+                                                  reference.getTableName());
+                }
+                // If reference is to another view, it must come first.
+                View refView = schema.getView(reference.getTableName());
+                if (refView != null) {
+                    addView(view, into, seen, schema, schemaName);
+                }
+            }
+            into.add(view);
         }
     }
 
@@ -667,15 +720,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if(group == null) {
             return;
         }
-        final Table table = group.getGroupTable();
-        final TableName tableName = table.getName();
         try {
             store().dropGroup(session, group);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
-        schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
-        checkCursorsForDDLModification(session, table);
+        final UserTable root = group.getRoot();
+        schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
+                                            SchemaManager.DropBehavior.CASCADE);
+        checkCursorsForDDLModification(session, root);
     }
 
     @Override
@@ -741,7 +794,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public List<String> getDDLs(final Session session) {
         logger.trace("getting DDLs");
-        return schemaManager().schemaStrings(session, false, false);
+        return schemaManager().schemaStrings(session, false);
     }
 
     @Override
@@ -939,24 +992,40 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         schemaManager().dropView(session, viewName);
     }
 
+    @Override
+    public void createRoutine(Session session, Routine routine)
+    {
+        schemaManager().createRoutine(session, routine);
+    }
+
+    @Override
+    public void dropRoutine(Session session, TableName routineName)
+    {
+        schemaManager().dropRoutine(session, routineName);
+    }
+
+    @Override
+    public void createSQLJJar(Session session, SQLJJar sqljJar) {
+        schemaManager().createSQLJJar(session, sqljJar);
+    }
+    
+    @Override
+    public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
+        schemaManager().replaceSQLJJar(session, sqljJar);
+    }
+    
+    @Override
+    public void dropSQLJJar(Session session, TableName jarName) {
+        schemaManager().dropSQLJJar(session, jarName);
+    }
+
     private void checkCursorsForDDLModification(Session session, Table table) {
         Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
         if (cursorsMap == null) {
             return;
         }
 
-        final int tableId;
-        final int gTableId;
-        {
-            if (table.isUserTable()) {
-                tableId = table.getTableId();
-                gTableId = table.getGroup().getGroupTable().getTableId();
-            }
-            else {
-                tableId = gTableId = table.getTableId();
-            }
-        }
-
+        final int tableId = table.getTableId();
         for (BasicDXLMiddleman.ScanData scanData : cursorsMap.values()) {
             Cursor cursor = scanData.getCursor();
             if (cursor.isClosed()) {
@@ -964,7 +1033,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
             ScanRequest request = cursor.getScanRequest();
             int scanTableId = request.getTableId();
-            if (scanTableId == tableId || scanTableId == gTableId) {
+            if (scanTableId == tableId) {
                 cursor.setDDLModified();
             }
         }

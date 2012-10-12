@@ -29,7 +29,6 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
@@ -75,8 +74,6 @@ class SupportedColumnTypes implements AISValidation, Visitor {
     }
     @Override
     public void visitGroup(Group group) {}
-    @Override
-    public void visitGroupTable(GroupTable groupTable) {}
     @Override
     public void visitIndex(Index index) {}
     @Override

@@ -104,7 +104,7 @@ public abstract class MYearWeek extends TScalarBase
         else
         {
             output.putInt32(modes[(int) mode].getYearWeek(new MutableDateTime(DateTimeZone.forID(context.getCurrentTimezone())),
-                                                      (int)ymd[0], (int)ymd[1], (int)ymd[2]));
+                                                          (int)ymd[0], (int)ymd[1], (int)ymd[2]));
         }
     }
 

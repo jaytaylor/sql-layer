@@ -28,6 +28,7 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.TExpressionExplainer;
+import com.akiban.server.types3.InputSetFlags;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -53,6 +54,13 @@ public abstract class TScalarBase implements TScalar {
         TInputSetBuilder builder = new TInputSetBuilder();
         buildInputSets(builder);
         return builder.toList();
+    }
+
+    @Override
+    public InputSetFlags exactInputs() {
+        TInputSetBuilder builder = new TInputSetBuilder();
+        buildInputSets(builder);
+        return builder.exactInputs();
     }
 
     @Override
@@ -131,7 +139,8 @@ public abstract class TScalarBase implements TScalar {
             public PValueSource get(int i) {
                 TPreptimeValue ptValue = inputs.get(i);
                 PValueSource source = ptValue.value();
-                assert source != null : "non-constant value where constant value expected";
+                assert allowNonConstsInEvaluation() || source != null
+                        : "non-constant value where constant value expected";
                 return source;
             }
 
@@ -153,6 +162,10 @@ public abstract class TScalarBase implements TScalar {
     protected static PValueSource constSource(LazyList<? extends TPreptimeValue> inputs, int index) {
         TPreptimeValue tpv = inputs.get(index);
         return tpv == null ? null : tpv.value();
+    }
+
+    protected boolean allowNonConstsInEvaluation() {
+        return false;
     }
 
     protected abstract void buildInputSets(TInputSetBuilder builder);

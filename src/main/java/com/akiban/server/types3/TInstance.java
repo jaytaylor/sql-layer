@@ -33,7 +33,28 @@ import com.akiban.util.AkibanAppender;
 import com.google.common.base.Objects;
 
 public final class TInstance {
-    
+
+    // AdjustableTInstance interface
+
+    public void setAttribute(Attribute attribute, int value) {
+        if (enumClass != attribute.getClass())
+            throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
+        int index = attribute.ordinal();
+        switch (index) {
+        case 0: attr0 = value; break;
+        case 1: attr1 = value; break;
+        case 2: attr2 = value; break;
+        case 3: attr3 = value; break;
+        default: throw new IllegalArgumentException("index out of range for " + tclass +  ": " + index);
+        }
+    }
+
+    public void validate() {
+        tclass.validate(this);
+    }
+
+    // TInstance interface
+
     public void writeCanonical(PValueSource in, PValueTarget out) {
         tclass.writeCanonical(in, this, out);
     }
@@ -57,7 +78,7 @@ public final class TInstance {
     public void formatAsJson(PValueSource source, AkibanAppender out) {
         tclass.formatAsJson(this, source, out);
     }
-    
+
     public int attribute(Attribute attribute) {
         if (enumClass != attribute.getClass())
             throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
@@ -217,7 +238,7 @@ public final class TInstance {
     }
 
     private final TClass tclass;
-    private final int attr0, attr1, attr2, attr3;
+    private int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
     private Object metaData;
     private final Class<?> enumClass;

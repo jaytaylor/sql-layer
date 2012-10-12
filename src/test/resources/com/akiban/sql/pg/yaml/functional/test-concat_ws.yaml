@@ -22,8 +22,8 @@
 - output: [['abcabc']]
 ---
 - Statement: SELECT CONCAT_WS();
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1582] }
 ---
 - Statement: SELECT CONCAT_WS('a');
-- error: [4250C]
+- error: !select-engine { all: [4250C], sys-mysql: [1582] }
 ...

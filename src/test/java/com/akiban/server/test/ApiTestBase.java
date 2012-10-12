@@ -556,6 +556,14 @@ public class ApiTestBase {
         updateAISGeneration();
     }
 
+    protected final void createView(String schema, String name, String definition) {
+        String ddl = String.format("CREATE VIEW %s AS %s", name, definition);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
+        View view = tempAIS.getView(new TableName(schema, name));
+        ddl().createView(session(), view);
+        updateAISGeneration();
+    }
+
     protected final int createTable(TableName tableName, String... definitions) throws InvalidOperationException {
         return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
     }
@@ -869,6 +877,17 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables(Session session) throws InvalidOperationException {
+        for(Routine routine : ddl().getAIS(session).getRoutines().values()) {
+            TableName name = routine.getName();
+            if (!name.getSchemaName().equals(TableName.SQLJ_SCHEMA) &&
+                !name.getSchemaName().equals(TableName.SYS_SCHEMA)) {
+                ddl().dropRoutine(session(), name);
+            }
+        }
+        for(SQLJJar jar : ddl().getAIS(session).getSQLJJars().values()) {
+            ddl().dropSQLJJar(session(), jar.getName());
+        }
+
         for(View view : ddl().getAIS(session).getViews().values()) {
             // In case one view references another, avoid having to delete in proper order.
             view.getTableColumnReferences().clear();

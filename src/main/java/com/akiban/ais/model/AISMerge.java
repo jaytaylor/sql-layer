@@ -299,7 +299,7 @@ public class AISMerge {
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
             LOG.debug("Table is root or lone table");
-            addNewGroup(builder, sourceTable, isISTable);
+            addNewGroup(builder, sourceTable);
         } else {
             // Normally there should be only one candidate parent join.
             // But since the AIS supports multiples, so does the merge.
@@ -321,7 +321,7 @@ public class AISMerge {
         for(JoinChange tnj : changedJoins) {
             final UserTable table = targetAIS.getUserTable(tnj.newChildName);
             if(tnj.isNewGroup) {
-                addNewGroup(builder, table, false);
+                addNewGroup(builder, table);
             } else if(tnj.newParentName != null) {
                 addJoin(builder, tnj.newParentName, tnj.parentCols, tnj.join, tnj.childCols, table);
             }
@@ -411,14 +411,10 @@ public class AISMerge {
         }
     }
 
-    private void addNewGroup (AISBuilder builder, UserTable rootTable, boolean isISTable) {
+    private void addNewGroup (AISBuilder builder, UserTable rootTable) {
         String groupName = nameGenerator.generateGroupName(rootTable);
-        String groupTableName = nameGenerator.generateGroupTableName(groupName);
         builder.basicSchemaIsComplete();
-        builder.createGroup(groupName,
-                            rootTable.getName().getSchemaName(),
-                            groupTableName,
-                            getNextTableID(isISTable));
+        builder.createGroup(groupName, rootTable.getName().getSchemaName());
         builder.addTableToGroup(groupName,
                                 rootTable.getName().getSchemaName(),
                                 rootTable.getName().getTableName());
@@ -476,30 +472,6 @@ public class AISMerge {
             throw new JoinToMultipleParentsException(join.getChild().getName());
         }
     }
-
-    // FOR DEBUGGING
-/*
-    private void dumpGroupStructure(String label, AkibanInformationSchema ais)
-    {
-        for (Group group : ais.getGroups().values()) {
-            if (!group.getGroupTable().getRoot().getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
-                System.out.println(String.format("%s: Group %s", label, group.getName()));
-                System.out.println("    tables:");
-                for (UserTable userTable : ais.getUserTables().values()) {
-                    if (userTable.getGroup() == group) {
-                        System.out.println(String.format("        %s -> %s", userTable, userTable.parentTable()));
-                    }
-                }
-                System.out.println("    joins:");
-                for (Join join : ais.getJoins().values()) {
-                    if (join.getGroup() == group) {
-                        System.out.println(String.format("        %s -> %s", join.getChild(), join.getParent()));
-                    }
-                }
-            }
-        }
-    }
-*/
 
     private int getUserTableIDOffset(TableName name) {
         int offset = getNextTableID(false);
@@ -608,10 +580,6 @@ public class AISMerge {
             final Set<Integer> set = TableName.INFORMATION_SCHEMA.equals(schema.getName()) ? isTableIDSet : userTableIDSet;
             for(UserTable table : schema.getUserTables().values()) {
                 set.add(table.getTableId());
-                Group group = table.getGroup();
-                if(group != null && group.getGroupTable() != null) {
-                    set.add(group.getGroupTable().getTableId());
-                }
             }
         }
     }
@@ -658,4 +626,22 @@ public class AISMerge {
         newAIS.freeze();
         return newAIS;
     }    
+
+    public static AkibanInformationSchema mergeRoutine(AkibanInformationSchema oldAIS,
+                                                       Routine routine) {
+        AkibanInformationSchema newAIS = copyAISForAdd(oldAIS);
+        newAIS.addRoutine(routine);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
+
+    public static AkibanInformationSchema mergeSQLJJar(AkibanInformationSchema oldAIS,
+                                                       SQLJJar sqljJar) {
+        AkibanInformationSchema newAIS = copyAISForAdd(oldAIS);
+        newAIS.addSQLJJar(sqljJar);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
 }

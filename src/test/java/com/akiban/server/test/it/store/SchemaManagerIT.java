@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -114,7 +113,7 @@ public final class SchemaManagerIT extends ITBase {
     private void deleteTableDef(final String schema, final String table) throws Exception {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
-                schemaManager.deleteTableDefinition(session(), schema, table);
+                schemaManager.dropTableDefinition(session(), schema, table, SchemaManager.DropBehavior.RESTRICT);
                 return null;
             }
         });
@@ -128,10 +127,10 @@ public final class SchemaManagerIT extends ITBase {
         });
     }
 
-    private List<String> getSchemaStringsWithoutAIS(final boolean withGroupTables) throws Exception {
+    private List<String> getSchemaStringsWithoutAIS() throws Exception {
         return transactionally(new Callable<List<String>>() {
             public List<String> call() throws Exception {
-                return schemaManager.schemaStrings(session(), false, withGroupTables);
+                return schemaManager.schemaStrings(session(), false);
             }
         });
     }
@@ -360,7 +359,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void tableIDsAreLow() throws Exception {
-        // TODO: Delete this test, only confirming temporarily desired behavior
+        // Test confirming desired behavior, but edit as needed
         // Purely testing initial table IDs start at 1 and don't change when adding new tables
         // Partly required by com.akiban.qp.operator.AcenstorLookup_Default creating an array sized by max table id
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
@@ -369,14 +368,12 @@ public final class SchemaManagerIT extends ITBase {
         createTableDef(SCHEMA, T2_NAME, T2_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME);
         assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        // 3: t1 group table got 2
-        assertEquals("t2 id", 3, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
+        assertEquals("t2 id", 2, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
         createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME, T3_CHILD_T1_NAME);
         assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        assertEquals("t2 id", 3, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
-        // 4: t2 group table got 4
-        assertEquals("t3 id", 5, getUserTable(SCHEMA, T3_CHILD_T1_NAME).getTableId().intValue());
+        assertEquals("t2 id", 2, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
+        assertEquals("t3 id", 3, getUserTable(SCHEMA, T3_CHILD_T1_NAME).getTableId().intValue());
     }
 
     @Test
@@ -386,7 +383,7 @@ public final class SchemaManagerIT extends ITBase {
         final String SCHEMA_DDL = "create schema if not exists `foo`;";
         final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
         createTableDef("foo", "bar", TABLE_DDL);
-        final List<String> ddls = getSchemaStringsWithoutAIS(false);
+        final List<String> ddls = getSchemaStringsWithoutAIS();
         assertEquals("ddl count", 2, ddls.size()); // schema and table
         assertTrue("create schema", ddls.get(0).startsWith("create schema"));
         assertEquals("create schema is canonical", SCHEMA_DDL, ddls.get(0));
@@ -396,10 +393,12 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void schemaStringsSingleGroup() throws Exception {
+        final String SCHEMA = "s1";
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
         Map<String, List<String>> schemaAndTables = new HashMap<String, List<String>>();
         schemaAndTables.put(SCHEMA, Arrays.asList(T1_NAME, T3_CHILD_T1_NAME));
+        assertSchemaStrings(schemaAndTables);
     }
 
     @Test
@@ -420,7 +419,6 @@ public final class SchemaManagerIT extends ITBase {
     public void manyTablesAndRestart() throws Exception {
         final int TABLE_COUNT = 50;
         final int UT_COUNT = schemaManager.getAis(session()).getUserTables().size();
-        final int GT_COUNT = schemaManager.getAis(session()).getGroupTables().size();
 
         String tableNames[] = new String[TABLE_COUNT];
         for(int i = 0; i < TABLE_COUNT; ++i) {
@@ -431,7 +429,6 @@ public final class SchemaManagerIT extends ITBase {
         AkibanInformationSchema ais = schemaManager.getAis(session());
         Collection<UserTable> before = new ArrayList<UserTable>(ais.getUserTables().values());
         assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count before", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
         safeRestart();
@@ -450,7 +447,6 @@ public final class SchemaManagerIT extends ITBase {
             }
         }
         assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count after", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
     }
 
@@ -459,7 +455,6 @@ public final class SchemaManagerIT extends ITBase {
         final int TABLE_COUNT = 3;
         AkibanInformationSchema ais = schemaManager.getAis(session());
         final int UT_COUNT = ais.getUserTables().size();
-        final int GT_COUNT = ais.getGroupTables().size();
 
         createTable(SCHEMA+"1", "t1", "id int not null primary key");
         createTable(SCHEMA+"2", "t2", "id int not null primary key");
@@ -467,7 +462,6 @@ public final class SchemaManagerIT extends ITBase {
 
         ais = schemaManager.getAis(session());
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
@@ -477,7 +471,6 @@ public final class SchemaManagerIT extends ITBase {
         assertNotNull("ais exists", ais);
 
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
@@ -743,7 +736,7 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     /**
-     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean, boolean)} is correct for
+     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
      * the given tables. The only guarantees are that schemas are created with 'if not exists',
      * a schema statement comes before any table in it, and a create table statement is fully qualified.
      * @param schemaAndTables Map of schema names to table names that should exist
@@ -752,7 +745,7 @@ public final class SchemaManagerIT extends ITBase {
     private void assertSchemaStrings(Map<String, List<String>> schemaAndTables) throws Exception {
         final String CREATE_SCHEMA = "create schema if not exists `";
         final String CREATE_TABLE = "create table `";
-        final List<String> ddls = getSchemaStringsWithoutAIS(false);
+        final List<String> ddls = getSchemaStringsWithoutAIS();
         final Set<String> sawSchemas = new HashSet<String>();
         for(String statement : ddls) {
             if(statement.startsWith(CREATE_SCHEMA)) {

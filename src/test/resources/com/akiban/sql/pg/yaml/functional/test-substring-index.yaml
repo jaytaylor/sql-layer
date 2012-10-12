@@ -4,10 +4,10 @@
 ---
 # Test for arity
 - Statement: SELECT SUBSTRING_INDEX() FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1582]} 
 ---
 - Statement: SELECT SUBSTRING_INDEX('a','b','c','d') FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1582] }
 ---
 # Test for null
 - Statement: SELECT SUBSTRING_INDEX(null, null, null)

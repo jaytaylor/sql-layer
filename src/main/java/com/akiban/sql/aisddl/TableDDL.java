@@ -271,19 +271,8 @@ public class TableDDL
                           final String schemaName, final String tableName, final String columnName,
                           int colpos, DataTypeDescriptor type, boolean nullable, boolean autoIncrement,
                           final String defaultValue) {
-        Long typeParameter1 = null, typeParameter2 = null;
-        Type builderType = typeMap.get(type.getTypeId());
-        if (builderType == null) {
-            throw new UnsupportedDataTypeException(new TableName(schemaName, tableName), columnName, type.getTypeName());
-        }
-        
-        if (builderType.nTypeParameters() == 1) {
-            typeParameter1 = (long)type.getMaximumWidth();
-        } else if (builderType.nTypeParameters() == 2) {
-            typeParameter1 = (long)type.getPrecision();
-            typeParameter2 = (long)type.getScale();
-        }
-        
+        Long[] typeParameters = new Long[2];
+        Type builderType = columnType(type, typeParameters, schemaName, tableName, columnName);
         String charset = null, collation = null;
         if (type.getCharacterAttributes() != null) {
             charset = type.getCharacterAttributes().getCharacterSet();
@@ -291,12 +280,30 @@ public class TableDDL
         }
         builder.column(schemaName, tableName, columnName, 
                        colpos,
-                       builderType.name(), 
-                       typeParameter1, typeParameter2, 
+                       builderType.name(), typeParameters[0], typeParameters[1],
                        nullable,
                        autoIncrement,
                        charset, collation,
                        defaultValue);
+    }
+
+    static Type columnType(DataTypeDescriptor type, Long[] typeParameters,
+                           String schemaName, String tableName, String columnName) {
+        Type builderType = typeMap.get(type.getTypeId());
+        if (builderType == null) {
+            throw new UnsupportedDataTypeException(new TableName(schemaName, tableName), columnName, type.getTypeName());
+        }
+        
+        if (builderType.nTypeParameters() == 1) {
+            typeParameters[0] = (long)type.getMaximumWidth();
+            typeParameters[1] = null;
+        } else if (builderType.nTypeParameters() == 2) {
+            typeParameters[0] = (long)type.getPrecision();
+            typeParameters[1] = (long)type.getScale();
+        } else {
+            typeParameters[0] = typeParameters[1] = null;
+        }
+        return builderType;
     }
 
     public static String addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn,
@@ -434,20 +441,17 @@ public class TableDDL
         }
         final String groupName;
         final String groupSchema;
-        final String groupTableName;
         if(parentTable.getGroup() == null) {
             groupName = parentName.getTableName();
             groupSchema = parentName.getSchemaName();
-            groupTableName = "_akiban_" + groupName;
         } else {
-            TableName gtName = parentTable.getGroup().getGroupTable().getName();
             groupName = parentTable.getGroup().getName();
-            groupSchema = gtName.getSchemaName();
-            groupTableName = gtName.getTableName();
+            groupSchema = parentTable.getGroup().getSchemaName();
         }
-        builder.createGroup(groupName, groupSchema, groupTableName);
+        builder.createGroup(groupName, groupSchema);
         builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
     }
+
 
     private static String[] columnNamesFromListOrPK(ResultColumnList list, PrimaryKey pk) {
         String[] names = (list == null) ? null: list.getColumnNames();

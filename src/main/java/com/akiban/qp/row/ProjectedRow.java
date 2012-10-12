@@ -138,6 +138,8 @@ public class ProjectedRow extends AbstractRow
 
     /** Make sure all the <code>ValueHolder</code>s are full. */
     public void freeze() {
+        if (holders == null)
+            return;
         for (int i = 0; i < holders.length; i++) {
             if (holders[i] == null) {
                 eval(i);

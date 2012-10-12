@@ -51,6 +51,7 @@ import java.util.Arrays;
 
 public final class MBinary extends SimpleDtdTClass {
 
+    private static final int MAX_BYTE_BUF = 4096;
     private static final TParser parser = new BinaryParser();
 
     public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
@@ -132,14 +133,17 @@ public final class MBinary extends SimpleDtdTClass {
 
     @Override
     public TInstance instance() {
-        return instance(defaultLength);
+        // 'defaultLength' doesn't always mean "LENGTH"
+        // -1 simply means a (VAR)BINARY type, in which case, you don't want
+        // to create an instance with length -1, but with MAX_BYTE_BUF (4096)
+        return instance(defaultLength < 0 ? MAX_BYTE_BUF : defaultLength);
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        int len0 = instance0.attribute(Attrs.LENGTH);
-        int len1 = instance0.attribute(Attrs.LENGTH);
-        return len0 > len1 ? instance0 : instance1;
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
+        int len0 = left.attribute(Attrs.LENGTH);
+        int len1 = left.attribute(Attrs.LENGTH);
+        return len0 > len1 ? left : right;
     }
 
     @Override
@@ -155,12 +159,13 @@ public final class MBinary extends SimpleDtdTClass {
             assert len == defaultLength : "expected length=" + defaultLength + " but was " + len;
         }
     }
-    
+
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, parser, typeId);
+        super(MBundle.INSTANCE.id(), name, AkCategory.STRING_BINARY, NumericFormatter.FORMAT.BYTES, Attrs.class,
+                1, 1, -1, PUnderlying.BYTES, parser, (defaultLength < 0 ? MAX_BYTE_BUF : defaultLength), typeId);
         this.defaultLength = defaultLength;
     }
-        
+
     private final int defaultLength;
 
     public static void putBytes(TExecutionContext context, PValueTarget target, byte[] bytes) {

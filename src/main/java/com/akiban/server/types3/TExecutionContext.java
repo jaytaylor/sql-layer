@@ -36,6 +36,8 @@ import com.akiban.server.error.OverflowException;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.util.SparseArray;
 import com.google.common.base.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Locale;
@@ -89,11 +91,17 @@ public final class TExecutionContext {
     }
 
     public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
-        queryContext.notifyClient(level, errorCode, message);
+        if (queryContext == null)
+            logger.warn("no query context on which to report error {}: {}", errorCode, message);
+        else
+            queryContext.notifyClient(level, errorCode, message);
     }
 
     public void warnClient(InvalidOperationException exception) {
-        queryContext.warnClient(exception);
+        if (queryContext == null)
+            logger.warn("no query context on which to report exception", exception);
+        else
+            queryContext.warnClient(exception);
     }
 
     public Locale getCurrentLocale()
@@ -244,4 +252,6 @@ public final class TExecutionContext {
     private ErrorHandlingMode overflowHandling;
     private ErrorHandlingMode truncateHandling;
     private ErrorHandlingMode invalidFormatHandling;
+
+    private static final Logger logger = LoggerFactory.getLogger(TExecutionContext.class);
 }

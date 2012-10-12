@@ -52,7 +52,6 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.TypesTranslation;
@@ -69,6 +68,7 @@ import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.Distinct;
+import com.akiban.sql.optimizer.plan.DMLStatement;
 import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
@@ -171,19 +171,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         @Override
         public boolean visitLeave(PlanNode n) {
             if (n instanceof ResultSet) {
-                ResultSet rs = (ResultSet) n;
-                TypedPlan typedInput = findTypedPlanNode(rs);
-                if (typedInput != null) {
-                    List<ResultField> rsFields = rs.getFields();
-                    assert rsFields.size() == typedInput.nFields() : rsFields + " not applicable to " + typedInput;
-                    for (int i = 0, size = rsFields.size(); i < size; i++) {
-                        ResultField rsField = rsFields.get(i);
-                        rsField.setTInstance(typedInput.getTypeAt(i));
-                    }
-                }
-                else {
-                    logger.warn("no Project node found for ResultSet: {}", rs);
-                }
+                updateResultFields(n, ((ResultSet)n).getFields());
+            }
+            else if (n instanceof DMLStatement) {
+                updateResultFields(n, ((DMLStatement)n).getResultField());
             }
             else if (n instanceof ExpressionsSource) {
                 handleExpressionsSource((ExpressionsSource)n);
@@ -191,11 +182,27 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return true;
         }
 
+        private void updateResultFields(PlanNode n, List<ResultField> rsFields) {
+            if (rsFields == null) return;
+            TypedPlan typedInput = findTypedPlanNode(n);
+            if (typedInput != null) {
+                assert rsFields.size() == typedInput.nFields() : rsFields + " not applicable to " + typedInput;
+                    for (int i = 0, size = rsFields.size(); i < size; i++) {
+                        ResultField rsField = rsFields.get(i);
+                        rsField.setTInstance(typedInput.getTypeAt(i));
+                    }
+            }
+            else {
+                logger.warn("no Project node found for result fields: {}", n);
+            }
+        }
+
         private TypedPlan findTypedPlanNode(PlanNode n) {
             while (true) {
                 if (n instanceof TypedPlan)
                     return (TypedPlan) n;
                 if ( (n instanceof ResultSet)
+                        || (n instanceof DMLStatement)
                         || (n instanceof Select)
                         || (n instanceof Sort)
                         || (n instanceof Limit)

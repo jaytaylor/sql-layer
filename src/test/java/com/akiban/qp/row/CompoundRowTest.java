@@ -126,10 +126,10 @@ public class CompoundRowTest {
         builder.column("schema", "state", "code", 0, "varchar", 2L, 0L, false, false, null, null);
         builder.column("schema", "state", "name", 1, "varchar", 50L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
-        builder.createGroup("state", "schema", "_akiba_state");
+        builder.createGroup("state", "schema");
         builder.addTableToGroup("state", "schema", "state");
         builder.groupingIsComplete();
         

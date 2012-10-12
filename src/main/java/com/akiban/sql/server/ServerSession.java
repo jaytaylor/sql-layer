@@ -35,13 +35,13 @@ import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
@@ -115,9 +115,6 @@ public interface ServerSession
     /** Return the tree service. */
     public TreeService getTreeService();
 
-    /** Return the LoadablePlan with the given name. */
-    public LoadablePlan<?> loadablePlan(String planName);
-
     /** Is a transaction open? */
     public boolean isTransactionActive();
 
@@ -159,4 +156,7 @@ public interface ServerSession
 
     /** Get the overload resolver */
     public T3RegistryService t3RegistryService();
+
+    /** Get the stored procedure cache */
+    public RoutineLoader getRoutineLoader();
 }

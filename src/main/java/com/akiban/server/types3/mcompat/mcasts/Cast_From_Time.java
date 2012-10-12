@@ -31,7 +31,6 @@ import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
@@ -83,7 +82,10 @@ public class Cast_From_Time {
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
     // Generally, TIME cannot be converted to DATE, DATETIME or TIMESTAMP
-    // Any cast from <TIME> --> <DATE> | <DATETIME> | <TIMESTAMP> should result in NULL
+    // Any cast from <TIME> --> <DATE> | <DATETIME> | <TIMESTAMP> should result in zeros
+    // and a warning.
+    // But contrast the similarly named _functions_, which do not give a warning and
+    // do preserve the time fields when appropriate.
     public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, Constantness.UNKNOWN)
     {
 

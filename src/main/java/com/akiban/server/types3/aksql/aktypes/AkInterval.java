@@ -30,6 +30,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -341,11 +342,11 @@ public class AkInterval extends TClassBase {
         return secondsRawFrom(source, TimeUnit.NANOSECONDS);
     }
 
-    private enum SecondsAttrs implements Attribute {
+    private static enum SecondsAttrs implements Attribute {
         FORMAT
     }
 
-    private enum MonthsAttrs implements Attribute {
+    private static enum MonthsAttrs implements Attribute {
         FORMAT
     }
 
@@ -355,10 +356,11 @@ public class AkInterval extends TClassBase {
             attributeToString(formatters, value, output);
         else
             super.attributeToString(attributeIndex, value,  output);
+        
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+    protected TInstance doPickInstance(TInstance left, TInstance right) {
         return instance();
     }
 
@@ -413,22 +415,28 @@ public class AkInterval extends TClassBase {
                                                IntervalFormat[] formatters)
     {
         super(bundle, name, category, enumClass, formatter, internalRepVersion, sVersion, sSize, pUnderlying,
-                createParser(formatAttribute, formatters));
+                createParser(formatAttribute, formatters), 128); // varchar len is arbitrary; I don't expect to use it
         this.formatters = formatters;
         this.formatAttribute = formatAttribute;
         this.typeIdToFormat = createTypeIdToFormatMap(formatters);
 
     }
 
-    public boolean isDate()
+    public boolean isDate(TInstance ins)
     {
-        return formatters[0] instanceof AkIntervalMonthsFormat
-                || formatters[0] == AkIntervalSecondsFormat.DAY;
+        if (ins.typeClass() instanceof AkInterval)
+            return formatters[0] instanceof AkIntervalMonthsFormat
+                    || formatters[ins.attribute(formatAttribute)] == AkIntervalSecondsFormat.DAY;
+        else
+            return false;
     }
     
-    public boolean isTime()
+    public boolean isTime(TInstance ins)
     {
-        return !isDate();
+        if (ins.typeClass() instanceof AkInterval)
+            return !isDate(ins);
+        else
+            return false;
     }
 
     private final IntervalFormat[] formatters;

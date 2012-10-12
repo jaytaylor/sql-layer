@@ -27,42 +27,28 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.GroupMissingTableColumnException;
-import com.akiban.server.error.TableColumnNotInGroupException;
-/**
- * Verifies that all the table columns are also present in the corresponding group table.
- * 
- * @author tjoneslo
- *
- */
-class TableColumnsMatchGroupColumns implements AISValidation {
+import com.akiban.server.error.GroupHasMultipleRootsException;
+
+class GroupSingleRoot implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (UserTable table : ais.getUserTables().values()) {
-            // table doesn't have a group, this is caught by TablesInAGroup
-            if (table.getGroup() == null) { continue; }
-            GroupTable groupTable = table.getGroup().getGroupTable();
-            
-            for (Column column : table.getColumnsIncludingInternal()) {
-                if (column.getGroupColumn() == null) {
+        for (Group group : ais.getGroups().values()) {
+            validateGroup (ais, group, output);
+        }
+    }
+    
+    private void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
+        UserTable root = null;
+        for (UserTable userTable : ais.getUserTables().values()) {
+            if (userTable.getGroup() == group && userTable.isRoot()) {
+                if (root == null) {
+                    root = userTable;
+                } else {
                     output.reportFailure(new AISValidationFailure (
-                            new TableColumnNotInGroupException (table.getName(),column.getName())));
-                }
-
-                Column matchingColumn = null;
-                for (Column groupTableColumn : groupTable.getColumns()) {
-                    if (groupTableColumn.getUserColumn() == column) {
-                        matchingColumn = groupTableColumn;
-                        break;
-                    }
-                }
-                if (matchingColumn == null) {
-                    output.reportFailure(new AISValidationFailure (
-                            new GroupMissingTableColumnException (groupTable.getName(), table.getName(), column.getName())));
+                            new GroupHasMultipleRootsException(group.getName(), root.getName(), userTable.getName())));
                 }
             }
         }
