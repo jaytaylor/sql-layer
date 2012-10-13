@@ -277,25 +277,32 @@ public class MDatetimes
             tks = datetime[0].split("-"); // ignore the time part
         else
             tks = st.split("-");
-
-        if (tks.length != 3)
-            throw new InvalidDateFormatException("date", st);
         
         try
         {
-            int ret[] = new int[]
+            int year, month, day;
+            if (tks.length == 3)
             {
-                Integer.parseInt(tks[0]),
-                Integer.parseInt(tks[1]),
-                Integer.parseInt(CastUtils.truncateNonDigits(tks[2], context))
-            };
-            
-            if (!isValidDayMonth(ret[0], ret[1], ret[2]))
+                year = Integer.parseInt(tks[0]);
+                month = Integer.parseInt(tks[1]);
+                day = Integer.parseInt(CastUtils.truncateNonDigits(tks[2], context));
+            }
+            else if (tks.length == 1)
+            {
+                long[] ymd = fromDate(Long.parseLong(tks[0]));
+                year = (int)ymd[YEAR_INDEX];
+                month = (int)ymd[MONTH_INDEX];
+                day = (int)ymd[DAY_INDEX];
+            }
+            else
+                throw new InvalidDateFormatException("date", st);
+
+            if (!isValidDayMonth(year, month, day))
                 throw new InvalidDateFormatException("date", st);
             else
-                return ret[0] * 512
-                        + ret[1] * 32
-                        + ret[2];
+                return year * 512
+                    + month * 32
+                    + day;
         }
         catch (NumberFormatException ex)
         {
@@ -638,8 +645,17 @@ public class MDatetimes
 
         try
         {
-            switch (values.length)
+            if (values.length == 1) 
             {
+                long[] hms = decodeTime(Long.parseLong(values[offset]));
+                hours += hms[HOUR_INDEX];
+                minutes = (int)hms[MIN_INDEX];
+                seconds = (int)hms[SEC_INDEX];
+            }
+            else 
+            {
+                switch (values.length)
+                {
                 case 3:
                     hours += Integer.parseInt(values[offset++]); // fall
                 case 2:
@@ -649,17 +665,18 @@ public class MDatetimes
                     break;
                 default:
                     throw new InvalidDateFormatException("time", string);
+                }
+
+                minutes += seconds / 60;
+                seconds %= 60;
+                hours += minutes / 60;
+                minutes %= 60;
             }
         }
         catch (NumberFormatException ex)
         {
             throw new InvalidDateFormatException("time", string);
         }
-        
-        minutes += seconds / 60;
-        seconds %= 60;
-        hours += minutes / 60;
-        minutes %= 60;
 
         if (!isValidHrMinSec(hours, minutes, seconds, shortTime))
             throw new InvalidDateFormatException("time", string);
