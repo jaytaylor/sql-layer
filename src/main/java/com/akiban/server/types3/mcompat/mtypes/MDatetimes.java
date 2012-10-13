@@ -54,6 +54,7 @@ import org.joda.time.base.BaseDateTime;
 
 public class MDatetimes
 {
+    public static final int MAX_YEAR = 2099;
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
     
     public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
@@ -118,14 +119,13 @@ public class MDatetimes
         }, 
         YEAR {         
             @Override
-            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-                int year = source.getInt8();
-                int yearAbs = Math.abs(year);
-                if (yearAbs < 70)
-                    year += 2000;
-                else if (yearAbs < 100)
-                    year += 1900;
-                out.append(year);
+            public void format(TInstance instance, PValueSource source, AkibanAppender out)
+            {
+                byte raw = source.getInt8();
+                if (raw == 0)
+                    out.append("0000");
+                else
+                    out.append((raw & 0xff) + 1900);
             }
 
             @Override
@@ -133,7 +133,7 @@ public class MDatetimes
                 format(instance, source, out);
             }
         }, 
-        TIMESTAMP {      
+        TIMESTAMP {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
                 out.append(timestampToString(source.getInt32(), null));
