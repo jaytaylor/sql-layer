@@ -1,0 +1,17 @@
+SelectQuery@2c820a76
+  ResultSet@d7cdfce[order_date, sku, quan]
+    MapJoin@45ca5e7a()
+      Flatten@4d1218ad(orders INNER items)
+        BranchLookup@6900bf61(customers -> customers)
+          SingleIndexScan@3014af22(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 200, cost = 16450.7)
+          TableSource@76f9d876(orders - TableGroupJoin@1df5f9d7(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          TableSource@cf26800(items - TableGroupJoin@7fe5a19e(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+      Project@149544d[orders.order_date, items.sku, items.quan]
+        Select@753d8be3[]
+          Limit@3cd5cdab(LIMIT 1)
+            Select@78b1b4c0[]
+              Flatten@2261adb1(i2)
+                Select@5ad1e727[Cast(items.quan AS MCOMPAT_ BIGINT(12) NOT NULL) == plus(i2.quan,items.quan)]
+                  AncestorLookup@a9ee006(items -> [items])
+                    SingleIndexScan@4485af5c(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 898.683)
+                    TableSource@7e89dea3(i2 - TableGroup@24bbe429(customers))

@@ -89,7 +89,7 @@ public class MDistanceLatLon extends TScalarBase
     @Override
     public String displayName()
     {
-        return "distance_lat_lon";
+        return "DISTANCE_LAT_LON";
     }
 
     @Override

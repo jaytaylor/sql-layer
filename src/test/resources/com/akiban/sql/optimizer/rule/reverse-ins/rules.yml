@@ -1,6 +1,7 @@
 - com.akiban.sql.optimizer.rule.ASTStatementLoader
 - com.akiban.sql.optimizer.rule.AggregateMapper
 #- com.akiban.sql.optimizer.rule.AggregateToDistinctMapper
+- com.akiban.sql.optimizer.rule.ConditionalOverloadAndTInstanceResolver
 - com.akiban.sql.optimizer.rule.ConstantFolder
 #- com.akiban.sql.optimizer.rule.OuterJoinPromoter
 - com.akiban.sql.optimizer.rule.GroupJoinFinder
