@@ -44,6 +44,7 @@ import com.akiban.util.ShareHolder;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 
+import com.google.common.base.Objects;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -139,7 +140,11 @@ final class UnionAll_Default extends Operator {
         for(int i=0; i<types.length; ++i) {
             TInstance tInst1 = rowType1.typeInstanceAt(i);
             TInstance tInst2 = rowType2.typeInstanceAt(i);
-            if (tInst1.equals(tInst2))
+            if (Objects.equal(tInst1, tInst2))
+                types[i] = tInst1;
+            else if (tInst1 == null)
+                types[i] = tInst2;
+            else if (tInst2 == null)
                 types[i] = tInst1;
             else
                 throw notSameShape(rowType1, rowType2);

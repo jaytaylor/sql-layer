@@ -31,6 +31,8 @@ import com.akiban.qp.operator.OperatorTestHelper;
 import com.akiban.qp.operator.RowsBuilder;
 import com.akiban.qp.operator.TestOperator;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.texpressions.TPreparedField;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.*;
 
@@ -187,8 +189,14 @@ public class Distinct_PartialTest {
             .row(7L,"abc")
         );
         Ordering ordering = ordering();
-        ordering.append(field(input.rowType(), 0), true);
-        ordering.append(field(input.rowType(), 1), true);
+        if (Types3Switch.ON) {
+            ordering.append(null, new TPreparedField(input.rowType().typeInstanceAt(0), 0), true);
+            ordering.append(null, new TPreparedField(input.rowType().typeInstanceAt(1), 1), true);
+        }
+        else {
+            ordering.append(field(input.rowType(), 0), true);
+            ordering.append(field(input.rowType(), 1), true);
+        }
         Operator sort = sort_InsertionLimited(input, input.rowType(),
                                               ordering, SortOption.PRESERVE_DUPLICATES, 200);
         Operator plan = distinct_Partial(sort, sort.rowType());
