@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.sql.optimizer.plan.*;
@@ -1349,9 +1350,25 @@ public class ASTStatementLoader extends BaseRule
                 if (valueNode instanceof BooleanConstantNode)
                     return new BooleanConstantExpression((Boolean)((ConstantNode)valueNode).getValue(), 
                                                          type, valueNode);
-                else
-                    return new ConstantExpression(((ConstantNode)valueNode).getValue(), 
-                                                  type, valueNode);
+                else {
+                    Object value = ((ConstantNode)valueNode).getValue();
+                    if (value instanceof Integer) {
+                        int ival = ((Integer)value).intValue();
+                        if (Types3Switch.ON) {
+                            if ((ival >= Byte.MIN_VALUE) && (ival <= Byte.MAX_VALUE))
+                                value = new Byte((byte)ival);
+                            else if ((ival >= Short.MIN_VALUE) && (ival <= Short.MAX_VALUE))
+                                value = new Short((short)ival);
+                            ExpressionNode constInt = new ConstantExpression(value, type, AkType.LONG, valueNode);
+                            constInt.getPreptimeValue(); // So that toString() won't try to use that AkType with an unsupported types2 type.
+                            return constInt;
+                        }
+                        else {
+                            value = new Long(ival);
+                        }
+                    }
+                    return new ConstantExpression(value, type, valueNode);
+                }
             }
             else if (valueNode instanceof ParameterNode)
                 return new ParameterExpression(((ParameterNode)valueNode)
@@ -1642,8 +1659,9 @@ public class ASTStatementLoader extends BaseRule
             ExpressionNode expression = toExpression(valueNode, projects);
             if (expression.isConstant()) {
                 Object value = ((ConstantExpression)expression).getValue();
-                if (value instanceof Long) {
-                    int i = ((Long)value).intValue();
+                if ((value instanceof Long) || (value instanceof Integer) ||
+                    (value instanceof Short) || (value instanceof Byte)) {
+                    int i = ((Number)value).intValue();
                     if ((i <= 0) || (i > projects.size()))
                         throw new OrderGroupByIntegerOutOfRange(which, i, projects.size());
                     expression = (ExpressionNode)projects.get(i-1);

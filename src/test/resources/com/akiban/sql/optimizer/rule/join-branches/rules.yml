@@ -1,4 +1,5 @@
 - com.akiban.sql.optimizer.rule.ASTStatementLoader
+- com.akiban.sql.optimizer.rule.ConditionalOverloadAndTInstanceResolver
 - com.akiban.sql.optimizer.rule.ConstantFolder
 - com.akiban.sql.optimizer.rule.ColumnEquivalenceFinder
 - com.akiban.sql.optimizer.rule.GroupJoinFinder

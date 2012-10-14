@@ -56,7 +56,11 @@ public class IsNull extends TScalarBase
         builder.covers(null, 0);
     }
 
-     
+    @Override
+    protected boolean nullContaminates(int inputIndex) {
+        return false;
+    }
+
     @Override
     public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) 
     {

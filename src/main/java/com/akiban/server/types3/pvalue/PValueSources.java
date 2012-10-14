@@ -276,6 +276,10 @@ public final class PValueSources {
             tInstance = MNumeric.SMALLINT.instance(false);
             value = new PValue((Short)object);
         }
+        else if (object instanceof Byte) {
+            tInstance = MNumeric.TINYINT.instance(false);
+            value = new PValue((Byte)object);
+        }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
         }
@@ -488,7 +492,8 @@ public final class PValueSources {
     }
 
     public static PValueSource fromValueSource(ValueSource source, TInstance tInstance) {
-        PValue result = new PValue(tInstance.typeClass().underlyingType());
+        PValue result = new PValue(tInstance == null ? null :
+                                   tInstance.typeClass().underlyingType());
         plainConverter.convert(null, source, result, tInstance);
         return result;
     }

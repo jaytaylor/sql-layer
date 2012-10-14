@@ -39,6 +39,7 @@ import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
 import java.util.ArrayList;
@@ -117,6 +118,16 @@ public abstract class TScalarBase implements TScalar {
     public TPreptimeValue evaluateConstant(TPreptimeContext context, final LazyList<? extends TPreptimeValue> inputs) {
         if (neverConstant()) {
             return null;
+        }
+        for (int i = 0; i < inputs.size(); ++i) {
+            if (nullContaminates(i)) {
+                PValueSource constSource = constSource(inputs, i);
+                if ((constSource != null) && constSource.isNull()) {
+                    // Const null source on contaminating operand. Result is null.
+                    return new TPreptimeValue(context.getOutputType(), 
+                                              PValueSources.getNullSource(context.getOutputType().typeClass().underlyingType()));
+                }
+            }
         }
         for (int i = 0; i < inputs.size(); ++i) {
             if (constnessMatters(i)) {

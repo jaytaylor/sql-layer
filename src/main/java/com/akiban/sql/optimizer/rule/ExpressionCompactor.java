@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression.Operation;
@@ -134,10 +135,10 @@ public class ExpressionCompactor extends BaseRule
             else {
                 Collections.sort(entry, conditionBySelectivity);
                 condition = entry.get(--size);
-                boolean nullable = condition.getPreptimeValue().isNullable();
+                boolean nullable = isNullable(condition);
                 while (size > 0) {
                     ConditionExpression left = entry.get(--size);
-                    nullable |= left.getPreptimeValue().isNullable();
+                    nullable |= isNullable(left);
                     condition = new BooleanOperationExpression(Operation.AND,
                                                                left,
                                                                condition,
@@ -147,6 +148,10 @@ public class ExpressionCompactor extends BaseRule
             }
             conditions.add(condition);
         }
+    }
+
+    private static boolean isNullable(ExpressionNode condition) {
+        return Types3Switch.ON ? condition.getPreptimeValue().isNullable() : condition.getSQLtype().isNullable();
     }
 
     static final Comparator<ColumnSource> tableSourceById = 

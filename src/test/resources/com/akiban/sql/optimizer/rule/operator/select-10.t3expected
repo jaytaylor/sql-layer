@@ -1,0 +1,10 @@
+PhysicalSelect@53ecb4e2[name, order_date, name]
+  Map_NestedLoops()
+    Flatten_HKeyOrdered(test.customers INNER test.orders)
+      AncestorLookup_Default(Index(test.orders.order_date) -> test.customers, test.orders)
+        IndexScan_Default(Index(test.orders.order_date), order_date > DATE '2011-01-01' ASC, cid, oid)
+    Project_Default(Bound(0, 1), Bound(0, 4), Field(2))
+      Select_HKeyOrdered(Field(2) != 'Smith')
+        Filter_Default(test.child)
+          BranchLookup_Default(Index(test.parent.name) -> test.parent)
+            IndexScan_Default(Index(test.parent.name), name = Bound(0, 1), id ASC)
