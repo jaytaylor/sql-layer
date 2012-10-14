@@ -34,6 +34,7 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -426,7 +427,10 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // a z-value of type long.
             if (startBoundColumns == 1) {
                 if (Types3Switch.ON) {
-                    tInstances[0] = MNumeric.BIGINT.instance();
+                    List<IndexColumn> keyColumns = keyRange.indexRowType().index().getKeyColumns();
+                    assert keyColumns.size() == 2
+                            : "covering index detected, need to update code: " + keyRange.indexRowType();
+                    tInstances[0] = MNumeric.BIGINT.instance(SpatialHelper.isNullable(keyRange));
                 }
                 else {
                     types[0] = AkType.LONG;

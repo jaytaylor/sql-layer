@@ -146,8 +146,8 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    public TInstance instance() {
-        return instance(10, 0);
+    public TInstance instance(boolean nullable) {
+        return instance(10, 0, nullable);
     }
 
     @Override
@@ -175,18 +175,19 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance left, TInstance right) {
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         int scaleL = left.attribute(Attrs.SCALE);
         int scaleR = left.attribute(Attrs.SCALE);
 
         int precisionL = left.attribute(Attrs.PRECISION);
         int precisionR = right.attribute(Attrs.PRECISION);
 
-        return pickPrecisionAndScale(MBigDecimal.this, precisionL, scaleL, precisionR, scaleR);
+        return pickPrecisionAndScale(MBigDecimal.this, precisionL, scaleL, precisionR, scaleR, suggestedNullability);
     }
 
     public static TInstance pickPrecisionAndScale(TClass tclass,
-                                                  int precisionL, int scaleL, int precisionR, int scaleR)
+                                                  int precisionL, int scaleL, int precisionR, int scaleR,
+                                                  boolean nullable)
     {
         int resultPrecision, resultScale;
 
@@ -211,7 +212,7 @@ public class MBigDecimal extends TClassBase {
             precisionOfSmallerScale += Math.abs(scaleL - scaleR);
             resultPrecision = Math.max(precisionOfSmallerScale, resultPrecision);
         }
-        return tclass.instance(resultPrecision, resultScale);
+        return tclass.instance(resultPrecision, resultScale, nullable);
     }
 
     public static final PValueCacher cacher = new PValueCacher() {

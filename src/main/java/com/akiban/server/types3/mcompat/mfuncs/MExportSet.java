@@ -179,13 +179,14 @@ public abstract class  MExportSet extends TScalarBase
             {
                 TPreptimeValue on = inputs.get(1);
                 TPreptimeValue off;
-                
+
+                boolean nullable = anyContaminatingNulls(inputs);
                 if (on == null 
                         || (off = inputs.get(2)) == null
                         || on.value().isNull()
                         || off.value().isNull()
                    )
-                    return stringType.instance(255); // if not lieteral, the length would just be 255
+                    return stringType.instance(255, nullable); // if not literal, the length would just be 255
                 
                 // compute the length
                 
@@ -206,7 +207,7 @@ public abstract class  MExportSet extends TScalarBase
                 }
                 // There would only be [length - 1] number of delimiter characters
                 // in the string. But we'd give it enough space for [length]
-                return stringType.instance(length * (digitLength + delimLength));
+                return stringType.instance(length * (digitLength + delimLength), nullable);
             }
             
         });

@@ -43,9 +43,13 @@ public final class TInExpression {
     public static TPreparedExpression prepare(TPreparedExpression lhs, List<? extends TPreparedExpression> rhs,
                                               QueryContext queryContext) {
         List<TPreparedExpression> all = new ArrayList<TPreparedExpression>(rhs.size() + 1);
+        boolean nullable = lhs.resultType().nullability();
         all.add(lhs);
-        all.addAll(rhs);
-        return new TPreparedFunction(overload, AkBool.INSTANCE.instance(), all, queryContext);
+        for (TPreparedExpression r : rhs) {
+            all.add(r);
+            nullable |= r.resultType().nullability();
+        }
+        return new TPreparedFunction(overload, AkBool.INSTANCE.instance(nullable), all, queryContext);
     }
     
     private static TValidatedScalar overload = new TValidatedScalar(new TScalarBase() {
@@ -76,7 +80,7 @@ public final class TInExpression {
 
         @Override
         public TOverloadResult resultType() {
-            return TOverloadResult.fixed(AkBool.INSTANCE.instance());
+            return TOverloadResult.fixed(AkBool.INSTANCE);
         }
     });
 }

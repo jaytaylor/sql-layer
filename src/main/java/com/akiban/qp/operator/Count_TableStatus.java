@@ -122,7 +122,7 @@ class Count_TableStatus extends Operator
                                   tableType instanceof UserTableRowType);
         this.tableType = tableType;
         this.resultType = usePValues
-                ? tableType.schema().newValuesType(MNumeric.BIGINT.instance())
+                ? tableType.schema().newValuesType(MNumeric.BIGINT.instance(false))
                 : tableType.schema().newValuesType(AkType.LONG);
         this.usePValues = usePValues;
     }

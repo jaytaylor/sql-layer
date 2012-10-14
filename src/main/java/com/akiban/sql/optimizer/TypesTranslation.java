@@ -354,43 +354,43 @@ public final class TypesTranslation {
             tInstance = AkInterval.MONTHS.tInstanceFrom(sqlType);
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
-            tInstance = MBinary.VARBINARY.instance(sqlType.getMaximumWidth());
+            tInstance = MBinary.VARBINARY.instance(sqlType.getMaximumWidth(), sqlType.isNullable());
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-            tInstance = AkBool.INSTANCE.instance();
+            tInstance = AkBool.INSTANCE.instance(sqlType.isNullable());
             break;
         case TypeId.FormatIds.CHAR_TYPE_ID:
             tInstance = charTInstance(sqlType, MString.VARCHAR);
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
-            tInstance = MDatetimes.DATE.instance();
+            tInstance = MDatetimes.DATE.instance(sqlType.isNullable());
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            tInstance = MNumeric.DECIMAL.instance(sqlType.getPrecision(), sqlType.getScale());
+            tInstance = MNumeric.DECIMAL.instance(sqlType.getPrecision(), sqlType.getScale(), sqlType.isNullable());
             break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
             if (typeId.isUnsigned()) {
-                tInstance = MApproximateNumber.DOUBLE_UNSIGNED.instance();
+                tInstance = MApproximateNumber.DOUBLE_UNSIGNED.instance(sqlType.isNullable());
             }
             else {
-                tInstance = MApproximateNumber.DOUBLE.instance();
+                tInstance = MApproximateNumber.DOUBLE.instance(sqlType.isNullable());
             }
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
             if (typeId.isUnsigned()) {
-                tInstance = MNumeric.INT_UNSIGNED.instance();
+                tInstance = MNumeric.INT_UNSIGNED.instance(sqlType.isNullable());
             }
             else {
-                tInstance = MNumeric.INT.instance();
+                tInstance = MNumeric.INT.instance(sqlType.isNullable());
             }
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned()) {
-                tInstance = MNumeric.BIGINT_UNSIGNED.instance();
+                tInstance = MNumeric.BIGINT_UNSIGNED.instance(sqlType.isNullable());
             }
             else {
-                tInstance = MNumeric.BIGINT.instance();
+                tInstance = MNumeric.BIGINT.instance(sqlType.isNullable());
             }
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
@@ -401,47 +401,47 @@ public final class TypesTranslation {
             break;
         case TypeId.FormatIds.REAL_TYPE_ID:
             if (typeId.isUnsigned()) {
-                tInstance = MApproximateNumber.FLOAT_UNSIGNED.instance();
+                tInstance = MApproximateNumber.FLOAT_UNSIGNED.instance(sqlType.isNullable());
             }
             else {
-                tInstance = MApproximateNumber.FLOAT.instance();
+                tInstance = MApproximateNumber.FLOAT.instance(sqlType.isNullable());
             }
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             if (typeId == TypeId.YEAR_ID) {
-                tInstance = MDatetimes.YEAR.instance();
+                tInstance = MDatetimes.YEAR.instance(sqlType.isNullable());
             }
             else if (typeId.isUnsigned()) {
-                tInstance = MNumeric.SMALLINT_UNSIGNED.instance();
+                tInstance = MNumeric.SMALLINT_UNSIGNED.instance(sqlType.isNullable());
             }
             else {
-                tInstance = MNumeric.SMALLINT.instance();
+                tInstance = MNumeric.SMALLINT.instance(sqlType.isNullable());
             }
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
-            tInstance = MDatetimes.TIME.instance();
+            tInstance = MDatetimes.TIME.instance(sqlType.isNullable());
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             if (typeId == TypeId.DATETIME_ID) {
-                tInstance = MDatetimes.DATETIME.instance();
+                tInstance = MDatetimes.DATETIME.instance(sqlType.isNullable());
             }
             else {
-                tInstance = MDatetimes.TIMESTAMP.instance();
+                tInstance = MDatetimes.TIMESTAMP.instance(sqlType.isNullable());
             }
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             if (typeId.isUnsigned()) {
-                tInstance = MNumeric.TINYINT_UNSIGNED.instance();
+                tInstance = MNumeric.TINYINT_UNSIGNED.instance(sqlType.isNullable());
             }
             else {
-                tInstance = MNumeric.TINYINT.instance();
+                tInstance = MNumeric.TINYINT.instance(sqlType.isNullable());
             }
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
-            tInstance = MBinary.VARBINARY.instance(sqlType.getMaximumWidth());
+            tInstance = MBinary.VARBINARY.instance(sqlType.getMaximumWidth(), sqlType.isNullable());
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            tInstance = MBinary.VARBINARY.instance(sqlType.getMaximumWidth());
+            tInstance = MBinary.VARBINARY.instance(sqlType.getMaximumWidth(), sqlType.isNullable());
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             tInstance = charTInstance(sqlType, MString.VARCHAR);
@@ -480,7 +480,6 @@ public final class TypesTranslation {
         default:
             throw new UnknownDataTypeException(sqlType.toString());
         }
-        tInstance.setNullable(sqlType.isNullable());
         return tInstance;
     }
 
@@ -489,7 +488,7 @@ public final class TypesTranslation {
         int charsetId = (typeAttributes == null)
                 ? -1
                 : Charset.of(typeAttributes.getCharacterSet()).ordinal();
-        return tClass.instance(type.getMaximumWidth(), charsetId);
+        return tClass.instance(type.getMaximumWidth(), charsetId, type.isNullable());
     }
 
     private TypesTranslation() {}

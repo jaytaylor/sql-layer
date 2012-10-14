@@ -142,11 +142,11 @@ public abstract class Pad extends TScalarBase
                 // if the argument isn't availabe
                 // return LONGTEXT 
                 if (len == null)
-                    return MString.LONGTEXT.instance();
+                    return MString.LONGTEXT.instance(anyContaminatingNulls(inputs));
                 else if (len.isNull())
-                    return stringType.instance(0);
+                    return stringType.instance(0, anyContaminatingNulls(inputs));
                 else
-                    return stringType.instance(len.getInt32());
+                    return stringType.instance(len.getInt32(), anyContaminatingNulls(inputs));
             }
         });
     }

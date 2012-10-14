@@ -26,7 +26,6 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchCastException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -39,7 +38,6 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.aksql.aktypes.AkResultSet;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
@@ -49,7 +47,6 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
-import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 
 import org.joda.time.DateTime;
@@ -75,7 +72,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Map;
 
 /** Make something like an array of typed values (for instance, a
  * <code>Row</code> or a <code>QueryContext</code>) accessible using
@@ -121,7 +117,7 @@ public abstract class ServerJavaValues
         protected CachedCast(TInstance sourceInstance, TClass targetClass, 
                              ServerQueryContext context) {
             this.targetClass = targetClass;
-            TInstance targetInstance = targetClass.instance();
+            TInstance targetInstance = targetClass.instance(sourceInstance == null || sourceInstance.nullability());
             tcast = context.getServer().t3RegistryService().getCastsResolver()
                 .cast(sourceInstance, targetInstance);
             if (tcast == null)

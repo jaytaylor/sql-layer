@@ -110,8 +110,8 @@ public final class MBinary extends SimpleDtdTClass {
             @Override
             public TInstance create(TAttributesDeclaration declaration) {
                 final int len;
+                TAttributeValues values = declaration.validate(1, 1);
                 if (defaultLength < 0) {
-                    TAttributeValues values = declaration.validate(1, 1);
                     len = values.intAt(Attrs.LENGTH, defaultLength);
                     if (len < 0)
                         throw new IllegalNameException("length must be positive");
@@ -120,7 +120,7 @@ public final class MBinary extends SimpleDtdTClass {
                     declaration.validate(0, 0);
                     len = defaultLength;
                 }
-                return instance(len);
+                return instance(len, values.nullable());
             }
         };
     }
@@ -132,15 +132,15 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     @Override
-    public TInstance instance() {
+    public TInstance instance(boolean nullable) {
         // 'defaultLength' doesn't always mean "LENGTH"
         // -1 simply means a (VAR)BINARY type, in which case, you don't want
         // to create an instance with length -1, but with MAX_BYTE_BUF (4096)
-        return instance(defaultLength < 0 ? MAX_BYTE_BUF : defaultLength);
+        return instance(defaultLength < 0 ? MAX_BYTE_BUF : defaultLength, nullable);
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance left, TInstance right) {
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         int len0 = left.attribute(Attrs.LENGTH);
         int len1 = left.attribute(Attrs.LENGTH);
         return len0 > len1 ? left : right;

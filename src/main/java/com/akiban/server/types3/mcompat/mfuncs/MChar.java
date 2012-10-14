@@ -90,7 +90,7 @@ public class MChar extends TScalarBase
         return TOverloadResult.custom(new TCustomOverloadResult() {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                return MBinary.VARBINARY.instance(inputs.size() * 4);
+                return MBinary.VARBINARY.instance(inputs.size() * 4, anyContaminatingNulls(inputs));
             }
         });
     }

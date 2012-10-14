@@ -85,7 +85,7 @@ public final class DescribeExpression extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MString.VARCHAR.instance(255));
+        return TOverloadResult.fixed(MString.VARCHAR, 255);
     }
 
     private DescribeExpression() {}

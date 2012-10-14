@@ -109,7 +109,7 @@ public abstract class TClassBase extends TClass
                     format(source.instance(), source.value(), AkibanAppender.of(sb));
                     len = sb.length();
                 }
-                return MString.VARCHAR.instance(len);
+                return MString.VARCHAR.instance(len, source.isNullable());
             }
         };
     }
