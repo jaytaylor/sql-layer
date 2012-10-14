@@ -36,7 +36,6 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.common.types.NumericAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -92,8 +91,7 @@ public final class MUnaryMinus extends TScalarBase {
 
             @Override
             protected TInstance resultType(TInstance operand) {
-                int operandWidth = operand.attribute(NumericAttribute.WIDTH);
-                return MNumeric.INT.instance(operandWidth + 1, operand.nullability());
+                return MNumeric.INT.instance(operand.nullability());
             }
         },
         BIGINT(MNumeric.BIGINT) {
@@ -105,8 +103,7 @@ public final class MUnaryMinus extends TScalarBase {
 
             @Override
             protected TInstance resultType(TInstance operand) {
-                int operandWidth = operand.attribute(NumericAttribute.WIDTH);
-                return MNumeric.BIGINT.instance(operandWidth + 1, operand.nullability());
+                return MNumeric.BIGINT.instance(operand.nullability());
             }
         },
         DOUBLE(MApproximateNumber.DOUBLE) {
@@ -118,7 +115,6 @@ public final class MUnaryMinus extends TScalarBase {
 
             @Override
             protected TInstance resultType(TInstance operand) {
-                // TODO not quite right, need to experiment
                 return MApproximateNumber.DOUBLE.instance(operand.nullability());
             }
         },

@@ -133,8 +133,15 @@ public abstract class AbstractRow implements Row
         final int fieldsCount = rowType().nFields();
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
-            if (Types3Switch.ON)
-                rowType().typeInstanceAt(i).format(pvalue(i), appender);
+            if (Types3Switch.ON) {
+                if (rowType().typeInstanceAt(i) == null) {
+                    assert pvalue(i).isNull();
+                    builder.append("NULL");
+                }
+                else {
+                    rowType().typeInstanceAt(i).format(pvalue(i), appender);
+                }
+            }
             else
                 eval(i).appendAsString(appender, Quote.SINGLE_QUOTE);
             if(i+1 < fieldsCount) {

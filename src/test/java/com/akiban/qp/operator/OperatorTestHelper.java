@@ -111,10 +111,15 @@ public final class OperatorTestHelper {
         PValueSource expectedSource = expected.pvalue(i);
         TInstance actualType = actual.rowType().typeInstanceAt(i);
         TInstance expectedType = expected.rowType().typeInstanceAt(i);
+        if (actualType == null || expectedType == null) {
+            assert actualSource.isNull() && expectedSource.isNull();
+            return;
+        }
         assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
 
         
-        if(!PValueSources.areEqual(actualSource, expectedSource, expectedType)) {
+        if(!PValueSources.areEqual(actualSource, expectedSource, expectedType) &&
+           !(actualSource.isNull() && expectedSource.isNull())) {
             Assert.assertEquals(
                     String.format("row[%d] field[%d]", rowCount, i),
                     str(expecteds),
