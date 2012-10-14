@@ -26,32 +26,13 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.util.AkibanAppender;
-import com.google.common.base.Objects;
 
 public final class TInstance {
-
-    // AdjustableTInstance interface
-
-    public void setAttribute(Attribute attribute, int value) {
-        if (enumClass != attribute.getClass())
-            throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
-        int index = attribute.ordinal();
-        switch (index) {
-        case 0: attr0 = value; break;
-        case 1: attr1 = value; break;
-        case 2: attr2 = value; break;
-        case 3: attr3 = value; break;
-        default: throw new IllegalArgumentException("index out of range for " + tclass +  ": " + index);
-        }
-    }
-
-    public void validate() {
-        tclass.validate(this);
-    }
 
     // TInstance interface
 
@@ -96,17 +77,18 @@ public final class TInstance {
         return tclass;
     }
 
-    public Boolean nullability() {
+    public boolean nullability() {
         return isNullable;
-    }
-
-    public TInstance setNullable(Boolean nullable) {
-        isNullable = nullable;
-        return this;
     }
 
     public Object getMetaData() {
         return metaData;
+    }
+
+    public TInstance withNullable(boolean isNullable) {
+        return (isNullable == this.isNullable)
+                ? this
+                : new TInstance(tclass, enumClass, tclass.nAttributes(), attr0, attr1, attr2, attr3, isNullable);
     }
 
     /**
@@ -131,10 +113,6 @@ public final class TInstance {
         return true;
     }
 
-    public TInstance copy() {
-        return new TInstance(tclass, enumClass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
-    }
-
     // object interface
 
     @Override
@@ -154,11 +132,10 @@ public final class TInstance {
                 sb.append(", ");
         }
         sb.append(')');
-        if (Boolean.TRUE.equals(isNullable))
+        if (isNullable)
             sb.append(" NULL");
-        else if (Boolean.FALSE.equals(isNullable))
+        else
             sb.append(" NOT NULL");
-        // else, nullability is not known
         return sb.toString();
     }
 
@@ -185,7 +162,7 @@ public final class TInstance {
                 && attr1 == other.attr1
                 && attr2 == other.attr2
                 && attr3 == other.attr3
-                && ((!withNullable) || Objects.equal(isNullable, other.isNullable))
+                && ((!withNullable) || (isNullable == other.isNullable))
                 && tclass.equals(other.tclass);
     }
 
@@ -196,14 +173,48 @@ public final class TInstance {
         result = 31 * result + attr2;
         result = 31 * result + attr1;
         result = 31 * result + attr3;
-        result = 31 * result + (isNullable != null ? isNullable.hashCode() : 0);
+        result = 31 * result + (isNullable ? 0 : 1);
         return result;
+    }
+
+    // package-private
+
+    static TInstance create(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3,
+                            boolean isNullable)
+    {
+        TInstance result = new TInstance(tclass, enumClass, nAttrs, attr0, attr1, attr2, attr3, isNullable);
+        tclass.validate(result);
+        return result;
+    }
+
+    static TInstance create(TInstance template, int attr0, int attr1, int attr2, int attr3, boolean nullable) {
+        return create(template.tclass, template.enumClass, template.tclass.nAttributes(),
+                attr0, attr1, attr2, attr3, nullable);
+    }
+
+    Class<?> enumClass() {
+        return enumClass;
+    }
+
+    int attrByPos(int i) {
+        switch (i) {
+        case 0: return attr0;
+        case 1: return attr1;
+        case 2: return attr2;
+        case 3: return attr3;
+        default: throw new AssertionError("out of range: " + i);
+        }
     }
 
     // state
 
-    TInstance(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3) {
-        assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
+    private TInstance(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3,
+              boolean isNullable)
+    {
+        if (tclass.nAttributes() != nAttrs) {
+            throw new AkibanInternalException(tclass.name() + " requires "+ tclass.nAttributes()
+                    + " attributes, saw " + nAttrs);
+        }
         // normalize inputs past nattrs
         switch (nAttrs) {
         case 0:
@@ -225,21 +236,12 @@ public final class TInstance {
         this.attr2 = attr2;
         this.attr3 = attr3;
         this.enumClass = enumClass;
+        this.isNullable = isNullable;
     }
-
-    public TInstance(TInstance copyFrom) {
-        this.tclass = copyFrom.tclass;
-        this.attr0 = copyFrom.attr0;
-        this.attr1 = copyFrom.attr1;
-        this.attr2 = copyFrom.attr2;
-        this.attr3 = copyFrom.attr3;
-        this.enumClass = copyFrom.enumClass;
-        this.isNullable = copyFrom.isNullable;
-    }
-
     private final TClass tclass;
-    private int attr0, attr1, attr2, attr3;
-    private Boolean isNullable;
+    private final int attr0, attr1, attr2, attr3;
+    private final boolean isNullable;
     private Object metaData;
+
     private final Class<?> enumClass;
 }

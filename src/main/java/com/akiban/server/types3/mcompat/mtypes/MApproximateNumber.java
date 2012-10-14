@@ -145,7 +145,8 @@ public class MApproximateNumber extends SimpleDtdTClass
             TAttributeValues values = declaration.validate(2, 0);
             return instance(
                     values.intAt(DoubleAttribute.PRECISION, DEFAULT_DOUBLE_PRECISION),
-                    values.intAt(DoubleAttribute.SCALE, DEFAULT_DOUBLE_SCALE));
+                    values.intAt(DoubleAttribute.SCALE, DEFAULT_DOUBLE_SCALE),
+                    values.nullable());
         }
     }
 
@@ -160,9 +161,9 @@ public class MApproximateNumber extends SimpleDtdTClass
     }
     
     @Override
-    public TInstance instance()
+    public TInstance instance(boolean nullable)
     {
-        return instance(DEFAULT_DOUBLE_PRECISION, DEFAULT_DOUBLE_SCALE);
+        return instance(DEFAULT_DOUBLE_PRECISION, DEFAULT_DOUBLE_SCALE, nullable);
     }
     
     @Override
@@ -172,18 +173,19 @@ public class MApproximateNumber extends SimpleDtdTClass
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance left, TInstance right) {
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         int precisionL = left.attribute(DoubleAttribute.PRECISION);
         if (precisionL <= 0)
-            return instance();
+            return instance(suggestedNullability);
         int precisionR = right.attribute(DoubleAttribute.PRECISION);
         if (precisionR <= 0)
-            return instance();
+            return instance(suggestedNullability);
 
         int scaleL = left.attribute(DoubleAttribute.SCALE);
         int scaleR = right.attribute(DoubleAttribute.SCALE);
 
-        return MBigDecimal.pickPrecisionAndScale(MApproximateNumber.this, precisionL, scaleL, precisionR, scaleR);
+        return MBigDecimal.pickPrecisionAndScale(MApproximateNumber.this, precisionL, scaleL, precisionR, scaleR,
+                suggestedNullability);
     }
 
     @Override

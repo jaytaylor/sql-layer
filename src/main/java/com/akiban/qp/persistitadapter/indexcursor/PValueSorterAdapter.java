@@ -119,5 +119,5 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
     
     private final PersistitValuePValueTarget valueTarget = new PersistitValuePValueTarget();
     
-    private static final TPreparedExpression DUMMY_EXPRESSION = new TNullExpression(MNumeric.BIGINT.instance());
+    private static final TPreparedExpression DUMMY_EXPRESSION = new TNullExpression(MNumeric.BIGINT.instance(true));
 }

@@ -24,47 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.funcs;
+package com.akiban.qp.persistitadapter;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TScalarBase;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.qp.expression.IndexKeyRange;
 
-public class TPow extends TScalarBase {
-    
-    private final TClass inputType;
-    
-    protected TPow(TClass inputType) {
-        this.inputType = inputType;
-    }
-    
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(inputType, 0, 1);
-    }
-        
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        double a0 = inputs.get(0).getDouble();
-        double a1 = inputs.get(1).getDouble();
-        output.putDouble(Math.pow(a0, a1));
-    }
-        
-    @Override
-    public String displayName() {
-        return "POW";
+import java.util.List;
+
+public final class SpatialHelper {
+    private SpatialHelper() {
+
     }
 
-    @Override
-    public String[] registeredNames()
-    {
-        return new String[]{"pow", "power"};
+    public static boolean isNullable(Index index) {
+        List<IndexColumn> declaredKeys = index.getKeyColumns();
+        assert declaredKeys.size() == 2 : "covering spatial index discovered, need to update code" + index;
+        return declaredKeys.get(0).getColumn().getNullable() || declaredKeys.get(1).getColumn().getNullable();
     }
-    
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(inputType);
+
+    public static boolean isNullable(IndexKeyRange indexKeyRange) {
+        return isNullable(indexKeyRange.indexRowType().index());
     }
 }

@@ -113,12 +113,12 @@ public class Conv extends TScalarBase
                 // if toBase and fromBase are not available yet,
                 // use the default value of ratio
                 if (isNull(fromBase) || isNull(toBase))
-                    return stringType.instance((int)(strPre * MAX_RATIO + 1));
+                    return stringType.instance((int)(strPre * MAX_RATIO + 1), anyContaminatingNulls(inputs));
 
                 // compute the exact length of the converted string
                 strPre = (int)(strPre * Math.log(toBase.value().getInt32()) 
                                         / Math.log(fromBase.value().getInt32()));
-                return stringType.instance(strPre);
+                return stringType.instance(strPre, anyContaminatingNulls(inputs));
             }
             
         });

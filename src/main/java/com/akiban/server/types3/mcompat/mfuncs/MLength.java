@@ -126,6 +126,6 @@ public abstract class MLength extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT.instance(10));
+        return TOverloadResult.fixed(MNumeric.INT, 10);
     }
 }

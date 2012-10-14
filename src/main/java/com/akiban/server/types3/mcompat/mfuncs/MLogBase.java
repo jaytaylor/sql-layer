@@ -32,7 +32,7 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MLogBase
 {
-    public static final TScalar INSTANCES[] = TLog.create(MApproximateNumber.DOUBLE.instance());
+    public static final TScalar INSTANCES[] = TLog.create(MApproximateNumber.DOUBLE);
 
     public static final TScalar TWO_ARG = new MLog(MApproximateNumber.DOUBLE);
 }

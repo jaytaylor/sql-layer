@@ -272,10 +272,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     n.setPreptimeValue(tpv);
                 }
                 if (tInstance != null) {
-                    if (tInstance.nullability() == null) {
-                        assert n.getSQLtype() != null : "ExpressionNode.SQLType is incorrectly null";
-                        tInstance.setNullable(n.getSQLtype().isNullable());
-                    }
                     DataTypeDescriptor newDtd = tInstance.dataTypeDescriptor();
                     n.setSQLtype(newDtd);
                 }
@@ -330,8 +326,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     if ( (topClass != null) && (botClass != null) )
                         needCasts.set(field);
 
-                    Boolean topIsNullable = (instances[field] == null) ? null : instances[field].nullability();
-                    Boolean botIsNullable = botInstance.nullability();
+                    boolean eitherIsNullable = botInstance.nullability();
+                    if ( (!eitherIsNullable) && (instances[field] != null)) {
+                        // bottom is not nullable, and there is a top. See if it's nullable
+                        eitherIsNullable = instances[field].nullability();
+                    }
                     // need to set a new instances[field]. Rules:
                     // - if topClass and botClass are the same as common, use picking algorithm
                     // - else, if one of them == commonTClass, use topInstance or botInstance (whichever is == common)
@@ -345,19 +344,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                         instances[field] = botInstance;
                     }
                     else if (!topIsCommon) { // this of this as "else if (topIsBottom) { <noop> } else { ..."
-                        instances[field] = commonTClass.instance();
+                        instances[field] = commonTClass.instance(eitherIsNullable);
                     }
 
                     // See if the top instance is not nullable but should be
                     if (instances[field] != null) {
-                        Boolean isNullable;
-                        if (topIsNullable == null)
-                            isNullable = botIsNullable;
-                        else if (botIsNullable == null)
-                            isNullable = topIsNullable;
-                        else
-                            isNullable = topIsNullable || botIsNullable;
-                        instances[field].setNullable(isNullable);
+                        instances[field] = instances[field].withNullable(eitherIsNullable);
                     }
                 }
             }
@@ -433,7 +425,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             }
             switch (overloadResultStrategy.category()) {
             case CUSTOM:
-                TInstance castSource = overloadResultStrategy.customRuleCastSource();
+                TInstance castSource = overloadResultStrategy.customRuleCastSource(anyOperandsNullable);
                 if (context == null)
                     context = new TPreptimeContext(operandInstances, queryContext);
                 expression.setPreptimeContext(context);
@@ -447,7 +439,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
                 break;
             case FIXED:
-                resultInstance = overloadResultStrategy.fixed();
+                resultInstance = overloadResultStrategy.fixed(anyOperandsNullable);
                 castTo = null;
                 break;
             case PICKING:
@@ -457,13 +449,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             default:
                 throw new AssertionError(overloadResultStrategy.category());
             }
-            resultInstance = resultInstance.copy(); // May change nullability.
             if (createPreptimeContext)
                 context.setOutputType(resultInstance);
-
-            if (resultInstance.nullability() == null) {
-                resultInstance.setNullable(anyOperandsNullable);
-            }
 
             expression.setPreptimeValue(new TPreptimeValue(resultInstance));
 
@@ -480,10 +467,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 // Didn't know whether function would return boolean or not earlier,
                 // so just assumed it would.
                 if (resultInstance.typeClass() != AkBool.INSTANCE) {
-                    castTo = AkBool.INSTANCE.instance();
-                    castTo.setNullable(resultInstance.nullability());
+                    castTo = AkBool.INSTANCE.instance(resultInstance.nullability());
                     resultExpression = castTo(resultExpression, castTo, folder, parametersSync);
-                    resultInstance = castTo;
                 }
             }
 
@@ -605,6 +590,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             ExpressionNode right = expression.getRight();
             TInstance leftTInst = tinst(left);
             TInstance rightTInst = tinst(right);
+            boolean nullable = isNullable(left) || isNullable(right);
             if (TClass.comparisonNeedsCasting(leftTInst, rightTInst)) {
                 boolean needCasts = true;
                 TCastResolver casts = registry.getCastsResolver();
@@ -642,7 +628,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     TInstance common = commonInstance(casts, left, right);
                     if (common == null) {
                         // TODO this means we have something like '? = ?' or '? = NULL'. What to do? Varchar for now?
-                        common = MString.VARCHAR.instance();
+                        common = MString.VARCHAR.instance(nullable);
                     }
                     left = castTo(left, common, folder, parametersSync);
                     right = castTo(right, common, folder, parametersSync);
@@ -651,11 +637,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 }
             }
 
-            return boolExpr(expression, isNullable(left) || isNullable(right));
+            return boolExpr(expression, nullable);
         }
 
         private boolean isNullable(ExpressionNode node) {
-            return tinst(node).nullability();
+            TInstance tinst = tinst(node);
+            return tinst == null || tinst.nullability();
         }
 
         ExpressionNode handleColumnExpression(ColumnExpression expression) {
@@ -668,8 +655,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     (expression.getSQLtype() != null) &&
                     (expression.getSQLtype().isNullable())) {
                     // With an outer join, the column can still be nullable.
-                    columnInstance = columnInstance.copy();
-                    columnInstance.setNullable(Boolean.TRUE);
+                    columnInstance = columnInstance.withNullable(true);
                 }
                 expression.setPreptimeValue(new TPreptimeValue(columnInstance));
             }
@@ -735,8 +721,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleParameterCondition(ParameterCondition expression) {
             parametersSync.uninferred(expression);
-            TInstance instance = AkBool.INSTANCE.instance();
-            instance.setNullable(true);
+            TInstance instance = AkBool.INSTANCE.instance(true);
             return castTo(expression, instance,
                           folder, parametersSync);
         }
@@ -797,9 +782,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return result;
     }
 
-    private static ExpressionNode boolExpr(ExpressionNode expression, Boolean nullable) {
-        TInstance instance = AkBool.INSTANCE.instance();
-        instance.setNullable(nullable);
+    private static ExpressionNode boolExpr(ExpressionNode expression, boolean nullable) {
+        TInstance instance = AkBool.INSTANCE.instance(nullable);
         expression.setPreptimeValue(new TPreptimeValue(instance));
         return expression;
     }
@@ -834,7 +818,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 for (UpdateColumn updateColumn : update.getUpdateColumns()) {
                     Column target = updateColumn.getColumn();
                     ExpressionNode value = updateColumn.getExpression();
-                    ExpressionNode casted = castTo(value, target.tInstance().typeClass(), folder, parametersSync);
+                    TInstance targetInst = target.tInstance();
+                    ExpressionNode casted = castTo(value, targetInst.typeClass(), targetInst.nullability(),
+                            folder, parametersSync);
                     if (casted != value)
                         updateColumn.setExpression(casted);
                 }
@@ -930,12 +916,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
     }
 
-    private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass, NewFolder folder,
-                                  ParametersSync parametersSync)
+    private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass, boolean nullable,
+                                         NewFolder folder, ParametersSync parametersSync)
     {
         if (targetClass == tclass(expression))
             return expression;
-        return castTo(expression, targetClass.instance(), folder, parametersSync);
+        return castTo(expression, targetClass.instance(nullable), folder, parametersSync);
     }
 
     private static ExpressionNode castTo(ExpressionNode expression, TInstance targetInstance, NewFolder folder,
@@ -943,8 +929,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     {
         // parameters and literal nulls have no type, so just set the type -- they'll be polymorphic about it.
         if (expression instanceof ParameterExpression) {
-            targetInstance = targetInstance.copy();
-            targetInstance.setNullable(true);
+            targetInstance = targetInstance.withNullable(true);
             CastExpression castExpression = 
                 newCastExpression(expression, targetInstance);
             castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
@@ -960,8 +945,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         if (equalForCast(targetInstance, tinst(expression)))
             return expression;
         DataTypeDescriptor sqlType = expression.getSQLtype();
-        targetInstance = targetInstance.copy();
-        targetInstance.setNullable(sqlType == null || sqlType.isNullable());
+        targetInstance = targetInstance.withNullable(sqlType == null || sqlType.isNullable());
         CastExpression castExpression = 
             newCastExpression(expression, targetInstance);
         castExpression.setPreptimeValue(new TPreptimeValue(targetInstance));
@@ -1055,7 +1039,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return left;
         if (commonClass == rightTClass)
             return right;
-        return commonClass.instance();
+        return commonClass.instance(left.nullability() || right.nullability());
     }
 
     private static RuntimeException error(String message) {

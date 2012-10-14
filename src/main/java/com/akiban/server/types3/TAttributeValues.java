@@ -29,4 +29,5 @@ package com.akiban.server.types3;
 public interface TAttributeValues {
     String stringAt(Attribute attribute, String defaultValue);
     int intAt(Attribute attribute, int defaultValue);
+    boolean nullable();
 }

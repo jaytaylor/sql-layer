@@ -100,7 +100,7 @@ public abstract class Locate extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(intType.instance());
+        return TOverloadResult.fixed(intType);
     }
 }
 

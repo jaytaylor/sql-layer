@@ -98,7 +98,7 @@ public abstract class Rand extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(resultType.instance());
+        return TOverloadResult.fixed(resultType);
     }
     
     @Override
