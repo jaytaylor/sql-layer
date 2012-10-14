@@ -277,7 +277,7 @@ public final class PValueSources {
             value = new PValue((Short)object);
         }
         else if (object instanceof Byte) {
-            tInstance = MNumeric.TINYINT.instance();
+            tInstance = MNumeric.TINYINT.instance(false);
             value = new PValue((Byte)object);
         }
         else {
