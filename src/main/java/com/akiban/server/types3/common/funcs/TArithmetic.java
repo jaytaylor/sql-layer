@@ -42,10 +42,13 @@ public abstract class TArithmetic extends TScalarBase {
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
+        TInstanceNormalizer normalizer = inputSetInstanceNormalizer();
         if (operand0 == operand1)
-            builder.covers(operand0, 0, 1);
-        else
-            builder.covers(operand0, 0).covers(operand1, 1);
+            builder.nextInputPicksWith(normalizer).covers(operand0, 0, 1);
+        else {
+            builder.nextInputPicksWith(normalizer).covers(operand0, 0);
+            builder.nextInputPicksWith(normalizer).covers(operand1, 1);
+        }
     }
 
     @Override
@@ -56,8 +59,12 @@ public abstract class TArithmetic extends TScalarBase {
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(resultType, attrs);
-    } 
-    
+    }
+
+    protected TInstanceNormalizer inputSetInstanceNormalizer() {
+        return null;
+    }
+
     private final String overloadName;
     private final TClass operand0;
     private final TClass operand1;

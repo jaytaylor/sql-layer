@@ -434,6 +434,9 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                         continue;
                     }
                 }
+                else if (inputTypeClass == null && scalarGroups.hasSameTypeAt(i)) {
+                    continue;
+                }
                 else if (inputTypeClass == inputSet.targetType()) {
                     continue;
                 }
