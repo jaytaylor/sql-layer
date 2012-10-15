@@ -66,6 +66,6 @@ public class MLog extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(argType.instance());
+        return TOverloadResult.fixed(argType);
     }
 }

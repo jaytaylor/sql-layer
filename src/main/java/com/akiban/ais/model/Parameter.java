@@ -46,7 +46,7 @@ public class Parameter
     }
 
     public TInstance tInstance() {
-        return new TInstance(tInstance(false));
+        return tInstance(false);
     }
 
     @Override

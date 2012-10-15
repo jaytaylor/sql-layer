@@ -49,26 +49,31 @@ public final class TComparisonExpression implements TPreparedExpression {
         TPreptimeValue leftPrep = left.evaluateConstant(queryContext);
         PValueSource oneVal = leftPrep.value();
         if (oneVal != null && oneVal.isNull())
-            return new TPreptimeValue(AkBool.INSTANCE.instance(), PValueSources.getNullSource(PUnderlying.BOOL));
+            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(PUnderlying.BOOL));
 
         TPreptimeValue rightPrep = right.evaluateConstant(queryContext);
         PValueSource twoVal = rightPrep.value();
         if (twoVal != null && twoVal.isNull())
-            return new TPreptimeValue(AkBool.INSTANCE.instance(), PValueSources.getNullSource(PUnderlying.BOOL));
+            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(PUnderlying.BOOL));
 
         // Neither side is constant null. If both sides are constant, evaluate
         PValueSource resultSource = null;
+        boolean nullable;
         if (oneVal != null && twoVal != null) {
             PValue result = new PValue(PUnderlying.BOOL);
             doEvaluate(leftPrep.instance(), oneVal, comparison, rightPrep.instance(), twoVal, collator, result);
             resultSource = result;
+            nullable = resultSource.isNull();
         }
-        return new TPreptimeValue(MNumeric.INT.instance(), resultSource);
+        else {
+            nullable = left.resultType().nullability() || right.resultType().nullability();
+        }
+        return new TPreptimeValue(MNumeric.INT.instance(nullable), resultSource);
     }
 
     @Override
     public TInstance resultType() {
-        return AkBool.INSTANCE.instance();
+        return AkBool.INSTANCE.instance(left.resultType().nullability() || right.resultType().nullability());
     }
 
     @Override

@@ -131,7 +131,7 @@ public abstract class Substring extends TScalarBase
                                        && !lenArg.isNull())
                     length = lenArg.getInt32();
                 
-                return MString.VARCHAR.instance(length > strLength ? strLength : length);
+                return MString.VARCHAR.instance(length > strLength ? strLength : length, anyContaminatingNulls(inputs));
             }
         });
     }

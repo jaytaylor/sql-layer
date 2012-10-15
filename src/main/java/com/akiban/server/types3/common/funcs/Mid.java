@@ -121,10 +121,10 @@ public class Mid extends TScalarBase
                 // if third argument (_length_) is not available
                 // return string with default length
                 if (length == null || length.value() == null || length.value().isNull())
-                    return strType.instance();
+                    return strType.instance(anyContaminatingNulls(inputs));
 
                 // evalue the constant
-                return strType.instance(length.value().getInt32());
+                return strType.instance(length.value().getInt32(), anyContaminatingNulls(inputs));
             }
         });
     }

@@ -26,9 +26,11 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
+import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.PlanToString;
@@ -38,6 +40,7 @@ import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
@@ -72,7 +75,14 @@ public class RulesTest extends OptimizerTestBase
                     return file.isDirectory();
                 }
             })) {
-            File rulesFile = new File(subdir, "rules.yml");
+            File rulesFile;
+            if (Types3Switch.ON) {
+                rulesFile = new File (subdir, "t3rules.yml");
+                if (!rulesFile.exists()) 
+                    rulesFile = new File (subdir, "rules.yml");
+            } else {
+                rulesFile = new File(subdir, "rules.yml");
+            }
             File schemaFile = new File(subdir, "schema.ddl");
             if (rulesFile.exists() && schemaFile.exists()) {
                 File defaultStatsFile = new File(subdir, "stats.yaml");
@@ -94,6 +104,10 @@ public class RulesTest extends OptimizerTestBase
                         propertiesFile = defaultPropertiesFile;
                     if (!extraDDL.exists())
                         extraDDL = defaultExtraDDL;
+                    File t3Results = new File (subdir, args[0] + ".t3expected");
+                    if (t3Results.exists() && Types3Switch.ON) {
+                        args[2] = fileContents(t3Results);
+                    }
                     Object[] nargs = new Object[args.length+5];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
@@ -144,8 +158,11 @@ public class RulesTest extends OptimizerTestBase
                                         RulesTestHelper.loadRules(rulesFile), 
                                         properties);
         // Normally set as a consequence of OutputFormat.
-        binder.setAllowSubqueryMultipleColumns(Boolean.parseBoolean(properties.getProperty("allowSubqueryMultipleColumns",
-                                                                                           "false")));
+        if (Boolean.parseBoolean(properties.getProperty("allowSubqueryMultipleColumns",
+                                                        "false"))) {
+            binder.setAllowSubqueryMultipleColumns(true);
+            typeComputer = new NestedResultSetTypeComputer(new FunctionsRegistryImpl());
+        }
     }
 
     @Test

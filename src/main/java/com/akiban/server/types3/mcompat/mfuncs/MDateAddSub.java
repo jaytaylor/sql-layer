@@ -34,6 +34,7 @@ import com.akiban.server.types3.TCommutativeOverloads;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TInstanceGenerator;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
@@ -212,7 +213,7 @@ public class MDateAddSub extends TScalarBase
 
     private static enum FirstType
     {
-        VARCHAR(MString.VARCHAR.instance(29))
+        VARCHAR(MString.VARCHAR, 29)
         {
             @Override
             long[] decode(PValueSource val, TExecutionContext context)
@@ -305,14 +306,10 @@ public class MDateAddSub extends TScalarBase
             }
         };
         
-        FirstType(TClass t)
+        FirstType(TClass t, int... attrs)
         {
-            type = t.instance();
-        }
-        
-        FirstType(TInstance t)
-        {
-            type = t;
+            this.type = t;
+            this.attrs = attrs;
         }
 
         abstract long[] decode (PValueSource val, TExecutionContext context);
@@ -323,7 +320,8 @@ public class MDateAddSub extends TScalarBase
             // only needs adjusting if <first arg> is DATE
             return this;
         }
-        protected final TInstance type;
+        private final TClass type;
+        private final int[] attrs;
     }
 
     private static enum SecondType
@@ -437,7 +435,7 @@ public class MDateAddSub extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(firstArg.type.typeClass(), 0).covers(secondArg.type, 1);
+        builder.covers(firstArg.type, 0).covers(secondArg.type, 1);
     }
 
     @Override
@@ -460,7 +458,8 @@ public class MDateAddSub extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                return firstArg.adjustFirstArg(inputs.get(1).instance()).type;
+                FirstType adjusted = firstArg.adjustFirstArg(inputs.get(1).instance());
+                return new TInstanceGenerator(adjusted.type, adjusted.attrs).setNullable(anyContaminatingNulls(inputs));
             }
         });
     }

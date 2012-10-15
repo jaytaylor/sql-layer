@@ -114,7 +114,7 @@ public abstract class Trim extends TScalarBase {
     @Override
     public TOverloadResult resultType() {
         // actual return type is exactly the same as input type
-        return TOverloadResult.fixed(stringType.instance());
+        return TOverloadResult.fixed(stringType);
     }
 
     // Helper methods

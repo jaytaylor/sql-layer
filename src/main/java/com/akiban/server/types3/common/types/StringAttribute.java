@@ -70,6 +70,9 @@ public enum StringAttribute implements Attribute
 
     public static TInstance copyWithCollation(TInstance tInstance, CharacterTypeAttributes cattrs) {
         AkCollator collator = AkCollatorFactory.getAkCollator(cattrs.getCollation());
-        return tInstance.typeClass().instance(tInstance.attribute(LENGTH), tInstance.attribute(CHARSET), collator.getCollationId());
+        return tInstance.typeClass().instance(
+                tInstance.attribute(LENGTH),
+                tInstance.attribute(CHARSET), collator.getCollationId(),
+                tInstance.nullability());
     }
 }

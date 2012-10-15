@@ -29,7 +29,7 @@ fi
 echo "There are $(echo "$KNOWN_FAILURES" | wc -l) known failures in trunk"
 
 if [ "$RUN_TESTS" = "yes" ]; then
-    CMD='mvn test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
+    CMD='mvn clean test -Dtest=PostgresServerMiscYamlIT -Dakiban.test.extraJvmArgs=-Dnewtypes=true'
     echo "Running tests: $CMD"
     echo '...'
     time ($CMD > /dev/null)

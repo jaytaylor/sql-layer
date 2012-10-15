@@ -39,42 +39,35 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-
-import java.util.Arrays;
-import java.util.Collection;
 
 public final class MField extends TScalarBase {
 
-    public static final Collection<? extends TScalar> exactOverloads = Collections2.transform(Arrays.asList(
-            MNumeric.TINYINT,
-            MNumeric.TINYINT_UNSIGNED,
-            MNumeric.SMALLINT,
-            MNumeric.SMALLINT_UNSIGNED,
-            MNumeric.INT,
-            MNumeric.INT_UNSIGNED,
-            MNumeric.MEDIUMINT,
-            MNumeric.MEDIUMINT_UNSIGNED,
-            MNumeric.BIGINT,
-            MNumeric.BIGINT_UNSIGNED,
+    public static final TScalar[] exactOverloads = new TScalar[] {
+            // From the MySQL docs:
+            //
+            //     If all arguments to FIELD() are strings, all arguments are compared as strings.
+            //     If all arguments are numbers, they are compared as numbers.
+            //     Otherwise, the arguments are compared as double.
+            //
+            // We can accomplish this by having three ScalarsGroups. The first consist of VARCHAR and CHAR. We want
+            // more than one TScalar in this group, so that same-type-at is false and it's not automatically picked.
+            // Only the various string types are strongly castable to either of these, so that takes care of the first
+            // sentence in the FIELD spec (as quoted above). The second ScalarsGroup consists of exact numbers. We
+            // provide these in four flavors: signed and unsigned of BIGINT and DECIMAL. This lets us cover all of the
+            // exact precision types without expensive casts (casts between non-DECIMAL ints are cheap). Finally,
+            // the DOUBLE overload is in a ScalarsGroup by itself, so that same-type-at is true and the scalar
+            // is always picked.
 
-            MNumeric.DECIMAL,
-            MNumeric.DECIMAL_UNSIGNED,
+            new MField(MString.VARCHAR, false, 1),
+            new MField(MString.CHAR, false, 1),
 
-            MString.VARCHAR,
-            MString.TINYTEXT,
-            MString.TEXT,
-            MString.MEDIUMTEXT,
-            MString.LONGTEXT
-            ), new Function<TClass, TScalar>() {
-                @Override
-                public TScalar apply(TClass input) {
-                    return new MField(input, true, 0);
-                }
-            }
-    );
-    public static final TScalar doubleOverload = new MField(MApproximateNumber.DOUBLE, false, 1);
+            new MField(MNumeric.BIGINT, false, 2),
+            new MField(MNumeric.BIGINT_UNSIGNED, false, 2),
+            new MField(MNumeric.DECIMAL, false, 2),
+            new MField(MNumeric.DECIMAL_UNSIGNED, false, 2),
+
+            new MField(MApproximateNumber.DOUBLE, false, 3)
+    };
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
@@ -109,15 +102,12 @@ public final class MField extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.INT.instance(3));
+        return TOverloadResult.fixed(MNumeric.INT, 3);
     }
 
     @Override
     public int[] getPriorities() {
-        int[] result = new int[maxPriority+1];
-        for (int i = 0; i < maxPriority; ++i)
-            result[i] = i;
-        return result;
+        return new int[] { priority };
     }
 
     @Override
@@ -128,10 +118,10 @@ public final class MField extends TScalarBase {
     private MField(TClass targetClass, boolean exact, int maxPriority) {
         this.targetClass = targetClass;
         this.exact = exact;
-        this.maxPriority = maxPriority;
+        this.priority = maxPriority;
     }
 
     private final TClass targetClass;
-    private final int maxPriority;
+    private final int priority;
     private final boolean exact;
 }

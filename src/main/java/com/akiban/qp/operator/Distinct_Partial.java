@@ -35,6 +35,8 @@ import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.std.DistinctExplainer;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -273,7 +275,7 @@ class Distinct_Partial extends Operator
                         currentRow.release();
                 }
                 PValueSource inputValue = inputRow.pvalue(i);
-                if (!PValueSources.areEqual(currentPValues[i], inputValue, rowType().typeInstanceAt(i))) {
+                if (!eqP(currentPValues[i], inputValue, rowType().typeInstanceAt(i))) {
                     PValueTargets.copyFrom(inputValue, currentPValues[i]);
                     nvalid = i + 1;
                     if (i < nfields - 1)
@@ -329,6 +331,17 @@ class Distinct_Partial extends Operator
                     return collator.compare(x, y) == 0;
                 }
             }
+        }
+
+        private boolean eqP(PValueSource x, PValueSource y, TInstance tinst)
+        {
+            if (tinst.typeClass() instanceof TString) {
+                AkCollator collator = ((TString)tinst.typeClass()).getCollator(tinst);
+                if (collator != null) {
+                    return collator.compare(x, y) == 0;
+                }
+            }
+            return PValueSources.areEqual(x, y, tinst);
         }
 
         // Object state

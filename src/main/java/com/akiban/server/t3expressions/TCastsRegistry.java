@@ -33,6 +33,7 @@ import com.akiban.server.types3.TCastPath;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TStrongCasts;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -312,6 +313,11 @@ public final class TCastsRegistry {
         }
 
         @Override
+        public TInstance preferredTarget(TPreptimeValue source) {
+            return source.instance();
+        }
+
+        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             if (source.isNull()) {
                 target.putNull();
@@ -348,6 +354,32 @@ public final class TCastsRegistry {
         }
 
         @Override
+        public TInstance preferredTarget(TPreptimeValue source) {
+            TInstance intermediateTInstance = first.preferredTarget(source);
+            PValueSource firstValue = source.value();
+            TInstance result;
+            if (firstValue != null) {
+                PValue intermediateValue = new PValue(first.targetClass().underlyingType());
+                TExecutionContext context = new TExecutionContext(
+                        Collections.singletonList(source.instance()),
+                        intermediateTInstance,
+                        null // TODO is this null a problem?
+                );
+                try {
+                    first.evaluate(context, firstValue, intermediateValue);
+                    result = second.preferredTarget(new TPreptimeValue(intermediateTInstance, intermediateValue));
+                } catch (Exception e) {
+                    logger.error("while evaluating intermediate value for " + source + " in " + this, e);
+                    result = second.preferredTarget(new TPreptimeValue(intermediateTInstance));
+                }
+            }
+            else {
+                result = second.preferredTarget(new TPreptimeValue(intermediateTInstance));
+            }
+            return result;
+        }
+
+        @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
             if (source.isNull()) {
                 target.putNull();
@@ -378,7 +410,7 @@ public final class TCastsRegistry {
             }
             this.first = first;
             this.second = second;
-            this.intermediateType = first.targetClass().instance();
+            this.intermediateType = first.targetClass().instance(true);
         }
 
         private final TCast first;

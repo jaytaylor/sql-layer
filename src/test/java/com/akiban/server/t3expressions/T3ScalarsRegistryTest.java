@@ -187,7 +187,7 @@ public final class T3ScalarsRegistryTest {
 
         @Override
         public TOverloadResult resultType() {
-            return TOverloadResult.fixed(testClass.instance());
+            return TOverloadResult.fixed(testClass);
         }
 
         @Override

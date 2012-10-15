@@ -306,7 +306,7 @@ public final class OverloadsFolderTest {
 
                 @Override
                 public TOverloadResult resultType() {
-                    return TOverloadResult.fixed(RET_TYPE.instance());
+                    return TOverloadResult.fixed(RET_TYPE);
                 }
             };
 

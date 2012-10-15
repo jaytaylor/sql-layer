@@ -32,7 +32,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 public class T3TestClass extends NoAttrTClass {
 
     public T3TestClass(String name) {
-        super(bundle, name, TestCategory.ONLY, null, 1, 1, 1, PUnderlying.INT_64, null, null);
+        super(bundle, name, TestCategory.ONLY, null, 1, 1, 1, PUnderlying.INT_64, null, 64, null);
     }
 
     public enum TestClassCategory {

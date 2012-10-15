@@ -67,7 +67,7 @@ public abstract class MToDaySec extends TScalarBase
         @Override
         public TOverloadResult resultType()
         {
-            return TOverloadResult.fixed(MNumeric.INT.instance(10));
+            return TOverloadResult.fixed(MNumeric.INT, 10);
         }
 
         @Override
@@ -146,6 +146,6 @@ public abstract class MToDaySec extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT.instance(6));
+        return TOverloadResult.fixed(MNumeric.INT, 6);
     }
 }

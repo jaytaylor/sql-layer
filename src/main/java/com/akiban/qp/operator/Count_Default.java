@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.PValuesRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
@@ -43,7 +42,6 @@ import com.akiban.util.tap.InOutTap;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -135,7 +133,7 @@ class Count_Default extends Operator
         this.countType = countType;
         this.usePValues = usePValues;
         this.resultType = usePValues
-            ? countType.schema().newValuesType(MNumeric.BIGINT.instance())
+            ? countType.schema().newValuesType(MNumeric.BIGINT.instance(false))
             : countType.schema().newValuesType(AkType.LONG);
     }
     

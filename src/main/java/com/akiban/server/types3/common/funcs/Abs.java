@@ -55,6 +55,6 @@ public abstract class Abs extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(inputType.instance());
+        return TOverloadResult.fixed(inputType);
     }
 }

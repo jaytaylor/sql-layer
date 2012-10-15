@@ -95,7 +95,7 @@ public class Column implements ColumnContainer
     }
 
     public TInstance tInstance() {
-        return new TInstance(tInstance(false));
+        return tInstance(false);
     }
 
     @Override
@@ -137,7 +137,6 @@ public class Column implements ColumnContainer
 
     public void finishCreating() {
         fillInDefaultParams();
-        tInstance(false).setNullable(nullable);
     }
 
     public void setNullable(Boolean nullable)
@@ -575,127 +574,128 @@ public class Column implements ColumnContainer
             throw new UnsupportedOperationException("unsupported type: " + type);
 
         case T_BLOB:
-            tinst = MBinary.BLOB.instance();
+            tinst = MBinary.BLOB.instance(nullable);
             break;
         case T_BIGINT:
-            tinst = MNumeric.BIGINT.instance();
+            tinst = MNumeric.BIGINT.instance(nullable);
             break;
         case T_U_BIGINT:
-            tinst = MNumeric.BIGINT_UNSIGNED.instance();
+            tinst = MNumeric.BIGINT_UNSIGNED.instance(nullable);
             break;
         case T_BINARY:
-            tinst = MBinary.BINARY.instance(typeParameter1.intValue());
+            tinst = MBinary.BINARY.instance(typeParameter1.intValue(), nullable);
             break;
         case T_CHAR:
-            tinst = charString(charsetAndCollation, typeParameter1, MString.CHAR);
+            tinst = charString(charsetAndCollation, typeParameter1, MString.CHAR, nullable);
             break;
         case T_DATE:
-            tinst = MDatetimes.DATE.instance();
+            tinst = MDatetimes.DATE.instance(nullable);
             break;
         case T_DATETIME:
-            tinst = MDatetimes.DATETIME.instance();
+            tinst = MDatetimes.DATETIME.instance(nullable);
             break;
         case T_DECIMAL:
-            tinst = MNumeric.DECIMAL.instance(typeParameter1.intValue(), typeParameter2.intValue());
+            tinst = MNumeric.DECIMAL.instance(typeParameter1.intValue(), typeParameter2.intValue(), nullable);
             break;
         case T_U_DECIMAL:
-            tinst = MNumeric.DECIMAL_UNSIGNED.instance(typeParameter1.intValue(), typeParameter2.intValue());
+            tinst = MNumeric.DECIMAL_UNSIGNED.instance(typeParameter1.intValue(), typeParameter2.intValue(), nullable);
             break;
         case T_DOUBLE:
-            tinst = MApproximateNumber.DOUBLE.instance();
+            tinst = MApproximateNumber.DOUBLE.instance(nullable);
             break;
         case T_U_DOUBLE:
-            tinst = MApproximateNumber.DOUBLE_UNSIGNED.instance();
+            tinst = MApproximateNumber.DOUBLE_UNSIGNED.instance(nullable);
             break;
         case T_FLOAT:
-            tinst = MApproximateNumber.FLOAT.instance();
+            tinst = MApproximateNumber.FLOAT.instance(nullable);
             break;
         case T_U_FLOAT:
-            tinst = MApproximateNumber.FLOAT_UNSIGNED.instance();
+            tinst = MApproximateNumber.FLOAT_UNSIGNED.instance(nullable);
             break;
         case T_INT:
-            tinst = MNumeric.INT.instance();
+            tinst = MNumeric.INT.instance(nullable);
             break;
         case T_U_INT:
-            tinst = MNumeric.INT_UNSIGNED.instance();
+            tinst = MNumeric.INT_UNSIGNED.instance(nullable);
             break;
         case T_LONGBLOB:
-            tinst = MBinary.LONGBLOB.instance();
+            tinst = MBinary.LONGBLOB.instance(nullable);
             break;
         case T_LONGTEXT:
-            tinst = textString(charsetAndCollation, MString.LONGTEXT);
+            tinst = textString(charsetAndCollation, MString.LONGTEXT, nullable);
             break;
         case T_MEDIUMBLOB:
-            tinst = MBinary.MEDIUMBLOB.instance();
+            tinst = MBinary.MEDIUMBLOB.instance(nullable);
             break;
         case T_MEDIUMINT:
-            tinst = MNumeric.MEDIUMINT.instance();
+            tinst = MNumeric.MEDIUMINT.instance(nullable);
             break;
         case T_U_MEDIUMINT:
-            tinst = MNumeric.MEDIUMINT_UNSIGNED.instance();
+            tinst = MNumeric.MEDIUMINT_UNSIGNED.instance(nullable);
             break;
         case T_MEDIUMTEXT:
-            tinst = textString(charsetAndCollation, MString.MEDIUMTEXT);
+            tinst = textString(charsetAndCollation, MString.MEDIUMTEXT, nullable);
             break;
         case T_SMALLINT:
-            tinst = MNumeric.SMALLINT.instance();
+            tinst = MNumeric.SMALLINT.instance(nullable);
             break;
         case T_U_SMALLINT:
-            tinst = MNumeric.SMALLINT_UNSIGNED.instance();
+            tinst = MNumeric.SMALLINT_UNSIGNED.instance(nullable);
             break;
         case T_TEXT:
-            tinst = textString(charsetAndCollation, MString.TEXT);
+            tinst = textString(charsetAndCollation, MString.TEXT, nullable);
             break;
         case T_TIME:
-            tinst = MDatetimes.TIME.instance();
+            tinst = MDatetimes.TIME.instance(nullable);
             break;
         case T_TIMESTAMP:
-            tinst = MDatetimes.TIMESTAMP.instance();
+            tinst = MDatetimes.TIMESTAMP.instance(nullable);
             break;
         case T_TINYBLOB:
-            tinst = MBinary.TINYBLOB.instance();
+            tinst = MBinary.TINYBLOB.instance(nullable);
             break;
         case T_TINYINT:
-            tinst = MNumeric.TINYINT.instance();
+            tinst = MNumeric.TINYINT.instance(nullable);
             break;
         case T_U_TINYINT:
-            tinst = MNumeric.TINYINT_UNSIGNED.instance();
+            tinst = MNumeric.TINYINT_UNSIGNED.instance(nullable);
             break;
         case T_TINYTEXT:
-            tinst = textString(charsetAndCollation, MString.TINYTEXT);
+            tinst = textString(charsetAndCollation, MString.TINYTEXT, nullable);
             break;
         case T_VARBINARY:
-            tinst = MBinary.VARBINARY.instance(typeParameter1.intValue());
+            tinst = MBinary.VARBINARY.instance(typeParameter1.intValue(), nullable);
             break;
         case T_VARCHAR:
-            tinst = charString(charsetAndCollation, typeParameter1, MString.VARCHAR);
+            tinst = charString(charsetAndCollation, typeParameter1, MString.VARCHAR, nullable);
             break;
         case T_YEAR:
-            tinst = MDatetimes.YEAR.instance();
+            tinst = MDatetimes.YEAR.instance(nullable);
             break;
         default:
             throw new UnsupportedOperationException("unknown type: " + type);
         }
 
         assert tinst != null : type;
-        tinst.setNullable(nullable);
         return tinst;
     }
 
-    private static TInstance charString(CharsetAndCollation charsetAndCollation, Long typeParameter1, TClass tClass) {
+    private static TInstance charString(CharsetAndCollation charsetAndCollation, Long typeParameter1, TClass tClass,
+                                        boolean nullable)
+    {
         if (charsetAndCollation == null)
-            return tClass.instance();
+            return tClass.instance(nullable);
         StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
         String collationName = charsetAndCollation.collation();
         int collatorId = AkCollatorFactory.getAkCollator(collationName).getCollationId();
-        return tClass.instance(typeParameter1.intValue(), charset.ordinal(), collatorId);
+        return tClass.instance(typeParameter1.intValue(), charset.ordinal(), collatorId, nullable);
     }
 
-    private static TInstance textString(CharsetAndCollation charsetAndCollation, TClass tClass) {
+    private static TInstance textString(CharsetAndCollation charsetAndCollation, TClass tClass, boolean nullable) {
         if (charsetAndCollation == null)
-            return tClass.instance();
+            return tClass.instance(nullable);
         StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
-        return tClass.instance(charset.ordinal(), -1); // TODO collation
+        return tClass.instance(charset.ordinal(), -1, nullable); // TODO collation
     }
 
     // State

@@ -368,7 +368,7 @@ public class AggregatePT extends ApiTestBase {
     };
     
     static final TInstance[] TINSTANCES = {
-        MNumeric.INT.instance(),MNumeric.INT.instance() ,MNumeric.INT.instance() ,MNumeric.INT.instance()
+        MNumeric.INT.instance(true),MNumeric.INT.instance(true) ,MNumeric.INT.instance(true) ,MNumeric.INT.instance(true)
     };
 
     static class BespokeRowType extends RowType {
