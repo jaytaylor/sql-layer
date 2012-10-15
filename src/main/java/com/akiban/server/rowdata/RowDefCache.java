@@ -63,28 +63,21 @@ import com.akiban.server.error.RowDefNotFoundException;
  * @author peter
  */
 public class RowDefCache {
-
-    // TODO: For debugging - remove this
-    private static volatile RowDefCache LATEST;
-
     private static final Logger LOG = LoggerFactory.getLogger(RowDefCache.class.getName());
 
+    private static volatile RowDefCache LATEST;
+
     private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
-    
     private final Map<TableName, Integer> nameMap = new TreeMap<TableName, Integer>();
-    
-    protected TableStatusCache tableStatusCache;
-
+    protected final TableStatusCache tableStatusCache;
     private AkibanInformationSchema ais;
-
-    {
-        LATEST = this;
-    }
 
     public RowDefCache(final TableStatusCache tableStatusCache) {
         this.tableStatusCache = tableStatusCache;
+        LATEST = this;
     }
 
+    /** Should <b>only</b> be used for debugging (e.g. friendly toString). This view is not transaction safe. **/
     public static RowDefCache latest() {
         return LATEST;
     }

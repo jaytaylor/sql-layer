@@ -58,12 +58,9 @@ public abstract class TreeRecordVisitor
         this.session = session;
         this.store = store;
         this.exchange = exchange;
-        for (RowDef rowDef : store.rowDefCache.getRowDefs()) {
-            if (rowDef.isUserTable()) {
-                UserTable table = rowDef.userTable();
-                if (!table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
-                    ordinalToTable.put(rowDef.getOrdinal(), table);
-                }
+        for (UserTable table : store.getAIS(session).getUserTables().values()) {
+            if (!table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
+                ordinalToTable.put(table.rowDef().getOrdinal(), table);
             }
         }
     }

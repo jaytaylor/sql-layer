@@ -187,21 +187,21 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private final AisHolder aish;
     private final SessionService sessionService;
-    private final Store store;
     private final TreeService treeService;
     private final ConfigurationService config;
+    private final RowDefCache rowDefCache;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
     private SerializationType serializationType = SerializationType.NONE;
 
     @Inject
-    public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
+    public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, TreeService treeService) {
         this.aish = aisHolder;
         this.config = config;
         this.sessionService = sessionService;
         this.treeService = treeService;
-        this.store = store;
+        rowDefCache = new RowDefCache(treeService.getTableStatusCache());
     }
 
     @Override
@@ -925,7 +925,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private void buildRowDefCache(final AkibanInformationSchema newAis)  {
         try {
-            final RowDefCache rowDefCache = RowDefCache.latest();
             rowDefCache.clear();
             treeService.getTableStatusCache().detachAIS();
             // This create|verifies the trees exist for indexes & tables

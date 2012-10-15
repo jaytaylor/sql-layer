@@ -51,6 +51,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.Types3Switch;
@@ -96,7 +97,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
         UPDATE_TOTAL.in();
         try {
-            AkibanInformationSchema ais = aisHolder.getAis();
+            AkibanInformationSchema ais = schemaManager.getAis(session);
             RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
             if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
                 throw new RuntimeException("group index maintenance won't work with partial rows");
@@ -171,7 +172,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_TOTAL.in();
         INSERT_MAINTENANCE.in();
         try {
-            AkibanInformationSchema ais = aisHolder.getAis();
+            AkibanInformationSchema ais = schemaManager.getAis(session);
             PersistitAdapter adapter = createAdapter(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
             super.writeRow(session, rowData);
@@ -192,7 +193,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         DELETE_TOTAL.in();
         DELETE_MAINTENANCE.in();
         try {
-            AkibanInformationSchema ais = aisHolder.getAis();
+            AkibanInformationSchema ais = schemaManager.getAis(session);
             PersistitAdapter adapter = createAdapter(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
@@ -226,7 +227,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
 
-        AkibanInformationSchema ais = aisHolder.getAis();
+        AkibanInformationSchema ais = schemaManager.getAis(session);
         PersistitAdapter adapter = createAdapter(ais, session);
 
         if(!tableIndexes.isEmpty()) {
@@ -249,11 +250,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // OperatorStore interface
 
     @Inject
-    public OperatorStore(AisHolder aisHolder, TreeService treeService, ConfigurationService config) {
-        super(new PersistitStore(false, treeService, config));
-        this.aisHolder = aisHolder;
+    public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager) {
+        super(new PersistitStore(false, treeService, config, schemaManager));
         this.treeService = treeService;
         this.config = config;
+        this.schemaManager = schemaManager;
     }
 
     @Override
@@ -388,7 +389,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // object state
     private final ConfigurationService config;
     private final TreeService treeService;
-    private final AisHolder aisHolder;
+    private final SchemaManager schemaManager;
 
 
     // consts
