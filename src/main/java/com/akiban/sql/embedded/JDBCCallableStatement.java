@@ -38,12 +38,12 @@ import java.util.Map;
 public class JDBCCallableStatement extends JDBCPreparedStatement implements CallableStatement
 {
     protected JDBCCallableStatement(JDBCConnection connection, 
-                                    InternalStatement internalStatement) {
-        super(connection, internalStatement);
+                                    ExecutableStatement executableStatement) {
+        super(connection, executableStatement);
     }
 
     protected int findParameter(String parameterName) throws SQLException {
-        JDBCParameterMetaData metaData = internalStatement.getParameterMetaData();
+        JDBCParameterMetaData metaData = executableStatement.getParameterMetaData();
         for (int i = 1; i <= metaData.getParameterCount(); i++) {
             if (parameterName.equalsIgnoreCase(metaData.getParameter(i).getName())) {
                 return i;
@@ -375,7 +375,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     }
 
     @Override
-    public void setBytes(String parameterName, byte x[]) throws SQLException {
+    public void setBytes(String parameterName, byte[] x) throws SQLException {
         setBytes(findParameter(parameterName), x);
     }
 

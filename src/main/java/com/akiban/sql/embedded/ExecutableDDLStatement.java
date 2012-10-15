@@ -26,38 +26,26 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.sql.server.ServerStatement;
+import com.akiban.sql.aisddl.AISDDL;
+import com.akiban.sql.parser.DDLStatementNode;
 
-import com.akiban.qp.operator.Operator;
-
-class InternalStatement implements ServerStatement
+class ExecutableDDLStatement extends ExecutableStatement
 {
-    private Operator resultOperator;
-    private JDBCResultSetMetaData resultSetMetaData;
-    private JDBCParameterMetaData parameterMetaData;
-    
-    protected InternalStatement(Operator resultOperator,
-                                JDBCResultSetMetaData resultSetMetaData, JDBCParameterMetaData parameterMetaData) {
-        this.resultOperator = resultOperator;
-        this.resultSetMetaData = resultSetMetaData;
-        this.parameterMetaData = parameterMetaData;
-    }
-    
-    public Operator getResultOperator() {
-        return resultOperator;
+    private DDLStatementNode ddl;
+
+    protected ExecutableDDLStatement(DDLStatementNode ddl) {
+        this.ddl = ddl;
     }
 
-    public JDBCResultSetMetaData getResultSetMetaData() {
-        return resultSetMetaData;
-    }
-
-    public JDBCParameterMetaData getParameterMetaData() {
-        return parameterMetaData;
+    @Override
+    public ExecuteResults execute(EmbeddedQueryContext context) {
+        AISDDL.execute(ddl, context);
+        return new ExecuteResults();
     }
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.READ;
+        return TransactionMode.NONE;
     }
 
     @Override

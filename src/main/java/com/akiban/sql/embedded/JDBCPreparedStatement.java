@@ -42,21 +42,21 @@ import java.util.*;
 
 public class JDBCPreparedStatement extends JDBCStatement implements PreparedStatement
 {
-    protected InternalStatement internalStatement;
+    protected ExecutableStatement executableStatement;
     protected EmbeddedQueryContext context;
     protected final Values values = new Values();
 
     protected JDBCPreparedStatement(JDBCConnection connection, 
-                                    InternalStatement internalStatement) {
+                                    ExecutableStatement executableStatement) {
         super(connection);
-        this.internalStatement = internalStatement;
+        this.executableStatement = executableStatement;
         context = new EmbeddedQueryContext(this);
     }
 
     protected class Values extends ServerJavaValues {
         @Override
         protected int size() {
-            return internalStatement.getParameterMetaData().getParameters().size();
+            return executableStatement.getParameterMetaData().getParameters().size();
         }
 
         @Override
@@ -86,12 +86,12 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
         @Override
         protected AkType getAkType(int index) {
-            return internalStatement.getParameterMetaData().getParameter(index + 1).getAkType();
+            return executableStatement.getParameterMetaData().getParameter(index + 1).getAkType();
         }
 
         @Override
         protected TInstance getTInstance(int index) {
-            return internalStatement.getParameterMetaData().getParameter(index + 1).getTInstance();
+            return executableStatement.getParameterMetaData().getParameter(index + 1).getTInstance();
         }
 
         @Override
@@ -104,12 +104,12 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public ResultSet executeQuery() throws SQLException {
-        return executeQueryInternal(internalStatement, context);
+        return executeQueryInternal(executableStatement, context);
     }
 
     @Override
     public int executeUpdate() throws SQLException {
-        return executeUpdateInternal(internalStatement, context);
+        return executeUpdateInternal(executableStatement, context);
     }
 
     @Override
@@ -213,7 +213,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     }
 
     @Override
-    public void setBytes(int parameterIndex, byte x[]) throws SQLException {
+    public void setBytes(int parameterIndex, byte[] x) throws SQLException {
         try {
             values.setBytes(parameterIndex - 1, x);
         }
@@ -313,7 +313,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public boolean execute() throws SQLException {
-        return executeInternal(internalStatement, context);
+        return executeInternal(executableStatement, context);
     }
 
     @Override
@@ -376,7 +376,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        return internalStatement.getResultSetMetaData();
+        return executableStatement.getResultSetMetaData();
     }
 
     @Override
@@ -426,7 +426,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
 
     @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
-        return internalStatement.getParameterMetaData();
+        return executableStatement.getParameterMetaData();
     }
 
     @Override

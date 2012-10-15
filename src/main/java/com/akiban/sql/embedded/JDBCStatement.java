@@ -27,10 +27,10 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.qp.operator.API;
-import com.akiban.server.error.InvalidOperationException;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 public class JDBCStatement implements Statement
@@ -38,47 +38,74 @@ public class JDBCStatement implements Statement
     protected final JDBCConnection connection;
     private boolean closed;
     private JDBCWarning warnings;
-    private JDBCResultSet currentResultSet;
     private int currentUpdateCount;
-    private List<JDBCResultSet> secondaryResultSets; // For instance, nested.
+    // Note that result sets need not be for this connection. For
+    // example, if a stored procedure with dynamic result sets called
+    // is, we don't know where its results came
+    // from. secondaryResultSets are always from the same connection;
+    // but this is only how they are set up.
+    private ResultSet currentResultSet, generatedKeys;
+    private List<ResultSet> secondaryResultSets; // For instance, nested.
+    private Deque<ResultSet> pendingResultSets; // For instance, from stored procedure.
 
     protected JDBCStatement(JDBCConnection connection) {
         this.connection = connection;
     }
 
-    public boolean executeInternal(InternalStatement stmt, EmbeddedQueryContext context) 
+    public boolean executeInternal(ExecutableStatement stmt, EmbeddedQueryContext context) 
             throws SQLException {
         if (context == null) {
             if (stmt.getParameterMetaData() != null)
-                throw new JDBCException("Statement required parameters; must prepare");
+                throw new JDBCException("Statement requires parameters; must prepare");
             context = new EmbeddedQueryContext(this);
         }
-        JDBCResultSet resultSet = new JDBCResultSet(this, stmt.getResultSetMetaData());
-        boolean success = false;
+        boolean hasResultSet = false;
         try {
-            connection.openingResultSet(resultSet);
-            resultSet.open(API.cursor(stmt.getResultOperator(), context));
-            currentResultSet = resultSet;
-            success = true;
+            ExecuteResults results = stmt.execute(context);
+            currentUpdateCount = results.getUpdateCount();
+            if (results.getOperator() != null) {
+                JDBCResultSet resultSet = new JDBCResultSet(this, stmt.getResultSetMetaData());
+                boolean success = false;
+                try {
+                    // Create cursor and open it within transaction.
+                    connection.openingResultSet(resultSet);
+                    resultSet.open(API.cursor(results.getOperator(), context));
+                    currentResultSet = resultSet;
+                    success = true;
+                }
+                finally {
+                    if (!success)
+                        connection.closingResultSet(resultSet);
+                }
+                hasResultSet = true;
+            }
+            else if (results.getGeneratedKeys() != null) {
+                // These are copied (to get update count) and do not need a transaction.
+                JDBCResultSet resultSet = new JDBCResultSet(this, stmt.getResultSetMetaData());
+                resultSet.open(results.getGeneratedKeys());
+                generatedKeys = resultSet;
+            }
+            else if (results.getAdditionalResultSets() != null) {
+                pendingResultSets = results.getAdditionalResultSets();
+                hasResultSet = getMoreResults();
+            }
         }
-        catch (InvalidOperationException ex) {
-            throw new JDBCException(ex);
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
         }
-        finally {
-            if (!success)
-                connection.closingResultSet(resultSet);
-        }
-        return true;
+        return hasResultSet;
     }
 
-    public ResultSet executeQueryInternal(InternalStatement stmt, EmbeddedQueryContext context) 
+    public ResultSet executeQueryInternal(ExecutableStatement stmt, 
+                                          EmbeddedQueryContext context) 
             throws SQLException {
         boolean hasResultSet = executeInternal(stmt, context);
         if (!hasResultSet) throw new JDBCException("Statement is not SELECT");
         return getResultSet();
     }
 
-    public int executeUpdateInternal(InternalStatement stmt, EmbeddedQueryContext context) 
+    public int executeUpdateInternal(ExecutableStatement stmt, 
+                                     EmbeddedQueryContext context) 
             throws SQLException {
         boolean hasResultSet = executeInternal(stmt, context);
         if (hasResultSet) throw new JDBCException("Statement is SELECT");
@@ -94,7 +121,7 @@ public class JDBCStatement implements Statement
 
     protected void openingResultSet(JDBCResultSet resultSet) {
         if (secondaryResultSets == null)
-            secondaryResultSets = new ArrayList<JDBCResultSet>();
+            secondaryResultSets = new ArrayList<ResultSet>();
         secondaryResultSets.add(resultSet);
         connection.openingResultSet(resultSet);
     }
@@ -123,23 +150,34 @@ public class JDBCStatement implements Statement
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        return executeQueryInternal(connection.compileInternalStatement(sql), null);
+        return executeQueryInternal(connection.compileExecutableStatement(sql), null);
     }
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        return executeUpdateInternal(connection.compileInternalStatement(sql), null);
+        return executeUpdateInternal(connection.compileExecutableStatement(sql), null);
     }
 
     @Override
     public void close() throws SQLException {
         if (currentResultSet != null) {
             currentResultSet.close(); // Which will call thru us to connection.
+            currentResultSet = null;
+        }
+        if (generatedKeys != null) {
+            generatedKeys.close();
+            generatedKeys = null;
         }
         if (secondaryResultSets != null) {
             while (!secondaryResultSets.isEmpty()) {
                 secondaryResultSets.get(0).close();
             }
+            secondaryResultSets = null;
+        }
+        if (pendingResultSets != null) {
+            while (!pendingResultSets.isEmpty())
+                pendingResultSets.removeFirst().close();
+            pendingResultSets = null;
         }
         closed = true;
     }
@@ -195,7 +233,7 @@ public class JDBCStatement implements Statement
 
     @Override
     public boolean execute(String sql) throws SQLException {
-        return executeInternal(connection.compileInternalStatement(sql), null);
+        return executeInternal(connection.compileExecutableStatement(sql), null);
     }
 
     @Override
@@ -210,8 +248,14 @@ public class JDBCStatement implements Statement
 
     @Override
     public boolean getMoreResults() throws SQLException {
-        currentResultSet = null;
-        return false;
+        if (currentResultSet != null) {
+            currentResultSet.close();
+            currentResultSet = null;
+        }
+        if (pendingResultSets == null)
+            return false;
+        currentResultSet = pendingResultSets.pollFirst();
+        return (currentResultSet != null);
     }
 
     @Override
@@ -271,37 +315,55 @@ public class JDBCStatement implements Statement
 
     @Override
     public ResultSet getGeneratedKeys() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return generatedKeys;
     }
 
     @Override
     public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return executeUpdateInternal(
+          connection.compileExecutableStatement(sql,
+                                                ExecuteAutoGeneratedKeys.of(autoGeneratedKeys)),
+                                     null);
     }
 
     @Override
-    public int executeUpdate(String sql, int columnIndexes[]) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
+        return executeUpdateInternal(
+          connection.compileExecutableStatement(sql,
+                                                ExecuteAutoGeneratedKeys.of(columnIndexes)),
+                                     null);
     }
 
     @Override
-    public int executeUpdate(String sql, String columnNames[]) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    public int executeUpdate(String sql, String[] columnNames) throws SQLException {
+        return executeUpdateInternal(
+          connection.compileExecutableStatement(sql,
+                                                ExecuteAutoGeneratedKeys.of(columnNames)),
+          null);
     }
 
     @Override
     public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return executeInternal(
+          connection.compileExecutableStatement(sql,
+                                                ExecuteAutoGeneratedKeys.of(autoGeneratedKeys)),
+          null);
     }
 
     @Override
-    public boolean execute(String sql, int columnIndexes[]) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    public boolean execute(String sql, int[] columnIndexes) throws SQLException {
+        return executeInternal(
+          connection.compileExecutableStatement(sql,
+                                                ExecuteAutoGeneratedKeys.of(columnIndexes)),
+          null);
     }
 
     @Override
-    public boolean execute(String sql, String columnNames[]) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    public boolean execute(String sql, String[] columnNames) throws SQLException {
+        return executeInternal(
+          connection.compileExecutableStatement(sql,
+                                                ExecuteAutoGeneratedKeys.of(columnNames)),
+          null);
     }
 
     @Override
