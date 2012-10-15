@@ -68,7 +68,6 @@ public class RowDefCache {
     private static volatile RowDefCache LATEST;
 
     private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
-    private final Map<TableName, Integer> nameMap = new TreeMap<TableName, Integer>();
     protected final TableStatusCache tableStatusCache;
     private AkibanInformationSchema ais;
 
@@ -82,48 +81,8 @@ public class RowDefCache {
         return LATEST;
     }
 
-    /**
-     * Look up and return a RowDef for a supplied rowDefId value.
-     * @param rowDefId ID to lookup.
-     * @return The corresponding RowDef
-     * @throws RowDefNotFoundException if there is no such RowDef.
-     */
-    public synchronized RowDef getRowDef(final int rowDefId) throws RowDefNotFoundException {
-        RowDef rowDef = rowDef(rowDefId);
-        if (rowDef == null) {
-            throw new RowDefNotFoundException(rowDefId);
-        }
-        return rowDef;
-    }
-
-    /**
-     * Look up and return a RowDef for a supplied rowDefId value or null if none exists.
-     * @param rowDefId ID to lookup.
-     * @return The corresponding RowDef object or <code>null</code>
-     */
-    public synchronized RowDef rowDef(final int rowDefId) {
-        return cacheMap.get(rowDefId);
-    }
-
-    public synchronized List<RowDef> getRowDefs() {
-        return new ArrayList<RowDef>(cacheMap.values());
-    }
-
-    public synchronized RowDef getRowDef(TableName tableName) throws RowDefNotFoundException {
-        final Integer key = nameMap.get(tableName);
-        if (key == null) {
-            return null;
-        }
-        return getRowDef(key);
-    }
-
-    public RowDef getRowDef(String schema, String table) throws RowDefNotFoundException {
-        return getRowDef(new TableName(schema, table));
-    }
-
     public synchronized void clear() {
         cacheMap.clear();
-        nameMap.clear();
     }
 
     /**
@@ -268,15 +227,10 @@ public class RowDefCache {
     
     private synchronized void putRowDef(final RowDef rowDef) {
         final Integer key = rowDef.getRowDefId();
-        final TableName name = new TableName(rowDef.getSchemaName(), rowDef.getTableName());
         if (cacheMap.containsKey(key)) {
             throw new IllegalStateException("Duplicate RowDefID (" + key + ") for RowDef: " + rowDef);
         }
-        if (nameMap.containsKey(name)) {
-            throw new IllegalStateException("Duplicate name (" + name + ") for RowDef: " + rowDef);
-        }
         cacheMap.put(key, rowDef);
-        nameMap.put(name, key);
     }
     
     private void analyzeAll() throws PersistitInterruptedException {
@@ -288,39 +242,21 @@ public class RowDefCache {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("\n");
-        for (Map.Entry<TableName, Integer> entry : nameMap.entrySet()) {
-            final RowDef rowDef = cacheMap.get(entry.getValue());
+        final StringBuilder sb = new StringBuilder();
+        for (UserTable table : ais().getUserTables().values()) {
+            if(sb.length() > 0) {
+                sb.append("\n");
+            }
             sb.append("   ");
-            sb.append(rowDef);
-            sb.append("\n");
+            sb.append(table.rowDef().toString());
         }
         return sb.toString();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if(this == o) {
-            return true;
-        }
-        if(!(o instanceof RowDefCache)) {
-            return false;
-        }
-        RowDefCache that = (RowDefCache) o;
-        if(cacheMap == null) {
-            return that.cacheMap == null;
-        }
-        return cacheMap.equals(that.cacheMap);
-    }
-
-    @Override
-    public int hashCode() {
-        return cacheMap.hashCode();
-    }
-
     protected Map<Group,List<RowDef>> getRowDefsByGroup() {
         Map<Group,List<RowDef>> groupToRowDefs = new HashMap<Group, List<RowDef>>();
-        for(RowDef rowDef : getRowDefs()) {
+        for(Table table : ais.getUserTables().values()) {
+            RowDef rowDef = table.rowDef();
             List<RowDef> list = groupToRowDefs.get(rowDef.getGroup());
             if(list == null) {
                 list = new ArrayList<RowDef>();
