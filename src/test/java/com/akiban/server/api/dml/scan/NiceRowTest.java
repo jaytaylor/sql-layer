@@ -180,7 +180,7 @@ public final class NiceRowTest {
         assertEquals("utf8 byte length", 12, TEST_STR.getBytes("UTF-8").length);
 
         String ddl = "create table test.t(id int not null primary key, v varchar(32) character set utf8)";
-        RowDef rowDef = SCHEMA_FACTORY.rowDefCache(ddl).getRowDef("test", "t");
+        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test", "t").rowDef();
 
         Object[] objects = { 1L, TEST_STR };
         RowData rowData = create(rowDef, objects);
