@@ -491,4 +491,10 @@ public enum ErrorCode {
         DEBUG,
         ERROR
     }
+
+    public static void main(String[] args) {
+        for(ErrorCode code : ErrorCode.values()) {
+            System.out.println( Long.parseLong(code.getFormattedValue(), 36) );
+        }
+    }
 }
