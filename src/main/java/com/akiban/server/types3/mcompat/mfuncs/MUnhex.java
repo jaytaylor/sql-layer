@@ -79,9 +79,9 @@ public class MUnhex extends TScalarBase {
                 int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
                 int varbinLength = stringLength / 2;
                 if (varbinLength > VARBINARY_MAX_LENGTH)
-                    return MBinary.VARBINARY.instance(VARBINARY_MAX_LENGTH);
+                    return MBinary.VARBINARY.instance(VARBINARY_MAX_LENGTH, preptimeValue.isNullable());
                 else
-                    return MBinary.VARBINARY.instance(varbinLength);
+                    return MBinary.VARBINARY.instance(varbinLength, preptimeValue.isNullable());
             }        
         });
     }

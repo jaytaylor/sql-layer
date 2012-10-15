@@ -149,7 +149,7 @@ public class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Ex
     }
 
     @Override
-    public void setOrderingMetadata(int orderingIndex, API.Ordering ordering, int tInstancesOffset,
+    public void setOrderingMetadata(API.Ordering ordering, int index,
                                     TInstance[] tInstances) {
         // nothing to do
     }

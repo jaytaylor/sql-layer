@@ -42,16 +42,34 @@ public class NoAttrTClass extends SimpleDtdTClass {
 
     @Override
     public TFactory factory() {
-        return new NoAttrFactory(instance());
+        return new NoAttrFactory(instance(true)); // TODO
     }
 
     @Override
-    public TInstance instance() {
-        return createInstanceNoArgs();
+    public TInstance instance(boolean nullable) {
+        TInstance result;
+        // These two blocks are obviously racy. However, the race will not create incorrectness, it'll just
+        // allow there to be multiple copies of the TInstance floating around, each of which is correct, immutable
+        // and equivalent.
+        if (nullable) {
+            result = nullableTInstance;
+            if (result == null) {
+                result = createInstanceNoArgs(true);
+                nullableTInstance = result;
+            }
+        }
+        else {
+            result = notNullableTInstance;
+            if (result == null) {
+                result = createInstanceNoArgs(false);
+                notNullableTInstance = result;
+            }
+        }
+        return result;
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance left, TInstance right) {
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         return right; // doesn't matter which!
     }
 
@@ -75,4 +93,7 @@ public class NoAttrTClass extends SimpleDtdTClass {
     {
         // about to delete...
     }
+
+    private volatile TInstance nullableTInstance;
+    private volatile TInstance notNullableTInstance;
 }

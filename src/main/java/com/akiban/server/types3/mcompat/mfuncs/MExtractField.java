@@ -212,7 +212,7 @@ public abstract class MExtractField extends TScalarBase
             @Override
             public TOverloadResult resultType()
             {
-                return TOverloadResult.fixed(MString.VARCHAR.instance(9));
+                return TOverloadResult.fixed(MString.VARCHAR, 9);
             }
         },
         new TScalarBase() // MONTHNAME
@@ -251,7 +251,7 @@ public abstract class MExtractField extends TScalarBase
             @Override
             public TOverloadResult resultType()
             {
-                return TOverloadResult.fixed(MString.VARCHAR.instance(9));
+                return TOverloadResult.fixed(MString.VARCHAR, 9);
             }
         }
     };
@@ -339,6 +339,6 @@ public abstract class MExtractField extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT.instance());
+        return TOverloadResult.fixed(MNumeric.INT);
     }
 }

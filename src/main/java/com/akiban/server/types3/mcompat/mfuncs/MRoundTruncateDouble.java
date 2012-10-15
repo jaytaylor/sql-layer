@@ -87,7 +87,7 @@ public class MRoundTruncateDouble extends TScalarBase {
                         ? inputs.get(0).instance().attribute(DoubleAttribute.SCALE)
                         : incomingScale.getInt32();
                 int resultPrecision = 17 + resultScale;
-                return MApproximateNumber.DOUBLE.instance(resultPrecision, resultScale);
+                return MApproximateNumber.DOUBLE.instance(resultPrecision, resultScale, anyContaminatingNulls(inputs));
             }
         });
     }

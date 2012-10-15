@@ -95,7 +95,9 @@ public class MSubstringIndex extends TScalarBase {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 TInstance stringInstance = inputs.get(0).instance();
-                return MString.VARCHAR.instance(stringInstance.attribute(StringAttribute.LENGTH));
+                return MString.VARCHAR.instance(
+                        stringInstance.attribute(StringAttribute.LENGTH),
+                        anyContaminatingNulls(inputs));
             }
         });
     }

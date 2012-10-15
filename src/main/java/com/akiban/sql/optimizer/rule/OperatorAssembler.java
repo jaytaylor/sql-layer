@@ -629,12 +629,12 @@ public class OperatorAssembler extends BaseRule
                 List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
                 arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
                 arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
-                
-                TPreparedExpression seqExpr =  new TPreparedFunction(overload, overload.resultStrategy().fixed(), 
+
+                TInstance overloadResultInstance = overload.resultStrategy().fixed(column.getNullable());
+                TPreparedExpression seqExpr =  new TPreparedFunction(overload, overloadResultInstance,
                                 arguments, planContext.getQueryContext());
 
-                if (!instance.equals(overload.resultStrategy().fixed())) {
-                    RulesContext rulesContext = planContext.getRulesContext();
+                if (!instance.equals(overloadResultInstance)) {
                     TCast tcast = registry.getCastsResolver().cast(seqExpr.resultType(), instance);
                     seqExpr = 
                             new TCastExpression(seqExpr, tcast, instance, planContext.getQueryContext());
@@ -858,8 +858,9 @@ public class OperatorAssembler extends BaseRule
                             TCast cast = tinst.typeClass().castFromVarchar();
                             if (cast != null) {
                                 defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                                TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                                 TExecutionContext executionContext = new TExecutionContext(
-                                        Collections.singletonList(MString.VARCHAR.instance(defaultValue.length())), 
+                                        Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
                                 cast.evaluate(executionContext, new PValue(defaultValue), defaultValueSource);
                             } else {

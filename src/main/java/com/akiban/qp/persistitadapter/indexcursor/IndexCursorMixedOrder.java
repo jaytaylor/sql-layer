@@ -295,6 +295,9 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             keyColumns = ordering.sortColumns();
             loBoundColumns = 0;
             tInstances = sortKeyAdapter.createTInstances(orderingColumns);
+            for (int i = 0; i < orderingColumns; ++i) {
+                sortKeyAdapter.setOrderingMetadata(ordering, i, tInstances);
+            }
         } else {
             Index index = keyRange.indexRowType().index();
             keyColumns = index.indexRowComposition().getLength();
@@ -314,9 +317,6 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             }
         }
         hiBoundColumns = loBoundColumns;
-        for (int i = 0; i < orderingColumns; ++i) {
-            sortKeyAdapter.setOrderingMetadata(i, ordering, loBoundColumns, tInstances);
-        }
     }
 
     // For use by this package

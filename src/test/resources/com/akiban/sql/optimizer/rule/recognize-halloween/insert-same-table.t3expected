@@ -1,0 +1,5 @@
+DMLStatement@4c54b365(t, HALLOWEEN)
+  InsertStatement@4ccdd309(t[t.id, t.n])
+    Project@5cda1b43[Cast(plus(t.id,100) AS MCOMPAT_ INTEGER(11) NOT NULL), t.n]
+      Select@7333fb54[]
+        SingleIndexScan@71d36bf2(Index(test.t.t_n[IndexColumn(n)]), covering/NONE, rows = 1, cost = 6.02560)

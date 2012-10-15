@@ -73,8 +73,6 @@ public final class TPreptimeValue {
         this.mutable = false;
         if (tInstance == null)
             ArgumentValidation.isNull("value", value);
-        else if (value != null)
-            tInstance.setNullable(value.isNull());
     }
 
     @Override

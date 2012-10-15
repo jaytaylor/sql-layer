@@ -93,7 +93,8 @@ public class MSpace extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                PValueSource length = inputs.get(0).value();
+                TPreptimeValue inputTpv = inputs.get(0);
+                PValueSource length = inputTpv.value();
                 int count;
                 
                 // TODO:
@@ -102,11 +103,11 @@ public class MSpace extends TScalarBase
                 if (length == null)
                     throw new UnsupportedOperationException("LONGTEXT type is not supported yet");
                 else if (length.isNull() || (count = length.getInt32()) == 0)
-                    return stringType.instance(0);
+                    return stringType.instance(0, inputTpv.isNullable());
                 else if (count < 0)
                     throw new UnsupportedOperationException("LONGTEXT type is not supported yet");
                 else
-                    return stringType.instance(count);
+                    return stringType.instance(count, inputTpv.isNullable());
             }
         });
     }

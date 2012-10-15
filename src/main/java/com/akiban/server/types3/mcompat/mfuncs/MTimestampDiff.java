@@ -220,7 +220,7 @@ public class MTimestampDiff extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.BIGINT.instance(21));
+        return TOverloadResult.fixed(MNumeric.BIGINT, 21);
     }
     
     // -------- static members --------------

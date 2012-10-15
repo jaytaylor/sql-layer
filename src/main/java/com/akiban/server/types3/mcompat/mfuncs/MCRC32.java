@@ -81,6 +81,6 @@ public class MCRC32 extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MNumeric.INT_UNSIGNED.instance());
+        return TOverloadResult.fixed(MNumeric.INT_UNSIGNED);
     }
 }

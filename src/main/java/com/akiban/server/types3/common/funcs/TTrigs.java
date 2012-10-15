@@ -28,8 +28,8 @@ package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -38,7 +38,7 @@ import com.akiban.server.types3.texpressions.TScalarBase;
 
 public class TTrigs extends TScalarBase
 {
-    public static TTrigs[] create(TInstance ins)
+    public static TTrigs[] create(TClass argType)
     {
         TrigType values[] = TrigType.values();
         TTrigs ret[] = new TTrigs[values.length];
@@ -47,7 +47,7 @@ public class TTrigs extends TScalarBase
         {
             TrigType trig = values[n];
             if (trig == TrigType.ATAN2)
-                ret[n] = new TTrigs(values[n], ins)
+                ret[n] = new TTrigs(values[n], argType)
                 {
                     public String[] registedNames()
                     {
@@ -55,7 +55,7 @@ public class TTrigs extends TScalarBase
                     }
                 };
             else
-                ret[n] = new TTrigs(values[n], ins);
+                ret[n] = new TTrigs(values[n], argType);
         }
         return ret;
     }
@@ -196,9 +196,9 @@ public class TTrigs extends TScalarBase
     }
 
     private final TrigType trigType;
-    private final TInstance argType;
+    private final TClass argType;
     
-    TTrigs (TrigType trigType, TInstance argType)
+    TTrigs (TrigType trigType, TClass argType)
     {
         this.trigType = trigType;
         this.argType = argType;
@@ -207,7 +207,7 @@ public class TTrigs extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(argType.typeClass(), trigType.covering);
+        builder.covers(argType, trigType.covering);
     }
 
     @Override

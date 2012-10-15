@@ -32,6 +32,7 @@ import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
+import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -146,7 +147,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
                 this.akTypes = null;
                 this.akCollators = null;
                 this.tInstances = new TInstance[nIndexFields];
-                this.tInstances[0] = MNumeric.BIGINT.instance();
+                this.tInstances[0] = MNumeric.BIGINT.instance(SpatialHelper.isNullable(index));
             }
             else {
                 this.akTypes = new AkType[nIndexFields];

@@ -139,7 +139,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         TInstance sourceInstance = expr.resultType();
         if (sourceInstance == null) // CAST(NULL as FOOTYPE)
         {
-            toType.setNullable(true);
+            toType = toType.withNullable(true);
             return new TNullExpression(toType);
         }
         else if (!toType.equals(sourceInstance))

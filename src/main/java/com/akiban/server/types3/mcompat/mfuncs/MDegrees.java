@@ -63,6 +63,6 @@ public class MDegrees extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MApproximateNumber.DOUBLE.instance());
+        return TOverloadResult.fixed(MApproximateNumber.DOUBLE);
     }
 }

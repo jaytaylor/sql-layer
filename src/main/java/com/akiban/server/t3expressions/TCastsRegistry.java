@@ -366,7 +366,7 @@ public final class TCastsRegistry {
                         null // TODO is this null a problem?
                 );
                 try {
-                    second.evaluate(context, source.value(), intermediateValue);
+                    first.evaluate(context, firstValue, intermediateValue);
                     result = second.preferredTarget(new TPreptimeValue(intermediateTInstance, intermediateValue));
                 } catch (Exception e) {
                     logger.error("while evaluating intermediate value for " + source + " in " + this, e);
@@ -410,7 +410,7 @@ public final class TCastsRegistry {
             }
             this.first = first;
             this.second = second;
-            this.intermediateType = first.targetClass().instance();
+            this.intermediateType = first.targetClass().instance(true);
         }
 
         private final TCast first;

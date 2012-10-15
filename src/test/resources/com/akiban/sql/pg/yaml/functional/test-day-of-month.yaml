@@ -18,8 +18,11 @@
 ---
 - Include: all-datetime-schema.yaml
 ---
+- Statement: SELECT id, DAYOFMONTH(time_field) from datetime_matrix WHERE id = 1;
+- output: !select-engine { all: [[1, null]], newtypes: [[1, 0]] }
+---
 - Statement: select id,DAYOFMONTH(time_field) from datetime_matrix where DAYOFMONTH(time_field) is not null;
-- row_count: 0
+- row_count: !select-engine { all: 0, newtypes: 840 }
 ---
 - Statement: select id,DAYOFMONTH(timestamp_field) from datetime_matrix where DAYOFMONTH(timestamp_field) <> DAYOFMONTH;
 - row_count: 0

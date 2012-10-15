@@ -320,16 +320,11 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            try
-            {
-                target.putInt8((byte)CastUtils.parseInRange(source.getString(), Byte.MAX_VALUE, Byte.MIN_VALUE, context));
-            }
-             catch (InvalidDateFormatException e)
-            {
-                context.warnClient(e);
-                target.putNull();
-            }
+            target.putInt8(CastUtils.adjustYear(CastUtils.parseInRange(source.getString(),
+                                                                       Long.MAX_VALUE,
+                                                                       Long.MIN_VALUE,
+                                                                       context),
+                                                context));
         }
     };
-    
 }

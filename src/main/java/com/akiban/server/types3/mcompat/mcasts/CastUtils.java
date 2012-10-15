@@ -176,7 +176,7 @@ public final class CastUtils
 
        return ret;
     }
-    
+
     public static long parseInRange(String st, long max, long min, TExecutionContext context)
     {
         String truncated;
@@ -261,5 +261,26 @@ public final class CastUtils
         return (c >= '5') && (c <= '9');
     }
 
+    public static byte adjustYear(long raw, TExecutionContext context)
+    {
+        if (raw == 0)
+            return 0;
+        if (raw < 0 || raw > 2155)
+        {
+            context.reportTruncate(String.valueOf(raw), "0000");
+            return 0;
+        }
+        else if (raw < 70)
+            return (byte)(2000 + raw - 1900);
+        else if (raw < 100)
+            return (byte)raw;
+        else if (raw >= 100 && raw < 1901) // two large to be 2-digit year, but too small to be 4-digit year
+        {
+            context.reportTruncate(String.valueOf(raw), "0000");
+            return (byte)0;
+        }
+        else
+            return (byte)(raw - 1900);
+    }
     private static final Pattern DOUBLE_PATTERN = Pattern.compile("([-+]?\\d*)(\\.?\\d+)?([eE][-+]?\\d+)?");
 }

@@ -1,2 +1,2 @@
 SELECT name FROM customers
- WHERE cid IN (1,LCASE(null),2)
+ WHERE cid IN (1,MONTH(NULL),2)

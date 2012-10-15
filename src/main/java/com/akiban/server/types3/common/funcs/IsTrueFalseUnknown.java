@@ -88,6 +88,11 @@ public abstract class IsTrueFalseUnknown extends TScalarBase
 
      
     @Override
+    protected boolean nullContaminates(int inputIndex) {
+        return false;
+    }
+
+    @Override
     public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) 
     {
         evaluate(inputs.get(0), output);
@@ -108,6 +113,6 @@ public abstract class IsTrueFalseUnknown extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(boolType.instance());
+        return TOverloadResult.fixed(boolType);
     }
 }

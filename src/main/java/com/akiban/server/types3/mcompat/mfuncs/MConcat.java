@@ -85,7 +85,7 @@ public class MConcat extends TScalarBase {
                 for (TPreptimeValue ptv : inputs) {
                     length += ptv.instance().attribute(StringAttribute.LENGTH);
                 }
-                return MString.VARCHAR.instance(length);
+                return MString.VARCHAR.instance(length, anyContaminatingNulls(inputs));
             }
         });
     }
