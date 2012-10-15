@@ -1544,11 +1544,11 @@ public class ASTStatementLoader extends BaseRule
                             rulesContext.getDefaultSchemaName();
                 // Extract the (potential) schema name as the first parameter
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(MString.VARCHAR.instance(schema.length()), new PValue(schema))));
+                        new TPreptimeValue(MString.VARCHAR.instance(schema.length(), false), new PValue(schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(MString.VARCHAR.instance(sequence.length()), new PValue(sequence))));
+                        new TPreptimeValue(MString.VARCHAR.instance(sequence.length(), false), new PValue(sequence))));
                 
                 return new FunctionExpression ("nextval", params,
                                                 valueNode.getType(), valueNode);
@@ -1562,11 +1562,11 @@ public class ASTStatementLoader extends BaseRule
                             rulesContext.getDefaultSchemaName();
                 // Extract the (potential) schema name as the first parameter
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(MString.VARCHAR.instance(schema.length()), new PValue(schema))));
+                        new TPreptimeValue(MString.VARCHAR.instance(schema.length(), false), new PValue(schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(MString.VARCHAR.instance(sequence.length()), new PValue(sequence))));
+                        new TPreptimeValue(MString.VARCHAR.instance(sequence.length(), false), new PValue(sequence))));
                 
                 return new FunctionExpression ("currval", params,
                                                 valueNode.getType(), valueNode);

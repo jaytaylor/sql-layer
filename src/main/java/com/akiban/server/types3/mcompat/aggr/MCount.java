@@ -69,7 +69,7 @@ public class MCount extends TAggregatorBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.BIGINT.instance());
+        return TOverloadResult.fixed(MNumeric.BIGINT);
     }
 
     private MCount(String name, boolean countIfNull, boolean claimNoInputs) {

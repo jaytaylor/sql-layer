@@ -58,7 +58,7 @@ public class MDateTimeDiff
             @Override
             public TOverloadResult resultType()
             {
-                return TOverloadResult.fixed(MNumeric.INT.instance(7));
+                return TOverloadResult.fixed(MNumeric.INT, 7);
             }
         },
         new DateTimeDiff(ArgType.TIME, ArgType.TIME, "TIMEDIFF")

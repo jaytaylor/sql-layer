@@ -8,7 +8,9 @@
 - Statement: INSERT INTO t VALUES (1.7976931348623157E308), (1.0E0)
 ---
 - Statement: SELECT SUM(real_field) FROM t
-- output: [[Infinity]]
+- output: !select-engine { all: [[Infinity]],
+                          newtypes: [[3.4028235E38]],             # We see REAL as a float field,
+                          sys-mysql: [[1.7976931348623157e308]] } # MySQL sees it as a DOUBLE field.
 # Test sum with no rows => null
 ---
 - Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
@@ -18,6 +20,14 @@
 - output: [[null, null, null, null, null, null, null, null, null]]
 
 # Test sum with incompatible data types
+---
+- Statement: SET newtypes='true'
+---
+- Statement: SELECT sum(blob_field) FROM all_types
+- output: [[NULL]]
+
+---
+- Statement: SET newtypes='false'
 ---
 - Statement: SELECT sum(blob_field) FROM all_types
 - error: [22503]
@@ -42,7 +52,8 @@
 ---
 - Statement: SELECT sum(varchar_field) FROM all_types
 - error: [22503]
-
+---
+- Statement: SET newtypes=DEFAULT
 # Test sum with inserted rows
 
 ---

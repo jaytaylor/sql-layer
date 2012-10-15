@@ -82,6 +82,6 @@ public class IsNull extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(boolType.instance());
+        return TOverloadResult.fixed(boolType);
     }
 }

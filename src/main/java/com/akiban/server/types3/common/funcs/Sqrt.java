@@ -67,7 +67,7 @@ public class Sqrt extends TScalarBase {
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(type.instance());
+        return TOverloadResult.fixed(type);
     }
 
 }

@@ -81,8 +81,8 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
-    public TInstance instance() {
-        return instance(defaultWidth);
+    public TInstance instance(boolean nullable) {
+        return instance(defaultWidth, nullable);
     }
 
     @Override
@@ -108,10 +108,10 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance left, TInstance right) {
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         int leftWidth = left.attribute(NumericAttribute.WIDTH);
         int rightWidth = right.attribute(NumericAttribute.WIDTH);
-        return instance(Math.max(leftWidth, rightWidth));
+        return instance(Math.max(leftWidth, rightWidth), suggestedNullability);
     }
 
     private final int defaultWidth;
