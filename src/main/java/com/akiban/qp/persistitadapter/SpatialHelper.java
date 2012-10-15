@@ -24,10 +24,26 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.error;
+package com.akiban.qp.persistitadapter;
 
-public class StalePlanException extends InvalidOperationException {
-    public StalePlanException(String planName) {
-        super (ErrorCode.STALE_PLAN, planName);
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.qp.expression.IndexKeyRange;
+
+import java.util.List;
+
+public final class SpatialHelper {
+    private SpatialHelper() {
+
+    }
+
+    public static boolean isNullable(Index index) {
+        List<IndexColumn> declaredKeys = index.getKeyColumns();
+        assert declaredKeys.size() == 2 : "covering spatial index discovered, need to update code" + index;
+        return declaredKeys.get(0).getColumn().getNullable() || declaredKeys.get(1).getColumn().getNullable();
+    }
+
+    public static boolean isNullable(IndexKeyRange indexKeyRange) {
+        return isNullable(indexKeyRange.indexRowType().index());
     }
 }

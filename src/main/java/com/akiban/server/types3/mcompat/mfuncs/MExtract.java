@@ -36,6 +36,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
+import java.util.Arrays;
 
 /**
  * 
@@ -65,6 +66,15 @@ public abstract class MExtract extends TScalarBase
                         output.putInt32(date);
                 }
             },
+            new MExtract(MDatetimes.TIME, MDatetimes.DATE, "DATE", true)
+            {
+
+                @Override
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+                {
+                    output.putInt32(0);
+                }
+            },
             new MExtract(MDatetimes.DATETIME, "TIMESTAMP")
             {
                 @Override
@@ -88,6 +98,23 @@ public abstract class MExtract extends TScalarBase
                         output.putInt64(datetime);
                 }
             },
+            new MExtract(MDatetimes.TIME, MDatetimes.DATETIME, "DATETIME", true)
+            {
+                @Override
+                public String[] registeredNames()
+                {
+                    return new String[] {"timestamp", "datetime"};
+                }
+
+                @Override
+                protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+                {
+                    int time = inputs.get(0).getInt32();
+                    long ymdHMS[] = MDatetimes.decodeTime(time);
+                    Arrays.fill(ymdHMS, 0, 3, 0); // zero ymd
+                    output.putInt64(MDatetimes.encodeDatetime(ymdHMS));
+                }
+            },
             new MExtract(MDatetimes.TIME, "TIME")
             {
                 @Override
@@ -108,19 +135,33 @@ public abstract class MExtract extends TScalarBase
         };
     }
     
-    private final TClass type;
+    private final TClass input, output;
     private final String name;
+    private final boolean exact;
     
-    private MExtract (TClass ret, String name)
+    private MExtract (TClass type, String name)
     {
-        type = ret;
+        this(type, type, name, false);
+    }
+
+    private MExtract (TClass input, TClass output, String name, boolean exact)
+    {
+        this.input = input;
+        this.output = output;
         this.name = name;
+        this.exact = exact;
+    }
+
+    @Override
+    public int[] getPriorities() {
+        // The exact one has priority but only works for its particular case.
+        return new int[] { exact ? 1 : 2 };
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(type, 0);
+        builder.setExact(exact).covers(input, 0);
     }
 
     @Override
@@ -132,6 +173,6 @@ public abstract class MExtract extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(type.instance());
+        return TOverloadResult.fixed(output);
     }
 }

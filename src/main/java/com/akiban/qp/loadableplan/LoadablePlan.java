@@ -35,8 +35,6 @@ import java.util.List;
 
 public abstract class LoadablePlan<T>
 {
-    public abstract String name();
-
     public abstract T plan();
 
     public abstract int[] jdbcTypes();
@@ -56,7 +54,7 @@ public abstract class LoadablePlan<T>
         this.ais = ais;
     }
 
-    protected AkibanInformationSchema ais()
+    public final AkibanInformationSchema ais()
     {
         return ais;
     }

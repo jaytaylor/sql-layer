@@ -64,6 +64,6 @@ public class Exp extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(doubleType.instance());
+        return TOverloadResult.fixed(doubleType);
     }
 }

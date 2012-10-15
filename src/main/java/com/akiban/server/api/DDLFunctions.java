@@ -31,7 +31,9 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -247,4 +249,34 @@ public interface DDLFunctions {
      * @param sequenceName Sequence to drop
      */
     void dropSequence(Session session, TableName sequenceName);
+    
+    /**
+     * Create a stored routine.
+     * @param routine Routine to create.
+     */
+    void createRoutine(Session session, Routine routine);
+    
+    /**
+     * Drop a stored routine.
+     * @param routineName Routine to drop
+     */
+    void dropRoutine(Session session, TableName routineName);
+    
+    /**
+     * Create an SQL/J jar.
+     * @param sqljJar SQLJJar to create.
+     */
+    void createSQLJJar(Session session, SQLJJar sqljJar);
+    
+    /**
+     * Update an SQL/J jar.
+     * @param sqljJar SQLJJar to create.
+     */
+    void replaceSQLJJar(Session session, SQLJJar sqljJar);
+    
+    /**
+     * Drop an SQL/J jar.
+     * @param jarName SQLJJar to drop.
+     */
+    void dropSQLJJar(Session session, TableName jarName);
 }

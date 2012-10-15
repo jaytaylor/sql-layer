@@ -42,17 +42,35 @@ public class NoAttrTClass extends SimpleDtdTClass {
 
     @Override
     public TFactory factory() {
-        return new NoAttrFactory(instance());
+        return new NoAttrFactory(instance(true)); // TODO
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        return instance0; // doesn't matter which it is
+    public TInstance instance(boolean nullable) {
+        TInstance result;
+        // These two blocks are obviously racy. However, the race will not create incorrectness, it'll just
+        // allow there to be multiple copies of the TInstance floating around, each of which is correct, immutable
+        // and equivalent.
+        if (nullable) {
+            result = nullableTInstance;
+            if (result == null) {
+                result = createInstanceNoArgs(true);
+                nullableTInstance = result;
+            }
+        }
+        else {
+            result = notNullableTInstance;
+            if (result == null) {
+                result = createInstanceNoArgs(false);
+                notNullableTInstance = result;
+            }
+        }
+        return result;
     }
 
     @Override
-    public TInstance instance() {
-        return createInstanceNoArgs();
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
+        return right; // doesn't matter which!
     }
 
     @Override
@@ -60,9 +78,10 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     public NoAttrTClass(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, int internalRepVersion,
-                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
+                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser,
+                           int defaultVarcharLen, TypeId typeId) {
         super(bundle, name, category, formatter, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
-                pUnderlying, parser, typeId);
+                pUnderlying, parser, defaultVarcharLen, typeId);
     }
 
     @Override
@@ -74,4 +93,7 @@ public class NoAttrTClass extends SimpleDtdTClass {
     {
         // about to delete...
     }
+
+    private volatile TInstance nullableTInstance;
+    private volatile TInstance notNullableTInstance;
 }

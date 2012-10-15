@@ -76,7 +76,7 @@ public class MRoundTruncateDecimal extends TScalarBase {
                 TPreptimeValue valueToRound = inputs.get(0);
                 PValueSource roundToPVal = signatureStrategy.getScaleOperand(inputs);
                 int precision, scale;
-                if (roundToPVal == null) {
+                if ((roundToPVal == null) || roundToPVal.isNull()) {
                     precision = 17;
                     int incomingScale = valueToRound.instance().attribute(MBigDecimal.Attrs.SCALE);
                     if (incomingScale > 1)
@@ -95,7 +95,7 @@ public class MRoundTruncateDecimal extends TScalarBase {
                     precision += scale;
 
                 }
-                return MNumeric.DECIMAL.instance(precision, scale);
+                return MNumeric.DECIMAL.instance(precision, scale, anyContaminatingNulls(inputs));
             }
         });
     }

@@ -27,8 +27,10 @@
 package com.akiban.server.types3.texpressions.std;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TInstanceGenerator;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -71,10 +73,14 @@ public abstract class NoArgExpression extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(tInstance());
+        return TOverloadResult.fixed(resultTClass(), resultAttrs());
     }
 
-    protected abstract TInstance tInstance();
+    protected int[] resultAttrs() {
+        return NO_ATTRS;
+    }
+
+    protected abstract TClass resultTClass();
 
     public NoArgExpression(String name, boolean constPerPrep)
     {
@@ -83,5 +89,6 @@ public abstract class NoArgExpression extends TScalarBase
     }
     
     private final String name;
-    private boolean constPerPrep;    
+    private boolean constPerPrep;
+    private static final int[] NO_ATTRS = new int[0];
 }

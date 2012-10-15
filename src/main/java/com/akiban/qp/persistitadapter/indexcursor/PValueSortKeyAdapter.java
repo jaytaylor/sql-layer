@@ -154,9 +154,9 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
     }
 
     @Override
-    public void setOrderingMetadata(int orderingIndex, API.Ordering ordering, int tInstancesOffset,
+    public void setOrderingMetadata(API.Ordering ordering, int index,
                                     TInstance[] tInstances) {
-        tInstances[orderingIndex + tInstancesOffset] = ordering.tInstance(orderingIndex);
+        tInstances[index] = ordering.tInstance(index);
     }
 
     private static class PValueSortKeyTarget implements SortKeyTarget<PValueSource> {

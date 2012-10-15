@@ -37,6 +37,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.IndexScanRowState;
+import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -149,8 +150,9 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         // Cursor going forward from starting z value (inclusive)
         List<Expression> exprs;
         List<TPreparedExpression> pexprs;
+        boolean nullable = Types3Switch.ON && SpatialHelper.isNullable(keyRange);
         if (Types3Switch.ON) {
-            TInstance instance = MNumeric.BIGINT.instance();
+            TInstance instance = MNumeric.BIGINT.instance(nullable);
             PValueSource value = new PValue(Long.MAX_VALUE);
             pexprs = Collections.<TPreparedExpression>singletonList(new TPreparedLiteral(instance, value));
             exprs = null;
@@ -180,7 +182,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         }
         zStart = space.shuffle(xLo, yLo);        
         if (Types3Switch.ON) {
-            TInstance instance = MNumeric.BIGINT.instance();
+            TInstance instance = MNumeric.BIGINT.instance(nullable);
             PValueSource value = new PValue(zStart);
             pexprs = Collections.<TPreparedExpression>singletonList(new TPreparedLiteral(instance, value));
             exprs = null;
@@ -212,7 +214,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         }
         // Cursor going backward from starting z value (exclusive)
         if (Types3Switch.ON) {
-            TInstance instance = MNumeric.BIGINT.instance();
+            TInstance instance = MNumeric.BIGINT.instance(nullable);
             PValueSource value = new PValue(Long.MIN_VALUE);
             pexprs = Collections.<TPreparedExpression>singletonList(new TPreparedLiteral(instance, value));
             exprs = null;

@@ -34,7 +34,6 @@ import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TCastIdentifier;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
@@ -46,7 +45,6 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -64,7 +62,7 @@ public class OverloadResolverTest {
         private static final TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
 
         public TestClassBase(String name, PUnderlying pUnderlying) {
-            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, null);
+            super(TEST_BUNDLE_ID, name, null, null, 1, 1, 1, pUnderlying, null, 64, null);
         }
 
         @Override
@@ -138,7 +136,7 @@ public class OverloadResolverTest {
 
         @Override
         public TOverloadResult resultType() {
-            return TOverloadResult.fixed(tTarget.instance());
+            return TOverloadResult.fixed(tTarget);
         }
     }
 
@@ -173,7 +171,7 @@ public class OverloadResolverTest {
 
         @Override
         public TOverloadResult resultType() {
-            return (tResult == null) ? TOverloadResult.picking() : TOverloadResult.fixed(tResult.instance());
+            return (tResult == null) ? TOverloadResult.picking() : TOverloadResult.fixed(tResult);
         }
     }
 
@@ -230,11 +228,7 @@ public class OverloadResolverTest {
     }
 
     private static TPreptimeValue prepVal(TClass tClass) {
-        TPreptimeValue tpv = (tClass != null) ? new TPreptimeValue(tClass.instance()) : new TPreptimeValue();
-        TInstance tInstance = tpv.instance();
-        if (tInstance != null)
-            tInstance.setNullable(true);
-        return tpv;
+        return (tClass != null) ? new TPreptimeValue(tClass.instance(true)) : new TPreptimeValue();
     }
 
     private static List<TPreptimeValue> prepVals(TClass... tClasses) {
@@ -307,7 +301,7 @@ public class OverloadResolverTest {
     // default resolution, types don't match (no registered casts, int -> bigint)
     @Test
     public void mulBigIntWithInts() {
-        new Initializer().overloads(MUL_BIGINTS).init();
+        new Initializer().overloads(MUL_BIGINTS).casts(C_INT_BIGINT).init();
         checkResolved("INT*INT", MUL_BIGINTS, MUL_NAME, prepVals(TINT, TINT));
     }
 

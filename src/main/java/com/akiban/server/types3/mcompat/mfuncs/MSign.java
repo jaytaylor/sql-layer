@@ -62,6 +62,6 @@ public class MSign extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.BIGINT.instance());
+        return TOverloadResult.fixed(MNumeric.BIGINT);
     }
 }

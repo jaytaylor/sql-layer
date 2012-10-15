@@ -31,12 +31,12 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ArgumentValidation;
-import com.google.common.base.Objects;
 import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
@@ -163,26 +163,26 @@ public abstract class TClass {
                         TInstance targetInstance,
                         PValueTarget targetValue);
 
-    public abstract TInstance instance();
+    public abstract TInstance instance(boolean nullable);
 
-    public TInstance instance(int arg0)
+    public TInstance instance(int arg0, boolean nullable)
     {
-        return createInstance(1, arg0, EMPTY, EMPTY, EMPTY);
+        return createInstance(1, arg0, EMPTY, EMPTY, EMPTY, nullable);
     }
 
-    public TInstance instance(int arg0, int arg1)
+    public TInstance instance(int arg0, int arg1, boolean nullable)
     {
-        return createInstance(2, arg0, arg1, EMPTY, EMPTY);
+        return createInstance(2, arg0, arg1, EMPTY, EMPTY, nullable);
     }
 
-    public TInstance instance(int arg0, int arg1, int arg2)
+    public TInstance instance(int arg0, int arg1, int arg2, boolean nullable)
     {
-        return createInstance(3, arg0, arg1, arg2, EMPTY);
+        return createInstance(3, arg0, arg1, arg2, EMPTY, nullable);
     }
 
-    public TInstance instance(int arg0, int arg1, int arg2, int arg3)
+    public TInstance instance(int arg0, int arg1, int arg2, int arg3, boolean nullable)
     {
-        return createInstance(4, arg0, arg1, arg2, arg3);
+        return createInstance(4, arg0, arg1, arg2, arg3, nullable);
     }
 
     protected void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
@@ -193,32 +193,11 @@ public abstract class TClass {
         writeCanonical(inValue, typeInstance, out);
     }
 
-    public TInstance pickInstance(TInstance instance0, TInstance instance1) {
-        if (instance0.typeClass() != this || instance1.typeClass() != this)
-            throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);
+    public TInstance pickInstance(TInstance left, TInstance right) {
+        if (left.typeClass() != TClass.this || right.typeClass() != TClass.this)
+            throw new IllegalArgumentException("can't combine " + left + " and " + right + " using " + this);
 
-        TInstance result = doPickInstance(instance0, instance1);
-
-        // set nullability
-        Boolean resultIsNullable = result.nullability();
-        final Boolean resultDesiredNullability;
-        Boolean leftIsNullable = instance0.nullability();
-        if (leftIsNullable == null) {
-            resultDesiredNullability = null;
-        }
-        else {
-            Boolean rightIsNullable = instance0.nullability();
-            resultDesiredNullability = (rightIsNullable == null)
-                    ? null
-                    : (leftIsNullable || rightIsNullable);
-        }
-        if (!Objects.equal(resultIsNullable, resultDesiredNullability)) {
-            // need to set the nullability. But if the result was one of the inputs, need to defensively copy it first.
-            if ( (result == instance0) || (result == instance1) )
-                result = new TInstance(result);
-            result.setNullable(resultDesiredNullability);
-        }
-        return result;
+        return doPickInstance(left, right, left.nullability() || right.nullability());
     }
 
     public PUnderlying underlyingType() {
@@ -295,23 +274,22 @@ public abstract class TClass {
             formatter.formatAsJson(instance, source, out);
     }
 
-    // for use by subclasses
-
-    protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);
-        
-    protected abstract void validate(TInstance instance);
-    // for use by this class
-
-    protected TInstance createInstanceNoArgs() {
-        return createInstance(0, EMPTY, EMPTY, EMPTY, EMPTY);
+    public TInstanceNormalizer pickInstanceNormalizer() {
+        return pickInstanceNormalizer;
     }
 
-    protected TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
-        if (nAttributes() != nAttrs)
-            throw new AkibanInternalException(name() + " requires " + nAttributes() + " attributes, saw " + nAttrs);
-        TInstance result = new TInstance(this, enumClass, nAttrs, attr0, attr1, attr2, attr3);
-        validate(result);
-        return result;
+    // for use by subclasses
+    protected abstract TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability);
+    protected abstract void validate(TInstance instance);
+
+    // for use by this class
+
+    protected TInstance createInstanceNoArgs(boolean nullable) {
+        return createInstance(0, EMPTY, EMPTY, EMPTY, EMPTY, nullable);
+    }
+
+    protected TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3, boolean nullable) {
+        return TInstance.create(this, enumClass, nAttrs, attr0, attr1, attr2, attr3, nullable);
     }
 
     public PValueCacher cacher() {
@@ -360,7 +338,6 @@ public abstract class TClass {
                 pUnderlying);
 
      }
-
     private final TName name;
     private final Class<?> enumClass;
     protected final TClassFormatter formatter;
@@ -368,8 +345,34 @@ public abstract class TClass {
     private final int internalRepVersion;
     private final int serializationVersion;
     private final int serializationSize;
+
     private final PUnderlying pUnderlying;
 
+    private TInstanceNormalizer pickInstanceNormalizer = new TInstanceNormalizer() {
+        @Override
+        public void apply(TInstanceAdjuster adjuster, TValidatedOverload overload, TInputSet inputSet, int max) {
+            TInstance result = null;
+            boolean resultEverChanged = false;
+            for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
+                TInstance inputInstance = adjuster.get(i);
+                if (result == null) {
+                    result = inputInstance;
+                }
+                else {
+                    TInstance picked = pickInstance(result, inputInstance);
+                    resultEverChanged |= (!picked.equalsIncludingNullable(picked));
+                    result = picked;
+                }
+            }
+            if (resultEverChanged) {
+                for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
+                    adjuster.replace(i, result);
+                }
+            }
+        }
+    };
+
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
+
     private static final int EMPTY = -1;
 }

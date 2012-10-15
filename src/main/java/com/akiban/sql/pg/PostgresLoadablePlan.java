@@ -26,14 +26,14 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerRoutineInvocation;
+
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 
@@ -43,45 +43,40 @@ import java.util.List;
 public class PostgresLoadablePlan
 {
     public static PostgresStatement statement(PostgresServerSession server, 
-                                              String planName, Object[] args) {
-        LoadablePlan<?> loadablePlan = server.loadablePlan(planName);
-        if (loadablePlan == null)
-            return null;
-        loadablePlan.ais(server.getAIS());
+                                              ServerRoutineInvocation invocation,
+                                              int[] paramTypes) {
+        LoadablePlan<?> loadablePlan = 
+            server.getRoutineLoader().loadLoadablePlan(server.getSession(),
+                                                       invocation.getRoutineName());
         List<String> columnNames = loadablePlan.columnNames();
         List<PostgresType> columnTypes = columnTypes(loadablePlan);
         boolean usesPValues = server.getBooleanProperty("newtypes", Types3Switch.ON);
         if (loadablePlan instanceof LoadableOperator)
-            return new PostgresLoadableOperator(
-                    (LoadableOperator)loadablePlan,
-                    columnNames,
-                    columnTypes,
-                    args,
-                    usesPValues);
+            return new PostgresLoadableOperator((LoadableOperator)loadablePlan, 
+                                                invocation,
+                                                columnNames, columnTypes,
+                                                null, usesPValues);
         if (loadablePlan instanceof LoadableDirectObjectPlan)
             return new PostgresLoadableDirectObjectPlan((LoadableDirectObjectPlan)loadablePlan, 
-                                                        columnNames, 
-                                                        columnTypes,
-                                                        args,
-                                                        usesPValues);
+                                                        invocation,
+                                                        columnNames, columnTypes,
+                                                        null, usesPValues);
         return null;
     }
-    
-    public static void setParameters(PostgresQueryContext context, Object[] args, boolean usePVals) {
-        if (args != null) {
-            if (usePVals) {
-                for (int i = 0; i < args.length; i++) {
-                    context.setPValue(i, PValueSources.fromObject(args[i], null).value());
-                }
+
+    public static PostgresQueryContext setParameters(PostgresQueryContext context, ServerRoutineInvocation invocation, boolean usePVals) {
+        if (!invocation.parametersInOrder()) {
+            if (invocation.hasParameters()) {
+                PostgresQueryContext calleeContext = 
+                    new PostgresQueryContext(context.getServer());
+                invocation.copyParameters(context, calleeContext, usePVals);
+                context = calleeContext;
             }
             else {
-                FromObjectValueSource source = new FromObjectValueSource();
-                for (int i = 0; i < args.length; i++) {
-                    source.setReflectively(args[i]);
-                    context.setValue(i, source);
-                }
+                invocation.copyParameters(null, context, usePVals);
             }
         }
+        return context;
     }
 
     public static List<PostgresType> columnTypes(LoadablePlan<?> plan)

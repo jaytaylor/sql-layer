@@ -27,7 +27,6 @@
 package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -36,7 +35,6 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.aksql.AkCategory;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -103,11 +101,12 @@ public class AkResultSet extends TClassBase {
               1,
               0,
               null, // PUnderlying.XXX
-              NO_PARSER);
+              NO_PARSER,
+              -1);
     }
 
     public TInstance instance(List<Column> columns) {
-        TInstance instance = createInstanceNoArgs();
+        TInstance instance = createInstanceNoArgs(false);
         instance.setMetaData(columns);
         return instance;
     }
@@ -127,7 +126,7 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
-    public TInstance instance() {
+    public TInstance instance(boolean nullable) {
         throw new UnsupportedOperationException();
     }
 
@@ -136,7 +135,7 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         throw new UnsupportedOperationException();
     }
 

@@ -9,7 +9,14 @@
 ---
 - Include: all-datetime-schema.yaml
 ---
-- Statement: select id,DATE(time_field) from datetime_matrix where DATE(time_field) is not null;
+- Statement: !select-engine { 
+              all: "select id,DATE(time_field) from datetime_matrix where DATE(time_field) is not null",
+         newtypes: "select id,DATE(time_field) from datetime_matrix where DATE(time_field) <> '0000-00-00' " }
+- row_count: 0
+---
+- Statement: !select-engine { 
+              all: "select id,CAST(time_field AS DATE) from datetime_matrix where CAST(time_field AS DATE) is not null",
+         newtypes: "select id,CAST(time_field AS DATE) from datetime_matrix where CAST(time_field AS DATE) <> '0000-00-00' " }
 - row_count: 0
 ---
 - Statement: select id,DATE(timestamp_field) from datetime_matrix where DATE(timestamp_field) <> DATE(CONCAT(expected_year,'-',expected_month,'-',expected_day));

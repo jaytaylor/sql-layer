@@ -347,6 +347,11 @@ public final class PValue implements PValueSource, PValueTarget {
         underlying(underlying);
     }
 
+    public PValue(byte[] val) {
+        this(PUnderlying.BYTES);
+        putBytes(val);
+    }
+
     public PValue(long val) {
         this(PUnderlying.INT_64);
         putInt64(val);
@@ -372,6 +377,11 @@ public final class PValue implements PValueSource, PValueTarget {
     public PValue(short val) {
         this(PUnderlying.INT_16);
         putInt16(val);
+    }
+
+    public PValue(byte val) {
+        this(PUnderlying.INT_8);
+        putInt8(val);
     }
 
     public PValue(String val) {

@@ -102,7 +102,7 @@ public class MConcatWS extends TScalarBase
                 // delele the laste delimeter
                 len -= dLen;
                 
-                return MString.VARCHAR.instance(len);
+                return MString.VARCHAR.instance(len, anyContaminatingNulls(inputs));
             }
         });
     }

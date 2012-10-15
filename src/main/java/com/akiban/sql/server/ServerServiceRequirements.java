@@ -30,6 +30,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
@@ -46,7 +47,8 @@ public final class ServerServiceRequirements {
                                      FunctionsRegistry functionsRegistry,
                                      ConfigurationService config,
                                      IndexStatisticsService indexStatistics,
-                                     T3RegistryService t3RegistryService) {
+                                     T3RegistryService t3RegistryService,
+                                     RoutineLoader routineLoader) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
@@ -56,6 +58,7 @@ public final class ServerServiceRequirements {
         this.config = config;
         this.indexStatistics = indexStatistics;
         this.t3RegistryService = t3RegistryService;
+        this.routineLoader = routineLoader;
     }
 
     public InstrumentationService instrumentation() {
@@ -94,6 +97,10 @@ public final class ServerServiceRequirements {
         return indexStatistics;
     }
 
+    public RoutineLoader routineLoader() {
+        return routineLoader;
+    }
+
     private final InstrumentationService instrumentation;
     private final DXLService dxlService;
     private final SessionService sessionService;
@@ -103,4 +110,5 @@ public final class ServerServiceRequirements {
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;
     private final T3RegistryService t3RegistryService;
+    private final RoutineLoader routineLoader;
 }

@@ -79,12 +79,6 @@ public interface PostgresMXBean {
      */
     long getUptime();
 
-    /*
-     * Loadable plans
-     */
-    void clearPlans();
-    String loadPlan(String jarFilePath, String className);
-
     /** Cancel any running query for the given connection. */
     void cancelQuery(int sessionId);
     /** Kill the given connection. */

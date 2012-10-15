@@ -126,7 +126,7 @@ public abstract class LeftRight extends TScalarBase
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
                 TPreptimeValue len = inputs.get(1);
-                
+
                 // if second argument is not available or is null
                 if (len.value() == null || len.value().isNull())
                 {
@@ -135,12 +135,12 @@ public abstract class LeftRight extends TScalarBase
                     // if the string is also not available
                     // the return the precision of the string's type
                     if (st.value() == null || st.value().isNull())
-                        return st.instance();
+                        return st.instance().withNullable(false);
                     else // if the string is available, return its length
-                        return stringType.instance((st.value().getString()).length());
+                        return stringType.instance((st.value().getString()).length(), anyContaminatingNulls(inputs));
                 }
                 else
-                    return stringType.instance(len.value().getInt32());
+                    return stringType.instance(len.value().getInt32(), anyContaminatingNulls(inputs));
             }
             
         });

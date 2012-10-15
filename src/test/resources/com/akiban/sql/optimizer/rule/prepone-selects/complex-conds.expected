@@ -3,7 +3,7 @@ SelectQuery@355ccfb1
     Project@78688954[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, orders.special]
       Select@7102be12[]
         Flatten@2594e776(customers INNER orders)
-          Select@1710278e[upper(customers.name) == SMITH, or(date(orders.order_date) == Cast(2011-01-01 AS DATE NOT NULL),date(orders.order_date) == Cast(2012-01-01 AS DATE NOT NULL))]
+          Select@1710278e[upper(customers.name) == SMITH, or(date(orders.order_date) == 2011-01-01,date(orders.order_date) == 2012-01-01)]
             GroupScan@52e80740(Group(customers -> test.customers), rows = 1000, cost = 61645.0)
               TableSource@23e45a5c(customers - TableGroup@7f342545(customers))
               TableSource@64e8606c(orders - TableGroupJoin@387b1641(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

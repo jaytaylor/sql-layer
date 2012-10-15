@@ -169,6 +169,31 @@ public final class NiceRowTest {
         compareRowDatas(rowData, newRow.toRowData());
     }
 
+    // bug1057016
+    @Test
+    public void toRowDataStringWithSurrogatePairs() throws Exception {
+        final String TEST_STR = "abc \ud83d\ude0d def";
+
+        assertEquals("string length", 10, TEST_STR.length());
+        assertEquals("char 4 high surrogate", true, Character.isHighSurrogate(TEST_STR.charAt(4)));
+        assertEquals("char 5 low surrogate", true, Character.isLowSurrogate(TEST_STR.charAt(5)));
+        assertEquals("utf8 byte length", 12, TEST_STR.getBytes("UTF-8").length);
+
+        String ddl = "create table test.t(id int not null primary key, v varchar(32) character set utf8)";
+        RowDef rowDef = SCHEMA_FACTORY.rowDefCache(ddl).getRowDef("test", "t");
+
+        Object[] objects = { 1L, TEST_STR };
+        RowData rowData = create(rowDef, objects);
+        NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
+
+        assertEquals("fields count", 2, newRow.getFields().size());
+        assertEquals("field[0]", 1L, newRow.get(0));
+        assertEquals("field[1]", TEST_STR, newRow.get(1));
+        assertEquals("filed[1] charset", "utf8", rowDef.getFieldDef(1).column().getCharsetAndCollation().charset());
+
+        compareRowDatas(rowData, newRow.toRowData());
+    }
+
     private static byte[] bytes() {
         return new byte[1024];
     }

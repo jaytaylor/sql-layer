@@ -39,6 +39,7 @@ import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
 import java.util.ArrayList;
@@ -119,6 +120,16 @@ public abstract class TScalarBase implements TScalar {
             return null;
         }
         for (int i = 0; i < inputs.size(); ++i) {
+            if (nullContaminates(i)) {
+                PValueSource constSource = constSource(inputs, i);
+                if ((constSource != null) && constSource.isNull()) {
+                    // Const null source on contaminating operand. Result is null.
+                    return new TPreptimeValue(context.getOutputType(), 
+                                              PValueSources.getNullSource(context.getOutputType().typeClass().underlyingType()));
+                }
+            }
+        }
+        for (int i = 0; i < inputs.size(); ++i) {
             if (constnessMatters(i)) {
                 Constantness constness = constness(i, inputs);
                 if (constness == Constantness.NOT_CONST)
@@ -139,7 +150,8 @@ public abstract class TScalarBase implements TScalar {
             public PValueSource get(int i) {
                 TPreptimeValue ptValue = inputs.get(i);
                 PValueSource source = ptValue.value();
-                assert source != null : "non-constant value where constant value expected";
+                assert allowNonConstsInEvaluation() || source != null
+                        : "non-constant value where constant value expected";
                 return source;
             }
 
@@ -161,6 +173,10 @@ public abstract class TScalarBase implements TScalar {
     protected static PValueSource constSource(LazyList<? extends TPreptimeValue> inputs, int index) {
         TPreptimeValue tpv = inputs.get(index);
         return tpv == null ? null : tpv.value();
+    }
+
+    protected boolean allowNonConstsInEvaluation() {
+        return false;
     }
 
     protected abstract void buildInputSets(TInputSetBuilder builder);
@@ -196,6 +212,14 @@ public abstract class TScalarBase implements TScalar {
     }
 
     protected boolean neverConstant() {
+        return false;
+    }
+
+    protected boolean anyContaminatingNulls(List<? extends TPreptimeValue> inputs) {
+        for (int i = 0, max = inputs.size(); i < max; ++i) {
+            if (nullContaminates(i) && inputs.get(i).isNullable())
+                return true;
+        }
         return false;
     }
 

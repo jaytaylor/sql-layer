@@ -30,7 +30,6 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -360,13 +359,13 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        return instance();
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
+        return instance(suggestedNullability);
     }
 
     @Override
-    public TInstance instance() {
-        return instance(formatAttribute.ordinal());
+    public TInstance instance(boolean nullable) {
+        return instance(formatAttribute.ordinal(), nullable);
     }
 
     @Override
@@ -401,9 +400,7 @@ public class AkInterval extends TClassBase {
         IntervalFormat format = typeIdToFormat.get(typeId);
         if (format == null)
             throw new IllegalArgumentException("couldn't convert " + type + " to " + name());
-        TInstance result = instance(format.ordinal());
-        result.setNullable(type.isNullable());
-        return result;
+        return instance(format.ordinal(), type.isNullable());
     }
 
     private <A extends Enum<A> & Attribute> AkInterval(TBundleID bundle, String name,
@@ -415,7 +412,7 @@ public class AkInterval extends TClassBase {
                                                IntervalFormat[] formatters)
     {
         super(bundle, name, category, enumClass, formatter, internalRepVersion, sVersion, sSize, pUnderlying,
-                createParser(formatAttribute, formatters));
+                createParser(formatAttribute, formatters), 128); // varchar len is arbitrary; I don't expect to use it
         this.formatters = formatters;
         this.formatAttribute = formatAttribute;
         this.typeIdToFormat = createTypeIdToFormatMap(formatters);

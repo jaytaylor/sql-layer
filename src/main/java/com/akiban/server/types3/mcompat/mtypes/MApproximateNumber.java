@@ -48,10 +48,10 @@ import com.akiban.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
 {
-    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE);
-    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE);
-    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, PUnderlying.FLOAT, TParsers.FLOAT,  NumericFormatter.FORMAT.FLOAT);
-    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT, TParsers.FLOAT, NumericFormatter.FORMAT.FLOAT);
+    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22);
+    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, PUnderlying.FLOAT, TParsers.FLOAT,  NumericFormatter.FORMAT.FLOAT, 12);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT, TParsers.FLOAT, NumericFormatter.FORMAT.FLOAT, 12);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
@@ -145,24 +145,25 @@ public class MApproximateNumber extends SimpleDtdTClass
             TAttributeValues values = declaration.validate(2, 0);
             return instance(
                     values.intAt(DoubleAttribute.PRECISION, DEFAULT_DOUBLE_PRECISION),
-                    values.intAt(DoubleAttribute.SCALE, DEFAULT_DOUBLE_SCALE));
+                    values.intAt(DoubleAttribute.SCALE, DEFAULT_DOUBLE_SCALE),
+                    values.nullable());
         }
     }
 
 
     private MApproximateNumber(String name, TypeId typeId, PUnderlying underlying, TParser parser,
-                               TClassFormatter formatter)
+                               TClassFormatter formatter, int defaultVarcharLen)
     {
         super(MBundle.INSTANCE.id(), name, AkCategory.FLOATING, formatter,
                 DoubleAttribute.class,
                 1, 1, 8,
-                underlying, parser, typeId);
+                underlying, parser, defaultVarcharLen, typeId);
     }
     
     @Override
-    public TInstance instance()
+    public TInstance instance(boolean nullable)
     {
-        return instance(DEFAULT_DOUBLE_PRECISION, DEFAULT_DOUBLE_SCALE);
+        return instance(DEFAULT_DOUBLE_PRECISION, DEFAULT_DOUBLE_SCALE, nullable);
     }
     
     @Override
@@ -172,19 +173,19 @@ public class MApproximateNumber extends SimpleDtdTClass
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instanceL, TInstance instanceR)
-    {
-        int precisionL = instanceL.attribute(DoubleAttribute.PRECISION);
+    protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
+        int precisionL = left.attribute(DoubleAttribute.PRECISION);
         if (precisionL <= 0)
-            return instance();
-        int precisionR = instanceR.attribute(DoubleAttribute.PRECISION);
+            return instance(suggestedNullability);
+        int precisionR = right.attribute(DoubleAttribute.PRECISION);
         if (precisionR <= 0)
-            return instance();
+            return instance(suggestedNullability);
 
-        int scaleL = instanceL.attribute(DoubleAttribute.SCALE);
-        int scaleR = instanceR.attribute(DoubleAttribute.SCALE);
+        int scaleL = left.attribute(DoubleAttribute.SCALE);
+        int scaleR = right.attribute(DoubleAttribute.SCALE);
 
-        return MBigDecimal.pickPrecisionAndScale(this, precisionL, scaleL, precisionR, scaleR);
+        return MBigDecimal.pickPrecisionAndScale(MApproximateNumber.this, precisionL, scaleL, precisionR, scaleR,
+                suggestedNullability);
     }
 
     @Override

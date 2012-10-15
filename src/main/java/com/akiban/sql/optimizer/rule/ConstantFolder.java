@@ -35,7 +35,6 @@ import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.akiban.server.expression.std.Comparison;
 
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +78,7 @@ public class ConstantFolder extends BaseRule
         protected final ExpressionAssembler<?> expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
         private Set<AggregateSource> changedAggregates = null;
-        private enum State { FOLDING, AGGREGATES };
+        private enum State { FOLDING, AGGREGATES, FOLDING_PIECEMEAL };
         private State state;
         private boolean changed;
         private Map<ConditionExpression,Boolean> topLevelConditions = 
@@ -92,7 +91,7 @@ public class ConstantFolder extends BaseRule
         
         public ExpressionNode foldConstants(ExpressionNode fromNode) {
             do {
-                state = State.FOLDING;
+                state = State.FOLDING_PIECEMEAL;
                 changed = false;
                 topLevelConditions.clear();
                 fromNode = fromNode.accept(this);
@@ -150,7 +149,7 @@ public class ConstantFolder extends BaseRule
 
         @Override
         public ExpressionNode visit(ExpressionNode expr) {
-            if (state == State.FOLDING) {
+            if ((state == State.FOLDING) || (state == State.FOLDING_PIECEMEAL)) {
                 if (expr instanceof ComparisonCondition)
                     return comparisonCondition((ComparisonCondition)expr);
                 else if (expr instanceof CastExpression)
@@ -388,7 +387,7 @@ public class ConstantFolder extends BaseRule
                             // That can be NULL or 0 for COUNT.
                             Object value = null;
                             if (isAggregateZero(afun))
-                                value = Integer.valueOf(0);
+                                value = Long.valueOf(0);
                             return newConstant(value, col.getAkType(), col);
                         }
                     }
@@ -665,7 +664,7 @@ public class ConstantFolder extends BaseRule
             }
             InCondition in = InCondition.of(cond);
             if (in != null) {
-                in.dedup(isTopLevelCondition(cond));
+                in.dedup(isTopLevelCondition(cond), (state == State.FOLDING));
                 switch (in.compareConstants(this)) {
                 case COMPARE_NULL:
                     return newBooleanConstant(null, cond);
@@ -1023,7 +1022,7 @@ public class ConstantFolder extends BaseRule
             }
         }
 
-        public void dedup(boolean topLevel) {
+        public void dedup(boolean topLevel, boolean setDistinct) {
             if (expressions.getDistinctState() != null)
                 return;
 
@@ -1084,16 +1083,18 @@ public class ConstantFolder extends BaseRule
             if (others != null)
                 rows.addAll(others);
 
-            DistinctState distinct;
-            if (others != null)
-                distinct = DistinctState.HAS_EXPRESSSIONS;
-            else if (parameters != null)
-                distinct = DistinctState.HAS_PARAMETERS;
-            else if (anyNull)
-                distinct = DistinctState.DISTINCT_WITH_NULL;
-            else
-                distinct = DistinctState.DISTINCT;
-            expressions.setDistinctState(distinct);
+            if (setDistinct) {
+                DistinctState distinct;
+                if (others != null)
+                    distinct = DistinctState.HAS_EXPRESSSIONS;
+                else if (parameters != null)
+                    distinct = DistinctState.HAS_PARAMETERS;
+                else if (anyNull)
+                    distinct = DistinctState.DISTINCT_WITH_NULL;
+                else
+                    distinct = DistinctState.DISTINCT;
+                expressions.setDistinctState(distinct);
+            }
         }
 
         private static boolean isParam(ExpressionNode expr) {

@@ -1,3 +1,3 @@
-PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NOT NULL, _SQL_COL_2:MCOMPAT_ VARCHAR(5, UTF8, NONE) NOT NULL]
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ TINYINT(5) NOT NULL, _SQL_COL_2:MCOMPAT_ VARCHAR(5, UTF8, NONE) NOT NULL]
   Project_Default(1, 'hello')
     IndexScan_Default(Index(items.sku), sku = '1234')

@@ -200,7 +200,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
     // static classes
 
     static final TClass differentTargetTypes
-            = new NoAttrTClass(AkBundle.INSTANCE.id(), "differentTargets", null, null, 0, 0, 0, null, null, null);
+            = new NoAttrTClass(AkBundle.INSTANCE.id(), "differentTargets", null, null, 0, 0, 0, null, null, -1, null);
 
     static final OverloadsFolder sameInputSets = new OverloadsFolder() {
         @Override
