@@ -849,6 +849,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public void stop() {
+        this.ais = null;
         this.rowDefCache = null;
         this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
