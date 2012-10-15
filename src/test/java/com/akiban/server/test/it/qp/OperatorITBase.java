@@ -50,7 +50,8 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
@@ -331,22 +332,46 @@ public class OperatorITBase extends ITBase
 /*
         try {
 */
-            ValuesHolderRow row = new ValuesHolderRow(indexRowType);
+            ValuesHolderRow row = new ValuesHolderRow(indexRowType, usingPValues());
             for (int i = 0; i < values.length; i++) {
                 Object value = values[i];
-                ValueHolder valueHolder = row.holderAt(i);
-                if (value == null) {
-                    valueHolder.putRawNull();
-                } else if (value instanceof Integer) {
-                    valueHolder.putInt((Integer) value);
-                } else if (value instanceof Long) {
-                    valueHolder.putLong((Long) value);
-                } else if (value instanceof String) {
-                    valueHolder.putString((String) value);
-                } else if (value instanceof BigDecimal) {
-                    valueHolder.putDecimal((BigDecimal) value);
-                } else {
-                    fail();
+                if (row.usingPValues()) {
+                    PValue pvalue = row.pvalueAt(i);
+                    if (value == null) {
+                        pvalue.putNull();
+                    } else if (value instanceof Integer) {
+                        if (pvalue.getUnderlyingType() == PUnderlying.INT_64)
+                            pvalue.putInt64(((Integer) value).longValue());
+                        else
+                            pvalue.putInt32((Integer) value);
+                    } else if (value instanceof Long) {
+                        if (pvalue.getUnderlyingType() == PUnderlying.INT_32)
+                            pvalue.putInt32(((Long) value).intValue());
+                        else
+                            pvalue.putInt64((Long) value);
+                    } else if (value instanceof String) {
+                        pvalue.putString((String) value, null);
+                    } else if (value instanceof BigDecimal) {
+                        pvalue.putObject((BigDecimal) value);
+                    } else {
+                        fail();
+                    }
+                }
+                else {
+                    ValueHolder valueHolder = row.holderAt(i);
+                    if (value == null) {
+                        valueHolder.putRawNull();
+                    } else if (value instanceof Integer) {
+                        valueHolder.putInt((Integer) value);
+                    } else if (value instanceof Long) {
+                        valueHolder.putLong((Long) value);
+                    } else if (value instanceof String) {
+                        valueHolder.putString((String) value);
+                    } else if (value instanceof BigDecimal) {
+                        valueHolder.putDecimal((BigDecimal) value);
+                    } else {
+                        fail();
+                    }
                 }
             }
             return row;
@@ -453,7 +478,7 @@ public class OperatorITBase extends ITBase
             } else if(type != newType) {
                 fail("Multiple row types: " + type + " vs " + newType);
             }
-            bindableRows.add(BindableRow.of(row, Types3Switch.ON));
+            bindableRows.add(BindableRow.of(row, usingPValues()));
         }
         return API.valuesScan_Default(bindableRows, type);
     }

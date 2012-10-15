@@ -347,7 +347,12 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
             Row row;
             List<Long> actualIds = new ArrayList<Long>();
             while ((row = cursor.next()) != null) {
-                actualIds.add(row.eval(3).getInt());
+                if (usingPValues()) {
+                    actualIds.add((long)row.pvalue(3).getInt32());
+                }
+                else {
+                    actualIds.add(row.eval(3).getInt());
+                }
             }
             List<Long> expectedIds = new ArrayList<Long>();
             for (int i = start; i < idOrdering.length; i++) {
