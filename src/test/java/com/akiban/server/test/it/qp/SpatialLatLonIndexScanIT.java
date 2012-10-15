@@ -40,6 +40,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             "lon decimal(11, 7)",
             "primary key(id)");
         TableIndex latLonIndex = createIndex("schema", "point", "latlon", "lat", "lon");
-        latLonIndex.markSpatial(0, 2);
+        latLonIndex.markSpatial(0, Space.LAT_LON_DIMENSIONS);
         schema = new Schema(rowDefCache().ais());
         pointRowType = schema.userTableRowType(userTable(point));
         latLonIndexRowType = indexType(point, "lat", "lon");

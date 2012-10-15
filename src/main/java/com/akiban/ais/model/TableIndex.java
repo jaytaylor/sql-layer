@@ -193,7 +193,7 @@ public class TableIndex extends Index
     public void markSpatial(int firstSpatialArgument, int dimensions)
     {
         checkMutability();
-        if (dimensions != 2) {
+        if (dimensions != Space.LAT_LON_DIMENSIONS) {
             // Only lat/lon for now
             throw new IllegalArgumentException();
         }
@@ -211,7 +211,7 @@ public class TableIndex extends Index
     {
         assert space != null : this;
         // Only lat/lon for now
-        return 2;
+        return Space.LAT_LON_DIMENSIONS;
     }
 
     public Space space()

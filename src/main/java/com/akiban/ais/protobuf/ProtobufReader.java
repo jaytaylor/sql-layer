@@ -50,6 +50,7 @@ import com.akiban.ais.model.View;
 import com.akiban.ais.pt.PendingOSC;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufReadException;
+import com.akiban.server.geophile.Space;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
@@ -389,7 +390,7 @@ public class ProtobufReader {
                 case Z_ORDER_LAT_LON:
                     assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
                     int firstSpatialArg = 0;
-                    int dimensions = 2;
+                    int dimensions = Space.LAT_LON_DIMENSIONS;
                     if (pbIndex.hasFirstSpatialArg()) {
                         firstSpatialArg = pbIndex.getFirstSpatialArg();
                         dimensions = pbIndex.getDimensions();
