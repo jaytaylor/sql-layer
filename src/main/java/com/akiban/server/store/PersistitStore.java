@@ -312,12 +312,20 @@ public class PersistitStore implements Store, Service {
     }
 
     public RowDef getRowDef(Session session, TableName tableName) {
-        return getAIS(session).getTable(tableName).rowDef();
+        Table table = getAIS(session).getTable(tableName);
+        if(table == null) {
+            throw new NoSuchTableException(tableName);
+        }
+        return table.rowDef();
     }
 
     @Override
     public RowDef getRowDef(Session session, int rowDefID) {
-        return getAIS(session).getUserTable(rowDefID).rowDef();
+        Table table = getAIS(session).getUserTable(rowDefID);
+        if(table == null) {
+            throw new RowDefNotFoundException(rowDefID);
+        }
+        return table.rowDef();
     }
 
     @Override
@@ -326,7 +334,7 @@ public class PersistitStore implements Store, Service {
     {
         writeRow(session, rowData, null, true);
     }
-    
+
     private void writeRow(Session session,
                           RowData rowData,
                           BitSet tablesRequiringHKeyMaintenance,
