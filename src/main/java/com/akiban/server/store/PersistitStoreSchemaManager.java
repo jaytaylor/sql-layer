@@ -189,7 +189,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private final SessionService sessionService;
     private final TreeService treeService;
     private final ConfigurationService config;
-    private final RowDefCache rowDefCache;
+    private RowDefCache rowDefCache;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
@@ -201,7 +201,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.config = config;
         this.sessionService = sessionService;
         this.treeService = treeService;
-        rowDefCache = new RowDefCache(treeService.getTableStatusCache());
     }
 
     @Override
@@ -820,6 +819,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public void start() {
+        rowDefCache = new RowDefCache(treeService.getTableStatusCache());
         updateTimestamp = new AtomicLong();
         skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
@@ -855,6 +855,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public void stop() {
         this.aish.setAis(null);
+        this.rowDefCache = null;
         this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
         this.skipAISUpgrade = false;
