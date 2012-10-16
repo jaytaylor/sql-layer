@@ -44,6 +44,8 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import org.junit.Before;
@@ -96,7 +98,12 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
         );
-        Row[] expected = new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL)
+        Row[] expected = 
+            (Types3Switch.ON ?
+             new RowsBuilder(MNumeric.INT.instance(false),
+                             MString.VARCHAR.instance(32, true),
+                             MNumeric.DECIMAL.instance(5,2, true)) :
+             new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL))
                 .row(4, "Aaa", "32.00")
                 .row(2, "Aaa", "75.25")
                 .row(3, "Bbb", "120.00")
@@ -117,7 +124,12 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
         );
-        Row[] expected = new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL)
+        Row[] expected = 
+            (Types3Switch.ON ?
+             new RowsBuilder(MNumeric.INT.instance(false),
+                             MString.VARCHAR.instance(32, true),
+                             MNumeric.DECIMAL.instance(5,2, true)) :
+             new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL))
                 .row(2, "Aaa", "75.25")
                 .row(4, "Aaa", "32.00")
                 .row(3, "Bbb", "120.00")
