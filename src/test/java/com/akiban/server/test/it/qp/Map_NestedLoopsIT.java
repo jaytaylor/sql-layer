@@ -60,7 +60,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 
 public class Map_NestedLoopsIT extends OperatorITBase
 {
