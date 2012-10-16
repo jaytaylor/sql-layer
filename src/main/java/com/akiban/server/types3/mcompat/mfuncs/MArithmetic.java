@@ -510,7 +510,7 @@ public abstract class MArithmetic extends TArithmetic {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
             double result = inputs.get(0).getDouble() * inputs.get(1).getDouble();
-            if (Doubles.isFinite(result))
+            if (!Doubles.isFinite(result))
                 output.putNull();
             else
                 output.putDouble(result);
