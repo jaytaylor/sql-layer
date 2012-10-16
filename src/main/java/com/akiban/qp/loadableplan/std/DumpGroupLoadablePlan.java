@@ -39,6 +39,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.types.util.SqlLiteralValueFormatter;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.util.AkibanAppender;
 
 import java.sql.Types;
 
@@ -87,11 +89,20 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         public void open() {
             String currentSchema = context.getCurrentUser();
             String schemaName, tableName;
-            if (context.getValue(0).isNull())
-                schemaName = currentSchema;
-            else
-                schemaName = context.getValue(0).getString();
-            tableName = context.getValue(1).getString();
+            if (Types3Switch.ON) {
+                if (context.getPValue(0).isNull())
+                    schemaName = currentSchema;
+                else
+                    schemaName = context.getPValue(0).getString();
+                tableName = context.getPValue(1).getString();
+            }
+            else {
+                if (context.getValue(0).isNull())
+                    schemaName = currentSchema;
+                else
+                    schemaName = context.getValue(0).getString();
+                tableName = context.getValue(1).getString();
+            }
             rootTable = context.getStore().schema().ais()
                 .getUserTable(schemaName, tableName);
             if (rootTable == null)
@@ -103,7 +114,12 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             buffer = new StringBuilder();
             int insertMaxRowCount;
             try {
-                insertMaxRowCount = (int)context.getValue(2).getLong();
+                if (Types3Switch.ON) {
+                    insertMaxRowCount = context.getPValue(2).getInt32();
+                }
+                else {
+                    insertMaxRowCount = (int)context.getValue(2).getLong();
+                }
             }
             catch (BindingNotSetException ex) {
                 insertMaxRowCount = 1;
@@ -187,15 +203,21 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         private Map<UserTable,String> tableNames = new HashMap<UserTable,String>();
         private int maxRowCount;
         private SqlLiteralValueFormatter literalFormatter;
+        private AkibanAppender appender;
         private RowType lastRowType;
         private int rowCount, insertWidth;
 
         SQLRowFormatter(StringBuilder buffer, String currentSchema, int maxRowCount) {
             super(buffer, currentSchema);
             this.maxRowCount = maxRowCount;
-            literalFormatter = new SqlLiteralValueFormatter(buffer);
-            // TODO: Workaround INSERT problems with literal timestamp into datetime field.
-            literalFormatter.setDateTimeFormat(SqlLiteralValueFormatter.DateTimeFormat.NONE);
+            if (Types3Switch.ON) {
+                appender = AkibanAppender.of(buffer);
+            }
+            else {
+                literalFormatter = new SqlLiteralValueFormatter(buffer);
+                // TODO: Workaround INSERT problems with literal timestamp into datetime field.
+                literalFormatter.setDateTimeFormat(SqlLiteralValueFormatter.DateTimeFormat.NONE);
+            }
         }
 
         @Override
@@ -221,7 +243,12 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             ncols = Math.min(ncols, rowType.nFields());
             for (int i = 0; i < ncols; i++) {
                 if (i > 0) buffer.append(", ");
-                literalFormatter.append(row.eval(i), rowType.typeAt(i));
+                if (Types3Switch.ON) {
+                    rowType.typeInstanceAt(i).formatAsLiteral(row.pvalue(i), appender);
+                }
+                else {
+                    literalFormatter.append(row.eval(i), rowType.typeAt(i));
+                }
             }
             buffer.append(')');
         }
