@@ -96,11 +96,11 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
         );
-        Row[] expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.DECIMAL)
-                .row(4L, "Aaa", "32.00")
-                .row(2L, "Aaa", "75.25")
-                .row(3L, "Bbb", "120.00")
-                .row(1L, "Ccc", "100.00")
+        Row[] expected = new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL)
+                .row(4, "Aaa", "32.00")
+                .row(2, "Aaa", "75.25")
+                .row(3, "Bbb", "120.00")
+                .row(1, "Ccc", "100.00")
                 .rows().toArray(new Row[4]);
         compareRows(expected, cursor(plan));
     }
@@ -117,11 +117,11 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
         );
-        Row[] expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.DECIMAL)
-                .row(2L, "Aaa", "75.25")
-                .row(4L, "Aaa", "32.00")
-                .row(3L, "Bbb", "120.00")
-                .row(1L, "Ccc", "100.00")
+        Row[] expected = new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL)
+                .row(2, "Aaa", "75.25")
+                .row(4, "Aaa", "32.00")
+                .row(3, "Bbb", "120.00")
+                .row(1, "Ccc", "100.00")
                 .rows().toArray(new Row[4]);
         compareRows(expected, cursor(plan));
     }
