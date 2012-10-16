@@ -376,6 +376,8 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                                 ScalarsGroup<V> scalarGroups) {
         if (!overload.coversNInputs(inputs.size()))
             return false;
+        if (!overload.isCandidate().apply(inputs))
+            return false;
 
         InputSetFlags exactInputs = overload.exactInputs();
         TClass[] pickSameType = null;

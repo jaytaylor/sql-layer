@@ -27,6 +27,7 @@
 ---
 - Statement: SELECT IFNULL (DATE('1991-12-12'), 123.4) FROM all_types;
 - output: [['1991-12-12']]
+- output_types: [VARCHAR]
 ## Test with params
 ---
 - Statement: SELECT IFNULL (?, 1) FROM all_types;
