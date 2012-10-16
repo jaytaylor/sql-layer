@@ -38,6 +38,7 @@ import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
@@ -311,6 +312,30 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
 
+    public static final TScalar DIVIDE_INTERVAL_SECS = new MArithmetic("divide", "/", false, AkInterval.SECONDS, MApproximateNumber.DOUBLE, AkInterval.SECONDS) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output)
+        {
+            long rawSecs = inputs.get(0).getInt64();
+            double denominator = inputs.get(1).getDouble();
+            double result = rawSecs / denominator;
+            output.putInt64(Math.round(result));
+        }
+    };
+
+    public static final TScalar DIVIDE_INTERVAL_MONTHS = new MArithmetic("divide", "/", false, AkInterval.SECONDS, MApproximateNumber.DOUBLE, AkInterval.MONTHS) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output)
+        {
+            long rawMonths = inputs.get(0).getInt64();
+            double denominator = inputs.get(1).getDouble();
+            double result = rawMonths * denominator;
+            output.putInt64(Math.round(result));
+        }
+    };
+
     public static final TScalar DIVIDE_DECIMAL = new DecimalArithmetic("divide", "/", false) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -519,6 +544,30 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         public int[] getPriorities() {
             return new int[] { 1, 2 };
+        }
+    };
+
+    public static final TScalar MULTIPLY_INTERVAL_SECS = new MArithmetic("times", "*", false, AkInterval.SECONDS, MApproximateNumber.DOUBLE, AkInterval.SECONDS) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output)
+        {
+            long rawSecs = inputs.get(0).getInt64();
+            double denominator = inputs.get(1).getDouble();
+            double result = rawSecs * denominator;
+            output.putInt64(Math.round(result));
+        }
+    };
+
+    public static final TScalar MULTIPLY_INTERVAL_MONTHS = new MArithmetic("times", "*", false, AkInterval.MONTHS, MApproximateNumber.DOUBLE, AkInterval.MONTHS) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output)
+        {
+            long rawMonths = inputs.get(0).getInt64();
+            double denominator = inputs.get(1).getDouble();
+            double result = rawMonths * denominator;
+            output.putInt64(Math.round(result));
         }
     };
     
