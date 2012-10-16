@@ -29,6 +29,7 @@ package com.akiban.qp.persistitadapter.indexcursor;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -419,33 +420,39 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         this.startKeyKey = adapter.newKey();
         this.endKeyKey = adapter.newKey();
         this.startBoundColumns = keyRange.boundColumns();
+        // Set up type info, allowing for spatial indexes
         this.types = sortKeyAdapter.createAkTypes(startBoundColumns);
         this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
         this.tInstances = sortKeyAdapter.createTInstances(startBoundColumns);
-        if (keyRange.indexRowType().index().isSpatial()) {
-            // This is a cursor created on behalf of a spatial index. There should be only one key column,
-            // a z-value of type long.
-            if (startBoundColumns == 1) {
-                if (Types3Switch.ON) {
-                    List<IndexColumn> keyColumns = keyRange.indexRowType().index().getKeyColumns();
-                    assert keyColumns.size() == 2
-                            : "covering index detected, need to update code: " + keyRange.indexRowType();
-                    tInstances[0] = MNumeric.BIGINT.instance(SpatialHelper.isNullable(keyRange));
-                }
-                else {
-                    types[0] = AkType.LONG;
-                    collators[0] = null;
-                }
-            } else {
-                // Unbounded scan of spatial index
-                assert startBoundColumns == 0;
-            }
+        Index index = keyRange.indexRowType().index();
+        int firstSpatialColumn;
+        int dimensions;
+        if (index.isSpatial()) {
+            TableIndex spatialIndex = (TableIndex) index;
+            firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            dimensions = spatialIndex.dimensions();
         } else {
-            List<IndexColumn> indexColumns = index().getAllColumns();
-            for (int f = 0; f < startBoundColumns; f++) {
-                Column column = indexColumns.get(f).getColumn();
-                sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
+            firstSpatialColumn = Integer.MAX_VALUE;
+            dimensions = 0;
+        }
+        List<IndexColumn> indexColumns = index().getAllColumns();
+        int logicalColumn = 0;
+        int physicalColumn = 0;
+        while (logicalColumn < startBoundColumns) {
+            if (logicalColumn == firstSpatialColumn) {
+                if (Types3Switch.ON) {
+                    tInstances[physicalColumn] = MNumeric.BIGINT.instance(SpatialHelper.isNullable(keyRange));
+                } else {
+                    types[physicalColumn] = AkType.LONG;
+                    collators[physicalColumn] = null;
+                }
+                logicalColumn += dimensions;
+            } else {
+                Column column = indexColumns.get(logicalColumn).getColumn();
+                sortKeyAdapter.setColumnMetadata(column, physicalColumn, types, collators, tInstances);
+                logicalColumn++;
             }
+            physicalColumn++;
         }
     }
 
