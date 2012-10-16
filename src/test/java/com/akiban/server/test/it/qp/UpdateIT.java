@@ -31,7 +31,6 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.ExpressionBasedUpdateFunction;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
@@ -59,7 +58,12 @@ public class UpdateIT extends OperatorITBase
     public void basicUpdate() throws Exception {
         use(db);
 
-        UpdateFunction updateFunction = new ExpressionBasedUpdateFunction() {
+        UpdateFunction updateFunction = new UpdateFunction() {
+            @Override
+            public boolean usePValues() {
+                return usingPValues();
+            }
+
             @Override
             public boolean rowIsSelected(Row row) {
                 return row.rowType().equals(customerRowType);
@@ -67,10 +71,17 @@ public class UpdateIT extends OperatorITBase
 
             @Override
             public Row evaluate(Row original, QueryContext context) {
-                ToObjectValueTarget target = new ToObjectValueTarget();
-                target.expectType(AkType.VARCHAR);
-                Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
-                String name = (String) obj; // TODO eventually use Expression for this
+                String name;
+                if (usePValues()) {
+                    name = original.pvalue(1).getString();
+                }
+                else {
+                    ToObjectValueTarget target = new ToObjectValueTarget();
+                    target.expectType(AkType.VARCHAR);
+                    Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
+                    name = (String) obj;
+                }
+                // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
                 return new OverlayingRow(original).overlay(1, name);
@@ -115,15 +126,26 @@ public class UpdateIT extends OperatorITBase
                 InputPreservationOption.DISCARD_INPUT),
             Arrays.asList(itemRowType));
         
-        UpdateFunction updateFunction = new ExpressionBasedUpdateFunction() {
+        UpdateFunction updateFunction = new UpdateFunction() {
+                @Override
+                public boolean usePValues() {
+                    return usingPValues();
+                }
+
                 @Override
                 public boolean rowIsSelected(Row row) {
                     return row.rowType().equals(itemRowType);
                 }
 
                 @Override
-                public Row evaluate(Row original, QueryContext context) {
-                    long id = original.eval(0).getInt();
+                public Row evaluate(Row original, QueryContext context) { 
+                    long id;
+                    if (usePValues()) {
+                        id = original.pvalue(0).getInt64();
+                    }
+                    else {
+                        id = original.eval(0).getInt();
+                    }
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0, id - 100);
                 }
@@ -164,7 +186,12 @@ public class UpdateIT extends OperatorITBase
                 InputPreservationOption.DISCARD_INPUT),
             Arrays.asList(itemRowType));
         
-        UpdateFunction updateFunction = new ExpressionBasedUpdateFunction() {
+        UpdateFunction updateFunction = new UpdateFunction() {
+                @Override
+                public boolean usePValues() {
+                    return usingPValues();
+                }
+
                 @Override
                 public boolean rowIsSelected(Row row) {
                     return row.rowType().equals(itemRowType);
@@ -172,7 +199,13 @@ public class UpdateIT extends OperatorITBase
 
                 @Override
                 public Row evaluate(Row original, QueryContext context) {
-                    long id = original.eval(0).getInt();
+                    long id;
+                    if (usePValues()) {
+                        id = original.pvalue(0).getInt64();
+                    }
+                    else {
+                        id = original.eval(0).getInt();
+                    }
                     return new OverlayingRow(original).overlay(0, 1000 + id);
                 }
             };
@@ -264,7 +297,12 @@ public class UpdateIT extends OperatorITBase
         Row[] rows = {
                 row(customerRowType, new Object[]{2, "abc"}, new AkType[]{AkType.INT, AkType.VARCHAR})
         };
-        UpdateFunction updateFunction = new ExpressionBasedUpdateFunction() {
+        UpdateFunction updateFunction = new UpdateFunction() {
+            @Override
+            public boolean usePValues() {
+                return usingPValues();
+            }
+
             @Override
             public Row evaluate(Row original, QueryContext context) {
                 return row(customerRowType, 2L, "zzz");
