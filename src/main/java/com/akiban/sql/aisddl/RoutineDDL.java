@@ -60,14 +60,13 @@ public class RoutineDDL {
         String language = aliasInfo.getLanguage();
         Routine.CallingConvention callingConvention;
         if (language.equalsIgnoreCase("JAVA")) {
-            switch (aliasInfo.getParameterStyle()) {
-            case JAVA:
+            if ("JAVA".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
                 callingConvention = Routine.CallingConvention.JAVA;
-                break;
-            case AKIBAN_LOADABLE_PLAN:
+            }
+            else if ("AKIBAN_LOADABLE_PLAN".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
                 callingConvention = Routine.CallingConvention.LOADABLE_PLAN;
-                break;
-            default:
+            }
+            else {
                 throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
             }
         }
@@ -114,6 +113,14 @@ public class RoutineDDL {
             String jarName = null;
             String className = createAlias.getJavaClassName();
             String methodName = createAlias.getMethodName();
+            if (callingConvention == Routine.CallingConvention.LOADABLE_PLAN) {
+                // The whole class implements a standard interface.
+                if (className == null)
+                    className = methodName;
+                else
+                    className = className + "." + methodName;
+                methodName = null;
+            }
             int idx = className.indexOf(':');
             if (idx >= 0) {
                 jarName = className.substring(0, idx);
