@@ -27,7 +27,6 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
 
 import java.sql.ResultSet;
 import java.util.Deque;
@@ -35,8 +34,7 @@ import java.util.Deque;
 class ExecuteResults
 {
     private int updateCount;
-    private Operator operator;
-    private Cursor generatedKeys;
+    private Cursor cursor;
     private Deque<ResultSet> additionalResultSets;
 
     /** No results. */
@@ -45,11 +43,11 @@ class ExecuteResults
     }
 
     /** Ordinary select result. 
-     * Execution does not really happen until transaction is opened. 
+     * Transaction remains open while it is visited.
      */
-    public ExecuteResults(Operator operator) {
+    public ExecuteResults(Cursor cursor) {
         this.updateCount = -1;
-        this.operator = operator;
+        this.cursor = cursor;
     }
 
     /** Update result, possibly with returned keys. 
@@ -57,7 +55,7 @@ class ExecuteResults
      */
     public ExecuteResults(int updateCount, Cursor generatedKeys) {
         this.updateCount = updateCount;
-        this.generatedKeys = generatedKeys;
+        this.cursor = generatedKeys;
     }
 
     /** Stored procedure returning result sets of unknown provenance. */
@@ -70,14 +68,14 @@ class ExecuteResults
         return updateCount;
     }
     
-    public Operator getOperator() {
-        return operator;
+    public Cursor getCursor() {
+        return cursor;
     }
 
-    public Cursor getGeneratedKeys() {
-        return generatedKeys;
+    public boolean hasResultSet() {
+        return (updateCount < 0);
     }
-
+    
     public Deque<ResultSet> getAdditionalResultSets() {
         return additionalResultSets;
     }

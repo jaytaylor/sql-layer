@@ -29,6 +29,7 @@ package com.akiban.sql.embedded;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
+import com.akiban.sql.server.ServerTransaction;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.DDLStatementNode;
@@ -59,7 +60,9 @@ import java.util.*;
 import java.util.concurrent.Executor;
 
 public class JDBCConnection extends ServerSessionBase implements Connection {
-    private boolean closed, autoCommit;
+    static enum CommitMode { AUTO, MANUAL, INHERITED };
+    private CommitMode commitMode;
+    private boolean closed;
     private JDBCWarning warnings;
     private Properties clientInfo = new Properties();
     private String schema;
@@ -73,7 +76,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         setProperties(info);
         session = reqs.sessionService().createSession();
         sessionTracer = new ServerSessionTracer(0, false);
-        autoCommit = true;
+        inheritCallTransaction();
+        commitMode = (transaction != null) ? CommitMode.INHERITED : CommitMode.AUTO;
     }
 
     @Override
@@ -166,20 +170,44 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         initAdapters(compiler);
     }
 
-    protected void openingResultSet(JDBCResultSet resultSet) {
-        if (!isTransactionActive()) {
-            logger.debug("BEGIN TRANSACTION");
-            beginTransaction();
+    // Slightly different contract than ServerSessionBase, since a transaction
+    // remains open when a until its read result set is closed.
+    protected void beforeExecuteStatement(ExecutableStatement stmt) {
+        ServerTransaction localTransaction = super.beforeExecute(stmt);
+        if (localTransaction != null) {
+            logger.debug("AUTO BEGIN TRANSACTION");
+            transaction = localTransaction;
         }
+    }
+
+    protected void afterExecuteStatement(ExecutableStatement stmt, boolean success) {
+        ServerTransaction localTransaction = null;
+        if (checkAutoCommit()) {
+            // An update statement without any open cursors, or a
+            // query statement that fails before the cursor gets fully
+            // set up. Treat as local transaction and commit / abort
+            // now.
+            localTransaction = transaction;
+            transaction = null;
+        }
+        super.afterExecute(stmt, localTransaction, success);
+    }
+
+    protected void openingResultSet(JDBCResultSet resultSet) {
+        assert isTransactionActive();
         openResultSets.add(resultSet);
     }
 
     protected void closingResultSet(JDBCResultSet resultSet) {
         openResultSets.remove(resultSet);
-        if (autoCommit && openResultSets.isEmpty()) {
+        if (checkAutoCommit()) {
             commitTransaction();
-            logger.debug("COMMIT TRANSACTION");
+            logger.debug("AUTO COMMIT TRANSACTION");
         }
+    }
+
+    protected boolean checkAutoCommit() {
+        return ((commitMode == CommitMode.AUTO) && openResultSets.isEmpty());
     }
 
     /* Wrapper */
@@ -218,22 +246,34 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-        if (this.autoCommit != autoCommit) {
-            if (transaction != null) 
-                commit();
-            this.autoCommit = autoCommit;
+        switch (commitMode) {
+        case INHERITED:
+            throw new JDBCException("Cannot set auto commit with outer transaction");
+        case AUTO:
+            if (!autoCommit)
+                commitMode = CommitMode.MANUAL;
+            break;
+        case MANUAL:
+            if (autoCommit)
+                commitMode = CommitMode.AUTO;
+            checkAutoCommit();  // Commit now if no open cursors.
+            break;
         }
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        return autoCommit;
+        return (commitMode == CommitMode.AUTO);
     }
 
     @Override
     public void commit() throws SQLException {
-        if (autoCommit)
-            throw new JDBCException("Not allowed in auto-commit mode");
+        switch (commitMode) {
+        case AUTO:
+            throw new JDBCException("Commit not allowed in auto-commit mode");
+        case INHERITED:
+            throw new JDBCException("Commit not allowed with outer transaction");
+        }
         try {
             commitTransaction();
         }
@@ -244,8 +284,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void rollback() throws SQLException {
-        if (autoCommit)
-            throw new JDBCException("Not allowed in auto-commit mode");
+        switch (commitMode) {
+        case AUTO:
+            throw new JDBCException("Rollback not allowed in auto-commit mode");
+        case INHERITED:
+            throw new JDBCException("Rollback not allowed with outer transaction");
+        }
         try {
             rollbackTransaction();
         }
@@ -276,7 +320,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-        this.transactionDefaultReadOnly = transactionDefaultReadOnly;
+        this.transactionDefaultReadOnly = readOnly;
     }
 
     @Override

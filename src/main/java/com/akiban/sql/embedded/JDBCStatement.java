@@ -26,8 +26,6 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.qp.operator.API;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -60,38 +58,40 @@ public class JDBCStatement implements Statement
             context = new EmbeddedQueryContext(this);
         }
         boolean hasResultSet = false;
+        connection.beforeExecuteStatement(stmt);
+        boolean success = false;
         try {
             ExecuteResults results = stmt.execute(context);
             currentUpdateCount = results.getUpdateCount();
-            if (results.getOperator() != null) {
-                JDBCResultSet resultSet = new JDBCResultSet(this, stmt.getResultSetMetaData());
-                boolean success = false;
-                try {
-                    // Create cursor and open it within transaction.
+            if (results.getCursor() != null) {
+                JDBCResultSet resultSet = new JDBCResultSet(this, stmt.getResultSetMetaData(), results.getCursor());
+                if (results.hasResultSet()) {
+                    // Cursor is ordinary result. This will keep an
+                    // auto-commit transaction open until it is
+                    // closed.
                     connection.openingResultSet(resultSet);
-                    resultSet.open(API.cursor(results.getOperator(), context));
                     currentResultSet = resultSet;
-                    success = true;
+                    hasResultSet = true;
                 }
-                finally {
-                    if (!success)
-                        connection.closingResultSet(resultSet);
+                else {
+                    // These are copied (to get update count) and do
+                    // not need a transaction. Note that behavior of
+                    // generated keys is explicitly ill-defined by the
+                    // JDBC spec in auto-commit mode.
+                    generatedKeys = resultSet;
                 }
-                hasResultSet = true;
-            }
-            else if (results.getGeneratedKeys() != null) {
-                // These are copied (to get update count) and do not need a transaction.
-                JDBCResultSet resultSet = new JDBCResultSet(this, stmt.getResultSetMetaData());
-                resultSet.open(results.getGeneratedKeys());
-                generatedKeys = resultSet;
             }
             else if (results.getAdditionalResultSets() != null) {
                 pendingResultSets = results.getAdditionalResultSets();
                 hasResultSet = getMoreResults();
             }
+            success = true;
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
+        }
+        finally {
+            connection.afterExecuteStatement(stmt, success);
         }
         return hasResultSet;
     }
@@ -119,7 +119,7 @@ public class JDBCStatement implements Statement
             warnings.setNextWarning(warning);
     }
 
-    protected void openingResultSet(JDBCResultSet resultSet) {
+    protected void secondaryResultSet(JDBCResultSet resultSet) {
         if (secondaryResultSets == null)
             secondaryResultSets = new ArrayList<ResultSet>();
         secondaryResultSets.add(resultSet);

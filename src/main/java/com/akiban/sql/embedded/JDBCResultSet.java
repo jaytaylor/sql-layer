@@ -55,23 +55,14 @@ public class JDBCResultSet implements ResultSet
     private final Values values;
     private JDBCWarning warnings;
 
-    protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData) {
-        this.statement = statement;
-        this.metaData = metaData;
-        context = new EmbeddedQueryContext(this);
-        values = new Values();
-    }
-
     protected JDBCResultSet(JDBCStatement statement, JDBCResultSetMetaData metaData,
                             Cursor cursor) {
-        this(statement, metaData);
+        this.statement = statement;
+        this.metaData = metaData;
         this.cursor = cursor;
-        statement.openingResultSet(this);
-    }
-
-    protected void open(Cursor cursor) {
-        this.cursor = cursor;
-        cursor.open();
+        assert cursor.isActive();
+        context = new EmbeddedQueryContext(this);
+        values = new Values();
     }
 
     protected class Values extends ServerJavaValues {
@@ -113,11 +104,12 @@ public class JDBCResultSet implements ResultSet
         }
 
         @Override
-        protected ResultSet toResultSet(int index, Object resultSet) {
-            if (resultSet == null)
+        protected ResultSet toResultSet(int index, Object cursor) {
+            if (cursor == null)
                 return null;
-            else
-                return new JDBCResultSet(statement, metaData.getNestedResultSet(index + 1), (Cursor)resultSet);
+            JDBCResultSet resultSet = new JDBCResultSet(statement, metaData.getNestedResultSet(index + 1), (Cursor)cursor);
+            statement.secondaryResultSet(resultSet);
+            return resultSet;
         }
 
         @Override
