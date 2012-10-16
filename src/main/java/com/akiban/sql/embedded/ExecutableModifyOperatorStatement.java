@@ -33,6 +33,8 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.akiban.sql.server.ServerSession;
+import com.akiban.sql.server.ServerTransaction;
 import com.akiban.util.ShareHolder;
 
 import java.util.ArrayList;
@@ -61,6 +63,9 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             // does not read all of the generated keys.
             returningRows = new SpoolCursor();
         context.lock(DXLFunction.UNSPECIFIED_DML_WRITE);
+        ServerSession server = context.getServer();
+        ServerTransaction localTransaction = server.beforeExecute(this);
+        boolean success = false;
         Cursor cursor = null;
         try {
             cursor = API.cursor(resultOperator, context);
@@ -72,6 +77,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
                     returningRows.add(row);
                 }
             }
+            success = true;
         }
         finally {
             try {
@@ -81,6 +87,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             }
             catch (RuntimeException ex) {
             }
+            server.afterExecute(this, localTransaction, success);
             context.unlock(DXLFunction.UNSPECIFIED_DML_WRITE);
         }
         return new ExecuteResults(updateCount, returningRows);
