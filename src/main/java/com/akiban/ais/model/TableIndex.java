@@ -203,13 +203,11 @@ public class TableIndex extends Index
 
     public int firstSpatialArgument()
     {
-        assert space != null : this;
         return firstSpatialArgument;
     }
 
     public int dimensions()
     {
-        assert space != null : this;
         // Only lat/lon for now
         return Space.LAT_LON_DIMENSIONS;
     }
