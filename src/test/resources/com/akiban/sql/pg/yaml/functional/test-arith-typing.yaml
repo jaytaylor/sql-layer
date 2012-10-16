@@ -1888,9 +1888,9 @@
 - Statement: SELECT INTERVAL 1 HOUR - '2012-01-23 12:30:10' FROM all_types;
 - error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
 ---
-#command number: 281
+#command number: 281, bug 1067475
 - Statement: SELECT INTERVAL 1 HOUR + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [DATE], all: [DATE] }
 ---
 #command number: 282
 - Statement: SELECT INTERVAL 1 HOUR - date_field FROM all_types;
@@ -1928,9 +1928,9 @@
 - Statement: SELECT INTERVAL 1 MINUTE - '2012-01-23 12:30:10' FROM all_types;
 - error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
 ---
-#command number: 291
+#command number: 291, bug 1067475
 - Statement: SELECT INTERVAL 1 MINUTE + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [DATE], all: [DATE] }
 ---
 #command number: 292
 - Statement: SELECT INTERVAL 1 MINUTE - date_field FROM all_types;
@@ -1968,9 +1968,9 @@
 - Statement: SELECT INTERVAL 1 SECOND - '2012-01-23 12:30:10' FROM all_types;
 - error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
 ---
-#command number: 301
+#command number: 301, bug 1067475
 - Statement: SELECT INTERVAL 1 SECOND + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [DATE], all: [DATE] }
 ---
 #command number: 302
 - Statement: SELECT INTERVAL 1 SECOND - date_field FROM all_types;
