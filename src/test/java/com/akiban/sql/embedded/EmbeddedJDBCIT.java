@@ -148,6 +148,11 @@ public class EmbeddedJDBCIT extends ITBase
         assertFalse("third generated keys", rs.next());
         rs.close();
         stmt.close();
+        PreparedStatement pstmt = conn.prepareStatement("UPDATE t1 SET s = 'boo' WHERE id = ?");
+        pstmt.setInt(1, 1);
+        assertFalse("has results", pstmt.execute());
+        assertEquals("updated count", 1, pstmt.getUpdateCount());
+        pstmt.close();
         conn.close();
     }
 

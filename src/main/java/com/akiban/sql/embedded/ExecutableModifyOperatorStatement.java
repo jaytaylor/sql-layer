@@ -85,6 +85,8 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             }
             context.unlock(DXLFunction.UNSPECIFIED_DML_WRITE);
         }
+        if (returningRows != null)
+            returningRows.open(); // Done filling.
         return new ExecuteResults(updateCount, returningRows);
     }
 
@@ -117,6 +119,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
                 ((ProjectedRow)row).freeze();
             ShareHolder<Row> holder = new ShareHolder<Row>();
             holder.hold(row);
+            rows.add(holder);
         }
 
         @Override

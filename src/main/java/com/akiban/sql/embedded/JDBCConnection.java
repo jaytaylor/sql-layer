@@ -175,7 +175,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     protected void beforeExecuteStatement(ExecutableStatement stmt) {
         ServerTransaction localTransaction = super.beforeExecute(stmt);
         if (localTransaction != null) {
-            logger.debug("AUTO BEGIN TRANSACTION");
+            logger.debug("Auto BEGIN TRANSACTION");
             transaction = localTransaction;
         }
     }
@@ -189,6 +189,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             // now.
             localTransaction = transaction;
             transaction = null;
+            logger.debug(success ? "Auto COMMIT TRANSACTION" : "Auto ROLLBACK TRANSACTION");
         }
         super.afterExecute(stmt, localTransaction, success);
     }
@@ -202,12 +203,14 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         openResultSets.remove(resultSet);
         if (checkAutoCommit()) {
             commitTransaction();
-            logger.debug("AUTO COMMIT TRANSACTION");
+            logger.debug("Auto COMMIT TRANSACTION");
         }
     }
 
     protected boolean checkAutoCommit() {
-        return ((commitMode == CommitMode.AUTO) && openResultSets.isEmpty());
+        return ((commitMode == CommitMode.AUTO) && 
+                (transaction != null) &&
+                openResultSets.isEmpty());
     }
 
     /* Wrapper */
