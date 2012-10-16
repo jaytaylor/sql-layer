@@ -97,7 +97,7 @@ public abstract class MArithmetic extends TArithmetic {
         return ex;
     }
 
-    private static BigDecimalWrapper getWrapper(TExecutionContext context)
+    protected static BigDecimalWrapper getWrapper(TExecutionContext context)
     {
         BigDecimalWrapper wrapper = (BigDecimalWrapper)context.exectimeObjectAt(DEC_INDEX);
         // Why would we need a Supplier?
@@ -157,7 +157,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
-                        .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
+                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
                         .add(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
         }
 
@@ -226,7 +226,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
-                        .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
+                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
                         .subtract(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
         }
 
@@ -323,7 +323,7 @@ public abstract class MArithmetic extends TArithmetic {
             else {
                 BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
                 BigDecimalWrapper result = getWrapper(context);
-                result.add(numerator);
+                result.set(numerator);
                 result.divide(divisor, context.outputTInstance().attribute(Attrs.SCALE));
                 output.putObject(result);
             }
@@ -430,9 +430,10 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
+            BigDecimalWrapper wrapper = getWrapper(context);
             BigDecimalWrapper numerator = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
             BigDecimalWrapper divisor = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
-            long rounded = numerator.divide(divisor).round(0).asBigDecimal().longValue();
+            long rounded = wrapper.set(numerator).divide(divisor).round(0).asBigDecimal().longValue();
             output.putInt64(rounded);
         }
 
@@ -536,10 +537,11 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
+            BigDecimalWrapper wrapper = getWrapper(context);
             BigDecimalWrapper arg0 = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
             BigDecimalWrapper arg1 = MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1));
             
-            output.putObject(arg0.multiply(arg1));
+            output.putObject(wrapper.set(arg0).multiply(arg1));
         }
     };
 
@@ -639,7 +641,7 @@ public abstract class MArithmetic extends TArithmetic {
                  output.putNull();
              else
                  output.putObject(getWrapper(context)
-                                     .add(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
+                                     .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
                                      .mod(divisor));
         }
     };

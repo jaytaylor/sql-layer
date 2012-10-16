@@ -77,7 +77,9 @@ public class MAbs {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            BigDecimalWrapper wrapper = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+            BigDecimalWrapper wrapper =
+                MArithmetic.getWrapper(context)
+                .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
             output.putObject(wrapper.abs());
         }
     };
