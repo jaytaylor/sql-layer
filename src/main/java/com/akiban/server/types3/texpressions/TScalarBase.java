@@ -41,6 +41,7 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.google.common.base.Predicate;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,6 +74,11 @@ public abstract class TScalarBase implements TScalar {
             }
         }
         doEvaluate(context, inputs, output);
+    }
+
+    @Override
+    public Predicate<List<? extends TPreptimeValue>> isCandidate() {
+        return null;
     }
 
     @Override
