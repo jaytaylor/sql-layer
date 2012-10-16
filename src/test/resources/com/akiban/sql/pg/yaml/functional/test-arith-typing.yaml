@@ -1682,7 +1682,7 @@
 ---
 #command number: 229
 - Statement: SELECT INTERVAL 1 YEAR - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
 ---
 #command number: 230
 - Statement: SELECT INTERVAL 1 YEAR - '2012-01-23 12:30:10' FROM all_types;
