@@ -1362,7 +1362,7 @@
 ---
 #command number: 149
 - Statement: SELECT timestamp_field + INTERVAL 1 YEAR FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 150
 - Statement: SELECT '2012-01-23' + INTERVAL 1 YEAR FROM all_types;
@@ -1382,7 +1382,7 @@
 ---
 #command number: 154
 - Statement: SELECT timestamp_field + INTERVAL 1 MONTH FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 155
 - Statement: SELECT '2012-01-23' + INTERVAL 1 MONTH FROM all_types;
@@ -1402,7 +1402,7 @@
 ---
 #command number: 159
 - Statement: SELECT timestamp_field + INTERVAL 1 QUARTER FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 160
 - Statement: SELECT '2012-01-23' + INTERVAL 1 QUARTER FROM all_types;
@@ -1422,7 +1422,7 @@
 ---
 #command number: 164
 - Statement: SELECT timestamp_field + INTERVAL 1 WEEK FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 165
 - Statement: SELECT '2012-01-23' + INTERVAL 1 WEEK FROM all_types;
@@ -1442,7 +1442,7 @@
 ---
 #command number: 169
 - Statement: SELECT timestamp_field + INTERVAL 1 DAY FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 170
 - Statement: SELECT '2012-01-23' + INTERVAL 1 DAY FROM all_types;
@@ -1454,7 +1454,7 @@
 ---
 #command number: 172
 - Statement: SELECT date_field + INTERVAL 1 HOUR FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 173
 - Statement: SELECT time_field + INTERVAL 1 HOUR FROM all_types;
@@ -1462,7 +1462,7 @@
 ---
 #command number: 174
 - Statement: SELECT timestamp_field + INTERVAL 1 HOUR FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 175
 - Statement: SELECT '2012-01-23' + INTERVAL 1 HOUR FROM all_types;
@@ -1474,7 +1474,7 @@
 ---
 #command number: 177
 - Statement: SELECT date_field + INTERVAL 1 MINUTE FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 178
 - Statement: SELECT time_field + INTERVAL 1 MINUTE FROM all_types;
@@ -1482,7 +1482,7 @@
 ---
 #command number: 179
 - Statement: SELECT timestamp_field + INTERVAL 1 MINUTE FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 180
 - Statement: SELECT '2012-01-23' + INTERVAL 1 MINUTE FROM all_types;
@@ -1494,7 +1494,7 @@
 ---
 #command number: 182
 - Statement: SELECT date_field + INTERVAL 1 SECOND FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE]}
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE]}
 ---
 #command number: 183
 - Statement: SELECT time_field + INTERVAL 1 SECOND FROM all_types;
@@ -1502,7 +1502,7 @@
 ---
 #command number: 184
 - Statement: SELECT timestamp_field + INTERVAL 1 SECOND FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP]}
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP]}
 ---
 #command number: 185
 - Statement: SELECT '2012-01-23' + INTERVAL 1 SECOND FROM all_types;
@@ -1522,7 +1522,7 @@
 ---
 #command number: 189
 - Statement: SELECT timestamp_field - INTERVAL 1 YEAR FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP]}
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP]}
 ---
 #command number: 190
 - Statement: SELECT '2012-01-23' - INTERVAL 1 YEAR FROM all_types;
@@ -1542,7 +1542,7 @@
 ---
 #command number: 194
 - Statement: SELECT timestamp_field - INTERVAL 1 MONTH FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 195
 - Statement: SELECT '2012-01-23' - INTERVAL 1 MONTH FROM all_types;
@@ -1562,7 +1562,7 @@
 ---
 #command number: 199
 - Statement: SELECT timestamp_field - INTERVAL 1 QUARTER FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 200
 - Statement: SELECT '2012-01-23' - INTERVAL 1 QUARTER FROM all_types;
@@ -1582,7 +1582,7 @@
 ---
 #command number: 204
 - Statement: SELECT timestamp_field - INTERVAL 1 WEEK FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 205
 - Statement: SELECT '2012-01-23' - INTERVAL 1 WEEK FROM all_types;
@@ -1602,7 +1602,7 @@
 ---
 #command number: 209
 - Statement: SELECT timestamp_field - INTERVAL 1 DAY FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 210
 - Statement: SELECT '2012-01-23' - INTERVAL 1 DAY FROM all_types;
@@ -1614,7 +1614,7 @@
 ---
 #command number: 212
 - Statement: SELECT date_field - INTERVAL 1 HOUR FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 213
 - Statement: SELECT time_field - INTERVAL 1 HOUR FROM all_types;
@@ -1622,7 +1622,7 @@
 ---
 #command number: 214
 - Statement: SELECT timestamp_field - INTERVAL 1 HOUR FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 215
 - Statement: SELECT '2012-01-23' - INTERVAL 1 HOUR FROM all_types;
@@ -1634,7 +1634,7 @@
 ---
 #command number: 217
 - Statement: SELECT date_field - INTERVAL 1 MINUTE FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 218
 - Statement: SELECT time_field - INTERVAL 1 MINUTE FROM all_types;
@@ -1642,7 +1642,7 @@
 ---
 #command number: 219
 - Statement: SELECT timestamp_field - INTERVAL 1 MINUTE FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 220
 - Statement: SELECT '2012-01-23' - INTERVAL 1 MINUTE FROM all_types;
@@ -1654,7 +1654,7 @@
 ---
 #command number: 222
 - Statement: SELECT date_field - INTERVAL 1 SECOND FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 223
 - Statement: SELECT time_field - INTERVAL 1 SECOND FROM all_types;
@@ -1662,7 +1662,7 @@
 ---
 #command number: 224
 - Statement: SELECT timestamp_field - INTERVAL 1 SECOND FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 225
 - Statement: SELECT '2012-01-23' - INTERVAL 1 SECOND FROM all_types;
@@ -1706,7 +1706,7 @@
 ---
 #command number: 235
 - Statement: SELECT INTERVAL 1 YEAR + timestamp_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 236
 - Statement: SELECT INTERVAL 1 YEAR - timestamp_field FROM all_types;
@@ -1746,7 +1746,7 @@
 ---
 #command number: 245
 - Statement: SELECT INTERVAL 1 MONTH + timestamp_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 246
 - Statement: SELECT INTERVAL 1 MONTH - timestamp_field FROM all_types;
@@ -1786,7 +1786,7 @@
 ---
 #command number: 255
 - Statement: SELECT INTERVAL 1 QUARTER + timestamp_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 256
 - Statement: SELECT INTERVAL 1 QUARTER - timestamp_field FROM all_types;
@@ -1826,7 +1826,7 @@
 ---
 #command number: 265
 - Statement: SELECT INTERVAL 1 WEEK + timestamp_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 266
 - Statement: SELECT INTERVAL 1 WEEK - timestamp_field FROM all_types;
@@ -1866,7 +1866,7 @@
 ---
 #command number: 275
 - Statement: SELECT INTERVAL 1 DAY + timestamp_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 276
 - Statement: SELECT INTERVAL 1 DAY - timestamp_field FROM all_types;
@@ -1890,7 +1890,7 @@
 ---
 #command number: 281
 - Statement: SELECT INTERVAL 1 HOUR + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 282
 - Statement: SELECT INTERVAL 1 HOUR - date_field FROM all_types;
@@ -1906,7 +1906,7 @@
 ---
 #command number: 285
 - Statement: SELECT INTERVAL 1 HOUR + timestamp_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 286
 - Statement: SELECT INTERVAL 1 HOUR - timestamp_field FROM all_types;
@@ -1930,7 +1930,7 @@
 ---
 #command number: 291
 - Statement: SELECT INTERVAL 1 MINUTE + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 292
 - Statement: SELECT INTERVAL 1 MINUTE - date_field FROM all_types;
@@ -1946,7 +1946,7 @@
 ---
 #command number: 295
 - Statement: SELECT INTERVAL 1 MINUTE + timestamp_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 296
 - Statement: SELECT INTERVAL 1 MINUTE - timestamp_field FROM all_types;
@@ -1970,7 +1970,7 @@
 ---
 #command number: 301
 - Statement: SELECT INTERVAL 1 SECOND + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 302
 - Statement: SELECT INTERVAL 1 SECOND - date_field FROM all_types;
@@ -1986,7 +1986,7 @@
 ---
 #command number: 305
 - Statement: SELECT INTERVAL 1 SECOND + timestamp_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], all: [TIMESTAMP] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [TIMESTAMP] }
 ---
 #command number: 306
 - Statement: SELECT INTERVAL 1 SECOND - timestamp_field FROM all_types;
