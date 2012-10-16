@@ -413,7 +413,7 @@ public abstract class Index implements Traversable
     {
         boolean isSpatialCompatible = false;
         List<IndexColumn> indexColumns = index.getKeyColumns();
-        if (indexColumns.size() == Space.LAT_LON_DIMENSIONS) {
+        if (indexColumns.size() >= Space.LAT_LON_DIMENSIONS) {
             isSpatialCompatible = true;
             for (int d = 0; d < index.dimensions(); d++) {
                 isSpatialCompatible =
