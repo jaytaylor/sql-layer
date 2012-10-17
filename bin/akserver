@@ -57,7 +57,7 @@ get_version()
     jar_file=$1
     # the JAR file we use to grab the version
     if [ "x$jar_file" == "x" ]; then
-        jar_file="${akiban_home}/target/akiban-server-1.4.2-SNAPSHOT-jar-with-dependencies.jar"
+        jar_file="${akiban_home}/target/akiban-server-1.4.2-jar-with-dependencies.jar"
     fi
 
     server_version=$(exec $JAVA -cp $jar_file com.akiban.server.GetVersion)
@@ -77,7 +77,7 @@ launch_service()
 
     # the JAR file we use to launch the akiban server
     if [ "x$JAR_FILE" == "x" ]; then
-        JAR_FILE="${akiban_home}/target/akiban-server-1.4.2-SNAPSHOT-jar-with-dependencies.jar"
+        JAR_FILE="${akiban_home}/target/akiban-server-1.4.2-jar-with-dependencies.jar"
     fi
 
     if [ "x$AKIBAN_CONF" == "x" ]; then
