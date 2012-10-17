@@ -33,6 +33,7 @@ import com.akiban.sql.parser.SQLToJavaValueNode;
 import com.akiban.sql.parser.StaticMethodCallNode;
 import com.akiban.sql.parser.ValueNode;
 
+import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -123,6 +124,10 @@ public class ServerRoutineInvocation
 
     public TableName getRoutineName() {
         return routine.getName();
+    }
+
+    public Parameter getRoutineParameter(int index) {
+        return routine.getParameters().get(index);
     }
 
     public int parameterUsage(int param) {
@@ -259,7 +264,7 @@ public class ServerRoutineInvocation
         @Override
         protected void setValue(int index, ValueSource source, AkType akType) {
             if (parameterArgs[index] < 0) {
-                throw new UnsupportedOperationException();
+                // An INOUT passed as a constant; do not overwrite it.
             }
             else {
                 parameters.setValue(parameterArgs[index], source, akType);
@@ -269,7 +274,7 @@ public class ServerRoutineInvocation
         @Override
         protected void setPValue(int index, PValueSource source) {
             if (parameterArgs[index] < 0) {
-                throw new UnsupportedOperationException();
+                // An INOUT passed as a constant; do not overwrite it.
             }
             else {
                 parameters.setPValue(parameterArgs[index], source);
