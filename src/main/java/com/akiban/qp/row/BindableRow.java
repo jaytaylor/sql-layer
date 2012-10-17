@@ -27,6 +27,8 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.expression.ExpressionRow;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
@@ -47,8 +49,8 @@ public abstract class BindableRow {
 
     // BindableRow class interface
 
-    public static BindableRow of(RowType rowType, List<? extends Expression> expressions, QueryContext queryContext) {
-        return of(rowType,  expressions, null, queryContext);
+    public static BindableRow of(RowType rowType, List<? extends ExpressionGenerator> expressions, QueryContext queryContext) {
+        return of(rowType, API.generateOld(expressions), API.generateNew(expressions), queryContext);
     }
 
     public static BindableRow of(RowType rowType, List<? extends Expression> expressions,

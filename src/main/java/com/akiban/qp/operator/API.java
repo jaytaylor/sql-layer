@@ -91,7 +91,7 @@ public class API
         return new Project_Default(inputOperator, rowType, generateOld(projections), generateNew(projections));
     }
 
-    private static List<Expression> generateOld(List<? extends ExpressionGenerator> expressionGenerators) {
+    public static List<Expression> generateOld(List<? extends ExpressionGenerator> expressionGenerators) {
         if (Types3Switch.ON)
             return null;
         List<Expression> results = new ArrayList<Expression>(expressionGenerators.size());
@@ -101,7 +101,7 @@ public class API
         return results;
     }
 
-    private static List<TPreparedExpression> generateNew(List<? extends ExpressionGenerator> expressionGenerators) {
+    public static List<TPreparedExpression> generateNew(List<? extends ExpressionGenerator> expressionGenerators) {
         if (!Types3Switch.ON)
             return null;
         List<TPreparedExpression> results = new ArrayList<TPreparedExpression>(expressionGenerators.size());
@@ -798,6 +798,15 @@ public class API
 
     // Select_BloomFilter
 
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends ExpressionGenerator> filterFields,
+                                              int bindingPosition)
+    {
+        return select_BloomFilter(input, onPositive, generateOld(filterFields), generateNew(filterFields), null, bindingPosition);
+    }
+
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends Expression> filterFields,
@@ -820,6 +829,21 @@ public class API
                                       tFilterFields,
                                       collators,
                                       bindingPosition);
+    }
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends ExpressionGenerator> filterFields,
+                                              List<AkCollator> collators,
+                                              int bindingPosition,
+                                              ExpressionGenerator.ErasureMaker marker)
+    {
+        return new Select_BloomFilter(input,
+                onPositive,
+                generateOld(filterFields),
+                generateNew(filterFields),
+                collators,
+                bindingPosition);
     }
 
     // Insert
@@ -989,6 +1013,11 @@ public class API
             return collators.get(i);
         }
 
+        public void append(ExpressionGenerator expressionGenerator, boolean ascending)
+        {
+            append(expressionGenerator.getExpression(), expressionGenerator.getTPreparedExpression(), ascending);
+        }
+
         public void append(Expression expression, boolean ascending)
         {
             append(expression, null, ascending);
@@ -999,9 +1028,19 @@ public class API
             append(expression, tExpression, ascending, null);
         }
         
-        public void append(Expression expression, boolean ascending, AkCollator collator)
+        public void append(ExpressionGenerator expression, boolean ascending, AkCollator collator)
         {
-            append(expression, null, ascending, collator);
+            Expression oldStyle;
+            TPreparedExpression newStyle;
+            if (Types3Switch.ON) {
+                newStyle = expression.getTPreparedExpression();
+                oldStyle = null;
+            }
+            else {
+                newStyle = null;
+                oldStyle = expression.getExpression();
+            }
+            append(oldStyle, newStyle, ascending, collator);
         }
 
         public void append(Expression expression, TPreparedExpression tExpression,  boolean ascending,

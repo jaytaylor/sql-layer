@@ -37,7 +37,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -245,9 +245,9 @@ public class NonRootPKIndexScanIT extends OperatorITBase
     private API.Ordering ordering(int mask)
     {
         API.Ordering ordering = new API.Ordering();
-        ordering.append(Expressions.field(childPKRowType, 0), (mask & 0x1) != 0);
-        ordering.append(Expressions.field(childPKRowType, 1), (mask & 0x2) != 0);
-        ordering.append(Expressions.field(childPKRowType, 2), (mask & 0x4) != 0);
+        ordering.append(ExpressionGenerators.field(childPKRowType, 0), (mask & 0x1) != 0);
+        ordering.append(ExpressionGenerators.field(childPKRowType, 1), (mask & 0x2) != 0);
+        ordering.append(ExpressionGenerators.field(childPKRowType, 2), (mask & 0x4) != 0);
         return ordering;
     }
 

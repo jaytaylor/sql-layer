@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.pt;
 
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
@@ -60,6 +61,7 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
@@ -77,6 +79,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
+
+import static com.akiban.server.test.ExpressionGenerators.boundField;
 
 public class AggregatePT extends ApiTestBase {
     public static final int NKEYS = 10;
@@ -189,10 +193,10 @@ public class AggregatePT extends ApiTestBase {
         
         plan = API.select_HKeyOrdered(plan, rowType, pred);
         plan = API.project_Default(plan, rowType,
-                                   Arrays.asList(Expressions.field(rowType, 0),
-                                                 Expressions.field(rowType, 3),
-                                                 Expressions.field(rowType, 4),
-                                                 Expressions.field(rowType, 5)));
+                                   Arrays.asList(ExpressionGenerators.field(rowType, 0),
+                                           ExpressionGenerators.field(rowType, 3),
+                                           ExpressionGenerators.field(rowType, 4),
+                                           ExpressionGenerators.field(rowType, 5)));
         rowType = plan.rowType();
         plan = API.aggregate_Partial(plan, rowType, 
                                      1, functions,
@@ -585,8 +589,8 @@ public class AggregatePT extends ApiTestBase {
         Schema schema = new Schema(rowDefCache().ais());
         IndexRowType indexType = schema.indexRowType(index);
         ValuesRowType valuesType = schema.newValuesType(AkType.LONG, AkType.LONG);
-        IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 0)))), new SetColumnSelector(0));
-        IndexBound hi = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 1)))), new SetColumnSelector(0));
+        IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<ExpressionGenerator>singletonList(boundField(valuesType, 0, 0))), new SetColumnSelector(0));
+        IndexBound hi = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<ExpressionGenerator>singletonList(boundField(valuesType, 0, 1))), new SetColumnSelector(0));
         IndexKeyRange keyRange = IndexKeyRange.bounded(indexType, lo, true, hi, false);
         API.Ordering ordering = new API.Ordering();
         ordering.append(new FieldExpression(indexType, 0), true);

@@ -26,10 +26,11 @@
 
 package com.akiban.server.expression.subquery;
 
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.OldExpressionTestBase;
 import com.akiban.server.expression.std.Comparison;
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.OperatorTestHelper;
@@ -63,12 +64,12 @@ public class AnySubqueryExpressionTest extends OldExpressionTestBase {
                 .row(1L)
         );
 
-        Expression equals = compare(boundField(outer.rowType(), 1, 0),
+        ExpressionGenerator equals = compare(boundField(outer.rowType(), 1, 0),
                                     Comparison.EQ,
                                     field(inner.rowType(), 0));
-        Expression any = new AnySubqueryExpression(inner, equals,
+        ExpressionGenerator any = anySubquery(inner, equals,
                                                    outer.rowType(), inner.rowType(), 1);
-        Expression outerN = field(outer.rowType(), 0);
+        ExpressionGenerator outerN = field(outer.rowType(), 0);
         Operator outerPlan = project_Default(outer, outer.rowType(),
                                              Arrays.asList(outerN, any));
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.BOOL)

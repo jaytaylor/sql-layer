@@ -37,7 +37,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
@@ -110,12 +110,12 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.literal(false)),
+                    ExpressionGenerators.literal(false)),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.literal(false)),
+                    ExpressionGenerators.literal(false)),
                 tRowType);
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor(plan, queryContext));
@@ -129,15 +129,15 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.literal(false)),
+                    ExpressionGenerators.literal(false)),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(9))),
+                        ExpressionGenerators.literal(9))),
                     tRowType);
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1001L, 9L),
@@ -156,15 +156,15 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(8))),
+                        ExpressionGenerators.literal(8))),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.literal(false)),
+                    ExpressionGenerators.literal(false)),
                     tRowType);
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1000L, 8L),
@@ -183,18 +183,18 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(8))),
+                        ExpressionGenerators.literal(8))),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(9))),
+                        ExpressionGenerators.literal(9))),
                     tRowType);
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1000L, 8L),
@@ -217,18 +217,18 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(8))),
+                        ExpressionGenerators.literal(8))),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(9))),
+                        ExpressionGenerators.literal(9))),
                 tRowType);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {

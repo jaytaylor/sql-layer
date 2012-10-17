@@ -39,7 +39,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -257,13 +257,13 @@ public class Select_BloomFilterIT extends OperatorITBase
                     groupScan_Default(group(f)),
                     Collections.singleton(fRowType)),
                 fRowType,
-                Expressions.compare(
-                    Expressions.field(fRowType, 0),
+                ExpressionGenerators.compare(
+                    ExpressionGenerators.field(fRowType, 0),
                     Comparison.EQ,
-                    Expressions.literal(testId))),
+                    ExpressionGenerators.literal(testId))),
             fRowType,
-            Arrays.asList(Expressions.field(fRowType, 1),
-                          Expressions.field(fRowType, 2)));
+            Arrays.asList(ExpressionGenerators.field(fRowType, 1),
+                          ExpressionGenerators.field(fRowType, 2)));
         // For the index scan retriving rows from the D(test_id) index
         IndexBound testIdBound =
             new IndexBound(row(dIndexRowType, testId), new SetColumnSelector(0));
@@ -274,8 +274,8 @@ public class Select_BloomFilterIT extends OperatorITBase
             new RowBasedUnboundExpressions(
                 loadFilter.rowType(),
                 Arrays.asList(
-                    Expressions.boundField(dIndexRowType, 0, 1),
-                    Expressions.boundField(dIndexRowType, 0, 2))),
+                    ExpressionGenerators.boundField(dIndexRowType, 0, 1),
+                    ExpressionGenerators.boundField(dIndexRowType, 0, 2))),
             new SetColumnSelector(0, 1));
         IndexKeyRange fabKeyRange =
             IndexKeyRange.bounded(fabIndexRowType, abBound, true, abBound, true);
@@ -303,16 +303,15 @@ public class Select_BloomFilterIT extends OperatorITBase
                             new Ordering()),
                         // filterFields
                         Arrays.asList(
-                            Expressions.field(dIndexRowType, 1),
-                            Expressions.field(dIndexRowType, 2)),
-                        null,
+                            ExpressionGenerators.field(dIndexRowType, 1),
+                            ExpressionGenerators.field(dIndexRowType, 2)),
                         // filterBindingPosition
                         0)),
                 dIndexRowType,
                 Arrays.asList(
-                    Expressions.field(dIndexRowType, 0),   // test_id
-                    Expressions.field(dIndexRowType, 1),   // a
-                    Expressions.field(dIndexRowType, 2))); // b
+                    ExpressionGenerators.field(dIndexRowType, 0),   // test_id
+                    ExpressionGenerators.field(dIndexRowType, 1),   // a
+                    ExpressionGenerators.field(dIndexRowType, 2))); // b
         outputRowType = plan.rowType();
         return plan;
     }

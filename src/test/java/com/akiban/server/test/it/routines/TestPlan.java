@@ -31,7 +31,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
 
 import java.sql.Types;
@@ -63,9 +63,9 @@ public class TestPlan extends LoadableOperator
             project_Default(
                 groupScan_Default(group),
                 testRowType,
-                Arrays.asList(Expressions.field(testRowType, 0),
-                              Expressions.field(testRowType, 1),
-                              Expressions.variable(AkType.LONG, 0)));
+                Arrays.asList(ExpressionGenerators.field(testRowType, 0),
+                              ExpressionGenerators.field(testRowType, 1),
+                              ExpressionGenerators.variable(AkType.LONG, 0)));
     }
 
     @Override

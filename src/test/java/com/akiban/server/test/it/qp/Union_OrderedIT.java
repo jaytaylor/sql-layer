@@ -41,7 +41,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.fail;
 
 public class Union_OrderedIT extends OperatorITBase

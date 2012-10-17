@@ -30,25 +30,30 @@ import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.ExpressionGenerator;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.BoundFieldExpression;
+import com.akiban.server.expression.std.CaseConvertExpression;
 import com.akiban.server.expression.std.ColumnExpression;
 import com.akiban.server.expression.std.CompareExpression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.expression.std.ValueSourceExpression;
 import com.akiban.server.expression.std.VariableExpression;
+import com.akiban.server.expression.subquery.AnySubqueryExpression;
+import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
+import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
+import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
+import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -98,6 +103,49 @@ public final class ExpressionGenerators {
             @Override
             public TPreparedExpression getTPreparedExpression() {
                 return new TPreparedField(rowType.typeInstanceAt(position), position);
+            }
+        };
+    }
+
+    public static ExpressionGenerator existsSubquery(final Operator innerPlan, final RowType outer, final RowType inner, final int bindingPos)
+    {
+        return new ExpressionGenerator() {
+            @Override
+            public Expression getExpression() {
+                return new ExistsSubqueryExpression(innerPlan, outer, inner, 1);
+            }
+
+            @Override
+            public TPreparedExpression getTPreparedExpression() {
+                return new ExistsSubqueryTExpression(innerPlan, outer, inner, bindingPos);
+            }
+        };
+    }
+
+    public static ExpressionGenerator scalarSubquery(final Operator innerPlan, final ExpressionGenerator expression, final RowType outer, final RowType inner, final int pos) {
+        return new ExpressionGenerator() {
+            @Override
+            public Expression getExpression() {
+                return new ScalarSubqueryExpression(innerPlan, expression.getExpression(), outer, inner, 1);
+            }
+
+            @Override
+            public TPreparedExpression getTPreparedExpression() {
+                return new ScalarSubqueryTExpression(innerPlan, expression.getTPreparedExpression(), outer, inner, pos);
+            }
+        };
+    }
+
+    public static ExpressionGenerator anySubquery(final Operator innerPlan, final ExpressionGenerator expression, final RowType outer, final RowType inner, final int pos) {
+        return new ExpressionGenerator() {
+            @Override
+            public Expression getExpression() {
+                return new AnySubqueryExpression(innerPlan, expression.getExpression(), outer, inner, 1);
+            }
+
+            @Override
+            public TPreparedExpression getTPreparedExpression() {
+                return new AnySubqueryTExpression(innerPlan, expression.getTPreparedExpression(), outer, inner, pos);
             }
         };
     }
@@ -172,6 +220,21 @@ public final class ExpressionGenerators {
             @Override
             public TPreparedExpression getTPreparedExpression() {
                 return new TPreparedBoundField(rowType, rowPosition, fieldPosition);
+            }
+        };
+    }
+
+    public static ExpressionGenerator toUpper(final ExpressionGenerator input)
+    {
+        return new ExpressionGenerator() {
+            @Override
+            public Expression getExpression() {
+                return new CaseConvertExpression(input.getExpression(), CaseConvertExpression.ConversionType.TOUPPER);
+            }
+
+            @Override
+            public TPreparedExpression getTPreparedExpression() {
+                throw new UnsupportedOperationException(); // TODO
             }
         };
     }

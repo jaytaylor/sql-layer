@@ -43,7 +43,7 @@ import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.IntersectOption.*;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class MultiIndexCrossBranchIT extends OperatorITBase
 {
