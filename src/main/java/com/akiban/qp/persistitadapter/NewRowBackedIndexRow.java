@@ -117,9 +117,16 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public PValueSource pvalue(int index) {
-        ValueSource valSource = eval(index);
-        return PValueSources.fromValueSource(valSource, rowType.typeInstanceAt(index));
+    public PValueSource pvalue(int i) {
+        FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
+        int fieldPos = fieldDef.getFieldIndex();
+        FromObjectValueSource source = sources[fieldPos];
+        if (row.isColumnNull(fieldPos)) {
+            source.setNull();
+        } else {
+            source.setReflectively(row.get(fieldPos));
+        }
+        return PValueSources.fromValueSource(source, rowType.typeInstanceAt(fieldPos));
     }
 
     // Object state
