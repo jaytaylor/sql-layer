@@ -159,7 +159,10 @@ public class ServerRoutineInvocation
         if (usePVals) {
             for (int i = 0; i < parameterArgs.length; i++) {
                 if (parameterArgs[i] < 0) {
-                    target.setPValue(i, PValueSources.fromObject(constantArgs[i], null).value());
+                    AkType nullType = null;
+                    if (constantArgs[i] == null)
+                        nullType = getAkType(i);
+                    target.setPValue(i, PValueSources.fromObject(constantArgs[i], nullType).value());
                 }
                 else {
                     target.setPValue(i, source.getPValue(parameterArgs[i]));
@@ -178,6 +181,14 @@ public class ServerRoutineInvocation
                 }
             }
         }
+    }
+
+    protected AkType getAkType(int index) {
+        return routine.getParameters().get(index).getType().akType();
+    }
+
+    protected TInstance getTInstance(int index) {
+        return routine.getParameters().get(index).tInstance();
     }
 
     public ServerJavaValues asValues(ServerQueryContext parameters) {
@@ -237,12 +248,12 @@ public class ServerRoutineInvocation
 
         @Override
         protected AkType getAkType(int index) {
-            return routine.getParameters().get(index).getType().akType();
+            return ServerRoutineInvocation.this.getAkType(index);
         }
 
         @Override
         protected TInstance getTInstance(int index) {
-            return routine.getParameters().get(index).tInstance();
+            return ServerRoutineInvocation.this.getTInstance(index);
         }
 
         @Override

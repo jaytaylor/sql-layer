@@ -7,7 +7,7 @@
     <key>CFBundleIdentifier</key>
     <string>com.akiban.server</string>
     <key>CFBundleVersion</key>
-    <string>1.4.2</string>
+    <string>1.4.3</string>
     <key>CFBundleAllowMixedLocalizations</key>
     <string>true</string>
     <key>CFBundleExecutable</key>
@@ -19,7 +19,7 @@
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleGetInfoString</key>
-    <string>Akiban Server 1.0.3</string>
+    <string>Akiban Server 1.4.3</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleIconFile</key>
@@ -29,7 +29,7 @@
         <key>JVMVersion</key>
         <string>1.6+</string>
         <key>ClassPath</key>
-        <string>$JAVAROOT/akiban-server-1.4.2-SNAPSHOT-jar-with-dependencies.jar</string>
+        <string>$JAVAROOT/akiban-server-1.4.3-SNAPSHOT-jar-with-dependencies.jar</string>
         <key>MainClass</key>
         <string>com.akiban.server.service.ui.AkServerWithSwingConsole</string>
         <key>VMOptions</key>

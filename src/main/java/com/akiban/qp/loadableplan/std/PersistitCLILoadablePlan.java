@@ -41,6 +41,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.types3.Types3Switch;
 import com.persistit.Management.TaskStatus;
 import com.persistit.Persistit;
 import com.persistit.Task;
@@ -88,7 +89,10 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
-                    carg = context.getValue(i).getString();
+                    if (Types3Switch.ON)
+                        carg = context.getPValue(i).getString();
+                    else
+                        carg = context.getValue(i).getString();
                 } catch (BindingNotSetException ex) {
                     break;
                 }

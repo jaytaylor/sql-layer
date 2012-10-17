@@ -28,7 +28,6 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.operator.ExpressionBasedUpdateFunction;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -103,8 +102,13 @@ public class ConcurrentUpdateIT extends OperatorITBase
         use(db);
         txn.commit();
         txn.end();
-        UpdateFunction updateAFunction = new ExpressionBasedUpdateFunction()
+        UpdateFunction updateAFunction = new UpdateFunction()
         {
+            @Override
+            public boolean usePValues() {
+                return usingPValues();
+            }
+
             @Override
             public boolean rowIsSelected(Row row)
             {
@@ -114,15 +118,26 @@ public class ConcurrentUpdateIT extends OperatorITBase
             @Override
             public Row evaluate(Row original, QueryContext context)
             {
-                ToObjectValueTarget target = new ToObjectValueTarget();
-                target.expectType(AkType.INT);
-                Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
-                Long ax = (Long) obj;
+                long ax;
+                if (usePValues()) {
+                    ax = original.pvalue(1).getInt64();
+                }
+                else {
+                    ToObjectValueTarget target = new ToObjectValueTarget();
+                    target.expectType(AkType.INT);
+                    Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
+                    ax = (Long) obj;
+                }
                 return new OverlayingRow(original).overlay(1, -ax);
             }
         };
-        UpdateFunction updateBFunction = new ExpressionBasedUpdateFunction()
+        UpdateFunction updateBFunction = new UpdateFunction()
         {
+            @Override
+            public boolean usePValues() {
+                return usingPValues();
+            }
+
             @Override
             public boolean rowIsSelected(Row row)
             {
@@ -132,10 +147,16 @@ public class ConcurrentUpdateIT extends OperatorITBase
             @Override
             public Row evaluate(Row original, QueryContext context)
             {
-                ToObjectValueTarget target = new ToObjectValueTarget();
-                target.expectType(AkType.INT);
-                Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
-                Long bx = (Long) obj;
+                long bx;
+                if (usePValues()) {
+                    bx = original.pvalue(1).getInt64();
+                }
+                else {
+                    ToObjectValueTarget target = new ToObjectValueTarget();
+                    target.expectType(AkType.INT);
+                    Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
+                    bx = (Long) obj;
+                }
                 return new OverlayingRow(original).overlay(1, -bx);
             }
         };

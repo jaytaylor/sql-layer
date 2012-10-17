@@ -84,11 +84,6 @@ public class AlterTableITBase extends ITBase {
 
     protected Map<Integer,List<String>> checkedIndexes = new HashMap<Integer, List<String>>();
 
-    @Override
-    protected boolean testSupportsPValues() {
-        return true;
-    }
-
     // Workaround for bug1052594 (Persistit brings trees back to life, this deletes data dir)
     @Override
     protected Collection<Property> startupConfigProperties() {
