@@ -43,6 +43,7 @@ import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 // Inspired by Bug 979162
 
@@ -112,7 +113,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
         while (i < ord.length) {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }

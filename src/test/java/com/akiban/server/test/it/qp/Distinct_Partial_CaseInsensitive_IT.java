@@ -125,9 +125,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowType projectRowType = project.rowType();
         Ordering ordering = new Ordering();
         ordering.append(field(project.rowType(), 0), true, caseInsensitiveCollator);
-        List<Expression> convertToUpper =
-            Arrays.asList((Expression) new CaseConvertExpression(new FieldExpression(projectRowType, 0),
-                                                                 CaseConvertExpression.ConversionType.TOUPPER));
+        List<ExpressionGenerator> convertToUpper = Arrays.asList(toUpper(field(projectRowType, 0)));
         Operator plan =
             project_Default(
                 sort_Tree(
@@ -136,8 +134,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     ordering,
                     SortOption.SUPPRESS_DUPLICATES),
                 projectRowType,
-                convertToUpper,
-                null);
+                convertToUpper);
         RowBase[] expected = new RowBase[] {
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
@@ -155,7 +152,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             Arrays.asList(field(tRowType, 3)));
         RowType projectRowType = project.rowType();
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(project.rowType(), 0), true);
+        ordering.append(field(project.rowType(), 0), true);
         Operator plan =
             sort_Tree(
                 project,
@@ -279,7 +276,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             Arrays.asList(field(tRowType, 3)));
         RowType projectRowType = project.rowType();
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(project.rowType(), 0), true);
+        ordering.append(field(project.rowType(), 0), true);
         Operator plan =
             sort_InsertionLimited(
                 project,
@@ -381,9 +378,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowType projectRowType = project.rowType();
         Ordering ordering = new Ordering();
         ordering.append(field(projectRowType, 0), true, caseInsensitiveCollator);
-        List<Expression> convertToUpper =
-            Arrays.asList((Expression) new CaseConvertExpression(new FieldExpression(projectRowType, 0),
-                                                                 CaseConvertExpression.ConversionType.TOUPPER));
+        List<ExpressionGenerator> convertToUpper = Arrays.asList(toUpper(field(projectRowType, 0)));
         // Sort, preserving duplicates, so that we can test Distinct_Partial.
         Operator plan =
             project_Default(
@@ -398,8 +393,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     Arrays.asList(caseInsensitiveCollator),
                     false),
                 projectRowType,
-                convertToUpper,
-                null);
+                convertToUpper);
         RowBase[] expected = new RowBase[] {
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
@@ -417,7 +411,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             Arrays.asList(field(tRowType, 3)));
         RowType projectRowType = project.rowType();
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(project.rowType(), 0), true);
+        ordering.append(field(project.rowType(), 0), true);
         Operator plan =
             distinct_Partial(
                 sort_InsertionLimited(

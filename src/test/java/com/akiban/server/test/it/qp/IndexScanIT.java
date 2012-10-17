@@ -53,6 +53,7 @@ import java.util.List;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.assertEquals;
 
 public class IndexScanIT extends OperatorITBase
@@ -201,8 +202,8 @@ public class IndexScanIT extends OperatorITBase
     public void testMixedMode()
     {
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(itemOidIidIndexRowType, 0), true);
-        ordering.append(new FieldExpression(itemOidIidIndexRowType, 1), false);
+        ordering.append(field(itemOidIidIndexRowType, 0), true);
+        ordering.append(field(itemOidIidIndexRowType, 1), false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType,
                                                IndexKeyRange.unbounded(itemOidIidIndexRowType),
                                                ordering,

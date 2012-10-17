@@ -43,6 +43,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class UnionAll_DefaultIT extends OperatorITBase
 {
@@ -259,7 +260,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
         IndexKeyRange xEQ8Range = IndexKeyRange.bounded(txIndexRowType, eight, true, eight, true);
         IndexKeyRange xEQ9Range = IndexKeyRange.bounded(txIndexRowType, nine, true, nine, true);
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(txIndexRowType, 0), true);
+        ordering.append(field(txIndexRowType, 0), true);
         Operator plan =
             map_NestedLoops(
                 limit_Default(

@@ -50,6 +50,7 @@ import com.akiban.qp.rowtype.Schema;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.*;
 
 public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
@@ -355,7 +356,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
         {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }

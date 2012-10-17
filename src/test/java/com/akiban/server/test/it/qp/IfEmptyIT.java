@@ -48,6 +48,7 @@ import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.ifEmpty_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static com.akiban.server.test.ExpressionGenerators.literal;
 
 public class IfEmptyIT extends OperatorITBase
@@ -286,7 +287,7 @@ public class IfEmptyIT extends OperatorITBase
     private API.Ordering asc()
     {
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(orderCidIndexRowType, 0), true);
+        ordering.append(field(orderCidIndexRowType, 0), true);
         return ordering;
     }
 }
