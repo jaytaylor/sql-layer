@@ -156,4 +156,17 @@ public class EmbeddedJDBCIT extends ITBase
         conn.close();
     }
 
+    @Test
+    public void testJavaProcedure() throws Exception {
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE PROCEDURE add_sub(IN x INT, IN y INT, OUT \"sum\" INT, out diff INT) LANGUAGE java PARAMETER STYLE java EXTERNAL NAME 'com.akiban.server.test.it.routines.TestJavaBasic.addSub'");
+        stmt.close();
+        CallableStatement cstmt = conn.prepareCall("CALL add_sub(100,?,?,?)");
+        cstmt.setInt(1, 23);
+        assertFalse("call returned results", cstmt.execute());
+        assertEquals("sum result", 123, cstmt.getInt("sum"));
+        assertEquals("diff results", 77L, cstmt.getObject("diff"));
+    }
+
 }

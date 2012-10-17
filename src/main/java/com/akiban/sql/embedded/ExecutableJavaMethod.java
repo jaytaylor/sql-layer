@@ -41,6 +41,7 @@ class ExecutableJavaMethod extends ExecutableJavaRoutine
                                    ServerRoutineInvocation invocation,
                                    JDBCParameterMetaData parameterMetaData) {
         super(invocation, parameterMetaData);
+        this.method = method;
     }
 
     public static ExecutableStatement executableStatement(ServerRoutineInvocation invocation,
