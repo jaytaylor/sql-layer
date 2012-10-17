@@ -29,7 +29,9 @@ package com.akiban.sql.embedded;
 import com.akiban.sql.embedded.JDBCParameterMetaData.ParameterType;
 
 import com.akiban.ais.model.Parameter;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.sql.StandardException;
 import com.akiban.sql.optimizer.ColumnBinding;
 import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.parser.ParameterNode;
@@ -84,7 +86,13 @@ abstract class ExecutableCallStatement extends ExecutableStatement
             int usage = invocation.parameterUsage(i);
             if (usage < 0) continue;
             Parameter param = invocation.getRoutineParameter(usage);
-            ptypes[i] = new ParameterType(param.getName(), ColumnBinding.getType(param));
+            try {
+                ptypes[i] = new ParameterType(param.getName(), 
+                                              ColumnBinding.getType(param));
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
+            }
         }
         return new JDBCParameterMetaData(Arrays.asList(ptypes));
     }

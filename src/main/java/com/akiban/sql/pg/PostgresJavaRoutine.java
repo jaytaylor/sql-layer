@@ -73,7 +73,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.NONE;
+        return TransactionMode.ALLOWED;
     }
 
     @Override
@@ -137,7 +137,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
             // That will determine its type.
             int usage = invocation.parameterUsage(i);
             if (usage < 0) continue;
-            PostgresType pgType = PostgresType.fromAIS(invocation.getRoutine().getParameters().get(i));
+            PostgresType pgType = PostgresType.fromAIS(invocation.getRoutineParameter(i));
             if ((paramTypes != null) && (i < paramTypes.length)) {
                 // Adjust to match what client proposed.
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
