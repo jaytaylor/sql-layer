@@ -76,7 +76,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         setProperties(info);
         session = reqs.sessionService().createSession();
         sessionTracer = new ServerSessionTracer(0, false);
-        inheritCallTransaction();
+        inheritFromCall();
         commitMode = (transaction != null) ? CommitMode.INHERITED : CommitMode.AUTO;
     }
 

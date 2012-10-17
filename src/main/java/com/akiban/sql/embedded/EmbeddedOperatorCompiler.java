@@ -180,6 +180,8 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
         }
     }
 
+    // TODO: Consider making these depend on a connection string parameter.
+
     @Override
     protected void initAIS(AkibanInformationSchema ais, String defaultSchemaName) {
         super.initAIS(ais, defaultSchemaName);

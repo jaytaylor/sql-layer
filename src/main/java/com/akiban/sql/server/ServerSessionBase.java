@@ -372,10 +372,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         }
     }
 
-    protected void inheritCallTransaction() {
+    protected void inheritFromCall() {
         ServerCallContextStack.Entry call = ServerCallContextStack.current();
         if (call != null) {
             ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
+            defaultSchemaName = server.defaultSchemaName;
             transaction = server.transaction;
             transactionDefaultReadOnly = server.transactionDefaultReadOnly;
         }
