@@ -1,0 +1,16 @@
+# tetinterval
+---
+- Statement: SET newtypes to 'true'
+---
+- Statement: SELECT INTERVAL 1 DAY + INTERVAL 1 HOUR + TIMESTAMP('2000-01-01 00:00:00');
+- output: [[!re '2000-01-02 01:00:00([.]0)?']]  # 25 hours since('2000-01-02 00:00:00')
+--- # addition is relfexive
+- Statement: SELECT INTERVAL 1 HOUR + INTERVAL 1 DAY + TIMESTAMP('2000-01-01 00:00:00');
+- output: [[!re '2000-01-02 01:00:00([.]0)?']]  # 25 hours since('2000-01-02 00:00:00')
+--- # addition is relfexive
+- Statement: SELECT TIMESTAMP('2000-01-01 00:00:00') + (INTERVAL 1 HOUR + INTERVAL 1 DAY);
+- output: [[!re '2000-01-02 01:00:00([.]0)?']]  # 25 hours since('2000-01-02 00:00:00')
+--- # addition is relfexive
+- Statement: SELECT TIMESTAMP('2000-01-01 00:00:00') + INTERVAL 1 HOUR + INTERVAL 1 DAY;
+- output: [[!re '2000-01-02 01:00:00([.]0)?']]  # 25 hours since('2000-01-02 00:00:00')
+...

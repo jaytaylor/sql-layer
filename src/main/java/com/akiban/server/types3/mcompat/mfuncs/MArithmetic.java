@@ -741,10 +741,15 @@ public abstract class MArithmetic extends TArithmetic {
     // divisions
     public static final TScalar DIVIDE_MONTHS_DOUBLE 
             = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
-  public static final TScalar DIVIDE_SECS_DOUBLE 
+    public static final TScalar DIVIDE_SECS_DOUBLE 
             = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
     
-    
+    // additions
+    public static final TScalar ADD_MONTH
+            = new IntervalArith(AkInterval.MONTHS, 0, AkInterval.MONTHS, 1, IntervalOp.ADD);
+  
+    public static final TScalar ADD_DAY
+            = new IntervalArith(AkInterval.SECONDS, 0, AkInterval.SECONDS, 1, IntervalOp.ADD);
     
     private static enum IntervalOp
     {
