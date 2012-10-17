@@ -47,8 +47,8 @@ import java.util.List;
 
 public class PostgresJavaMethod extends PostgresDMLStatement
 {
-    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
-    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresJavaMethod: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresJavaMethod: acquire shared lock");
 
     private Method method;
     private ServerRoutineInvocation invocation;
