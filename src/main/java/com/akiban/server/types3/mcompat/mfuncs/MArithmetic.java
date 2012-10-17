@@ -751,6 +751,13 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar ADD_DAY
             = new IntervalArith(AkInterval.SECONDS, 0, AkInterval.SECONDS, 1, IntervalOp.ADD);
     
+    // substractions
+    public static final TScalar SUBSTRACT_MONTH
+            = new IntervalArith(AkInterval.MONTHS, 0, AkInterval.MONTHS, 1, IntervalOp.MINUS);
+  
+    public static final TScalar SUBSTRACT_DAY
+            = new IntervalArith(AkInterval.SECONDS, 0, AkInterval.SECONDS, 1, IntervalOp.MINUS);
+    
     private static enum IntervalOp
     {
         MULT("times")
@@ -780,6 +787,14 @@ public abstract class MArithmetic extends TArithmetic {
             {
                 return inputs.get(0).getInt64() + inputs.get(1).getInt64();
             }
+        },
+        MINUS("minus")
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                return inputs.get(0).getInt64() - inputs.get(1).getInt64();
+            }
         }
         ;
         
@@ -800,6 +815,10 @@ public abstract class MArithmetic extends TArithmetic {
         
         IntervalArith(TClass left,int pos0, TClass right, int pos1, IntervalOp op)
         {
+           if (!(pos0 == 0 && pos1 == 1
+                   || pos0 == 1 && pos1 == 0))
+               throw new IllegalArgumentException("pos0 and pos1 must be {0, 1}");
+           
            this.left = left;
            this.right = right;
            this.pos0 = pos0;
