@@ -96,8 +96,8 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
             ServerCallContextStack.pop(context, invocation);
         }
         if (getColumnTypes() != null) {
-            PostgresOutputter<Object[]> outputter = new PostgresJavaRoutineResultsOutputter(context, this, call);
-            outputter.output(methodArgs, usesPValues());
+            PostgresOutputter<ServerJavaRoutine> outputter = new PostgresJavaRoutineResultsOutputter(context, this);
+            outputter.output(call, usesPValues());
             nrows++;
         }
         {        

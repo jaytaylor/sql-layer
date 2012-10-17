@@ -74,7 +74,7 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
                                  List<PostgresType> columnTypes,
                                  PostgresType[] parameterTypes,
                                  boolean usesPValues) {
-        super(invocation, columnNames, columnTypes, parameterTypes, usePValues);
+        super(invocation, columnNames, columnTypes, parameterTypes, usesPValues);
         this.method = method;
     }
 

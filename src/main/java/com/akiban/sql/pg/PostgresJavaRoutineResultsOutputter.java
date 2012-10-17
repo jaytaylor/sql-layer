@@ -29,28 +29,27 @@ package com.akiban.sql.pg;
 import com.akiban.ais.model.Parameter;
 import com.akiban.sql.server.ServerJavaRoutine;
 
+import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class PostgresJavaRoutineResultsOutputter extends PostgresOutputter<Object[]>
+public class PostgresJavaRoutineResultsOutputter extends PostgresOutputter<ServerJavaRoutine>
 {
-    private ServerJavaRoutine javaRoutine;
-
     public PostgresJavaRoutineResultsOutputter(PostgresQueryContext context,
-                                               PostgresJavaRoutine statement,
-                                               ServerJavaRoutine javaRoutine) {
+                                               PostgresJavaRoutine statement) {
         super(context, statement);
-        this.javaRoutine = javaRoutine;
     }
 
     @Override
-    public void output(Object[] row, boolean usePVals) throws IOException {
+    public void output(ServerJavaRoutine javaRoutine, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         int fieldIndex = 0;
-        for (Parameter param : javaRoutine.getInvocation().getRoutine().getParameters()) {
+        List<Parameter> params = javaRoutine.getInvocation().getRoutine().getParameters();
+        for (int i = 0; i < params.size(); i++) {
+            Parameter param = params.get(i);
             if (param.getDirection() == Parameter.Direction.IN) continue;
-            Object field = javaRoutine.getOutParameter(param);
+            Object field = javaRoutine.getOutParameter(param, i);
             PostgresType type = columnTypes.get(fieldIndex);
             boolean binary = context.isColumnBinary(fieldIndex);
             ByteArrayOutputStream bytes;
