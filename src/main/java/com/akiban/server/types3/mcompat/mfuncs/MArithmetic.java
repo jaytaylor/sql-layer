@@ -331,7 +331,7 @@ public abstract class MArithmetic extends TArithmetic {
         {
             long rawMonths = inputs.get(0).getInt64();
             double denominator = inputs.get(1).getDouble();
-            double result = rawMonths * denominator;
+            double result = rawMonths / denominator;
             output.putInt64(Math.round(result));
         }
     };
