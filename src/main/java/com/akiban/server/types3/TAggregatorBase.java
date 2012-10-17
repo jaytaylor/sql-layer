@@ -27,6 +27,7 @@
 package com.akiban.server.types3;
 
 import com.akiban.util.BitSets;
+import com.google.common.base.Predicate;
 
 import java.util.Collections;
 import java.util.List;
@@ -67,6 +68,11 @@ public abstract class TAggregatorBase implements TAggregator {
     @Override
     public final String toString() {
         return displayName();
+    }
+
+    @Override
+    public Predicate<List<? extends TPreptimeValue>> isCandidate() {
+        return null;
     }
 
     protected TClass inputClass() {
