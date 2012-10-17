@@ -26,21 +26,82 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.common.util.IsCandidatePredicates;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 public final class IfNull extends TScalarBase {
-    public static final TScalar INSTANCE = new IfNull();
+    // If either side is a string type, result is a string type.
+    // Else, if either side is an approximate number, the result is an approximate double.
+    // Else, if either side is an exact number, the result is an exact number
+    // Else, if both sides are date/time, the result is a date/time.
+    // Else, the result is a varchar.
+    public static final TScalar[] instances = createInstances();
+
+    private static TScalar[] createInstances() {
+        List<TScalar> resultsList = new ArrayList<TScalar>();
+        Collection<? extends TClass> strings = Arrays.asList(
+                MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT
+        );
+        Collection<? extends TClass> datetimes = Arrays.asList(
+                MDatetimes.DATETIME, MDatetimes.DATE, MDatetimes.TIME, MDatetimes.TIMESTAMP
+        );
+        Collection<? extends TClass> approx = Arrays.asList(
+                MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE_UNSIGNED,
+                MApproximateNumber.FLOAT, MApproximateNumber.FLOAT_UNSIGNED,
+                MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED,
+                MNumeric.TINYINT, MNumeric.SMALLINT, MNumeric.INT, MNumeric.MEDIUMINT, MNumeric.BIGINT,
+                MNumeric.TINYINT_UNSIGNED, MNumeric.SMALLINT_UNSIGNED, MNumeric.INT_UNSIGNED,
+                MNumeric.MEDIUMINT_UNSIGNED, MNumeric.BIGINT_UNSIGNED
+        );
+
+        // Strings go first, each in its own group to get around the fact that there is no strong casts to strings
+        for (TClass  tClass : strings) {
+            Predicate<List<? extends TPreptimeValue>> containsTClass = IsCandidatePredicates.contains(tClass);
+            Predicate<List<? extends TPreptimeValue>> predicate =
+                    Predicates.and(containsTClass, IsCandidatePredicates.allTypesKnown);
+            resultsList.add(new IfNull(tClass, resultsList.size(), predicate));
+        }
+
+        // Next, date/times go, grouped together. After them come numbers. In both cases, strong casts work as needed.
+        createAsGroup(resultsList, datetimes);
+        createAsGroup(resultsList, approx);
+
+        // Finally, put another varchar as a catch-all
+        resultsList.add(new IfNull(MString.VARCHAR, resultsList.size(), null));
+
+        return resultsList.toArray(new TScalar[resultsList.size()]);
+    }
+
+    private static void createAsGroup(List<TScalar> resultsList, Collection<? extends TClass> group) {
+        Predicate<List<? extends TPreptimeValue>> containsAny = IsCandidatePredicates.containsOnly(group);
+        Predicate<List<? extends TPreptimeValue>> predicate =
+                Predicates.and(containsAny, IsCandidatePredicates.allTypesKnown);
+        resultsList.add(new IfNull(null, resultsList.size(), predicate));
+    }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.pickingCovers(null, 0, 1);
+        builder.pickingCovers(targetClass, 0, 1);
     }
 
     @Override
@@ -61,11 +122,29 @@ public final class IfNull extends TScalarBase {
     }
 
     @Override
+    public int[] getPriorities() {
+        return new int[] { priority };
+    }
+
+    @Override
+    public Predicate<List<? extends TPreptimeValue>> isCandidate() {
+        return isCandidatePredicate;
+    }
+
+    @Override
     protected boolean nullContaminates(int inputIndex) {
         // Neither arg contaminates by itself. If both are null, then the result is null, but it's just as easy
         // to figure this out in doEvaluate as anywhere else (since PValueTargets.copyFrom does the actual checking).
         return false;
     }
 
-    private IfNull() {}
+    private IfNull(TClass targetClass, int priority, Predicate<List<? extends TPreptimeValue>> isCandidatePredicate) {
+        this.targetClass = targetClass;
+        this.priority = priority;
+        this.isCandidatePredicate = isCandidatePredicate;
+    }
+
+    private final TClass targetClass;
+    private final int priority;
+    private final Predicate<List<? extends TPreptimeValue>> isCandidatePredicate;
 }

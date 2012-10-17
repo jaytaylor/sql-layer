@@ -1013,8 +1013,14 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
             List<Long> actualIds = new ArrayList<Long>();
-            while ((row = cursor.next()) != null)
-                actualIds.add(row.eval(3).getInt());
+            while ((row = cursor.next()) != null) {
+                if (usingPValues()) {
+                    actualIds.add((long)row.pvalue(3).getInt32());
+                }
+                else {
+                    actualIds.add(row.eval(3).getInt());
+                }
+            }
 
             assertEquals(expecteds.get(start), actualIds);
         }
