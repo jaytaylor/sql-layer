@@ -52,6 +52,8 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -117,7 +119,11 @@ class IndexCursorSpatial_InBox extends IndexCursor
         API.Ordering zOrdering = new API.Ordering();
         IndexRowType rowType = keyRange.indexRowType().physicalRowType();
         for (int f = 0; f < rowType.nFields(); f++) {
-            zOrdering.append(Expressions.field(rowType, f), true);
+            if (Types3Switch.ON) {
+                zOrdering.append(null, new TPreparedField(rowType.typeInstanceAt(f), f), true);
+            } else {
+                zOrdering.append(Expressions.field(rowType, f), null, true);
+            }
         }
         // The index column selector needs to select all the columns before the z column, and the z column itself.
         this.indexColumnSelector = new IndexRowPrefixSelector(this.latColumn + 1);
