@@ -25,9 +25,12 @@
 
 # Test #3: '1900-01-01' minus (2 * 1 year - 1 month)
 ---
+- Statement: SELECT DATE('2010-01-01') - ( INTERVAL 1 * 2 YEAR - INTERVAL 1 MONTH)
+- output: [['2008-02-01']]
+---
 - Statement: SELECT DATE('2010-01-01') - ( (INTERVAL 1 YEAR) * 2 - INTERVAL 1 MONTH)
-- output: [['2007-12-01']]
+- output: [['2008-02-01']]
 ---
 - Statement: SELECT DATE('2010-01-01') -  (INTERVAL 1 YEAR) * 2 + INTERVAL 1 MONTH
-- output: [['2007-12-01']]
+- output: [['2008-02-01']]
 ...
