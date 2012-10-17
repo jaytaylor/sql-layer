@@ -26,30 +26,31 @@
 
 package com.akiban.sql.pg;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
+import com.akiban.ais.model.Parameter;
+import com.akiban.sql.server.ServerJavaRoutine;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class PostgresJavaMethodResultsOutputter extends PostgresOutputter<Object[]>
+public class PostgresJavaRoutineResultsOutputter extends PostgresOutputter<Object[]>
 {
-    private Method method;
+    private ServerJavaRoutine javaRoutine;
 
-    public PostgresJavaMethodResultsOutputter(PostgresQueryContext context,
-                                              PostgresJavaMethod statement) {
+    public PostgresJavaRoutineResultsOutputter(PostgresQueryContext context,
+                                               PostgresJavaRoutine statement,
+                                               ServerJavaRoutine javaRoutine) {
         super(context, statement);
-        this.method = statement.getMethod();
+        this.javaRoutine = javaRoutine;
     }
 
     @Override
     public void output(Object[] row, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
-        Class<?>[] parameterTypes = method.getParameterTypes();
         int fieldIndex = 0;
-        for (int paramIndex = 0; paramIndex < parameterTypes.length; paramIndex++) {
-            if (!parameterTypes[paramIndex].isArray()) continue;
-            Object field = Array.get(row[paramIndex], 0);
+        for (Parameter param : javaRoutine.getInvocation().getRoutine().getParameters()) {
+            if (param.getDirection() == Parameter.Direction.IN) continue;
+            Object field = javaRoutine.getOutParameter(param);
             PostgresType type = columnTypes.get(fieldIndex);
             boolean binary = context.isColumnBinary(fieldIndex);
             ByteArrayOutputStream bytes;
