@@ -38,6 +38,8 @@ import java.util.List;
 
 public abstract class MRoundBase extends TScalarBase {
     
+    private static final int DEC_INDEX = 0;
+
     static enum RoundType
     {
         CEIL() {
@@ -75,7 +77,7 @@ public abstract class MRoundBase extends TScalarBase {
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 TClass cached = (TClass) context.objectAt(RET_TYPE_INDEX);
-                BigDecimalWrapper result = MArithmetic.getWrapper(context);
+                BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
                 result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
                 result = roundType.evaluate(result);
                 

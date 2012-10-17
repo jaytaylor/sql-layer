@@ -48,6 +48,8 @@ import java.util.List;
 
 public final class MUnaryMinus extends TScalarBase {
 
+    private static final int DEC_INDEX = 0;
+
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(strategy.tClass, 0);
@@ -121,7 +123,7 @@ public final class MUnaryMinus extends TScalarBase {
         DECIMAL(MNumeric.DECIMAL) {
             @Override
             protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
-                BigDecimalWrapper wrapped = MArithmetic.getWrapper(context);
+                BigDecimalWrapper wrapped = MBigDecimal.getWrapper(context, DEC_INDEX);
                 wrapped.set(MBigDecimal.getWrapper(in, context.inputTInstanceAt(0)));
                 wrapped.negate();
                 out.putObject(wrapped);
