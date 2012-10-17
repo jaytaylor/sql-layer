@@ -42,6 +42,7 @@ import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class TreeScanCT extends CostModelBase
 {
@@ -137,7 +138,7 @@ public class TreeScanCT extends CostModelBase
         IndexBound hi = new IndexBound(row(idxRowType, indexedColumn.valueFor(Integer.MAX_VALUE)),
                                        new SetColumnSelector(0));
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(idxRowType, 0), true);
+        ordering.append(field(idxRowType, 0), true);
         IndexKeyRange keyRange = IndexKeyRange.bounded(idxRowType, lo, true, hi, true);
         Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
         long start = System.nanoTime();
@@ -166,7 +167,7 @@ public class TreeScanCT extends CostModelBase
         IndexBound bound = new IndexBound(boundRow, new SetColumnSelector(0));
         IndexKeyRange keyRange = IndexKeyRange.bounded(idxRowType, bound, true, bound, true);
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(idxRowType, 0), true);
+        ordering.append(field(idxRowType, 0), true);
         Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
         Cursor cursor = cursor(plan, queryContext);
         long startTime = System.nanoTime();

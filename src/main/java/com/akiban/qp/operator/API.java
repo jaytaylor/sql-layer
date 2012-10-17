@@ -92,7 +92,7 @@ public class API
     }
 
     public static List<Expression> generateOld(List<? extends ExpressionGenerator> expressionGenerators) {
-        if (Types3Switch.ON)
+        if ((expressionGenerators == null) || Types3Switch.ON)
             return null;
         List<Expression> results = new ArrayList<Expression>(expressionGenerators.size());
         for (ExpressionGenerator generator : expressionGenerators) {
@@ -102,7 +102,7 @@ public class API
     }
 
     public static List<TPreparedExpression> generateNew(List<? extends ExpressionGenerator> expressionGenerators) {
-        if (!Types3Switch.ON)
+        if ((expressionGenerators == null) || (!Types3Switch.ON) )
             return null;
         List<TPreparedExpression> results = new ArrayList<TPreparedExpression>(expressionGenerators.size());
         for (ExpressionGenerator generator : expressionGenerators) {
@@ -1015,7 +1015,17 @@ public class API
 
         public void append(ExpressionGenerator expressionGenerator, boolean ascending)
         {
-            append(expressionGenerator.getExpression(), expressionGenerator.getTPreparedExpression(), ascending);
+            TPreparedExpression newExpr;
+            Expression oldExpr;
+            if (Types3Switch.ON) {
+                newExpr = expressionGenerator.getTPreparedExpression();
+                oldExpr = null;
+            }
+            else {
+                newExpr = null;
+                oldExpr = expressionGenerator.getExpression();
+            }
+            append(oldExpr, newExpr, ascending);
         }
 
         public void append(Expression expression, boolean ascending)

@@ -45,6 +45,7 @@ import org.junit.Test;
 import java.util.Random;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class IntersectCT extends CostModelBase
 {
@@ -106,11 +107,11 @@ public class IntersectCT extends CostModelBase
     private void intersect(int runs, int leftIndexKey, int rightIndexKey, String label)
     {
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(indexRowType, 1), true);
-        ordering.append(new FieldExpression(indexRowType, 2), true);
-        ordering.append(new FieldExpression(indexRowType, 3), true);
-        ordering.append(new FieldExpression(indexRowType, 4), true);
-        ordering.append(new FieldExpression(indexRowType, 5), true);
+        ordering.append(field(indexRowType, 1), true);
+        ordering.append(field(indexRowType, 2), true);
+        ordering.append(field(indexRowType, 3), true);
+        ordering.append(field(indexRowType, 4), true);
+        ordering.append(field(indexRowType, 5), true);
         IndexBound leftBound = new IndexBound(row(indexRowType, leftIndexKey), new SetColumnSelector(0));
         IndexKeyRange leftKeyRange = IndexKeyRange.bounded(indexRowType, leftBound, true, leftBound, true);
         IndexBound rightBound = new IndexBound(row(indexRowType, rightIndexKey), new SetColumnSelector(0));
