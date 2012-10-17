@@ -657,7 +657,6 @@ public class AkInterval extends TClassBase {
                 try
                 {
                     double val = Double.parseDouble(string);
-                    //@SuppressWarnings("unchecked")
                     return parseLong(Math.round(val), (U)units[0]);
                 }
                 catch (NumberFormatException e)
