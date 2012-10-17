@@ -31,7 +31,10 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.util.SparseArray;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 
 public class TValidatedOverload implements TOverload {
-
     // TResolvable methods (straight delegation)
 
     @Override
@@ -61,6 +63,24 @@ public class TValidatedOverload implements TOverload {
     @Override
     public int[] getPriorities() {
         return overload.getPriorities();
+    }
+
+    @Override
+    public Predicate<List<? extends TPreptimeValue>> isCandidate() {
+        Predicate<List<? extends TPreptimeValue>> overloadIsCandidate = overload.isCandidate();
+        return (overloadIsCandidate == null)
+                ? Predicates.<List<? extends TPreptimeValue>>alwaysTrue()
+                : overloadIsCandidate;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof TOverload) && overload.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return overload.hashCode();
     }
 
     // TResolvable methods (cached)
@@ -251,6 +271,7 @@ public class TValidatedOverload implements TOverload {
         }
         return results;
     }
+
     private static String[] createInputSetDescriptions(List<TInputSet> inputSetsByPos,
                                                        TInputSet pickingSet, TInputSet varargInputSet)
     {
@@ -287,7 +308,6 @@ public class TValidatedOverload implements TOverload {
     private final List<TInputSet> inputSetsCached;
     private final List<TInputSet> inputSetsByPos;
     private final TOverloadResult resultStrategy;
-
     private final TInputSet varargs;
 
     private final TInputSet pickingSet;

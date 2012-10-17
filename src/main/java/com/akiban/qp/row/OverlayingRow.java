@@ -33,6 +33,7 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
 
 public final class OverlayingRow extends AbstractRow {
@@ -87,7 +88,10 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     public OverlayingRow overlay(int index, Object object) {
-        return overlay(index, valueSource.setExplicitly(object, underlying.rowType().typeAt(index)));
+        if (pOverlays != null)
+            return overlay(index, PValueSources.fromObject(object, underlying.rowType().typeAt(index)).value());
+        else
+            return overlay(index, valueSource.setExplicitly(object, underlying.rowType().typeAt(index)));
     }
 
     @Override

@@ -107,7 +107,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
             queryContext.setPValue(0, new PValue(SCHEMA_NAME));
             queryContext.setPValue(1, new PValue(GROUP_NAME));
             if (multiple)
-                queryContext.setPValue(2, new PValue(10L));
+                queryContext.setPValue(2, new PValue(10));
         }
         else {
             queryContext.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));

@@ -1105,6 +1105,6 @@ public class ApiTestBase {
     }
     
     protected boolean testSupportsPValues() {
-        return false;
+        return true;
     }
 }

@@ -146,11 +146,6 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         ordering.append(oFieldExpression, tFieldExpression, ascending);
     }
 
-    @Override
-    protected boolean testSupportsPValues() {
-        return true;
-    }
-
     private Schema schema;
     private int customer;
     private Group customerGroup;

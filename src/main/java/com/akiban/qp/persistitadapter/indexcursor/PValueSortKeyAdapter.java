@@ -38,6 +38,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
@@ -179,7 +180,7 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
 
         @Override
         public void append(PValueSource source, AkCollator collator, TInstance tInstance) {
-            throw new UnsupportedOperationException(); // TODO
+            append(source, null, tInstance, collator);
         }
 
         protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget();

@@ -28,9 +28,9 @@ package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.operator.ExpressionBasedUpdateFunction;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -55,34 +55,34 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
             "schema", "grandparent",
             "gid int not null",
             "gid_copy int",
-            "primary key(gid)",
-            "index(gid_copy)");
+            "primary key(gid)");
+        createIndex("schema", "grandparent", "idx_gid_copy", "gid_copy");
         parent = createTable(
             "schema", "parent",
             "gid int not null",
             "pid int not null",
             "pid_copy int",
-            "index(pid_copy)",
             "primary key(gid, pid)",
-            "constraint __akiban_pg foreign key __akiban_pg(gid) references grandparent(gid)");
+            "grouping foreign key(gid) references grandparent(gid)");
+        createIndex("schema", "parent", "idx_pid_copy", "pid_copy");
         child1 = createTable(
             "schema", "child1",
             "gid int not null",
             "pid int not null",
             "cid1 int not null",
             "cid1_copy int",
-            "index(cid1_copy)",
             "primary key(gid, pid, cid1)",
-            "constraint __akiban_c1p foreign key __akiban_c1p(gid, pid) references parent(gid, pid)");
+            "grouping foreign key(gid, pid) references parent(gid, pid)");
+        createIndex("schema", "child1", "idx_cid1_copy", "cid1_copy");
         child2 = createTable(
             "schema", "child2",
             "gid int not null",
             "pid int not null",
             "cid2 int not null",
             "cid2_copy int",
-            "index(cid2_copy)",
             "primary key(gid, pid, cid2)",
-            "constraint __akiban_c2p foreign key __akiban_c2p(gid, pid) references parent(gid, pid)");
+            "grouping foreign key(gid, pid) references parent(gid, pid)");
+        createIndex("schema", "child2", "idx_cid2_copy", "cid2_copy");
         schema = new Schema(ais());
         grandparentRowType = schema.userTableRowType(userTable(grandparent));
         parentRowType = schema.userTableRowType(userTable(parent));
@@ -158,13 +158,25 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         Operator scanPlan = groupScan_Default(group);
         final UpdatePlannable updatePlan =
             update_Default(scanPlan,
-                           new ExpressionBasedUpdateFunction()
+                           new UpdateFunction()
                            {
+                               @Override
+                               public boolean usePValues() {
+                                   return usingPValues();
+                               }
+
                                @Override
                                public Row evaluate(Row original, QueryContext context)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   updatedRow.overlay(0, original.eval(0).getInt() - 1000000);
+                                   long i;
+                                   if (usePValues()) {
+                                       i = original.pvalue(0).getInt64();
+                                   }
+                                   else {
+                                       i = original.eval(0).getInt();
+                                   }
+                                   updatedRow.overlay(0, i - 1000000);
                                    return updatedRow;
                                }
 
