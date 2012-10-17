@@ -27,6 +27,7 @@
 package com.akiban.server.types3;
 
 import com.akiban.util.HasId;
+import com.google.common.base.Predicate;
 
 import java.util.List;
 
@@ -54,4 +55,5 @@ public interface TOverload extends HasId {
     List<TInputSet> inputSets();
     InputSetFlags exactInputs();
     int[] getPriorities();
+    Predicate<List<? extends TPreptimeValue>> isCandidate();
 }

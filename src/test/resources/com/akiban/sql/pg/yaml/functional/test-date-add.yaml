@@ -2,20 +2,25 @@
 # Related bug(s): 889300, 903215
 # Status: confirmed
 ---
+- Statement: SET newtypes to 'true'
+---
+- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', INTERVAL 1 WEEK);
+- output: [[!re '2001-01-07 23:59:59([.]0)?']]
+---
+- Statement: SELECT '2000-01-01' + interval 1 YEAR;
+- output: [['2001-01-01']]
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
----
-# '2000-12-31 23:59:59' minus '2000-12-30 23:59:58' ===> interval 1 day and 1 second
-- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', DATETIME('2000-12-31 23:59:59') -'2000-12-30 23:59:58') from all_types;
-- output: [[!re '2001-01-02 00:00:00([.]0)?']] 
 ---  
 # bug 903191
 - Statement: select '2008-12-31 23:59:59' + INTERVAL 1 SECOND from all_types;
 - output: [[!re '2009-01-01 00:00:00([.]0)?']] 
 ---
 - Statement: SELECT '2005-01-01' - INTERVAL 1 SECOND from all_types;
-- output: [['2004-12-31']]
+- output: !select-engine { all: [['2004-12-31']],
+                           newtypes: [[!re '2004-12-31 23:59:59([.]0)?']] }
 ---
 - Statement: SELECT DATE_ADD('2000-12-31 23:59:59', INTERVAL 1 SECOND) from all_types;
 - output: [[!re '2001-01-01 00:00:00([.]0)?']]
@@ -36,7 +41,8 @@
 - output: [[!re '2004-12-30 22:58:59([.]0)?']] 
 ---
 - Statement: SELECT '2005-01-01' - INTERVAL '1 1:1:1' DAY_SECOND from all_types;
-- output: [['2004-12-30']]
+- output: !select-engine { all: [['2004-12-30']],
+                           newtypes: [[!re '2004-12-30 22:58:59([.]0)?']] }
 ---
 #comparing DATE_ADD and '+'
 # DATE_ADD performs type promotion (that is, DATE and TIME INTERVAL (second/hr/min..) ---> DATETIME
@@ -45,14 +51,17 @@
 - output: [[!re '1899-12-30 14:00:00([.]0)?']]
 ---
 - Statement: SELECT '1900-01-01' + INTERVAL '-1 10' DAY_HOUR from all_types;
-- output: [['1899-12-30']] 
+- output: !select-engine { all: [['1899-12-30']],
+                           newtypes: [[!re '1899-12-30 14:00:00([.]0)?']] }
 ---
 #test  with INTERVAL coming from an arithmetic expression
 - Statement: SELECT '2009-12-12' + INTERVAL 1.5 * 3 DAY from all_types;
-- output: [['2009-12-16']]
+- output: !select-engine { all: [['2009-12-16']],        # types2 truncates 4.5 ==> 4
+                           newtypes: [['2009-12-17']] }  # types3 rounds    4.5 ==> 5
 ---
 - Statement: SELECT DATE_ADD('2009-12-12', INTERVAL 1.5 * 3 DAY) from all_types;
-- output: [[!re '2009-12-16 12:00:00([.]0)?']]
+- output: !select-engine { all: [[!re '2009-12-16 12:00:00([.]0)?']],
+                           newtypes: [['2009-12-17']] }
 #--- 
 # bug 889300: (Timestamp with fractional seconds)
 #- Statement: SELECT DATE_ADD('1992-12-31 23:59:59.000002', INTERVAL '1.999999' SECOND_MICROSECOND) from all_types;
@@ -74,7 +83,8 @@
 # DATE + (or minus) INTERVAL n DAY will still result in DATETIME because INTERVAL_DAY gets
 # translated to INTERVAL_MILLIS.
 - Statement: SELECT DATE_ADD('2013-01-01', INTERVAL 1 DAY) from all_types;
-- output: [[!re '2013-01-02 00:00:00([.]0)?']]
+- output: !select-engine { all: [[!re '2013-01-02 00:00:00([.]0)?']],
+                           newtypes: [['2013-01-02']] }
 ---
 - Statement: SELECT DATE_ADD('2013-01-01', INTERVAL 1 HOUR) from all_types;
 - output: [[!re '2013-01-01 01:00:00([.]0)?']]
@@ -93,4 +103,13 @@
 ---
 - Statement: SELECT INTERVAL 1 DAY + '2008-12-31' from all_types;
 - output: [['2009-01-01']] 
+################# Types2-unique- behaviour ##############################
+---
+- Statement: SET newtypes to 'false'
+---
+# '2000-12-31 23:59:59' minus '2000-12-30 23:59:58' ===> interval 1 day and 1 second
+- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', DATETIME('2000-12-31 23:59:59') -'2000-12-30 23:59:58') from all_types;
+- output: [[!re '2001-01-02 00:00:00([.]0)?']] 
+---
+- Statement: SET newtypes to DEFAULT
 ...

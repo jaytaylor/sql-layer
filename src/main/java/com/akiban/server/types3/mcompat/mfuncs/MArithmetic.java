@@ -38,6 +38,7 @@ import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.aktypes.AkInterval;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
@@ -51,6 +52,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.google.common.primitives.Doubles;
 
 import java.util.List;
@@ -510,7 +512,7 @@ public abstract class MArithmetic extends TArithmetic {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
             double result = inputs.get(0).getDouble() * inputs.get(1).getDouble();
-            if (Doubles.isFinite(result))
+            if (!Doubles.isFinite(result))
                 output.putNull();
             else
                 output.putDouble(result);
@@ -543,6 +545,7 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
 
+    // mod function
     public static final TScalar MOD_TINYTINT = new MArithmetic("mod", "mod", false, MNumeric.TINYINT, MNumeric.INT, 4)
     {
         @Override
@@ -724,5 +727,113 @@ public abstract class MArithmetic extends TArithmetic {
 
     }
 
+    
+    // multiplications
+    public static final TScalar MULT_MONTH_DOUBLE 
+            = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
+    public static final TScalar MULT_DOUBLE_MONTH 
+            = new IntervalArith(AkInterval.MONTHS, 1, MApproximateNumber.DOUBLE, 0, IntervalOp.MULT);
+    public static final TScalar MULT_SECS_DOUBLE 
+            = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
+    public static final TScalar MULT_DOUBLE_SECS 
+            = new IntervalArith(AkInterval.SECONDS, 1, MApproximateNumber.DOUBLE, 0, IntervalOp.MULT);
+    
+    // divisions
+    public static final TScalar DIVIDE_MONTHS_DOUBLE 
+            = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
+  public static final TScalar DIVIDE_SECS_DOUBLE 
+            = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
+    
+    
+    
+    private static enum IntervalOp
+    {
+        MULT("times")
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                return Math.round(inputs.get(pos0).getInt64()
+                                    * inputs.get(pos1).getDouble());
+            }
+        },
+        DIVIDE("divide")
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                assert pos0 == 0 && pos1 == 1 : "ONLY <INTERVA> / <NUMERIC> is supported";
+
+                return Math.round(inputs.get(0).getInt64()
+                                    / inputs.get(1).getDouble());
+            }
+        },
+        ADD("plus")
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                return inputs.get(0).getInt64() + inputs.get(1).getInt64();
+            }
+        }
+        ;
+        
+        private IntervalOp(String n)
+        {
+            name = n;
+        }
+        
+        final String name;
+        abstract long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1);
+    }
+
+    static class IntervalArith extends TScalarBase
+    {
+        private final TClass left, right;
+        protected final int pos0, pos1;
+        private final IntervalOp op;
+        
+        IntervalArith(TClass left,int pos0, TClass right, int pos1, IntervalOp op)
+        {
+           this.left = left;
+           this.right = right;
+           this.pos0 = pos0;
+           this.pos1 = pos1;
+           this.op = op;
+        }
+        
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder)
+        {
+            // the INTERVAL arg should not be a 'casted' one
+            builder.covers(left, pos0).covers(right, pos1).setExact(pos0, true);
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putInt64(op.doMath(inputs, pos0, pos1));
+        }
+        
+        @Override
+        public String displayName()
+        {
+            return op.name;
+        }
+
+        @Override
+        public TOverloadResult resultType()
+        {
+            return TOverloadResult.custom(new TCustomOverloadResult()
+            {
+                @Override
+                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
+                {
+                    return inputs.get(pos0).instance();
+                }   
+            });
+        }
+    }
+    
     private static final int DIV_PRECISION_INCREMENT = 4;
 }
