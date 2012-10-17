@@ -87,12 +87,16 @@ public class MDateAddSub extends TScalarBase
         
         // ADDTIME
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.INTERVAL_MILLIS, "plus"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.TIME, SecondType.INTERVAL_MILLIS, "minus"),
+        
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, "plus"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.INTERVAL_MILLIS, "minus"),
+        
         new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS),
-        new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.SECONDS),
         new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS),
-        new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.SECONDS),
     };
 
     public static final TScalar[] NON_COMMUTATIVE = new TScalar[]
