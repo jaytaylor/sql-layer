@@ -24,42 +24,48 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.server;
+package com.akiban.sql.script;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.server.error.ExternalRoutineInvocationException;
+import com.akiban.sql.server.ServerJavaRoutine;
+import com.akiban.sql.server.ServerJavaValues;
+import com.akiban.sql.server.ServerQueryContext;
+import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.server.service.routines.ScriptInvoker;
+import com.akiban.server.service.routines.ScriptPool;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.List;
 
-public class ServerJavaMethod extends ServerJavaRoutine
+/** Implementation of the <code>SCRIPT_FUNCTION_JAVA</code> calling convention. 
+ * Like standard <code>PARAMETER STYLE JAVA</code>, outputs are passed
+ * as 1-long arrays that the called function stores into.
+ */
+public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
 {
-    private Method method;
-    private Class<?>[] parameterTypes;
-    private Object[] methodArgs;
-    private Object methodResult;
+    private ScriptPool<ScriptInvoker> pool;
+    private Object[] functionArgs;
+    private Object functionResult;
     
-    public ServerJavaMethod(ServerQueryContext context,
-                            ServerRoutineInvocation invocation,
-                            Method method) {
+    public ScriptFunctionJavaRoutine(ServerQueryContext context,
+                                     ServerRoutineInvocation invocation,
+                                     ScriptPool<ScriptInvoker> pool) {
         super(context, invocation);
-        this.method = method;
-        parameterTypes = method.getParameterTypes();
+        this.pool = pool;
     }
 
     @Override
     public void push() {
         super.push();
-        methodArgs = methodArgs(parameterTypes);
+        functionArgs = functionArgs(getInvocation().getRoutine().getParameters());
     }
 
-    protected static Object[] methodArgs(Class<?>[] parameterTypes) {
-        Object[] result = new Object[parameterTypes.length];
-        for (int i = 0; i < parameterTypes.length; i++) {
-            Class<?> outputType = parameterTypes[i].getComponentType();
-            if (outputType != null) {
-                result[i] = Array.newInstance(outputType, 1);
+    protected static Object[] functionArgs(List<Parameter> parameters) {
+        Object[] result = new Object[parameters.size()];
+        for (int i = 0; i < result.length; i++) {
+            if (parameters.get(i).getDirection() != Parameter.Direction.IN) {
+                result[i] = new Object[1];
             }
         }
         return result;
@@ -67,36 +73,34 @@ public class ServerJavaMethod extends ServerJavaRoutine
 
     @Override
     public void setInParameter(Parameter parameter, ServerJavaValues values, int index) {
-        Class<?> clazz = parameterTypes[index];
-        if (clazz.isArray()) {
-            Array.set(methodArgs[index], 0, 
-                      values.getObject(index, clazz.getComponentType()));
+        if (parameter.getDirection() == Parameter.Direction.INOUT) {
+            Array.set(functionArgs[index], 0, values.getObject(index));
         }
         else {
-            methodArgs[index] = values.getObject(index, clazz);
+            functionArgs[index] = values.getObject(index);
         }
     }
 
     @Override
     public void invoke() {
+        ScriptInvoker invoker = pool.get();
+        boolean success = false;
         try {
-            methodResult = method.invoke(null, methodArgs);
+            functionResult = invoker.invoke(functionArgs);
+            success = true;
         }
-        catch (IllegalAccessException ex) {
-            throw new ExternalRoutineInvocationException(getInvocation().getRoutineName(), ex);
-        }
-        catch (InvocationTargetException ex) {
-            throw new ExternalRoutineInvocationException(getInvocation().getRoutineName(), ex.getTargetException());
+        finally {
+            pool.put(invoker, !success);
         }
     }
 
     @Override
     public Object getOutParameter(Parameter parameter, int index) {
         if (parameter.getDirection() == Parameter.Direction.RETURN) {
-            return methodResult;
+            return functionResult;
         }
         else {
-            return Array.get(methodArgs[index], 0);
+            return Array.get(functionArgs[index], 0);
         }
     }
     

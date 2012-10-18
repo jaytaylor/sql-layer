@@ -355,10 +355,10 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         i_oid = 2;
         i_iid = 3;
         i_ix = 4;
-        vendorRD = rowDefCache().getRowDef(vendorId);
-        customerRD = rowDefCache().getRowDef(customerId);
-        orderRD = rowDefCache().getRowDef(orderId);
-        itemRD = rowDefCache().getRowDef(itemId);
+        vendorRD = getRowDef(vendorId);
+        customerRD = getRowDef(customerId);
+        orderRD = getRowDef(orderId);
+        itemRD = getRowDef(itemId);
         // group
         group = customerRD.getGroup();
     }

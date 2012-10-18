@@ -56,12 +56,12 @@ public class QPProfilePTBase extends PTBase
 {
     protected Group group(int userTableId)
     {
-        return rowDefCache().rowDef(userTableId).table().getGroup();
+        return getRowDef(userTableId).table().getGroup();
     }
 
     protected UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = getRowDef(userTableId);
         return userTableRowDef.userTable();
     }
 
@@ -106,7 +106,7 @@ public class QPProfilePTBase extends PTBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId, store());
+        NiceRow niceRow = new NiceRow(session(), tableId, store());
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];

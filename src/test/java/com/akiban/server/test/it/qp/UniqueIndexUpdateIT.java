@@ -54,7 +54,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
             "y int",
             "primary key (id)");
         createUniqueIndex("schema", "t", "idx_xy", "x", "y");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         xyIndexRowType = indexType(t, "x", "y");
         adapter = persistitAdapter(schema);

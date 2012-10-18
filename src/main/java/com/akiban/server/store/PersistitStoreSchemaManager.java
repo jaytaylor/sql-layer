@@ -925,7 +925,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private void buildRowDefCache(final AkibanInformationSchema newAis)  {
         try {
-            final RowDefCache rowDefCache = store.getRowDefCache();
+            final RowDefCache rowDefCache = RowDefCache.latest();
             rowDefCache.clear();
             treeService.getTableStatusCache().detachAIS();
             // This create|verifies the trees exist for indexes & tables

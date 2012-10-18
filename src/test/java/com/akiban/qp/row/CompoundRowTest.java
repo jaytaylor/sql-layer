@@ -134,7 +134,7 @@ public class CompoundRowTest {
         builder.groupingIsComplete();
         
         SchemaFactory factory = new SchemaFactory ("schema");
-        factory.rowDefCache(builder.akibanInformationSchema());
+        factory.buildRowDefs(builder.akibanInformationSchema());
         return new Schema(builder.akibanInformationSchema());
     }
     

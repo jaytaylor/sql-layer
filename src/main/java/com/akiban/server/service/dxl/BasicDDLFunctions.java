@@ -786,9 +786,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public RowDef getRowDef(int tableId) throws RowDefNotFoundException {
+    public RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException {
         logger.trace("getting RowDef for {}", tableId);
-        return store().getRowDefCache().getRowDef(tableId);
+        return store().getRowDef(session, tableId);
     }
 
     @Override

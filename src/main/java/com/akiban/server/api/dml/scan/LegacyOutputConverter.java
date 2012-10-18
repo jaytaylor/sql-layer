@@ -31,6 +31,7 @@ import java.util.Set;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.service.session.Session;
 
 /**
  * <p>A class that acts as a LegacyRowOutput and converts each row, as it's seen, to a NiceRow. That NiceRow
@@ -41,11 +42,13 @@ import com.akiban.server.api.DMLFunctions;
  * LegacyRowOutput.</p>
  */
 public final class LegacyOutputConverter implements BufferedLegacyOutputRouter.Handler {
+    private final Session session;
     private final DMLFunctions converter;
     private RowOutput output;
     private Set<Integer> columnsToScan;
 
-    public LegacyOutputConverter(DMLFunctions converter) {
+    public LegacyOutputConverter(Session session, DMLFunctions converter) {
+        this.session = session;
         this.converter = converter;
     }
 
@@ -54,7 +57,7 @@ public final class LegacyOutputConverter implements BufferedLegacyOutputRouter.H
         RowData rowData = new RowData(bytes, offset, length);
         rowData.prepareRow(offset);
         final NewRow aNew;
-        aNew = converter.convertRowData(rowData);
+        aNew = converter.convertRowData(session, rowData);
 
         if (columnsToScan != null) {
             final Set<Integer> colsToRemove = new HashSet<Integer>();

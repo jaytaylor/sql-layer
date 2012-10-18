@@ -48,6 +48,44 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
 
     protected ServerRoutineInvocation invocation;
 
+    public static PostgresStatement statement(PostgresServerSession server, 
+                                              ServerRoutineInvocation invocation,
+                                              List<ParameterNode> params, 
+                                              int[] paramTypes) {
+        Routine routine = invocation.getRoutine();
+        List<PostgresType> columnTypes = columnTypes(routine);
+        List<String> columnNames;
+        if (columnTypes.isEmpty()) {
+            columnTypes = null;
+            columnNames = null;
+        }
+        else {
+            columnNames = columnNames(routine);
+        }
+        PostgresType[] parameterTypes;
+        if ((params == null) || params.isEmpty())
+            parameterTypes = null;
+        else
+            parameterTypes = parameterTypes(invocation, params.size(), paramTypes);
+        boolean usesPValues = server.getBooleanProperty("newtypes", Types3Switch.ON);
+        switch (routine.getCallingConvention()) {
+        case JAVA:
+            return PostgresJavaMethod.statement(server, invocation, 
+                                                columnNames, columnTypes,
+                                                parameterTypes, usesPValues);
+        case SCRIPT_FUNCTION_JAVA:
+            return PostgresScriptFunctionJavaRoutine.statement(server, invocation, 
+                                                               columnNames, columnTypes,
+                                                               parameterTypes, usesPValues);
+        case SCRIPT_BINDINGS:
+            return PostgresScriptBindingsRoutine.statement(server, invocation, 
+                                                           columnNames, columnTypes,
+                                                           parameterTypes, usesPValues);
+        default:
+            return null;
+        }
+    }
+
     protected PostgresJavaRoutine(ServerRoutineInvocation invocation,
                                   List<String> columnNames, 
                                   List<PostgresType> columnTypes,
@@ -87,18 +125,19 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         ServerJavaRoutine call = javaRoutine(context);
-        call.setInputs();
-        ServerCallContextStack.push(context, invocation);
+        call.push();
         try {
+            call.setInputs();
             call.invoke();
+            if (getColumnTypes() != null) {
+                PostgresOutputter<ServerJavaRoutine> outputter = 
+                    new PostgresJavaRoutineResultsOutputter(context, this);
+                outputter.output(call, usesPValues());
+                nrows++;
+            }
         }
         finally {
-            ServerCallContextStack.pop(context, invocation);
-        }
-        if (getColumnTypes() != null) {
-            PostgresOutputter<ServerJavaRoutine> outputter = new PostgresJavaRoutineResultsOutputter(context, this);
-            outputter.output(call, usesPValues());
-            nrows++;
+            call.pop();
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());

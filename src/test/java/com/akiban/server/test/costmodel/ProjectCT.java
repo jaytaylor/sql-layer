@@ -58,7 +58,7 @@ public class ProjectCT extends CostModelBase
         t = createTable(schemaName, tableName,
                         "id int not null",
                         "primary key(id)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         group = group(t);
         adapter = persistitAdapter(schema);

@@ -40,7 +40,7 @@ public interface RoutineLoader
     public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName);
     public Method loadJavaMethod(Session session, TableName routineName);
     public boolean isScriptLanguage(Session session, String language);
-    public ScriptPool<? extends ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName);
-    public ScriptPool<? extends ScriptInvoker> getScriptInvoker(Session session, TableName routineName);
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName);
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName);
     public void unloadRoutine(Session session, TableName routineName);
 }

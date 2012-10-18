@@ -27,13 +27,14 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
 public class TestRow extends NiceRow
 {
-    public TestRow(int tableId, Store store)
+    public TestRow(Session session, int tableId, Store store)
     {
-        super(tableId, store);
+        super(session, tableId, store);
         this.store = store;
     }
 
