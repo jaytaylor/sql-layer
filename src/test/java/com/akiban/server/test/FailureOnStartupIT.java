@@ -30,7 +30,6 @@ import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
@@ -89,8 +88,8 @@ public final class FailureOnStartupIT extends ApiTestBase {
     public static class BadStore extends OperatorStore {
 
         @Inject
-        public BadStore(AisHolder aisHolder, TreeService treeService, SchemaManager schemaManager) {
-            super(aisHolder, treeService, null, schemaManager);
+        public BadStore(TreeService treeService, SchemaManager schemaManager) {
+            super(treeService, null, schemaManager);
         }
 
         @Override
