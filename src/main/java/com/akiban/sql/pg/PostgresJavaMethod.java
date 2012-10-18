@@ -26,13 +26,9 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
 import com.akiban.sql.server.ServerRoutineInvocation;
-
-import com.akiban.ais.model.Routine;
-import com.akiban.server.types3.Types3Switch;
 
 import java.lang.reflect.Method;
 import java.util.List;
