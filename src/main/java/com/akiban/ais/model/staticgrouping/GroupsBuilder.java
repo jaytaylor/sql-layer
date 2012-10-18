@@ -229,7 +229,7 @@ public final class GroupsBuilder
             }
             final String groupName;
             if (uTable.getGroup().getRoot() == uTable) {
-                groupName = "__GROUP_" + uTable.getGroup().getName();
+                groupName = "__GROUP_" + uTable.getGroup().getName().getTableName();
             }
             else {
                 groupName = "__TMP_@" + System.identityHashCode(uTable) + '_' + uTable.getName();

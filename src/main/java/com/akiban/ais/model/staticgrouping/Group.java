@@ -38,11 +38,6 @@ public final class Group
 {
     private final TableName groupName;
 
-    public Group(String schemaName, String tableName)
-    {
-        this(new TableName(schemaName, tableName));
-    }
-
     public Group(TableName groupName)
     {
         if (groupName == null) {

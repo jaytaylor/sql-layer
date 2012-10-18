@@ -63,7 +63,7 @@ final class VisitToString implements GroupingVisitor<String> {
             firstGroup = false;
         }
         builder.append("CREATE GROUP");
-        if (!group.getGroupName().equals(rootTable.getTableName())) {
+        if (!group.getGroupName().equals(rootTable)) {
             builder.append(' ').append(group.getGroupName());
         }
         builder.append(NL).append("ROOT TABLE ").append(rootTable.escaped(visitorDefaultSchema));
