@@ -455,11 +455,7 @@ public class RowData {
 
     @Override
     public String toString() {
-        return toString(RowDefCache.latest());
-    }
-
-    public String toString(RowDefCache cache) {
-        return toString(cache != null ? cache.ais() : null);
+        return toString(RowDefCache.latest().ais());
     }
 
     public String toString(AkibanInformationSchema ais) {
@@ -574,7 +570,7 @@ public class RowData {
     }
 
     /** Returns a hex-dump of the backing buffer. */
-    private String toStringWithoutRowDef(String missingRowDefExplanation) {
+    public String toStringWithoutRowDef(String missingRowDefExplanation) {
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
         try {
             sb.append("RowData[");
