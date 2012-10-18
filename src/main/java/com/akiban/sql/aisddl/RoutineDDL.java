@@ -108,32 +108,47 @@ public class RoutineDDL {
                               builderType.name(), typeParameters[0], typeParameters[1]);
         }
 
-        if (createAlias.getJavaClassName() != null) {
-            String jarSchema = defaultSchemaName;
-            String jarName = null;
-            String className = createAlias.getJavaClassName();
-            String methodName = createAlias.getMethodName();
-            if (callingConvention == Routine.CallingConvention.LOADABLE_PLAN) {
-                // The whole class implements a standard interface.
-                if (className == null)
-                    className = methodName;
-                else
-                    className = className + "." + methodName;
-                methodName = null;
+        if (createAlias.getExternalName() != null) {
+            String className, methodName;
+            boolean checkJarName;
+            if (callingConvention == Routine.CallingConvention.JAVA) {
+                className = createAlias.getJavaClassName();
+                methodName = createAlias.getMethodName();
+                checkJarName = true;
             }
-            int idx = className.indexOf(':');
-            if (idx >= 0) {
-                jarName = className.substring(0, idx);
-                className = className.substring(idx + 1);
-                idx = jarName.indexOf('.');
+            else if (callingConvention == Routine.CallingConvention.LOADABLE_PLAN) {
+                // The whole class implements a standard interface.
+                className = createAlias.getExternalName();
+                methodName = null;
+                checkJarName = true;
+            }
+            else {
+                className = null;
+                methodName = createAlias.getExternalName();
+                checkJarName = false;
+            }
+            String jarSchema = null;
+            String jarName = null;
+            if (checkJarName) {
+                int idx = className.indexOf(':');
                 if (idx >= 0) {
-                    jarSchema = jarName.substring(0, idx);
-                    jarName = jarName.substring(idx + 1);
-                }
-                else if (jarName.equals("thisjar")) {
-                    TableName thisJar = (TableName)createAlias.getUserData();
-                    jarSchema = thisJar.getSchemaName();
-                    jarName = thisJar.getTableName();
+                    jarName = className.substring(0, idx);
+                    className = className.substring(idx + 1);
+                    if (jarName.equals("thisjar")) {
+                        TableName thisJar = (TableName)createAlias.getUserData();
+                        jarSchema = thisJar.getSchemaName();
+                        jarName = thisJar.getTableName();
+                    }
+                    else {
+                        idx = jarName.indexOf('.');
+                        if (idx < 0) {
+                            jarSchema = defaultSchemaName;
+                        }
+                        else {
+                            jarSchema = jarName.substring(0, idx);
+                            jarName = jarName.substring(idx + 1);
+                        }
+                    }
                 }
             }
             if (jarName != null) {
