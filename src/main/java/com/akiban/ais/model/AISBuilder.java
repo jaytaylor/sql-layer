@@ -162,7 +162,7 @@ public class AISBuilder {
     /** @deprecated */
     public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
     {
-        groupIndex(ais.getGroup(groupName).getName(), indexName, unique, joinType);
+        groupIndex(findFullGroupName(groupName), indexName, unique, joinType);
     }
 
     public void groupIndex(TableName groupName, String indexName, Boolean unique, Index.JoinType joinType)
@@ -174,12 +174,6 @@ public class AISBuilder {
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
         Index index = GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
         index.setTreeName(nameGenerator.generateIndexTreeName(index));
-    }
-
-    @Deprecated
-    public void groupIndex(String groupName, String indexName, Boolean unique)
-    {
-        groupIndex(groupName, indexName, unique, Index.JoinType.LEFT);
     }
 
     public void indexColumn(String schemaName, String tableName,
@@ -202,7 +196,7 @@ public class AISBuilder {
     /** @deprecated **/
     public void groupIndexColumn(String groupName, String indexName, String schemaName, String tableName,
                                  String columnName, Integer position) {
-        groupIndexColumn(ais.getGroup(groupName).getName(), indexName, schemaName, tableName, columnName, position);
+        groupIndexColumn(findFullGroupName(groupName), indexName, schemaName, tableName, columnName, position);
     }
 
     public void groupIndexColumn(TableName groupName, String indexName, String schemaName, String tableName,
@@ -399,10 +393,15 @@ public class AISBuilder {
         group.setTreeName(nameGenerator.generateGroupTreeName(groupSchemaName, groupName));
     }
 
+    /** @deprecated **/
     public void deleteGroup(String groupName) {
+        deleteGroup(findFullGroupName(groupName));
+    }
+
+    public void deleteGroup(TableName groupName) {
         LOG.info("deleteGroup: " + groupName);
         Group group = ais.getGroup(groupName);
-        checkFound(group, "deleting group", "group", groupName);
+        checkFound(group, "deleting group", "group", groupName.toString());
         boolean groupEmpty = true;
         for (UserTable userTable : ais.getUserTables().values()) {
             if (userTable.getGroup() == group) {
@@ -416,8 +415,9 @@ public class AISBuilder {
         }
     }
 
+    /** @deprecated **/
     public void addTableToGroup(String groupName, String schemaName, String tableName) {
-        addTableToGroup(ais.getGroup(groupName).getName(), schemaName, tableName);
+        addTableToGroup(findFullGroupName(groupName), schemaName, tableName);
     }
 
     public void addTableToGroup(TableName groupName, String schemaName, String tableName) {
@@ -443,7 +443,7 @@ public class AISBuilder {
 
     /** @deprecated  **/
     public void addJoinToGroup(String groupName, String joinName, Integer weight) {
-        addJoinToGroup(ais.getGroup(groupName).getName(), joinName, weight);
+        addJoinToGroup(findFullGroupName(groupName), joinName, weight);
     }
 
     public void addJoinToGroup(TableName groupName, String joinName, Integer weight) {
@@ -479,14 +479,17 @@ public class AISBuilder {
         checkGroupAddition(group, join.getGroup(), joinName);
     }
 
-    public void removeTableFromGroup(String groupName, String schemaName,
-            String tableName) {
+    public void removeTableFromGroup(String groupName, String schemaName, String tableName) {
+        removeTableFromGroup(findFullGroupName(groupName), schemaName, tableName);
+    }
+
+    public void removeTableFromGroup(TableName groupName, String schemaName, String tableName) {
         LOG.info("removeTableFromGroup: " + groupName + ": " + schemaName + "."
                 + tableName);
         // This is only valid for a single-table group.
         // group
         Group group = ais.getGroup(groupName);
-        checkFound(group, "removing join from group", "group", groupName);
+        checkFound(group, "removing join from group", "group", groupName.toString());
         // table
         UserTable table = ais.getUserTable(schemaName, tableName);
         checkFound(table, "removing join from group", "table table",
@@ -501,14 +504,19 @@ public class AISBuilder {
         setTablesGroup(table, null);
     }
 
+    /** @deprecated **/
     public void removeJoinFromGroup(String groupName, String joinName) {
+        removeJoinFromGroup(findFullGroupName(groupName), joinName);
+    }
+
+    public void removeJoinFromGroup(TableName groupName, String joinName) {
         LOG.info("removeJoinFromGroup: " + groupName + ": " + joinName);
         // join
         Join join = ais.getJoin(joinName);
         checkFound(join, "removing join from group", "join", joinName);
         // group
         Group group = ais.getGroup(groupName);
-        checkFound(group, "removing join from group", "group", groupName);
+        checkFound(group, "removing join from group", "group", groupName.toString());
         checkInGroup(group, join, "removing join from group", "child table");
         // parent
         String parentSchemaName = join.getParent().getName().getSchemaName();
@@ -539,8 +547,9 @@ public class AISBuilder {
         }
     }
 
+    /** @deprecated **/
     public void moveTreeToGroup(String schemaName, String tableName, String groupName, String joinName) {
-        moveTreeToGroup(schemaName, tableName, ais.getGroup(groupName).getName(), joinName);
+        moveTreeToGroup(schemaName, tableName, findFullGroupName(groupName), joinName);
     }
 
     public void moveTreeToGroup(String schemaName, String tableName, TableName groupName, String joinName) {
@@ -584,8 +593,11 @@ public class AISBuilder {
         moveTree(children, group);
     }
 
-    public void moveTreeToEmptyGroup(String schemaName, String tableName,
-            String groupName) {
+    public void moveTreeToEmptyGroup(String schemaName, String tableName, String groupName) {
+        moveTreeToEmptyGroup(schemaName, tableName, findFullGroupName(groupName));
+    }
+
+    public void moveTreeToEmptyGroup(String schemaName, String tableName, TableName groupName) {
         LOG.info("moveTree: " + schemaName + "." + tableName
                 + " -> empty group " + groupName);
         // table
@@ -594,7 +606,7 @@ public class AISBuilder {
 
         // group
         Group group = ais.getGroup(groupName);
-        checkFound(group, "moving tree", "group", groupName);
+        checkFound(group, "moving tree", "group", groupName.toString());
 
         // Remove table's parent join from its current group (if there is a
         // parent)
@@ -737,6 +749,12 @@ public class AISBuilder {
         }
     }
 
+    private TableName findFullGroupName(String groupName) {
+        Group group = ais.getGroup(groupName);
+        checkFound(group, "looking up group without schema", "group", groupName);
+        return group.getName();
+    }
+
     // State
     static final class ColumnName {
         private final TableName table;
@@ -764,10 +782,13 @@ public class AISBuilder {
             if (!(object instanceof ColumnName))
                 return false;
             ColumnName other = (ColumnName) object;
-            if (this.table == null && other.table != null)
+            if (this.table == null) {
+                if(other.table != null)
+                    return false;
+            }
+            else if (!this.table.equals(other.table)) {
                 return false;
-            if (!this.table.equals(other.table))
-                return false;
+            }
             return (this.columnName == null) ? other.columnName == null
                     : this.columnName.equals(other.columnName);
         }
