@@ -159,11 +159,17 @@ public class AISBuilder {
         index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
+    /** @deprecated */
     public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
+    {
+        groupIndex(ais.getGroup(groupName).getName(), indexName, unique, joinType);
+    }
+
+    public void groupIndex(TableName groupName, String indexName, Boolean unique, Index.JoinType joinType)
     {
         LOG.info("groupIndex: " + groupName + "." + indexName);
         Group group = ais.getGroup(groupName);
-        checkFound(group, "creating group index", "group", groupName);
+        checkFound(group, "creating group index", "group", groupName.toString());
         setRootIfNeeded(group);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
         Index index = GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
@@ -193,14 +199,20 @@ public class AISBuilder {
         IndexColumn.create(index, column, position, ascending, indexedLength);
     }
 
+    /** @deprecated **/
     public void groupIndexColumn(String groupName, String indexName, String schemaName, String tableName,
+                                 String columnName, Integer position) {
+        groupIndexColumn(ais.getGroup(groupName).getName(), indexName, schemaName, tableName, columnName, position);
+    }
+
+    public void groupIndexColumn(TableName groupName, String indexName, String schemaName, String tableName,
                                  String columnName, Integer position)
     {
         LOG.info("groupIndexColumn: " + groupName + "." + indexName + ":" + columnName);
         Group group = ais.getGroup(groupName);
-        checkFound(group, "creating group index column", "group", groupName);
+        checkFound(group, "creating group index column", "group", groupName.toString());
         Index index = group.getIndex(indexName);
-        checkFound(index, "creating group index column", "index", concat(groupName, indexName));
+        checkFound(index, "creating group index column", "index", concat(groupName.toString(), indexName));
         Table table = ais.getTable(schemaName, tableName);
         if (!table.getGroup().getName().equals(groupName)) {
             throw new IllegalArgumentException("group name mismatch: " + groupName + " != " + table.getGroup());
@@ -382,8 +394,8 @@ public class AISBuilder {
     // API for describing groups
 
     public void createGroup(String groupName, String groupSchemaName) {
-        LOG.info("createGroup: {} in {}", groupName, groupSchemaName);
-        Group group = Group.create(ais, groupName);
+        LOG.info("createGroup: {}.{}", groupSchemaName, groupName);
+        Group group = Group.create(ais, groupSchemaName, groupName);
         group.setTreeName(nameGenerator.generateGroupTreeName(groupSchemaName, groupName));
     }
 
@@ -426,14 +438,19 @@ public class AISBuilder {
     // DOES NOT WORK for addJoinToGroup,
     // because there could be multiple candidate joins between a pair of tables.
 
+    /** @deprecated  **/
     public void addJoinToGroup(String groupName, String joinName, Integer weight) {
+        addJoinToGroup(ais.getGroup(groupName).getName(), joinName, weight);
+    }
+
+    public void addJoinToGroup(TableName groupName, String joinName, Integer weight) {
         LOG.info("addJoinToGroup: " + groupName + ": " + joinName);
         // join
         Join join = ais.getJoin(joinName);
         checkFound(join, "adding join to group", "join", joinName);
         // group
         Group group = ais.getGroup(groupName);
-        checkFound(group, "adding join to group", "group", groupName);
+        checkFound(group, "adding join to group", "group", groupName.toString());
         // parent
         String parentSchemaName = join.getParent().getName().getSchemaName();
         String parentTableName = join.getParent().getName().getTableName();
@@ -709,7 +726,7 @@ public class AISBuilder {
     public void setGroupTreeNamesForTest() {
         for(Group group : ais.getGroups().values()) {
             if(group.getTreeName() == null) {
-                group.setTreeName(group.getName());
+                group.setTreeName(group.getName().toString());
             }
         }
     }

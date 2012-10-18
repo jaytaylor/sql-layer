@@ -649,7 +649,7 @@ public class AISBBasedBuilder
             if (userTable.getGroup() == null) {
                 throw new IllegalStateException("ungrouped table: " + schema + '.' + table);
             }
-            String localGroupName = userTable.getGroup().getName();
+            TableName localGroupName = userTable.getGroup().getName();
             if (localGroupName == null) {
                 throw new IllegalStateException("unnamed group for " + schema + '.' + table);
             }
@@ -697,6 +697,6 @@ public class AISBBasedBuilder
         private int position;
         private Index.JoinType joinType;
         private String indexName;
-        private String groupName;
+        private TableName groupName;
     }
 }
