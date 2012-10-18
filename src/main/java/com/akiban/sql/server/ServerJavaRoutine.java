@@ -53,6 +53,14 @@ public abstract class ServerJavaRoutine
     public abstract Object getOutParameter(Parameter parameter, int index);
     // TODO: Something about list of dynamic result sets.
 
+    public void push() {
+        ServerCallContextStack.push(context, invocation);
+    }
+
+    public void pop() {
+        ServerCallContextStack.pop(context, invocation);
+    }
+
     public void setInputs() {
         int nargs = invocation.size();
         ServerJavaValues values = invocation.asValues(context);

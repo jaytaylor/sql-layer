@@ -87,18 +87,19 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         ServerJavaRoutine call = javaRoutine(context);
-        call.setInputs();
-        ServerCallContextStack.push(context, invocation);
+        call.push();
         try {
+            call.setInputs();
             call.invoke();
+            if (getColumnTypes() != null) {
+                PostgresOutputter<ServerJavaRoutine> outputter = 
+                    new PostgresJavaRoutineResultsOutputter(context, this);
+                outputter.output(call, usesPValues());
+                nrows++;
+            }
         }
         finally {
-            ServerCallContextStack.pop(context, invocation);
-        }
-        if (getColumnTypes() != null) {
-            PostgresOutputter<ServerJavaRoutine> outputter = new PostgresJavaRoutineResultsOutputter(context, this);
-            outputter.output(call, usesPValues());
-            nrows++;
+            call.pop();
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
