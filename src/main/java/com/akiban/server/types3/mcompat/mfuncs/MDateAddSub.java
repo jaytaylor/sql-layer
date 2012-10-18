@@ -27,7 +27,9 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidDateFormatException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCommutativeOverloads;
@@ -47,6 +49,7 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TPreptimeErrorScalar;
 import com.akiban.server.types3.texpressions.TScalarBase;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -76,13 +79,6 @@ public class MDateAddSub extends TScalarBase
         new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.DAY, "SUBDATE"),
         new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.DAY, "SUBDATE"),
         new AddSubWithVarchar(Helper.DO_SUB, SecondType.DAY, "SUBDATE"),
-        new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
-        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
-        new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
-        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
-        new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
-        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
-        new AddSubWithVarchar(Helper.DO_SUB, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
         new AddSubWithVarchar(Helper.DO_SUB_MONTH, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
         
         // ADDTIME
@@ -93,6 +89,25 @@ public class MDateAddSub extends TScalarBase
         new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.SECONDS),
         new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS),
         new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.SECONDS),
+
+        // MULTIPLY and DIVIDE
+        new BadIntervalArithmetic(AkInterval.SECONDS, "times", MDatetimes.DATE),
+        new BadIntervalArithmetic(AkInterval.SECONDS, "times", MDatetimes.TIME),
+        new BadIntervalArithmetic(AkInterval.SECONDS, "times", MDatetimes.DATETIME),
+        new BadIntervalArithmetic(AkInterval.SECONDS, "times", MDatetimes.TIMESTAMP),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "times", MDatetimes.DATE),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "times", MDatetimes.TIME),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "times", MDatetimes.DATETIME),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "times", MDatetimes.TIMESTAMP),
+
+        new BadIntervalArithmetic(AkInterval.SECONDS, "divide", MDatetimes.DATE),
+        new BadIntervalArithmetic(AkInterval.SECONDS, "divide", MDatetimes.TIME),
+        new BadIntervalArithmetic(AkInterval.SECONDS, "divide", MDatetimes.DATETIME),
+        new BadIntervalArithmetic(AkInterval.SECONDS, "divide", MDatetimes.TIMESTAMP),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "divide", MDatetimes.DATE),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "divide", MDatetimes.TIME),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "divide", MDatetimes.DATETIME),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "divide", MDatetimes.TIMESTAMP),
     };
 
     public static final TScalar[] NON_COMMUTATIVE = new TScalar[]
@@ -100,7 +115,27 @@ public class MDateAddSub extends TScalarBase
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.TIME, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME_STRING, "SUBTIME"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
+        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
+        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
+        new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
+        new BadIntervalArithmetic(AkInterval.SECONDS, "minus", null),
+        new BadIntervalArithmetic(AkInterval.MONTHS, "minus", null),
     };
+
+    private static class BadIntervalArithmetic extends TPreptimeErrorScalar {
+        @Override
+        protected InvalidOperationException error() {
+            throw new InvalidArgumentTypeException("can't subtract from an interval");
+        }
+
+        private BadIntervalArithmetic(TClass firstOperand, String name, TClass secondOperand) {
+            super(0, name, firstOperand, secondOperand);
+        }
+    }
 
     public static final TCommutativeOverloads COMMUTED = TCommutativeOverloads.createFrom(COMMUTATIVE);
 

@@ -24,23 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.routines;
+package com.akiban.qp.operator;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.service.session.Session;
-import java.lang.reflect.Method;
+public interface ExpressionGenerator {
+    Expression getExpression();
+    TPreparedExpression getTPreparedExpression();
 
-public interface RoutineLoader
-{
-    public ClassLoader loadSQLJJar(Session session, TableName jarName);
-    public void unloadSQLJJar(Session session, TableName jarName);
-
-    public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName);
-    public Method loadJavaMethod(Session session, TableName routineName);
-    public boolean isScriptLanguage(Session session, String language);
-    public ScriptPool<? extends ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName);
-    public ScriptPool<? extends ScriptInvoker> getScriptInvoker(Session session, TableName routineName);
-    public void unloadRoutine(Session session, TableName routineName);
+    enum ErasureMaker {MARK}
 }

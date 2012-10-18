@@ -29,6 +29,7 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.*;
 import com.akiban.server.api.dml.SetColumnSelector;
@@ -38,7 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.fail;
 
 // Single-branch testing. See MultiIndexCrossBranchIT for cross-branch testing.
@@ -502,7 +503,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         Ordering ordering = API.ordering();
         int i = 0;
         while (i < objects.length) {
-            Expression expression = (Expression) objects[i++];
+            ExpressionGenerator expression = (ExpressionGenerator) objects[i++];
             Boolean ascending = (Boolean) objects[i++];
             ordering.append(expression, ascending);
         }

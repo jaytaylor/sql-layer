@@ -61,10 +61,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private final Map<TableName,ClassLoader> classLoaders = new HashMap<TableName,ClassLoader>();
     private final Map<TableName,LoadablePlan<?>> loadablePlans = new HashMap<TableName,LoadablePlan<?>>();
     private final Map<TableName,Method> javaMethods = new HashMap<TableName,Method>();
+    private final ScriptCache scripts;
 
     @Inject @SuppressWarnings("unused")
     public RoutineLoaderImpl(SchemaManager schemaManager) {
         this.schemaManager = schemaManager;
+        scripts = new ScriptCache(schemaManager);
     }
 
     /* RoutineLoader */
@@ -171,6 +173,21 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
+    public boolean isScriptLanguage(Session session, String language) {
+        return scripts.isScriptLanguage(session, language);
+    }
+
+    @Override
+    public ScriptPool<? extends ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
+        return scripts.getScriptEvaluator(session, routineName);
+    }
+
+    @Override
+    public ScriptPool<? extends ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
+        return scripts.getScriptInvoker(session, routineName);
+    }
+
+    @Override
     public void unloadRoutine(Session session, TableName routineName) {
         synchronized (loadablePlans) {
             loadablePlans.remove(routineName);
@@ -178,6 +195,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
         synchronized (javaMethods) {
             javaMethods.remove(routineName);
         }
+        scripts.remove(routineName);
     }
 
     /* Service */

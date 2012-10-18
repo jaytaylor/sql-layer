@@ -48,6 +48,8 @@ import java.util.List;
 
 public final class MUnaryMinus extends TScalarBase {
 
+    private static final int DEC_INDEX = 0;
+
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(strategy.tClass, 0);
@@ -55,7 +57,7 @@ public final class MUnaryMinus extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        strategy.apply(inputs.get(0), output, context.inputTInstanceAt(0));
+        strategy.apply(inputs.get(0), output, context);
     }
 
     @Override
@@ -84,7 +86,7 @@ public final class MUnaryMinus extends TScalarBase {
     private enum Strategy {
         INT(MNumeric.INT) {
             @Override
-            protected void apply(PValueSource in, PValueTarget out, TInstance tInstance) {
+            protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
                 int neg = -in.getInt32();
                 out.putInt32(neg);
             }
@@ -96,7 +98,7 @@ public final class MUnaryMinus extends TScalarBase {
         },
         BIGINT(MNumeric.BIGINT) {
             @Override
-            protected void apply(PValueSource in, PValueTarget out, TInstance tInstance) {
+            protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
                 long neg = -in.getInt64();
                 out.putInt64(neg);
             }
@@ -108,7 +110,7 @@ public final class MUnaryMinus extends TScalarBase {
         },
         DOUBLE(MApproximateNumber.DOUBLE) {
             @Override
-            protected void apply(PValueSource in, PValueTarget out, TInstance tInstance) {
+            protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
                 double neg = -in.getDouble();
                 out.putDouble(neg);
             }
@@ -120,8 +122,9 @@ public final class MUnaryMinus extends TScalarBase {
         },
         DECIMAL(MNumeric.DECIMAL) {
             @Override
-            protected void apply(PValueSource in, PValueTarget out, TInstance tInstance) {
-                BigDecimalWrapper wrapped = MBigDecimal.getWrapper(in, tInstance);
+            protected void apply(PValueSource in, PValueTarget out, TExecutionContext context) {
+                BigDecimalWrapper wrapped = MBigDecimal.getWrapper(context, DEC_INDEX);
+                wrapped.set(MBigDecimal.getWrapper(in, context.inputTInstanceAt(0)));
                 wrapped.negate();
                 out.putObject(wrapped);
             }
@@ -132,7 +135,7 @@ public final class MUnaryMinus extends TScalarBase {
             }
         }
         ;
-        protected abstract void apply(PValueSource in, PValueTarget out, TInstance tInstance);
+        protected abstract void apply(PValueSource in, PValueTarget out, TExecutionContext context);
         protected abstract TInstance resultType(TInstance operand);
 
         private Strategy(TClass tClass) {
