@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
@@ -97,7 +98,7 @@ public final class GroupIndexScanIT extends ITBase {
         o = createTable(SCHEMA, "o", "oid int not null primary key, c_id int", "when varchar(32)", akibanFK("c_id", "c", "cid"));
         i = createTable(SCHEMA, "i", "iid int not null primary key, o_id int", "sku varchar(6)", akibanFK("o_id", "o", "oid"));
         h = createTable(SCHEMA, "h", "hid int not null primary key, i_id int", akibanFK("i_id", "i", "iid"));
-        String groupName = getUserTable(c).getGroup().getName();
+        TableName groupName = getUserTable(c).getGroup().getName();
         GroupIndex gi = createGroupIndex(groupName, GI_NAME, "o.when, i.sku");
 
         schema = new Schema(ddl().getAIS(session()));
