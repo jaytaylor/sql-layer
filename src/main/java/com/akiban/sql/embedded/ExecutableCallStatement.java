@@ -67,6 +67,10 @@ abstract class ExecutableCallStatement extends ExecutableStatement
                 return ExecutableLoadableOperator.executableStatement(invocation, parameterMetaData, call, context);
             case JAVA:
                 return ExecutableJavaMethod.executableStatement(invocation, parameterMetaData, call, context);
+            case SCRIPT_FUNCTION_JAVA:
+                return ExecutableScriptFunctionJavaRoutine.executableStatement(invocation, parameterMetaData, call, context);
+            case SCRIPT_BINDINGS:
+                return ExecutableScriptBindingsRoutine.executableStatement(invocation, parameterMetaData, call, context);
             }
         }
         throw new UnsupportedSQLException("Unknown routine", call);
