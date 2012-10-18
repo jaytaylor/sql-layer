@@ -46,6 +46,11 @@ public class ServerJavaMethod extends ServerJavaRoutine
         super(context, invocation);
         this.method = method;
         parameterTypes = method.getParameterTypes();
+    }
+
+    @Override
+    public void push() {
+        super.push();
         methodArgs = methodArgs(parameterTypes);
     }
 
