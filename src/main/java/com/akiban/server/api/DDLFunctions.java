@@ -110,7 +110,7 @@ public interface DDLFunctions {
      * @param groupName the group to drop
      * @throws NullPointerException if groupName is null
      */
-    void dropGroup(Session session, String groupName);
+    void dropGroup(Session session, TableName groupName);
 
     /**
      * Gets the AIS from the Store.
@@ -213,7 +213,7 @@ public interface DDLFunctions {
      * Drop indexes on an existing group.
      * @param indexesToDrop Indexes to drop
      */
-    void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop);
+    void dropGroupIndexes(Session session, TableName groupName, Collection<String> indexesToDrop);
 
     /**
      * Update statistics for the given table.

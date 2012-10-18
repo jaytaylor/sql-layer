@@ -29,6 +29,7 @@ package com.akiban.server.service.dxl;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.ServiceNotStartedException;
@@ -132,7 +133,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         try {
             DDLFunctions ddl = ddlFunctions();
             AkibanInformationSchema ais = ddl.getAIS(session);
-            Map<String,List<GroupIndex>> gisByGroup = new HashMap<String, List<GroupIndex>>();
+            Map<TableName,List<GroupIndex>> gisByGroup = new HashMap<TableName, List<GroupIndex>>();
             for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
                 ArrayList<GroupIndex> groupGis = new ArrayList<GroupIndex>(group.getIndexes());
                 for (Iterator<GroupIndex> iterator = groupGis.iterator(); iterator.hasNext(); ) {
@@ -145,7 +146,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
                 }
                 gisByGroup.put(group.getName(), groupGis);
             }
-            for (Map.Entry<String,List<GroupIndex>> entry : gisByGroup.entrySet()) {
+            for (Map.Entry<TableName,List<GroupIndex>> entry : gisByGroup.entrySet()) {
                 List<GroupIndex> gis = entry.getValue();
                 List<String> giNames = new ArrayList<String>(gis.size());
                 for (Index gi : gis) {
