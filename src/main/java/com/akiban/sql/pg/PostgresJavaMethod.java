@@ -44,25 +44,12 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
 
     public static PostgresStatement statement(PostgresServerSession server, 
                                               ServerRoutineInvocation invocation,
-                                              List<ParameterNode> params, int[] paramTypes) {
+                                              List<String> columnNames, 
+                                              List<PostgresType> columnTypes,
+                                              PostgresType[] parameterTypes,
+                                              boolean usesPValues) {
         Method method = server.getRoutineLoader().loadJavaMethod(server.getSession(),
                                                                  invocation.getRoutineName());
-        Routine routine = invocation.getRoutine();
-        List<PostgresType> columnTypes = columnTypes(routine);
-        List<String> columnNames;
-        if (columnTypes.isEmpty()) {
-            columnTypes = null;
-            columnNames = null;
-        }
-        else {
-            columnNames = columnNames(routine);
-        }
-        PostgresType[] parameterTypes;
-        if ((params == null) || params.isEmpty())
-            parameterTypes = null;
-        else
-            parameterTypes = parameterTypes(invocation, params.size(), paramTypes);
-        boolean usesPValues = server.getBooleanProperty("newtypes", Types3Switch.ON);
         return new PostgresJavaMethod(method, invocation,
                                       columnNames, columnTypes,
                                       parameterTypes, usesPValues);
