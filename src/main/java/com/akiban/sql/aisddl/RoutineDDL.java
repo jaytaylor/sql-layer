@@ -49,6 +49,64 @@ import java.sql.ParameterMetaData;
 public class RoutineDDL {
     private RoutineDDL() { }
     
+    static class ParameterStyleCallingConvention {
+        final String language, parameterStyle;
+        final Routine.CallingConvention callingConvention;
+        
+        ParameterStyleCallingConvention(String language, String parameterStyle,
+                                        Routine.CallingConvention callingConvention) {
+            this.language = language;
+            this.parameterStyle = parameterStyle;
+            this.callingConvention = callingConvention;
+        }
+    }
+
+    static final ParameterStyleCallingConvention[] parameterStyleCallingConventions = {
+        new ParameterStyleCallingConvention("JAVA", "JAVA", 
+                                            Routine.CallingConvention.JAVA),
+        new ParameterStyleCallingConvention("JAVA", "AKIBAN_LOADABLE_PLAN", 
+                                            Routine.CallingConvention.LOADABLE_PLAN),
+        new ParameterStyleCallingConvention("SQL", "ROW", 
+                                            Routine.CallingConvention.SQL_ROW),
+        new ParameterStyleCallingConvention(null, "VARIABLES", 
+                                            Routine.CallingConvention.SCRIPT_BINDINGS),
+        new ParameterStyleCallingConvention(null, "JAVA", 
+                                            Routine.CallingConvention.SCRIPT_FUNCTION_JAVA)
+    };
+
+    protected static Routine.CallingConvention findCallingConvention(String schemaName,
+                                                                     String routineName,
+                                                                     String language,
+                                                                     String parameterStyle,
+                                                                     RoutineLoader routineLoader,
+                                                                     Session session) {
+        boolean languageSeen = false, isScript = false, scriptChecked = false;
+        for (ParameterStyleCallingConvention cc : parameterStyleCallingConventions) {
+            if (cc.language == null) {
+                if (!scriptChecked) {
+                    isScript = routineLoader.isScriptLanguage(session, language);
+                    scriptChecked = true;
+                }
+                if (!isScript) continue;
+            }
+            else if (cc.language.equalsIgnoreCase(language)) {
+                languageSeen = true;
+            }
+            else {
+                continue;
+            }
+            if (cc.parameterStyle.equalsIgnoreCase(parameterStyle)) {
+                return cc.callingConvention;
+            }
+        }
+        if (languageSeen) {
+            throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + parameterStyle);
+        }
+        else {
+            throw new InvalidRoutineException(schemaName, routineName, "unsupported LANGUAGE " + language);
+        }
+    }
+
     public static void createRoutine(DDLFunctions ddlFunctions,
                                      RoutineLoader routineLoader,
                                      Session session,
@@ -59,55 +117,18 @@ public class RoutineDDL {
         String schemaName = tableName.getSchemaName();
         String routineName = tableName.getTableName();
         String language = aliasInfo.getLanguage();
-        Routine.CallingConvention callingConvention;
-        if (language.equalsIgnoreCase("JAVA")) {
-            // The existence of both PARAMETER STYLE and EXTERNAL NAME
-            // was checked by the parser.
-            if ("JAVA".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
-                callingConvention = Routine.CallingConvention.JAVA;
-            }
-            else if ("AKIBAN_LOADABLE_PLAN".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
-                callingConvention = Routine.CallingConvention.LOADABLE_PLAN;
-            }
-            else {
-                throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
-            }
-        }
-        else if (language.equalsIgnoreCase("SQL")) {
-            // The existence of both PARAMETER STYLE and AS was
-            // checked by the parser.
-            if ("ROW".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
-                callingConvention = Routine.CallingConvention.SQL_ROW;
-            }
-            else {
-                throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
-            }
+        Routine.CallingConvention callingConvention = findCallingConvention(schemaName, routineName, language, aliasInfo.getParameterStyle(),
+                                                                            routineLoader, session);
+        switch (callingConvention) {
+        case SQL_ROW:
+        case SCRIPT_BINDINGS:
             if (createAlias.getExternalName() != null)
-                throw new InvalidRoutineException(schemaName, routineName, "SQL routine cannot have EXTERNAL NAME");
-        }
-        else if (routineLoader.isScriptLanguage(session, language)) {
-            if ("VARIABLES".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
-                callingConvention = Routine.CallingConvention.SCRIPT_BINDINGS;
+                throw new InvalidRoutineException(schemaName, routineName, language + " routine cannot have EXTERNAL NAME");
+            break;
+        case SCRIPT_FUNCTION_JAVA:
+            if (createAlias.getExternalName() == null) {
+                throw new InvalidRoutineException(schemaName, routineName, "must have EXTERNAL NAME function_name");
             }
-            else if ("JAVA".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
-                callingConvention = Routine.CallingConvention.SCRIPT_FUNCTION_JAVA;
-            }
-            else {
-                throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
-            }
-            if (callingConvention == Routine.CallingConvention.SCRIPT_FUNCTION_JAVA) {
-                if (createAlias.getExternalName() == null) {
-                    throw new InvalidRoutineException(schemaName, routineName, "must have EXTERNAL NAME function_name");
-                }
-            }
-            else {
-                if (createAlias.getExternalName() != null) {
-                    throw new InvalidRoutineException(schemaName, routineName, "EXTERNAL NAME not allowed for script");
-                }
-            }
-        }
-        else {
-            throw new InvalidRoutineException(schemaName, routineName, "unsupported LANGUAGE " + language);
         }
         AISBuilder builder = new AISBuilder();
         builder.routine(schemaName, routineName,
