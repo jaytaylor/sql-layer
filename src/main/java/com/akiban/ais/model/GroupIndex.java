@@ -160,28 +160,12 @@ public class GroupIndex extends Index
     }
 
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint)
-    {
-        ais.checkMutability();
-        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint);
-        group.addIndex(index);
-        return index;
-    }
-
-    public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
                                     Boolean isUnique, String constraint, JoinType joinType)
     {
         ais.checkMutability();
         GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
         group.addIndex(index);
         return index;
-    }
-
-    private GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
-    {
-        // index checks index name.
-        super(group.getName(), indexName, indexId, isUnique, constraint);
-        this.group = group;
     }
 
     public GroupIndex(Group group,
@@ -192,7 +176,8 @@ public class GroupIndex extends Index
                       JoinType joinType)
     {
         // index checks index name.
-        super(group.getName(), indexName, indexId, isUnique, constraint, joinType, true);
+        // TODO: Fix this, adding schema requires updating many expected
+        super(new TableName("", group.getName().getTableName()), indexName, indexId, isUnique, constraint, joinType, true);
         this.group = group;
     }
 
@@ -407,12 +392,6 @@ public class GroupIndex extends Index
             throw new BranchingGroupIndexException(indexColumn.getIndex().getIndexName().getName(),
                                                    indexTable.getName(), entry.getValue().table.getName());
         }
-    }
-
-    @Override
-    public String toString() {
-        // TODO: This should go away altogether when expected output is updated
-        return "Index(" + '.' + getIndexName().getTableName() + '.' + getIndexName().getName() + keyColumns + ")";
     }
 
     // Object state
