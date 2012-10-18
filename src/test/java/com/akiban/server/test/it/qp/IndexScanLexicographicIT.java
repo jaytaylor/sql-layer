@@ -51,6 +51,7 @@ import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.fail;
 
 /*
@@ -319,7 +320,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
     private API.Ordering ordering(boolean direction)
     {
         API.Ordering ordering = API.ordering();
-        ordering.append(new FieldExpression(idxRowType, 0), direction);
+        ordering.append(field(idxRowType, 0), direction);
         return ordering;
     }
 

@@ -26,6 +26,8 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.Attributes;
@@ -68,8 +70,8 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
     }
 
     @Deprecated
-    public RowBasedUnboundExpressions(RowType rowType, List<Expression> expressions) {
-        this(rowType, expressions, null);
+    public RowBasedUnboundExpressions(RowType rowType, List<ExpressionGenerator> expressions) {
+        this(rowType, API.generateOld(expressions), API.generateNew(expressions));
     }
 
     public RowBasedUnboundExpressions(RowType rowType, List<Expression> expressions, List<TPreparedExpression> pExprs)

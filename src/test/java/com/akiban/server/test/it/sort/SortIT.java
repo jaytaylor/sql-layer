@@ -46,6 +46,8 @@ import com.akiban.util.tap.Tap;
 import com.persistit.exception.PersistitException;
 import org.junit.Test;
 
+import static com.akiban.server.test.ExpressionGenerators.field;
+
 public final class SortIT extends ITBase {
     @Test
     public void firstRowHasNulls() throws PersistitException {
@@ -61,7 +63,7 @@ public final class SortIT extends ITBase {
         Cursor inputCursor = API.cursor(inputOperator, context);
         inputCursor.open();
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(inputOperator.rowType(), 0), true);
+        ordering.append(field(inputOperator.rowType(), 0), true);
         Sorter sorter = new Sorter(context,
                                    inputCursor,
                                    inputOperator.rowType(),
