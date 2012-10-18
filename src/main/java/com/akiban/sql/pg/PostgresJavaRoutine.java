@@ -126,6 +126,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         int nrows = 0;
         ServerJavaRoutine call = javaRoutine(context);
         call.push();
+        boolean success = false;
         try {
             call.setInputs();
             call.invoke();
@@ -135,9 +136,10 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                 outputter.output(call, usesPValues());
                 nrows++;
             }
+            success = true;
         }
         finally {
-            call.pop();
+            call.pop(success);
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());

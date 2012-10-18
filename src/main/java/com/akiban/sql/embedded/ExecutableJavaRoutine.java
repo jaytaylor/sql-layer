@@ -46,20 +46,24 @@ abstract class ExecutableJavaRoutine extends ExecutableCallStatement
 
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context) {
+        Deque<ResultSet> resultSets = null;
         ServerJavaRoutine call = javaRoutine(context);
-        call.setInputs();
-        ServerCallContextStack.push(context, invocation);
+        call.push();
+        boolean success = false;
         try {
+            call.setInputs();
             call.invoke();
+            call.getOutputs();
+            if (false) {
+                // TODO: Get dynamic result sets here.
+                resultSets = new ArrayDeque<ResultSet>();
+            }
+            success = true;
         }
         finally {
-            ServerCallContextStack.pop(context, invocation);
+            call.pop(success);
         }
-        call.getOutputs();
-
-        // TODO: Get dynamic result sets.
-        Deque<ResultSet> results = new ArrayDeque<ResultSet>();
-        return new ExecuteResults(results);
+        return new ExecuteResults(resultSets);
     }
 
     @Override

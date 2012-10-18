@@ -119,10 +119,10 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
     }
     
     @Override
-    public void pop() {
-        pool.put(evaluator, false);
+    public void pop(boolean success) {
+        pool.put(evaluator, success);
         evaluator = null;
-        super.pop();
+        super.pop(success);
     }
 
 }
