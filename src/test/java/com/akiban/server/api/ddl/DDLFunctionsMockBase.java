@@ -81,7 +81,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public void dropGroup(Session session, String groupName) {
+    public void dropGroup(Session session, TableName groupName) {
         throw new UnsupportedOperationException();
     }
 
@@ -146,7 +146,7 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop) {
+    public void dropGroupIndexes(Session session, TableName groupName, Collection<String> indexesToDrop) {
         throw new UnsupportedOperationException();
     }
 
