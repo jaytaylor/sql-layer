@@ -44,8 +44,8 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
                                               List<PostgresType> columnTypes,
                                               PostgresType[] parameterTypes,
                                               boolean usesPValues) {
-        Method method = server.getRoutineLoader().loadJavaMethod(server.getSession(),
-                                                                 invocation.getRoutineName());
+        Method method = server.getRoutineLoader()
+            .loadJavaMethod(server.getSession(), invocation.getRoutineName());
         return new PostgresJavaMethod(method, invocation,
                                       columnNames, columnTypes,
                                       parameterTypes, usesPValues);
