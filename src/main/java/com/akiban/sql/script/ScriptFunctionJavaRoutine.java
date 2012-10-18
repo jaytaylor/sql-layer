@@ -65,7 +65,7 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
         Object[] result = new Object[parameters.size()];
         for (int i = 0; i < result.length; i++) {
             if (parameters.get(i).getDirection() != Parameter.Direction.IN) {
-                result = new Object[1];
+                result[i] = new Object[1];
             }
         }
         return result;

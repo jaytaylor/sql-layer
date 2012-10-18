@@ -36,6 +36,8 @@ import com.akiban.server.service.routines.ScriptEvaluator;
 import com.akiban.server.service.routines.ScriptPool;
 
 import javax.script.Bindings;
+import java.util.List;
+import java.util.Map;
 
 /** Implementation of the <code>SCRIPT_BINDINGS</code> calling convention. 
  * Inputs are passed as named (script engine scope) variables.
@@ -88,6 +90,31 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         if (bindings.containsKey(var))
             return bindings.get(var);
         // Not bound, try to find in result.
+        if (parameter.getRoutine().isProcedure()) {
+            // Unless FUNCTION, can usurp return value.
+            if (evalResult instanceof Map) {
+                return ((Map)evalResult).get(var);
+            }
+            else if (evalResult instanceof List) {
+                List lresult = (List)evalResult;
+                int jndex = 0;
+                for (Parameter otherParam : parameter.getRoutine().getParameters()) {
+                    if (otherParam == parameter) break;
+                    if (otherParam.getDirection() != Parameter.Direction.IN)
+                        jndex++;
+                }
+                if (jndex < lresult.size())
+                    return lresult.get(jndex);
+            }
+            else {
+                for (Parameter otherParam : parameter.getRoutine().getParameters()) {
+                    if (otherParam == parameter) continue;
+                    if (otherParam.getDirection() != Parameter.Direction.IN)
+                        return null; // Too many outputs.
+                }
+                return evalResult;
+            }
+        }
         return null;
     }
     
