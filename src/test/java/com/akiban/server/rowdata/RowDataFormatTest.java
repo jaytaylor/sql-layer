@@ -184,8 +184,8 @@ public final class RowDataFormatTest {
         AkibanInformationSchema ais = aisBuilder.ais();
         UserTable table = ais.getUserTable(SCHEMA, TABLE);
         table.setTableId(1);
-        RowDefCache rdc = new SchemaFactory().rowDefCache(ais);
-        rowDef = rdc.getRowDef(SCHEMA, TABLE);
+        new SchemaFactory().buildRowDefs(ais);
+        rowDef = ais.getTable(SCHEMA, TABLE).rowDef();
         this.fields = Arrays.copyOf(fields, fields.length);
         this.bytesString = bytesString;
     }

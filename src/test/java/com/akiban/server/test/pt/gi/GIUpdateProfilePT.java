@@ -87,7 +87,7 @@ public class GIUpdateProfilePT extends PTBase
         String groupName = coi.getName();
         createGroupIndex(groupName, "name_salesman", "customer.name, order.salesman");
         createGroupIndex(groupName, "name_address", "customer.name, address.address");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
@@ -153,12 +153,12 @@ public class GIUpdateProfilePT extends PTBase
 
     private Group group(int userTableId)
     {
-        return rowDefCache().rowDef(userTableId).table().getGroup();
+        return getRowDef(userTableId).table().getGroup();
     }
 
     private UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = getRowDef(userTableId);
         return userTableRowDef.userTable();
     }
 

@@ -365,7 +365,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         checkDB();
         checkInitialState();
     }
-    
+
     @Test
     public void testVendorPKUpdateCreatingDuplicate() throws Exception
     {
@@ -382,7 +382,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         }
         checkDB();
     }
-    
+
     @Test
     public void testItemDelete() throws Exception
     {
@@ -499,7 +499,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         checkDB();
         checkInitialState();
     }
-    
+
     @Test
     public void testVendorDelete() throws Exception
     {
@@ -589,17 +589,17 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         i_iid2 = 8;
         i_ix = 1;
         // group
-        vendorRD = rowDefCache().getRowDef(vendorId);
-        customerRD = rowDefCache().getRowDef(customerId);
-        orderRD = rowDefCache().getRowDef(orderId);
-        itemRD = rowDefCache().getRowDef(itemId);
+        vendorRD = getRowDef(vendorId);
+        customerRD = getRowDef(customerId);
+        orderRD = getRowDef(orderId);
+        itemRD = getRowDef(itemId);
         group = customerRD.getGroup();
     }
 
     @Override
     protected List<List<Object>> vendorPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, vendorRD, 
+        return indexFromRecords(records, vendorRD,
                                 v_vid1, v_vid2);
     }
 
@@ -633,8 +633,8 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD, 
-                                o_priority, 
+        return indexFromRecords(records, orderRD,
+                                o_priority,
                                 o_vid1, o_vid2,
                                 o_cid1, o_cid2,
                                 o_oid1, o_oid2);
@@ -643,16 +643,16 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD, 
+        return indexFromRecords(records, orderRD,
                                 o_when, NULL_SEPARATOR_COLUMN,
                                 o_vid1, o_vid2,
                                 o_cid1, o_cid2,
                                 o_oid1, o_oid2);
     }
 
-    // vendorRow, customerRow, orderRow and itemRow: The formatting of populateTables above is copied from 
-    // KeyUpdateIT. Because of the duplicated column values and weird column orders, that formatting doesn't 
-    // really work here. The functions below translate the rows, formatted as for the KeyUpdateIT schema, 
+    // vendorRow, customerRow, orderRow and itemRow: The formatting of populateTables above is copied from
+    // KeyUpdateIT. Because of the duplicated column values and weird column orders, that formatting doesn't
+    // really work here. The functions below translate the rows, formatted as for the KeyUpdateIT schema,
     // and generates the correct rows for this test.
 
     @Override
@@ -763,7 +763,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
 
     private TestRow vendorRow(long vid, long vx)
     {
-        TestRow vendor = new TestRow(vendorId, store());
+        TestRow vendor = new TestRow(session(), vendorId, store());
         vendor.put(v_vid1, vid);
         vendor.put(v_vid2, vid);
         vendor.put(v_vx, vx);
@@ -773,7 +773,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
 
     private TestRow customerRow(long vid, long cid, long cx)
     {
-        TestRow customer = new TestRow(customerId, store());
+        TestRow customer = new TestRow(session(), customerId, store());
         customer.put(c_vid1, vid);
         customer.put(c_vid2, vid);
         customer.put(c_cid1, cid);
@@ -782,10 +782,10 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         customer.hKey(new HKey(vendorRD, vid, vid, customerRD, cid, cid));
         return customer;
     }
-    
+
     private TestRow orderRow(long vid, long cid, long oid, long ox, long priority, long when)
     {
-        TestRow order = new TestRow(orderId, store());
+        TestRow order = new TestRow(session(), orderId, store());
         order.put(o_vid1, vid);
         order.put(o_vid2, vid);
         order.put(o_cid1, cid);
@@ -800,10 +800,10 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
                             orderRD, oid, oid));
         return order;
     }
-    
+
     private TestRow itemRow(long vid, long cid, long oid, long iid, long ix)
     {
-        TestRow item = new TestRow(itemId, store());
+        TestRow item = new TestRow(session(), itemId, store());
         item.put(i_vid1, vid);
         item.put(i_vid2, vid);
         item.put(i_cid1, cid);

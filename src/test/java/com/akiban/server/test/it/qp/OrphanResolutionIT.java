@@ -57,7 +57,7 @@ public class OrphanResolutionIT extends OperatorITBase
             "pid int",
             "cx int",
             "grouping foreign key(pid) references parent(pid)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         group = group(parent);

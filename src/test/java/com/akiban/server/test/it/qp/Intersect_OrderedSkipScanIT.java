@@ -66,7 +66,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             "z int",
             "grouping foreign key (pid) references parent(pid)");
         createIndex("schema", "child", "z", "z");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         parentPidIndexRowType = indexType(parent, "pid");

@@ -60,12 +60,12 @@ public class RowDefCacheTest
             "    GROUPING FOREIGN KEY (bb0,bb2,bb1,bb3) REFERENCES b (b3,b2,b4,b1)",
             ");",
         };
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        RowDef b = rowDefCache.getRowDef(tableName("b"));
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        RowDef b = ais.getTable(tableName("b")).rowDef();
         UserTable bTable = b.userTable();
         checkHKey(bTable.hKey(), bTable, bTable, "b3", bTable, "b2", bTable, "b4", bTable, "b1");
         assertEquals(5, b.getHKeyDepth()); // b ordinal, b3, b2, b4, b1
-        RowDef bb = rowDefCache.getRowDef(tableName("bb"));
+        RowDef bb = ais.getTable(tableName("bb")).rowDef();
         UserTable bbTable = bb.userTable();
         checkHKey(bbTable.hKey(),
                   bTable, bbTable, "bb0", bbTable, "bb2", bbTable, "bb1", bbTable, "bb3",
@@ -105,12 +105,12 @@ public class RowDefCacheTest
             "   GROUPING FOREIGN KEY (id) references parent(id)",
             ");"
         };
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        RowDef parent = rowDefCache.getRowDef(tableName("parent"));
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        RowDef parent = ais.getTable(tableName("parent")).rowDef();
         UserTable p = parent.userTable();
         checkHKey(p.hKey(), p, p, "id");
         assertEquals(2, parent.getHKeyDepth()); // parent ordinal, id
-        RowDef child = rowDefCache.getRowDef(tableName("child"));
+        RowDef child = ais.getTable(tableName("child")).rowDef();
         UserTable c = child.userTable();
         checkHKey(c.hKey(),
                   p, c, "id",
@@ -135,8 +135,8 @@ public class RowDefCacheTest
             ");",
             "create index e_d on t(e, d);"
         };
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        RowDef t = rowDefCache.getRowDef(tableName("t"));
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        RowDef t = ais.getTable(tableName("t")).rowDef();
         assertEquals(3, t.getHKeyDepth()); // t ordinal, c, a
         Index index;
         index = t.getPKIndex();
@@ -183,13 +183,13 @@ public class RowDefCacheTest
             "create index iid_oid on item(iid, oid);",
             "create index oid_iid_ix on item(oid, iid, ix);",
         };
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         TableIndex index;
         int[] fields;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // ------------------------- Customer ------------------------------------------
-        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
+        RowDef customer = ais.getTable(tableName("customer")).rowDef();
         checkFields(customer, "cid", "cx");
         assertEquals(2, customer.getHKeyDepth()); // customer ordinal, cid
         assertArrayEquals(new int[]{}, customer.getParentJoinFields());
@@ -222,7 +222,7 @@ public class RowDefCacheTest
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
         assertEquals(0, indexToHKey.getIndexRowPosition(1)); // index cid
         // ------------------------- Orders ------------------------------------------
-        RowDef orders = rowDefCache.getRowDef(tableName("orders"));
+        RowDef orders = ais.getTable(tableName("orders")).rowDef();
         checkFields(orders, "oid", "cid", "ox");
         assertEquals(4, orders.getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid
         assertArrayEquals(new int[]{1}, orders.getParentJoinFields());
@@ -297,7 +297,7 @@ public class RowDefCacheTest
         assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2)); // o ordinal
         assertEquals(1, indexToHKey.getIndexRowPosition(3)); // index oid
         // ------------------------- Item ------------------------------------------
-        RowDef item = rowDefCache.getRowDef(tableName("item"));
+        RowDef item = ais.getTable(tableName("item")).rowDef();
         checkFields(item, "iid", "oid", "ix");
         assertEquals(6, item.getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid, item ordinal, iid
         assertArrayEquals(new int[]{1}, item.getParentJoinFields());
@@ -414,13 +414,13 @@ public class RowDefCacheTest
             "create index \"__akiban_io\" on item(cid, oid);",
             "create index ix_iid_oid_cid on item(ix, iid, oid, cid);",
         };
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         TableIndex index;
         int[] fields;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // ------------------------- Customer ------------------------------------------
-        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
+        RowDef customer = ais.getTable(tableName("customer")).rowDef();
         checkFields(customer, "cid", "cx");
         assertEquals(2, customer.getHKeyDepth()); // customer ordinal, cid
         assertArrayEquals(new int[]{}, customer.getParentJoinFields());
@@ -452,7 +452,7 @@ public class RowDefCacheTest
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
         assertEquals(1, indexToHKey.getIndexRowPosition(1)); // index cid
         // ------------------------- Orders ------------------------------------------
-        RowDef orders = rowDefCache.getRowDef(tableName("orders"));
+        RowDef orders = ais.getTable(tableName("orders")).rowDef();
         checkFields(orders, "cid", "oid", "ox");
         assertEquals(4, orders.getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid
         assertArrayEquals(new int[]{0}, orders.getParentJoinFields());
@@ -492,7 +492,7 @@ public class RowDefCacheTest
         assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2)); // o ordinal
         assertEquals(2, indexToHKey.getIndexRowPosition(3)); // index oid
         // ------------------------- Item ------------------------------------------
-        RowDef item = rowDefCache.getRowDef(tableName("item"));
+        RowDef item = ais.getTable(tableName("item")).rowDef();
         checkFields(item, "cid", "oid", "iid", "ix");
         assertEquals(6, item.getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid, item ordinal iid
         assertArrayEquals(new int[]{0, 1}, item.getParentJoinFields());
@@ -550,9 +550,9 @@ public class RowDefCacheTest
                          "create index cName_oDate on orders(customer.name, orders.date) using left join;"
         };
 
-        final RowDefCache rowDefCache;
+        final AkibanInformationSchema ais;
         {
-            AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+            ais = SCHEMA_FACTORY.ais(ddl);
             Table customerTable = ais.getTable(SCHEMA, "customer");
             Table ordersTable = ais.getTable(SCHEMA, "orders");
             GroupIndex index = GroupIndex.create(ais,
@@ -564,15 +564,15 @@ public class RowDefCacheTest
                                                  Index.JoinType.LEFT);
             IndexColumn.create(index, customerTable.getColumn("name"), 0, true, null);
             IndexColumn.create(index, ordersTable.getColumn("date"), 1, true, null);
-            rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
+            SCHEMA_FACTORY.buildRowDefs(ais);
         }
 
         GroupIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
 
-        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
-        RowDef orders = rowDefCache.getRowDef(tableName("orders"));
+        RowDef customer = ais.getTable(tableName("customer")).rowDef();
+        RowDef orders = ais.getTable(tableName("orders")).rowDef();
         // left join group index on (c.name,o.date):
         //     declared: c.name  o.date
         //     hkey: o.cid  c.oid
@@ -611,19 +611,15 @@ public class RowDefCacheTest
                          "create index cName_oDate_iSku on items(customer.name, orders.date, items.sku) using left join;"
         };
 
-        final RowDefCache rowDefCache;
-        {
-            AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-            rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
-        }
+        final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
 
         GroupIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
 
-        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
-        RowDef orders = rowDefCache.getRowDef(tableName("orders"));
-        RowDef items = rowDefCache.getRowDef(tableName("items"));
+        RowDef customer = ais.getTable(tableName("customer")).rowDef();
+        RowDef orders = ais.getTable(tableName("orders")).rowDef();
+        RowDef items = ais.getTable(tableName("items")).rowDef();
         // left join group index on (c.name,o.date,i.sku):
         //    declared: c.name  o.date  i.sku
         //    hkey:  c.cid  o.oid  i.iid
@@ -671,19 +667,18 @@ public class RowDefCacheTest
                          "create index oDate_iSku on items(orders.date, items.sku) using left join;"
         };
 
-        final RowDefCache rowDefCache;
+        final AkibanInformationSchema ais;
         {
-            AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-            rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
+            ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         }
 
         GroupIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
 
-        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
-        RowDef orders = rowDefCache.getRowDef(tableName("orders"));
-        RowDef items = rowDefCache.getRowDef(tableName("items"));
+        RowDef customer = ais.getTable(tableName("customer")).rowDef();
+        RowDef orders = ais.getTable(tableName("orders")).rowDef();
+        RowDef items = ais.getTable(tableName("items")).rowDef();
         // left join group index on o.date,i.sku
         //     declared:  o.date  i.sku
         //     hkey:  o.cid  o.oid  i.iid

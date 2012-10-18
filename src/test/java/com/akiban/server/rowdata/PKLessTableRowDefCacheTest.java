@@ -48,8 +48,8 @@ public class PKLessTableRowDefCacheTest
             ");",
             "create index e_d on test(e, d);"
         };
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        RowDef test = rowDefCache.getRowDef(tableName("test"));
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        RowDef test = ais.getTable(tableName("test")).rowDef();
         UserTable t = (UserTable) test.table();
         Assert.assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
         checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
@@ -97,12 +97,12 @@ public class PKLessTableRowDefCacheTest
             ");",
             "create index c2_c1 on child(c2, c1);"
         };
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         TableIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // ------------------------- parent ----------------------------------------------------------------------------
-        RowDef parent = rowDefCache.getRowDef(tableName("parent"));
+        RowDef parent = ais.getTable(tableName("parent")).rowDef();
         UserTable p = (UserTable) parent.table();
         Assert.assertEquals(2, parent.getHKeyDepth()); // parent ordinal, p1
         checkHKey(p.hKey(), p, p, "p1");
@@ -117,7 +117,7 @@ public class PKLessTableRowDefCacheTest
         Assert.assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
         Assert.assertEquals(0, indexToHKey.getIndexRowPosition(1)); // parent p1
         // ------------------------- child -----------------------------------------------------------------------------
-        RowDef child = rowDefCache.getRowDef(tableName("child"));
+        RowDef child = ais.getTable(tableName("child")).rowDef();
         UserTable c = (UserTable) child.table();
         Assert.assertEquals(2, parent.getHKeyDepth()); // child ordinal, child row counter
         checkHKey(c.hKey(),

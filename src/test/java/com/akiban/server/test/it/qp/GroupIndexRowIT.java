@@ -71,7 +71,7 @@ public class GroupIndexRowIT extends OperatorITBase
             "primary key(entUserGroupID)",
             "grouping foreign key (uid) references member_info(profileID)");
         createGroupIndex("usr", "gi", "entitlement_user_group.uid,member_info.lastLogin", Index.JoinType.LEFT);
-        schema = new com.akiban.qp.rowtype.Schema(rowDefCache().ais());
+        schema = new com.akiban.qp.rowtype.Schema(ais());
         userRowType = schema.userTableRowType(userTable(user));
         memberInfoRowType = schema.userTableRowType(userTable(memberInfo));
         entitlementUserGroupRowType = schema.userTableRowType(userTable(entitlementUserGroup));

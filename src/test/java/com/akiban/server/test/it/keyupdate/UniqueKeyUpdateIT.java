@@ -156,7 +156,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
             assertEquals("scan[1][0]", 2L, scan.get(1).get(0));
 
             original = scan.get(0); // (1)
-            updated = new NiceRow(tableId, store());
+            updated = new NiceRow(session(), tableId, store());
             updated.put(0, scan.get(1).get(0)); // (2)
             original.put(1, 1L); // (1, 1)
             updated.put(1, 1L); // (2, 1)

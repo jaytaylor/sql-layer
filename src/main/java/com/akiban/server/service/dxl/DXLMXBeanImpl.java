@@ -235,7 +235,7 @@ class DXLMXBeanImpl implements DXLMXBean {
         final Session session = sessionService.createSession();
         try {
             int tableId = dxlService.ddlFunctions().getTableId(session, new TableName(schema, table));
-            NewRow row = new NiceRow(tableId, store);
+            NewRow row = new NiceRow(session, tableId, store);
             String[] fieldsArray = fields.split(",\\s*");
             for (int i=0; i < fieldsArray.length; ++i) {
                 String field = java.net.URLDecoder.decode(fieldsArray[i], "UTF-8");

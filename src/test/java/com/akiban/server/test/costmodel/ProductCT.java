@@ -82,7 +82,7 @@ public class ProductCT extends CostModelBase
                            "primary key(mid)",
                            String.format("grouping foreign key(rid, root_instance) references %s(rid, root_instance)",
                                          rootTableName));
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         rootRowType = schema.userTableRowType(userTable(root));
         oneRowType = schema.userTableRowType(userTable(one));
         manyRowType = schema.userTableRowType(userTable(many));

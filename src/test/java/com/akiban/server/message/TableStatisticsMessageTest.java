@@ -28,7 +28,7 @@ package com.akiban.server.message;
 
 import static org.junit.Assert.assertEquals;
 
-import com.akiban.server.collation.TestKeyCreator;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
@@ -37,8 +37,6 @@ import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
-import com.persistit.Key;
-import com.persistit.Persistit;
 
 public class TableStatisticsMessageTest {
 
@@ -53,8 +51,8 @@ public class TableStatisticsMessageTest {
             "    unique(b));"
         };
         SchemaFactory schemaFactory = new SchemaFactory("schema");
-        RowDefCache rowDefCache = schemaFactory.rowDefCache(DDL);
-        RowDef rowDef = rowDefCache.getRowDef("schema", "test");
+        AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(DDL);
+        RowDef rowDef = ais.getTable("schema", "test").rowDef();
         final TableStatistics ts = new TableStatistics(123);
         ts.setAutoIncrementValue(999);
         ts.setBlockSize(8192);
