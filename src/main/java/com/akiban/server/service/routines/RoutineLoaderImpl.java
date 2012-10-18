@@ -178,12 +178,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
-    public ScriptPool<? extends ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
         return scripts.getScriptEvaluator(session, routineName);
     }
 
     @Override
-    public ScriptPool<? extends ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
         return scripts.getScriptInvoker(session, routineName);
     }
 

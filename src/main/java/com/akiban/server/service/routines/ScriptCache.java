@@ -66,11 +66,11 @@ public class ScriptCache
         return (manager.getEngineByName(language) != null);
     }
 
-    public ScriptPool<? extends ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
         return getEntry(session, routineName).getScriptEvaluator();
     }
 
-    public ScriptPool<? extends ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
         return getEntry(session, routineName).getScriptInvoker();
     }
     
@@ -114,7 +114,7 @@ public class ScriptCache
             spareEngine = engine;
         }
 
-        public ScriptPool<? extends ScriptEvaluator> getScriptEvaluator() {
+        public ScriptPool<ScriptEvaluator> getScriptEvaluator() {
             // The only case where anything more than the factory is cached is
             // for THREAD-ISOLATED / STATELESS threading + Compilable,
             // which means that just one CompiledScript will work for
@@ -159,7 +159,7 @@ public class ScriptCache
             }
         }
 
-        public ScriptPool<? extends ScriptInvoker> getScriptInvoker() {
+        public ScriptPool<ScriptInvoker> getScriptInvoker() {
             assert invocable && (function != null);
             // Can share if at multi-threaded (or stronger), since we are invoking
             // the function.
@@ -261,7 +261,7 @@ public class ScriptCache
         }
     }
 
-    static class EngineEvaluatorPool extends BasePool<EngineEvaluator> {
+    static class EngineEvaluatorPool extends BasePool<ScriptEvaluator> {
         public EngineEvaluatorPool(TableName routineName, ScriptEngineFactory factory, String script, EngineEvaluator initial) {
             super(routineName, factory, script, initial);
         }
@@ -272,7 +272,7 @@ public class ScriptCache
         }
     }
 
-    static class CompiledEvaluatorPool extends BasePool<CompiledEvaluator> {
+    static class CompiledEvaluatorPool extends BasePool<ScriptEvaluator> {
         public CompiledEvaluatorPool(TableName routineName, ScriptEngineFactory factory, String script, CompiledEvaluator initial) {
             super(routineName, factory, script, initial);
         }
@@ -283,7 +283,7 @@ public class ScriptCache
         }
     }
 
-    static class InvokerPool extends BasePool<Invoker> {
+    static class InvokerPool extends BasePool<ScriptInvoker> {
         private final String function;
         
         public InvokerPool(TableName routineName, ScriptEngineFactory factory, String script, String function, Invoker initial) {
