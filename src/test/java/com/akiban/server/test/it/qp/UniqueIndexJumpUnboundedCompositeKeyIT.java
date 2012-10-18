@@ -99,7 +99,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         
         createUniqueIndex("schema", "t", "idx", "a", "b", "c");
         
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {

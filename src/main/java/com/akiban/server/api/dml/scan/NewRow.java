@@ -32,6 +32,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
 /**
@@ -155,10 +156,8 @@ public abstract class NewRow {
         this.rowDef = rowDef;
     }
 
-    protected static RowDef rowDef(int rowDefId, Store store)
+    protected static RowDef rowDef(Session session, int rowDefId, Store store)
     {
-        RowDefCache rowDefCache = store.getRowDefCache();
-        RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        return rowDef;
+        return store.getRowDef(session, rowDefId);
     }
 }

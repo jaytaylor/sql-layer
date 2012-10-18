@@ -82,7 +82,7 @@ public class SortWithLimitCT extends CostModelBase
             "e int",
             "primary key(id)");
         group = group(t);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
         queryContext = queryContext((PersistitAdapter) adapter);

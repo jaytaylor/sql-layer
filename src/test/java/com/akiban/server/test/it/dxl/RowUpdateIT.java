@@ -102,7 +102,7 @@ public class RowUpdateIT extends ITBase
         cB = 2;
         cC = 3;
         cD = 4;
-        rowDef = rowDefCache().getRowDef(t);
+        rowDef = getRowDef(t);
         target = new NiceRow(t, rowDef);
         target.put(cId, 888L);
         target.put(cA, 888L);

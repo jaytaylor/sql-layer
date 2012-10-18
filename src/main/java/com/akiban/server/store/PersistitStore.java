@@ -128,7 +128,7 @@ public class PersistitStore implements Store, Service {
         try {
             CoderManager cm = getDb().getCoderManager();
             Management m = getDb().getManagement();
-            cm.registerValueCoder(RowData.class, new RowDataValueCoder(this));
+            cm.registerValueCoder(RowData.class, new RowDataValueCoder());
             cm.registerKeyCoder(CString.class, new CStringKeyCoder());
             originalDisplayFilter = m.getDisplayFilter();
             m.setDisplayFilter(new RowDataDisplayFilter(originalDisplayFilter));
@@ -305,9 +305,17 @@ public class PersistitStore implements Store, Service {
 
     // --------------------- Implement Store interface --------------------
 
+    public AkibanInformationSchema getAIS(Session session) {
+        return rowDefCache.ais(); // TODO: From SchemaManager
+    }
+
+    public RowDef getRowDef(Session session, TableName tableName) {
+        return getAIS(session).getTable(tableName).rowDef();
+    }
+
     @Override
-    public RowDefCache getRowDefCache() {
-        return rowDefCache;
+    public RowDef getRowDef(Session session, int rowDefID) {
+        return getAIS(session).getUserTable(rowDefID).rowDef();
     }
 
     @Override
@@ -1193,21 +1201,10 @@ public class PersistitStore implements Store, Service {
         AkServerUtil.putInt(rowData.getBytes(), RowData.O_ROW_DEF_ID, rowDefId);
     }
 
-    @Override
-    public void buildAllIndexes(Session session, boolean deferIndexes) {
-        Collection<Index> indexes = new HashSet<Index>();
-        for(RowDef rowDef : rowDefCache.getRowDefs()) {
-            if(rowDef.isUserTable()) {
-                indexes.addAll(Arrays.asList(rowDef.getIndexes()));
-            }
-        }
-        buildIndexes(session, indexes, deferIndexes);
-    }
-
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         flushIndexes(session);
         Set<Group> groups = new HashSet<Group>();
-        Set<RowDef> userRowDefs = new HashSet<RowDef>();
+        Map<Integer,RowDef> userRowDefs = new HashMap<Integer,RowDef>();
         Set<Index> indexesToBuild = new HashSet<Index>();
         for(Index index : indexes) {
             IndexDef indexDef = index.indexDef();
@@ -1216,7 +1213,7 @@ public class PersistitStore implements Store, Service {
             }
             indexesToBuild.add(index);
             RowDef rowDef = indexDef.getRowDef();
-            userRowDefs.add(rowDef);
+            userRowDefs.put(rowDef.getRowDefId(), rowDef);
             groups.add(rowDef.table().getGroup());
         }
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
@@ -1230,8 +1227,8 @@ public class PersistitStore implements Store, Service {
                 while (hEx.next(true)) {
                     expandRowData(hEx, rowData);
                     int tableId = rowData.getRowDefId();
-                    RowDef userRowDef = rowDefCache.getRowDef(tableId);
-                    if (userRowDefs.contains(userRowDef)) {
+                    RowDef userRowDef = userRowDefs.get(tableId);
+                    if (userRowDef != null) {
                         for (Index index : userRowDef.getIndexes()) {
                             if(indexesToBuild.contains(index)) {
                                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, defer);
@@ -1357,7 +1354,7 @@ public class PersistitStore implements Store, Service {
 
     private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector) {
         NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
-        NewRow newRow = new LegacyRowWrapper(newRowData, this);
+        NewRow newRow = new LegacyRowWrapper(rowDef, newRowData);
         int fields = rowDef.getFieldCount();
         for (int i = 0; i < fields; i++) {
             if (columnSelector.includesColumn(i)) {
@@ -1389,7 +1386,7 @@ public class PersistitStore implements Store, Service {
         Exchange exchange = getExchange(session, group);
         try {
             exchange.clear().append(Key.BEFORE);
-            visitor.initialize(this, exchange);
+            visitor.initialize(session, this, exchange);
             while (exchange.next(true)) {
                 visitor.visit();
             }
@@ -1413,9 +1410,8 @@ public class PersistitStore implements Store, Service {
 
     public TableStatus getTableStatus(Table table) {
         TableStatus ts = null;
-        RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
-        if (rowDef != null) {
-            ts = rowDef.getTableStatus();
+        if(table.rowDef() != null) {
+            ts = table.rowDef().getTableStatus();
         }
         return ts;
     }

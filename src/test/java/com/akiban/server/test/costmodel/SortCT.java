@@ -105,7 +105,7 @@ public class SortCT extends CostModelBase
             /* 7 */ "filler400 varchar(400)",
             "primary key(id)");
         group = group(t);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
         queryContext = queryContext((PersistitAdapter) adapter);
