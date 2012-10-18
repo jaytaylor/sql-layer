@@ -409,6 +409,12 @@ public class GroupIndex extends Index
         }
     }
 
+    @Override
+    public String toString() {
+        // TODO: This should go away altogether when expected output is updated
+        return "Index(" + '.' + getIndexName().getTableName() + '.' + getIndexName().getName() + keyColumns + ")";
+    }
+
     // Object state
 
     private final Group group;
