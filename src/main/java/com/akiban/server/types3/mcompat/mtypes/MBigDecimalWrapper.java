@@ -62,6 +62,12 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
             
     @Override
+    public BigDecimalWrapper set(BigDecimalWrapper other) {
+        value = other.asBigDecimal();
+        return this;
+    }
+            
+    @Override
     public BigDecimalWrapper add(BigDecimalWrapper other) {
         value = value.add(other.asBigDecimal());
         return this;
@@ -115,18 +121,18 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
     
     @Override
-    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
+    public BigDecimalWrapper divide(BigDecimalWrapper divisor, int scale)
     {
-        value = value.divide(augend.asBigDecimal(),
+        value = value.divide(divisor.asBigDecimal(),
                 scale,
                 RoundingMode.HALF_UP);
         return this;
     }
 
     @Override
-    public BigDecimalWrapper divideToIntegeralValue (BigDecimalWrapper augend)
+    public BigDecimalWrapper divideToIntegralValue(BigDecimalWrapper divisor)
     {
-        value = value.divideToIntegralValue(augend.asBigDecimal());
+        value = value.divideToIntegralValue(divisor.asBigDecimal());
         return this;
     }
 

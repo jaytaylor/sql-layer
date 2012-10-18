@@ -31,6 +31,7 @@ import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
@@ -60,7 +61,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 
 public class Map_NestedLoopsIT extends OperatorITBase
 {
@@ -271,22 +272,10 @@ public class Map_NestedLoopsIT extends OperatorITBase
     public void testIndexScanUnderMapNestedLoopsUsedAsInnerLoopOfAnotherMapNestedLoops()
     {
         RowType cidValueRowType = schema.newValuesType(AkType.INT);
-        List<Expression> expressions;
-        List<TPreparedExpression> pExpressions;
-        if (Types3Switch.ON) {
-            pExpressions = Arrays.asList((TPreparedExpression) new TPreparedBoundField(
-                    cidValueRowType, 1, 0));
-            expressions = null;
-        }
-        else {
-            pExpressions = null;
-            expressions = Arrays.asList((Expression) new BoundFieldExpression(
-                    1,
-                    new FieldExpression(cidValueRowType, 0)));
-        }
+        List<ExpressionGenerator> expressions = Arrays.asList(boundField(cidValueRowType, 1, 0));
         IndexBound cidBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(customerCidIndexRowType, expressions, pExpressions),
+                new RowBasedUnboundExpressions(customerCidIndexRowType, expressions),
                 new SetColumnSelector(0));
         IndexKeyRange cidRange = IndexKeyRange.bounded(customerCidIndexRowType, cidBound, true, cidBound, true);
         Operator plan =

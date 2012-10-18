@@ -72,6 +72,16 @@ public class MBigDecimal extends TClassBase {
         return new MBigDecimalWrapper(sb.toString());
     }
 
+    public static BigDecimalWrapper getWrapper(TExecutionContext context, int index) {
+        BigDecimalWrapper wrapper = (BigDecimalWrapper)context.exectimeObjectAt(index);
+        if (wrapper == null) {
+            wrapper = new MBigDecimalWrapper();
+            context.putExectimeObject(index, wrapper);
+        }
+        wrapper.reset();
+        return wrapper;
+    }
+
     public static void adjustAttrsAsNeeded(TExecutionContext context, PValueSource source,
                                            TInstance targetInstance, PValueTarget target)
     {

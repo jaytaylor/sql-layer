@@ -23,35 +23,15 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common;
 
-import java.math.BigDecimal;
+package com.akiban.qp.operator;
 
-public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
-    
-    BigDecimalWrapper set(BigDecimalWrapper value);
-    BigDecimalWrapper add(BigDecimalWrapper addend);
-    BigDecimalWrapper subtract(BigDecimalWrapper subtrahend);
-    BigDecimalWrapper multiply(BigDecimalWrapper multiplicand);
-    BigDecimalWrapper divide(BigDecimalWrapper divisor);
-    BigDecimalWrapper floor();
-    BigDecimalWrapper ceil();
-    BigDecimalWrapper truncate(int scale);
-    BigDecimalWrapper round(int scale);
-    BigDecimalWrapper divideToIntegralValue(BigDecimalWrapper divisor);
-    BigDecimalWrapper divide(BigDecimalWrapper divisor, int scale);
-    BigDecimalWrapper parseString(String num);
-    BigDecimalWrapper round (int precision, int scale);
-    BigDecimalWrapper negate();
-    BigDecimalWrapper abs();
-    BigDecimalWrapper mod(BigDecimalWrapper num);
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 
-    int compareTo (BigDecimalWrapper o);
-    int getScale();
-    int getPrecision();
-    int getSign();
-    boolean isZero();
-    void reset();
+public interface ExpressionGenerator {
+    Expression getExpression();
+    TPreparedExpression getTPreparedExpression();
 
-    BigDecimal asBigDecimal();
+    enum ErasureMaker {MARK}
 }

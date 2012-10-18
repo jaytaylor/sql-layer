@@ -34,7 +34,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -142,17 +142,17 @@ public class SortCT extends CostModelBase
                     groupScan_Default(group),
                     rows),
                 tRowType,
-                Arrays.asList(Expressions.field(tRowType, 0),
-                              Expressions.field(tRowType, 1),
-                              Expressions.field(tRowType, 2),
-                              Expressions.field(tRowType, 3),
-                              Expressions.field(tRowType, fillerColumn)));
+                Arrays.asList(ExpressionGenerators.field(tRowType, 0),
+                              ExpressionGenerators.field(tRowType, 1),
+                              ExpressionGenerators.field(tRowType, 2),
+                              ExpressionGenerators.field(tRowType, 3),
+                              ExpressionGenerators.field(tRowType, fillerColumn)));
         RowType inputRowType = setup.rowType();
         int sortComplexity = 0;
         Ordering ordering = ordering();
         for (int f = 0; f < sortFields; f++) {
             boolean ascending = (orderingMask & (1 << f)) != 0;
-            ordering.append(Expressions.field(inputRowType, f), ascending);
+            ordering.append(ExpressionGenerators.field(inputRowType, f), ascending);
             boolean previousAscending = (orderingMask & (1 << (f - 1))) != 0;
             if (f > 0 && ascending != previousAscending) {
                 sortComplexity++;

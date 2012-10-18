@@ -37,7 +37,7 @@ import com.akiban.server.types3.texpressions.TScalarBase;
 import java.util.List;
 
 public abstract class MRoundBase extends TScalarBase {
-    
+
     static enum RoundType
     {
         CEIL() {
@@ -70,12 +70,15 @@ public abstract class MRoundBase extends TScalarBase {
     public static TScalar[] create(final RoundType roundType) {
         TScalar exactType = new MRoundBase(roundType, MNumeric.DECIMAL) {
                     
-            private final int RET_TYPE_INDEX = 0;
+            private static final int RET_TYPE_INDEX = 0;
+            private static final int DEC_INDEX = 1;
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 TClass cached = (TClass) context.objectAt(RET_TYPE_INDEX);
-                BigDecimalWrapper result = roundType.evaluate(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
+                BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
+                result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
+                result = roundType.evaluate(result);
                 
                 TClass outT = context.outputTInstance().typeClass();
                 if (cached != null && cached != outT)
