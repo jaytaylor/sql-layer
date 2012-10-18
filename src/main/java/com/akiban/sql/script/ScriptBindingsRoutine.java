@@ -29,25 +29,27 @@ package com.akiban.sql.server;
 import com.akiban.ais.model.Parameter;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.server.service.routines.ScriptInvoker;
+import com.akiban.server.service.routines.ScriptEvaluator;
 import com.akiban.server.service.routines.ScriptPool;
 
-import java.lang.reflect.Array;
-import java.util.List;
+import javax.script.Bindings;
 
-/** Implementation of the <code>SCRIPT_FUNCTION_JAVA</code> calling convention. 
- * Like standard <code>PARAMETER STYLE JAVA</code>, outputs are passed
- * as 1-long arrays that the called function stores into.
+/** Implementation of the <code>SCRIPT_BINDINGS</code> calling convention. 
+ * Inputs are passed as named (script engine scope) variables.
+ * Outputs can be received in the same way, or (since that is not
+ * possible in all languages) via the scripts return value, which can
+ * be a single value or a list or a dictionary.
  */
-public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
+public class ScriptBindingsRoutine extends ServerJavaRoutine
 {
-    private ScriptPool<ScriptInvoker> pool;
-    private Object[] functionArgs;
-    private Object functionResult;
-    
-    public ScriptFunctionJavaRoutine(ServerQueryContext context,
-                                     ServerRoutineInvocation invocation,
-                                     ScriptPool<ScriptInvoker> pool) {
+    private ScriptPool<ScriptEvaluator> pool;
+    private ScriptEvaluator evaluator;
+    private Bindings bindings;
+    private Object evalResult;
+
+    public ScriptBindingsRoutine(ServerQueryContext context,
+                                 ServerRoutineInvocation invocation,
+                                 ScriptPool<ScriptEvaluator> pool) {
         super(context, invocation);
         this.pool = pool;
     }
@@ -55,50 +57,42 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
     @Override
     public void push() {
         super.push();
-        functionArgs = functionArgs(getInvocation().getRoutine().getParameters());
-    }
-
-    protected static Object[] functionArgs(List<Parameter> parameters) {
-        Object[] result = new Object[parameters.size()];
-        for (int i = 0; i < result.length; i++) {
-            if (parameters.get(i).getDirection() != Parameter.Direction.IN) {
-                result = new Object[1];
-            }
-        }
-        return result;
+        evaluator = pool.get();
+        bindings = evaluator.createBindings();
     }
 
     @Override
     public void setInParameter(Parameter parameter, ServerJavaValues values, int index) {
-        if (parameter.getDirection() == Parameter.Direction.INOUT) {
-            Array.set(functionArgs[index], 0, values.getObject(index));
-        }
-        else {
-            functionArgs[index] = values.getObject(index);
-        }
+        String var = parameter.getName();
+        if (var == null)
+            var = String.format("arg%d", index+1);
+        bindings.put(var, values.getObject(index));
     }
 
     @Override
     public void invoke() {
-        ScriptInvoker invoker = pool.get();
-        boolean success = false;
-        try {
-            functionResult = invoker.invoke(functionArgs);
-            success = true;
-        }
-        finally {
-            pool.put(invoker, !success);
-        }
+        evalResult = evaluator.eval(bindings);
     }
 
     @Override
     public Object getOutParameter(Parameter parameter, int index) {
         if (parameter.getDirection() == Parameter.Direction.RETURN) {
-            return functionResult;
+            return evalResult;
         }
-        else {
-            return Array.get(functionArgs[index], 0);
-        }
+        String var = parameter.getName();
+        if (var == null)
+            var = String.format("arg%d", index+1);
+        if (bindings.containsKey(var))
+            return bindings.get(var);
+        // Not bound, try to find in result.
+        return null;
     }
     
+    @Override
+    public void pop() {
+        pool.put(evaluator, false);
+        evaluator = null;
+        super.pop();
+    }
+
 }
