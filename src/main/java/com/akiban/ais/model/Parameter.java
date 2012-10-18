@@ -55,7 +55,7 @@ public class Parameter
         StringBuffer str = new StringBuffer(direction.name());
         if (name != null)
             str.append(" ").append(name);
-        str.append( getTypeDescription());
+        str.append(" ").append(getTypeDescription());
         return str.toString();
     }
 
