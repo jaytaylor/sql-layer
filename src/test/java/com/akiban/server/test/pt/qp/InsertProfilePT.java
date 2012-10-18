@@ -27,6 +27,7 @@
 package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -65,7 +66,7 @@ public class InsertProfilePT extends QPProfilePTBase
             "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
             "index(address)");
         coi = group(customer);
-        String groupName = coi.getName();
+        TableName groupName = coi.getName();
         createGroupIndex(groupName, "name_salesman", "customer.name, order.salesman");
         createGroupIndex(groupName, "name_address", "customer.name, address.address");
         schema = new Schema(rowDefCache().ais());

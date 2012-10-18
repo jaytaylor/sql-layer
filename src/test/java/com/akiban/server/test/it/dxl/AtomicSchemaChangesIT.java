@@ -202,11 +202,6 @@ public class AtomicSchemaChangesIT extends ITBase
         }
     }
 
-    private AkibanInformationSchema ais()
-    {
-        return ddl().getAIS(session());
-    }
-
     private GrowableByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
         GrowableByteBuffer buffer = new GrowableByteBuffer(BUFFER_SIZE);

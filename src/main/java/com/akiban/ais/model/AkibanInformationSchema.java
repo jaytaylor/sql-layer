@@ -84,6 +84,21 @@ public class AkibanInformationSchema implements Traversable
         return buffer.toString();
     }
 
+    /** @deprecated Use the fully qualified version {@link #getGroup(TableName)} **/
+    public Group getGroup(final String groupName)
+    {
+        Group candidate = null;
+        for(Group group : groups.values()) {
+            if(group.getName().getTableName().equals(groupName)) {
+                if(candidate != null) {
+                    throw new IllegalArgumentException("Ambiguous group name: " + groupName);
+                }
+                candidate = group;
+            }
+        }
+        return candidate;
+    }
+
     public Group getGroup(final TableName groupName)
     {
         return groups.get(groupName);

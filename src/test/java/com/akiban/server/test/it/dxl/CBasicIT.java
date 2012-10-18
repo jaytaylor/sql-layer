@@ -236,7 +236,7 @@ public final class CBasicIT extends ITBase {
         final int tid;
         try {
             tid = createTable("test", "t", "id int not null primary key");
-            final String groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
+            final TableName groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
             ddl().dropGroup(session(), groupName);
 
             AkibanInformationSchema ais = ddl().getAIS(session());

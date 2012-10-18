@@ -432,6 +432,10 @@ public class ApiTestBase {
         aisGeneration = ddl().getGeneration();
     }
 
+    protected final AkibanInformationSchema ais() {
+        return ddl().getAIS(session());
+    }
+
     protected Collection<Property> startupConfigProperties() {
         return Collections.emptyList();
     }
@@ -647,12 +651,22 @@ public class ApiTestBase {
         return getUserTable(table.getTableId()).getIndex(indexName);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+    /** @deprecated  **/
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs) {
+        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs);
+    }
+
+    /** @deprecated  **/
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType) {
+        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs, joinType);
+    }
+
+    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs)
             throws InvalidOperationException {
         return createGroupIndex(groupName, indexName, tableColumnPairs, Index.JoinType.LEFT);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
+    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;

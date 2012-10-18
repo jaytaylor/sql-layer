@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
@@ -208,7 +209,7 @@ public final class COIBasicIT extends ITBase {
     @Test
     public void dropGroup() throws InvalidOperationException {
         final TableIds tids = createTables();
-        final String groupName = ddl().getAIS(session()).getUserTable(tableName(tids.i)).getGroup().getName();
+        final TableName groupName = ddl().getAIS(session()).getUserTable(tableName(tids.i)).getGroup().getName();
 
         ddl().dropGroup(session(), groupName);
 
