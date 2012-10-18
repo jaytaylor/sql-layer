@@ -135,12 +135,20 @@ public final class GroupsBuilder
     }
 
     public void rootTable(TableName root, String groupName) {
+        rootTable(root, new TableName(root.getSchemaName(), groupName));
+    }
+
+    public void rootTable(TableName root, TableName groupName) {
         Group group = new Group(groupName);
         grouping.addGroup(group, root);
     }
 
+    public void rootTable(String schemaName, String tableName, TableName group) {
+        rootTable(new TableName(schemaName, tableName), group);
+    }
+
     public void rootTable(String schemaName, String tableName, String group) {
-        rootTable( new TableName(schemaName, tableName), group );
+        rootTable(new TableName(schemaName, tableName), group);
     }
 
     public void rootTable(String tableName, String group) {
@@ -191,7 +199,7 @@ public final class GroupsBuilder
         assert ! childCols.hasNext() : "had extra child columns: " + parentColumns + childColumns;
     }
 
-    public void dropGroup(String groupName) {
+    public void dropGroup(TableName groupName) {
         grouping.dropGroup(groupName);
     }
 
@@ -244,9 +252,9 @@ public final class GroupsBuilder
         }
 
         for (Group group : grouping.getGroups()) {
-            assert group.getGroupName().startsWith("__GROUP_") : group.getGroupName();
-            String unmangledName = group.getGroupName().substring( "__GROUP_".length() );
-            grouping.newGroupFromChild(grouping.getRootTable(group), unmangledName);
+            assert group.getGroupName().getTableName().startsWith("__GROUP_") : group.getGroupName();
+            String unmangledName = group.getGroupName().getTableName().substring("__GROUP_".length());
+            grouping.newGroupFromChild(grouping.getRootTable(group), new TableName(group.getGroupName().getSchemaName(), unmangledName));
         }
         
         return grouping;
