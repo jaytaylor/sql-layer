@@ -343,7 +343,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 {
                     newGroup = newAIS.getGroup(indexName.getTableName());
                     if(newGroup == null) {
-                        throw new NoSuchGroupException(indexName.getTableName());
+                        throw new NoSuchGroupException(indexName.getFullTableName());
                     }
                     curIndex = newGroup.getIndex(indexName.getName());
                     Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
