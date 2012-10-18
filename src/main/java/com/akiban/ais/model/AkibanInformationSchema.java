@@ -84,12 +84,12 @@ public class AkibanInformationSchema implements Traversable
         return buffer.toString();
     }
 
-    public Group getGroup(final String groupName)
+    public Group getGroup(final TableName groupName)
     {
         return groups.get(groupName);
     }
 
-    public Map<String, Group> getGroups()
+    public Map<TableName, Group> getGroups()
     {
         return groups;
     }
@@ -421,9 +421,9 @@ public class AkibanInformationSchema implements Traversable
      */
     private void checkGroups(List<String> out)
     {
-        for (Map.Entry<String,Group> entry : groups.entrySet())
+        for (Map.Entry<TableName,Group> entry : groups.entrySet())
         {
-            String name = entry.getKey();
+            TableName name = entry.getKey();
             Group group = entry.getValue();
             if (group == null) {
                 out.add("null group for name: " + name);
@@ -434,7 +434,9 @@ public class AkibanInformationSchema implements Traversable
             else if (!name.equals(group.getName())) {
                 out.add("name mismatch, expected <" + name + "> for group " + group);
             }
-            group.checkIntegrity(out);
+            else {
+                group.checkIntegrity(out);
+            }
         }
     }
 
@@ -669,7 +671,7 @@ public class AkibanInformationSchema implements Traversable
     private static String defaultCharset = "utf8";
     private static String defaultCollation = "utf8_bin";
 
-    private final Map<String, Group> groups = new TreeMap<String, Group>();
+    private final Map<TableName, Group> groups = new TreeMap<TableName, Group>();
     private final Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
     private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
     private final Map<TableName, View> views = new TreeMap<TableName, View>();

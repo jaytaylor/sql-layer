@@ -180,7 +180,7 @@ public class GroupIndex extends Index
     private GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
         // index checks index name.
-        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
+        super(group.getName(), indexName, indexId, isUnique, constraint);
         this.group = group;
     }
 
@@ -192,7 +192,7 @@ public class GroupIndex extends Index
                       JoinType joinType)
     {
         // index checks index name.
-        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint, joinType, true);
+        super(group.getName(), indexName, indexId, isUnique, constraint, joinType, true);
         this.group = group;
     }
 
