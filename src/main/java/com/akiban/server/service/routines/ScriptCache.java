@@ -209,7 +209,7 @@ public class ScriptCache
         }
 
         @Override
-        public void put(T elem, boolean error) {
+        public void put(T elem, boolean success) {
         }
     }
 
@@ -239,8 +239,8 @@ public class ScriptCache
         }
 
         @Override
-        public void put(T elem, boolean error) {
-            if (!error) {
+        public void put(T elem, boolean success) {
+            if (success) {
                 synchronized (pool) {
                     pool.offerLast(elem);
                 }

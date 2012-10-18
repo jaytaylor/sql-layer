@@ -57,7 +57,7 @@ public abstract class ServerJavaRoutine
         ServerCallContextStack.push(context, invocation);
     }
 
-    public void pop() {
+    public void pop(boolean success) {
         ServerCallContextStack.pop(context, invocation);
     }
 
