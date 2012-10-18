@@ -47,6 +47,7 @@ import com.akiban.server.collation.AkCollatorMySQL;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
 import com.persistit.Key;
 import org.junit.Before;
 import org.junit.Test;
@@ -327,7 +328,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                     // collators
                     collators,
                     // usePValues
-                    false
+                    Types3Switch.ON
                     ),
                 dIndexRowType,
                 Arrays.asList(
