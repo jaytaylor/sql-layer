@@ -66,6 +66,8 @@ import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.util.GroupIndexCreator;
@@ -410,6 +412,10 @@ public class ApiTestBase {
 
     protected final ServiceManager serviceManager() {
         return sm;
+    }
+
+    protected final TCastResolver castResolver() {
+        return sm.getServiceByClass(T3RegistryService.class).getCastsResolver();
     }
 
     protected final ConfigurationService configService() {

@@ -64,6 +64,12 @@ import java.util.TreeMap;
 
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
 
+    public static TCastResolver createTCastResolver() {
+        T3RegistryServiceImpl registryService = new T3RegistryServiceImpl();
+        registryService.start();
+        return registryService.getCastsResolver();
+    }
+
     // T3RegistryService interface
 
     @Override

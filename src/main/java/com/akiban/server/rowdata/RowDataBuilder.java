@@ -369,7 +369,8 @@ public final class RowDataBuilder {
                         pValue.putBytes(((ByteSource)object).toByteSubarray());
                     break;
                 case STRING:
-                    assert false : "should have been handled above";
+                    pValue.putString(object.toString(), null);
+                    break;
                 case BOOL:
                     if (object instanceof Boolean)
                         pValue.putBool((Boolean)object);
