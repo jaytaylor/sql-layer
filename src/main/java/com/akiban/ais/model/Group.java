@@ -60,7 +60,7 @@ public class Group implements Traversable, TreeLink
     @Override
     public String toString()
     {
-        // TODO: Fix. Many expected tests rely on this output. Also optimizer TableGroup, TableGroupJoin/Join, and GroupIndex.
+        // TODO: Fix. Many expected tests rely on this output. See optimizer TableGroup, TableGroupJoin/Join, and GroupIndex.
         TableName tableName = (rootTable != null) ? rootTable.getName() : null;
         return "Group(" + name.getTableName() + " -> " + tableName + ")";
     }

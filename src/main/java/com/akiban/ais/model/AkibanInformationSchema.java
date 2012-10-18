@@ -99,11 +99,6 @@ public class AkibanInformationSchema implements Traversable
         return candidate;
     }
 
-    public Group getGroup(final String schemaName, final String groupName)
-    {
-        return getGroup(new TableName(schemaName, groupName));
-    }
-
     public Group getGroup(final TableName groupName)
     {
         return groups.get(groupName);

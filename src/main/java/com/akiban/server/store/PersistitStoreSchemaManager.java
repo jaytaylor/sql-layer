@@ -341,7 +341,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 break;
                 case GROUP:
                 {
-                    newGroup = newAIS.getGroup(indexName.getTableName());
+                    GroupIndex gi = (GroupIndex)index;
+                    newGroup = newAIS.getGroup(gi.getGroup().getName());
                     if(newGroup == null) {
                         throw new NoSuchGroupException(indexName.getFullTableName());
                     }
