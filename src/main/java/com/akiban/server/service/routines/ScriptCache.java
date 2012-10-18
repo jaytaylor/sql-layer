@@ -58,6 +58,14 @@ public class ScriptCache
         cache.remove(routineName);
     }
     
+    public boolean isScriptLanguage(Session session, String language) {
+        synchronized (this) {
+            if (manager == null)
+                manager = new ScriptEngineManager();
+        }
+        return (manager.getEngineByName(language) != null);
+    }
+
     public ScriptPool<? extends ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
         return getEntry(session, routineName).getScriptEvaluator();
     }

@@ -33,7 +33,7 @@ import java.util.*;
 public class Routine 
 {
     public static enum CallingConvention {
-        JAVA, LOADABLE_PLAN
+        JAVA, LOADABLE_PLAN, SQL_ROW, SCRIPT_FUNCTION_JAVA, SCRIPT_BINDINGS
     }
 
     public static enum SQLAllowed {
@@ -153,6 +153,9 @@ public class Routine
             break;
         case LOADABLE_PLAN:
             AISInvariants.checkNullName(className, "Routine", "class name");
+            break;
+        case SCRIPT_FUNCTION_JAVA:
+            AISInvariants.checkNullName(methodName, "Routine", "function name");
             break;
         default:
             throw new InvalidRoutineException(name.getSchemaName(), name.getTableName(), 

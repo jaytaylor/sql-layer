@@ -173,6 +173,11 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
+    public boolean isScriptLanguage(Session session, String language) {
+        return scripts.isScriptLanguage(session, language);
+    }
+
+    @Override
     public ScriptPool<? extends ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
         return scripts.getScriptEvaluator(session, routineName);
     }

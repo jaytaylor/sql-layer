@@ -50,6 +50,7 @@ public class RoutineDDL {
     private RoutineDDL() { }
     
     public static void createRoutine(DDLFunctions ddlFunctions,
+                                     RoutineLoader routineLoader,
                                      Session session,
                                      String defaultSchemaName,
                                      CreateAliasNode createAlias) {
@@ -60,6 +61,8 @@ public class RoutineDDL {
         String language = aliasInfo.getLanguage();
         Routine.CallingConvention callingConvention;
         if (language.equalsIgnoreCase("JAVA")) {
+            // The existence of both PARAMETER STYLE and EXTERNAL NAME
+            // was checked by the parser.
             if ("JAVA".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
                 callingConvention = Routine.CallingConvention.JAVA;
             }
@@ -68,6 +71,39 @@ public class RoutineDDL {
             }
             else {
                 throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
+            }
+        }
+        else if (language.equalsIgnoreCase("SQL")) {
+            // The existence of both PARAMETER STYLE and AS was
+            // checked by the parser.
+            if ("ROW".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
+                callingConvention = Routine.CallingConvention.SQL_ROW;
+            }
+            else {
+                throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
+            }
+            if (createAlias.getExternalName() != null)
+                throw new InvalidRoutineException(schemaName, routineName, "SQL routine cannot have EXTERNAL NAME");
+        }
+        else if (routineLoader.isScriptLanguage(session, language)) {
+            if ("VARIABLES".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
+                callingConvention = Routine.CallingConvention.SCRIPT_BINDINGS;
+            }
+            else if ("JAVA".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
+                callingConvention = Routine.CallingConvention.SCRIPT_FUNCTION_JAVA;
+            }
+            else {
+                throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
+            }
+            if (callingConvention == Routine.CallingConvention.SCRIPT_FUNCTION_JAVA) {
+                if (createAlias.getExternalName() == null) {
+                    throw new InvalidRoutineException(schemaName, routineName, "must have EXTERNAL NAME function_name");
+                }
+            }
+            else {
+                if (createAlias.getExternalName() != null) {
+                    throw new InvalidRoutineException(schemaName, routineName, "EXTERNAL NAME not allowed for script");
+                }
             }
         }
         else {
