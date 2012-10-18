@@ -416,13 +416,16 @@ public class AISBuilder {
         }
     }
 
-    public void addTableToGroup(String groupName, String schemaName,
-            String tableName) {
+    public void addTableToGroup(String groupName, String schemaName, String tableName) {
+        addTableToGroup(ais.getGroup(groupName).getName(), schemaName, tableName);
+    }
+
+    public void addTableToGroup(TableName groupName, String schemaName, String tableName) {
         LOG.info("addTableToGroup: " + groupName + ": " + schemaName + "."
                 + tableName);
         // group
         Group group = ais.getGroup(groupName);
-        checkFound(group, "adding table to group", "group", groupName);
+        checkFound(group, "adding table to group", "group", groupName.toString());
         // table
         UserTable table = ais.getUserTable(schemaName, tableName);
         checkFound(table, "adding table to group", "table",
@@ -536,8 +539,11 @@ public class AISBuilder {
         }
     }
 
-    public void moveTreeToGroup(String schemaName, String tableName,
-            String groupName, String joinName) {
+    public void moveTreeToGroup(String schemaName, String tableName, String groupName, String joinName) {
+        moveTreeToGroup(schemaName, tableName, ais.getGroup(groupName).getName(), joinName);
+    }
+
+    public void moveTreeToGroup(String schemaName, String tableName, TableName groupName, String joinName) {
         LOG.info("moveTree: " + schemaName + "." + tableName + " -> "
                 + groupName + " via join " + joinName);
         // table
@@ -546,7 +552,7 @@ public class AISBuilder {
 
         // group
         Group group = ais.getGroup(groupName);
-        checkFound(group, "moving tree", "group", groupName);
+        checkFound(group, "moving tree", "group", groupName.toString());
 
         // join
         Join join = ais.getJoin(joinName);

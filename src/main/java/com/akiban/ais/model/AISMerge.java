@@ -411,9 +411,9 @@ public class AISMerge {
     }
 
     private void addNewGroup (AISBuilder builder, UserTable rootTable) {
-        String groupName = nameGenerator.generateGroupName(rootTable);
+        TableName groupName = rootTable.getName();
         builder.basicSchemaIsComplete();
-        builder.createGroup(groupName, rootTable.getName().getSchemaName());
+        builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
         builder.addTableToGroup(groupName,
                                 rootTable.getName().getSchemaName(),
                                 rootTable.getName().getTableName());

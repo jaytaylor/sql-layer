@@ -113,10 +113,9 @@ public class AISBBasedBuilder
             this.userTable = table;
             TableName tableName= new TableName (schema, table);
             aisb.userTable(schema, table);
-            String groupName = nameGenerator.generateGroupName(aisb.akibanInformationSchema().getUserTable(tableName));
-            aisb.createGroup(groupName, schema);
-            aisb.addTableToGroup(groupName, schema, table);
-            tablesToGroups.put(TableName.create(schema, table), groupName);
+            aisb.createGroup(table, schema);
+            aisb.addTableToGroup(tableName, schema, table);
+            tablesToGroups.put(TableName.create(schema, table), tableName);
             uTableColumnPos = 0;
             return this;
         }
@@ -365,10 +364,10 @@ public class AISBBasedBuilder
             aisb.index(this.schema, this.userTable, fkIndexName, false, Index.FOREIGN_KEY_CONSTRAINT);
             aisb.joinTables(fkJoinName, schema, table, this.schema, this.userTable);
 
-            String fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));
+            TableName fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));
             aisb.moveTreeToGroup(this.schema, this.userTable, fkGroupName, fkJoinName);
             aisb.akibanInformationSchema().removeGroup(oldGroup);
-            String oldGroupName = tablesToGroups.put(TableName.create(this.schema, this.userTable), fkGroupName);
+            TableName oldGroupName = tablesToGroups.put(TableName.create(this.schema, this.userTable), fkGroupName);
             assert oldGroup.getName().equals(oldGroupName) : oldGroup.getName() + " != " + oldGroupName;
             return this;
         }
@@ -560,8 +559,7 @@ public class AISBBasedBuilder
         public ActualBuilder() {
             aisb = new AISBuilder();
             usable = true;
-            tablesToGroups = new HashMap<TableName, String>();
-            nameGenerator = new DefaultNameGenerator();
+            tablesToGroups = new HashMap<TableName, TableName>();
         }
 
         // private
@@ -589,8 +587,7 @@ public class AISBBasedBuilder
 
         private boolean usable;
 
-        private final Map<TableName,String> tablesToGroups;
-        private final NameGenerator nameGenerator;
+        private final Map<TableName,TableName> tablesToGroups;
         // constants
 
         private static final boolean NULLABLE_DEFAULT = false;
