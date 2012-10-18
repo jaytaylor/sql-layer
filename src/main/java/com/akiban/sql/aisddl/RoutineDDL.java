@@ -219,7 +219,7 @@ public class RoutineDDL {
                                         jarSchema, jarName, 
                                         className, methodName);
         }
-        else if (createAlias.getDefinition() != null) {
+        if (createAlias.getDefinition() != null) {
             builder.routineDefinition(schemaName, routineName, 
                                       createAlias.getDefinition());
         }
