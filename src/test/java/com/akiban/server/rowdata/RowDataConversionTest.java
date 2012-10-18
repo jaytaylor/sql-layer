@@ -226,8 +226,8 @@ public final class RowDataConversionTest extends ConversionTestBase {
             col.setTypeParameter1(testCase.param1());
             col.setTypeParameter2(testCase.param2());
             col.setCharset(testCase.charset());
-            RowDefCache rdc = new SchemaFactory().rowDefCache(ais);
-            RowDef rowDef = rdc.getRowDef("mySchema", "testTable");
+            new SchemaFactory().buildRowDefs(ais);
+            RowDef rowDef = ais.getTable("mySchema", "testTable").rowDef();
             fieldDef = rowDef.getFieldDef(rowDef.getFieldIndex("c1"));
         }
 

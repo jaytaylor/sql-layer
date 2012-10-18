@@ -56,7 +56,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
             "x int",
             "primary key(id)");
         createIndex("schema", "t", "tx", "x");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         txIndexRowType = indexType(t, "x");
         tRowType = schema.userTableRowType(userTable(t));
         groupTable = group(t);

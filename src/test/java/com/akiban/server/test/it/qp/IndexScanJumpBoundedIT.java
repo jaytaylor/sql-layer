@@ -61,7 +61,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
             "b int",
             "c int");
         createIndex("schema", "t", "idx", "a", "b", "c", "id");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new NewRow[] {

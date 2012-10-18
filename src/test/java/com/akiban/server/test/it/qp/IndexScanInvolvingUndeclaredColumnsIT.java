@@ -62,7 +62,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
             "locid int not null",
             "grouping foreign key(rid) references region(rid)");
         createIndex("schema", "region_children", "idx_locid", "locid");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         regionChildrenRowType = schema.userTableRowType(userTable(regionChildren));
         idxRowType = indexType(regionChildren, "locid");
         db = new NewRow[]{
@@ -101,11 +101,6 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
 
     // For use by this class
 
-    private IndexKeyRange unbounded()
-    {
-        return IndexKeyRange.unbounded(idxRowType);
-    }
-    
     private API.Ordering ordering(Object ... ord) // alternating column positions and asc/desc
     {
         API.Ordering ordering = API.ordering();

@@ -124,7 +124,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     }
                 };
             IndexBound bound =
-                new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData, this), index),
+                new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(userTable.rowDef(), oldRowData), index),
                                indexColumnSelector);
             IndexKeyRange range = IndexKeyRange.bounded(indexType, bound, true, bound, true);
 

@@ -57,7 +57,7 @@ public class UniqueIndexScanIT extends OperatorITBase
         createUniqueIndex("schema", "item", "idx_x", "x");
         createUniqueIndex("schema", "item", "idx_y", "y");
         createUniqueIndex("schema", "item", "idx_xy", "x", "y");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         itemRowType = schema.userTableRowType(userTable(item));
         xIndexRowType = indexType(item, "x");
         yIndexRowType = indexType(item, "y");
