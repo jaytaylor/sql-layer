@@ -33,7 +33,7 @@ import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
@@ -74,7 +74,7 @@ public class SelectCT extends CostModelBase
     {
         Operator scan = groupScan_Default(group);
         TimeOperator timeScan = new TimeOperator(scan);
-        Operator select = select_HKeyOrdered(timeScan, tRowType, Expressions.literal(true));
+        Operator select = select_HKeyOrdered(timeScan, tRowType, ExpressionGenerators.literal(true));
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(select, queryContext);

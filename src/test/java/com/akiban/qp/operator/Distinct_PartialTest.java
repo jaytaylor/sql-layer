@@ -34,7 +34,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 
 import com.akiban.server.types.AkType;
 

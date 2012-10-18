@@ -44,7 +44,7 @@ import org.junit.Test;
 import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 // Testing Intersect_Ordered key comparisons, which are done at the Persistit level.
 

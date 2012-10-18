@@ -28,6 +28,7 @@ package com.akiban.server.test.costmodel;
 
 import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.TimeOperator;
@@ -36,7 +37,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -115,9 +116,9 @@ public class DistinctCT extends CostModelBase
 
     private void sort(int fields, int runs, String label)
     {
-        List<Expression> projectFields = new ArrayList<Expression>();
+        List<ExpressionGenerator> projectFields = new ArrayList<ExpressionGenerator>();
         for (int f = 0; f < fields; f++) {
-            projectFields.add(Expressions.field(tRowType, f));
+            projectFields.add(ExpressionGenerators.field(tRowType, f));
         }
         Operator setup =
             project_Default(

@@ -28,12 +28,12 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.persistitadapter.indexcursor.Sorter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.service.session.Session;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +42,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.assertTrue;
 
 public class Sort_TreeIT extends OperatorITBase
@@ -152,9 +152,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -187,9 +187,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -222,9 +222,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -257,9 +257,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -292,9 +292,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -327,9 +327,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -362,9 +362,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -397,9 +397,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -426,8 +426,8 @@ public class Sort_TreeIT extends OperatorITBase
     @Test
     public void testReusedSort()
     {
-        Expression iidField = field(itemRowType, 0);
-        Expression oidField = field(itemRowType, 1);
+        ExpressionGenerator iidField = field(itemRowType, 0);
+        ExpressionGenerator oidField = field(itemRowType, 1);
         Operator plan =
             sort_Tree(
                 sort_Tree(
@@ -548,7 +548,7 @@ public class Sort_TreeIT extends OperatorITBase
         Ordering ordering = API.ordering();
         int i = 0;
         while (i < objects.length) {
-            Expression expression = (Expression) objects[i++];
+            ExpressionGenerator expression = (ExpressionGenerator) objects[i++];
             Boolean ascending = (Boolean) objects[i++];
             ordering.append(expression, ascending);
         }

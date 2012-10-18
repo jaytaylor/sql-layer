@@ -40,6 +40,7 @@ import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 /*
  * This test covers unbounded index scans with combinations of the following variations:
@@ -856,7 +857,7 @@ public class UniqueIndexScanUnboundedIT extends OperatorITBase
         while (i < ord.length) {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }
