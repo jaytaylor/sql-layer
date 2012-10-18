@@ -24,11 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.server;
+package com.akiban.sql.script;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.sql.server.ServerJavaRoutine;
+import com.akiban.sql.server.ServerJavaValues;
+import com.akiban.sql.server.ServerQueryContext;
+import com.akiban.sql.server.ServerRoutineInvocation;
 import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.routines.ScriptPool;
 
