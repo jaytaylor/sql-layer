@@ -175,9 +175,7 @@ public class GroupIndex extends Index
                       String constraint,
                       JoinType joinType)
     {
-        // index checks index name.
-        // TODO: Fix this when Group#toString() gets updated, adding schema requires updating many expected
-        super(new TableName("", group.getName().getTableName()), indexName, indexId, isUnique, constraint, joinType, true);
+        super(group.getName(), indexName, indexId, isUnique, constraint, joinType, true);
         this.group = group;
     }
 
