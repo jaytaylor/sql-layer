@@ -399,9 +399,9 @@ class HKeyUnion_Ordered extends Operator
             int leftField = leftRowType.nFields() - leftOrderingFields;
             int rightField = rightRowType.nFields() - rightOrderingFields;
             for (int f = 0; f < comparisonFields; f++) {
-                fieldRankingExpressions[f] =
-                        new RankExpression(new FieldExpression(leftRowType, leftField),
-                                new FieldExpression(rightRowType, rightField));
+                fieldRankingExpressions[f] = new RankExpression(
+                        new FieldExpression(leftRowType, leftField),
+                        new FieldExpression(rightRowType, rightField));
                 leftField++;
                 rightField++;
             }
