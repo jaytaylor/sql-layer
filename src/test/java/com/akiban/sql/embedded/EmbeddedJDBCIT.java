@@ -169,4 +169,17 @@ public class EmbeddedJDBCIT extends ITBase
         assertEquals("diff results", 77L, cstmt.getObject("diff"));
     }
 
+    @Test
+    public void testScriptProcedure() throws Exception {
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE PROCEDURE concat_n(IN s VARCHAR(128), IN x INT, OUT ns VARCHAR(128)) LANGUAGE javascript PARAMETER STYLE variables AS 's+x'");
+        stmt.close();
+        CallableStatement cstmt = conn.prepareCall("CALL concat_n(?,?,?)");
+        cstmt.setString(1, "Hello ");
+        cstmt.setInt(2, 123);
+        assertFalse("call returned results", cstmt.execute());
+        assertEquals("script results", "Hello 123", cstmt.getString(3));
+    }
+
 }
