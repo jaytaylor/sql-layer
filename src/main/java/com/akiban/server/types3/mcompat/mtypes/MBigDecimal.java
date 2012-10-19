@@ -125,6 +125,10 @@ public class MBigDecimal extends TClassBase {
 
     @Override
     protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        if (in.isNull()) {
+            out.putNull();
+            return;
+        }
         byte[] bytes;
         if (in.hasRawValue()) {
             bytes = in.getBytes();

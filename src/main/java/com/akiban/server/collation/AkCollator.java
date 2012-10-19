@@ -36,7 +36,7 @@ public abstract class AkCollator {
     public static String getString(PValueSource valueSource) {
         if (valueSource.isNull())
             return null;
-        if (valueSource.hasRawValue())
+        else if (valueSource.hasRawValue())
             return valueSource.getString();
         else if (valueSource.hasCacheValue())
             return (String) valueSource.getObject();

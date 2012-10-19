@@ -853,6 +853,37 @@ public class ApiTestBase {
         return castAs.cast(obj);
     }
 
+    public static Object getObject(PValueSource pvalue) {
+        if (pvalue.isNull())
+            return null;
+        if (pvalue.hasCacheValue())
+            return pvalue.getObject();
+        switch (pvalue.getUnderlyingType()) {
+        case BOOL:
+            return pvalue.getBoolean();
+        case INT_8:
+            return pvalue.getInt8();
+        case INT_16:
+            return pvalue.getInt16();
+        case UINT_16:
+            return pvalue.getUInt16();
+        case INT_32:
+            return pvalue.getInt32();
+        case INT_64:
+            return pvalue.getInt64();
+        case FLOAT:
+            return pvalue.getFloat();
+        case DOUBLE:
+            return pvalue.getDouble();
+        case BYTES:
+            return pvalue.getBytes();
+        case STRING:
+            return pvalue.getString();
+        default:
+            throw new AssertionError(pvalue);
+        }
+    }
+
     public static boolean isNull(BoundExpressions row, int pos) {
         return Types3Switch.ON
                 ? row.pvalue(pos).isNull()
