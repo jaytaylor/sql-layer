@@ -3,6 +3,6 @@ SelectQuery@207ff5b6
     Project@608beff2[blogs.bid1, blogs.bid2, blogs.title, blogs.bcol1, blogs.bcol2, comments.cid, comments.bfk1, comments.bfk2, comments.content, comments.ccol1, comments.ccol2]
       Select@3362a63[]
         TableJoins@5918cb3a(TableGroup@6ac67a88(blogs))
-          JoinNode@c96ad7c(INNER/GROUP[comments.bfk1 == blogs.bid1, comments.bfk2 == blogs.bid2] - TableGroupJoin@7857ae58(Join(test/blogs/bid1_bid2/test/test.comments/bfk1_bfk2: test.comments -> test.blogs, group(blogs))))
+          JoinNode@c96ad7c(INNER/GROUP[comments.bfk1 == blogs.bid1, comments.bfk2 == blogs.bid2] - TableGroupJoin@7857ae58(Join(test/blogs/bid1_bid2/test/test.comments/bfk1_bfk2: test.comments -> test.blogs, group(test.blogs))))
             TableSource@10b914b3(blogs - TableGroup@6ac67a88(blogs))
-            TableSource@77fe4169(comments - TableGroupJoin@7857ae58(Join(test/blogs/bid1_bid2/test/test.comments/bfk1_bfk2: test.comments -> test.blogs, group(blogs))))
+            TableSource@77fe4169(comments - TableGroupJoin@7857ae58(Join(test/blogs/bid1_bid2/test/test.comments/bfk1_bfk2: test.comments -> test.blogs, group(test.blogs))))

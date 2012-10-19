@@ -1,4 +1,4 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], sku:varchar(32)[VARCHAR]]
   Distinct_Partial()
     Project_Default(customers.name, items.sku)
-      IndexScan_Default(Index(.customers.cname_and_sku), customers.name ASC, items.sku)
+      IndexScan_Default(Index(customers.cname_and_sku), customers.name ASC, items.sku)

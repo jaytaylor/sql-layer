@@ -4,6 +4,6 @@ SelectQuery@79fb80c9
       Select@2c91e143[]
         TableGroupJoinTree@1d5c0c91(TableGroup@7e6a60d5(customers), customers INNER addresses INNER orders INNER items)
           TableSource@2d83e895(customers - TableGroup@7e6a60d5(customers))
-            TableSource@2f1aa58b(addresses - TableGroupJoin@63d12a6(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
-            TableSource@4a32ef2d(orders - TableGroupJoin@1393537d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-              TableSource@55f49969(items - TableGroupJoin@2d4e3d95(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@2f1aa58b(addresses - TableGroupJoin@63d12a6(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
+            TableSource@4a32ef2d(orders - TableGroupJoin@1393537d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+              TableSource@55f49969(items - TableGroupJoin@2d4e3d95(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

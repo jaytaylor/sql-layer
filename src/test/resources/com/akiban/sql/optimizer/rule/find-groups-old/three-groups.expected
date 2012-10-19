@@ -4,9 +4,9 @@ SelectQuery@14d5bc9
       Select@7cd37a[child.name == parent.name, parent.name == customers.name]
         JoinNode@1202d69(INNER)
           TableJoins@1855562(TableGroup@a89ce3(customers))
-            JoinNode@1d439fe(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@2b7db1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            JoinNode@1d439fe(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@2b7db1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@7a4489(customers - TableGroup@a89ce3(customers))
-              TableSource@129b0e1(orders - TableGroupJoin@2b7db1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@129b0e1(orders - TableGroupJoin@2b7db1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           JoinNode@148f8c8(INNER)
             TableJoins@1c5466b(TableGroup@922804(parent))
               TableSource@1ba94d(parent - TableGroup@922804(parent))

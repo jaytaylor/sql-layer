@@ -6,7 +6,7 @@ SelectQuery@38ea76e6
           JoinNode@7a677550(INNER)
             TableGroupJoinTree@1e4715f8(TableGroup@30a303f8(customers), customers INNER orders)
               TableSource@616c4812(customers - TableGroup@30a303f8(customers))
-                TableSource@3ca6a831(orders - TableGroupJoin@4cf35c4f(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@3ca6a831(orders - TableGroupJoin@4cf35c4f(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
             TableGroupJoinTree@7d316e00(TableGroup@1e59a7ba(parent), child)
               TableSource@befc7b6(child - TableGroup@1e59a7ba(parent))
           TableGroupJoinTree@382d0236(TableGroup@1e59a7ba(parent), parent)
