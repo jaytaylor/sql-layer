@@ -33,6 +33,9 @@ import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.script.*;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -45,6 +48,7 @@ public class ScriptCache
     private final Map<TableName,CacheEntry> cache = new HashMap<TableName,CacheEntry>();
     // Script engine discovery can be fairly expensive, so it is deferred.
     private ScriptEngineManager manager = null;
+    private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
 
     public ScriptCache(SchemaManager schemaManager) {
         this.schemaManager = schemaManager;
@@ -315,6 +319,7 @@ public class ScriptCache
 
         @Override
         public Object eval(Bindings bindings) {
+            logger.debug("Evaluating {}", routineName);
             try {
                 return engine.eval(script, bindings);
             }
@@ -330,6 +335,7 @@ public class ScriptCache
 
         public CompiledEvaluator(TableName routineName, ScriptEngine engine, String script) {
             this.routineName = routineName;
+            logger.debug("Compiling {}", routineName);
             try {
                 compiled = ((Compilable)engine).compile(script);
             }
@@ -345,6 +351,7 @@ public class ScriptCache
 
         @Override
         public Object eval(Bindings bindings) {
+            logger.debug("Loading compiled {}", routineName);
             try {
                 return compiled.eval(bindings);
             }
@@ -365,9 +372,11 @@ public class ScriptCache
             this.function = function;
             try {
                 if (engine instanceof Compilable) {
+                    logger.debug("Compiling and loading {}", routineName);
                     ((Compilable)engine).compile(script).eval();
                 }
                 else {
+                    logger.debug("Evaluating {}", routineName);
                     engine.eval(script);
                 }
             }
@@ -379,6 +388,7 @@ public class ScriptCache
 
         @Override
         public Object invoke(Object[] args) {
+            logger.debug("Calling {} in {}", function, routineName);
             try {
                 return invocable.invokeFunction(function, args);
             }

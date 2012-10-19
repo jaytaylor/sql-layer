@@ -43,8 +43,10 @@ import com.akiban.server.store.SchemaManager;
 import com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan;
 import com.akiban.qp.loadableplan.std.PersistitCLILoadablePlan;
 
-import javax.inject.Inject;
 import com.google.inject.Singleton;
+import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -62,6 +64,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private final Map<TableName,LoadablePlan<?>> loadablePlans = new HashMap<TableName,LoadablePlan<?>>();
     private final Map<TableName,Method> javaMethods = new HashMap<TableName,Method>();
     private final ScriptCache scripts;
+    private final static Logger logger = LoggerFactory.getLogger(RoutineLoaderImpl.class);
 
     @Inject @SuppressWarnings("unused")
     public RoutineLoaderImpl(SchemaManager schemaManager) {
