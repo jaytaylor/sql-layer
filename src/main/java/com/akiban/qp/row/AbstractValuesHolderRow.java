@@ -26,6 +26,7 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -97,6 +98,8 @@ class AbstractValuesHolderRow extends AbstractRow {
     AbstractValuesHolderRow(RowType rowType, boolean isMutable, boolean usePValues) {
         this.isMutable = isMutable;
         this.rowType = rowType;
+        if (rowType instanceof IndexRowType)
+            rowType = ((IndexRowType)rowType).physicalRowType();
         int nfields = rowType.nFields();
         if (!usePValues) {
             values = new ArrayList<ValueHolder>();
