@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.Ignore;
 import com.akiban.util.ShareHolder;
 import com.akiban.server.types.ValueSource;
@@ -1680,8 +1682,12 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         {
             // nulls are allowed
             ArrayList<Long> toLong = new ArrayList<Long>();
-            for (int n = 0; n < INDEX_COLUMN_COUNT; ++n)
-                addColumn(toLong, row.eval(n));
+            for (int n = 0; n < INDEX_COLUMN_COUNT; ++n) {
+                if (Types3Switch.ON)
+                    addColumn(toLong, row.pvalue(n));
+                else
+                    addColumn(toLong, row.eval(n));
+            }
             
             ret.add(toLong);
         }
@@ -1706,6 +1712,35 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
                             break;
             default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
         }
+    }
+
+    private void addColumn(ArrayList<Long> row, PValueSource pvalue) {
+        if (pvalue.isNull())
+        {
+            row.add(null);
+            return;
+        }
+        long lVal;
+        switch (pvalue.getUnderlyingType()) {
+        case INT_8:
+            lVal = pvalue.getInt8();
+            break;
+        case INT_16:
+            lVal = pvalue.getInt16();
+            break;
+        case UINT_16:
+            lVal = pvalue.getUInt16();
+            break;
+        case INT_32:
+            lVal = pvalue.getInt32();
+            break;
+        case INT_64:
+            lVal = pvalue.getInt64();
+            break;
+        default:
+            throw new AssertionError(pvalue);
+        }
+        row.add(lVal);
     }
 
      // --- start generated
