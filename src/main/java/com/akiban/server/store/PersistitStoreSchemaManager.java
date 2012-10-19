@@ -355,6 +355,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     throw new IllegalArgumentException("Unknown index type: " + index);
             }
 
+            if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
+                TableIndex spatialIndex = (TableIndex) index;
+                ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
+            }
+
             if(curIndex != null) {
                 throw new DuplicateIndexException(indexName);
             }
@@ -399,10 +404,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
             newIndex.freezeColumns();
             newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
-            if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-                TableIndex spatialIndex = (TableIndex) index;
-                ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
-            }
             newIndexes.add(newIndex);
         }
         return newIndexes;
