@@ -282,7 +282,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             BigDecimal queryLat = randomLat();
             BigDecimal queryLon = randomLon();
             long zStart = space.shuffle(queryLat, queryLon);
-            IndexBound zStartBound = new IndexBound(row(latLonIndexRowType.physicalRowType(), queryLat, queryLon),
+            IndexBound zStartBound = new IndexBound(row(latLonIndexRowType, queryLat, queryLon),
                                                     new SetColumnSelector(0, 1));
             IndexKeyRange zStartRange = IndexKeyRange.around(latLonIndexRowType, zStartBound);
             Operator plan = indexScan_Default(latLonIndexRowType, false, zStartRange);

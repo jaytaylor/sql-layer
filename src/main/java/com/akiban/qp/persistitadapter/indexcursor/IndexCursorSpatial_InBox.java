@@ -163,9 +163,9 @@ class IndexCursorSpatial_InBox extends IndexCursor
         for (int i = 0; i < zValues.length; i++) {
             long z = zValues[i];
             if (z != -1L) {
-                IndexRowType physicalRowType = keyRange.indexRowType().physicalRowType();
+                IndexRowType rowType = keyRange.indexRowType();
                 // lo bound of z
-                ValuesHolderRow zLoRow = new ValuesHolderRow(physicalRowType, Types3Switch.ON);
+                ValuesHolderRow zLoRow = new ValuesHolderRow(rowType, Types3Switch.ON);
                 if (Types3Switch.ON) {
                     zLoRow.pvalueAt(0).underlying(PUnderlying.INT_64);
                     zLoRow.pvalueAt(0).putInt64(space.zLo(z));
@@ -176,7 +176,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
                 }
                 IndexBound zLo = new IndexBound(zLoRow, Z_SELECTOR);
                 // hi bound of z
-                ValuesHolderRow zHiRow = new ValuesHolderRow(physicalRowType, Types3Switch.ON);
+                ValuesHolderRow zHiRow = new ValuesHolderRow(rowType, Types3Switch.ON);
                 if (Types3Switch.ON) {
                     zHiRow.pvalueAt(0).underlying(PUnderlying.INT_64);
                     zHiRow.pvalueAt(0).putInt64(space.zHi(z));
@@ -186,7 +186,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
                     zHiRow.holderAt(0).putLong(space.zHi(z));
                 }
                 IndexBound zHi = new IndexBound(zHiRow, Z_SELECTOR);
-                IndexKeyRange zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);
+                IndexKeyRange zKeyRange = IndexKeyRange.bounded(rowType, zLo, true, zHi, true);
                 zKeyRanges.add(zKeyRange);
             }
         }
