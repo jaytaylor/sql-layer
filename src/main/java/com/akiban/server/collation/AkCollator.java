@@ -34,7 +34,9 @@ import com.persistit.Key;
 public abstract class AkCollator {
 
     public static String getString(PValueSource valueSource) {
-        if (valueSource.hasRawValue())
+        if (valueSource.isNull())
+            return null;
+        else if (valueSource.hasRawValue())
             return valueSource.getString();
         else if (valueSource.hasCacheValue())
             return (String) valueSource.getObject();
