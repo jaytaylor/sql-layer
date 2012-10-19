@@ -55,11 +55,11 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
@@ -167,7 +167,6 @@ public class ApiTestBase {
     private static ServiceManager sm;
     private Session session;
     private int aisGeneration;
-    private int akibanFKCount;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
@@ -385,7 +384,6 @@ public class ApiTestBase {
     }
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
-        ++akibanFKCount;
         return String.format("GROUPING FOREIGN KEY (%s) REFERENCES \"%s\" (%s)",
                              childCol, parentTable, parentCol
         );
@@ -403,9 +401,8 @@ public class ApiTestBase {
         return new SimpleQueryContext(adapter);
     }
 
-    protected final RowDefCache rowDefCache() {
-        Store store = sm.getStore();
-        return store.getRowDefCache();
+    protected final AkibanInformationSchema ais() {
+        return ddl().getAIS(session());
     }
 
     protected final ServiceManager serviceManager() {
@@ -647,12 +644,22 @@ public class ApiTestBase {
         return getUserTable(table.getTableId()).getIndex(indexName);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+    /** @deprecated  **/
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs) {
+        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs);
+    }
+
+    /** @deprecated  **/
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType) {
+        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs, joinType);
+    }
+
+    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs)
             throws InvalidOperationException {
         return createGroupIndex(groupName, indexName, tableColumnPairs, Index.JoinType.LEFT);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
+    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
@@ -843,7 +850,7 @@ public class ApiTestBase {
     protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) {
         List<NewRow> ret = new ArrayList<NewRow>(rowDatas.size());
         for(RowData rowData : rowDatas) {
-            NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(rowData.getRowDefId()));
+            NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(session(), rowData.getRowDefId()));
             ret.add(newRow);
         }
         return ret;
@@ -860,11 +867,11 @@ public class ApiTestBase {
     }
 
     public NewRow createNewRow(int tableId, Object... columns) {
-        return createNewRow(store(), tableId, columns);
+        return createNewRow(session(), store(), tableId, columns);
     }
 
-    public static NewRow createNewRow(Store store, int tableId, Object... columns) {
-        NewRow row = new NiceRow(tableId, store);
+    public static NewRow createNewRow(Session session, Store store, int tableId, Object... columns) {
+        NewRow row = new NiceRow(session, tableId, store);
         for (int i=0; i < columns.length; ++i) {
             if (columns[i] != UNDEF) {
                 row.put(i, columns[i] );
@@ -974,6 +981,18 @@ public class ApiTestBase {
 
     protected final UserTable getUserTable(TableName name) {
         return ddl().getUserTable(session(), name);
+    }
+
+    protected final RowDef getRowDef(int rowDefId) {
+        return getUserTable(rowDefId).rowDef();
+    }
+
+    protected final RowDef getRowDef(String schema, String table) {
+        return getUserTable(schema, table).rowDef();
+    }
+
+    protected final RowDef getRowDef(TableName tableName) {
+        return getUserTable(tableName).rowDef();
     }
 
     protected final UserTable getUserTable(int tableId) {

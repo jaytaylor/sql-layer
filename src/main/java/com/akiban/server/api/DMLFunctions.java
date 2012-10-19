@@ -211,7 +211,7 @@ public interface DMLFunctions {
      * @param rowData the row to convert
      * @return a NewRow representation of the RowData
      */
-    NewRow convertRowData(RowData rowData);
+    NewRow convertRowData(Session session, RowData rowData);
 
     /**
      * Converts several RowData objects at once. This is not just a convenience; it lets implementations of this
@@ -219,7 +219,7 @@ public interface DMLFunctions {
      * @param rowDatas the rows to convert
      * @return a List of NewRows, each of which is a converted RowData
      */
-    List<NewRow> convertRowDatas(List<RowData> rowDatas);
+    List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas);
 
     /**
      * Writes a row to the specified table. If the table contains an autoincrement column, and a value for that

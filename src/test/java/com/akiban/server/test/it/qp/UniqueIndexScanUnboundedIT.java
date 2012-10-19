@@ -40,6 +40,7 @@ import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 /*
  * This test covers unbounded index scans with combinations of the following variations:
@@ -60,7 +61,7 @@ public class UniqueIndexScanUnboundedIT extends OperatorITBase
             "b int",
             "c int");
         createUniqueIndex("schema", "t", "idx_abc", "a", "b", "c");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[]{
@@ -856,7 +857,7 @@ public class UniqueIndexScanUnboundedIT extends OperatorITBase
         while (i < ord.length) {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }

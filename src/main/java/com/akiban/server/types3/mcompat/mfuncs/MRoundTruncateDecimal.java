@@ -43,6 +43,8 @@ public class MRoundTruncateDecimal extends TScalarBase {
 
     public static final Collection<TScalar> overloads = createAll();
 
+    private static final int DEC_INDEX = 0;
+
     private enum RoundingStrategy {
         ROUND {
             @Override
@@ -62,7 +64,8 @@ public class MRoundTruncateDecimal extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        BigDecimalWrapper result = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+        BigDecimalWrapper result = MBigDecimal.getWrapper(context, DEC_INDEX);
+        result.set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
         int scale = signatureStrategy.roundToScale(inputs);
         roundingStrategy.apply(result, scale);
         output.putObject(result);

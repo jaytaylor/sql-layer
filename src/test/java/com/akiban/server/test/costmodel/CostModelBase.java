@@ -56,12 +56,12 @@ public class CostModelBase extends ApiTestBase
 
     protected Group group(int userTableId)
     {
-        return rowDefCache().rowDef(userTableId).table().getGroup();
+        return getRowDef(userTableId).table().getGroup();
     }
 
     protected UserTable userTable(int userTableId)
     {
-        return rowDefCache().rowDef(userTableId).userTable();
+        return getRowDef(userTableId).userTable();
     }
 
     protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
@@ -105,7 +105,7 @@ public class CostModelBase extends ApiTestBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId, store());
+        NiceRow niceRow = new NiceRow(session(), tableId, store());
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];

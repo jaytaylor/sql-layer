@@ -103,9 +103,8 @@ public final class ConversionHelperBigDecimalTest {
     private void checkWrite(int precision, int scale, String value, String readAs) {
         SchemaFactory schemaFactory = new SchemaFactory("my_schema");
         String sql = String.format("CREATE TABLE dec_test(dec_col decimal(%d,%d))", precision, scale);
-        AkibanInformationSchema ais = schemaFactory.ais(sql);
-        RowDefCache rdc = schemaFactory.rowDefCache(ais);
-        RowDef rowDef = rdc.getRowDef("my_schema", "dec_test");
+        AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(sql);
+        RowDef rowDef = ais.getTable("my_schema", "dec_test").rowDef();
 
         FieldDef fieldDef = rowDef.getFieldDef(0);
         assertEquals("fieldDef name", fieldDef.getName(), "dec_col"); // make sure we have the right field def

@@ -69,7 +69,7 @@ public class MapCT extends CostModelBase
                         "pid int",
                         "primary key(did)",
                         String.format("grouping foreign key(pid) references %s(pid)", pTableName));
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         pRowType = schema.userTableRowType(userTable(p));
         cRowType = schema.userTableRowType(userTable(c));
         dRowType = schema.userTableRowType(userTable(d));

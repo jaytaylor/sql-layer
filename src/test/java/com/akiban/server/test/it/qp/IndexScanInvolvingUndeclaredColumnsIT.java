@@ -36,13 +36,14 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 // Inspired by Bug 979162
 
@@ -61,7 +62,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
             "locid int not null",
             "grouping foreign key(rid) references region(rid)");
         createIndex("schema", "region_children", "idx_locid", "locid");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         regionChildrenRowType = schema.userTableRowType(userTable(regionChildren));
         idxRowType = indexType(regionChildren, "locid");
         db = new NewRow[]{
@@ -88,8 +89,8 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
                                           new SetColumnSelector(0, 1));
         IndexKeyRange range = IndexKeyRange.bounded(idxRowType, bound, true, bound, true);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(Expressions.field(idxRowType, 0), true);
-        ordering.append(Expressions.field(idxRowType, 1), true);
+        ordering.append(ExpressionGenerators.field(idxRowType, 0), true);
+        ordering.append(ExpressionGenerators.field(idxRowType, 1), true);
         Operator plan =
             indexScan_Default(
                 idxRowType,
@@ -100,11 +101,6 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
 
     // For use by this class
 
-    private IndexKeyRange unbounded()
-    {
-        return IndexKeyRange.unbounded(idxRowType);
-    }
-    
     private API.Ordering ordering(Object ... ord) // alternating column positions and asc/desc
     {
         API.Ordering ordering = API.ordering();
@@ -112,7 +108,7 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
         while (i < ord.length) {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }

@@ -52,8 +52,9 @@ import com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.Service;
-import com.akiban.server.store.AisHolder;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 
@@ -90,12 +91,9 @@ public class BasicInfoSchemaTablesServiceImpl
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
 
-    private final AisHolder aisHolder;
-    
     @Inject
-    public BasicInfoSchemaTablesServiceImpl(AisHolder aisHolder, SchemaManager schemaManager) {
+    public BasicInfoSchemaTablesServiceImpl(SchemaManager schemaManager) {
         super(schemaManager);
-        this.aisHolder = aisHolder;
     }
 
     @Override
@@ -121,19 +119,20 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            return aisHolder.getAis().getSchemas().size();
+            return getDirtyAIS().getSchemas().size();
         }
 
         private class Scan extends BaseScan {
-            final Iterator<Schema> it = aisHolder.getAis().getSchemas().values().iterator();
+            final Iterator<Schema> it;
 
-            public Scan(RowType rowType) {
-                super (rowType);
+            public Scan(Session session, RowType rowType) {
+                super(rowType);
+                it = getAIS(session).getSchemas().values().iterator();
             }
 
             @Override
@@ -152,6 +151,14 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
+    private AkibanInformationSchema getDirtyAIS() {
+        return RowDefCache.latest().ais();
+    }
+
+    private AkibanInformationSchema getAIS(Session session) {
+        return schemaManager.getAis(session);
+    }
+
     private class TablesFactory extends BasicFactoryBase {
         public TablesFactory(TableName sourceTable) {
             super(sourceTable);
@@ -159,21 +166,24 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            return aisHolder.getAis().getUserTables().size() +
-                aisHolder.getAis().getViews().size() ;
+            AkibanInformationSchema ais = getDirtyAIS();
+            return ais.getUserTables().size() + ais.getViews().size() ;
         }
 
         private class Scan extends BaseScan {
-            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            final Session session;
+            final Iterator<UserTable> tableIt;
             Iterator<View> viewIt = null;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
+                this.tableIt = getAIS(session).getUserTables().values().iterator();
             }
 
             @Override
@@ -194,7 +204,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                              table.getCharsetAndCollation().collation(),
                                              ++rowCounter /*hidden pk*/);
                     } else {
-                        viewIt = aisHolder.getAis().getViews().values().iterator();
+                        viewIt = getAIS(session).getViews().values().iterator();
                     }
                 }
                 if(viewIt.hasNext()) {
@@ -223,28 +233,32 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
+            AkibanInformationSchema ais = getDirtyAIS();
             long count = 0;
-            for(UserTable table : aisHolder.getAis().getUserTables().values()) {
+            for(UserTable table : ais.getUserTables().values()) {
                 count += table.getColumns().size();
             }
-            for(View view : aisHolder.getAis().getViews().values()) {
+            for(View view : ais.getViews().values()) {
                 count += view.getColumns().size();
             }
             return count;
         }
         
         private class Scan extends BaseScan {
-            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            final Session session;
+            final Iterator<UserTable> tableIt;
             Iterator<View> viewIt = null;
             Iterator<Column> columnIt;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
+                this.tableIt = getAIS(session).getUserTables().values().iterator();
             }
 
             @Override
@@ -255,7 +269,7 @@ public class BasicInfoSchemaTablesServiceImpl
                             columnIt = tableIt.next().getColumns().iterator();
                             continue;
                         } else {
-                            viewIt = aisHolder.getAis().getViews().values().iterator();
+                            viewIt = getAIS(session).getViews().values().iterator();
                         }
                     }
                     if(viewIt.hasNext()) {
@@ -327,19 +341,20 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
-        private TableConstraintsIteration newIteration() {
-            return new TableConstraintsIteration(aisHolder.getAis().getUserTables().values().iterator());
+        private TableConstraintsIteration newIteration(AkibanInformationSchema ais) {
+            return new TableConstraintsIteration(ais.getUserTables().values().iterator());
         }
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
+            AkibanInformationSchema ais = getDirtyAIS();
             long count = 0;
-            TableConstraintsIteration it = newIteration();
+            TableConstraintsIteration it = newIteration(ais);
             while(it.next()) {
                 ++count;
             }
@@ -347,10 +362,11 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final TableConstraintsIteration it = newIteration();
+            final TableConstraintsIteration it;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.it = newIteration(getAIS(session));
             }
 
             @Override
@@ -450,25 +466,26 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            return aisHolder.getAis().getUserTables().values().size();
+            return getDirtyAIS().getUserTables().size();
         }
 
         private class Scan extends BaseScan {
             final List<RootPathTable> rootPathTables;
             final Iterator<RootPathTable> it;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                AkibanInformationSchema ais = getAIS(session);
 
                 // Desired output: groups together, ordered by branch (ordinal), then ordered by depth
                 // Highest level sorting will be by schema.root, which seems as good as any
                 rootPathTables = new ArrayList<RootPathTable>();
-                Collection<UserTable> allTables = aisHolder.getAis().getUserTables().values();
+                Collection<UserTable> allTables = ais.getUserTables().values();
                 StringBuilder builder = new StringBuilder();
                 for(UserTable table : allTables) {
                     if(table.isRoot()) {
@@ -522,19 +539,19 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
-        private TableConstraintsIteration newIteration() {
-            return new TableConstraintsIteration(aisHolder.getAis().getUserTables().values().iterator());
+        private TableConstraintsIteration newIteration(AkibanInformationSchema ais) {
+            return new TableConstraintsIteration(ais.getUserTables().values().iterator());
         }
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             int count = 0;
-            TableConstraintsIteration it = newIteration();
+            TableConstraintsIteration it = newIteration(getDirtyAIS());
             while(it.next()) {
                 ++count;
             }
@@ -542,15 +559,16 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final TableConstraintsIteration it = newIteration();
+            final TableConstraintsIteration it;
             Iterator<IndexColumn> indexColIt;
             Iterator<JoinColumn> joinColIt;
             String colName;
             int colPos;
             Integer posInUnique;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.it = newIteration(getAIS(session));
             }
 
             // Find position in parents PK
@@ -612,19 +630,19 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
-        private IndexIteration newIteration() {
-            return new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
+        private IndexIteration newIteration(AkibanInformationSchema ais) {
+            return new IndexIteration(ais.getUserTables().values().iterator());
         }
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             long count = 0;
-            IndexIteration it = newIteration();
+            IndexIteration it = newIteration(getDirtyAIS());
             while(it.next() != null) {
                 ++count;
             }
@@ -632,10 +650,11 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final IndexIteration indexIt = newIteration();
+            final IndexIteration indexIt;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.indexIt = newIteration(getAIS(session));
             }
 
             @Override
@@ -675,18 +694,18 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
-        private IndexIteration newIteration() {
-            return new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
+        private IndexIteration newIteration(AkibanInformationSchema ais) {
+            return new IndexIteration(ais.getUserTables().values().iterator());
         }
 
         @Override
         public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            IndexIteration indexIt = newIteration();
+            IndexIteration indexIt = newIteration(getDirtyAIS());
             long count = 0;
             Index index;
             while((index = indexIt.next()) != null) {
@@ -696,11 +715,12 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final IndexIteration indexIt = newIteration();
+            final IndexIteration indexIt;
             Iterator<IndexColumn> indexColumnIt;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.indexIt = newIteration(getAIS(session));
             }
 
             private IndexColumn advance() {
@@ -742,19 +762,20 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            return aisHolder.getAis().getSequences().size();
+            return getDirtyAIS().getSequences().size();
         }
         
         private class Scan extends BaseScan {
-            final Iterator<Sequence> it = aisHolder.getAis().getSequences().values().iterator();
+            final Iterator<Sequence> it;
             
-            public Scan (RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.it =  getAIS(session).getSequences().values().iterator();
             }
 
             @Override
@@ -784,19 +805,20 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            return aisHolder.getAis().getViews().size() ;
+            return getDirtyAIS().getViews().size();
         }
 
         private class Scan extends BaseScan {
-            final Iterator<View> it = aisHolder.getAis().getViews().values().iterator();
+            final Iterator<View> it;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                it = getAIS(session).getViews().values().iterator();
             }
 
             @Override
@@ -823,25 +845,26 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             long count = 0;
-            for (View view : aisHolder.getAis().getViews().values()) {
+            for (View view : getDirtyAIS().getViews().values()) {
                 count += view.getTableReferences().size();
             }
             return count;
         }
 
         private class Scan extends BaseScan {
-            final Iterator<View> viewIt = aisHolder.getAis().getViews().values().iterator();
+            final Iterator<View> viewIt;
             View view;
             Iterator<TableName> tableIt = null;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.viewIt =  getAIS(session).getViews().values().iterator();
             }
 
             @Override
@@ -870,13 +893,13 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             long count = 0;
-            for (View view : aisHolder.getAis().getViews().values()) {
+            for (View view : getDirtyAIS().getViews().values()) {
                 for (Collection<String> columns : view.getTableColumnReferences().values()) {
                     count += columns.size();
                 }
@@ -885,14 +908,15 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final Iterator<View> viewIt = aisHolder.getAis().getViews().values().iterator();
+            final Iterator<View> viewIt;
             View view;
             Iterator<Map.Entry<TableName,Collection<String>>> tableIt = null;
             TableName table;
             Iterator<String> columnIt = null;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.viewIt = getAIS(session).getViews().values().iterator();
             }
 
             @Override
@@ -1022,19 +1046,20 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            return aisHolder.getAis().getRoutines().size() ;
+            return getDirtyAIS().getRoutines().size() ;
         }
 
         private class Scan extends BaseScan {
-            final Iterator<Routine> it = aisHolder.getAis().getRoutines().values().iterator();
+            final Iterator<Routine> it;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.it = getAIS(session).getRoutines().values().iterator();
             }
 
             @Override
@@ -1068,13 +1093,13 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             long count = 0;
-            for (Routine routine : aisHolder.getAis().getRoutines().values()) {
+            for (Routine routine : getDirtyAIS().getRoutines().values()) {
                 if (routine.getReturnValue() != null) {
                     count++;
                 }
@@ -1084,17 +1109,18 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final Iterator<Routine> routinesIt = aisHolder.getAis().getRoutines().values().iterator();
+            final Iterator<Routine> routinesIt;
             Iterator<Parameter> paramsIt;
             long ordinal;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.routinesIt = getAIS(session).getRoutines().values().iterator();
             }
 
             @Override
             public Row next() {
-                Parameter param = null;
+                Parameter param;
                 while (true) {
                     if (paramsIt != null) {
                         if (paramsIt.hasNext()) {
@@ -1149,19 +1175,20 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
-            return aisHolder.getAis().getSQLJJars().size() ;
+            return getDirtyAIS().getSQLJJars().size() ;
         }
 
         private class Scan extends BaseScan {
-            final Iterator<SQLJJar> it = aisHolder.getAis().getSQLJJars().values().iterator();
+            final Iterator<SQLJJar> it;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.it = getAIS(session).getSQLJJars().values().iterator();
             }
 
             @Override
@@ -1187,13 +1214,13 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(adapter.getSession(), getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             long count = 0;
-            for (Routine routine : aisHolder.getAis().getRoutines().values()) {
+            for (Routine routine : getDirtyAIS().getRoutines().values()) {
                 if (routine.getSQLJJar() != null) {
                     count++;
                 }
@@ -1202,10 +1229,11 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final Iterator<Routine> it = aisHolder.getAis().getRoutines().values().iterator();
+            final Iterator<Routine> it;
 
-            public Scan(RowType rowType) {
+            public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.it = getAIS(session).getRoutines().values().iterator();
             }
 
             @Override

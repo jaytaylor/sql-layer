@@ -333,9 +333,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         private final LegacyOutputConverter converter;
         private final BufferedLegacyOutputRouter router;
 
-        public PooledConverter(DMLFunctions dmlFunctions) {
+        public PooledConverter(Session session, DMLFunctions dmlFunctions) {
             router = new BufferedLegacyOutputRouter(1024 * 1024, true);
-            converter = new LegacyOutputConverter(dmlFunctions);
+            converter = new LegacyOutputConverter(session, dmlFunctions);
             router.addHandler(converter);
         }
 
@@ -351,11 +351,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
 
-    private PooledConverter getPooledConverter(RowOutput output, Set<Integer> columns) {
+    private PooledConverter getPooledConverter(Session session, RowOutput output, Set<Integer> columns) {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             logger.debug("Allocating new PooledConverter");
-            converter = new PooledConverter(this);
+            converter = new PooledConverter(session, this);
         }
         try {
             converter.setConverter(output, columns);
@@ -391,7 +391,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         final ScanData scanData = getScanData(session, cursorId);
         assert scanData != null;
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
-        final PooledConverter converter = getPooledConverter(output, scanColumns);
+        final PooledConverter converter = getPooledConverter(session, output, scanColumns);
         try {
             scanSome(session, cursorId, converter.getLegacyOutput(), scanHooks);
         }
@@ -546,14 +546,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public NewRow convertRowData(RowData rowData) {
+    public NewRow convertRowData(Session session, RowData rowData) {
         logger.trace("converting to NewRow: {}", rowData);
-        RowDef rowDef = ddlFunctions.getRowDef(rowData.getRowDefId());
+        RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());
         return NiceRow.fromRowData(rowData, rowDef);
     }
 
     @Override
-    public List<NewRow> convertRowDatas(List<RowData> rowDatas)
+    public List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas)
     {
         logger.trace("converting {} RowData(s) to NewRow", rowDatas.size());
         if (rowDatas.isEmpty()) {
@@ -567,7 +567,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             int currRowDefId = rowData.getRowDefId();
             if ((rowDef == null) || (currRowDefId != lastRowDefId)) {
                 lastRowDefId = currRowDefId;
-                rowDef = ddlFunctions.getRowDef(currRowDefId);
+                rowDef = ddlFunctions.getRowDef(session, currRowDefId);
             }
             converted.add(NiceRow.fromRowData(rowData, rowDef));
         }
@@ -653,13 +653,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                         cursor.setScanModified();
                         break;
                     }
-                    scanTableId = ddlFunctions.getRowDef(scanTableId).getParentRowDefId();
+                    scanTableId = ddlFunctions.getRowDef(session, scanTableId).getParentRowDefId();
                 }
             }
             else {
                 IndexDef indexDef = rc.getIndexDef();
                 if (indexDef == null) {
-                    Index index = ddlFunctions.getRowDef(rc.getTableId()).getPKIndex();
+                    Index index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
                     indexDef = index != null ? index.indexDef() : null;
                 }
                 if (indexDef != null) {

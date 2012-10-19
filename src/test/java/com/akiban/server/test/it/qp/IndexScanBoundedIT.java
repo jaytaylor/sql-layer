@@ -42,6 +42,7 @@ import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -64,7 +65,7 @@ public class IndexScanBoundedIT extends OperatorITBase
             "b int",
             "c int");
         createIndex("schema", "t", "a", "a", "b", "c", "id");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new NewRow[]{
@@ -1699,13 +1700,13 @@ public class IndexScanBoundedIT extends OperatorITBase
         assertTrue(directions.length >= 1 && directions.length <= 3);
         API.Ordering ordering = API.ordering();
         if (directions.length >= 1) {
-            ordering.append(new FieldExpression(idxRowType, A), directions[0]);
+            ordering.append(field(idxRowType, A), directions[0]);
         }
         if (directions.length >= 2) {
-            ordering.append(new FieldExpression(idxRowType, B), directions[1]);
+            ordering.append(field(idxRowType, B), directions[1]);
         }
         if (directions.length >= 3) {
-            ordering.append(new FieldExpression(idxRowType, C), directions[2]);
+            ordering.append(field(idxRowType, C), directions[2]);
         }
         return ordering;
     }

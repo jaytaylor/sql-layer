@@ -81,7 +81,7 @@ public class Product3WayIT extends OperatorITBase
             "cvalue varchar(20)",
             "grouping foreign key(rid) references r(rid)");
         createIndex("schema", "c", "cvalue", "cvalue");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         rRowType = schema.userTableRowType(userTable(r));
         aRowType = schema.userTableRowType(userTable(a));
         bRowType = schema.userTableRowType(userTable(b));

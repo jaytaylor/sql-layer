@@ -28,6 +28,7 @@ package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
 /**
@@ -37,12 +38,12 @@ public final class NewRowBuilder {
     private final NewRow row;
     private int nextCol = 0;
 
-    public static NewRowBuilder forTable(int tableId, Store store) {
-        return new NewRowBuilder(new NiceRow(tableId, store));
+    public static NewRowBuilder forTable(Session session, int tableId, Store store) {
+        return new NewRowBuilder(new NiceRow(session, tableId, store));
     }
 
-    public static NewRowBuilder copyOf(NewRow row, Store store) {
-        NewRowBuilder builder = forTable(row.getTableId(), store);
+    public static NewRowBuilder copyOf(Session session, NewRow row, Store store) {
+        NewRowBuilder builder = forTable(session, row.getTableId(), store);
         builder.row().getFields().putAll( row.getFields() );
         return builder;
     }
@@ -96,9 +97,9 @@ public final class NewRowBuilder {
      * @param dml the DMLFunctions that is responsible for the conversion
      * @return this builder
      */
-    public NewRowBuilder check(DMLFunctions dml) {
+    public NewRowBuilder check(Session session, DMLFunctions dml) {
         final RowData rowData = dml.convertNewRow(row);
-        final NewRow back = dml.convertRowData(rowData);
+        final NewRow back = dml.convertRowData(session, rowData);
         if (!row.equals(back)) {
             throw new RuntimeException(String.format("%s != %s", row, back));
         }

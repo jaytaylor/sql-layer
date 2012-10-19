@@ -66,7 +66,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             "primary key(id)");
         TableIndex latLonIndex = createIndex("schema", "point", "latlon", "lat", "lon");
         latLonIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         pointRowType = schema.userTableRowType(userTable(point));
         latLonIndexRowType = indexType(point, "lat", "lon");
         space = SpaceLatLon.create();

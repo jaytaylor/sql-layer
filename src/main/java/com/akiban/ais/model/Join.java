@@ -53,7 +53,8 @@ public class Join implements Traversable, HasGroup
         return
                 getGroup() == null
                 ? "Join(" + joinName + ": " + child + " -> " + parent + ")"
-                : "Join(" + joinName + ": " + child + " -> " + parent + ", group(" + getGroup().getName() + "))";
+                // TODO: Fix when Group#toString() gets updated
+                : "Join(" + joinName + ": " + child + " -> " + parent + ", group(" + getGroup().getName().getTableName() + "))";
     }
 
     public JoinColumn addJoinColumn(Column parent, Column child)

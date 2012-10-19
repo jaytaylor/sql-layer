@@ -44,7 +44,7 @@ import org.junit.Test;
 import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 // Testing Intersect_Ordered key comparisons, which are done at the Persistit level.
 
@@ -69,7 +69,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
             "primary key(id)");
         createIndex("schema", "t", "idx_left", "test", "l1", "l2", "l3");
         createIndex("schema", "t", "idx_right", "test", "r1", "r2", "r3");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         leftIndexRowType = indexType(t, "test", "l1", "l2", "l3");
         rightIndexRowType = indexType(t, "test", "r1", "r2", "r3");

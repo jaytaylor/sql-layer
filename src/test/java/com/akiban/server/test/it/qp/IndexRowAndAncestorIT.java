@@ -92,7 +92,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         // ch left/right indexes declare an hky column from an internal table (neither leafmost nor rootmost)
         idxCHLeft = createGroupIndex("c", "idxCHLeft", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
         idxCHRight = createGroupIndex("c", "idxCHRight", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
-        schema = new com.akiban.qp.rowtype.Schema(rowDefCache().ais());
+        schema = new com.akiban.qp.rowtype.Schema(ais());
         cRowType = schema.userTableRowType(userTable(c));
         oRowType = schema.userTableRowType(userTable(o));
         iRowType = schema.userTableRowType(userTable(i));

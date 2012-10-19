@@ -38,7 +38,6 @@ import java.util.TreeMap;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
@@ -53,7 +52,6 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.RowDefNotFoundException;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs
@@ -63,96 +61,51 @@ import com.akiban.server.error.RowDefNotFoundException;
  * @author peter
  */
 public class RowDefCache {
-
-    // TODO: For debugging - remove this
-    private static volatile RowDefCache LATEST;
-
     private static final Logger LOG = LoggerFactory.getLogger(RowDefCache.class.getName());
 
-    private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
-    
-    private final Map<TableName, Integer> nameMap = new TreeMap<TableName, Integer>();
-    
-    protected TableStatusCache tableStatusCache;
+    private static volatile RowDefCache LATEST;
 
+    protected final TableStatusCache tableStatusCache;
     private AkibanInformationSchema ais;
-
-    {
-        LATEST = this;
-    }
 
     public RowDefCache(final TableStatusCache tableStatusCache) {
         this.tableStatusCache = tableStatusCache;
+        LATEST = this;
     }
 
+    /** Should <b>only</b> be used for debugging (e.g. friendly toString). This view is not transaction safe. **/
     public static RowDefCache latest() {
         return LATEST;
-    }
-
-    /**
-     * Look up and return a RowDef for a supplied rowDefId value.
-     * @param rowDefId ID to lookup.
-     * @return The corresponding RowDef
-     * @throws RowDefNotFoundException if there is no such RowDef.
-     */
-    public synchronized RowDef getRowDef(final int rowDefId) throws RowDefNotFoundException {
-        RowDef rowDef = rowDef(rowDefId);
-        if (rowDef == null) {
-            throw new RowDefNotFoundException(rowDefId);
-        }
-        return rowDef;
-    }
-
-    /**
-     * Look up and return a RowDef for a supplied rowDefId value or null if none exists.
-     * @param rowDefId ID to lookup.
-     * @return The corresponding RowDef object or <code>null</code>
-     */
-    public synchronized RowDef rowDef(final int rowDefId) {
-        return cacheMap.get(rowDefId);
-    }
-
-    public synchronized List<RowDef> getRowDefs() {
-        return new ArrayList<RowDef>(cacheMap.values());
-    }
-
-    public synchronized RowDef getRowDef(TableName tableName) throws RowDefNotFoundException {
-        final Integer key = nameMap.get(tableName);
-        if (key == null) {
-            return null;
-        }
-        return getRowDef(key);
-    }
-
-    public RowDef getRowDef(String schema, String table) throws RowDefNotFoundException {
-        return getRowDef(new TableName(schema, table));
-    }
-
-    public synchronized void clear() {
-        cacheMap.clear();
-        nameMap.clear();
     }
 
     /**
      * Receive an instance of the AkibanInformationSchema, crack it and produce
      * the RowDef instances it defines.
      */
-    public synchronized void setAIS(final AkibanInformationSchema ais) throws PersistitInterruptedException {
-        this.ais = ais;
-        
+    public synchronized void setAIS(final AkibanInformationSchema newAIS) throws PersistitInterruptedException {
+        ais = newAIS;
+
+        Map<Integer, RowDef> newRowDefs = new TreeMap<Integer,RowDef>();
         for (final UserTable table : ais.getUserTables().values()) {
-            putRowDef(createUserTableRowDef(table));
+            RowDef rowDef = createUserTableRowDef(table);
+            Integer key = rowDef.getRowDefId();
+            RowDef prev = newRowDefs.put(key, rowDef);
+            if (prev != null) {
+                throw new IllegalStateException("Duplicate RowDefID (" + key + ") for RowDef: " + rowDef);
+            }
         }
 
-        analyzeAll();
-        
+        Map<Table,Integer> ordinalMap = fixUpOrdinals();
+        for (RowDef rowDef : newRowDefs.values()) {
+            rowDef.computeFieldAssociations(ordinalMap);
+        }
+
         if (LOG.isDebugEnabled()) {
             LOG.debug(toString());
         }
     }
 
-    public AkibanInformationSchema ais()
-    {
+    public synchronized AkibanInformationSchema ais() {
         return ais;
     }
 
@@ -208,7 +161,7 @@ public class RowDefCache {
         } else {
             status = tableStatusCache.getMemoryTableStatus(table.getTableId(), factory);
         }
-        return new RowDef(table, status);
+        return new RowDef(table, status); // Hooks up table's rowDef too
     }
 
     private RowDef createUserTableRowDef(UserTable table) throws PersistitInterruptedException {
@@ -272,62 +225,24 @@ public class RowDefCache {
 
         return rowDef;
     }
-    
-    private synchronized void putRowDef(final RowDef rowDef) {
-        final Integer key = rowDef.getRowDefId();
-        final TableName name = new TableName(rowDef.getSchemaName(), rowDef.getTableName());
-        if (cacheMap.containsKey(key)) {
-            throw new IllegalStateException("Duplicate RowDefID (" + key + ") for RowDef: " + rowDef);
-        }
-        if (nameMap.containsKey(name)) {
-            throw new IllegalStateException("Duplicate name (" + name + ") for RowDef: " + rowDef);
-        }
-        cacheMap.put(key, rowDef);
-        nameMap.put(name, key);
-    }
-    
-    private void analyzeAll() throws PersistitInterruptedException {
-        Map<Table,Integer> ordinalMap = fixUpOrdinals();
-        for (final RowDef rowDef : cacheMap.values()) {
-            rowDef.computeFieldAssociations(ordinalMap);
-        }
-    }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("\n");
-        for (Map.Entry<TableName, Integer> entry : nameMap.entrySet()) {
-            final RowDef rowDef = cacheMap.get(entry.getValue());
+        final StringBuilder sb = new StringBuilder();
+        for (UserTable table : ais().getUserTables().values()) {
+            if(sb.length() > 0) {
+                sb.append("\n");
+            }
             sb.append("   ");
-            sb.append(rowDef);
-            sb.append("\n");
+            sb.append(table.rowDef().toString());
         }
         return sb.toString();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if(this == o) {
-            return true;
-        }
-        if(!(o instanceof RowDefCache)) {
-            return false;
-        }
-        RowDefCache that = (RowDefCache) o;
-        if(cacheMap == null) {
-            return that.cacheMap == null;
-        }
-        return cacheMap.equals(that.cacheMap);
-    }
-
-    @Override
-    public int hashCode() {
-        return cacheMap.hashCode();
-    }
-
-    protected Map<Group,List<RowDef>> getRowDefsByGroup() {
+    protected synchronized Map<Group,List<RowDef>> getRowDefsByGroup() {
         Map<Group,List<RowDef>> groupToRowDefs = new HashMap<Group, List<RowDef>>();
-        for(RowDef rowDef : getRowDefs()) {
+        for(Table table : ais.getUserTables().values()) {
+            RowDef rowDef = table.rowDef();
             List<RowDef> list = groupToRowDefs.get(rowDef.getGroup());
             if(list == null) {
                 list = new ArrayList<RowDef>();

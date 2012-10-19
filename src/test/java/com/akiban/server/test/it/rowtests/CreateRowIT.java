@@ -43,7 +43,7 @@ public class CreateRowIT extends ITBase
     {
         int t = createTable("s", "t",
                             "string varchar(100) character set latin1");
-        RowDef rowDef = rowDefCache().getRowDef(t);
+        RowDef rowDef = getRowDef(t);
         RowData rowData = new RowData(new byte[RowData.MINIMUM_RECORD_LENGTH + 1 /* null bitmap */ + 5]);
         rowData.createRow(rowDef, new Object[]{"abc"}, false);
     }
@@ -53,7 +53,7 @@ public class CreateRowIT extends ITBase
     {
         int t = createTable("s", "t",
                             "string varchar(100)");
-        RowDef rowDef = rowDefCache().getRowDef(t);
+        RowDef rowDef = getRowDef(t);
         RowData rowData = new RowData(new byte[RowData.MINIMUM_RECORD_LENGTH + 1 /* null bitmap */ + 5]);
         rowData.createRow(rowDef, new Object[]{"abcdefghijklmnopqrstuvwxyz"}, false);
         fail();
@@ -65,7 +65,7 @@ public class CreateRowIT extends ITBase
         // Buffer should grow one time
         int t = createTable("s", "t",
                             "string varchar(100)");
-        RowDef rowDef = rowDefCache().getRowDef(t);
+        RowDef rowDef = getRowDef(t);
         int initialBufferSize = RowData.MINIMUM_RECORD_LENGTH + 1 /* null bitmap */ + 5;
         RowData rowData = new RowData(new byte[initialBufferSize]);
         rowData.createRow(rowDef, new Object[]{"abcdefghijklmno"}, true);
@@ -78,7 +78,7 @@ public class CreateRowIT extends ITBase
         // Buffer should grow two times
         int t = createTable("s", "t",
                             "string varchar(100)");
-        RowDef rowDef = rowDefCache().getRowDef(t);
+        RowDef rowDef = getRowDef(t);
         int initialBufferSize = RowData.MINIMUM_RECORD_LENGTH + 1 /* null bitmap */ + 5;
         RowData rowData = new RowData(new byte[initialBufferSize]);
         // initialBufferSize has room for varchar of size 4, (1 byte of the 5 is for length).

@@ -110,7 +110,7 @@ public interface DDLFunctions {
      * @param groupName the group to drop
      * @throws NullPointerException if groupName is null
      */
-    void dropGroup(Session session, String groupName);
+    void dropGroup(Session session, TableName groupName);
 
     /**
      * Gets the AIS from the Store.
@@ -166,11 +166,12 @@ public interface DDLFunctions {
 
     /**
      * Resolves the given table ID to its RowDef
+     * @param session the session
      * @param tableId the table to look up
      * @return the rowdef
      * @throws RowDefNotFoundException if the tableID has no associated RowDef.
      */
-    RowDef getRowDef(int tableId) throws RowDefNotFoundException;
+    RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException;
 
     /**
      * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>information_schema</tt>
@@ -213,7 +214,7 @@ public interface DDLFunctions {
      * Drop indexes on an existing group.
      * @param indexesToDrop Indexes to drop
      */
-    void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop);
+    void dropGroupIndexes(Session session, TableName groupName, Collection<String> indexesToDrop);
 
     /**
      * Update statistics for the given table.

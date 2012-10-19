@@ -83,7 +83,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
             "primary key(gid, pid, cid2)",
             "grouping foreign key(gid, pid) references parent(gid, pid)");
         createIndex("schema", "child2", "idx_cid2_copy", "cid2_copy");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         grandparentRowType = schema.userTableRowType(userTable(grandparent));
         parentRowType = schema.userTableRowType(userTable(parent));
         child1RowType = schema.userTableRowType(userTable(child1));

@@ -99,8 +99,6 @@ public class PersistitStore implements Store, Service {
 
     private boolean deferIndexes = false;
 
-    RowDefCache rowDefCache;
-
     private final ConfigurationService config;
 
     private final TreeService treeService;
@@ -109,26 +107,29 @@ public class PersistitStore implements Store, Service {
 
     private DisplayFilter originalDisplayFilter;
 
+    private SchemaManager schemaManager;
+
     private volatile IndexStatisticsService indexStatistics;
 
     private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config) {
+    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
+                          SchemaManager schemaManager) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
+        this.schemaManager = schemaManager;
     }
 
     @Override
     public synchronized void start() {
         tableStatusCache = treeService.getTableStatusCache();
-        rowDefCache = new RowDefCache(tableStatusCache);
         try {
             CoderManager cm = getDb().getCoderManager();
             Management m = getDb().getManagement();
-            cm.registerValueCoder(RowData.class, new RowDataValueCoder(this));
+            cm.registerValueCoder(RowData.class, new RowDataValueCoder());
             cm.registerKeyCoder(CString.class, new CStringKeyCoder());
             originalDisplayFilter = m.getDisplayFilter();
             m.setDisplayFilter(new RowDataDisplayFilter(originalDisplayFilter));
@@ -140,11 +141,12 @@ public class PersistitStore implements Store, Service {
     @Override
     public synchronized void stop() {
         try {
+            getDb().getCoderManager().unregisterValueCoder(RowData.class);
+            getDb().getCoderManager().unregisterKeyCoder(CString.class);
             getDb().getManagement().setDisplayFilter(originalDisplayFilter);
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
-        rowDefCache = null;
     }
 
     @Override
@@ -305,9 +307,25 @@ public class PersistitStore implements Store, Service {
 
     // --------------------- Implement Store interface --------------------
 
+    public AkibanInformationSchema getAIS(Session session) {
+        return schemaManager.getAis(session);
+    }
+
+    public RowDef getRowDef(Session session, TableName tableName) {
+        Table table = getAIS(session).getTable(tableName);
+        if(table == null) {
+            throw new NoSuchTableException(tableName);
+        }
+        return table.rowDef();
+    }
+
     @Override
-    public RowDefCache getRowDefCache() {
-        return rowDefCache;
+    public RowDef getRowDef(Session session, int rowDefID) {
+        Table table = getAIS(session).getUserTable(rowDefID);
+        if(table == null) {
+            throw new RowDefNotFoundException(rowDefID);
+        }
+        return table.rowDef();
     }
 
     @Override
@@ -316,7 +334,7 @@ public class PersistitStore implements Store, Service {
     {
         writeRow(session, rowData, null, true);
     }
-    
+
     private void writeRow(Session session,
                           RowData rowData,
                           BitSet tablesRequiringHKeyMaintenance,
@@ -331,7 +349,7 @@ public class PersistitStore implements Store, Service {
             }
         }
 
-        final RowDef rowDef = rowDefFromExplicitOrId(rowData);
+        final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx;
         hEx = getExchange(session, rowDef);
@@ -432,7 +450,7 @@ public class PersistitStore implements Store, Service {
         throws PersistitException
     {
         int rowDefId = rowData.getRowDefId();
-        RowDef rowDef = rowDefFromExplicitOrId(rowData);
+        RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         DELETE_ROW_TAP.in();
@@ -500,8 +518,8 @@ public class PersistitStore implements Store, Service {
 
         // RowDefs may be different (e.g. during an ALTER)
         // Only non-pk or grouping columns could have change in this scenario
-        RowDef rowDef = rowDefFromExplicitOrId(oldRowData);
-        RowDef newRowDef = rowDefFromExplicitOrId(newRowData);
+        RowDef rowDef = rowDefFromExplicitOrId(session, oldRowData);
+        RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         UPDATE_ROW_TAP.in();
@@ -527,7 +545,7 @@ public class PersistitStore implements Store, Service {
                 : mergeRows(rowDef, currentRow, newRowData, columnSelector);
             BitSet tablesRequiringHKeyMaintenance =
                     propagateHKeyChanges
-                    ? analyzeFieldChanges(rowDef, oldRowData, mergedRowData)
+                    ? analyzeFieldChanges(session, rowDef, oldRowData, mergedRowData)
                     : null;
             if (tablesRequiringHKeyMaintenance == null) {
                 // No PK or FK fields have changed. Just update the row.
@@ -558,7 +576,7 @@ public class PersistitStore implements Store, Service {
         }
     }
 
-    private BitSet analyzeFieldChanges(RowDef rowDef, RowData oldRow, RowData newRow)
+    private BitSet analyzeFieldChanges(Session session, RowDef rowDef, RowData oldRow, RowData newRow)
     {
         BitSet tablesRequiringHKeyMaintenance;
         assert oldRow.getRowDefId() == newRow.getRowDefId();
@@ -587,14 +605,14 @@ public class PersistitStore implements Store, Service {
             // A PK or FK field has changed, so the update has to be done as delete/insert. To minimize hkey
             // propagation work, find which tables (descendents of the updated table) are affected by hkey
             // changes.
-            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(oldRow.getRowDefId());
+            tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(session, oldRow.getRowDefId());
         }
         return tablesRequiringHKeyMaintenance;
     }
 
-    private BitSet hKeyDependentTableOrdinals(int rowDefId)
+    private BitSet hKeyDependentTableOrdinals(Session session, int rowDefId)
     {
-        RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        RowDef rowDef = getRowDef(session, rowDefId);
         UserTable table = rowDef.userTable();
         BitSet ordinals = new BitSet();
         for (UserTable hKeyDependentTable : table.hKeyDependentTables()) {
@@ -634,7 +652,7 @@ public class PersistitStore implements Store, Service {
         while (exchange.next(filter)) {
             expandRowData(exchange, descendentRowData);
             int descendentRowDefId = descendentRowData.getRowDefId();
-            RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
+            RowDef descendentRowDef = getRowDef(session, descendentRowDefId);
             int descendentOrdinal = descendentRowDef.getOrdinal();
             if ((tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(descendentOrdinal))) {
                 PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.hit();
@@ -767,8 +785,8 @@ public class PersistitStore implements Store, Service {
         return list;
     }
 
-    private RowDef checkRequest(int rowDefId,RowData start, ColumnSelector startColumns,
-            RowData end, ColumnSelector endColumns) throws IllegalArgumentException {
+    private RowDef checkRequest(Session session, int rowDefId, RowData start, ColumnSelector startColumns,
+                                RowData end, ColumnSelector endColumns) throws IllegalArgumentException {
         if (start != null) {
             if (startColumns == null) {
                 throw new IllegalArgumentException("non-null start row requires non-null ColumnSelector");
@@ -785,7 +803,7 @@ public class PersistitStore implements Store, Service {
                 throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
             }
         }
-        final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+        final RowDef rowDef = getRowDef(session, rowDefId);
         if (rowDef == null) {
             throw new IllegalArgumentException("No RowDef for rowDefId " + rowDefId);
         }
@@ -836,7 +854,7 @@ public class PersistitStore implements Store, Service {
             if(end != null && endColumns == null) {
                 endColumns = createNonNullFieldSelector(end);
             }
-            RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
+            RowDef rowDef = checkRequest(session, rowDefId, start, startColumns, end, endColumns);
             rc = OperatorBasedRowCollector.newCollector(config,
                                                         session,
                                                         this,
@@ -874,7 +892,7 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public TableStatistics getTableStatistics(final Session session, int tableId) {
-        final RowDef rowDef = rowDefCache.getRowDef(tableId);
+        final RowDef rowDef = getRowDef(session, tableId);
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = rowDef.getTableStatus();
         try {
@@ -1193,21 +1211,10 @@ public class PersistitStore implements Store, Service {
         AkServerUtil.putInt(rowData.getBytes(), RowData.O_ROW_DEF_ID, rowDefId);
     }
 
-    @Override
-    public void buildAllIndexes(Session session, boolean deferIndexes) {
-        Collection<Index> indexes = new HashSet<Index>();
-        for(RowDef rowDef : rowDefCache.getRowDefs()) {
-            if(rowDef.isUserTable()) {
-                indexes.addAll(Arrays.asList(rowDef.getIndexes()));
-            }
-        }
-        buildIndexes(session, indexes, deferIndexes);
-    }
-
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         flushIndexes(session);
         Set<Group> groups = new HashSet<Group>();
-        Set<RowDef> userRowDefs = new HashSet<RowDef>();
+        Map<Integer,RowDef> userRowDefs = new HashMap<Integer,RowDef>();
         Set<Index> indexesToBuild = new HashSet<Index>();
         for(Index index : indexes) {
             IndexDef indexDef = index.indexDef();
@@ -1216,7 +1223,7 @@ public class PersistitStore implements Store, Service {
             }
             indexesToBuild.add(index);
             RowDef rowDef = indexDef.getRowDef();
-            userRowDefs.add(rowDef);
+            userRowDefs.put(rowDef.getRowDefId(), rowDef);
             groups.add(rowDef.table().getGroup());
         }
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
@@ -1230,8 +1237,8 @@ public class PersistitStore implements Store, Service {
                 while (hEx.next(true)) {
                     expandRowData(hEx, rowData);
                     int tableId = rowData.getRowDefId();
-                    RowDef userRowDef = rowDefCache.getRowDef(tableId);
-                    if (userRowDefs.contains(userRowDef)) {
+                    RowDef userRowDef = userRowDefs.get(tableId);
+                    if (userRowDef != null) {
                         for (Index index : userRowDef.getIndexes()) {
                             if(indexesToBuild.contains(index)) {
                                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, defer);
@@ -1357,7 +1364,7 @@ public class PersistitStore implements Store, Service {
 
     private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector) {
         NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
-        NewRow newRow = new LegacyRowWrapper(newRowData, this);
+        NewRow newRow = new LegacyRowWrapper(rowDef, newRowData);
         int fields = rowDef.getFieldCount();
         for (int i = 0; i < fields; i++) {
             if (columnSelector.includesColumn(i)) {
@@ -1367,10 +1374,10 @@ public class PersistitStore implements Store, Service {
         return mergedRow.toRowData();
     }
 
-    private RowDef rowDefFromExplicitOrId(RowData rowData) {
+    private RowDef rowDefFromExplicitOrId(Session session, RowData rowData) {
         RowDef rowDef = rowData.getExplicitRowDef();
         if(rowDef == null) {
-            rowDef = rowDefCache.getRowDef(rowData.getRowDefId());
+            rowDef = getRowDef(session, rowData.getRowDefId());
         }
         return rowDef;
     }
@@ -1389,7 +1396,7 @@ public class PersistitStore implements Store, Service {
         Exchange exchange = getExchange(session, group);
         try {
             exchange.clear().append(Key.BEFORE);
-            visitor.initialize(this, exchange);
+            visitor.initialize(session, this, exchange);
             while (exchange.next(true)) {
                 visitor.visit();
             }
@@ -1413,9 +1420,8 @@ public class PersistitStore implements Store, Service {
 
     public TableStatus getTableStatus(Table table) {
         TableStatus ts = null;
-        RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
-        if (rowDef != null) {
-            ts = rowDef.getTableStatus();
+        if(table.rowDef() != null) {
+            ts = table.rowDef().getTableStatus();
         }
         return ts;
     }

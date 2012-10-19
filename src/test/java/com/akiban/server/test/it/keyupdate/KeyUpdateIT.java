@@ -490,10 +490,10 @@ public class KeyUpdateIT extends KeyUpdateBase
         i_oid = 1;
         i_ix = 2;
         // group
-        vendorRD = rowDefCache().getRowDef(vendorId);
-        customerRD = rowDefCache().getRowDef(customerId);
-        orderRD = rowDefCache().getRowDef(orderId);
-        itemRD = rowDefCache().getRowDef(itemId);
+        vendorRD = getRowDef(vendorId);
+        customerRD = getRowDef(customerId);
+        orderRD = getRowDef(orderId);
+        itemRD = getRowDef(itemId);
         group = customerRD.getGroup();
     }
 

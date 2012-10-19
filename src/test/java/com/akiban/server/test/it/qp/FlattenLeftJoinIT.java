@@ -39,6 +39,7 @@ package com.akiban.server.test.it.qp;
  */
 
 import com.akiban.ais.model.Group;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -54,7 +55,7 @@ import org.junit.Test;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.LEFT_JOIN;
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 
 import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 import static com.akiban.server.types.AkType.*;
@@ -93,7 +94,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             "pid int",
             "avalue varchar(20)",
             "grouping foreign key(pid) references parent(pid)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         ancestorRowType = schema.userTableRowType(userTable(ancestor));
         parentRowType = schema.userTableRowType(userTable(parent));
         beforeChildRowType = schema.userTableRowType(userTable(beforeChild));
@@ -540,7 +541,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
 
     // For use by this class
 
-    private Expression selectAncestor(long aid)
+    private ExpressionGenerator selectAncestor(long aid)
     {
         return compare(field(ancestorRowType, 0), Comparison.EQ, literal(aid));
     }
