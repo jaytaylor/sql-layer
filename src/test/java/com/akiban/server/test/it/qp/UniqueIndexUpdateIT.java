@@ -35,6 +35,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.Types3Switch;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -110,10 +111,12 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         final long NEW_Y_VALUE = 99;
         while ((row = cursor.next()) != null) {
             PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
-            long x = indexRow.eval(0).getInt();
-            long id = indexRow.eval(2).getInt();
-            ValueSource yValueSource = indexRow.eval(1);
-            if (yValueSource.isNull()) {
+            long x = getLong(indexRow, 0);
+            long id = getLong(indexRow, 2);
+            boolean yValueNull = Types3Switch.ON
+                    ? indexRow.pvalue(1).isNull()
+                    : indexRow.eval(1).isNull();
+            if (yValueNull) {
                 NewRow oldRow = createNewRow(t, id, x, null);
                 NewRow newRow = createNewRow(t, id, x, NEW_Y_VALUE);
                 dml().updateRow(session(), oldRow, newRow, null);
