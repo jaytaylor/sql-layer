@@ -2,7 +2,7 @@ PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[IN
   Map_NestedLoops()
     Distinct_Partial()
       Project_Default(i2.sku)
-        IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku)
+        IndexScan_Default(Index(customers.cname_and_sku), customers.name = 'Smith', items.sku)
     Project_Default(items.iid, items.oid, items.sku, items.quan)
       AncestorLookup_Default(Index(items.sku) -> items)
         IndexScan_Default(Index(items.sku), sku = Bound(0, 0), orders.cid, oid, iid)
