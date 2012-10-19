@@ -235,5 +235,12 @@ public class MBigDecimal extends TClassBase {
             ConversionHelperBigDecimal.decodeToString(bb, 0, precision, scale, AkibanAppender.of(sb));
             return new MBigDecimalWrapper(sb.toString());
         }
+
+        @Override
+        public Object sanitize(Object object) {
+            if (object instanceof BigDecimal)
+                return new MBigDecimalWrapper((BigDecimal)object);
+            throw new UnsupportedOperationException(String.valueOf(object));
+        }
     };
 }
