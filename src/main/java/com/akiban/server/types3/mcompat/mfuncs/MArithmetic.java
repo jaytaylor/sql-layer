@@ -740,9 +740,9 @@ public abstract class MArithmetic extends TArithmetic {
     
     // divisions
     public static final TScalar DIVIDE_MONTHS_DOUBLE 
-            = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
+            = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIVIDE);
     public static final TScalar DIVIDE_SECS_DOUBLE 
-            = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
+            = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIVIDE);
     
     // additions
     public static final TScalar ADD_MONTH
@@ -829,8 +829,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void buildInputSets(TInputSetBuilder builder)
         {
-            // the INTERVAL arg should not be a 'casted' one
-            builder.covers(left, pos0).covers(right, pos1).setExact(pos0, true);
+            builder.covers(left, pos0).covers(right, pos1);
         }
 
         @Override

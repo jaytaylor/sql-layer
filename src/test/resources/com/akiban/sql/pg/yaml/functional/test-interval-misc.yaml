@@ -8,7 +8,6 @@
     (1, '00:00:00', '2000-01-01', '2000-01-01 00:00:00'),
     (2, '00:00:01', '2000-01-02', '2000-01-01 00:00:01')
 
-# Bad syntax
 ---
 - Statement: SELECT time_field + INTERVAL FROM t
 - error: !select-engine { all: [42000], sys-mysql: [1064] }
