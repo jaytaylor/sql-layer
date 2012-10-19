@@ -293,8 +293,6 @@ class Distinct_Partial extends Operator
         // filled as needed.
         private int nvalid;
         private final ValuesAdapter<?> valuesAdapter;
-//        private final ValueHolder[] currentValues;
-//        private final PValue[] currentPValues;
         private boolean idle = true;
         private boolean destroyed = false;
     }
