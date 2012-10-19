@@ -27,6 +27,7 @@
 package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.server.collation.CString;
 import com.persistit.Key;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -197,7 +198,14 @@ public class PersistitKeyPValueSource implements PValueSource {
                     case FLOAT:     output.putFloat(key.decodeFloat());         break;
                     case DOUBLE:    output.putDouble(key.decodeDouble());       break;
                     case BYTES:     output.putBytes(key.decodeByteArray());     break;
-                    case STRING:    output.putString(key.decodeString(), null);       break;
+                    case STRING:
+                        if (key.decodeType() == CString.class) {
+                            output.putObject(key.decode().toString());
+                        }
+                        else {
+                            output.putString(key.decodeString(), null);
+                        }
+                        break;
                     default: throw new UnsupportedOperationException(pUnderlying.name());
                 }
             }

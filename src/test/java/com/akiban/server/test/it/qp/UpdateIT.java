@@ -144,7 +144,7 @@ public class UpdateIT extends OperatorITBase
                         id = original.pvalue(0).getInt64();
                     }
                     else {
-                        id = original.eval(0).getInt();
+                        id = getLong(original, 0);
                     }
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0, id - 100);
@@ -204,7 +204,7 @@ public class UpdateIT extends OperatorITBase
                         id = original.pvalue(0).getInt64();
                     }
                     else {
-                        id = original.eval(0).getInt();
+                        id = getLong(original, 0);
                     }
                     return new OverlayingRow(original).overlay(0, 1000 + id);
                 }

@@ -33,6 +33,16 @@ import com.persistit.Key;
 
 public abstract class AkCollator {
 
+    public static String getString(PValueSource valueSource) {
+        if (valueSource.isNull())
+            return null;
+        if (valueSource.hasRawValue())
+            return valueSource.getString();
+        else if (valueSource.hasCacheValue())
+            return (String) valueSource.getObject();
+        throw new AssertionError("no value");
+    }
+
     private final String collatorName;
 
     private final String collatorScheme;
@@ -96,11 +106,11 @@ public abstract class AkCollator {
         if (persistit1 && persistit2) {
             return ((PersistitKeyPValueSource) value1).compare((PersistitKeyPValueSource) value2);
         } else if (persistit1) {
-            return ((PersistitKeyPValueSource) value1).compare(this, value2.getString());
+            return ((PersistitKeyPValueSource) value1).compare(this, getString(value2));
         } else if (persistit2) {
-            return -((PersistitKeyPValueSource) value2).compare(this, value1.getString());
+            return -((PersistitKeyPValueSource) value2).compare(this, getString(value1));
         } else {
-            return compare(value1.getString(), value2.getString());
+            return compare(getString(value1), getString(value2));
         }
     }
 

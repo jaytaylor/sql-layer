@@ -255,7 +255,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
         List<Long> ret = new ArrayList<Long>(rows.size());
 
         for (Row row : rows)
-            ret.add(row.eval(3).getInt());
+            ret.add(getLong(row, 3));
 
         return ret;
     }

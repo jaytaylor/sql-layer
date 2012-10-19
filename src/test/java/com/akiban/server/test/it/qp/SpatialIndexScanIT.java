@@ -209,7 +209,7 @@ public class SpatialIndexScanIT extends OperatorITBase
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
-                int id = (int) row.eval(1).getInt();
+                int id = getLong(row, 1).intValue();
                 actual.add(id);
             }
             // There should be no false negatives
@@ -239,7 +239,7 @@ public class SpatialIndexScanIT extends OperatorITBase
             int count = 0;
             while ((row = cursor.next()) != null) {
                 long zActual = row.eval(0).getLong();
-                int id = (int) row.eval(1).getInt();
+                int id = getLong(row, 1).intValue();
                 long x = xs.get(id);
                 long y = ys.get(id);
                 long zExpected = space.shuffle(new long[]{x, y});

@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.Ignore;
 import com.akiban.util.ShareHolder;
 import com.akiban.server.types.ValueSource;
@@ -1680,32 +1682,13 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         {
             // nulls are allowed
             ArrayList<Long> toLong = new ArrayList<Long>();
-            for (int n = 0; n < INDEX_COLUMN_COUNT; ++n)
-                addColumn(toLong, row.eval(n));
+            for (int n = 0; n < INDEX_COLUMN_COUNT; ++n) {
+                toLong.add(getLong(row, n));
+            }
             
             ret.add(toLong);
         }
         return ret;
-    }
-
-    private static void addColumn(List<Long> row, ValueSource v)
-    {
-        if (v.isNull())
-        {
-            row.add(null);
-            return;
-        }
-
-        switch(v.getConversionType())
-        {
-            case LONG:      row.add(v.getLong());
-                            break;
-            case INT:       row.add(v.getInt());
-                            break;
-            case NULL:      row.add(null);
-                            break;
-            default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
-        }
     }
 
      // --- start generated
