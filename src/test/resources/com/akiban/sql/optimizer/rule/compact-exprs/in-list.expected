@@ -3,7 +3,7 @@ SelectQuery@2e00e753
     Project@18b1aebf[orders.order_date, items.sku, items.quan]
       Select@39478a43[or(customers.name == Smith,IN(items.sku, [1234, 6666, 9876]))]
         Flatten@2c979e8b(customers INNER orders INNER items)
-          GroupScan@1629ce8c(Group(customers -> test.customers), rows = 20000, cost = 896440)
+          GroupScan@1629ce8c(Group(test.customers), rows = 20000, cost = 896440)
             TableSource@39cf4a2c(customers - TableGroup@12b754b2(customers))
-            TableSource@580eac5a(orders - TableGroupJoin@42197bb7(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-            TableSource@371bed71(items - TableGroupJoin@17094d48(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@580eac5a(orders - TableGroupJoin@42197bb7(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+            TableSource@371bed71(items - TableGroupJoin@17094d48(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

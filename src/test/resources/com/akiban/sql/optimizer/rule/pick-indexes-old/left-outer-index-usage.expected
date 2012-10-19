@@ -3,7 +3,7 @@ SelectQuery@4877834b
     Project@467bd132[customers.cid, parent.name]
       Select@6ae34dc4[customers.name == foo, isNull(parent.name)]
         JoinNode@7106b5ae(LEFT/NESTED_LOOPS[])
-          TableJoins@6f81ec7a(TableGroup@6bcd1b7c(customers) - GroupScan@66c7a12e(Group(customers -> test.customers)))
+          TableJoins@6f81ec7a(TableGroup@6bcd1b7c(customers) - GroupScan@66c7a12e(Group(test.customers)))
             TableSource@1cee9b9b(customers - TableGroup@6bcd1b7c(customers))
           TableJoins@3acc76c7(TableGroup@3c2707b9(parent) - SingleIndexScan@266c2189(Index(test.parent.PRIMARY[IndexColumn(id)]), NONE, =customers.cid))
             TableSource@7529ebf3(parent - TableGroup@3c2707b9(parent))

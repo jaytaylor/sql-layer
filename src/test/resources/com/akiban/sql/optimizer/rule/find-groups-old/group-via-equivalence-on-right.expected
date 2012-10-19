@@ -3,6 +3,6 @@ SelectQuery@6d7e4dee
     Project@44ea5461[orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, items.price]
       Select@7449cf9f[items.quan == items.oid]
         TableJoins@19de0b5e(TableGroup@40bc5596(customers))
-          JoinNode@c970c0e(RIGHT/GROUP[items.quan == orders.oid, items.oid == orders.oid] - TableGroupJoin@10987197(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+          JoinNode@c970c0e(RIGHT/GROUP[items.quan == orders.oid, items.oid == orders.oid] - TableGroupJoin@10987197(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
             TableSource@7cc792d4(orders - TableGroup@40bc5596(customers))
-            TableSource@5e2c17f7(items - TableGroupJoin@10987197(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@5e2c17f7(items - TableGroupJoin@10987197(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

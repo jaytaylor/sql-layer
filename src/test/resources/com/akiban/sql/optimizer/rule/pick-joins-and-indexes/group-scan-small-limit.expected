@@ -3,6 +3,6 @@ SelectQuery@768d58c
     Limit@7e14422b(LIMIT 100)
       Project@640455b7[orders.order_date, items.sku, items.quan]
         Select@589794ad[]
-          TableGroupJoinTree@47a2174b(TableGroup@62a761aa(customers), orders INNER items - GroupScan@5afd127f(Group(customers -> test.customers), rows = 100, cost = 4243.16))
+          TableGroupJoinTree@47a2174b(TableGroup@62a761aa(customers), orders INNER items - GroupScan@5afd127f(Group(test.customers), rows = 100, cost = 4243.16))
             TableSource@1854b34e(orders - TableGroup@62a761aa(customers))
-              TableSource@60c7d25c(items - TableGroupJoin@1cc97e84(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+              TableSource@60c7d25c(items - TableGroupJoin@1cc97e84(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
