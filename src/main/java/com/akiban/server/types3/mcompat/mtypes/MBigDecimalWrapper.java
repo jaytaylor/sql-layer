@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
@@ -37,6 +38,11 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
 
     private BigDecimal value;
 
+    public MBigDecimalWrapper(byte ar[])
+    {
+        value = new BigDecimal(new BigInteger(ar));
+    }
+    
     public MBigDecimalWrapper(BigDecimal value) {
         this.value = value;
     }

@@ -27,6 +27,9 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -132,6 +135,10 @@ public abstract class TClass {
         case DOUBLE:
             return Doubles.compare(sourceA.getDouble(), sourceB.getDouble());
         case BYTES:
+            if (this instanceof MBigDecimal)
+                return (new MBigDecimalWrapper(sourceA.getBytes()))
+                             .compareTo(new MBigDecimalWrapper(sourceB.getBytes()));
+            
             ByteBuffer bbA = ByteBuffer.wrap(sourceA.getBytes());
             ByteBuffer bbB = ByteBuffer.wrap(sourceB.getBytes());
             return bbA.compareTo(bbB);
@@ -141,6 +148,7 @@ public abstract class TClass {
             throw new AssertionError(sourceA.getUnderlyingType());
         }
     }
+    
 
     protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
         PValueTargets.copyFrom(in, out);
