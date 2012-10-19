@@ -37,6 +37,7 @@ import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.RankExpression;
 import com.akiban.server.explain.*;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -162,7 +163,7 @@ class HKeyUnion_Ordered extends Operator
         this.outputHKeySegments = outputHKeyDefinition.segments().size();
         // Setup for row comparisons
         fieldRankingExpressionsAdapters = Types3Switch.ON
-                ? null
+                ? new NewRankExpressions(leftRowType, rightRowType, leftOrderingFields, rightOrderingFields, comparisonFields)
                 : new OldRankExpressions(leftRowType, rightRowType, leftOrderingFields, rightOrderingFields, comparisonFields);
     }
 
@@ -336,7 +337,7 @@ class HKeyUnion_Ordered extends Operator
         
         private long compareRows()
         {
-            long c = 0;
+            long c;
             assert !closed;
             assert !(leftRow.isEmpty() && rightRow.isEmpty());
             if (leftRow.isEmpty()) {
@@ -431,5 +432,42 @@ class HKeyUnion_Ordered extends Operator
         }
 
         private final AbstractTwoArgExpressionEvaluation[] fieldRankingEvaluations;
+    }
+
+    private static class NewRankExpressions implements RankExpressions, RankEvaluations {
+
+        private NewRankExpressions(RowType leftRowType, RowType rightRowType, int leftOrderingFields,
+                                   int rightOrderingFields, int comparisonFields)
+        {
+            this.leftOffset = leftRowType.nFields() - leftOrderingFields;
+            this.rightOffset = rightRowType.nFields() - rightOrderingFields;
+            this.comparisonExpressions = comparisonFields;
+        }
+
+        @Override
+        public RankEvaluations buildEvaluations() {
+            return this;
+        }
+
+        @Override
+        public long compare(Row left, Row right) {
+            int c = 0;
+            int leftIndex = leftOffset;
+            int rightIndex = rightOffset;
+            for (int i = 0; i < comparisonExpressions; ++i) {
+                c = TClass.compare(
+                        left.rowType().typeInstanceAt(leftIndex), left.pvalue(leftIndex),
+                        right.rowType().typeInstanceAt(rightIndex), right.pvalue(rightIndex));
+                if (c != 0)
+                    break;
+                ++leftIndex;
+                ++rightIndex;
+            }
+            return c;
+        }
+
+        private final int leftOffset;
+        private final int rightOffset;
+        private final int comparisonExpressions;
     }
 }
