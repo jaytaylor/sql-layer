@@ -28,6 +28,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
@@ -43,7 +44,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 import static com.akiban.qp.operator.API.*;
 
 public class Sort_InsertionLimitedIT extends OperatorITBase
@@ -173,9 +174,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -209,9 +210,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -245,9 +246,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -281,9 +282,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -317,9 +318,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -353,9 +354,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -389,9 +390,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -425,9 +426,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -597,7 +598,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
         Ordering ordering = API.ordering();
         int i = 0;
         while (i < objects.length) {
-            Expression expression = (Expression) objects[i++];
+            ExpressionGenerator expression = (ExpressionGenerator) objects[i++];
             Boolean ascending = (Boolean) objects[i++];
             ordering.append(expression, ascending);
         }

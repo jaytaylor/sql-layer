@@ -33,7 +33,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +57,7 @@ public class OrphanResolutionIT extends OperatorITBase
             "pid int",
             "cx int",
             "grouping foreign key(pid) references parent(pid)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         group = group(parent);
@@ -92,8 +92,8 @@ public class OrphanResolutionIT extends OperatorITBase
 
     private BindableRow parentRow(int pid, int px)
     {
-        return BindableRow.of(parentRowType, Arrays.asList(Expressions.literal(pid, AkType.INT),
-                                                           Expressions.literal(px, AkType.INT)), null);
+        return BindableRow.of(parentRowType, Arrays.asList(ExpressionGenerators.literal(pid, AkType.INT),
+                                                           ExpressionGenerators.literal(px, AkType.INT)), null);
     }
 
     private int parent;

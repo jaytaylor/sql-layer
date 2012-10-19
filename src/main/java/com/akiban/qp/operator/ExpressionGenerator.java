@@ -24,11 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.store;
+package com.akiban.qp.operator;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 
-public interface AisHolder {
-    AkibanInformationSchema getAis();
-    void setAis(AkibanInformationSchema ais);
+public interface ExpressionGenerator {
+    Expression getExpression();
+    TPreparedExpression getTPreparedExpression();
+
+    enum ErasureMaker {MARK}
 }

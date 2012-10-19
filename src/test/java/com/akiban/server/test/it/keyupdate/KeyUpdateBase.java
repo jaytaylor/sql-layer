@@ -303,7 +303,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestRow copyRow(TestRow row)
     {
-        TestRow copy = new TestRow(row.getTableId(), store());
+        TestRow copy = new TestRow(session(), row.getTableId(), store());
         for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
             copy.put(entry.getKey(), entry.getValue());
         }
@@ -328,7 +328,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected final TestRow row(RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId(), store());
+        TestRow row = new TestRow(session(), table.getRowDefId(), store());
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -342,7 +342,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestRow row(TestRow parent, RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId(), store());
+        TestRow row = new TestRow(session(), table.getRowDefId(), store());
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -356,7 +356,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestRow row(TestRow parent, TestRow grandparent, RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId(), store());
+        TestRow row = new TestRow(session(), table.getRowDefId(), store());
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {

@@ -37,12 +37,13 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class UnionAll_DefaultIT extends OperatorITBase
 {
@@ -55,7 +56,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
             "x int",
             "primary key(id)");
         createIndex("schema", "t", "tx", "x");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         txIndexRowType = indexType(t, "x");
         tRowType = schema.userTableRowType(userTable(t));
         groupTable = group(t);
@@ -110,12 +111,12 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.literal(false)),
+                    ExpressionGenerators.literal(false)),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.literal(false)),
+                    ExpressionGenerators.literal(false)),
                 tRowType);
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor(plan, queryContext));
@@ -129,15 +130,15 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.literal(false)),
+                    ExpressionGenerators.literal(false)),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(9))),
+                        ExpressionGenerators.literal(9))),
                     tRowType);
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1001L, 9L),
@@ -156,15 +157,15 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(8))),
+                        ExpressionGenerators.literal(8))),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.literal(false)),
+                    ExpressionGenerators.literal(false)),
                     tRowType);
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1000L, 8L),
@@ -183,18 +184,18 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(8))),
+                        ExpressionGenerators.literal(8))),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(9))),
+                        ExpressionGenerators.literal(9))),
                     tRowType);
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1000L, 8L),
@@ -217,18 +218,18 @@ public class UnionAll_DefaultIT extends OperatorITBase
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(8))),
+                        ExpressionGenerators.literal(8))),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
                     tRowType,
-                    Expressions.compare(
-                        Expressions.field(tRowType, 1),
+                    ExpressionGenerators.compare(
+                        ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        Expressions.literal(9))),
+                        ExpressionGenerators.literal(9))),
                 tRowType);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
@@ -259,7 +260,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
         IndexKeyRange xEQ8Range = IndexKeyRange.bounded(txIndexRowType, eight, true, eight, true);
         IndexKeyRange xEQ9Range = IndexKeyRange.bounded(txIndexRowType, nine, true, nine, true);
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(txIndexRowType, 0), true);
+        ordering.append(field(txIndexRowType, 0), true);
         Operator plan =
             map_NestedLoops(
                 limit_Default(

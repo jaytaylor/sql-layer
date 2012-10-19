@@ -44,7 +44,7 @@ import org.junit.Test;
 import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -63,7 +63,7 @@ public class NWaySkipScanIT extends OperatorITBase
         createIndex("schema", "t", "idx_x", "x");
         createIndex("schema", "t", "idx_y", "y");
         createIndex("schema", "t", "idx_z", "z");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         tIdIndexRowType = indexType(t, "id");
         tXIndexRowType = indexType(t, "x");

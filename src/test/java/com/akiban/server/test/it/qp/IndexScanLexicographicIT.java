@@ -51,6 +51,7 @@ import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.fail;
 
 /*
@@ -87,7 +88,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
             "b int",
             "c int");
         createIndex("schema", "t", "a", "a", "b", "c", "id");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new NewRow[]{
@@ -213,10 +214,10 @@ public class IndexScanLexicographicIT extends OperatorITBase
     @Test
     public void test_HiMoreConstrainedThanLo() throws Exception
     {
-        NewRow loRow = new NiceRow(t, store());
+        NewRow loRow = new NiceRow(session(), t, store());
         loRow.put(1, 1); // a = 1
         RowData loRowData = loRow.toRowData();
-        NewRow hiRow = new NiceRow(t, store());
+        NewRow hiRow = new NiceRow(session(), t, store());
         hiRow.put(1, 1); // a = 1
         hiRow.put(2, 18); // b = 18
         RowData hiRowData = hiRow.toRowData();
@@ -319,7 +320,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
     private API.Ordering ordering(boolean direction)
     {
         API.Ordering ordering = API.ordering();
-        ordering.append(new FieldExpression(idxRowType, 0), direction);
+        ordering.append(field(idxRowType, 0), direction);
         return ordering;
     }
 

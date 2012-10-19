@@ -38,6 +38,8 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MAbs {
 
+    private static final int DEC_INDEX = 0;
+
     public static final TScalar TINYINT = new Abs(MNumeric.TINYINT) {
 
         @Override
@@ -77,7 +79,9 @@ public class MAbs {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            BigDecimalWrapper wrapper = MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0));
+            BigDecimalWrapper wrapper =
+                MBigDecimal.getWrapper(context, DEC_INDEX)
+                .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)));
             output.putObject(wrapper.abs());
         }
     };

@@ -48,6 +48,7 @@ import java.util.Map;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.expression.std.Expressions.field;
 import static org.junit.Assert.assertEquals;
 
 public class IndexScanJumpUnboundedIT extends OperatorITBase
@@ -62,7 +63,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
             "b int",
             "c int");
         createIndex("schema", "t", "idx", "a", "b", "c", "id");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new NewRow[] {
@@ -384,7 +385,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
         while (i < ord.length) {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }

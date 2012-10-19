@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Table;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
@@ -451,29 +453,21 @@ public class RowData {
         AkServerUtil.putLong(bytes, offset, rowId);
     }
 
-    /**
-     * Debug-only: returns a hex-dump of the backing buffer.
-     */
     @Override
     public String toString() {
-        // return AkSserverUtil.dump(bytes, rowStart, rowEnd - rowStart);
-        return toString(RowDefCache.latest());
+        return toString(RowDefCache.latest().ais());
     }
 
-    public String toString(final RowDefCache cache) {
-        String toString;
-        if (cache == null) {
-            toString = toStringWithoutRowDef("no RowDefCache");
+    public String toString(AkibanInformationSchema ais) {
+        if (ais == null) {
+            return toStringWithoutRowDef("No AIS");
         }
-        else {
-            try {
-                toString = toString(cache.getRowDef(getRowDefId()));
-            }
-            catch ( RowDefNotFoundException e) {
-                toString = toStringWithoutRowDef(String.format("rowDefId %s not in cache", getRowDefId()));
-            }
+        int rowDefID = getRowDefId();
+        Table table = ais.getUserTable(rowDefID);
+        if(table == null) {
+            return toStringWithoutRowDef("Unknown RowDefID(" + rowDefID + ")");
         }
-        return toString;
+        return toString(table.rowDef());
     }
 
     public String toString(final RowDef rowDef)
@@ -575,7 +569,8 @@ public class RowData {
                (rowDef.getFieldCount() + 7) / 8; // null bitmap
     }
 
-    private String toStringWithoutRowDef(String missingRowDefExplanation) {
+    /** Returns a hex-dump of the backing buffer. */
+    public String toStringWithoutRowDef(String missingRowDefExplanation) {
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
         try {
             sb.append("RowData[");

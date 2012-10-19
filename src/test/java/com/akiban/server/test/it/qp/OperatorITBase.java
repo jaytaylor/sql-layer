@@ -120,7 +120,7 @@ public class OperatorITBase extends ITBase
         createIndex("schema", "address", "cid", "cid");
         createIndex("schema", "address", "address", "address");
         createGroupIndex("customer", "cname_ioid", "customer.name,item.oid", Index.JoinType.LEFT);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
@@ -243,12 +243,12 @@ public class OperatorITBase extends ITBase
 
     protected Group group(int userTableId)
     {
-        return rowDefCache().rowDef(userTableId).table().getGroup();
+        return getRowDef(userTableId).table().getGroup();
     }
 
     protected UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = getRowDef(userTableId);
         return userTableRowDef.userTable();
     }
 
@@ -318,7 +318,7 @@ public class OperatorITBase extends ITBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId, store());
+        NiceRow niceRow = new NiceRow(session(), tableId, store());
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];

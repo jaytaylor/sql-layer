@@ -30,6 +30,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowsBuilder;
@@ -53,6 +54,7 @@ import org.junit.Test;
 
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public final class Sort_MixedColumnTypesIT extends ITBase {
     @Before
@@ -145,17 +147,8 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     }
 
     private void orderBy(Ordering ordering, int fieldPos, boolean ascending) {
-        Expression oFieldExpression;
-        TPreparedExpression tFieldExpression;
-        if (Types3Switch.ON) {
-            tFieldExpression = new TPreparedField(customerRowType.typeInstanceAt(fieldPos), fieldPos);
-            oFieldExpression = null;
-        }
-        else {
-            tFieldExpression = null;
-            oFieldExpression = new FieldExpression(customerRowType, fieldPos);
-        }
-        ordering.append(oFieldExpression, tFieldExpression, ascending);
+        ExpressionGenerator expression = field(customerRowType, fieldPos);
+        ordering.append(expression, ascending);
     }
 
     private Schema schema;

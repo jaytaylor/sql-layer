@@ -244,8 +244,8 @@ public class OSCHooksIT extends AlterTableITBase {
         }
 
         @Override
-        public RowDef getRowDef(int tableId) {
-            return delegate.getRowDef(tableId);
+        public RowDef getRowDef(Session session, int tableId) {
+            return delegate.getRowDef(session, tableId);
         }
 
         @Override

@@ -47,7 +47,7 @@ public class RowTestIT extends ITBase
                                 "id int not null primary key",
                                 "a int not null",
                                 "b int not null");
-        NiceRow original = new NiceRow(t, store());
+        NiceRow original = new NiceRow(session(), t, store());
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -55,7 +55,7 @@ public class RowTestIT extends ITBase
         original.put(cId, 100L);
         original.put(cA, 200L);
         original.put(cB, 300L);
-        RowDef rowDef = rowDefCache().getRowDef(t);
+        RowDef rowDef = getRowDef(t);
         RowData rowData = original.toRowData();
         NiceRow reconstituted = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
         assertEquals(original, reconstituted);
@@ -69,7 +69,7 @@ public class RowTestIT extends ITBase
                                 "id int not null primary key",
                                 "a int not null",
                                 "b int");
-        NiceRow original = new NiceRow(t, store());
+        NiceRow original = new NiceRow(session(), t, store());
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -77,7 +77,7 @@ public class RowTestIT extends ITBase
         original.put(cId, 100L);
         original.put(cA, 200L);
         original.put(cB, null);
-        RowDef rowDef = rowDefCache().getRowDef(t);
+        RowDef rowDef = getRowDef(t);
         RowData rowData = original.toRowData();
         NiceRow reconstituted = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
         assertEquals(original, reconstituted);
@@ -92,7 +92,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NiceRow row = new NiceRow(t, store());
+        NiceRow row = new NiceRow(session(), t, store());
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -124,7 +124,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NiceRow niceRow = new NiceRow(t, store());
+        NiceRow niceRow = new NiceRow(session(), t, store());
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -134,7 +134,7 @@ public class RowTestIT extends ITBase
         niceRow.put(cA, 200L);
         niceRow.put(cB, 300L);
         niceRow.put(cC, null);
-        LegacyRowWrapper legacyRow = new LegacyRowWrapper(niceRow.toRowData(), store());
+        LegacyRowWrapper legacyRow = new LegacyRowWrapper(session(), niceRow.toRowData(), store());
         assertEquals(100L, legacyRow.get(cId));
         assertEquals(200L, legacyRow.get(cA));
         assertEquals(300L, legacyRow.get(cB));
@@ -159,7 +159,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NiceRow niceRow = new NiceRow(t, store());
+        NiceRow niceRow = new NiceRow(session(), t, store());
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -170,7 +170,7 @@ public class RowTestIT extends ITBase
         niceRow.put(cB, 0L);
         niceRow.put(cC, 0L);
         // Create initial legacy row
-        LegacyRowWrapper legacyRow = new LegacyRowWrapper((niceRow.toRowData()), store());
+        LegacyRowWrapper legacyRow = new LegacyRowWrapper(session(), niceRow.toRowData(), store());
         assertEquals(0L, legacyRow.get(cA));
         assertEquals(0L, legacyRow.get(cB));
         assertEquals(0L, legacyRow.get(cC));
@@ -183,7 +183,7 @@ public class RowTestIT extends ITBase
         assertEquals(1L, legacyRow.get(cB));
         assertEquals(1L, legacyRow.get(cC));
         // Convert to LegacyRow and check NiceRow created from the legacy row's RowData
-        RowDef rowDef = rowDefCache().getRowDef(t);
+        RowDef rowDef = getRowDef(t);
         niceRow = (NiceRow) NiceRow.fromRowData(legacyRow.toRowData(), rowDef);
         assertEquals(1L, niceRow.get(cA));
         assertEquals(1L, niceRow.get(cB));
