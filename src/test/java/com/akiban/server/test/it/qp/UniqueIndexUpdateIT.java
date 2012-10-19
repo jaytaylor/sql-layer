@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
@@ -35,8 +34,6 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.Types3Switch;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -83,7 +80,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
             long id = getLong(indexRow, 2);
             assertEquals(id, x * 1000);
             long nullSeparator = indexRow.nullSeparator();
-            if (getBoolean(indexRow, 1)) {
+            if (isNull(indexRow, 1)) {
                 assertTrue(id == 3000 || id == 4000);
                 assertTrue(nullSeparator > 0);
                 assertTrue(nullSeparator != previousNullSeparator);
@@ -114,7 +111,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
             long x = getLong(indexRow, 0);
             long id = getLong(indexRow, 2);
             int pos = 1;
-            if (getBoolean(indexRow, pos)) {
+            if (isNull(indexRow, pos)) {
                 NewRow oldRow = createNewRow(t, id, x, null);
                 NewRow newRow = createNewRow(t, id, x, NEW_Y_VALUE);
                 dml().updateRow(session(), oldRow, newRow, null);
