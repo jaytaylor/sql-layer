@@ -539,10 +539,7 @@ public class ProtobufReader {
 
     private void loadExternalRoutines(String schema, Collection<AISProtobuf.Routine> pbRoutines) {
         for (AISProtobuf.Routine pbRoutine : pbRoutines) {
-            if (pbRoutine.hasClassName()) {
-                SQLJJar sqljJar = null;
-                String className = pbRoutine.getClassName();
-                String methodName = null;
+            if (pbRoutine.hasClassName() || pbRoutine.hasMethodName()) {
                 Routine routine = destAIS.getRoutine(schema, pbRoutine.getRoutineName());
                 if (routine == null) {
                     throw new ProtobufReadException(
@@ -550,6 +547,9 @@ public class ProtobufReader {
                             String.format("%s not found", pbRoutine.getRoutineName())
                     );
                 }
+                SQLJJar sqljJar = null;
+                String className = null;
+                String methodName = null;
                 if (pbRoutine.hasJarName()) {
                     sqljJar = destAIS.getSQLJJar(pbRoutine.getJarName().getSchemaName(),
                                                  pbRoutine.getJarName().getTableName());
@@ -560,6 +560,8 @@ public class ProtobufReader {
                         );
                     }
                 }
+                if (pbRoutine.hasClassName())
+                    className = pbRoutine.getClassName();
                 if (pbRoutine.hasMethodName())
                     methodName = pbRoutine.getMethodName();
                 routine.setExternalName(sqljJar, className, methodName);
