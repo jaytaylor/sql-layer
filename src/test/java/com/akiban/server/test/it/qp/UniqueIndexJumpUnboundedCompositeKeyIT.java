@@ -2887,20 +2887,14 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     {
         List<List<Long>> actualList = new ArrayList<List<Long>>();
         for (Row row : actual)
-            actualList.add(Arrays.asList(evalInt(row, ID1),
-                                         evalInt(row, ID2)));
+            actualList.add(Arrays.asList(getLong(row, ID1),
+                                         getLong(row, ID2)));
         
         List<List<Long>> expectedList = new ArrayList<List<Long>>();
         for (long idPair[] : expected)
             expectedList.add(Arrays.asList(idPair[0], idPair[1]));
         
         assertEquals(expectedList, actualList);
-    }
-
-    private long evalInt(Row row, int i) {
-        return Types3Switch.ON
-                ? row.pvalue(i).getInt32()
-                : row.eval(i).getInt();
     }
 
     // --- start generated

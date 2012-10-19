@@ -1683,64 +1683,12 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
             // nulls are allowed
             ArrayList<Long> toLong = new ArrayList<Long>();
             for (int n = 0; n < INDEX_COLUMN_COUNT; ++n) {
-                if (Types3Switch.ON)
-                    addColumn(toLong, row.pvalue(n));
-                else
-                    addColumn(toLong, row.eval(n));
+                toLong.add(getLong(row, n));
             }
             
             ret.add(toLong);
         }
         return ret;
-    }
-
-    private static void addColumn(List<Long> row, ValueSource v)
-    {
-        if (v.isNull())
-        {
-            row.add(null);
-            return;
-        }
-
-        switch(v.getConversionType())
-        {
-            case LONG:      row.add(v.getLong());
-                            break;
-            case INT:       row.add(v.getInt());
-                            break;
-            case NULL:      row.add(null);
-                            break;
-            default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
-        }
-    }
-
-    private void addColumn(ArrayList<Long> row, PValueSource pvalue) {
-        if (pvalue.isNull())
-        {
-            row.add(null);
-            return;
-        }
-        long lVal;
-        switch (pvalue.getUnderlyingType()) {
-        case INT_8:
-            lVal = pvalue.getInt8();
-            break;
-        case INT_16:
-            lVal = pvalue.getInt16();
-            break;
-        case UINT_16:
-            lVal = pvalue.getUInt16();
-            break;
-        case INT_32:
-            lVal = pvalue.getInt32();
-            break;
-        case INT_64:
-            lVal = pvalue.getInt64();
-            break;
-        default:
-            throw new AssertionError(pvalue);
-        }
-        row.add(lVal);
     }
 
      // --- start generated

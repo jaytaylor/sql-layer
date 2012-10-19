@@ -32,6 +32,7 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,6 +52,7 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.AkServerUtil;
@@ -68,8 +70,10 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.TCastResolver;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.AlterTableDDL;
@@ -838,6 +842,68 @@ public class ApiTestBase {
     protected static <T> T get(NewRow row, int field, Class<T> castAs) {
         Object obj = row.get(field);
         return castAs.cast(obj);
+    }
+
+    protected static Long getLong(Row row, int field) {
+        final Long result;
+        if (Types3Switch.ON) {
+            PValueSource pvalue = row.pvalue(field);
+            if (pvalue.isNull()) {
+                result = null;
+            }
+            else {
+                switch (pvalue.getUnderlyingType()) {
+                case INT_8:
+                    result = (long) pvalue.getInt8();
+                    break;
+                case INT_16:
+                    result = (long) pvalue.getInt16();
+                    break;
+                case UINT_16:
+                    result = (long) pvalue.getUInt16();
+                    break;
+                case INT_32:
+                    result = (long) pvalue.getInt32();
+                    break;
+                case INT_64:
+                    result = pvalue.getInt64();
+                    break;
+                default:
+                    throw new AssertionError(pvalue);
+                }
+            }
+        }
+        else {
+            ValueSource value = row.eval(field);
+            if (value.isNull()) {
+                result = null;
+            }
+            else {
+                switch (value.getConversionType()) {
+                case INT:
+                    result = value.getInt();
+                    break;
+                case LONG:
+                    result = value.getLong();
+                    break;
+                case U_BIGINT:
+                    BigInteger bigInt = value.getUBigInt();
+                    result = bigInt.longValue();
+                    if (!bigInt.equals(BigInteger.valueOf(result)))
+                        throw new AssertionError("overflow: " + bigInt);
+                    break;
+                case U_INT:
+                    result = value.getUInt();
+                    break;
+                case NULL:
+                    result = null;
+                    break;
+                default:
+                    throw new AssertionError(value);
+                }
+            }
+        }
+        return result;
     }
 
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
