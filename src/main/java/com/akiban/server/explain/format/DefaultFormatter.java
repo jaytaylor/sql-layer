@@ -384,18 +384,14 @@ public class DefaultFormatter
                     norders--;
                 }
                 String indexSchema = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_SCHEMA);
-                if ("".equals(indexSchema))
-                    indexSchema = null; // Group index.
                 String indexTable = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_NAME);
                 for (int i = 0; i < ncols; i++) {
                     sb.append(", ");
                     String columnSchema = (String)atts.get(Label.TABLE_SCHEMA).get(i).get();
                     String columnTable = (String)atts.get(Label.TABLE_NAME).get(i).get();
-                    if ((indexSchema != null) &&
-                        !indexSchema.equals(columnSchema))
+                    if (!indexSchema.equals(columnSchema))
                         sb.append(columnSchema).append('.').append(columnTable).append('.');
-                    else if ((indexSchema == null) ||
-                             !indexTable.equals(columnTable))
+                    else if (!indexTable.equals(columnTable))
                         sb.append(columnTable).append('.');
                     append(atts.get(Label.COLUMN_NAME).get(i));
                     if (i < nequals) {
