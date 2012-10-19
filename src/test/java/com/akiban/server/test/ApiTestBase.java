@@ -877,13 +877,13 @@ public class ApiTestBase {
         }
     }
 
-    public static boolean getBoolean(BoundExpressions row, int pos) {
+    public static boolean isNull(BoundExpressions row, int pos) {
         return Types3Switch.ON
                 ? row.pvalue(pos).isNull()
                 : row.eval(pos).isNull();
     }
 
-    public static Long getLong(RowBase row, int field) {
+    public static Long getLong(BoundExpressions row, int field) {
         final Long result;
         if (Types3Switch.ON) {
             PValueSource pvalue = row.pvalue(field);
