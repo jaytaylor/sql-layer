@@ -146,7 +146,7 @@ public abstract class IndexRowType extends AisRowType
                 Column column = indexColumns.get(i).getColumn();
                 akTypes[i] = column.getType().akType();
             }
-            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, index) : null;
+            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, index) : this;
         }
 
         // For a spatial index, the IndexRowType reflects the declared columns. physicalRowType reflects the
