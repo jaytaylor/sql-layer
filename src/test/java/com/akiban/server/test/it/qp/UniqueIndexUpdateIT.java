@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
@@ -78,12 +79,11 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         long previousNullSeparator = -1L;
         while ((row = cursor.next()) != null) {
             PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
-            long x = indexRow.eval(0).getInt();
-            ValueSource yValueSource = indexRow.eval(1);
-            long id = indexRow.eval(2).getInt();
+            long x = getLong(indexRow, 0);
+            long id = getLong(indexRow, 2);
             assertEquals(id, x * 1000);
             long nullSeparator = indexRow.nullSeparator();
-            if (yValueSource.isNull()) {
+            if (getBoolean(indexRow, 1)) {
                 assertTrue(id == 3000 || id == 4000);
                 assertTrue(nullSeparator > 0);
                 assertTrue(nullSeparator != previousNullSeparator);
@@ -113,10 +113,8 @@ public class UniqueIndexUpdateIT extends OperatorITBase
             PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
             long x = getLong(indexRow, 0);
             long id = getLong(indexRow, 2);
-            boolean yValueNull = Types3Switch.ON
-                    ? indexRow.pvalue(1).isNull()
-                    : indexRow.eval(1).isNull();
-            if (yValueNull) {
+            int pos = 1;
+            if (getBoolean(indexRow, pos)) {
                 NewRow oldRow = createNewRow(t, id, x, null);
                 NewRow newRow = createNewRow(t, id, x, NEW_Y_VALUE);
                 dml().updateRow(session(), oldRow, newRow, null);
@@ -130,9 +128,9 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         int count = 0;
         while ((row = cursor.next()) != null) {
             PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
-            long x = indexRow.eval(0).getInt();
-            long y = indexRow.eval(1).getInt();
-            long id = indexRow.eval(2).getInt();
+            long x = getLong(indexRow, 0);
+            long y = getLong(indexRow, 1);
+            long id = getLong(indexRow, 2);
             long nullSeparator = indexRow.nullSeparator();
             assertEquals(id, x * 1000);
             assertEquals(0, nullSeparator);
@@ -178,7 +176,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         Row row;
         int count = 0;
         while ((row = cursor.next()) != null) {
-            long id = row.eval(2).getInt();
+            long id = getLong(row, 2);
             assertEquals(expectedIds[count], id);
             count++;
         }
@@ -200,9 +198,9 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         Cursor cursor = cursor(indexScan_Default(xyIndexRowType), queryContext);
         cursor.open();
         Row row = cursor.next();
-        assertEquals(10, row.eval(0).getInt());
-        assertEquals(10, row.eval(1).getInt());
-        assertEquals(1, row.eval(2).getInt());
+        assertEquals(Long.valueOf(10), getLong(row, 0));
+        assertEquals(Long.valueOf(10), getLong(row, 1));
+        assertEquals(Long.valueOf(1), getLong(row, 2));
         row = cursor.next();
         assertNull(row);
     }

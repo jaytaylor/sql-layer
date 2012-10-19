@@ -120,7 +120,7 @@ public class GIUpdateProfilePT extends PTBase
             while ((row = cursor.next()) != null) {
                 NiceRow oldRow = new NiceRow(customer, customerRowDef);
                 NiceRow newRow  = new NiceRow(customer, customerRowDef);
-                long cid = row.eval(0).getInt();
+                long cid = getLong(row, 0);
                 String name = row.eval(1).getString();
                 oldRow.put(0, cid);
                 oldRow.put(1, name);

@@ -587,8 +587,8 @@ public class IndexScanIT extends OperatorITBase
         }
         else {
             // Get and checking each field should work
-            assertEquals(11L, row.eval(0).getInt());
-            assertEquals(111L, row.eval(1).getInt());
+            assertEquals(Long.valueOf(11L), getLong(row, 0));
+            assertEquals(Long.valueOf(111L), getLong(row, 1));
             // Getting all value sources and then using them should also work
             ValueSource v0 = row.eval(0);
             ValueSource v1 = row.eval(1);

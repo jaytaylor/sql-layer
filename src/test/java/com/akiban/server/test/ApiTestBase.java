@@ -49,10 +49,12 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.AkServerUtil;
@@ -844,7 +846,13 @@ public class ApiTestBase {
         return castAs.cast(obj);
     }
 
-    protected static Long getLong(Row row, int field) {
+    public static boolean getBoolean(BoundExpressions row, int pos) {
+        return Types3Switch.ON
+                ? row.pvalue(pos).isNull()
+                : row.eval(pos).isNull();
+    }
+
+    public static Long getLong(RowBase row, int field) {
         final Long result;
         if (Types3Switch.ON) {
             PValueSource pvalue = row.pvalue(field);

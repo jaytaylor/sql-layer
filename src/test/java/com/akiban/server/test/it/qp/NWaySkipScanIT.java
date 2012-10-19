@@ -255,7 +255,7 @@ public class NWaySkipScanIT extends OperatorITBase
         Cursor cursor = cursor(plan, queryContext);
         cursor.open();
         RowBase row = cursor.next();
-        assertEquals(key, row.eval(0).getInt());
+        assertEquals(Long.valueOf(key), getLong(row, 0));
         assertNull(cursor.next());
     }
 

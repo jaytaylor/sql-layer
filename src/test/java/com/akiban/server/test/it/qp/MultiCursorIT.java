@@ -118,7 +118,7 @@ public class MultiCursorIT extends OperatorITBase
     private int unwrap(Row row)
     {
         ValuesRow valuesRow = (ValuesRow) row;
-        return (int) valuesRow.eval(0).getInt();
+        return getLong(valuesRow, 0).intValue();
     }
 
     private int t;
