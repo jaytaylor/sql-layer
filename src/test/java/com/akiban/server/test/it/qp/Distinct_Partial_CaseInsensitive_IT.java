@@ -38,6 +38,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.CaseConvertExpression;
 import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.types3.Types3Switch;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -353,7 +354,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     db.length),
                 projectRowType,
                 Arrays.asList(caseSensitiveCollator),
-                false);
+                Types3Switch.ON);
         RowBase[] expected = new RowBase[] {
             row(projectRowType, "AA_cs"),
             row(projectRowType, "Aa_cs"),
@@ -391,7 +392,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                         db.length),
                     projectRowType,
                     Arrays.asList(caseInsensitiveCollator),
-                    false),
+                    Types3Switch.ON),
                 projectRowType,
                 convertToUpper);
         RowBase[] expected = new RowBase[] {
@@ -422,7 +423,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                     db.length),
                 projectRowType,
                 Arrays.asList((AkCollator)null),
-                false);
+                Types3Switch.ON);
         RowBase[] expected = new RowBase[] {
             row(projectRowType, 0L),
         };
@@ -458,7 +459,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                         db.length),
                     projectRowType,
                     Arrays.asList(caseSensitiveCollator, caseInsensitiveCollator, null),
-                    false),
+                    Types3Switch.ON),
                 projectRowType,
                 convertCaseInsensitiveToUpper);
         RowBase[] expected = new RowBase[] {
