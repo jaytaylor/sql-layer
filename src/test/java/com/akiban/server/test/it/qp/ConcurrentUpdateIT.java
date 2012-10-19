@@ -196,7 +196,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
 
         public TestThread(Group group, UpdatePlannable plan)
         {
-            setName(group.getName());
+            setName(group.getName().toString());
             this.group = group;
             this.plan = plan;
         }

@@ -439,16 +439,13 @@ public class TableDDL
             builder.indexColumn(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY_KEY_CONSTRAINT,
                     column.getName(), colpos++, true, 0);
         }
-        final String groupName;
-        final String groupSchema;
+        final TableName groupName;
         if(parentTable.getGroup() == null) {
-            groupName = parentName.getTableName();
-            groupSchema = parentName.getSchemaName();
+            groupName = parentName;
         } else {
             groupName = parentTable.getGroup().getName();
-            groupSchema = parentTable.getGroup().getSchemaName();
         }
-        builder.createGroup(groupName, groupSchema);
+        builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
         builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
     }
 

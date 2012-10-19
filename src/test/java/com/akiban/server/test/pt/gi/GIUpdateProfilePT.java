@@ -29,6 +29,7 @@ package com.akiban.server.test.pt.gi;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -84,7 +85,7 @@ public class GIUpdateProfilePT extends PTBase
                 "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
                 "index(address)");
         coi = group(customer);
-        String groupName = coi.getName();
+        TableName groupName = coi.getName();
         createGroupIndex(groupName, "name_salesman", "customer.name, order.salesman");
         createGroupIndex(groupName, "name_address", "customer.name, address.address");
         schema = new Schema(ais());

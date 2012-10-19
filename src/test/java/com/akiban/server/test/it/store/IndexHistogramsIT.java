@@ -28,6 +28,7 @@ package com.akiban.server.test.it.store;
 
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.store.statistics.IndexStatistics.HistogramEntryDescription;
@@ -388,7 +389,7 @@ public final class IndexHistogramsIT extends ITBase {
                 akibanFK("cid", "customers", "cid"));
         createIndex(SCHEMA, "orders", "placed", "placed");
         // schema: GIs
-        String groupName = getUserTable(SCHEMA, "customers").getGroup().getName();
+        TableName groupName = getUserTable(SCHEMA, "customers").getGroup().getName();
         namePlacedGi = createGroupIndex(groupName, "namePlaced", "customers.name,orders.placed");
 
         // insert data

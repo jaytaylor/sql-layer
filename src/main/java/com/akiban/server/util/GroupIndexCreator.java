@@ -33,6 +33,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.NameIsNullException;
 import com.akiban.server.error.NoSuchColumnException;
@@ -65,7 +66,7 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
+    public static GroupIndex createIndex(AkibanInformationSchema ais, TableName groupName, String indexName,
                                          String tableColumnList, Index.JoinType joinType) {
         return createIndex(ais, groupName, indexName, false, tableColumnList, joinType);
     }
@@ -81,7 +82,7 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    private static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
+    private static GroupIndex createIndex(AkibanInformationSchema ais, TableName groupName, String indexName,
                                          boolean unique, String tableColumnList, Index.JoinType joinType) {
         if(ais.isFrozen()) {
             ais = AISCloner.clone(ais);
