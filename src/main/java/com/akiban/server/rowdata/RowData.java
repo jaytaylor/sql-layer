@@ -35,7 +35,6 @@ import com.akiban.ais.model.Table;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
@@ -455,7 +454,7 @@ public class RowData {
 
     @Override
     public String toString() {
-        return toString(RowDefCache.latest().ais());
+        return toString(RowDefCache.latestForDebugging().ais());
     }
 
     public String toString(AkibanInformationSchema ais) {
