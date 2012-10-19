@@ -322,8 +322,9 @@ public class DefaultFormatter
     protected void appendIndexScanOperator(Attributes atts) {
         append(atts.getAttribute(Label.INDEX));
         if (verbose) {
-            if (atts.containsKey(Label.INDEX_KIND) &&
-                "SPATIAL".equals(atts.getValue(Label.INDEX_KIND))) {
+            boolean isSpatial = atts.containsKey(Label.INDEX_KIND) && "SPATIAL".equals(atts.getValue(Label.INDEX_KIND));
+            boolean isGroup = atts.containsKey(Label.INDEX_KIND) && "GROUP".equals(atts.getValue(Label.INDEX_KIND));
+            if (isSpatial) {
                 sb.append(", (");
                 int ndims = atts.get(Label.LOW_COMPARAND).size();
                 for (int i = 0; i < ndims; i++) {
@@ -391,7 +392,7 @@ public class DefaultFormatter
                     String columnTable = (String)atts.get(Label.TABLE_NAME).get(i).get();
                     if (!indexSchema.equals(columnSchema))
                         sb.append(columnSchema).append('.').append(columnTable).append('.');
-                    else if (!indexTable.equals(columnTable))
+                    else if (isGroup || !indexTable.equals(columnTable))
                         sb.append(columnTable).append('.');
                     append(atts.get(Label.COLUMN_NAME).get(i));
                     if (i < nequals) {
