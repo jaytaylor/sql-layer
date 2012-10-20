@@ -398,8 +398,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
             newIndex.freezeColumns();
             newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
-            if (index.getIndexMethod() != Index.IndexMethod.NORMAL)
-                ((TableIndex)newIndex).setIndexMethod(index.getIndexMethod());
+            if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
+                TableIndex spatialIndex = (TableIndex) index;
+                ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
+            }
             newIndexes.add(newIndex);
         }
         return newIndexes;

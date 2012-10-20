@@ -382,6 +382,7 @@ public class Space
 
     // Class state
 
+    public static final int LAT_LON_DIMENSIONS = 2;
     private static final int MAX_DIMENSIONS = 6;
     // Format of a z:
     // MSB  0: 0

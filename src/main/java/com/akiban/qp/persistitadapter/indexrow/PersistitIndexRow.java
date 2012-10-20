@@ -138,52 +138,9 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
-        if (index.isSpatial()) {
-            // TODO: Getting the AIS and Schema to know about spatial indexes is a lot of work, and will probably
-            // TODO: be done when we support function indexes. Until then, just deal with the differences using
-            // TODO: brute force.
-            // nPhysicalFields counts the z-value field plus the number of undeclared (hkey) columns.
-            if (Types3Switch.ON) {
-                this.akTypes = null;
-                this.akCollators = null;
-                this.tInstances = new TInstance[nIndexFields];
-                this.tInstances[0] = MNumeric.BIGINT.instance(SpatialHelper.isNullable(index));
-            }
-            else {
-                this.akTypes = new AkType[nIndexFields];
-                this.akCollators = new AkCollator[nIndexFields];
-                this.akTypes[0] = AkType.LONG;
-                this.akCollators[0] = null;
-                this.tInstances = null;
-            }
-            int physicalPosition = 1;
-            int logicalPosition = index.getKeyColumns().size();
-            while (physicalPosition < nIndexFields) {
-                IndexColumn indexColumn = index.getAllColumns().get(logicalPosition);
-                Column column = indexColumn.getColumn();
-                if (Types3Switch.ON) {
-                    this.tInstances[physicalPosition] = column.tInstance();
-                } else {
-                    this.akTypes[physicalPosition] = column.getType().akType();
-                    this.akCollators[physicalPosition] = column.getCollator();
-                }
-                logicalPosition++;
-                physicalPosition++;
-            }
-        } else {
-            if (Types3Switch.ON) {
-                this.akTypes = null;
-                this.akCollators = null;
-                this.tInstances = new TInstance[nIndexFields];
-                for (int i = 0; i < nIndexFields; i++) {
-                    this.tInstances[i] = index.getAllColumns().get(i).getColumn().tInstance();
-                }
-            } else {
-                this.akTypes = index.akTypes();
-                this.akCollators = index.akCollators();
-                this.tInstances = null;
-            }
-        }
+        this.akTypes = index.akTypes();
+        this.akCollators = index.akCollators();
+        this.tInstances = index.tInstances();
     }
 
     // For use by this class

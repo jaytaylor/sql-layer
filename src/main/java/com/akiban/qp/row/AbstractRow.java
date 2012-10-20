@@ -28,6 +28,7 @@ package com.akiban.qp.row;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.server.types.ValueSource;
@@ -130,16 +131,21 @@ public abstract class AbstractRow implements Row
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(this.getClass().getSimpleName()).append('[');
-        final int fieldsCount = rowType().nFields();
+        RowType rowType = rowType();
+        if (rowType instanceof IndexRowType) {
+            // Takes care of spatial indexes
+            rowType = ((IndexRowType) rowType).physicalRowType();
+        }
+        final int fieldsCount = rowType.nFields();
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
             if (Types3Switch.ON) {
-                if (rowType().typeInstanceAt(i) == null) {
+                if (rowType.typeInstanceAt(i) == null) {
                     assert pvalue(i).isNull();
                     builder.append("NULL");
                 }
                 else {
-                    rowType().typeInstanceAt(i).format(pvalue(i), appender);
+                    rowType.typeInstanceAt(i).format(pvalue(i), appender);
                 }
             }
             else
