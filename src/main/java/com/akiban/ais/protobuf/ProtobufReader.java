@@ -181,7 +181,7 @@ public class ProtobufReader {
         for(AISProtobuf.Group pbGroup : pbGroups) {
             hasRequiredFields(pbGroup);
             String rootTableName = pbGroup.getRootTableName();
-            Group group = Group.create(destAIS, nameGenerator.generateGroupName(rootTableName));
+            Group group = Group.create(destAIS, schema, rootTableName);
             group.setTreeName(pbGroup.hasTreeName() ? pbGroup.getTreeName() : null);
             newGroups.add(new NewGroupInfo(schema, group, pbGroup));
         }

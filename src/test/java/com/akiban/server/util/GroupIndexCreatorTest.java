@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
@@ -42,12 +43,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class GroupIndexCreatorTest {
+    private static final String SCHEMA = "test";
+    private static final TableName GROUP_C = new TableName(SCHEMA, "c");
     private AkibanInformationSchema ais;
 
     @Before
     public void setup() {
         NewAISBuilder builder = AISBBasedBuilder.create();
-        ais = builder.defaultSchema("test")
+        ais = builder.defaultSchema(SCHEMA)
                 .userTable("c").colLong("id").colString("name", 32).pk("id")
                 .userTable("o").colLong("id").colLong("date").colLong("cid").pk("id").joinTo("c").on("cid", "id")
                 .unvalidatedAIS();
@@ -55,13 +58,13 @@ public class GroupIndexCreatorTest {
 
     @Test(expected=NoSuchGroupException.class)
     public void unknownGroup() throws Exception {
-        GroupIndexCreator.createIndex(ais, "foobar", "name_date", "c.name", Index.JoinType.LEFT);
+        GroupIndexCreator.createIndex(ais, new TableName(SCHEMA, "foobar"), "name_date", "c.name", Index.JoinType.LEFT);
     }
 
     @Test
     public void singleTableSingleColumnLeft() throws Exception {
-        GroupIndex index = GroupIndexCreator.createIndex(ais, "c", "c_name", "c.name", Index.JoinType.LEFT);
-        final Group cGroup = ais.getGroup("c");
+        GroupIndex index = GroupIndexCreator.createIndex(ais, GROUP_C, "c_name", "c.name", Index.JoinType.LEFT);
+        final Group cGroup = ais.getGroup(GROUP_C);
         final UserTable cTable = ais.getUserTable("test", "c");
         assertEquals("group same", cGroup, index.getGroup());
         assertEquals("index name", "c_name", index.getIndexName().getName());
@@ -73,8 +76,8 @@ public class GroupIndexCreatorTest {
 
     @Test
     public void singleTableSingleColumnRight() throws Exception {
-        GroupIndex index = GroupIndexCreator.createIndex(ais, "c", "c_name", "c.name", Index.JoinType.RIGHT);
-        final Group cGroup = ais.getGroup("c");
+        GroupIndex index = GroupIndexCreator.createIndex(ais, GROUP_C, "c_name", "c.name", Index.JoinType.RIGHT);
+        final Group cGroup = ais.getGroup(GROUP_C);
         final UserTable cTable = ais.getUserTable("test", "c");
         assertEquals("group same", cGroup, index.getGroup());
         assertEquals("index name", "c_name", index.getIndexName().getName());
@@ -86,8 +89,8 @@ public class GroupIndexCreatorTest {
 
     @Test
     public void twoTablesTwoColumns() throws Exception {
-        GroupIndex index = GroupIndexCreator.createIndex(ais, "c", "name_date", "c.name,o.date", Index.JoinType.LEFT);
-        final Group cGroup = ais.getGroup("c");
+        GroupIndex index = GroupIndexCreator.createIndex(ais, GROUP_C, "name_date", "c.name,o.date", Index.JoinType.LEFT);
+        final Group cGroup = ais.getGroup(GROUP_C);
         final UserTable cTable = ais.getUserTable("test", "c");
         final UserTable oTable = ais.getUserTable("test", "o");
         assertEquals("group same", cGroup, index.getGroup());

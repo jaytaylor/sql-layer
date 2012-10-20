@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
@@ -39,6 +40,8 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -97,7 +100,7 @@ public final class GroupIndexScanIT extends ITBase {
         o = createTable(SCHEMA, "o", "oid int not null primary key, c_id int", "when varchar(32)", akibanFK("c_id", "c", "cid"));
         i = createTable(SCHEMA, "i", "iid int not null primary key, o_id int", "sku varchar(6)", akibanFK("o_id", "o", "oid"));
         h = createTable(SCHEMA, "h", "hid int not null primary key, i_id int", akibanFK("i_id", "i", "iid"));
-        String groupName = getUserTable(c).getGroup().getName();
+        TableName groupName = getUserTable(c).getGroup().getName();
         GroupIndex gi = createGroupIndex(groupName, GI_NAME, "o.when, i.sku");
 
         schema = new Schema(ddl().getAIS(session()));
@@ -151,8 +154,15 @@ public final class GroupIndexScanIT extends ITBase {
                     : rowType.nFields();
                 Object[] rowArray = new Object[fields];
                 for (int i=0; i < rowArray.length; ++i) {
-                    ValueSource source = row.eval(i);
-                    rowArray[i] = target.convertFromSource(source);
+                    Object fromRow;
+                    if (Types3Switch.ON) {
+                        fromRow = getObject(row.pvalue(i));
+                    }
+                    else {
+                        ValueSource source = row.eval(i);
+                        fromRow = target.convertFromSource(source);
+                    }
+                    rowArray[i] = fromRow;
                 }
                 actualResults.add(Arrays.asList(rowArray));
             }

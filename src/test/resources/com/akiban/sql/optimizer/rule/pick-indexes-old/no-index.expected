@@ -2,7 +2,7 @@ SelectQuery@6c6c2a78
   ResultSet@315863e4[cid, name, oid, cid, order_date]
     Project@2206270b[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
       Select@41ed54a0[]
-        TableJoins@444ef630(TableGroup@1c04ec59(customers) - GroupScan@738d56e(Group(customers -> test.customers)))
-          JoinNode@24442c76(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@77c30993(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+        TableJoins@444ef630(TableGroup@1c04ec59(customers) - GroupScan@738d56e(Group(test.customers)))
+          JoinNode@24442c76(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@77c30993(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
             TableSource@ba3bc8c(customers - TableGroup@1c04ec59(customers))
-            TableSource@2aaf914c(orders - TableGroupJoin@77c30993(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@2aaf914c(orders - TableGroupJoin@77c30993(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

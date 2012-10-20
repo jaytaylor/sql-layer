@@ -110,7 +110,7 @@ public class TableGroup extends BasePlanElement
     @Override
     public String toString() {
         return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
-            "(" + group.getName() + ")";
+            "(" + group.getName().getTableName() + ")";
     }
 
     @Override

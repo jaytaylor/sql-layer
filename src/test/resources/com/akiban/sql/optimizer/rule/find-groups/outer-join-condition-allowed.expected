@@ -4,5 +4,5 @@ SelectQuery@37e80c87
       Select@adc9515[]
         TableGroupJoinTree@17bf9b45(TableGroup@246adb31(customers), customers LEFT orders LEFT items ON items.sku != 1234)
           TableSource@69ce835b(customers - TableGroup@246adb31(customers))
-            TableSource@751201a1(orders - TableGroupJoin@635c80a4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-              TableSource@71292d12(items - TableGroupJoin@4e01c1f2(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@751201a1(orders - TableGroupJoin@635c80a4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+              TableSource@71292d12(items - TableGroupJoin@4e01c1f2(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

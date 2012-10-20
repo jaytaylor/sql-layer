@@ -29,6 +29,7 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.IndexKeyVisitor;
@@ -55,7 +56,7 @@ public class GroupIndexIT extends ITBase {
     private int aId;
     private int oId;
     private int iId;
-    private String groupName;
+    private TableName groupName;
 
     @Before
     public void createTables() {
@@ -70,7 +71,7 @@ public class GroupIndexIT extends ITBase {
     public void removeTables() {
         ddl().dropGroup(session(), groupName);
         cId = aId = oId = iId = -1;
-        groupName = "";
+        groupName = null;
     }
 
     @Test

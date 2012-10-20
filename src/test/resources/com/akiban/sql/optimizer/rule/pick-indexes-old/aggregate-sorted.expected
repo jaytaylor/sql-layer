@@ -4,9 +4,9 @@ SelectQuery@41d144a4
       Select@2778c490[]
         AggregateSource@69b0de2e(PRESORTED,[customers.name, items.sku],[])
           Select@5acad437[]
-            TableJoins@3a329572(TableGroup@4ef18d37(customers) - SingleIndexScan@546e3e5e(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), SORTED))
-              JoinNode@11c0b8a0(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@399197b(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
-                JoinNode@3857dc15(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@10320399(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableJoins@3a329572(TableGroup@4ef18d37(customers) - SingleIndexScan@546e3e5e(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), SORTED))
+              JoinNode@11c0b8a0(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@399197b(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
+                JoinNode@3857dc15(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@10320399(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
                   TableSource@2bd9e5ad(customers - TableGroup@4ef18d37(customers))
-                  TableSource@6e75d758(orders - TableGroupJoin@10320399(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-                TableSource@7a8d0b0f(items - TableGroupJoin@399197b(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+                  TableSource@6e75d758(orders - TableGroupJoin@10320399(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+                TableSource@7a8d0b0f(items - TableGroupJoin@399197b(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

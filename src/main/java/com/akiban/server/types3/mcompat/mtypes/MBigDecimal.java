@@ -125,6 +125,10 @@ public class MBigDecimal extends TClassBase {
 
     @Override
     protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        if (in.isNull()) {
+            out.putNull();
+            return;
+        }
         byte[] bytes;
         if (in.hasRawValue()) {
             bytes = in.getBytes();
@@ -244,6 +248,17 @@ public class MBigDecimal extends TClassBase {
             StringBuilder sb = new StringBuilder(precision + 2); // +2 for dot and minus sign
             ConversionHelperBigDecimal.decodeToString(bb, 0, precision, scale, AkibanAppender.of(sb));
             return new MBigDecimalWrapper(sb.toString());
+        }
+
+        @Override
+        public Object sanitize(Object object) {
+            if (object instanceof BigDecimal)
+                return new MBigDecimalWrapper((BigDecimal)object);
+            else if (object instanceof MBigDecimalWrapper)
+                return object;
+            else if (object instanceof String)
+                return new MBigDecimalWrapper((String)object);
+            throw new UnsupportedOperationException(String.valueOf(object));
         }
     };
 }

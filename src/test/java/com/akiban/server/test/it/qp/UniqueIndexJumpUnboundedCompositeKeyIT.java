@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.Ignore;
 import java.util.Arrays;
 import java.lang.Long;
@@ -2885,8 +2887,8 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     {
         List<List<Long>> actualList = new ArrayList<List<Long>>();
         for (Row row : actual)
-            actualList.add(Arrays.asList(row.eval(ID1).getInt(),
-                                         row.eval(ID2).getInt()));
+            actualList.add(Arrays.asList(getLong(row, ID1),
+                                         getLong(row, ID2)));
         
         List<List<Long>> expectedList = new ArrayList<List<Long>>();
         for (long idPair[] : expected)

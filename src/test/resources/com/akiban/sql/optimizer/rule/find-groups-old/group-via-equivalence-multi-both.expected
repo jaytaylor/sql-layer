@@ -3,6 +3,6 @@ SelectQuery@56f449b8
     Project@5fed27e4[b.bid1, b.bid2, b.title, b.bcol1, b.bcol2, c.cid, c.bfk1, c.bfk2, c.content, c.ccol1, c.ccol2]
       Select@7b7d8769[c.ccol1 == b.bcol1, c.ccol2 == b.bcol2, b.bcol1 == b.bid1, b.bcol2 == b.bid2, c.ccol1 == c.bfk1, c.ccol2 == c.bfk2]
         TableJoins@2e82674b(TableGroup@734b84c7(blogs))
-          JoinNode@62fa5ff3(INNER/GROUP[c.bfk1 == b.bid1, c.bfk2 == b.bid2] - TableGroupJoin@23b17d49(Join(test/blogs/bid1_bid2/test/test.comments/bfk1_bfk2: test.comments -> test.blogs, group(blogs))))
+          JoinNode@62fa5ff3(INNER/GROUP[c.bfk1 == b.bid1, c.bfk2 == b.bid2] - TableGroupJoin@23b17d49(Join(test/blogs/bid1_bid2/test/test.comments/bfk1_bfk2: test.comments -> test.blogs, group(test.blogs))))
             TableSource@2cc22a3b(b - TableGroup@734b84c7(blogs))
-            TableSource@7f629e71(c - TableGroupJoin@23b17d49(Join(test/blogs/bid1_bid2/test/test.comments/bfk1_bfk2: test.comments -> test.blogs, group(blogs))))
+            TableSource@7f629e71(c - TableGroupJoin@23b17d49(Join(test/blogs/bid1_bid2/test/test.comments/bfk1_bfk2: test.comments -> test.blogs, group(test.blogs))))

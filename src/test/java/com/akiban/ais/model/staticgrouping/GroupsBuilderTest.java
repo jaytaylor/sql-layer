@@ -31,6 +31,7 @@ import static junit.framework.Assert.fail;
 
 import java.util.List;
 
+import com.akiban.ais.model.TableName;
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
@@ -51,8 +52,8 @@ public class GroupsBuilderTest {
         List<Group> groups = grouping.getGroups();
         assertEquals("groups size", 2, groups.size());
         
-        assertSimilarGroup("first", "group_a", groups.get(0));
-        assertSimilarGroup("second", "group_b", groups.get(1));
+        assertSimilarGroup("first", new TableName(SCHEMA, "group_a"), groups.get(0));
+        assertSimilarGroup("second", new TableName(SCHEMA, "group_b"), groups.get(1));
     }
 
     @Test(expected=IllegalStateException.class)
@@ -164,7 +165,7 @@ public class GroupsBuilderTest {
         assertEquals("grouping", "groupschema " + SCHEMA, grouping.toString().trim());
     }
 
-    private static void assertSimilarGroup(String message, String expectedName,
+    private static void assertSimilarGroup(String message, TableName expectedName,
                                            Group actualGroup)
     {
         assertEquals(message + " group name", expectedName, actualGroup.getGroupName());
