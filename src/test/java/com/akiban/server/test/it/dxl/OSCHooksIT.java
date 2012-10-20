@@ -209,7 +209,7 @@ public class OSCHooksIT extends AlterTableITBase {
         }
 
         @Override
-        public void dropGroup(Session session, String groupName) {
+        public void dropGroup(Session session, TableName groupName) {
             delegate.dropGroup(session, groupName);
         }
 
@@ -274,7 +274,7 @@ public class OSCHooksIT extends AlterTableITBase {
         }
 
         @Override
-        public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop) {
+        public void dropGroupIndexes(Session session, TableName groupName, Collection<String> indexesToDrop) {
             delegate.dropGroupIndexes(session, groupName, indexesToDrop);
         }
 

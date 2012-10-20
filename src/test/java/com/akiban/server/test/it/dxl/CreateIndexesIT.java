@@ -233,7 +233,7 @@ public final class CreateIndexesIT extends ITBase {
         createTable("test", "c", "cid int not null primary key, name varchar(255)");
         int oid = createTable("test", "o", "oid int not null primary key, c_id int, priority int, " + akibanFK("c_id", "c", "cid"));
         AkibanInformationSchema ais = ddl().getAIS(session());
-        String groupName = ais.getUserTable(oid).getGroup().getName();
+        TableName groupName = ais.getUserTable(oid).getGroup().getName();
         GroupIndex createdGI = GroupIndexCreator.createIndex(
                 ais,
                 groupName,
@@ -259,7 +259,7 @@ public final class CreateIndexesIT extends ITBase {
         createTable("test", "c", "cid int not null primary key, name varchar(255)");
         int oid = createTable("test", "o", "oid int not null primary key, c_id int, priority int, " + akibanFK("c_id", "c", "cid"));
         AkibanInformationSchema ais = ddl().getAIS(session());
-        String groupName = ais.getUserTable(oid).getGroup().getName();
+        TableName groupName = ais.getUserTable(oid).getGroup().getName();
         GroupIndex invalidIndex = GroupIndexCreator.createIndex(
                 ais,
                 groupName,

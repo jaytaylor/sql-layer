@@ -4,14 +4,14 @@ SelectQuery@6f539d49
       Select@2edad4b8[o2.order_date == o1.order_date, o2.oid < o1.oid, o3.order_date == o2.order_date, o3.oid < o2.oid]
         Product@485b701a(customers)
           Flatten@6b1ce012(customers INNER o1)
-            GroupScan@8244f74(Group(customers -> test.customers), rows = 1000000000, cost = 4.49201e+10)
+            GroupScan@8244f74(Group(test.customers), rows = 1000000000, cost = 4.49201e+10)
               TableSource@69fa10da(customers - TableGroup@6bad186f(customers))
-              TableSource@20688e91(o1 - TableGroupJoin@54373e38(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@20688e91(o1 - TableGroupJoin@54373e38(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           Flatten@34baf4ae(customers INNER o2)
             Select@397577f9[weekday(o2.order_date) == 3]
               BranchLookup@5e15e68d(customers -> orders)
-                TableSource@7434600d(o2 - TableGroupJoin@76d5f9b9(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@7434600d(o2 - TableGroupJoin@76d5f9b9(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           Flatten@6fd3633c(customers INNER o3)
             Select@4f1799e7[weekday(o3.order_date) == 2]
               BranchLookup@1f18317f(customers -> orders)
-                TableSource@1a8e3115(o3 - TableGroupJoin@59fe1da2(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@1a8e3115(o3 - TableGroupJoin@59fe1da2(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

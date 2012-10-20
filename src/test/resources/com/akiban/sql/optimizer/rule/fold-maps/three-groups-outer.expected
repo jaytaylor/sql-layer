@@ -2,9 +2,9 @@ SelectQuery@7229c204
   ResultSet@1380cf2a[order_date, name]
     MapJoin@2e257f1b()
       Flatten@55a7b0bf(customers LEFT orders)
-        GroupScan@643f96ee(Group(customers -> test.customers), rows = 1000, cost = 59715.0)
+        GroupScan@643f96ee(Group(test.customers), rows = 1000, cost = 59715.0)
           TableSource@644cd580(customers - TableGroup@5dc1ac46(customers))
-          TableSource@7054f9f1(orders - TableGroupJoin@561557c0(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          TableSource@7054f9f1(orders - TableGroupJoin@561557c0(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
       MapJoin@1fbbdd48()
         NullIfEmpty@609903f4
           SingleIndexScan@ace16ad(Index(test.parent.name[IndexColumn(name)]), covering/NONE, =customers.name, rows = 1, cost = 7.17100)

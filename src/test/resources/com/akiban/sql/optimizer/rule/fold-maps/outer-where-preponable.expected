@@ -2,9 +2,9 @@ SelectQuery@102f729e
   ResultSet@1b0deb5f[order_date, name]
     MapJoin@747917a()
       Flatten@643f96ee(customers INNER orders)
-        GroupScan@281ec58a(Group(customers -> test.customers), rows = 1000, cost = 60535.0)
+        GroupScan@281ec58a(Group(test.customers), rows = 1000, cost = 60535.0)
           TableSource@5bf02b85(customers - TableGroup@6da0d866(customers))
-          TableSource@74b957ea(orders - TableGroupJoin@5adf48c4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          TableSource@74b957ea(orders - TableGroupJoin@5adf48c4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
       Project@2ed7b7d9[orders.order_date, child.name]
         Select@66bcb23e[or(parent.name == Smith,parent.name == Jones)]
           NullIfEmpty@7444f787
@@ -12,4 +12,4 @@ SelectQuery@102f729e
               BranchLookup@6032bd65(parent -> parent)
                 SingleIndexScan@7c3afb99(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 885.731)
                 TableSource@68a53de4(parent - TableGroup@427be8c2(parent))
-                TableSource@38827968(child - TableGroupJoin@54ee3aa7(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+                TableSource@38827968(child - TableGroupJoin@54ee3aa7(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

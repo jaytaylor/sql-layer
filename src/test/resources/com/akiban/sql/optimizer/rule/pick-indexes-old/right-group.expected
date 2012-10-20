@@ -2,7 +2,7 @@ SelectQuery@4cfa88fb
   ResultSet@54373e38[name, city]
     Project@76d5f9b9[customers.name, addresses.city]
       Select@59fe1da2[]
-        TableJoins@3a4ba4d6(TableGroup@7de4e3e4(customers) - SingleIndexScan@3e2dce4e(Index(.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), SORTED, =MA))
-          JoinNode@3c32fb80(RIGHT/GROUP[addresses.cid == customers.cid] - TableGroupJoin@314382c6(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+        TableJoins@3a4ba4d6(TableGroup@7de4e3e4(customers) - SingleIndexScan@3e2dce4e(Index(test.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), SORTED, =MA))
+          JoinNode@3c32fb80(RIGHT/GROUP[addresses.cid == customers.cid] - TableGroupJoin@314382c6(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
             TableSource@311f56a3(customers - TableGroup@7de4e3e4(customers))
-            TableSource@710087(addresses - TableGroupJoin@314382c6(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+            TableSource@710087(addresses - TableGroupJoin@314382c6(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))

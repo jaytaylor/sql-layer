@@ -420,13 +420,13 @@ public class AggregatePT extends ApiTestBase {
             if (("M".compareTo(sval) > 0) ||
                 ("Y".compareTo(sval) < 0))
                 return false;
-            long flag = inputRow.eval(2).getInt();
+            long flag = getLong(inputRow, 2);
             if (flag == 1)
                 return false;
 
             // The actual aggregate part.
             boolean emit = false, reset = false;
-            long nextKey = inputRow.eval(0).getInt();
+            long nextKey = getLong(inputRow, 0);
             if (!key_init) {
                 key_init = reset = true;
                 key = nextKey;

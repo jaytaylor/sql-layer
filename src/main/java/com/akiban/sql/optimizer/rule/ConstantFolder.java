@@ -31,6 +31,7 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
+import com.akiban.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
 
 import com.akiban.server.expression.std.Comparison;
 
@@ -451,7 +452,10 @@ public class ConstantFolder extends BaseRule
                 if (!emptyRow)
                     replacement = new NullSource();
                 else {
+                    // set iTinstance types? No. 
                     replacement = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
+                    ResolvingVisitor visitor = (ResolvingVisitor)OverloadAndTInstanceResolver.getResolver(planContext);
+                    if (visitor != null) visitor.visitLeave(replacement);
                 }
                 inOutput.replaceInput(toReplace, replacement);
             }

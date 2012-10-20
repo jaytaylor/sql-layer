@@ -27,6 +27,7 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -50,6 +51,6 @@ class MixedOrderScanStateNullSeparator<S,E> extends MixedOrderScanStateSingleSeg
                                             SortKeyAdapter<S, E> sortKeyAdapter)
         throws PersistitException
     {
-        super(cursor, field, ascending, sortKeyAdapter);
+        super(cursor, field, ascending, sortKeyAdapter, MNumeric.BIGINT.instance(false));
     }
 }

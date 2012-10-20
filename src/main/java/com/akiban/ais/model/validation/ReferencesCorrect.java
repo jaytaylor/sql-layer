@@ -93,7 +93,7 @@ class ReferencesCorrect implements AISValidation,Visitor {
                     new AISNullReferenceException("ais", "", "group")));
         } else if (group.getRoot() == null) {
             output.reportFailure(new AISValidationFailure(
-                    new AISNullReferenceException("group", group.getName(), "root table")));
+                    new AISNullReferenceException("group", group.getName().toString(), "root table")));
         }
     }
 
@@ -110,7 +110,7 @@ class ReferencesCorrect implements AISValidation,Visitor {
         } else if (index.isGroupIndex() && ((GroupIndex)index).getGroup() != visitingGroup) {
             output.reportFailure(new AISValidationFailure (
                     new BadAISReferenceException ("Group index", index.getIndexName().toString(), 
-                            "group", visitingGroup.getName())));
+                            "group", visitingGroup.getName().toString())));
         }
         
     }

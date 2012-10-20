@@ -32,6 +32,7 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,9 +49,12 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.AkServerUtil;
@@ -66,8 +70,12 @@ import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.t3expressions.TCastResolver;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.AlterTableDDL;
@@ -409,6 +417,10 @@ public class ApiTestBase {
         return sm;
     }
 
+    protected final TCastResolver castResolver() {
+        return sm.getServiceByClass(T3RegistryService.class).getCastsResolver();
+    }
+
     protected final ConfigurationService configService() {
         return sm.getConfigurationService();
     }
@@ -644,12 +656,22 @@ public class ApiTestBase {
         return getUserTable(table.getTableId()).getIndex(indexName);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+    /** @deprecated  **/
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs) {
+        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs);
+    }
+
+    /** @deprecated  **/
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType) {
+        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs, joinType);
+    }
+
+    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs)
             throws InvalidOperationException {
         return createGroupIndex(groupName, indexName, tableColumnPairs, Index.JoinType.LEFT);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
+    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
@@ -829,6 +851,105 @@ public class ApiTestBase {
     protected static <T> T get(NewRow row, int field, Class<T> castAs) {
         Object obj = row.get(field);
         return castAs.cast(obj);
+    }
+
+    public static Object getObject(PValueSource pvalue) {
+        if (pvalue.isNull())
+            return null;
+        if (pvalue.hasCacheValue())
+            return pvalue.getObject();
+        switch (pvalue.getUnderlyingType()) {
+        case BOOL:
+            return pvalue.getBoolean();
+        case INT_8:
+            return pvalue.getInt8();
+        case INT_16:
+            return pvalue.getInt16();
+        case UINT_16:
+            return pvalue.getUInt16();
+        case INT_32:
+            return pvalue.getInt32();
+        case INT_64:
+            return pvalue.getInt64();
+        case FLOAT:
+            return pvalue.getFloat();
+        case DOUBLE:
+            return pvalue.getDouble();
+        case BYTES:
+            return pvalue.getBytes();
+        case STRING:
+            return pvalue.getString();
+        default:
+            throw new AssertionError(pvalue);
+        }
+    }
+
+    public static boolean isNull(BoundExpressions row, int pos) {
+        return Types3Switch.ON
+                ? row.pvalue(pos).isNull()
+                : row.eval(pos).isNull();
+    }
+
+    public static Long getLong(BoundExpressions row, int field) {
+        final Long result;
+        if (Types3Switch.ON) {
+            PValueSource pvalue = row.pvalue(field);
+            if (pvalue.isNull()) {
+                result = null;
+            }
+            else {
+                switch (pvalue.getUnderlyingType()) {
+                case INT_8:
+                    result = (long) pvalue.getInt8();
+                    break;
+                case INT_16:
+                    result = (long) pvalue.getInt16();
+                    break;
+                case UINT_16:
+                    result = (long) pvalue.getUInt16();
+                    break;
+                case INT_32:
+                    result = (long) pvalue.getInt32();
+                    break;
+                case INT_64:
+                    result = pvalue.getInt64();
+                    break;
+                default:
+                    throw new AssertionError(pvalue);
+                }
+            }
+        }
+        else {
+            ValueSource value = row.eval(field);
+            if (value.isNull()) {
+                result = null;
+            }
+            else {
+                switch (value.getConversionType()) {
+                case INT:
+                    result = value.getInt();
+                    break;
+                case LONG:
+                    result = value.getLong();
+                    break;
+                case U_BIGINT:
+                    BigInteger bigInt = value.getUBigInt();
+                    result = bigInt.longValue();
+                    if (!bigInt.equals(BigInteger.valueOf(result)))
+                        throw new AssertionError("overflow: " + bigInt);
+                    break;
+                case U_INT:
+                    result = value.getUInt();
+                    break;
+                case NULL:
+                    result = null;
+                    break;
+                default:
+                    throw new AssertionError(value);
+                }
+            }
+        }
+        return result;
     }
 
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
