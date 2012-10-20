@@ -7,10 +7,10 @@ SelectQuery@3590ed52
           AncestorLookup@171e1813(addresses -> [customers, addresses])
             SingleIndexScan@39fa487f(Index(test.addresses.state[IndexColumn(state)]), NONE, =VALUES[0], rows = 11, cost = 1146.02)
             TableSource@38da9246(customers - TableGroup@558fee4f(customers))
-            TableSource@15b94ed3(addresses - TableGroupJoin@64f007ad(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+            TableSource@15b94ed3(addresses - TableGroupJoin@64f007ad(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
         Project@4ccbc2d3[addresses.city, addresses.state, child.name]
           Select@5563d208[]
             Flatten@38be9340(child)
               BranchLookup@67b56bda(parent -> parent)
                 SingleIndexScan@2698dd08(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 426.731)
-                TableSource@7448bc3d(child - TableGroupJoin@2f995c9a(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+                TableSource@7448bc3d(child - TableGroupJoin@2f995c9a(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

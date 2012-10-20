@@ -31,10 +31,14 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.CaseConvertExpression;
@@ -47,19 +51,29 @@ import com.akiban.server.expression.std.VariableExpression;
 import com.akiban.server.expression.subquery.AnySubqueryExpression;
 import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
+import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
 import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
 import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
+import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
+import com.akiban.sql.optimizer.rule.OverloadAndTInstanceResolver;
 
 public final class ExpressionGenerators {
     public static ExpressionGenerator field(final Column column, final int position)
@@ -77,7 +91,8 @@ public final class ExpressionGenerators {
         };
     }
 
-    public static ExpressionGenerator compare(final ExpressionGenerator left, final Comparison comparison, final ExpressionGenerator right)
+    public static ExpressionGenerator compare(final ExpressionGenerator left, final Comparison comparison,
+                                              final ExpressionGenerator right, final TCastResolver castResolver)
     {
         return new ExpressionGenerator() {
             @Override
@@ -87,7 +102,23 @@ public final class ExpressionGenerators {
 
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                return new TComparisonExpression(left.getTPreparedExpression(), comparison, right.getTPreparedExpression());
+                TPreparedExpression leftExpr = left.getTPreparedExpression();
+                TPreparedExpression rightExpr = right.getTPreparedExpression();
+
+                TInstance common = OverloadAndTInstanceResolver.commonInstance(
+                        castResolver, leftExpr.resultType(), rightExpr.resultType());
+                leftExpr = castTo(leftExpr, common, castResolver);
+                rightExpr = castTo(rightExpr, common, castResolver);
+                return new TComparisonExpression(leftExpr, comparison, rightExpr);
+            }
+
+            private TPreparedExpression castTo(TPreparedExpression expression, TInstance target, TCastResolver casts) {
+                TClass inputTClass = expression.resultType().typeClass();
+                TClass targetTClass = target.typeClass();
+                if (targetTClass.equals(inputTClass))
+                    return expression;
+                TCast cast = casts.cast(inputTClass, targetTClass);
+                return new TCastExpression(expression, cast, target, null);
             }
         };
     }
@@ -234,7 +265,56 @@ public final class ExpressionGenerators {
 
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                throw new UnsupportedOperationException(); // TODO
+                final TPreparedExpression expr = input.getTPreparedExpression();
+                return new TPreparedExpression() {
+                    @Override
+                    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    @Override
+                    public TInstance resultType() {
+                        return expr.resultType();
+                    }
+
+                    @Override
+                    public TEvaluatableExpression build() {
+                        final TEvaluatableExpression eval = expr.build();
+                        return new TEvaluatableExpression() {
+                            @Override
+                            public PValueSource resultValue() {
+                                return pValue;
+                            }
+
+                            @Override
+                            public void evaluate() {
+                                eval.evaluate();
+                                PValueSource inSrc = eval.resultValue();
+                                if (inSrc.isNull())
+                                    pValue.putNull();
+                                else
+                                    pValue.putString(inSrc.getString(), null);
+                            }
+
+                            @Override
+                            public void with(Row row) {
+                                eval.with(row);
+                            }
+
+                            @Override
+                            public void with(QueryContext context) {
+                                eval.with(context);
+                            }
+
+                            private final PValue pValue = new PValue(PUnderlying.STRING);
+                        };
+                    }
+
+                    @Override
+                    public CompoundExplainer getExplainer(ExplainContext context) {
+                        throw new UnsupportedOperationException();
+                    }
+                };
             }
         };
     }

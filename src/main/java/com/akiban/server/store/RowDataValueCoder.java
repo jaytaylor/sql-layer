@@ -29,8 +29,6 @@ package com.akiban.server.store;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.rowdata.CorruptRowDataException;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.persistit.Value;
 import com.persistit.encoding.CoderContext;
 import com.persistit.encoding.ValueDisplayer;
@@ -99,9 +97,7 @@ public class RowDataValueCoder implements ValueDisplayer, ValueRenderer {
         Object object = get(value, clazz, context);
         if (object instanceof RowData) {
             final RowData rowData = (RowData) object;
-            final int rowDefId = rowData.getRowDefId();
-            final RowDef rowDef = RowDefCache.latest().getRowDef(rowDefId);
-            target.append(rowData.toString(rowDef));
+            target.append(rowData.toString());
         } else {
             target.append(object);
         }

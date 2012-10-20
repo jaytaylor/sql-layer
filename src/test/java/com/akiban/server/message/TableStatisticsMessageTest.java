@@ -31,7 +31,6 @@ import static org.junit.Assert.assertEquals;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;

@@ -27,7 +27,6 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.qp.operator.ExpressionGenerator;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.OldExpressionTestBase;
 import com.akiban.server.expression.std.Comparison;
 import static com.akiban.server.test.ExpressionGenerators.*;
@@ -66,7 +65,7 @@ public class AnySubqueryExpressionTest extends OldExpressionTestBase {
 
         ExpressionGenerator equals = compare(boundField(outer.rowType(), 1, 0),
                                     Comparison.EQ,
-                                    field(inner.rowType(), 0));
+                                    field(inner.rowType(), 0), castResolver());
         ExpressionGenerator any = anySubquery(inner, equals,
                                                    outer.rowType(), inner.rowType(), 1);
         ExpressionGenerator outerN = field(outer.rowType(), 0);

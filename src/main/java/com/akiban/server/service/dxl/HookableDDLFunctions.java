@@ -246,7 +246,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropGroup(Session session, String groupName) {
+    public void dropGroup(Session session, TableName groupName) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.DROP_GROUP);
@@ -452,7 +452,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop) {
+    public void dropGroupIndexes(Session session, TableName groupName, Collection<String> indexesToDrop) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.DROP_INDEXES);

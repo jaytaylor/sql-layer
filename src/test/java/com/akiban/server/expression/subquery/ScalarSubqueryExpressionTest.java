@@ -83,7 +83,7 @@ public class ScalarSubqueryExpressionTest extends OldExpressionTestBase {
 
         ExpressionGenerator equals = compare(boundField(outer.rowType(), 1, 0),
                                     Comparison.NE,
-                                    field(inner.rowType(), 0));
+                                    field(inner.rowType(), 0), castResolver());
         Operator innerPlan = select_HKeyOrdered(inner, inner.rowType(), equals);
         ExpressionGenerator expression = add(
                 boundField(outer.rowType(), 1, 0),
@@ -118,7 +118,7 @@ public class ScalarSubqueryExpressionTest extends OldExpressionTestBase {
 
         ExpressionGenerator equals = compare(boundField(outer.rowType(), 1, 0),
                                     Comparison.NE,
-                                    field(inner.rowType(), 0));
+                                    field(inner.rowType(), 0), castResolver());
         Operator innerPlan = select_HKeyOrdered(inner, inner.rowType(), equals);
         ExpressionGenerator expression = add(
                 boundField(outer.rowType(), 1, 0),

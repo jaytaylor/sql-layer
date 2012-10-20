@@ -123,7 +123,6 @@ public class AISMerge {
 
     private static NameGenerator makeGenerator(AkibanInformationSchema ais) {
         return new DefaultNameGenerator().
-                setDefaultGroupNames(ais.getGroups().keySet()).
                 setDefaultSequenceNames(computeSequenceNames(ais)).
                 setDefaultTreeNames(computeTreeNames(ais));
     }
@@ -412,9 +411,9 @@ public class AISMerge {
     }
 
     private void addNewGroup (AISBuilder builder, UserTable rootTable) {
-        String groupName = nameGenerator.generateGroupName(rootTable);
+        TableName groupName = rootTable.getName();
         builder.basicSchemaIsComplete();
-        builder.createGroup(groupName, rootTable.getName().getSchemaName());
+        builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
         builder.addTableToGroup(groupName,
                                 rootTable.getName().getSchemaName(),
                                 rootTable.getName().getTableName());
@@ -506,7 +505,7 @@ public class AISMerge {
         return nextID;
     }
 
-    private static int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
+    private static int computeIndexIDOffset (AkibanInformationSchema ais, TableName groupName) {
         int offset = 1;
         Group group = ais.getGroup(groupName);
         for(UserTable table : ais.getUserTables().values()) {

@@ -47,7 +47,7 @@ public class ValuesRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return (types == null ) ? tInstances.length : types.length;
+        return (types == null) ? ((tInstances == null) ? 0 : tInstances.length) : types.length;
     }
 
     @Override

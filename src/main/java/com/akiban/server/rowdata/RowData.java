@@ -35,7 +35,6 @@ import com.akiban.ais.model.Table;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
@@ -455,11 +454,7 @@ public class RowData {
 
     @Override
     public String toString() {
-        return toString(RowDefCache.latest());
-    }
-
-    public String toString(RowDefCache cache) {
-        return toString(cache != null ? cache.ais() : null);
+        return toString(RowDefCache.latestForDebugging().ais());
     }
 
     public String toString(AkibanInformationSchema ais) {
@@ -574,7 +569,7 @@ public class RowData {
     }
 
     /** Returns a hex-dump of the backing buffer. */
-    private String toStringWithoutRowDef(String missingRowDefExplanation) {
+    public String toStringWithoutRowDef(String missingRowDefExplanation) {
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
         try {
             sb.append("RowData[");

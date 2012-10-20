@@ -47,7 +47,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import org.junit.Before;
 import org.junit.Test;
@@ -543,7 +542,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
 
     private ExpressionGenerator selectAncestor(long aid)
     {
-        return compare(field(ancestorRowType, 0), Comparison.EQ, literal(aid));
+        return compare(field(ancestorRowType, 0), Comparison.EQ, literal(aid), castResolver());
     }
 
     // Object state

@@ -150,7 +150,7 @@ public class AISMergeTest {
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
-        assertEquals (TABLE, t.getUserTable(TABLENAME).getGroup().getName());
+        assertEquals (TABLENAME, t.getUserTable(TABLENAME).getGroup().getName());
 
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
@@ -168,7 +168,7 @@ public class AISMergeTest {
         assertNotNull (t.getUserTable(SCHEMA, "t2").getParentJoin());
         assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));
-        assertEquals (TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
+        assertEquals (TABLENAME, t.getUserTable(SCHEMA, "t2").getGroup().getName());
     }
     
     @Test
@@ -215,7 +215,7 @@ public class AISMergeTest {
         assertNotNull (t.getUserTable(SCHEMA, "t3").getParentJoin());
         assertEquals (2, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));
-        assertEquals (TABLE, t.getUserTable(SCHEMA, "t3").getGroup().getName());
+        assertEquals (TABLENAME, t.getUserTable(SCHEMA, "t3").getGroup().getName());
     }
 
     
@@ -340,9 +340,9 @@ public class AISMergeTest {
         assertNotNull (t.getUserTable(SCHEMA, "t2").getParentJoin());
         assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));
-        assertEquals (TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
+        assertEquals (TABLENAME, t.getUserTable(SCHEMA, "t2").getGroup().getName());
         assertNotNull (t.getUserTable(SCHEMA, TABLE));
-        assertEquals (TABLE, t.getUserTable(SCHEMA, TABLE).getGroup().getName());
+        assertEquals (TABLENAME, t.getUserTable(SCHEMA, TABLE).getGroup().getName());
 
     }
 
@@ -360,7 +360,7 @@ public class AISMergeTest {
         AISMerge merge = new AISMerge(t, s.getUserTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue(t.isFrozen());
-        assertEquals(TABLE, t.getUserTable(TABLENAME).getGroup().getName());
+        assertEquals(TABLENAME, t.getUserTable(TABLENAME).getGroup().getName());
 
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);
@@ -380,7 +380,7 @@ public class AISMergeTest {
         assertNotNull(t.getUserTable(SCHEMA, "t2").getParentJoin());
         assertEquals(1, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull(t.getGroup(TABLE));
-        assertEquals(TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
+        assertEquals(TABLENAME, t.getUserTable(SCHEMA, "t2").getGroup().getName());
     }
 
     @Test(expected= InvalidOperationException.class)
@@ -397,7 +397,7 @@ public class AISMergeTest {
         AISMerge merge = new AISMerge(t, s.getUserTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue(t.isFrozen());
-        assertEquals(TABLE, t.getUserTable(TABLENAME).getGroup().getName());
+        assertEquals(TABLENAME, t.getUserTable(TABLENAME).getGroup().getName());
 
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);

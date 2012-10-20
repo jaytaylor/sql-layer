@@ -1098,7 +1098,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         final String schema2 = "test2";
         createAndLoadCOI(schema1);
         createAndLoadCOI(schema2);
-        String groupName = getUserTable(schema2, "c").getGroup().getName();
+        TableName groupName = getUserTable(schema2, "c").getGroup().getName();
         createGroupIndex(groupName, "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
 
         runAlter(ChangeLevel.TABLE, "ALTER TABLE test2.o ALTER COLUMN o1 SET DATA TYPE bigint");
@@ -1116,7 +1116,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void changeColumnInGICommon(String table, Runnable alterRunnable) {
         String giName = "c1_o1_i1";
         createAndLoadCOI();
-        String groupName = getUserTable(SCHEMA, table).getGroup().getName();
+        TableName groupName = getUserTable(SCHEMA, table).getGroup().getName();
         createGroupIndex(groupName, giName, "c.c1,o.o1,i.i1", Index.JoinType.LEFT);
 
         alterRunnable.run();

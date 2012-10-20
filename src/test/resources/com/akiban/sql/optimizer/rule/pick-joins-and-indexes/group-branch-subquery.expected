@@ -2,9 +2,9 @@ SelectQuery@163caf76
   ResultSet@6a237761[name, state, _SQL_COL_1]
     Project@3e72b7b7[customers.name, addresses.state, Subquery@1676076c]
       Select@5d7b6f68[]
-        TableGroupJoinTree@52cf44ca(TableGroup@ffac9ec(customers), customers INNER addresses - GroupScan@19dead26(Group(customers -> test.customers), rows = 100, cost = 22815.0))
+        TableGroupJoinTree@52cf44ca(TableGroup@ffac9ec(customers), customers INNER addresses - GroupScan@19dead26(Group(test.customers), rows = 100, cost = 22815.0))
           TableSource@5e1e8f4a(customers - TableGroup@ffac9ec(customers))
-            TableSource@1bdf40e9(addresses - TableGroupJoin@6a39a70e(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+            TableSource@1bdf40e9(addresses - TableGroupJoin@6a39a70e(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
 
 Subquery@1676076c
   ResultSet@1ee14ef9[_SQL_COL_2]

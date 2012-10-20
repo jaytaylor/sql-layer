@@ -1020,7 +1020,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return commonInstance(resolver, tinst(left), tinst(right));
     }
 
-    private static TInstance commonInstance(TCastResolver resolver, TInstance left, TInstance right) {
+    public static TInstance commonInstance(TCastResolver resolver, TInstance left, TInstance right) {
         if (left == null && right == null)
             return null;
         else if (left == null)

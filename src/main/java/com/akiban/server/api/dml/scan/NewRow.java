@@ -30,7 +30,6 @@ import java.util.Map;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
