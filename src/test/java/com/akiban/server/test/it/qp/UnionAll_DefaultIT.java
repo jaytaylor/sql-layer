@@ -38,7 +38,6 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.test.ExpressionGenerators;
-import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -138,7 +137,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.compare(
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        ExpressionGenerators.literal(9))),
+                        ExpressionGenerators.literal(9), castResolver())),
                     tRowType);
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1001L, 9L),
@@ -160,7 +159,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.compare(
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        ExpressionGenerators.literal(8))),
+                        ExpressionGenerators.literal(8), castResolver())),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
@@ -187,7 +186,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.compare(
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        ExpressionGenerators.literal(8))),
+                        ExpressionGenerators.literal(8), castResolver())),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
@@ -195,7 +194,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.compare(
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        ExpressionGenerators.literal(9))),
+                        ExpressionGenerators.literal(9), castResolver())),
                     tRowType);
         RowBase[] expected = new RowBase[]{
             row(tRowType, 1000L, 8L),
@@ -221,7 +220,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.compare(
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        ExpressionGenerators.literal(8))),
+                        ExpressionGenerators.literal(8), castResolver())),
                 tRowType,
                 select_HKeyOrdered(
                     groupScan_Default(groupTable),
@@ -229,7 +228,7 @@ public class UnionAll_DefaultIT extends OperatorITBase
                     ExpressionGenerators.compare(
                         ExpressionGenerators.field(tRowType, 1),
                         Comparison.EQ,
-                        ExpressionGenerators.literal(9))),
+                        ExpressionGenerators.literal(9), castResolver())),
                 tRowType);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {

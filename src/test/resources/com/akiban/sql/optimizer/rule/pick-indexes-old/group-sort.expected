@@ -2,9 +2,9 @@ SelectQuery@36db492
   ResultSet@1769df00[cid, name, oid, cid, order_date, iid, oid, sku, quan]
     Project@27af8502[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan]
       Select@74455aa8[]
-        TableJoins@7543073a(TableGroup@38facfb(customers) - SingleIndexScan@4da59490(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), SORTED/reverse, =1234))
-          JoinNode@31bca1c3(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@572022b7(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
-            JoinNode@7ec74910(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@4d8dfa76(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+        TableJoins@7543073a(TableGroup@38facfb(customers) - SingleIndexScan@4da59490(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), SORTED/reverse, =1234))
+          JoinNode@31bca1c3(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@572022b7(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
+            JoinNode@7ec74910(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@4d8dfa76(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@2ad1918a(customers - TableGroup@38facfb(customers))
-              TableSource@24aa10fc(orders - TableGroupJoin@4d8dfa76(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-            TableSource@19412332(items - TableGroupJoin@572022b7(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+              TableSource@24aa10fc(orders - TableGroupJoin@4d8dfa76(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+            TableSource@19412332(items - TableGroupJoin@572022b7(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

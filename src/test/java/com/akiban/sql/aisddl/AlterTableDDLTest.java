@@ -1047,8 +1047,8 @@ public class AlterTableDDLTest {
         // Only check the name of the group, DDLFunctionsMock doesn't re-serialize
         UserTable table1 = ddlFunctions.ais.getUserTable(t1);
         UserTable table2 = ddlFunctions.ais.getUserTable(t2);
-        String groupName1 = ((table1 != null) && (table1.getGroup() != null)) ? table1.getGroup().getName() : "<NO_GROUP>1";
-        String groupName2 = ((table2 != null) && (table2.getGroup() != null)) ? table2.getGroup().getName() : "<NO_GROUP>2";
+        String groupName1 = ((table1 != null) && (table1.getGroup() != null)) ? table1.getGroup().getName().toString() : "<NO_GROUP>1";
+        String groupName2 = ((table2 != null) && (table2.getGroup() != null)) ? table2.getGroup().getName().toString() : "<NO_GROUP>2";
         if(equal) {
             assertEquals("Same group for tables " + t1 + "," + t2, groupName1, groupName2);
         } else if(groupName1.equals(groupName2)) {

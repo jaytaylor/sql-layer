@@ -5,12 +5,12 @@ SelectQuery@1394294
         AggregateSource@7db78988(SORT,1,[MAX])
           MapJoin@2ac71fda()
             Flatten@4086649f(customers INNER orders)
-              GroupScan@76fc3726(Group(customers -> test.customers), rows = 1000, cost = 59715.0)
+              GroupScan@76fc3726(Group(test.customers), rows = 1000, cost = 59715.0)
                 TableSource@732c4b84(customers - TableGroup@654d4bcb(customers))
-                TableSource@59b0fedc(orders - TableGroupJoin@2888dcd1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@59b0fedc(orders - TableGroupJoin@2888dcd1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
             Project@31593221[child.name, orders.order_date]
               Select@1ca68033[]
                 Flatten@373823d1(child)
                   BranchLookup@56ea2dd6(parent -> parent)
                     SingleIndexScan@2867692e(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 640.731)
-                    TableSource@129498a3(child - TableGroupJoin@1d2a5fbb(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+                    TableSource@129498a3(child - TableGroupJoin@1d2a5fbb(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

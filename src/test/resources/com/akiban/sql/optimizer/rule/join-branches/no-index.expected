@@ -3,6 +3,6 @@ SelectQuery@694b081b
     Project@29978933[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
       Select@23e45a5c[]
         Flatten@234265(customers INNER orders)
-          GroupScan@64e8606c(Group(customers -> test.customers), rows = 1000, cost = 59716.0)
+          GroupScan@64e8606c(Group(test.customers), rows = 1000, cost = 59716.0)
             TableSource@5c74cb02(customers - TableGroup@5a92668c(customers))
-            TableSource@77bc1fb9(orders - TableGroupJoin@418a9fc8(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@77bc1fb9(orders - TableGroupJoin@418a9fc8(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

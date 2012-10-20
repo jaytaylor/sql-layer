@@ -36,7 +36,6 @@ import java.util.TreeMap;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
 

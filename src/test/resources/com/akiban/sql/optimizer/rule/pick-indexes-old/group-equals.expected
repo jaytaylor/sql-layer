@@ -2,9 +2,9 @@ SelectQuery@968e429
   ResultSet@455b4492[cid, name, oid, cid, order_date, iid, oid, sku, quan]
     Project@6af2f0d0[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan]
       Select@73a01e8a[]
-        TableJoins@15353154(TableGroup@57398cac(customers) - SingleIndexScan@3429cf1(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =1234))
-          JoinNode@a4d93e3(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@6b28215d(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
-            JoinNode@17a697a1(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@3a2cd728(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+        TableJoins@15353154(TableGroup@57398cac(customers) - SingleIndexScan@3429cf1(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =1234))
+          JoinNode@a4d93e3(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@6b28215d(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
+            JoinNode@17a697a1(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@3a2cd728(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@1f5726ec(customers - TableGroup@57398cac(customers))
-              TableSource@12bc6007(orders - TableGroupJoin@3a2cd728(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-            TableSource@d44752d(items - TableGroupJoin@6b28215d(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+              TableSource@12bc6007(orders - TableGroupJoin@3a2cd728(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+            TableSource@d44752d(items - TableGroupJoin@6b28215d(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

@@ -40,15 +40,12 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import org.junit.Before;
@@ -172,7 +169,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     compare(
                             field(orderRowType, 1) /* order.cid */,
                             Comparison.EQ,
-                            boundField(customerRowType, 0, 0) /* customer.cid */)),
+                            boundField(customerRowType, 0, 0) /* customer.cid */, castResolver())),
                 orderRowType,
                 Arrays.asList(boundField(customerRowType, 0, 0) /* customer.cid */, field(orderRowType, 0) /* order.oid */));
         Operator plan =
@@ -208,7 +205,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 compare(
                         field(orderRowType, 1) /* order.cid */,
                         Comparison.EQ,
-                        boundField(customerRowType, 0, 0) /* customer.cid */)),
+                        boundField(customerRowType, 0, 0) /* customer.cid */, castResolver())),
             orderRowType,
             Arrays.asList(boundField(customerRowType, 0, 0) /* customer.cid */, field(orderRowType, 0) /* order.oid */));
         RowType projectRowType = project.rowType();

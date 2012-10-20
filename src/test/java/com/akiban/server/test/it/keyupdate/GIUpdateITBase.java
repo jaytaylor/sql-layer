@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.store.IndexRecordVisitor;
@@ -169,7 +170,7 @@ public abstract class GIUpdateITBase extends ITBase {
     private final Index.JoinType joinType;
     private final String groupIndexName = "test_gi";
 
-    String groupName;
+    TableName groupName;
     Integer c;
     Integer o;
     Integer i;
