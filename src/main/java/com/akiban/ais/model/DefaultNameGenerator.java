@@ -36,26 +36,9 @@ import com.akiban.util.Strings;
 public class DefaultNameGenerator implements NameGenerator {
     public static final String TREE_NAME_SEPARATOR = ".";
 
-    private final Set<String> groupNames = new HashSet<String>();
     private final Set<String> indexNames = new HashSet<String>();
     private final Set<String> treeNames = new HashSet<String>();
     private final Set<String> sequenceNames = new HashSet<String>();
-
-    @Override
-    public String generateGroupName(UserTable userTable) {
-        return generateGroupName(userTable.getName().getTableName());
-    }
-    
-    @Override
-    public String generateGroupName(final String tableName) {
-        String proposed = tableName;
-        return makeUnique(groupNames, proposed);
-    }
-
-    public DefaultNameGenerator setDefaultGroupNames (Set<String> initialSet) {
-        groupNames.addAll(initialSet);
-        return this;
-    }
 
     public DefaultNameGenerator setDefaultTreeNames (Set<String> initialSet) {
         treeNames.addAll(initialSet);

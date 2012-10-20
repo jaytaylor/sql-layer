@@ -34,7 +34,6 @@ import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +80,7 @@ public class OperatorIT extends OperatorITBase
     public void testSelect()
     {
         Operator groupScan = groupScan_Default(coi);
-        ExpressionGenerator cidEq2 = compare(field(customerRowType, 0), Comparison.EQ, literal(2L));
+        ExpressionGenerator cidEq2 = compare(field(customerRowType, 0), Comparison.EQ, literal(2L), castResolver());
         Operator select = select_HKeyOrdered(groupScan, customerRowType, cidEq2);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc"),
                                            row(orderRowType, 21L, 2L, "tom"),

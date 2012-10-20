@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.store.statistics.IndexStatisticsService;
@@ -1903,7 +1904,7 @@ public final class NewGiUpdateIT extends ITBase {
         h = createTable(SCHEMA, "h", "hid int not null primary key, i_id int, handling_instructions varchar(32), s_extra int", akibanFK("i_id", "i", "iid") );
         a = createTable(SCHEMA, "a", "aid int not null primary key, c_id int, street varchar(56), a_extra int", akibanFK("c_id", "c", "cid") );
 
-        String groupName = group().getName();
+        TableName groupName = group().getName();
         Tap.setEnabled(TAP_PATTERN, false);
         createGroupIndex(groupName, ___LEFT_name_when___________, "c.name,o.when", Index.JoinType.LEFT);
         createGroupIndex(groupName, ___LEFT_sku_instructions____, "i.sku, h.handling_instructions", Index.JoinType.LEFT);

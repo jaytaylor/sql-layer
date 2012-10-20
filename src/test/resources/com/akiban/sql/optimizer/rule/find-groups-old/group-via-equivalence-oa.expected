@@ -3,8 +3,8 @@ SelectQuery@38f18cc3
     Project@37c9313b[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, addresses.aid, addresses.cid, addresses.state, addresses.city]
       Select@79bf3519[orders.cid == addresses.cid]
         TableJoins@78373ac0(TableGroup@76e704e1(customers))
-          JoinNode@71f250e8(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@5b9de9c9(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-            JoinNode@5c5fba1c(INNER/GROUP[addresses.cid == customers.cid] - TableGroupJoin@10b3b3a5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+          JoinNode@71f250e8(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@5b9de9c9(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+            JoinNode@5c5fba1c(INNER/GROUP[addresses.cid == customers.cid] - TableGroupJoin@10b3b3a5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
               TableSource@2c3f0860(customers - TableGroup@76e704e1(customers))
-              TableSource@67ea6afc(addresses - TableGroupJoin@10b3b3a5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
-            TableSource@4f15fbb0(orders - TableGroupJoin@5b9de9c9(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@67ea6afc(addresses - TableGroupJoin@10b3b3a5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
+            TableSource@4f15fbb0(orders - TableGroupJoin@5b9de9c9(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

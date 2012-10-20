@@ -208,16 +208,16 @@ public class SelectIT extends OperatorITBase
 
     private ExpressionGenerator customerNameEQ(String name)
     {
-        return compare(field(customerRowType, 1), Comparison.EQ, literal(name));
+        return compare(field(customerRowType, 1), Comparison.EQ, literal(name), castResolver());
     }
 
     private ExpressionGenerator orderSalesmanEQ(String name)
     {
-        return compare(field(orderRowType, 2), Comparison.EQ, literal(name));
+        return compare(field(orderRowType, 2), Comparison.EQ, literal(name), castResolver());
     }
 
     private ExpressionGenerator itemOidEQ(long oid)
     {
-        return compare(field(itemRowType, 1), Comparison.EQ, literal(oid));
+        return compare(field(itemRowType, 1), Comparison.EQ, literal(oid), castResolver());
     }
 }

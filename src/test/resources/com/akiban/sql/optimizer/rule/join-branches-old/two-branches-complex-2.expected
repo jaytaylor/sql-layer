@@ -5,9 +5,9 @@ SelectQuery@78f6e005
         Product@2804f2ec
           Flatten@5ce8787a(customers LEFT orders)
             Select@223dc13d[orders.order_date != Cast(2011-01-01 AS DATE NOT NULL)]
-              GroupScan@4599d5b(Group(customers -> test.customers))
+              GroupScan@4599d5b(Group(test.customers))
                 TableSource@52ec1f9e(customers - TableGroup@1769c398(customers))
-                TableSource@686fdca5(orders - TableGroupJoin@20a83c2a(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@686fdca5(orders - TableGroupJoin@20a83c2a(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           Flatten@505fa26(customers LEFT addresses)
             BranchLookup@4b69d75d(customers -> addresses)
-              TableSource@c0fe89a(addresses - TableGroupJoin@11ba4159(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+              TableSource@c0fe89a(addresses - TableGroupJoin@11ba4159(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))

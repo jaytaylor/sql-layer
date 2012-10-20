@@ -260,7 +260,7 @@ public class Select_BloomFilterIT extends OperatorITBase
                 ExpressionGenerators.compare(
                     ExpressionGenerators.field(fRowType, 0),
                     Comparison.EQ,
-                    ExpressionGenerators.literal(testId))),
+                    ExpressionGenerators.literal(testId), castResolver())),
             fRowType,
             Arrays.asList(ExpressionGenerators.field(fRowType, 1),
                           ExpressionGenerators.field(fRowType, 2)));

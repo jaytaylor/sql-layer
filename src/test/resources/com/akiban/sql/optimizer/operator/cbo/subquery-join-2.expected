@@ -3,5 +3,5 @@ PhysicalSelect[order_date:date[DATE], quan:int[INT]]
     ValuesScan_Default(['1234'], ['9876'])
     Project_Default(orders.order_date, items.quan)
       Flatten_HKeyOrdered(orders INNER items)
-        AncestorLookup_Default(Index(.customers.sku_and_date) -> orders, items)
-          IndexScan_Default(Index(.customers.sku_and_date), items.sku = Bound(0, 0), orders.order_date < DATE '2011-01-01')
+        AncestorLookup_Default(Index(customers.sku_and_date) -> orders, items)
+          IndexScan_Default(Index(customers.sku_and_date), items.sku = Bound(0, 0), orders.order_date < DATE '2011-01-01')

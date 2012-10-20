@@ -38,6 +38,7 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
@@ -369,14 +370,20 @@ public final class RowDataBuilder {
                         pValue.putBytes(((ByteSource)object).toByteSubarray());
                     break;
                 case STRING:
-                    assert false : "should have been handled above";
+                    pValue.putString(object.toString(), null);
+                    break;
                 case BOOL:
                     if (object instanceof Boolean)
                         pValue.putBool((Boolean)object);
                     break;
                 }
-                if (!pValue.hasAnyValue())
-                    pValue.putObject(object); // last ditch effort!
+                if (!pValue.hasAnyValue()) {
+                    // last ditch effort! This is mostly to play nice with the loosey-goosy typing from types2.
+                    PValueCacher cacher = fieldDef.column().tInstance().typeClass().cacher();
+                    if (cacher != null)
+                        object = cacher.sanitize(object);
+                    pValue.putObject(object);
+                }
             }
         }
 
