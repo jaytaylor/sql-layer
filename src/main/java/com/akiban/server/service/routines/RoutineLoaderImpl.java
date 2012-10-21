@@ -37,6 +37,7 @@ import com.akiban.server.error.SQLJInstanceException;
 import com.akiban.server.error.NoSuchSQLJJarException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 
@@ -67,9 +68,10 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private final static Logger logger = LoggerFactory.getLogger(RoutineLoaderImpl.class);
 
     @Inject @SuppressWarnings("unused")
-    public RoutineLoaderImpl(SchemaManager schemaManager) {
+    public RoutineLoaderImpl(SchemaManager schemaManager, 
+                             ConfigurationService configService) {
         this.schemaManager = schemaManager;
-        scripts = new ScriptCache(schemaManager);
+        scripts = new ScriptCache(schemaManager, configService);
     }
 
     /* RoutineLoader */

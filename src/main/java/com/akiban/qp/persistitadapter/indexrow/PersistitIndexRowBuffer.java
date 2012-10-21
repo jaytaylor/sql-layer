@@ -165,27 +165,28 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     {
         pKeyAppends = 0;
         int indexField = 0;
-        if (spatialHandler != null) {
-            spatialHandler.bind(rowData);
-            pKey().append(spatialHandler.zValue());
-            indexField = spatialHandler.dimensions();
-        }
         IndexRowComposition indexRowComp = index.indexRowComposition();
         FieldDef[] fieldDefs = index.indexDef().getRowDef().getFieldDefs();
         RowDataSource rowDataValueSource = Types3Switch.ON ? new RowDataPValueSource() : new RowDataValueSource();
         while (indexField < indexRowComp.getLength()) {
-            if (indexRowComp.isInRowData(indexField)) {
-                FieldDef fieldDef = fieldDefs[indexRowComp.getFieldPosition(indexField)];
-                Column column = fieldDef.column();
-                rowDataValueSource.bind(fieldDef, rowData);
-                pKeyTarget().append(rowDataValueSource, column.getType().akType(), column.tInstance(), column.getCollator());
-            } else if (indexRowComp.isInHKey(indexField)) {
-                PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField));
-            } else {
-                throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
+            // handleSpatialColumn will increment pKeyAppends once for all spatial columns
+            if (spatialHandler == null || !spatialHandler.handleSpatialColumn(rowData, indexField)) {
+                if (indexRowComp.isInRowData(indexField)) {
+                    FieldDef fieldDef = fieldDefs[indexRowComp.getFieldPosition(indexField)];
+                    Column column = fieldDef.column();
+                    rowDataValueSource.bind(fieldDef, rowData);
+                    pKeyTarget().append(rowDataValueSource,
+                                        column.getType().akType(),
+                                        column.tInstance(),
+                                        column.getCollator());
+                } else if (indexRowComp.isInHKey(indexField)) {
+                    PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField));
+                } else {
+                    throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
+                }
+                pKeyAppends++;
             }
             indexField++;
-            pKeyAppends++;
         }
     }
 
@@ -434,11 +435,10 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
         this.value = value;
         if (index.isSpatial()) {
-            this.nIndexFields = index.getAllColumns().size() - index.getKeyColumns().size() + 1;
+            TableIndex spatialIndex = (TableIndex) index;
+            this.nIndexFields = spatialIndex.getAllColumns().size() - spatialIndex.dimensions() + 1;
             this.pKeyFields = this.nIndexFields;
-            if (this.spatialHandler == null) {
-                this.spatialHandler = new SpatialHandler();
-            }
+            this.spatialHandler = new SpatialHandler();
         } else {
             this.nIndexFields = index.getAllColumns().size();
             this.pKeyFields = index.isUnique() ? index.getKeyColumns().size() : index.getAllColumns().size();
@@ -523,7 +523,21 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             return dimensions;
         }
 
-        public void bind(RowData rowData)
+        public boolean handleSpatialColumn(RowData rowData, int indexField)
+        {
+            boolean handled = false;
+            if (indexField >= firstSpatialField && indexField <= lastSpatialField) {
+                if (indexField == firstSpatialField) {
+                    bind(rowData);
+                    pKey().append(zValue());
+                    pKeyAppends++;
+                }
+                handled = true;
+            }
+            return handled;
+        }
+
+        private void bind(RowData rowData)
         {
             for (int d = 0; d < dimensions; d++) {
                 rowDataSource.bind(fieldDefs[d], rowData);
@@ -550,43 +564,46 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                 else {
                     RowDataValueSource rowDataValueSource = (RowDataValueSource)rowDataSource;
                     switch (types[d]) {
-                    case INT:
-                        coords[d] = rowDataValueSource.getInt();
-                        break;
-                    case LONG:
-                        coords[d] = rowDataValueSource.getLong();
-                        break;
-                    case DECIMAL:
-                        coords[d] =
-                            d == 0
-                            ? SpaceLatLon.scaleLat(rowDataValueSource.getDecimal())
-                            : SpaceLatLon.scaleLon(rowDataValueSource.getDecimal());
-                        break;
-                    default:
-                        assert false : fieldDefs[d].column();
-                        break;
+                        case INT:
+                            coords[d] = rowDataValueSource.getInt();
+                            break;
+                        case LONG:
+                            coords[d] = rowDataValueSource.getLong();
+                            break;
+                        case DECIMAL:
+                            coords[d] =
+                                d == 0
+                                ? SpaceLatLon.scaleLat(rowDataValueSource.getDecimal())
+                                : SpaceLatLon.scaleLon(rowDataValueSource.getDecimal());
+                            break;
+                        default:
+                            assert false : fieldDefs[d].column();
+                            break;
                     }
                 }
             }
         }
 
-        public long zValue()
+        private long zValue()
         {
             return space.shuffle(coords);
         }
 
-        private Space space;
+        private final Space space;
         private final int dimensions;
         private final AkType[] types;
         private final TInstance[] tinstances;
         private final FieldDef[] fieldDefs;
         private final long[] coords;
         private final RowDataSource rowDataSource;
+        private final int firstSpatialField;
+        private final int lastSpatialField;
 
         {
-            space = ((TableIndex)index).space();
+            TableIndex spatialIndex = (TableIndex) index;
+            space = spatialIndex.space();
             dimensions = space.dimensions();
-            assert index.getKeyColumns().size() == dimensions;
+            assert spatialIndex.dimensions() == dimensions;
             if (Types3Switch.ON) {
                 tinstances = new TInstance[dimensions];
                 types = null;
@@ -598,16 +615,18 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             fieldDefs = new FieldDef[dimensions];
             coords = new long[dimensions];
             rowDataSource = (Types3Switch.ON) ? new RowDataPValueSource() : new RowDataValueSource();
-            for (IndexColumn indexColumn : index.getKeyColumns()) {
-                int position = indexColumn.getPosition();
+            firstSpatialField = spatialIndex.firstSpatialArgument();
+            lastSpatialField = firstSpatialField + dimensions - 1;
+            for (int d = 0; d < dimensions; d++) {
+                IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + d);
                 Column column = indexColumn.getColumn();
                 if (Types3Switch.ON) {
-                    tinstances[position] = column.tInstance();
+                    tinstances[d] = column.tInstance();
                 }
                 else {
-                    types[position] = column.getType().akType();
+                    types[d] = column.getType().akType();
                 }
-                fieldDefs[position] = column.getFieldDef();
+                fieldDefs[d] = column.getFieldDef();
             }
         }
     }

@@ -63,7 +63,7 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
     public void push() {
         super.push();
         evaluator = pool.get();
-        bindings = evaluator.createBindings();
+        bindings = evaluator.getBindings();
     }
 
     @Override

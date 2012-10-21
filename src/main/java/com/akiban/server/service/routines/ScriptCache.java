@@ -30,6 +30,7 @@ import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.NoSuchRoutineException;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 
@@ -37,6 +38,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.script.*;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -44,14 +49,17 @@ import java.util.Map;
 
 public class ScriptCache
 {
+    public static final String CLASS_PATH = "akserver.routines.script_class_path";
     private final SchemaManager schemaManager;
+    private final ConfigurationService configService;
     private final Map<TableName,CacheEntry> cache = new HashMap<TableName,CacheEntry>();
     // Script engine discovery can be fairly expensive, so it is deferred.
     private ScriptEngineManager manager = null;
     private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
 
-    public ScriptCache(SchemaManager schemaManager) {
+    public ScriptCache(SchemaManager schemaManager, ConfigurationService configService) {
         this.schemaManager = schemaManager;
+        this.configService = configService;
     }
 
     public synchronized void clear() {
@@ -63,11 +71,7 @@ public class ScriptCache
     }
     
     public boolean isScriptLanguage(Session session, String language) {
-        synchronized (this) {
-            if (manager == null)
-                manager = new ScriptEngineManager();
-        }
-        return (manager.getEngineByName(language) != null);
+        return (getManager(session).getEngineByName(language) != null);
     }
 
     public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
@@ -78,6 +82,36 @@ public class ScriptCache
         return getEntry(session, routineName).getScriptInvoker();
     }
     
+    protected ScriptEngineManager getManager(Session session) {
+        if (manager == null) {
+            logger.debug("Initializing script engine manager");
+            String classPath = configService.getProperty(CLASS_PATH);
+            // TODO: Everything is in the boot class loader presently, but the idea
+            // is to restrict scripts to standard Java classes without
+            // the rest of the Akiban server.
+            ClassLoader classLoader = java.math.BigDecimal.class.getClassLoader();
+            if (!classPath.equals("")) {
+                try {
+                    String[] paths = classPath.split(File.pathSeparator);
+                    URL[] urls = new URL[paths.length];
+                    for (int i = 0; i < paths.length; i++) {
+                        urls[i] = new File(paths[i]).toURL();
+                    }
+                    System.out.println("??? " + java.util.Arrays.toString(urls));
+                    classLoader = new URLClassLoader(urls, classLoader);
+                }
+                catch (MalformedURLException ex) {
+                    logger.warn("Error setting script class loader", ex);
+                }
+            }
+            synchronized (this) {
+                if (manager == null)
+                    manager = new ScriptEngineManager(classLoader);
+            }
+        }
+        return manager;
+    }
+
     protected synchronized CacheEntry getEntry(Session session, TableName routineName) {
         CacheEntry entry = cache.get(routineName);
         if (entry != null)
@@ -85,9 +119,7 @@ public class ScriptCache
         Routine routine = schemaManager.getAis(session).getRoutine(routineName);
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
-        if (manager == null)
-            manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName(routine.getLanguage());
+        ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
         if (engine == null)
             throw new ExternalRoutineInvocationException(routineName,
                                                          "Cannot find " + routine.getLanguage() + " script engine");
@@ -134,7 +166,8 @@ public class ScriptCache
                             engine = factory.getScriptEngine();
                         CompiledEvaluator compiled = new CompiledEvaluator(routineName,
                                                                            engine,
-                                                                           script);
+                                                                           script,
+                                                                           true);
                         sharedEvaluatorPool = new SharedPool<ScriptEvaluator>(compiled);
                     }
                     return sharedEvaluatorPool;
@@ -152,7 +185,7 @@ public class ScriptCache
             if (compilable) {
                 CompiledEvaluator compiled = null;
                 if (engine != null)
-                    compiled = new CompiledEvaluator(routineName, engine, script);
+                    compiled = new CompiledEvaluator(routineName, engine, script, false);
                 return new CompiledEvaluatorPool(routineName, factory, script, compiled);
             }
             else {
@@ -283,7 +316,8 @@ public class ScriptCache
 
         @Override
         protected CompiledEvaluator create() {
-            return new CompiledEvaluator(routineName, factory.getScriptEngine(), script);
+            return new CompiledEvaluator(routineName, factory.getScriptEngine(), 
+                                         script, false);
         }
     }
 
@@ -313,15 +347,15 @@ public class ScriptCache
         }
 
         @Override
-        public Bindings createBindings() {
-            return engine.createBindings();
+        public Bindings getBindings() {
+            return engine.getBindings(ScriptContext.ENGINE_SCOPE);
         }
 
         @Override
         public Object eval(Bindings bindings) {
             logger.debug("Evaluating {}", routineName);
             try {
-                return engine.eval(script, bindings);
+                return engine.eval(script); // Bindings came from engine.
             }
             catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
@@ -332,8 +366,10 @@ public class ScriptCache
     static class CompiledEvaluator implements ScriptEvaluator {
         private final TableName routineName;
         private final CompiledScript compiled;
+        private final boolean shared;
 
-        public CompiledEvaluator(TableName routineName, ScriptEngine engine, String script) {
+        public CompiledEvaluator(TableName routineName, ScriptEngine engine, 
+                                 String script, boolean shared) {
             this.routineName = routineName;
             logger.debug("Compiling {}", routineName);
             try {
@@ -342,18 +378,28 @@ public class ScriptCache
             catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
+            this.shared = shared;
         }
 
         @Override
-        public Bindings createBindings() {
-            return compiled.getEngine().createBindings();
+        public Bindings getBindings() {
+            // Prefer to use the Bindings already in the engine
+            // instead of a fresh one, since some engines (Jython, for
+            // instance) do not do well with a dynamic set.
+            if (shared)
+                return compiled.getEngine().createBindings();
+            else
+                return compiled.getEngine().getBindings(ScriptContext.ENGINE_SCOPE);
         }
 
         @Override
         public Object eval(Bindings bindings) {
             logger.debug("Loading compiled {}", routineName);
             try {
-                return compiled.eval(bindings);
+                if (shared)
+                    return compiled.eval(bindings);
+                else
+                    return compiled.eval();
             }
             catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);

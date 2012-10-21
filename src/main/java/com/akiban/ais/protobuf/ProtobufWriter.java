@@ -26,25 +26,7 @@
 
 package com.akiban.ais.protobuf;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Schema;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
+import com.akiban.ais.model.*;
 import com.akiban.ais.pt.PendingOSC;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufWriteException;
@@ -494,9 +476,15 @@ public class ProtobufWriter {
                 setJoinType(convertJoinType(index.getJoinType())).
                 setIndexMethod(convertIndexMethod(index.getIndexMethod()));
                 // Not yet in AIS: description
-
         if(index.getTreeName() != null) {
             indexBuilder.setTreeName(index.getTreeName());
+        }
+        if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
+            TableIndex spatialIndex = (TableIndex) index;
+            indexBuilder.
+                    setFirstSpatialArg(spatialIndex.firstSpatialArgument()).
+                    setDimensions(spatialIndex.dimensions());
+
         }
 
         for(IndexColumn indexColumn : index.getKeyColumns()) {

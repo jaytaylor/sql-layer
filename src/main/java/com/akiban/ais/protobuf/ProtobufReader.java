@@ -50,6 +50,7 @@ import com.akiban.ais.model.View;
 import com.akiban.ais.pt.PendingOSC;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufReadException;
+import com.akiban.server.geophile.Space;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
@@ -387,7 +388,14 @@ public class ProtobufReader {
             if (pbIndex.hasIndexMethod()) {
                 switch (pbIndex.getIndexMethod()) {
                 case Z_ORDER_LAT_LON:
-                    tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
+                    assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
+                    int firstSpatialArg = 0;
+                    int dimensions = Space.LAT_LON_DIMENSIONS;
+                    if (pbIndex.hasFirstSpatialArg()) {
+                        firstSpatialArg = pbIndex.getFirstSpatialArg();
+                        dimensions = pbIndex.getDimensions();
+                    }
+                    tableIndex.markSpatial(firstSpatialArg, dimensions);
                     break;
                 }
             }
@@ -716,7 +724,9 @@ public class ProtobufReader {
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Index.JOINTYPE_FIELD_NUMBER,
-                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER
+                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
+                AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
+                AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER
         );
     }
 
@@ -725,7 +735,9 @@ public class ProtobufReader {
                 pbIndex,
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
-                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER
+                AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
+                AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
+                AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER
         );
     }
 
