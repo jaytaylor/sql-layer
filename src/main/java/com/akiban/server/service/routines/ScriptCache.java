@@ -166,7 +166,8 @@ public class ScriptCache
                             engine = factory.getScriptEngine();
                         CompiledEvaluator compiled = new CompiledEvaluator(routineName,
                                                                            engine,
-                                                                           script);
+                                                                           script,
+                                                                           true);
                         sharedEvaluatorPool = new SharedPool<ScriptEvaluator>(compiled);
                     }
                     return sharedEvaluatorPool;
@@ -184,7 +185,7 @@ public class ScriptCache
             if (compilable) {
                 CompiledEvaluator compiled = null;
                 if (engine != null)
-                    compiled = new CompiledEvaluator(routineName, engine, script);
+                    compiled = new CompiledEvaluator(routineName, engine, script, false);
                 return new CompiledEvaluatorPool(routineName, factory, script, compiled);
             }
             else {
@@ -315,7 +316,8 @@ public class ScriptCache
 
         @Override
         protected CompiledEvaluator create() {
-            return new CompiledEvaluator(routineName, factory.getScriptEngine(), script);
+            return new CompiledEvaluator(routineName, factory.getScriptEngine(), 
+                                         script, false);
         }
     }
 
@@ -345,15 +347,15 @@ public class ScriptCache
         }
 
         @Override
-        public Bindings createBindings() {
-            return engine.createBindings();
+        public Bindings getBindings() {
+            return engine.getBindings(ScriptContext.ENGINE_SCOPE);
         }
 
         @Override
         public Object eval(Bindings bindings) {
             logger.debug("Evaluating {}", routineName);
             try {
-                return engine.eval(script, bindings);
+                return engine.eval(script); // Bindings came from engine.
             }
             catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
@@ -364,8 +366,10 @@ public class ScriptCache
     static class CompiledEvaluator implements ScriptEvaluator {
         private final TableName routineName;
         private final CompiledScript compiled;
+        private final boolean shared;
 
-        public CompiledEvaluator(TableName routineName, ScriptEngine engine, String script) {
+        public CompiledEvaluator(TableName routineName, ScriptEngine engine, 
+                                 String script, boolean shared) {
             this.routineName = routineName;
             logger.debug("Compiling {}", routineName);
             try {
@@ -374,18 +378,28 @@ public class ScriptCache
             catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
+            this.shared = shared;
         }
 
         @Override
-        public Bindings createBindings() {
-            return compiled.getEngine().createBindings();
+        public Bindings getBindings() {
+            // Prefer to use the Bindings already in the engine
+            // instead of a fresh one, since some engines (Jython, for
+            // instance) do not do well with a dynamic set.
+            if (shared)
+                return compiled.getEngine().createBindings();
+            else
+                return compiled.getEngine().getBindings(ScriptContext.ENGINE_SCOPE);
         }
 
         @Override
         public Object eval(Bindings bindings) {
             logger.debug("Loading compiled {}", routineName);
             try {
-                return compiled.eval(bindings);
+                if (shared)
+                    return compiled.eval(bindings);
+                else
+                    return compiled.eval();
             }
             catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);

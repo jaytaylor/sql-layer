@@ -30,6 +30,6 @@ import javax.script.Bindings;
 
 public interface ScriptEvaluator
 {
-    public Bindings createBindings();
+    public Bindings getBindings();
     public Object eval(Bindings bindings);
 }
