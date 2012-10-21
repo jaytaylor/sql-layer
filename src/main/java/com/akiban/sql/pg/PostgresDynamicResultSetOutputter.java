@@ -28,7 +28,10 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.SQLParserInternalException;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -118,7 +121,9 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
                                              metaData.isNullable(columnIndex) != ResultSetMetaData.columnNoNulls,
                                              metaData.getColumnDisplaySize(columnIndex));
         }
-        return PostgresType.fromDerby(sqlType, null, null);
+        AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
+        TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+        return PostgresType.fromDerby(sqlType, akType, tInstance);
     }
 
 }
