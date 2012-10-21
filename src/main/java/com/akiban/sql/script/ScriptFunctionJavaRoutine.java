@@ -27,6 +27,7 @@
 package com.akiban.sql.script;
 
 import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.sql.server.ServerJavaRoutine;
 import com.akiban.sql.server.ServerJavaValues;
@@ -58,10 +59,11 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
     @Override
     public void push() {
         super.push();
-        functionArgs = functionArgs(getInvocation().getRoutine().getParameters());
+        functionArgs = functionArgs(getInvocation().getRoutine());
     }
 
-    protected static Object[] functionArgs(List<Parameter> parameters) {
+    protected static Object[] functionArgs(Routine routine) {
+        List<Parameter> parameters = routine.getParameters();
         Object[] result = new Object[parameters.size()];
         for (int i = 0; i < result.length; i++) {
             if (parameters.get(i).getDirection() != Parameter.Direction.IN) {
