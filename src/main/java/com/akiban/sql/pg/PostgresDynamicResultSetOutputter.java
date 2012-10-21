@@ -27,6 +27,10 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.error.ExternalRoutineInvocationException;
+import com.akiban.server.error.SQLParserInternalException;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -90,8 +94,31 @@ public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultS
         }
     }
 
-    protected static PostgresType typeFromSQL(ResultSetMetaData metaData, int columnIndex) {
-        return null;
+    protected static PostgresType typeFromSQL(ResultSetMetaData metaData, int columnIndex) throws SQLException {
+        TypeId typeId = TypeId.getBuiltInTypeId(metaData.getColumnType(columnIndex));
+        if (typeId == null) {
+            try {
+                typeId = TypeId.getUserDefinedTypeId(metaData.getColumnTypeName(columnIndex),
+                                                     false);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
+            }
+        }
+        DataTypeDescriptor sqlType;
+        if (typeId.isDecimalTypeId() || typeId.isNumericTypeId()) {
+            sqlType = new DataTypeDescriptor(typeId,
+                                             metaData.getPrecision(columnIndex),
+                                             metaData.getScale(columnIndex),
+                                             metaData.isNullable(columnIndex) != ResultSetMetaData.columnNoNulls,
+                                             metaData.getColumnDisplaySize(columnIndex));
+        }
+        else {
+            sqlType = new DataTypeDescriptor(typeId,
+                                             metaData.isNullable(columnIndex) != ResultSetMetaData.columnNoNulls,
+                                             metaData.getColumnDisplaySize(columnIndex));
+        }
+        return PostgresType.fromDerby(sqlType, null, null);
     }
 
 }
