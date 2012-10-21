@@ -43,6 +43,7 @@ public class EmbeddedJDBCIT extends ITBase
 {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        // JDBC service is not in test-services.
         return super.serviceBindingsProvider()
             .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class);
     }
