@@ -338,27 +338,27 @@ public abstract class Index implements Traversable
 
     public AkType[] akTypes()
     {
-        ensureTypeInfo();
+        ensureTypeInfo(false);
         return akTypes;
     }
 
     public AkCollator[] akCollators()
     {
-        ensureTypeInfo();
+        ensureTypeInfo(false);
         return akCollators;
     }
 
     public TInstance[] tInstances()
     {
-        ensureTypeInfo();
+        ensureTypeInfo(true);
         return tInstances;
     }
 
-    private void ensureTypeInfo()
+    private void ensureTypeInfo(boolean types3Info)
     {
-        if (akTypes == null && tInstances == null) {
+        if (types3Info ? (tInstances == null) : (akTypes == null)) {
             synchronized (this) {
-                if (akTypes == null && tInstances == null) {
+                if (types3Info ? (tInstances == null) : (akTypes == null)) {
                     int physicalColumns;
                     int firstSpatialColumn;
                     int dimensions;
@@ -372,15 +372,22 @@ public abstract class Index implements Traversable
                         physicalColumns = allColumns.size();
                         firstSpatialColumn = Integer.MAX_VALUE;
                     }
-                    AkType[] localAkTypes = new AkType[physicalColumns];
-                    AkCollator[] localAkCollators = new AkCollator[physicalColumns];
-                    TInstance[] localTInstances = new TInstance[physicalColumns];
+                    AkType[] localAkTypes = null;
+                    AkCollator[] localAkCollators = null;
+                    TInstance[] localTInstances = null;
+                    if (types3Info) {
+                        localTInstances = new TInstance[physicalColumns];
+                    }
+                    else {
+                        localAkTypes = new AkType[physicalColumns];
+                        localAkCollators = new AkCollator[physicalColumns];
+                    }
                     int logicalColumn = 0;
                     int physicalColumn = 0;
                     int nColumns = allColumns.size();
                     while (logicalColumn < nColumns) {
                         if (logicalColumn == firstSpatialColumn) {
-                            if (Types3Switch.ON) {
+                            if (types3Info) {
                                 localTInstances[physicalColumn] =
                                     MNumeric.BIGINT.instance(SpatialHelper.isNullable(this));
                             } else {
@@ -391,7 +398,7 @@ public abstract class Index implements Traversable
                         } else {
                             IndexColumn indexColumn = allColumns.get(logicalColumn);
                             Column column = indexColumn.getColumn();
-                            if (Types3Switch.ON) {
+                            if (types3Info) {
                                 localTInstances[physicalColumn] = column.tInstance();
                             } else {
                                 localAkTypes[physicalColumn] = column.getType().akType();
@@ -401,9 +408,13 @@ public abstract class Index implements Traversable
                         }
                         physicalColumn++;
                     }
-                    akCollators = localAkCollators;
-                    tInstances = localTInstances;
-                    akTypes = localAkTypes;
+                    if (types3Info) {
+                        tInstances = localTInstances;
+                    }
+                    else {
+                        akCollators = localAkCollators;
+                        akTypes = localAkTypes;
+                    }
                 }
             }
         }
