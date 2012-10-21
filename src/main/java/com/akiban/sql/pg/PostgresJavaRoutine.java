@@ -33,11 +33,13 @@ import com.akiban.sql.server.ServerRoutineInvocation;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
@@ -131,7 +133,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         int nrows = 0;
         ServerJavaRoutine call = javaRoutine(context);
         call.push();
-        boolean success = false;
+        boolean anyOutput = false, success = false;
         try {
             call.setInputs();
             call.invoke();
@@ -140,13 +142,35 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                     new PostgresJavaRoutineResultsOutputter(context, this);
                 outputter.output(call, usesPValues());
                 nrows++;
+                anyOutput = true;
             }
             List<ResultSet> dynamicResultSets = call.getDynamicResultSets();
             if (!dynamicResultSets.isEmpty()) {
-                PostgresOutputter<ResultSet> outputter = 
+                PostgresDynamicResultSetOutputter outputter = 
                     new PostgresDynamicResultSetOutputter(context, this);
                 for (ResultSet rs : dynamicResultSets) {
-                    outputter.output(rs, usesPValues());
+                    if (anyOutput) {
+                        // Postgres protocol does not allow for
+                        // multiple result sets, except as the result
+                        // of multiple commands. So pretend that's
+                        // what we've got.
+                        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
+                        messenger.writeString("CALL " + nrows);
+                        messenger.sendMessage();
+                        nrows = 0;
+                    }
+                    try {
+                        outputter.setMetaData(rs.getMetaData());
+                        outputter.sendDescription();
+                        while (rs.next()) {
+                            outputter.output(rs, usesPValues());
+                            nrows++;
+                        }
+                    }
+                    catch (SQLException ex) {
+                        throw new ExternalRoutineInvocationException(invocation.getRoutineName(), ex);
+                    }
+                    anyOutput = true;
                 }
             }
             success = true;

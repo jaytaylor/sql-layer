@@ -44,57 +44,67 @@ import java.io.IOException;
 
 public class PostgresDynamicResultSetOutputter extends PostgresOutputter<ResultSet>
 {
+    private int ncols;
+    private PostgresType[] columnTypes;
+    private String[] columnNames;
+
     public PostgresDynamicResultSetOutputter(PostgresQueryContext context,
                                              PostgresJavaRoutine statement) {
         super(context, statement);
     }
 
+    public void setMetaData(ResultSetMetaData metaData) throws SQLException {
+        ncols = metaData.getColumnCount();
+        columnTypes = new PostgresType[ncols];
+        columnNames = new String[ncols];
+        for (int i = 0; i < ncols; i++) {
+            columnTypes[i] = typeFromSQL(metaData, i+1);
+            columnNames[i] = metaData.getColumnName(i+1);
+        }
+    }
+
+    public void sendDescription() throws IOException {
+        messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
+        messenger.writeShort(ncols);
+        for (int i = 0; i < columnTypes.length; i++) {
+            PostgresType type = columnTypes[i];
+            messenger.writeString(columnNames[i]); // attname
+            messenger.writeInt(0);    // attrelid
+            messenger.writeShort(0);  // attnum
+            messenger.writeInt(type.getOid()); // atttypid
+            messenger.writeShort(type.getLength()); // attlen
+            messenger.writeInt(type.getModifier()); // atttypmod
+            messenger.writeShort(0);
+        }
+        messenger.sendMessage();
+    }
+
     @Override
     public void output(ResultSet resultSet, boolean usePVals) throws IOException {
-        try {
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int ncols = metaData.getColumnCount();
-            PostgresType[] types = new PostgresType[ncols];
-
-            messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
-            messenger.writeShort(ncols);
-            for (int i = 0; i < ncols; i++) {
-                PostgresType type = typeFromSQL(metaData, i+1);
-                types[i] = type;
-                messenger.writeString(metaData.getColumnName(i+1)); // attname
-                messenger.writeInt(0);    // attrelid
-                messenger.writeShort(0);  // attnum
-                messenger.writeInt(type.getOid()); // atttypid
-                messenger.writeShort(type.getLength()); // attlen
-                messenger.writeInt(type.getModifier()); // atttypmod
-                messenger.writeShort(0);
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(ncols);
+        for (int i = 0; i < ncols; i++) {
+            Object column;
+            try {
+                column = resultSet.getObject(i+1);
             }
-            messenger.sendMessage();
-
-            while (resultSet.next()) {
-                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-                messenger.writeShort(ncols);
-                for (int i = 0; i < ncols; i++) {
-                    Object column = resultSet.getObject(i+1);
-                    PostgresType type = types[i];
-                    boolean binary = false;
-                    ByteArrayOutputStream bytes;
-                    if (usePVals) bytes = encoder.encodePObject(column, type, binary);
-                    else bytes = encoder.encodeObject(column, type, binary);
-                    if (bytes == null) {
-                        messenger.writeInt(-1);
-                    }
-                    else {
-                        messenger.writeInt(bytes.size());
-                        messenger.writeByteStream(bytes);
-                    }
-                }
-                messenger.sendMessage();
+            catch (SQLException ex) {
+                throw new ExternalRoutineInvocationException(((PostgresJavaRoutine)statement).getInvocation().getRoutineName(), ex);
+            }
+            PostgresType type = columnTypes[i];
+            boolean binary = false;
+            ByteArrayOutputStream bytes;
+            if (usePVals) bytes = encoder.encodePObject(column, type, binary);
+            else bytes = encoder.encodeObject(column, type, binary);
+            if (bytes == null) {
+                messenger.writeInt(-1);
+            }
+            else {
+                messenger.writeInt(bytes.size());
+                messenger.writeByteStream(bytes);
             }
         }
-        catch (SQLException ex) {
-            throw new ExternalRoutineInvocationException(((PostgresJavaRoutine)statement).getInvocation().getRoutineName(), ex);
-        }
+        messenger.sendMessage();
     }
 
     protected static PostgresType typeFromSQL(ResultSetMetaData metaData, int columnIndex) throws SQLException {
