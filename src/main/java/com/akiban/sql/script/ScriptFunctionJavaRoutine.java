@@ -65,9 +65,10 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
     protected static Object[] functionArgs(Routine routine) {
         List<Parameter> parameters = routine.getParameters();
         Object[] result = new Object[parameters.size()];
-        for (int i = 0; i < result.length; i++) {
-            if (parameters.get(i).getDirection() != Parameter.Direction.IN) {
-                result[i] = new Object[1];
+        int index = 0;
+        for (Parameter parameter : parameters) {
+            if (parameter.getDirection() != Parameter.Direction.IN) {
+                result[index++] = new Object[1];
             }
         }
         return result;
