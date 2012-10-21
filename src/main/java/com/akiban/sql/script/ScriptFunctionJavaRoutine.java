@@ -36,7 +36,9 @@ import com.akiban.sql.server.ServerRoutineInvocation;
 import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.routines.ScriptPool;
 
+import java.sql.ResultSet;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 
 /** Implementation of the <code>SCRIPT_FUNCTION_JAVA</code> calling convention. 
@@ -64,11 +66,16 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
 
     protected static Object[] functionArgs(Routine routine) {
         List<Parameter> parameters = routine.getParameters();
-        Object[] result = new Object[parameters.size()];
-        for (int i = 0; i < result.length; i++) {
-            if (parameters.get(i).getDirection() != Parameter.Direction.IN) {
-                result[i] = new Object[1];
+        int dynamicResultSets = routine.getDynamicResultSets();
+        Object[] result = new Object[parameters.size() + dynamicResultSets];
+        int index = 0;
+        for (Parameter parameter : parameters) {
+            if (parameter.getDirection() != Parameter.Direction.IN) {
+                result[index++] = new Object[1];
             }
+        }
+        for (int i = 0; i < dynamicResultSets; i++) {
+            result[index++] = new Object[1];
         }
         return result;
     }
@@ -106,4 +113,16 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
         }
     }
     
+    @Override
+    public List<ResultSet> getDynamicResultSets() {
+        List<ResultSet> result = new ArrayList<ResultSet>();
+        for (int index = getInvocation().getRoutine().getParameters().size();
+             index < functionArgs.length; index++) {
+            ResultSet rs = (ResultSet)((Object[])functionArgs[index])[0];
+            if (rs != null)
+                result.add(rs);
+        }
+        return result;
+    }
+
 }

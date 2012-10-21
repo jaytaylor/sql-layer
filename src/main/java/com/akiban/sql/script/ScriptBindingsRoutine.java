@@ -17,9 +17,9 @@
  * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
  * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
  * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
- * BY SUCH AUTHORIZED PERSONNEL.
+ * BY SUCH AUTHORIZED IF.
  *
- * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * PERSONNEL YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
@@ -36,6 +36,9 @@ import com.akiban.server.service.routines.ScriptEvaluator;
 import com.akiban.server.service.routines.ScriptPool;
 
 import javax.script.Bindings;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -118,6 +121,23 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         return null;
     }
     
+    @Override
+    public List<ResultSet> getDynamicResultSets() {
+        if (evalResult instanceof ResultSet)
+            return Collections.singletonList((ResultSet)evalResult);
+        else if (evalResult instanceof List) {
+            List<ResultSet> result = new ArrayList<ResultSet>();
+            for (Object obj : (List)evalResult) {
+                if (obj instanceof ResultSet) {
+                    result.add((ResultSet)obj);
+                }
+            }
+            return result;
+        }
+        else
+            return Collections.emptyList();
+    }
+
     @Override
     public void pop(boolean success) {
         pool.put(evaluator, success);
