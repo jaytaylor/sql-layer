@@ -51,7 +51,7 @@ public class MString extends TString
     public static final MString LONGTEXT = new MString(TypeId.LONGVARCHAR_ID, "longtext", Integer.MAX_VALUE); // TODO not big enough!
 
     @Override
-    public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+    protected void doWriteCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
         final int collatorId = inInstance.attribute(StringAttribute.COLLATION);
         out.putString(AkCollator.getString(inValue), AkCollatorFactory.getAkCollator(collatorId));
     }
