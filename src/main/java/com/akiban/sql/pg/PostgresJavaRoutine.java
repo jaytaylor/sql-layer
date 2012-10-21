@@ -152,8 +152,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                     if (anyOutput) {
                         // Postgres protocol does not allow for
                         // multiple result sets, except as the result
-                        // of multiple commands. So pretend that's
-                        // what we've got.
+                        // of multiple commands. So pretend that's what we've
+                        // got. Even with that, most clients seem to only expose the
+                        // last result set.
                         messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
                         messenger.writeString("CALL " + nrows);
                         messenger.sendMessage();
