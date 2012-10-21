@@ -37,6 +37,7 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
@@ -135,6 +136,14 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                     new PostgresJavaRoutineResultsOutputter(context, this);
                 outputter.output(call, usesPValues());
                 nrows++;
+            }
+            List<ResultSet> dynamicResultSets = call.getDynamicResultSets();
+            if (!dynamicResultSets.isEmpty()) {
+                PostgresOutputter<ResultSet> outputter = 
+                    new PostgresDynamicResultSetOutputter(context, this);
+                for (ResultSet rs : dynamicResultSets) {
+                    outputter.output(rs, usesPValues());
+                }
             }
             success = true;
         }
