@@ -54,10 +54,7 @@ abstract class ExecutableJavaRoutine extends ExecutableCallStatement
             call.setInputs();
             call.invoke();
             call.getOutputs();
-            if (false) {
-                // TODO: Get dynamic result sets here.
-                resultSets = new ArrayDeque<ResultSet>();
-            }
+            resultSets = new ArrayDeque<ResultSet>(call.getDynamicResultSets());
             success = true;
         }
         finally {
