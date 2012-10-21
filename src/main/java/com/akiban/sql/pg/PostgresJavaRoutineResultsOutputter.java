@@ -55,7 +55,7 @@ public class PostgresJavaRoutineResultsOutputter extends PostgresOutputter<Serve
             ByteArrayOutputStream bytes;
             if (usePVals) bytes = encoder.encodePObject(field, type, binary);
             else bytes = encoder.encodeObject(field, type, binary);
-            if (field == null) {
+            if (bytes == null) {
                 messenger.writeInt(-1);
             }
             else {
