@@ -749,8 +749,24 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar SUBSTRACT_DAY
             = new IntervalArith(AkInterval.SECONDS, 0, AkInterval.SECONDS, 1, IntervalOp.MINUS);
     
+    // div (integer division)
+    public static final TScalar DIV_MONTH
+            = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIV);
+    public static final TScalar DIV_SECS
+            = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIV);
+    
     private static enum IntervalOp
     {
+        DIV("div") // integer division
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                assert pos0 == 0 && pos1 == 1 : "ONLY <INTERVAL> / <NUMERIC> is supported";
+
+                return (long)(inputs.get(0).getInt64() / inputs.get(1).getDouble());
+            }
+        },
         MULT("times")
         {
             @Override
@@ -765,7 +781,7 @@ public abstract class MArithmetic extends TArithmetic {
             @Override
             long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
             {
-                assert pos0 == 0 && pos1 == 1 : "ONLY <INTERVA> / <NUMERIC> is supported";
+                assert pos0 == 0 && pos1 == 1 : "ONLY <INTERVAL> / <NUMERIC> is supported";
 
                 return Math.round(inputs.get(0).getInt64()
                                     / inputs.get(1).getDouble());
