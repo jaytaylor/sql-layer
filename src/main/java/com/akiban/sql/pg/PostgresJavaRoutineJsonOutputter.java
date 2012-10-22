@@ -60,12 +60,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
     @Override
     public void beforeData() throws IOException {
         if (context.getServer().getOutputFormat() == PostgresServerSession.OutputFormat.JSON_WITH_META_DATA) {
-            try {
-                outputMetaData();
-            }
-            catch (SQLException ex) {
-                throw new ExternalRoutineInvocationException(((PostgresJavaRoutine)statement).getInvocation().getRoutineName(), ex);
-            }
+            outputMetaData();
         }
     }
 
@@ -74,16 +69,15 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1);
         encoder.reset();
-        outputResults(javaRoutine);
+        outputResults(javaRoutine, encoder.getAppender());
         ByteArrayOutputStream bytes = encoder.getByteStream();
         messenger.writeInt(bytes.size());
         messenger.writeByteStream(bytes);
         messenger.sendMessage();
     }
 
-    protected void outputResults(ServerJavaRoutine javaRoutine) throws IOException {
+    protected void outputResults(ServerJavaRoutine javaRoutine, AkibanAppender appender) throws IOException {
         encoder.appendString("{");
-        AkibanAppender appender = encoder.getAppender();
         boolean first = true;
         List<Parameter> params = javaRoutine.getInvocation().getRoutine().getParameters();
         for (int i = 0; i < params.size(); i++) {
@@ -151,8 +145,23 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
         encoder.appendString("]");
     }
     
-    public void outputMetaData() throws IOException, SQLException {
-        AkibanAppender appender = encoder.getAppender();
+    public void outputMetaData() throws IOException {
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(1);
+        encoder.reset();
+        try {
+            outputMetaData(encoder.getAppender());
+        }
+        catch (SQLException ex) {
+            throw new ExternalRoutineInvocationException(((PostgresJavaRoutine)statement).getInvocation().getRoutineName(), ex);
+        }
+        ByteArrayOutputStream bytes = encoder.getByteStream();
+        messenger.writeInt(bytes.size());
+        messenger.writeByteStream(bytes);
+        messenger.sendMessage();
+    }
+
+    protected void outputMetaData(AkibanAppender appender) throws IOException, SQLException {
         encoder.appendString("[");
         boolean first = true;
         List<Parameter> params = ((PostgresJavaRoutine)statement).getInvocation().getRoutine().getParameters();
