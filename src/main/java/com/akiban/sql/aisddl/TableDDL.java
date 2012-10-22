@@ -30,7 +30,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.akiban.ais.model.DefaultIndexNameGenerator;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexNameGenerator;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
@@ -148,29 +150,32 @@ public class TableDDL
         if (createTable.getQueryExpression() != null)
             throw new UnsupportedCreateSelectException();
 
-        com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
-        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        String tableName = parserName.getTableName();
+        TableName fullName = DDLHelper.convertName(defaultSchemaName, createTable.getObjectName());
+        String schemaName = fullName.getSchemaName();
+        String tableName = fullName.getTableName();
+
         ExistenceCheck condition = createTable.getExistenceCheck();
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-
-        if (ais.getUserTable(schemaName, tableName) != null)
+        if (ais.getUserTable(schemaName, tableName) != null) {
+            InvalidOperationException dup = new DuplicateTableNameException(schemaName, tableName);
             switch(condition)
             {
                 case IF_NOT_EXISTS:
-                    // table already exists. does nothing
                     if (context != null)
-                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
+                        context.warnClient(dup);
                     return;
                 case NO_CONDITION:
-                    throw new DuplicateTableNameException(schemaName, tableName);
+                    throw dup;
                 default:
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
+        }
 
         AISBuilder builder = new AISBuilder();
         builder.userTable(schemaName, tableName);
+        UserTable newTable = builder.akibanInformationSchema().getUserTable(fullName);
+        IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(newTable);
 
         int colpos = 0;
         // first loop through table elements, add the columns
@@ -179,11 +184,12 @@ public class TableDDL
                 addColumn (builder, (ColumnDefinitionNode)tableElement, schemaName, tableName, colpos++);
             }
         }
+
         // second pass get the constraints (primary, FKs, and other keys)
         // This needs to be done in two passes as the parser may put the 
         // constraint before the column definition. For example:
         // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result. 
-        // The Builder complains if you try to do such a thing. 
+        // The Builder complains if you try to do such a thing.
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
@@ -195,14 +201,13 @@ public class TableDDL
                 }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
-                addIndex (builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName);
+                addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName);
             }
         }
+
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
-        
-        ddlFunctions.createTable(session, table);
+        ddlFunctions.createTable(session, newTable);
     }
     
     static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
@@ -306,11 +311,8 @@ public class TableDDL
         return builderType;
     }
 
-    public static String addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn,
-            final String schemaName, final String tableName)  {
-
-        NameGenerator namer = new DefaultNameGenerator();
-
+    public static String addIndex(IndexNameGenerator namer, AISBuilder builder, ConstraintDefinitionNode cdn,
+                                  String schemaName, String tableName)  {
         // We don't (yet) have a constraint representation so override any provided
         final String constraint;
         String indexName = cdn.getName();
@@ -448,7 +450,6 @@ public class TableDDL
         builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
         builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
     }
-
 
     private static String[] columnNamesFromListOrPK(ResultColumnList list, PrimaryKey pk) {
         String[] names = (list == null) ? null: list.getColumnNames();

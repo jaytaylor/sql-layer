@@ -36,7 +36,6 @@ import com.akiban.util.Strings;
 public class DefaultNameGenerator implements NameGenerator {
     public static final String TREE_NAME_SEPARATOR = ".";
 
-    private final Set<String> indexNames = new HashSet<String>();
     private final Set<String> treeNames = new HashSet<String>();
     private final Set<String> sequenceNames = new HashSet<String>();
 
@@ -48,27 +47,6 @@ public class DefaultNameGenerator implements NameGenerator {
     public DefaultNameGenerator setDefaultSequenceNames (Set<String> initialSet) {
         sequenceNames.addAll(initialSet);
         return this;
-    }
-    
-    @Override
-    public String generateIndexName(String indexName, String columnName,
-            String constraint) {
-        if (constraint.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
-            indexNames.add(Index.PRIMARY_KEY_CONSTRAINT);
-            return Index.PRIMARY_KEY_CONSTRAINT;
-        }
-        
-        if (indexName != null && !indexNames.contains(indexName)) {
-            indexNames.add(indexName);
-            return indexName;
-        }
-        
-        String name = columnName;
-        for (int suffixNum=2; indexNames.contains(name); ++suffixNum) {
-            name = String.format("%s_%d", columnName, suffixNum);
-        }
-        indexNames.add(name);
-        return name;
     }
     
     @Override
