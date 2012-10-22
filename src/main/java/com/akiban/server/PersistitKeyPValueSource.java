@@ -27,13 +27,15 @@
 package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.collation.CString;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+
+import java.util.EnumMap;
+
 import static java.lang.Math.min;
 
 public class PersistitKeyPValueSource implements PValueSource {
@@ -189,25 +191,25 @@ public class PersistitKeyPValueSource implements PValueSource {
             }
             else
             {
-                switch (getUnderlyingType()) {
-                    case BOOL:      output.putBool(key.decodeBoolean());        break;
-                    case INT_8:     output.putInt8((byte)key.decodeLong());           break;
-                    case INT_16:    output.putInt16((short)key.decodeLong());         break;
-                    case UINT_16:   output.putUInt16((char)key.decodeLong());         break;
-                    case INT_32:    output.putInt32((int)key.decodeLong());           break;
-                    case INT_64:    output.putInt64(key.decodeLong());          break;
-                    case FLOAT:     output.putFloat(key.decodeFloat());         break;
-                    case DOUBLE:    output.putDouble(key.decodeDouble());       break;
-                    case BYTES:     output.putBytes(key.decodeByteArray());     break;
-                    case STRING:
-                        if (key.decodeType() == String.class) {
-                            output.putString(key.decodeString(), null);
-                        }
-                        else {
-                            output.putObject(key.decode());
-                        }
-                        break;
-                    default: throw new UnsupportedOperationException(tInstance + " with " + getUnderlyingType());
+                PUnderlying pUnderlying = getUnderlyingType();
+                Class<?> expected = pUnderlyingExpectedClasses.get(pUnderlying);
+                if (key.decodeType() == expected) {
+                    switch (pUnderlying) {
+                        case BOOL:      output.putBool(key.decodeBoolean());        break;
+                        case INT_8:     output.putInt8((byte)key.decodeLong());     break;
+                        case INT_16:    output.putInt16((short)key.decodeLong());   break;
+                        case UINT_16:   output.putUInt16((char)key.decodeLong());   break;
+                        case INT_32:    output.putInt32((int)key.decodeLong());     break;
+                        case INT_64:    output.putInt64(key.decodeLong());          break;
+                        case FLOAT:     output.putFloat(key.decodeFloat());         break;
+                        case DOUBLE:    output.putDouble(key.decodeDouble());       break;
+                        case BYTES:     output.putBytes(key.decodeByteArray());     break;
+                        case STRING:    output.putString(key.decodeString(), null); break;
+                        default: throw new UnsupportedOperationException(tInstance + " with " + pUnderlying);
+                    }
+                }
+                else {
+                    output.putObject(key.decode());
                 }
                 // the following asumes that the TClass' readCollating expects the same PUnderlying for in and out
                 tInstance.readCollating(output, output);
@@ -240,5 +242,42 @@ public class PersistitKeyPValueSource implements PValueSource {
 
     private void clear() {
         needsDecoding = true;
+    }
+
+    private static final EnumMap<PUnderlying, Class<?>> pUnderlyingExpectedClasses = createPUnderlyingExpectedClasses();
+
+    private static EnumMap<PUnderlying, Class<?>> createPUnderlyingExpectedClasses() {
+        EnumMap<PUnderlying, Class<?>> result = new EnumMap<PUnderlying, Class<?>>(PUnderlying.class);
+        for (PUnderlying pUnderlying : PUnderlying.values()) {
+            final Class<?> expected;
+            switch (pUnderlying) {
+            case BOOL:
+                expected = Boolean.class;
+                break;
+            case INT_8:
+            case INT_16:
+            case UINT_16:
+            case INT_32:
+            case INT_64:
+                expected = Long.class;
+                break;
+            case FLOAT:
+                expected = Float.class;
+                break;
+            case DOUBLE:
+                expected = Double.class;
+                break;
+            case BYTES:
+                expected = byte[].class;
+                break;
+            case STRING:
+                expected = String.class;
+                break;
+            default:
+                throw new AssertionError("unrecognized PUnderlying: " + pUnderlying);
+            }
+            result.put(pUnderlying, expected);
+        }
+        return result;
     }
 }
