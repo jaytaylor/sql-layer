@@ -128,7 +128,7 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         }
         return index;
     }
-    
+
     @Override
     public Queue<ResultSet> getDynamicResultSets() {
         Queue<ResultSet> result = new ArrayDeque<ResultSet>();
@@ -141,6 +141,9 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
                     result.add((ResultSet)obj);
                 }
             }
+        }
+        else if (getRhino16Interface().isScriptable(evalResult)) {
+            getRhino16Interface().getDynamicResultSets(result, evalResult);
         }
         return result;
     }
@@ -209,6 +212,23 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
             catch (Exception ex) {
             }
             return null;
+        }
+
+        public static final int MAX_LENGTH = 100; // Just in case.
+
+        public void getDynamicResultSets(Queue<ResultSet> result, Object evalResult) {
+            try {
+                for (int i = 0; i < MAX_LENGTH; i++) {
+                    Object elem = getInt.invoke(evalResult, i, null);
+                    if (elem == NOT_FOUND) break;
+                    if (nativeJavaObject.isInstance(elem))
+                        elem = unwrap.invoke(elem);
+                    if (elem instanceof ResultSet)
+                        result.add((ResultSet)elem);
+                }
+            }
+            catch (Exception ex) {
+            }
         }
     }
 
