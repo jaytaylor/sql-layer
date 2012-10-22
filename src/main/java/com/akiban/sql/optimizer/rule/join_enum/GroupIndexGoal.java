@@ -301,13 +301,41 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     private static void setColumnsAndOrdering(SingleIndexScan index) {
         List<IndexColumn> indexColumns = index.getAllColumns();
         int ncols = indexColumns.size();
+        int firstSpatialColumn, dimensions;
+        SpecialIndexExpression.Function spatialFunction;
+        if (index.getIndex().isSpatial()) {
+            TableIndex spatialIndex = (TableIndex)index.getIndex();
+            firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            dimensions = spatialIndex.dimensions();
+            assert (dimensions == 2);
+            spatialFunction = SpecialIndexExpression.Function.Z_ORDER_LAT_LON;
+        }
+        else {
+            firstSpatialColumn = Integer.MAX_VALUE;
+            dimensions = 0;
+            spatialFunction = null;
+        }
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
-        for (IndexColumn indexColumn : indexColumns) {
-            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+        int i = 0;
+        while (i < ncols) {
+            ExpressionNode indexExpression;
+            boolean ascending;
+            if (i == firstSpatialColumn) {
+                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(dimensions);
+                for (int j = 0; j < dimensions; j++) {
+                    operands.add(getIndexExpression(index, indexColumns.get(i++)));
+                }
+                indexExpression = new SpecialIndexExpression(spatialFunction, operands);
+                ascending = true;
+            }
+            else {
+                IndexColumn indexColumn = indexColumns.get(i++);
+                indexExpression = getIndexExpression(index, indexColumn);
+                ascending = indexColumn.isAscending();
+            }
             indexExpressions.add(indexExpression);
-            orderBy.add(new OrderByExpression(indexExpression,
-                    indexColumn.isAscending()));
+            orderBy.add(new OrderByExpression(indexExpression, ascending));
         }
         index.setColumns(indexExpressions);
         index.setOrdering(orderBy);
@@ -569,7 +597,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
     /** Get an expression form of the given index column. */
     protected static ExpressionNode getIndexExpression(IndexScan index,
-                                                IndexColumn indexColumn) {
+                                                       IndexColumn indexColumn) {
         Column column = indexColumn.getColumn();
         UserTable indexTable = column.getUserTable();
         for (TableSource table = index.getLeafMostTable();
