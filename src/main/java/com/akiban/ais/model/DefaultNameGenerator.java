@@ -105,7 +105,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public String generateIdentitySequenceTreeName (Sequence sequence) {
+    public String generateSequenceTreeName (Sequence sequence) {
         TableName tableName = sequence.getSequenceName();
         String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
                           escapeForTreeName(tableName.getTableName());

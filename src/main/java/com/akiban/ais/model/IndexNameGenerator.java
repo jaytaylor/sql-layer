@@ -26,17 +26,6 @@
 
 package com.akiban.ais.model;
 
-import java.util.List;
-
-public interface NameGenerator
-{
-    // Object names
-    String generateIdentitySequenceName(TableName table);
-    String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-
-    // Tree names
-    String generateIndexTreeName(Index index);
-    String generateGroupTreeName(String schemaName, String groupName);
-    String generateSequenceTreeName(Sequence sequence);
+public interface IndexNameGenerator {
+    String generateIndexName(String indexName, String columnName, String constraint);
 }
