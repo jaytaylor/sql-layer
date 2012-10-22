@@ -89,6 +89,10 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
 
     protected abstract ServerJavaRoutine javaRoutine(PostgresQueryContext context);
 
+    public ServerRoutineInvocation getInvocation() {
+        return invocation;
+    }
+    
     @Override
     protected InOutTap executeTap()
     {
