@@ -29,6 +29,7 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Parameter;
@@ -106,6 +107,13 @@ public class AISInvariants {
         }
     }
     
+    public static void checkDuplicateIndexesInGroup(Group group, String indexName)
+    {
+        if (group.getIndex(indexName) != null) {
+            throw new DuplicateIndexException (group.getName(), indexName);
+        }
+    }
+
     public static boolean isIndexInTable (Table table, String indexName)
     {
         return table.getIndex(indexName) != null;
