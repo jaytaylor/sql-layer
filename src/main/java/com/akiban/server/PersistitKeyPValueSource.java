@@ -200,11 +200,11 @@ public class PersistitKeyPValueSource implements PValueSource {
                     case DOUBLE:    output.putDouble(key.decodeDouble());       break;
                     case BYTES:     output.putBytes(key.decodeByteArray());     break;
                     case STRING:
-                        if (key.decodeType() == CString.class) {
-                            output.putObject(key.decode().toString());
+                        if (key.decodeType() == String.class) {
+                            output.putString(key.decodeString(), null);
                         }
                         else {
-                            output.putString(key.decodeString(), null);
+                            output.putObject(key.decode());
                         }
                         break;
                     default: throw new UnsupportedOperationException(tInstance + " with " + getUnderlyingType());
