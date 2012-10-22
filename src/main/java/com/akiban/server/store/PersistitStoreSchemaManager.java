@@ -567,7 +567,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final AkibanInformationSchema oldAIS = getAis(session);
         checkSystemSchema(sqljJar.getName(), false);
         SQLJJar oldJar = oldAIS.getSQLJJar(sqljJar.getName());
-        if (sqljJar == null)
+        if (oldJar == null)
             throw new NoSuchSQLJJarException(sqljJar.getName());
         final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
         // Changing old state rather than actually replacing saves having to find
