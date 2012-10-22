@@ -28,6 +28,7 @@ package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.collation.CString;
+import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -40,23 +41,23 @@ public class PersistitKeyPValueSource implements PValueSource {
     // object state
     private Key key;
     private int depth;
-    private PUnderlying pUnderlying;
+    private TInstance tInstance;
     private PValue output;
     private boolean needsDecoding = true;
     
-    public PersistitKeyPValueSource(PUnderlying pUnderlying) {
-        this.pUnderlying = pUnderlying;
-        this.output = new PValue(pUnderlying);
+    public PersistitKeyPValueSource(TInstance tInstance) {
+        this.tInstance = tInstance;
+        this.output = new PValue(tInstance.typeClass().underlyingType());
     }
     
     public void attach(Key key, IndexColumn indexColumn) {
-        attach(key, indexColumn.getPosition(), indexColumn.getColumn().tInstance().typeClass().underlyingType());
+        attach(key, indexColumn.getPosition(), indexColumn.getColumn().tInstance());
     }
 
-    public void attach(Key key, int depth, PUnderlying pUnderlying) {
+    public void attach(Key key, int depth, TInstance tInstance) {
         this.key = key;
         this.depth = depth;
-        this.pUnderlying = pUnderlying;
+        this.tInstance = tInstance;
         clear();
     }
     
@@ -67,7 +68,7 @@ public class PersistitKeyPValueSource implements PValueSource {
 
     @Override
     public PUnderlying getUnderlyingType() {
-        return pUnderlying;
+        return tInstance.typeClass().underlyingType();
     }
 
     @Override
@@ -188,7 +189,7 @@ public class PersistitKeyPValueSource implements PValueSource {
             }
             else
             {
-                switch (pUnderlying) {
+                switch (getUnderlyingType()) {
                     case BOOL:      output.putBool(key.decodeBoolean());        break;
                     case INT_8:     output.putInt8((byte)key.decodeLong());           break;
                     case INT_16:    output.putInt16((short)key.decodeLong());         break;
@@ -206,8 +207,10 @@ public class PersistitKeyPValueSource implements PValueSource {
                             output.putString(key.decodeString(), null);
                         }
                         break;
-                    default: throw new UnsupportedOperationException(pUnderlying.name());
+                    default: throw new UnsupportedOperationException(tInstance + " with " + getUnderlyingType());
                 }
+                // the following asumes that the TClass' readCollating expects the same PUnderlying for in and out
+                tInstance.readCollating(output, output);
             }
             needsDecoding = false;
         }
