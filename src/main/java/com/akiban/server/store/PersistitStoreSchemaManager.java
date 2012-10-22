@@ -281,31 +281,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             saveAISChangeWithRowDefs(session, newAIS, Arrays.asList(curSchema, newSchema));
         }
     }
-
-    private static boolean inSameBranch(UserTable t1, UserTable t2) {
-        if(t1 == t2) {
-            return true;
-        }
-        // search for t2 in t1->root
-        Join join = t1.getParentJoin();
-        while(join != null) {
-            final UserTable parent = join.getParent();
-            if(parent == t2) {
-                return true;
-            }
-            join = parent.getParentJoin();
-        }
-        // search fo t1 in t2->root
-        join = t2.getParentJoin();
-        while(join != null) {
-            final UserTable parent = join.getParent();
-            if(parent == t1) {
-                return true;
-            }
-            join = parent.getParentJoin();
-        }
-        return false;
-    }
     
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
