@@ -44,6 +44,7 @@ import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
@@ -137,9 +138,9 @@ public final class CBasicIT extends ITBase {
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
         NiceRow r;
-        r = new NiceRow(tableId, store()); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
-        r = new NiceRow(tableId, store()); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
-        r = new NiceRow(tableId, store()); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
+        r = new NiceRow(session(), tableId, store()); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
+        r = new NiceRow(session(), tableId, store()); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
+        r = new NiceRow(session(), tableId, store()); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
         assertEquals("row content", expectedRows, rows);
     }
 
@@ -210,7 +211,7 @@ public final class CBasicIT extends ITBase {
         RowData rowData = new RowData(output.getOutputBuffer().array(), 0, output.getOutputBuffer().position());
         rowData.prepareRow(0);
         assertEquals("table ID", tableId, rowData.getRowDefId());
-        List<NewRow> converted = dml().convertRowDatas(Arrays.asList(rowData));
+        List<NewRow> converted = dml().convertRowDatas(session(), Arrays.asList(rowData));
         assertEquals("rows scanned", expectedRows, converted);
     }
     
@@ -236,7 +237,7 @@ public final class CBasicIT extends ITBase {
         final int tid;
         try {
             tid = createTable("test", "t", "id int not null primary key");
-            final String groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
+            final TableName groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
             ddl().dropGroup(session(), groupName);
 
             AkibanInformationSchema ais = ddl().getAIS(session());
@@ -367,7 +368,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow old = new NiceRow(tableId, store());
+            NiceRow old = new NiceRow(session(), tableId, store());
             old.put(1, "hello world");
             dml().updateRow(session(), old, createNewRow(tableId, 1, "goodbye cruel world"), null );
         } catch (NoSuchRowException e) {
@@ -401,6 +402,7 @@ public final class CBasicIT extends ITBase {
 
     @Test(expected=InvalidCharToNumException.class)
     public void updateOldNewHasWrongType() throws InvalidOperationException {
+        Types3Switch.ON = false;
         final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
@@ -429,6 +431,7 @@ public final class CBasicIT extends ITBase {
 
     @Test(expected=InvalidCharToNumException.class)
     public void insertHasWrongType() throws InvalidOperationException {
+        Types3Switch.ON = false;
         final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
@@ -525,7 +528,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow deleteAttempt = new NiceRow(tableId, store());
+            NiceRow deleteAttempt = new NiceRow(session(), tableId, store());
             deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session(), deleteAttempt);
         } catch (NoSuchRowException e) {
@@ -545,7 +548,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow deleteAttempt = new NiceRow(tableId, store());
+            NiceRow deleteAttempt = new NiceRow(session(), tableId, store());
             deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session(), createNewRow(tableId, 0, "this row doesn't exist"));
         } catch (NoSuchRowException e) {

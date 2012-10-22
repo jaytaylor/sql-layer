@@ -37,7 +37,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
@@ -53,6 +53,7 @@ import java.util.List;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.assertEquals;
 
 public class IndexScanIT extends OperatorITBase
@@ -122,8 +123,8 @@ public class IndexScanIT extends OperatorITBase
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 20, 20), new SetColumnSelector(0, 1));
         IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(Expressions.field(itemOidIidIndexRowType, 0), true);
-        ordering.append(Expressions.field(itemOidIidIndexRowType, 1), false);
+        ordering.append(ExpressionGenerators.field(itemOidIidIndexRowType, 0), true);
+        ordering.append(ExpressionGenerators.field(itemOidIidIndexRowType, 1), false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType, keyRange, ordering);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor(indexScan, queryContext));
@@ -201,8 +202,8 @@ public class IndexScanIT extends OperatorITBase
     public void testMixedMode()
     {
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(itemOidIidIndexRowType, 0), true);
-        ordering.append(new FieldExpression(itemOidIidIndexRowType, 1), false);
+        ordering.append(field(itemOidIidIndexRowType, 0), true);
+        ordering.append(field(itemOidIidIndexRowType, 1), false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType,
                                                IndexKeyRange.unbounded(itemOidIidIndexRowType),
                                                ordering,
@@ -586,8 +587,8 @@ public class IndexScanIT extends OperatorITBase
         }
         else {
             // Get and checking each field should work
-            assertEquals(11L, row.eval(0).getInt());
-            assertEquals(111L, row.eval(1).getInt());
+            assertEquals(Long.valueOf(11L), getLong(row, 0));
+            assertEquals(Long.valueOf(111L), getLong(row, 1));
             // Getting all value sources and then using them should also work
             ValueSource v0 = row.eval(0);
             ValueSource v1 = row.eval(1);

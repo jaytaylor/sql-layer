@@ -34,17 +34,22 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.SQLJJar;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
+import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.store.AisHolder;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.TableDefinition;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,6 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.SortedMap;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import static com.akiban.server.types.AkType.*;
@@ -66,36 +72,17 @@ import static org.junit.Assert.fail;
 public class BasicInfoSchemaTablesServiceImplTest {
     private static final String I_S = TableName.INFORMATION_SCHEMA;
 
-    private AisHolder holder;
+    private AkibanInformationSchema ais;
     private BasicInfoSchemaTablesServiceImpl bist;
     private MemoryAdapter adapter;
 
     @Before
     public void setUp() throws Exception {
-        holder = new AisHolder() {
-            final AkibanInformationSchema ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
-
-            @Override
-            public AkibanInformationSchema getAis() {
-                return ais;
-            }
-
-            @Override
-            public void setAis(AkibanInformationSchema ais) {
-                throw new UnsupportedOperationException();
-            }
-        };
+        ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
         createTables();
-        bist = new BasicInfoSchemaTablesServiceImpl(holder, null);
-        bist.attachFactories(holder.getAis(), false);
-        adapter = new MemoryAdapter(new Schema(holder.getAis()), null, null);
-    }
-
-    @After
-    public void tearDown() {
-        holder = null;
-        bist = null;
-        adapter = null;
+        bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais));
+        bist.attachFactories(ais, false);
+        adapter = new MemoryAdapter(new Schema(ais), null, null);
     }
 
     private static void simpleTable(AISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {
@@ -120,7 +107,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     }
 
     private void createTables() throws Exception {
-        AISBuilder builder = new AISBuilder(holder.getAis());
+        AISBuilder builder = new AISBuilder(ais);
 
         {
         String schema = "test";
@@ -243,7 +230,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         Map<Table, Integer> ordinalMap = new HashMap<Table, Integer>();
         List<UserTable> remainingTables = new ArrayList<UserTable>();
         // Add all roots
-        for(UserTable userTable : holder.getAis().getUserTables().values()) {
+        for(UserTable userTable : ais.getUserTables().values()) {
             if(userTable.isRoot()) {
                 userTable.getGroup().setTreeName(userTable.getName().getTableName() + "_tree");
                 remainingTables.add(userTable);
@@ -261,7 +248,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 remainingTables.add(join.getChild());
             }
         }
-        for(Group group : holder.getAis().getGroups().values()) {
+        for(Group group : ais.getGroups().values()) {
             for(Index index : group.getIndexes()) {
                 index.computeFieldAssociations(ordinalMap);
                 index.setTreeName(index.getIndexName().getName() + "_tree");
@@ -297,7 +284,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     }
 
     private MemoryTableFactory getFactory(TableName name) {
-        UserTable table = holder.getAis().getUserTable(name);
+        UserTable table = ais.getUserTable(name);
         assertNotNull("No such table: " + name, table);
         MemoryTableFactory factory = table.getMemoryTableFactory();
         assertNotNull("No factory for table " + name, factory);
@@ -662,4 +649,148 @@ public class BasicInfoSchemaTablesServiceImplTest {
         assertEquals("Skip I_S routines", 0, skipped);
     }
 
+
+    private static class MockSchemaManager implements SchemaManager {
+        final AkibanInformationSchema ais;
+
+        public MockSchemaManager(AkibanInformationSchema ais) {
+            this.ais = ais;
+        }
+
+        @Override
+        public AkibanInformationSchema getAis(Session session) {
+            return ais;
+        }
+
+
+        @Override
+        public TableName registerStoredInformationSchemaTable(UserTable newTable, int version) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public TableName registerMemoryInformationSchemaTable(UserTable newTable, MemoryTableFactory factory) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void unRegisterMemoryInformationSchemaTable(TableName tableName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public TableName createTableDefinition(Session session, UserTable newTable) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void renameTable(Session session, TableName currentName, TableName newName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropIndexes(Session session, Collection<? extends Index> indexes) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public TableDefinition getTableDefinition(Session session, TableName tableName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<String> schemaStrings(Session session, boolean withISTables) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getUpdateTimestamp() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getSchemaGeneration() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createView(Session session, View view) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropView(Session session, TableName viewName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createSequence(Session session, Sequence sequence) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropSequence(Session session, Sequence sequence) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createRoutine(Session session, Routine routine) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropRoutine(Session session, TableName routineName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createSQLJJar(Session session, SQLJJar sqljJar) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropSQLJJar(Session session, TableName jarName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void registerSystemRoutine(Routine routine) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void unRegisterSystemRoutine(TableName routineName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void rollbackAIS(Session session, AkibanInformationSchema replacementAIS, Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames) {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

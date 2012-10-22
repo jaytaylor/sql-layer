@@ -71,10 +71,7 @@ class OperatorStoreGIHandler {
                 if (Types3Switch.ON) {
                     PValueSource source = row.pvalue(flattenedIndex);
                     TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
-                    if (source.isNull())
-                        pTarget.putNull();
-                    else
-                        sourceInstance.writeCollating(source, pTarget);
+                    sourceInstance.writeCollating(source, pTarget);
                 }
                 else {
                     Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);

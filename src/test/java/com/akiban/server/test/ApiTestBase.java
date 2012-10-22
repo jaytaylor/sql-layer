@@ -32,6 +32,7 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,26 +49,33 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.t3expressions.TCastResolver;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.AlterTableDDL;
@@ -167,10 +175,10 @@ public class ApiTestBase {
     private static ServiceManager sm;
     private Session session;
     private int aisGeneration;
-    private int akibanFKCount;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
+    private boolean types3SwitchSave;
     
     @Rule
     public static final TestName testName = new TestName();
@@ -181,6 +189,7 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
+        types3SwitchSave = Types3Switch.ON;
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
@@ -252,6 +261,7 @@ public class ApiTestBase {
 
     @After
     public final void tearDownAllTables() throws Exception {
+        Types3Switch.ON = types3SwitchSave;
         if (lastStartupConfigProperties == null)
             return; // services never started up
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
@@ -385,7 +395,6 @@ public class ApiTestBase {
     }
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
-        ++akibanFKCount;
         return String.format("GROUPING FOREIGN KEY (%s) REFERENCES \"%s\" (%s)",
                              childCol, parentTable, parentCol
         );
@@ -403,13 +412,16 @@ public class ApiTestBase {
         return new SimpleQueryContext(adapter);
     }
 
-    protected final RowDefCache rowDefCache() {
-        Store store = sm.getStore();
-        return store.getRowDefCache();
+    protected final AkibanInformationSchema ais() {
+        return ddl().getAIS(session());
     }
 
     protected final ServiceManager serviceManager() {
         return sm;
+    }
+
+    protected final TCastResolver castResolver() {
+        return sm.getServiceByClass(T3RegistryService.class).getCastsResolver();
     }
 
     protected final ConfigurationService configService() {
@@ -647,12 +659,22 @@ public class ApiTestBase {
         return getUserTable(table.getTableId()).getIndex(indexName);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
+    /** @deprecated  **/
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs) {
+        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs);
+    }
+
+    /** @deprecated  **/
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType) {
+        return createGroupIndex(ais().getGroup(groupName).getName(), indexName, tableColumnPairs, joinType);
+    }
+
+    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs)
             throws InvalidOperationException {
         return createGroupIndex(groupName, indexName, tableColumnPairs, Index.JoinType.LEFT);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
+    protected final GroupIndex createGroupIndex(TableName groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
@@ -834,6 +856,105 @@ public class ApiTestBase {
         return castAs.cast(obj);
     }
 
+    public static Object getObject(PValueSource pvalue) {
+        if (pvalue.isNull())
+            return null;
+        if (pvalue.hasCacheValue())
+            return pvalue.getObject();
+        switch (pvalue.getUnderlyingType()) {
+        case BOOL:
+            return pvalue.getBoolean();
+        case INT_8:
+            return pvalue.getInt8();
+        case INT_16:
+            return pvalue.getInt16();
+        case UINT_16:
+            return pvalue.getUInt16();
+        case INT_32:
+            return pvalue.getInt32();
+        case INT_64:
+            return pvalue.getInt64();
+        case FLOAT:
+            return pvalue.getFloat();
+        case DOUBLE:
+            return pvalue.getDouble();
+        case BYTES:
+            return pvalue.getBytes();
+        case STRING:
+            return pvalue.getString();
+        default:
+            throw new AssertionError(pvalue);
+        }
+    }
+
+    public static boolean isNull(BoundExpressions row, int pos) {
+        return Types3Switch.ON
+                ? row.pvalue(pos).isNull()
+                : row.eval(pos).isNull();
+    }
+
+    public static Long getLong(BoundExpressions row, int field) {
+        final Long result;
+        if (Types3Switch.ON) {
+            PValueSource pvalue = row.pvalue(field);
+            if (pvalue.isNull()) {
+                result = null;
+            }
+            else {
+                switch (pvalue.getUnderlyingType()) {
+                case INT_8:
+                    result = (long) pvalue.getInt8();
+                    break;
+                case INT_16:
+                    result = (long) pvalue.getInt16();
+                    break;
+                case UINT_16:
+                    result = (long) pvalue.getUInt16();
+                    break;
+                case INT_32:
+                    result = (long) pvalue.getInt32();
+                    break;
+                case INT_64:
+                    result = pvalue.getInt64();
+                    break;
+                default:
+                    throw new AssertionError(pvalue);
+                }
+            }
+        }
+        else {
+            ValueSource value = row.eval(field);
+            if (value.isNull()) {
+                result = null;
+            }
+            else {
+                switch (value.getConversionType()) {
+                case INT:
+                    result = value.getInt();
+                    break;
+                case LONG:
+                    result = value.getLong();
+                    break;
+                case U_BIGINT:
+                    BigInteger bigInt = value.getUBigInt();
+                    result = bigInt.longValue();
+                    if (!bigInt.equals(BigInteger.valueOf(result)))
+                        throw new AssertionError("overflow: " + bigInt);
+                    break;
+                case U_INT:
+                    result = value.getUInt();
+                    break;
+                case NULL:
+                    result = null;
+                    break;
+                default:
+                    throw new AssertionError(value);
+                }
+            }
+        }
+        return result;
+    }
+
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
         ScanRequest all = scanAllRequest(tableId);
         expectRows(all, expectedRows);
@@ -843,7 +964,7 @@ public class ApiTestBase {
     protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) {
         List<NewRow> ret = new ArrayList<NewRow>(rowDatas.size());
         for(RowData rowData : rowDatas) {
-            NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(rowData.getRowDefId()));
+            NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(session(), rowData.getRowDefId()));
             ret.add(newRow);
         }
         return ret;
@@ -860,11 +981,11 @@ public class ApiTestBase {
     }
 
     public NewRow createNewRow(int tableId, Object... columns) {
-        return createNewRow(store(), tableId, columns);
+        return createNewRow(session(), store(), tableId, columns);
     }
 
-    public static NewRow createNewRow(Store store, int tableId, Object... columns) {
-        NewRow row = new NiceRow(tableId, store);
+    public static NewRow createNewRow(Session session, Store store, int tableId, Object... columns) {
+        NewRow row = new NiceRow(session, tableId, store);
         for (int i=0; i < columns.length; ++i) {
             if (columns[i] != UNDEF) {
                 row.put(i, columns[i] );
@@ -974,6 +1095,18 @@ public class ApiTestBase {
 
     protected final UserTable getUserTable(TableName name) {
         return ddl().getUserTable(session(), name);
+    }
+
+    protected final RowDef getRowDef(int rowDefId) {
+        return getUserTable(rowDefId).rowDef();
+    }
+
+    protected final RowDef getRowDef(String schema, String table) {
+        return getUserTable(schema, table).rowDef();
+    }
+
+    protected final RowDef getRowDef(TableName tableName) {
+        return getUserTable(tableName).rowDef();
     }
 
     protected final UserTable getUserTable(int tableId) {

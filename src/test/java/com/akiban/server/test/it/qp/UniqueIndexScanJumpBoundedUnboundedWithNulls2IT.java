@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.Ignore;
 import com.akiban.util.ShareHolder;
 import com.akiban.server.types.ValueSource;
@@ -50,6 +52,7 @@ import com.akiban.qp.rowtype.Schema;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.*;
 
 /**
@@ -92,7 +95,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
             "b int",
             "c int");
         createUniqueIndex("schema", "t", "idx", "a", "b", "c");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
@@ -1679,32 +1682,13 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         {
             // nulls are allowed
             ArrayList<Long> toLong = new ArrayList<Long>();
-            for (int n = 0; n < INDEX_COLUMN_COUNT; ++n)
-                addColumn(toLong, row.eval(n));
+            for (int n = 0; n < INDEX_COLUMN_COUNT; ++n) {
+                toLong.add(getLong(row, n));
+            }
             
             ret.add(toLong);
         }
         return ret;
-    }
-
-    private static void addColumn(List<Long> row, ValueSource v)
-    {
-        if (v.isNull())
-        {
-            row.add(null);
-            return;
-        }
-
-        switch(v.getConversionType())
-        {
-            case LONG:      row.add(v.getLong());
-                            break;
-            case INT:       row.add(v.getInt());
-                            break;
-            case NULL:      row.add(null);
-                            break;
-            default:        throw new IllegalArgumentException("Unexpected type: " + v.getConversionType());
-        }
     }
 
      // --- start generated
@@ -1841,7 +1825,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }

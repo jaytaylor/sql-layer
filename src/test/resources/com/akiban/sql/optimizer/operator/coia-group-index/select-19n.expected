@@ -3,4 +3,4 @@ PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin]
     IfEmpty_Default(NULL)
       Limit_Default(1)
         Project_Default(items.sku)
-          IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku)
+          IndexScan_Default(Index(customers.cname_and_sku), customers.name = 'Smith', items.sku)

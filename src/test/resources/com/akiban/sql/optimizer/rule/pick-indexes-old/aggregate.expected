@@ -5,6 +5,6 @@ SelectQuery@3979c7cf
         AggregateSource@690ff62a(PRESORTED,[customers.name],[])
           Select@16ea7549[]
             TableJoins@7aba175f(TableGroup@4f549ceb(customers) - SingleIndexScan@3c0a30fd(Index(test.customers.name[IndexColumn(name)]), GROUPED))
-              JoinNode@411650d6(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@201532fc(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              JoinNode@411650d6(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@201532fc(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
                 TableSource@464d28c7(customers - TableGroup@4f549ceb(customers))
-                TableSource@73b044df(orders - TableGroupJoin@201532fc(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@73b044df(orders - TableGroupJoin@201532fc(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

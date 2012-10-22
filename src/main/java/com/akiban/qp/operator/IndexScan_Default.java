@@ -222,6 +222,8 @@ class IndexScan_Default extends Operator
             atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(column.getTable().getName().getTableName()));
             atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
         }
+        if (indexType.index().isGroupIndex())
+            atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("GROUP"));
         if (!indexKeyRange.unbounded()) {
             List<Explainer> loExprs = null, hiExprs = null;
             if (indexKeyRange.lo() != null) {

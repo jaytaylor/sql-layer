@@ -78,7 +78,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
         latLonAfterIndex.markSpatial(0, Space.LAT_LON_DIMENSIONS);
         TableIndex beforeLatLonAfterIndex = createIndex("schema", "point", "before_lat_lon_after", "before", "lat", "lon", "after");
         beforeLatLonAfterIndex.markSpatial(1, Space.LAT_LON_DIMENSIONS);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         pointRowType = schema.userTableRowType(userTable(point));
         latLonIndexRowType = indexType(point, "lat", "lon");
         beforeLatLonIndexRowType = indexType(point, "before", "lat", "lon");
@@ -354,7 +354,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
-                int id = (int) row.eval(1).getInt();
+                int id = getLong(row, 1).intValue();
                 actual.add(id);
             }
             // There should be no false negatives
@@ -411,7 +411,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
-                int id = (int) row.eval(1).getInt();
+                int id = getLong(row, 1).intValue();
                 actual.add(id);
             }
             // There should be no false negatives
@@ -501,7 +501,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             int count = 0;
             while ((row = cursor.next()) != null) {
                 long zActual = row.eval(0).getLong();
-                int id = (int) row.eval(1).getInt();
+                int id = getLong(row, 1).intValue();
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
                 long zExpected = space.shuffle(lat, lon);

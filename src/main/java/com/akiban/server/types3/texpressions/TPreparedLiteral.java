@@ -63,7 +63,10 @@ public final class TPreparedLiteral implements TPreparedExpression {
 
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
-        return new TPreptimeValue(tInstance, value);
+        if (tInstance == null)
+            return new TPreptimeValue(null);
+        else
+            return new TPreptimeValue(tInstance, value);
     }
 
     @Override

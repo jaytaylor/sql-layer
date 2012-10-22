@@ -77,7 +77,7 @@ public class SimpleJoinPT extends QPProfilePTBase
         createIndex("schema", "customer", "idx_cname", "name");
         createIndex("schema", "orders", "idx_osalesman", "salesman");
         createIndex("schema", "address", "idx_aaddress", "address");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));

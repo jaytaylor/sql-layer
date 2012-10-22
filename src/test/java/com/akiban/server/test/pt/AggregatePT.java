@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.pt;
 
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
@@ -60,6 +61,7 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
@@ -77,6 +79,9 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
+
+import static com.akiban.server.test.ExpressionGenerators.boundField;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class AggregatePT extends ApiTestBase {
     public static final int NKEYS = 10;
@@ -128,11 +133,11 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void normalOperators() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(indexType, 0), true);
+        ordering.append(field(indexType, 0), true);
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
@@ -189,10 +194,10 @@ public class AggregatePT extends ApiTestBase {
         
         plan = API.select_HKeyOrdered(plan, rowType, pred);
         plan = API.project_Default(plan, rowType,
-                                   Arrays.asList(Expressions.field(rowType, 0),
-                                                 Expressions.field(rowType, 3),
-                                                 Expressions.field(rowType, 4),
-                                                 Expressions.field(rowType, 5)));
+                                   Arrays.asList(ExpressionGenerators.field(rowType, 0),
+                                           ExpressionGenerators.field(rowType, 3),
+                                           ExpressionGenerators.field(rowType, 4),
+                                           ExpressionGenerators.field(rowType, 5)));
         rowType = plan.rowType();
         plan = API.aggregate_Partial(plan, rowType, 
                                      1, functions,
@@ -203,11 +208,11 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void bespokeOperator() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(indexType, 0), true);
+        ordering.append(field(indexType, 0), true);
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
@@ -415,13 +420,13 @@ public class AggregatePT extends ApiTestBase {
             if (("M".compareTo(sval) > 0) ||
                 ("Y".compareTo(sval) < 0))
                 return false;
-            long flag = inputRow.eval(2).getInt();
+            long flag = getLong(inputRow, 2);
             if (flag == 1)
                 return false;
 
             // The actual aggregate part.
             boolean emit = false, reset = false;
-            long nextKey = inputRow.eval(0).getInt();
+            long nextKey = getLong(inputRow, 0);
             if (!key_init) {
                 key_init = reset = true;
                 key = nextKey;
@@ -541,11 +546,11 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void sorted() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(indexType, 0), true);
+        ordering.append(field(indexType, 0), true);
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
@@ -554,7 +559,7 @@ public class AggregatePT extends ApiTestBase {
         rowType = plan.rowType();
         
         ordering = new API.Ordering();
-        ordering.append(new FieldExpression(rowType, 2), true);
+        ordering.append(field(rowType, 2), true);
         plan = API.sort_InsertionLimited(plan, rowType, ordering, 
                                          API.SortOption.PRESERVE_DUPLICATES, 100);
         
@@ -582,14 +587,14 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void parallel() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         ValuesRowType valuesType = schema.newValuesType(AkType.LONG, AkType.LONG);
-        IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 0)))), new SetColumnSelector(0));
-        IndexBound hi = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 1)))), new SetColumnSelector(0));
+        IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<ExpressionGenerator>singletonList(boundField(valuesType, 0, 0))), new SetColumnSelector(0));
+        IndexBound hi = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<ExpressionGenerator>singletonList(boundField(valuesType, 0, 1))), new SetColumnSelector(0));
         IndexKeyRange keyRange = IndexKeyRange.bounded(indexType, lo, true, hi, false);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(indexType, 0), true);
+        ordering.append(field(indexType, 0), true);
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
@@ -609,7 +614,7 @@ public class AggregatePT extends ApiTestBase {
         plan = new Map_Parallel(plan, rowType, valuesType, keyRows, 0);
                                 
         ordering = new API.Ordering();
-        ordering.append(new FieldExpression(rowType, 2), true);
+        ordering.append(field(rowType, 2), true);
         plan = API.sort_InsertionLimited(plan, rowType, ordering, 
                                          API.SortOption.PRESERVE_DUPLICATES, 100);
         

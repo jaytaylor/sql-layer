@@ -69,9 +69,9 @@ public class MultiVolumeStoreIT extends ITBase {
 
     @Test
     public void insertCOIrows() throws Exception {
-        final RowDef defaultRowDef = rowDefCache().getRowDef(DEFAULT_SCHEMA, "customer");
-        final RowDef test1RowDef = rowDefCache().getRowDef(TEST1_SCHEMA, "customer");
-        final RowDef test2RowDef = rowDefCache().getRowDef(TEST2_SCHEMA, "customer");
+        final RowDef defaultRowDef = getRowDef(DEFAULT_SCHEMA, "customer");
+        final RowDef test1RowDef = getRowDef(TEST1_SCHEMA, "customer");
+        final RowDef test2RowDef = getRowDef(TEST2_SCHEMA, "customer");
 
         final RowData rowData = new RowData(new byte[1024]);
         final Object[] values = new Object[] { 1, "Acme Manufacturing" };

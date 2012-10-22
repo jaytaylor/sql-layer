@@ -2,12 +2,12 @@ SelectQuery@5566f63a
   ResultSet@5aaf85a3[cid, name, id, pid, name, oid, cid, order_date, id, name, state]
     Project@396ebed8[customers.cid, customers.name, child.id, child.pid, child.name, orders.oid, orders.cid, orders.order_date, parent.id, parent.name, parent.state]
       Select@15b3745d[child.name == customers.name]
-        JoinNode@389c90cc(LEFT/GROUP[child.pid == parent.id] - TableGroupJoin@2ee65e1d(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+        JoinNode@389c90cc(LEFT/GROUP[child.pid == parent.id] - TableGroupJoin@2ee65e1d(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
           JoinNode@162cd9f9(INNER)
             TableJoins@5a9a75ce(TableGroup@2924133b(customers))
-              JoinNode@52ac55da(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@3038859d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              JoinNode@52ac55da(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@3038859d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
                 TableSource@53023556(customers - TableGroup@2924133b(customers))
-                TableSource@40553c13(orders - TableGroupJoin@3038859d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@40553c13(orders - TableGroupJoin@3038859d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
             TableJoins@4ecc1f26(TableGroup@7f6a9b96(parent))
               TableSource@1bdb2464(child - TableGroup@7f6a9b96(parent))
           TableJoins@3b112034(TableGroup@7f6a9b96(parent))

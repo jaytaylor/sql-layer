@@ -4,4 +4,4 @@ PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[IN
       GroupScan_Default(customers)
     Project_Default(items.iid, items.oid, items.sku, items.quan)
       Limit_Default(1)
-        IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku = items.sku)
+        IndexScan_Default(Index(customers.cname_and_sku), customers.name = 'Smith', items.sku = items.sku)

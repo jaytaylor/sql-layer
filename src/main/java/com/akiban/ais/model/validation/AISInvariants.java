@@ -121,10 +121,10 @@ public class AISInvariants {
             // TODO: Index uses position for a relative ordering, not an absolute position. 
         }
     }
-    public static void checkDuplicateGroups (AkibanInformationSchema ais, String groupName)
+    public static void checkDuplicateGroups (AkibanInformationSchema ais, TableName groupName)
     {
         if (ais.getGroup(groupName) != null) {
-            throw new DuplicateGroupNameException (groupName);
+            throw new DuplicateGroupNameException(groupName);
         }
     }    
 

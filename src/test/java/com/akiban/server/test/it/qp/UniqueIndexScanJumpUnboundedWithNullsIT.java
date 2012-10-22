@@ -47,6 +47,7 @@ import com.akiban.qp.rowtype.Schema;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.*;
 
 public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
@@ -77,7 +78,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
             "b int",
             "c int");
         createUniqueIndex("schema", "t", "idx", "a", "b", "c");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
@@ -254,7 +255,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
         List<Long> ret = new ArrayList<Long>(rows.size());
 
         for (Row row : rows)
-            ret.add(row.eval(3).getInt());
+            ret.add(getLong(row, 3));
 
         return ret;
     }
@@ -323,7 +324,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
         {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }

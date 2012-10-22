@@ -3,4 +3,4 @@ PhysicalSelect[_SQL_COL_1:MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NOT NULL]
     IfEmpty_Default(NULL)
       Limit_Default(1)
         Project_Default(items.sku)
-          IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku)
+          IndexScan_Default(Index(customers.cname_and_sku), customers.name = 'Smith', items.sku)

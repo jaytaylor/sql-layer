@@ -7,4 +7,4 @@ SelectQuery@1422384
             AncestorLookup@1388e5e(addresses -> [customers])
               SingleIndexScan@ad483(Index(test.addresses.state[IndexColumn(state)]), NONE, =MA)
               TableSource@1bef1ac(customers - TableGroup@1861086(customers))
-            TableSource@192425a(orders - TableGroupJoin@1f52460(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@192425a(orders - TableGroupJoin@1f52460(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

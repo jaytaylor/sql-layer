@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
@@ -67,11 +68,11 @@ public class CompoundRowTest {
         // Can't test this because ValuesRow throws UnsupportedOperationException for this check.
         //assertFalse(flattenRow.containsRealRowOf(state));
         
-        assertEquals(flattenRow.eval(0).getInt(), 1);
+        assertEquals(ApiTestBase.getLong(flattenRow, 0), Long.valueOf(1));
         assertEquals(flattenRow.eval(1).getString(), "fred");
-        assertEquals(flattenRow.eval(2).getInt(), 1000);
-        assertEquals(flattenRow.eval(3).getInt(), 1);
-        assertEquals(flattenRow.eval(4).getInt(), 45);
+        assertEquals(ApiTestBase.getLong(flattenRow, 2), Long.valueOf(1000));
+        assertEquals(ApiTestBase.getLong(flattenRow, 3), Long.valueOf(1));
+        assertEquals(ApiTestBase.getLong(flattenRow, 4), Long.valueOf(45));
     }
     
     @Test
@@ -93,9 +94,9 @@ public class CompoundRowTest {
         
         assertNotNull (productRow);
        
-        assertEquals(productRow.eval(0).getInt(), 1);
+        assertEquals(ApiTestBase.getLong(productRow, 0), Long.valueOf(1));
         assertEquals(productRow.eval(1).getString(), "Fred");
-        assertEquals(productRow.eval(2).getInt(), 45);
+        assertEquals(ApiTestBase.getLong(productRow, 2), Long.valueOf(45));
         
     }
 
@@ -134,7 +135,7 @@ public class CompoundRowTest {
         builder.groupingIsComplete();
         
         SchemaFactory factory = new SchemaFactory ("schema");
-        factory.rowDefCache(builder.akibanInformationSchema());
+        factory.buildRowDefs(builder.akibanInformationSchema());
         return new Schema(builder.akibanInformationSchema());
     }
     

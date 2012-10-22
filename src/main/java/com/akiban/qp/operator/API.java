@@ -86,9 +86,29 @@ public class API
 
     public static Operator project_Default(Operator inputOperator,
                                            RowType rowType,
-                                           List<Expression> projections)
+                                           List<ExpressionGenerator> projections)
     {
-        return new Project_Default(inputOperator, rowType, projections, null);
+        return new Project_Default(inputOperator, rowType, generateOld(projections), generateNew(projections));
+    }
+
+    public static List<Expression> generateOld(List<? extends ExpressionGenerator> expressionGenerators) {
+        if ((expressionGenerators == null) || Types3Switch.ON)
+            return null;
+        List<Expression> results = new ArrayList<Expression>(expressionGenerators.size());
+        for (ExpressionGenerator generator : expressionGenerators) {
+            results.add(generator.getExpression());
+        }
+        return results;
+    }
+
+    public static List<TPreparedExpression> generateNew(List<? extends ExpressionGenerator> expressionGenerators) {
+        if ((expressionGenerators == null) || (!Types3Switch.ON) )
+            return null;
+        List<TPreparedExpression> results = new ArrayList<TPreparedExpression>(expressionGenerators.size());
+        for (ExpressionGenerator generator : expressionGenerators) {
+            results.add(generator.getTPreparedExpression());
+        }
+        return results;
     }
 
     public static Operator project_Default(Operator inputOperator,
@@ -463,6 +483,15 @@ public class API
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
     }
 
+    public static Operator select_HKeyOrdered(Operator inputOperator,
+                                              RowType predicateRowType,
+                                              ExpressionGenerator predicate)
+    {
+        if (Types3Switch.ON)
+            return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate.getTPreparedExpression());
+        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate.getExpression());
+    }
+
     // Filter
 
     public static Operator filter_Default(Operator inputOperator, Collection<? extends RowType> keepTypes)
@@ -590,10 +619,10 @@ public class API
     }
 
     public static Operator ifEmpty_Default(Operator input, RowType rowType,
-                                           List<? extends Expression> expressions,
+                                           List<? extends ExpressionGenerator> expressions,
                                            InputPreservationOption inputPreservation)
     {
-        return new IfEmpty_Default(input, rowType, expressions, null, inputPreservation);
+        return new IfEmpty_Default(input, rowType, generateOld(expressions), generateNew(expressions), inputPreservation);
     }
 
     // Union
@@ -769,6 +798,15 @@ public class API
 
     // Select_BloomFilter
 
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends ExpressionGenerator> filterFields,
+                                              int bindingPosition)
+    {
+        return select_BloomFilter(input, onPositive, generateOld(filterFields), generateNew(filterFields), null, bindingPosition);
+    }
+
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends Expression> filterFields,
@@ -791,6 +829,21 @@ public class API
                                       tFilterFields,
                                       collators,
                                       bindingPosition);
+    }
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends ExpressionGenerator> filterFields,
+                                              List<AkCollator> collators,
+                                              int bindingPosition,
+                                              ExpressionGenerator.ErasureMaker marker)
+    {
+        return new Select_BloomFilter(input,
+                onPositive,
+                generateOld(filterFields),
+                generateNew(filterFields),
+                collators,
+                bindingPosition);
     }
 
     // Insert
@@ -960,6 +1013,21 @@ public class API
             return collators.get(i);
         }
 
+        public void append(ExpressionGenerator expressionGenerator, boolean ascending)
+        {
+            TPreparedExpression newExpr;
+            Expression oldExpr;
+            if (Types3Switch.ON) {
+                newExpr = expressionGenerator.getTPreparedExpression();
+                oldExpr = null;
+            }
+            else {
+                newExpr = null;
+                oldExpr = expressionGenerator.getExpression();
+            }
+            append(oldExpr, newExpr, ascending);
+        }
+
         public void append(Expression expression, boolean ascending)
         {
             append(expression, null, ascending);
@@ -970,9 +1038,19 @@ public class API
             append(expression, tExpression, ascending, null);
         }
         
-        public void append(Expression expression, boolean ascending, AkCollator collator)
+        public void append(ExpressionGenerator expression, boolean ascending, AkCollator collator)
         {
-            append(expression, null, ascending, collator);
+            Expression oldStyle;
+            TPreparedExpression newStyle;
+            if (Types3Switch.ON) {
+                newStyle = expression.getTPreparedExpression();
+                oldStyle = null;
+            }
+            else {
+                newStyle = null;
+                oldStyle = expression.getExpression();
+            }
+            append(oldStyle, newStyle, ascending, collator);
         }
 
         public void append(Expression expression, TPreparedExpression tExpression,  boolean ascending,

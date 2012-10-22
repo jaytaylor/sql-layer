@@ -155,8 +155,8 @@ public class GroupScanIT extends OperatorITBase
         row = cursor.next();
         assertSame(orderRowType, row.rowType());
         // Get and checking each field should work
-        assertEquals(11L, row.eval(0).getInt());
-        assertEquals(1L, row.eval(1).getInt());
+        assertEquals(Long.valueOf(11L), getLong(row, 0));
+        assertEquals(Long.valueOf(1L), getLong(row, 1));
         assertEquals("ori", row.eval(2).getString());
         // Getting all value sources and then using them should also work
         ValueSource v0 = row.eval(0);

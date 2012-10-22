@@ -12,6 +12,6 @@ Subquery@317b1d64
         AggregateSource@77762fc7(UNGROUPED,[])
           Select@703aef16[orders.cid == customers.cid]
             TableJoins@37b82d69(TableGroup@594ab51b(customers))
-              JoinNode@2d26c6ea(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@1cad6513(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+              JoinNode@2d26c6ea(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@1cad6513(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
                 TableSource@4ccd43ce(orders - TableGroup@594ab51b(customers))
-                TableSource@381eb0c6(items - TableGroupJoin@1cad6513(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+                TableSource@381eb0c6(items - TableGroupJoin@1cad6513(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

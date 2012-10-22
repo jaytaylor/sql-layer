@@ -158,9 +158,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex(Index.PRIMARY_KEY_CONSTRAINT)),
-                createNewRow(store(), cid, UNDEF, 10L),
-                createNewRow(store(), cid, UNDEF, 20L),
-                createNewRow(store(), cid, UNDEF, 50L)
+                createNewRow(cid, UNDEF, 10L),
+                createNewRow(cid, UNDEF, 20L),
+                createNewRow(cid, UNDEF, 50L)
         );
     }
 
@@ -277,9 +277,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectRows(
                 scanAllIndexRequest(getUserTable(tableId).getIndex("c4")),
-                createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null),
-                createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null),
-                createNewRow(store(), tableId, UNDEF, UNDEF, UNDEF, null)
+                createNewRow(tableId, UNDEF, UNDEF, UNDEF, null),
+                createNewRow(tableId, UNDEF, UNDEF, UNDEF, null),
+                createNewRow(tableId, UNDEF, UNDEF, UNDEF, null)
         );
 
         ddl().dropTable(session(), cName);
@@ -381,9 +381,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         assertEquals("index tree exists", false, treeService().treeExists(SCHEMA, origTable.getIndex("c1").getTreeName()));
         expectFullRows(
                 cid,
-                createNewRow(store(), cid,  1L),
-                createNewRow(store(), cid,  2L),
-                createNewRow(store(), cid,  3L)
+                createNewRow(cid,  1L),
+                createNewRow(cid,  2L),
+                createNewRow(cid,  3L)
         );
     }
 
@@ -402,10 +402,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1_c2")),
-                createNewRow(store(), cid, UNDEF, 12L),
-                createNewRow(store(), cid, UNDEF, 22L),
-                createNewRow(store(), cid, UNDEF, 32L),
-                createNewRow(store(), cid, UNDEF, 102L)
+                createNewRow(cid, UNDEF, 12L),
+                createNewRow(cid, UNDEF, 22L),
+                createNewRow(cid, UNDEF, 32L),
+                createNewRow(cid, UNDEF, 102L)
         );
     }
 
@@ -477,9 +477,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1")),
-                createNewRow(store(), cid, UNDEF, 10L),
-                createNewRow(store(), cid, UNDEF, 20L),
-                createNewRow(store(), cid, UNDEF, 30L)
+                createNewRow(cid, UNDEF, 10L),
+                createNewRow(cid, UNDEF, 20L),
+                createNewRow(cid, UNDEF, 30L)
         );
     }
 
@@ -533,9 +533,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         expectIndexes(cid, "PRIMARY", "c1");
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("c1")),
-                createNewRow(store(), cid, UNDEF, "10"),
-                createNewRow(store(), cid, UNDEF, "20"),
-                createNewRow(store(), cid, UNDEF, "30")
+                createNewRow(cid, UNDEF, "10"),
+                createNewRow(cid, UNDEF, "20"),
+                createNewRow(cid, UNDEF, "30")
         );
     }
 
@@ -595,9 +595,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         expectIndexes(cid, "foo", "PRIMARY");
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("foo")),
-                createNewRow(store(), cid, UNDEF, UNDEF, "1"),
-                createNewRow(store(), cid, UNDEF, UNDEF, "2"),
-                createNewRow(store(), cid, UNDEF, UNDEF, "3")
+                createNewRow(cid, UNDEF, UNDEF, "1"),
+                createNewRow(cid, UNDEF, UNDEF, "2"),
+                createNewRow(cid, UNDEF, UNDEF, "3")
         );
     }
 
@@ -628,9 +628,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         expectIndexes(cid, "foo", "PRIMARY");
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "c").getIndex("foo")),
-                createNewRow(store(), cid, UNDEF, "C", "1"),
-                createNewRow(store(), cid, UNDEF, "B", "2"),
-                createNewRow(store(), cid, UNDEF, "A", "3")
+                createNewRow(cid, UNDEF, "C", "1"),
+                createNewRow(cid, UNDEF, "B", "2"),
+                createNewRow(cid, UNDEF, "A", "3")
         );
     }
 
@@ -670,16 +670,16 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "o").getIndex("x")),
-                createNewRow(store(), oid, UNDEF, UNDEF, null),
-                createNewRow(store(), oid, UNDEF, UNDEF, null),
-                createNewRow(store(), oid, UNDEF, UNDEF, null)
+                createNewRow(oid, UNDEF, UNDEF, null),
+                createNewRow(oid, UNDEF, UNDEF, null),
+                createNewRow(oid, UNDEF, UNDEF, null)
         );
 
         expectRows(
                 scanAllIndexRequest(getUserTable(SCHEMA, "o").getIndex("y")),
-                createNewRow(store(), oid, UNDEF, 1L, UNDEF),
-                createNewRow(store(), oid, UNDEF, 1L, UNDEF),
-                createNewRow(store(), oid, UNDEF, 3L, UNDEF)
+                createNewRow(oid, UNDEF, 1L, UNDEF),
+                createNewRow(oid, UNDEF, 1L, UNDEF),
+                createNewRow(oid, UNDEF, 3L, UNDEF)
         );
     }
 
@@ -1098,7 +1098,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         final String schema2 = "test2";
         createAndLoadCOI(schema1);
         createAndLoadCOI(schema2);
-        String groupName = getUserTable(schema2, "c").getGroup().getName();
+        TableName groupName = getUserTable(schema2, "c").getGroup().getName();
         createGroupIndex(groupName, "c1_01", "c.c1,o.o1", Index.JoinType.LEFT);
 
         runAlter(ChangeLevel.TABLE, "ALTER TABLE test2.o ALTER COLUMN o1 SET DATA TYPE bigint");
@@ -1116,7 +1116,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void changeColumnInGICommon(String table, Runnable alterRunnable) {
         String giName = "c1_o1_i1";
         createAndLoadCOI();
-        String groupName = getUserTable(SCHEMA, table).getGroup().getName();
+        TableName groupName = getUserTable(SCHEMA, table).getGroup().getName();
         createGroupIndex(groupName, giName, "c.c1,o.o1,i.i1", Index.JoinType.LEFT);
 
         alterRunnable.run();

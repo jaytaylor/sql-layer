@@ -7,10 +7,14 @@
 ---
 # addtime should be able to recognise the second arg as the number of seconds
 - Statement: select ADDTIME('2007-12-31 23:59:59', 2) from all_types;
-- output: !select-engine { all: [[!re '2008-01-01 00:00:01([.]0)?']], newtypes: [['00:00:01']] }
+- output: !select-engine { all: [[!re '2008-01-01 00:00:01([.]0)?']], newtypes: [['2008-01-01 00:00:01']] }
+---
+- Statement: SET newtypes='false'
 ---
 - Statement: select ADDTIME('2007-12-31 23:59:59', INTERVAL 2 SECOND) from all_types;
 - output: [[!re '2008-01-01 00:00:01([.]0)?']]
+---
+- Statement: SET newtypes=DEFAULT
 #--- # bug 889300
 # fractional seconds is not supported yet
 #- Statement: select ADDTIME('01:00:00.999999', '02:00:00.999998') from all_types;

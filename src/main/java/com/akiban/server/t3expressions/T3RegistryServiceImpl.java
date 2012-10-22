@@ -39,7 +39,6 @@ import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
-import com.akiban.util.HasId;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ComparisonChain;
@@ -52,16 +51,24 @@ import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 public final class T3RegistryServiceImpl implements T3RegistryService, Service, JmxManageable {
+
+    public static TCastResolver createTCastResolver() {
+        T3RegistryServiceImpl registryService = new T3RegistryServiceImpl();
+        registryService.start();
+        return registryService.getCastsResolver();
+    }
 
     // T3RegistryService interface
 
@@ -266,7 +273,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return describeOverloads(flattenedOverloads.asMap(), Functions.toStringFunction());
         }
 
-        private <T extends HasId,S> Object describeOverloads(
+        private <T extends TOverload,S> Object describeOverloads(
                 Map<String, Collection<T>> elems, Function<? super T, S> format)
         {
             Map<String,Map<String,String>> result = new TreeMap<String, Map<String,String>>();
@@ -274,6 +281,12 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 Collection<T> overloads = entry.getValue();
                 Map<String,String> overloadDescriptions = new TreeMap<String, String>();
                 int idSuffix = 1;
+                boolean allSamePriorities = allSamePriorities(overloads);
+                if (!allSamePriorities) {
+                    List<T> asList = new ArrayList<T>(overloads);
+                    Collections.sort(asList, compareByPriorities);
+                    overloads = asList;
+                }
                 for (T overload : overloads) {
                     final String overloadId = overload.id();
                     final String origDescription = String.valueOf(format.apply(overload));
@@ -283,11 +296,25 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     while (overloadDescriptions.containsKey(overloadDescription)) {
                         overloadDescription = origDescription + " [" + Integer.toString(idSuffix++) + ']';
                     }
+                    if (!allSamePriorities)
+                        overloadDescription = "priority " + Arrays.toString(overload.getPriorities()) + ' '
+                                + origDescription;
                     overloadDescriptions.put(overloadDescription, overloadId);
                 }
                 result.put(entry.getKey(), overloadDescriptions);
             }
             return result;
+        }
+
+        private <T extends TOverload> boolean allSamePriorities(Collection<T> overloads) {
+            Iterator<T> iter = overloads.iterator();
+            int[] firstPriorities = iter.next().getPriorities();
+            while (iter.hasNext()) {
+                int[] priorities = iter.next().getPriorities();
+                if (!Arrays.equals(firstPriorities, priorities))
+                    return false;
+            }
+            return true;
         }
 
         private void buildTName(String bundleTag, String nameTag, TClass tClass, Map<String, Comparable<?>> out) {
@@ -302,6 +329,22 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             options.setIndent(4);
             return new Yaml(options).dump(obj);
         }
+
+        Comparator<TOverload> compareByPriorities = new Comparator<TOverload>() {
+            @Override
+            public int compare(TOverload o1, TOverload o2) {
+                int[] o1Priorities = o1.getPriorities();
+                int[] o2Priorities = o2.getPriorities();
+                return lowest(o1Priorities) - lowest(o2Priorities);
+            }
+
+            private int lowest(int[] ints) {
+                int result = ints[0];
+                for (int i = 1; i < ints.length; ++i)
+                    result = Math.min(result, ints[i]);
+                return result;
+            }
+        };
     }
 
 }

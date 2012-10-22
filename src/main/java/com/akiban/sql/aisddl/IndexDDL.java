@@ -78,7 +78,7 @@ public class IndexDDL
                                     String defaultSchemaName,
                                     DropIndexNode dropIndex,
                                     QueryContext context) {
-        String groupName = null;
+        TableName groupName = null;
         TableName tableName = null;
         ExistenceCheck condition = dropIndex.getExistenceCheck();
 
@@ -268,7 +268,7 @@ public class IndexDDL
             throw new NoSuchTableException (tableName);
         }
         
-        final String groupName = ais.getUserTable(tableName).getGroup().getName();
+        final TableName groupName = ais.getUserTable(tableName).getGroup().getName();
         
         if (ais.getGroup(groupName) == null) {
             throw new NoSuchGroupException(groupName);

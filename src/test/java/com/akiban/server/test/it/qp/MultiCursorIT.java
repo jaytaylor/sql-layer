@@ -48,7 +48,7 @@ public class MultiCursorIT extends OperatorITBase
         t = createTable(
             "schema", "t",
             "id int not null primary key");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
@@ -118,7 +118,7 @@ public class MultiCursorIT extends OperatorITBase
     private int unwrap(Row row)
     {
         ValuesRow valuesRow = (ValuesRow) row;
-        return (int) valuesRow.eval(0).getInt();
+        return getLong(valuesRow, 0).intValue();
     }
 
     private int t;

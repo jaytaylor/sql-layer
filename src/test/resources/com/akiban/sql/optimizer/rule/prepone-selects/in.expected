@@ -8,10 +8,10 @@ SelectQuery@52d03a00
               AncestorLookup@384e23c3(items -> [customers, orders, items])
                 SingleIndexScan@120df416(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 19504.5)
                 TableSource@79a7bd3b(customers - TableGroup@771b16a7(customers))
-                TableSource@1a6d3ca2(orders - TableGroupJoin@5213d99c(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-                TableSource@403525a2(items - TableGroupJoin@1533badd(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+                TableSource@1a6d3ca2(orders - TableGroupJoin@5213d99c(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+                TableSource@403525a2(items - TableGroupJoin@1533badd(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
           Select@69d4c4b7[]
             Flatten@77310e0a(child)
               Select@3590efa8[customers.name == child.name, child.pid == 1]
-                GroupScan@3e661a11(Group(parent -> test.parent), rows = 1, cost = 1225.64)
+                GroupScan@3e661a11(Group(test.parent), rows = 1, cost = 1225.64)
                   TableSource@7378aae2(child - TableGroup@21397218(parent))

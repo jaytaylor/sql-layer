@@ -31,6 +31,7 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.row.BindableRow;
@@ -40,7 +41,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -79,14 +80,14 @@ public class Select_BloomFilterCT extends CostModelBase
             "x int");
         Index dx = createIndex(schemaName, dTableName, "idx_dx", "x");
         Index fx = createIndex(schemaName, fTableName, "idx_fx", "x");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
         dIndexRowType = dRowType.indexRowType(dx);
         fIndexRowType = fRowType.indexRowType(fx);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -138,13 +139,13 @@ public class Select_BloomFilterCT extends CostModelBase
             project_Default(
                 groupScan_Default(group(f)),
                 fRowType,
-                Arrays.asList(Expressions.field(fRowType, 0)));
+                Arrays.asList(ExpressionGenerators.field(fRowType, 0)));
         timeFilterInput = new TimeOperator(filterInput);
         // For the  index scan retrieving rows from the F(x) index given a D index row
         IndexBound fxBound = new IndexBound(
             new RowBasedUnboundExpressions(
                 filterInput.rowType(),
-                Arrays.asList(Expressions.boundField(dIndexRowType, 0, 0))),
+                Arrays.asList(ExpressionGenerators.boundField(dIndexRowType, 0, 0))),
             new SetColumnSelector(0));
         IndexKeyRange fKeyRange = IndexKeyRange.bounded(fIndexRowType, fxBound, true, fxBound, true);
         // Use a bloom filter loaded by filterInput. Then for each input row, check the filter (projecting
@@ -169,8 +170,7 @@ public class Select_BloomFilterCT extends CostModelBase
                         fKeyRange,
                         new Ordering()),
                     // filterFields
-                    Arrays.asList(Expressions.field(dIndexRowType, 0)),
-                    null,
+                    Arrays.asList(ExpressionGenerators.field(dIndexRowType, 0)),
                     // filterBindingPosition
                     0));
         return plan;
@@ -183,7 +183,7 @@ public class Select_BloomFilterCT extends CostModelBase
             project_Default(
                 groupScan_Default(group(f)),
                 fRowType,
-                Arrays.asList(Expressions.field(fRowType, 0)));
+                Arrays.asList(ExpressionGenerators.field(fRowType, 0)));
         timeFilterInput = new TimeOperator(filterInput);
         // For the index scan retriving rows from the D(x) index
         IndexBound dxLo =
@@ -196,7 +196,7 @@ public class Select_BloomFilterCT extends CostModelBase
         IndexBound fxBound = new IndexBound(
             new RowBasedUnboundExpressions(
                 filterInput.rowType(),
-                Arrays.asList(Expressions.boundField(dIndexRowType, 0, 0))),
+                Arrays.asList(ExpressionGenerators.boundField(dIndexRowType, 0, 0))),
             new SetColumnSelector(0));
         IndexKeyRange fKeyRange = IndexKeyRange.bounded(fIndexRowType, fxBound, true, fxBound, true);
         // Use a bloom filter loaded by filterInput. Then for each input row, check the filter (projecting
@@ -223,8 +223,7 @@ public class Select_BloomFilterCT extends CostModelBase
                         fKeyRange,
                         new Ordering()),
                     // filterFields
-                    Arrays.asList(Expressions.field(dIndexRowType, 0)),
-                    null,
+                    Arrays.asList(ExpressionGenerators.field(dIndexRowType, 0)),
                     // filterBindingPosition
                     0));
         return plan;

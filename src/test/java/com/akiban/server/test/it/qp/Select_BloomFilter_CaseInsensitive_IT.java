@@ -30,6 +30,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -44,8 +45,9 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.collation.AkCollatorMySQL;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
 import com.persistit.Key;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,7 +81,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
             "b varchar(10) collate latin1_swedish_ci");
         Index dIndex = createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
         Index fab = createIndex("schema", "filtering", "idx_fab", "a", "b");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
         dIndexRowType = dRowType.indexRowType(dIndex);
@@ -270,13 +272,13 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                     groupScan_Default(group(f)),
                     Collections.singleton(fRowType)),
                 fRowType,
-                Expressions.compare(
-                    Expressions.field(fRowType, 0),
+                ExpressionGenerators.compare(
+                    ExpressionGenerators.field(fRowType, 0),
                     Comparison.EQ,
-                    Expressions.literal(testId))),
+                    ExpressionGenerators.literal(testId), castResolver())),
             fRowType,
-            Arrays.asList(Expressions.field(fRowType, 1),
-                          Expressions.field(fRowType, 2)));
+            Arrays.asList(ExpressionGenerators.field(fRowType, 1),
+                          ExpressionGenerators.field(fRowType, 2)));
         // For the index scan retriving rows from the D(test_id) index
         IndexBound testIdBound =
             new IndexBound(row(dIndexRowType, testId), new SetColumnSelector(0));
@@ -287,8 +289,8 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
             new RowBasedUnboundExpressions(
                 loadFilter.rowType(),
                 Arrays.asList(
-                    Expressions.boundField(dIndexRowType, 0, 1),
-                    Expressions.boundField(dIndexRowType, 0, 2))),
+                    ExpressionGenerators.boundField(dIndexRowType, 0, 1),
+                    ExpressionGenerators.boundField(dIndexRowType, 0, 2))),
             new SetColumnSelector(0, 1));
         IndexKeyRange fabKeyRange =
             IndexKeyRange.bounded(fabIndexRowType, abBound, true, abBound, true);
@@ -316,23 +318,23 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                             new Ordering()),
                         // filterFields
                         Arrays.asList(
-                            Expressions.field(dIndexRowType, 1),
-                            Expressions.field(dIndexRowType, 2)),
-                        null,
+                            ExpressionGenerators.field(dIndexRowType, 1),
+                            ExpressionGenerators.field(dIndexRowType, 2)),
                         // collators
                         collators,
                         // filterBindingPosition
-                        0),
+                        0,
+                        ExpressionGenerator.ErasureMaker.MARK),
                     // collators
                     collators,
                     // usePValues
-                    false
+                    Types3Switch.ON
                     ),
                 dIndexRowType,
                 Arrays.asList(
-                    Expressions.field(dIndexRowType, 0),   // test_id
-                    Expressions.field(dIndexRowType, 1),   // a
-                    Expressions.field(dIndexRowType, 2))); // b
+                    ExpressionGenerators.field(dIndexRowType, 0),   // test_id
+                    ExpressionGenerators.field(dIndexRowType, 1),   // a
+                    ExpressionGenerators.field(dIndexRowType, 2))); // b
         outputRowType = plan.rowType();
         return plan;
     }

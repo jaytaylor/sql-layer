@@ -113,14 +113,14 @@ public abstract class AbstractScanBase extends ITBase {
         // their children.
         // PrintStream output = new PrintStream(new FileOutputStream(new File("/tmp/srt.out")));
         for (TableName name : tableMap.keySet()) {
-            final RowDef rowDef = rowDefCache().getRowDef(name);
+            final RowDef rowDef = getRowDef(name);
             final LegacyRowWrapper rowWrapper = new LegacyRowWrapper(rowDef);
             final int level = name.getTableName().length();
             int k = (int) Math.pow(10, level);
             for (int i = 0; i < k; i++) {
                 rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8, i + "X" });
                 rowWrapper.setRowData(rowData);
-                // output.println(rowData.toString(rowDefCache));
+                // output.println(rowData.toString(rowDef));
                 dml.writeRow(session(), rowWrapper);
             }
         }
@@ -128,7 +128,7 @@ public abstract class AbstractScanBase extends ITBase {
     }
 
     protected RowDef rowDef(final String name) {
-        return rowDefCache().getRowDef(new TableName(SCHEMA, name));
+        return getRowDef(new TableName(SCHEMA, name));
     }
 
     protected int scanAllRows(final String test, final RowData start,
@@ -162,7 +162,7 @@ public abstract class AbstractScanBase extends ITBase {
                 result.add(rowData);
                 if (VERBOSE) {
                     System.out.println(String.format("%5d ", scanCount)
-                                       + rowData.toString(rowDefCache()));
+                                       + rowData.toString(ais()));
                 }
                 p = rowData.getRowEnd();
             }
@@ -187,7 +187,7 @@ public abstract class AbstractScanBase extends ITBase {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         for (final RowData rowData : result) {
-            sb.append(rowData.toString(rowDefCache()));
+            sb.append(rowData.toString(ais()));
             sb.append(AkServerUtil.NEW_LINE);
         }
         return sb.toString();

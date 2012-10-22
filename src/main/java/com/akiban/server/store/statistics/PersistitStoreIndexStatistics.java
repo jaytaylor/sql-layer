@@ -72,13 +72,10 @@ public class PersistitStoreIndexStatistics
     }
 
     /** Load previously stored statistics from database. */
-    public IndexStatistics loadIndexStatistics(Session session, Index index)
-            throws PersistitException {
+    public IndexStatistics loadIndexStatistics(Session session, Index index) throws PersistitException {
         IndexDef indexDef = index.indexDef();
-        RowDef indexStatisticsRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_TABLE_NAME);
-        RowDef indexStatisticsEntryRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
+        RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
 
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         exchange.clear()
@@ -191,11 +188,10 @@ public class PersistitStoreIndexStatistics
     }
 
     /** Store statistics into database. */
-    public void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics)
-            throws PersistitException {
+    public void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics) throws PersistitException {
         int tableId = index.indexDef().getRowDef().getRowDefId();
-        RowDef indexStatisticsRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_TABLE_NAME);
-        RowDef indexStatisticsEntryRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        RowDef indexStatisticsRowDef = store.getRowDef(session, INDEX_STATISTICS_TABLE_NAME);
+        RowDef indexStatisticsEntryRowDef = store.getRowDef(session, INDEX_STATISTICS_ENTRY_TABLE_NAME);
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         Transaction transaction = exchange.getTransaction();
 
@@ -247,8 +243,8 @@ public class PersistitStoreIndexStatistics
         throws PersistitException
     {
         RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
-        RowDef indexStatisticsRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_TABLE_NAME);
-        RowDef indexStatisticsEntryRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
+        RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
         int tableId = index.indexDef().getRowDef().getRowDefId();
         int indexId = index.getIndexId();
         // Delete index_statistics_entry rows.
@@ -256,7 +252,7 @@ public class PersistitStoreIndexStatistics
         while (exchange.traverse(Key.Direction.GT, true)) {
             store.expandRowData(exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsEntryRowDef.getRowDefId() &&
-                selectedIndex(rowData, tableId, indexId)) {
+                selectedIndex(session, rowData, tableId, indexId)) {
                 store.deleteRow(session, rowData);
             }
         }
@@ -265,16 +261,16 @@ public class PersistitStoreIndexStatistics
         while (exchange.traverse(Key.Direction.GT, true)) {
             store.expandRowData(exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsRowDef.getRowDefId() &&
-                selectedIndex(rowData, tableId, indexId)) {
+                selectedIndex(session, rowData, tableId, indexId)) {
                 store.deleteRow(session, rowData);
             }
         }
         // TODO: Maintain row counts for index_statistics and index_statistics_entry tables.
     }
 
-    private boolean selectedIndex(RowData rowData, long tableId, long indexId)
+    private boolean selectedIndex(Session session, RowData rowData, long tableId, long indexId)
     {
-        LegacyRowWrapper row = new LegacyRowWrapper(rowData, store);
+        LegacyRowWrapper row = new LegacyRowWrapper(session, rowData, store);
         long rowTableId = (Long) row.get(0);
         long rowIndexId = (Long) row.get(1);
         return rowTableId == tableId && rowIndexId == indexId;
@@ -284,7 +280,7 @@ public class PersistitStoreIndexStatistics
     public void deleteIndexStatistics(Session session, Index index)
             throws PersistitException
     {
-        RowDef indexStatisticsRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_TABLE_NAME);
+        RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         Transaction transaction = exchange.getTransaction();
         transaction.begin();
@@ -334,6 +330,14 @@ public class PersistitStoreIndexStatistics
         CountingVisitor countingVisitor = new CountingVisitor();
         store.traverse(session, index, countingVisitor);
         return countingVisitor.getCount();
+    }
+
+    private RowDef getIndexStatsRowDef(Session session) {
+        return store.getRowDef(session, INDEX_STATISTICS_TABLE_NAME);
+    }
+
+    private RowDef getIndexStatsEntryRowDef(Session session) {
+        return store.getRowDef(session, INDEX_STATISTICS_ENTRY_TABLE_NAME);
     }
 
     private static class CountingVisitor extends IndexVisitor {

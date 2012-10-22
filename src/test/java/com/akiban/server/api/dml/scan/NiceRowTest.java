@@ -30,14 +30,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
 
@@ -156,7 +154,7 @@ public final class NiceRowTest {
         String str = new String(bytes, "utf8");
 
         String ddl = "create table test.t(id int not null primary key, v varchar(255) character set utf8)";
-        RowDef rowDef = SCHEMA_FACTORY.rowDefCache(ddl).getRowDef("test", "t");
+        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test", "t").rowDef();
 
         Object[] objects = { 1L, str };
         RowData rowData = create(rowDef, objects);
@@ -181,7 +179,7 @@ public final class NiceRowTest {
         assertEquals("utf8 byte length", 12, TEST_STR.getBytes("UTF-8").length);
 
         String ddl = "create table test.t(id int not null primary key, v varchar(32) character set utf8)";
-        RowDef rowDef = SCHEMA_FACTORY.rowDefCache(ddl).getRowDef("test", "t");
+        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test", "t").rowDef();
 
         Object[] objects = { 1L, TEST_STR };
         RowData rowData = create(rowDef, objects);
@@ -210,8 +208,7 @@ public final class NiceRowTest {
             ddl[i++] = String.format(", field_%s int", c);
         }
         ddl[i] = ");";
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        return rowDefCache.getRowDef("test_schema", "test_table");
+        return SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test_schema", "test_table").rowDef();
     }
 
     private RowData create(RowDef rowDef, Object[] objects) {

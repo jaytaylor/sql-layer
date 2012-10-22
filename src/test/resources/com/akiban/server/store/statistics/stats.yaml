@@ -1,3 +1,24 @@
+Index: name
+RowCount: 1600
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 200
+    eq: 1
+    key: [AAA]
+    lt: 500
+  - distinct: 100
+    eq: 2
+    key: [MMM]
+    lt: 900
+  - distinct: 300
+    eq: 1
+    key: ["\x81"]
+    lt: 300
+Table: parent
+Timestamp: 2010-01-01T00:00:00Z
+---
 Index: value
 RowCount: 1600
 SampledCount: 100
@@ -22,26 +43,5 @@ Statistics:
     eq: 0
     key: [MMM, '99.99']
     lt: 900
-Table: parent
-Timestamp: 2010-01-01T00:00:00Z
----
-Index: name
-RowCount: 1600
-SampledCount: 100
-Statistics:
-- Columns: 1
-  Histogram:
-  - distinct: 200
-    eq: 1
-    key: [AAA]
-    lt: 500
-  - distinct: 100
-    eq: 2
-    key: [MMM]
-    lt: 900
-  - distinct: 300
-    eq: 1
-    key: ["\x81"]
-    lt: 300
 Table: parent
 Timestamp: 2010-01-01T00:00:00Z

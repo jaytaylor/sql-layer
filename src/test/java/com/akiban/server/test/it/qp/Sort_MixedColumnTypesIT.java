@@ -30,6 +30,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowsBuilder;
@@ -44,6 +45,8 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import org.junit.Before;
@@ -51,6 +54,7 @@ import org.junit.Test;
 
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public final class Sort_MixedColumnTypesIT extends ITBase {
     @Before
@@ -96,11 +100,16 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
         );
-        Row[] expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.DECIMAL)
-                .row(4L, "Aaa", "32.00")
-                .row(2L, "Aaa", "75.25")
-                .row(3L, "Bbb", "120.00")
-                .row(1L, "Ccc", "100.00")
+        Row[] expected = 
+            (Types3Switch.ON ?
+             new RowsBuilder(MNumeric.INT.instance(false),
+                             MString.VARCHAR.instance(32, true),
+                             MNumeric.DECIMAL.instance(5,2, true)) :
+             new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL))
+                .row(4, "Aaa", "32.00")
+                .row(2, "Aaa", "75.25")
+                .row(3, "Bbb", "120.00")
+                .row(1, "Ccc", "100.00")
                 .rows().toArray(new Row[4]);
         compareRows(expected, cursor(plan));
     }
@@ -117,11 +126,16 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 ordering,
                 SortOption.PRESERVE_DUPLICATES
         );
-        Row[] expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.DECIMAL)
-                .row(2L, "Aaa", "75.25")
-                .row(4L, "Aaa", "32.00")
-                .row(3L, "Bbb", "120.00")
-                .row(1L, "Ccc", "100.00")
+        Row[] expected = 
+            (Types3Switch.ON ?
+             new RowsBuilder(MNumeric.INT.instance(false),
+                             MString.VARCHAR.instance(32, true),
+                             MNumeric.DECIMAL.instance(5,2, true)) :
+             new RowsBuilder(AkType.INT, AkType.VARCHAR, AkType.DECIMAL))
+                .row(2, "Aaa", "75.25")
+                .row(4, "Aaa", "32.00")
+                .row(3, "Bbb", "120.00")
+                .row(1, "Ccc", "100.00")
                 .rows().toArray(new Row[4]);
         compareRows(expected, cursor(plan));
     }
@@ -133,17 +147,8 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     }
 
     private void orderBy(Ordering ordering, int fieldPos, boolean ascending) {
-        Expression oFieldExpression;
-        TPreparedExpression tFieldExpression;
-        if (Types3Switch.ON) {
-            tFieldExpression = new TPreparedField(customerRowType.typeInstanceAt(fieldPos), fieldPos);
-            oFieldExpression = null;
-        }
-        else {
-            tFieldExpression = null;
-            oFieldExpression = new FieldExpression(customerRowType, fieldPos);
-        }
-        ordering.append(oFieldExpression, tFieldExpression, ascending);
+        ExpressionGenerator expression = field(customerRowType, fieldPos);
+        ordering.append(expression, ascending);
     }
 
     private Schema schema;

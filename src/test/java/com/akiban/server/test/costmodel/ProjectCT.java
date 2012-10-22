@@ -33,7 +33,7 @@ import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -58,7 +58,7 @@ public class ProjectCT extends CostModelBase
         t = createTable(schemaName, tableName,
                         "id int not null",
                         "primary key(id)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         group = group(t);
         adapter = persistitAdapter(schema);
@@ -76,7 +76,7 @@ public class ProjectCT extends CostModelBase
     {
         Operator scan = groupScan_Default(group);
         TimeOperator timeScan = new TimeOperator(scan);
-        Operator project = project_Default(timeScan, tRowType, Arrays.asList(Expressions.literal(true)));
+        Operator project = project_Default(timeScan, tRowType, Arrays.asList(ExpressionGenerators.literal(true)));
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(project, queryContext);

@@ -35,6 +35,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.akiban.util.tap.TapReport;
@@ -56,7 +57,7 @@ public class SortPT extends QPProfilePTBase
             "rand int",
             "filler varchar(20)");
         group = group(t);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
         queryContext = queryContext((PersistitAdapter) adapter);
@@ -68,7 +69,7 @@ public class SortPT extends QPProfilePTBase
         InOutTap tap = Operator.OPERATOR_TAP; // Force loading of class and registration of tap.
         Tap.setEnabled(OPERATOR_TAPS, true);
         ordering = ordering();
-        ordering.append(new FieldExpression(tRowType, 0), true);
+        ordering.append(ExpressionGenerators.field(tRowType, 0), true);
         plan = sort_Tree(groupScan_Default(group), tRowType, ordering, SortOption.PRESERVE_DUPLICATES);
         populateDB(10000000);
         // Warmup
@@ -110,7 +111,7 @@ public class SortPT extends QPProfilePTBase
     {
         Tap.reset(OPERATOR_TAPS);
         Ordering ordering = ordering();
-        ordering.append(new FieldExpression(tRowType, field), true);
+        ordering.append(ExpressionGenerators.field(tRowType, field), true);
         Operator plan = 
             sort_Tree(
                 limit_Default(

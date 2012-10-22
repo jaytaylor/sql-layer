@@ -2,5 +2,5 @@ SelectQuery@7f3ae009
   ResultSet@724ab020[c1]
     Project@5713f7f[tc.c1]
       Select@4dffada3[]
-        TableJoins@4ce0d056(TableGroup@3b8de588(tc) - GroupScan@60d86243(Group(tc -> test.tc)))
+        TableJoins@4ce0d056(TableGroup@3b8de588(tc) - GroupScan@60d86243(Group(test.tc)))
           TableSource@66d83fa6(tc - TableGroup@3b8de588(tc))

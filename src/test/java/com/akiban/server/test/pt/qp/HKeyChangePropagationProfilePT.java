@@ -77,7 +77,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
             "cid2_copy int," +
             "grouping foreign key(pid) references parent(pid)");
         createIndex("schema", "child2", "idx_cid2_copy", "cid2_copy");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         grandparentRowType = schema.userTableRowType(userTable(grandparent));
         parentRowType = schema.userTableRowType(userTable(parent));
         child1RowType = schema.userTableRowType(userTable(child1));
@@ -170,7 +170,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                        i = original.pvalue(1).getInt64();
                                    }
                                    else {
-                                       i = original.eval(1).getInt();
+                                       i = getLong(original, 1);
                                    }
                                    updatedRow.overlay(1, i - 1000000);
                                    return updatedRow;
@@ -244,7 +244,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                        i = original.pvalue(0).getInt64();
                                    }
                                    else {
-                                       i = original.eval(0).getInt();
+                                       i = getLong(original, 0);
                                    }
                                    updatedRow.overlay(0, i - 1000000);
                                    return updatedRow;
@@ -274,7 +274,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                        i = original.pvalue(0).getInt64();
                                    }
                                    else {
-                                       i = original.eval(0).getInt();
+                                       i = getLong(original, 0);
                                    }
                                    updatedRow.overlay(0, i + 1000000);
                                    return updatedRow;

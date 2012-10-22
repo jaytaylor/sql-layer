@@ -247,7 +247,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     
     protected OperatorBasedRowCollector(PersistitStore store, Session session, ConfigurationService config)
     {
-        this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
+        this.schema = SchemaCache.globalSchema(store.getAIS(session));
         // Passing null to PersistitAdapter's TreeService argument. TreeService is only needed for sorting,
         // which OBRC doesn't use.
         this.adapter = new PersistitAdapter(schema, store, null, session, config);

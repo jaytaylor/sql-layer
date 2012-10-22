@@ -199,6 +199,7 @@ public final class PValue implements PValueSource, PValueTarget {
     @Override
     public String getString() {
         checkUnderlying(PUnderlying.STRING);
+        internalUpdateRaw();
         return (String) oCache;
     }
 

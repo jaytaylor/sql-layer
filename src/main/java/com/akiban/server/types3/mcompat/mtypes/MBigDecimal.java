@@ -72,6 +72,16 @@ public class MBigDecimal extends TClassBase {
         return new MBigDecimalWrapper(sb.toString());
     }
 
+    public static BigDecimalWrapper getWrapper(TExecutionContext context, int index) {
+        BigDecimalWrapper wrapper = (BigDecimalWrapper)context.exectimeObjectAt(index);
+        if (wrapper == null) {
+            wrapper = new MBigDecimalWrapper();
+            context.putExectimeObject(index, wrapper);
+        }
+        wrapper.reset();
+        return wrapper;
+    }
+
     public static void adjustAttrsAsNeeded(TExecutionContext context, PValueSource source,
                                            TInstance targetInstance, PValueTarget target)
     {
@@ -114,7 +124,7 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
-    protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+    protected void doWriteCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
         byte[] bytes;
         if (in.hasRawValue()) {
             bytes = in.getBytes();
@@ -234,6 +244,17 @@ public class MBigDecimal extends TClassBase {
             StringBuilder sb = new StringBuilder(precision + 2); // +2 for dot and minus sign
             ConversionHelperBigDecimal.decodeToString(bb, 0, precision, scale, AkibanAppender.of(sb));
             return new MBigDecimalWrapper(sb.toString());
+        }
+
+        @Override
+        public Object sanitize(Object object) {
+            if (object instanceof BigDecimal)
+                return new MBigDecimalWrapper((BigDecimal)object);
+            else if (object instanceof MBigDecimalWrapper)
+                return object;
+            else if (object instanceof String)
+                return new MBigDecimalWrapper((String)object);
+            throw new UnsupportedOperationException(String.valueOf(object));
         }
     };
 }

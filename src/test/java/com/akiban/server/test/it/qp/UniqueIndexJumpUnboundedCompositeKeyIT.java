@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.Ignore;
 import java.util.Arrays;
 import java.lang.Long;
@@ -51,6 +53,7 @@ import com.akiban.qp.rowtype.Schema;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static org.junit.Assert.*;
 
 /**
@@ -98,7 +101,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         
         createUniqueIndex("schema", "t", "idx", "a", "b", "c");
         
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new NewRow[] {
@@ -2884,8 +2887,8 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     {
         List<List<Long>> actualList = new ArrayList<List<Long>>();
         for (Row row : actual)
-            actualList.add(Arrays.asList(row.eval(ID1).getInt(),
-                                         row.eval(ID2).getInt()));
+            actualList.add(Arrays.asList(getLong(row, ID1),
+                                         getLong(row, ID2)));
         
         List<List<Long>> expectedList = new ArrayList<List<Long>>();
         for (long idPair[] : expected)
@@ -3139,7 +3142,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         {
             int column = (Integer) ord[i++];
             boolean asc = (Boolean) ord[i++];
-            ordering.append(new FieldExpression(idxRowType, column), asc);
+            ordering.append(field(idxRowType, column), asc);
         }
         return ordering;
     }

@@ -3,9 +3,9 @@ SelectQuery@14acfcd
     Project@cb78915[customers.name, orders.order_date]
       Select@19113f8[EXISTS(Subquery@626bd9e0)]
         TableJoins@7e266b44(TableGroup@100bac2(customers))
-          JoinNode@ab54eb(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@542529(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          JoinNode@ab54eb(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@542529(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
             TableSource@53ab04(customers - TableGroup@100bac2(customers))
-            TableSource@e51b2c(orders - TableGroupJoin@542529(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@e51b2c(orders - TableGroupJoin@542529(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
 
 Subquery@626bd9e0
   Select@15aed57[items.oid == orders.oid, items.sku == 1234]
