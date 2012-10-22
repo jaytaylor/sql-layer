@@ -192,7 +192,7 @@ public abstract class TClass {
         if (inValue.isNull())
             out.putNull();
         else
-            writeCanonical(inValue, inInstance, out);
+            doWriteCollating(inValue, inInstance, out);
     }
 
     protected void doWriteCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
