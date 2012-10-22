@@ -159,6 +159,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                 switch (server.getOutputFormat()) {
                 case JSON:
                 case JSON_WITH_META_DATA:
+                    outputter = new PostgresJavaRoutineJsonOutputter(context, this,
+                                                                     dynamicResultSets);
+                    break;
                 default:
                     outputter = new PostgresJavaRoutineResultsOutputter(context, this);
                     break;
