@@ -257,7 +257,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         AISBuilder builder = new AISBuilder(newAIS);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        newAIS.freeze();
 
         final String curSchema = currentName.getSchemaName();
         final String newSchema = newName.getSchemaName();
@@ -857,6 +856,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      */
     private void saveAISChange(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
 
         int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
         GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
