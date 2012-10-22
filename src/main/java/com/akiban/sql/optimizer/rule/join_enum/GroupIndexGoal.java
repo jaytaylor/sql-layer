@@ -1520,6 +1520,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 return false;
         }
 
+        index.setCovering(determineCovering(index));
         index.setCostEstimate(estimateCostSpatial(index));
         return true;
     }
