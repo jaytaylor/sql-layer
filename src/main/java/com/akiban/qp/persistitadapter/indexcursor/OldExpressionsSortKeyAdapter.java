@@ -37,10 +37,10 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.RankExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.util.ValueSources;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
@@ -112,8 +112,7 @@ public class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Ex
 
     @Override
     public long compare(TInstance tInstance, ValueSource one, ValueSource two) {
-        return new RankExpression(Expressions.valueSource(one),
-                Expressions.valueSource(two)).evaluation().eval().getInt();
+        return ValueSources.compare(one, two);
     }
 
     @Override

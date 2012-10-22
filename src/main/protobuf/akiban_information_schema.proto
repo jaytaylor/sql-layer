@@ -80,6 +80,8 @@ message Index {
     optional string   description = 8;  // index comment holder 
     optional JoinType joinType    = 9;  // Type of join used for GroupIndex
     optional IndexMethod indexMethod  = 10; // Kind of special index
+    optional int32 firstSpatialArg = 11;    // For a spatial index, the position in the index of the first spatial column
+    optional int32 dimensions = 12;         // For a spatial index, the number of dimensions of the space
 }
 
 message Group {

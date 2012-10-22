@@ -34,19 +34,12 @@ import java.util.List;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.error.*;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.sql.parser.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.session.Session;
-import com.akiban.sql.parser.CreateIndexNode;
-import com.akiban.sql.parser.DropIndexNode;
-import com.akiban.sql.parser.IndexColumn;
-import com.akiban.sql.parser.RenameNode;
-import com.akiban.sql.parser.SpecialIndexFuncNode;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -56,7 +49,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.qp.operator.QueryContext;
 
 /** DDL operations on Indices */
@@ -241,7 +233,8 @@ public class IndexDDL
                       index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
 
         int i = 0;
-        for (IndexColumn col : index.getColumnList()) {
+        IndexColumnList indexColumns = index.getColumnList();
+        for (IndexColumn col : indexColumns) {
             Column tableCol = ais.getTable(tableName).getColumn(col.getColumnName());
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
@@ -253,16 +246,13 @@ public class IndexDDL
         
         TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
 
-        if (index.getColumnList() instanceof SpecialIndexFuncNode) {
-            switch (((SpecialIndexFuncNode)index.getColumnList()).getFunctionType()) {
-            case Z_ORDER_LAT_LON:
-                if (!Index.isSpatialCompatible(tableIndex)) {
-                    throw new BadSpatialIndexException(indexName, index);
-                }
-                tableIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
-                assert tableIndex.isSpatial() : tableIndex;
-                break;
+        if (indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON) {
+            if (!Index.isSpatialCompatible(tableIndex)) {
+                throw new BadSpatialIndexException(indexName, index);
             }
+            tableIndex.markSpatial(indexColumns.firstFunctionArg(),
+                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
+            assert tableIndex.isSpatial() : tableIndex;
         }
 
         return tableIndex;

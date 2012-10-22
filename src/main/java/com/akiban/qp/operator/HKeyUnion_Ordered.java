@@ -33,10 +33,8 @@ import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.HKeyCache;
-import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.expression.std.RankExpression;
 import com.akiban.server.explain.*;
+import com.akiban.server.types.util.ValueSources;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.ArgumentValidation;
@@ -162,9 +160,12 @@ class HKeyUnion_Ordered extends Operator
         this.outputHKeyRowType = outputHKeyTableRowType.schema().newHKeyRowType(outputHKeyDefinition);
         this.outputHKeySegments = outputHKeyDefinition.segments().size();
         // Setup for row comparisons
-        fieldRankingExpressionsAdapters = Types3Switch.ON
-                ? new NewRankExpressions(leftRowType, rightRowType, leftOrderingFields, rightOrderingFields, comparisonFields)
-                : new OldRankExpressions(leftRowType, rightRowType, leftOrderingFields, rightOrderingFields, comparisonFields);
+        RowsComparator comparator = Types3Switch.ON ? newComparator : oldComparator;
+        fieldRankingExpressions = new RankExpressions(
+                leftRowType, rightRowType,
+                leftOrderingFields, rightOrderingFields,
+                comparisonFields,
+                comparator);
     }
 
     // Class state
@@ -176,7 +177,7 @@ class HKeyUnion_Ordered extends Operator
 
     private final Operator left;
     private final Operator right;
-    private final RankExpressions fieldRankingExpressionsAdapters;
+    private final RankExpressions fieldRankingExpressions;
     private final boolean advanceLeftOnMatch;
     private final boolean advanceRightOnMatch;
     private final UserTableRowType outputHKeyTableRowType;
@@ -312,7 +313,6 @@ class HKeyUnion_Ordered extends Operator
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
             hKeyCache = new HKeyCache<HKey>(context.getStore());
-            rankEvaluations = fieldRankingExpressionsAdapters.buildEvaluations();
         }
         
         // For use by this class
@@ -345,7 +345,7 @@ class HKeyUnion_Ordered extends Operator
             } else if (rightRow.isEmpty()) {
                 c = -1;
             } else {
-                c = rankEvaluations.compare(leftRow.get(), rightRow.get());
+                c = fieldRankingExpressions.compare(leftRow.get(), rightRow.get());
             }
             return c;
         }
@@ -367,97 +367,52 @@ class HKeyUnion_Ordered extends Operator
         private final Cursor rightInput;
         private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
         private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
-        private final RankEvaluations rankEvaluations;
         private final HKeyCache<HKey> hKeyCache;
         private HKey previousHKey;
         private boolean closed = true;
     }
 
-    private interface RankExpressions {
-        RankEvaluations buildEvaluations();
+    private interface RowsComparator {
+        public abstract int compare(Row left, Row right, int leftIndex, int rightIndex);
     }
 
-    private interface RankEvaluations {
-        long compare(Row left, Row right);
-    }
-
-    private static class OldRankExpressions implements RankExpressions {
-
+    private static final RowsComparator oldComparator = new RowsComparator() {
         @Override
-        public RankEvaluations buildEvaluations() {
-            AbstractTwoArgExpressionEvaluation[] fieldRankingEvaluations
-                    = new AbstractTwoArgExpressionEvaluation[fieldRankingExpressions.length];
-            for (int f = 0; f < fieldRankingEvaluations.length; f++) {
-                fieldRankingEvaluations[f] =
-                        (AbstractTwoArgExpressionEvaluation) fieldRankingExpressions[f].evaluation();
-            }
-            return new OldRankEvaluations(fieldRankingEvaluations);
+        public int compare(Row left, Row right, int leftIndex, int rightIndex) {
+            long c = ValueSources.compare(left.eval(leftIndex), right.eval(rightIndex));
+            if (c == 0)
+                return 0;
+            return c < 0 ? -1 : 1;
         }
+    };
 
-        public OldRankExpressions(RowType leftRowType, RowType rightRowType, int leftOrderingFields,
-                                  int rightOrderingFields, int comparisonFields) {
-            fieldRankingExpressions = new RankExpression[comparisonFields];
-            int leftField = leftRowType.nFields() - leftOrderingFields;
-            int rightField = rightRowType.nFields() - rightOrderingFields;
-            for (int f = 0; f < comparisonFields; f++) {
-                fieldRankingExpressions[f] = new RankExpression(
-                        new FieldExpression(leftRowType, leftField),
-                        new FieldExpression(rightRowType, rightField));
-                leftField++;
-                rightField++;
-            }
-        }
-
-        private final RankExpression[] fieldRankingExpressions;
-    }
-
-    private static class OldRankEvaluations implements RankEvaluations {
-
-        private OldRankEvaluations(AbstractTwoArgExpressionEvaluation[] fieldRankingEvaluations) {
-            this.fieldRankingEvaluations = fieldRankingEvaluations;
-        }
-
+    private static final RowsComparator newComparator = new RowsComparator() {
         @Override
-        public long compare(Row left, Row right) {
-            long c = 0;
-            for (AbstractTwoArgExpressionEvaluation fieldRankingEvaluation : fieldRankingEvaluations) {
-                fieldRankingEvaluation.leftEvaluation().of(left);
-                fieldRankingEvaluation.rightEvaluation().of(right);
-                c = fieldRankingEvaluation.eval().getInt();
-                if (c != 0) {
-                    break;
-                }
-            }
-            return c;
+        public int compare(Row left, Row right, int leftIndex, int rightIndex) {
+            return TClass.compare(
+                    left.rowType().typeInstanceAt(leftIndex), left.pvalue(leftIndex),
+                    right.rowType().typeInstanceAt(rightIndex), right.pvalue(rightIndex));
         }
+    };
 
-        private final AbstractTwoArgExpressionEvaluation[] fieldRankingEvaluations;
-    }
+    private static class RankExpressions {
 
-    private static class NewRankExpressions implements RankExpressions, RankEvaluations {
-
-        private NewRankExpressions(RowType leftRowType, RowType rightRowType, int leftOrderingFields,
-                                   int rightOrderingFields, int comparisonFields)
+        private RankExpressions(RowType leftRowType, RowType rightRowType, int leftOrderingFields,
+                                   int rightOrderingFields, int comparisonFields,
+                                   RowsComparator comparator)
         {
             this.leftOffset = leftRowType.nFields() - leftOrderingFields;
             this.rightOffset = rightRowType.nFields() - rightOrderingFields;
             this.comparisonExpressions = comparisonFields;
+            this.comparator = comparator;
         }
 
-        @Override
-        public RankEvaluations buildEvaluations() {
-            return this;
-        }
-
-        @Override
         public long compare(Row left, Row right) {
             int c = 0;
             int leftIndex = leftOffset;
             int rightIndex = rightOffset;
             for (int i = 0; i < comparisonExpressions; ++i) {
-                c = TClass.compare(
-                        left.rowType().typeInstanceAt(leftIndex), left.pvalue(leftIndex),
-                        right.rowType().typeInstanceAt(rightIndex), right.pvalue(rightIndex));
+                c = comparator.compare(left, right, leftIndex, rightIndex);
                 if (c != 0)
                     break;
                 ++leftIndex;
@@ -469,5 +424,6 @@ class HKeyUnion_Ordered extends Operator
         private final int leftOffset;
         private final int rightOffset;
         private final int comparisonExpressions;
+        private final RowsComparator comparator;
     }
 }

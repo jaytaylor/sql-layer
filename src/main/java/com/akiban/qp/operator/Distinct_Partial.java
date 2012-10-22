@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.collation.AkCollator;
@@ -190,7 +191,7 @@ class Distinct_Partial extends Operator
                 Row row;
                 while ((row = input.next()) != null) {
                     assert row.rowType() == distinctType : row;
-                    boolean isDistinct = isDistinct(row, valuesAdapter);
+                    boolean isDistinct = (currentValues == null) ? isDistinctP(row) : isDistinct(row);
                     if (isDistinct) // TODO inline this var once legacy types are gone
                         break;
                 }
@@ -245,35 +246,37 @@ class Distinct_Partial extends Operator
             this.input = input;
 
             nfields = distinctType.nFields();
-
             if (!usePValue) {
-                valuesAdapter = new OldValuesAdapter(nfields);
+                currentValues = new ValueHolder[nfields];
+                currentPValues = null;
             }
             else {
-                valuesAdapter = new NewValuesAdapter(nfields, distinctType);
+                currentValues = null;
+                currentPValues = new PValue[nfields];
+                for (int i = 0; i < nfields; ++i) {
+                    currentPValues[i] = new PValue(distinctType.typeInstanceAt(i).typeClass().underlyingType());
+                }
             }
         }
 
-        private <T> boolean isDistinct(Row inputRow, ValuesAdapter<T> valuesAdapter)
-        {
+        private boolean isDistinctP(Row inputRow) {
             if ((nvalid == 0) && currentRow.isEmpty()) {
                 // Very first row.
                 currentRow.hold(inputRow);
                 return true;
             }
-            T inputValue = valuesAdapter.createRegister();
             for (int i = 0; i < nfields; i++) {
                 if (i == nvalid) {
                     assert currentRow.isHolding();
-                    valuesAdapter.copy(currentRow, i);
+                    PValueTargets.copyFrom(currentRow.get().pvalue(i), currentPValues[i]);
                     nvalid++;
                     if (nvalid == nfields)
                         // Once we have copies of all fields, don't need row any more.
                         currentRow.release();
                 }
-                valuesAdapter.copy(inputRow, i, inputValue);
-                if (!valuesAdapter.areEqual(i, inputValue)) {
-                    valuesAdapter.copy(inputValue, i);
+                PValueSource inputValue = inputRow.pvalue(i);
+                if (!eqP(currentPValues[i], inputValue, rowType().typeInstanceAt(i))) {
+                    PValueTargets.copyFrom(inputValue, currentPValues[i]);
                     nvalid = i + 1;
                     if (i < nfields - 1)
                         // Might need later fields.
@@ -284,6 +287,63 @@ class Distinct_Partial extends Operator
             return false;
         }
 
+        private boolean isDistinct(Row inputRow) 
+        {
+            if ((nvalid == 0) && currentRow.isEmpty()) {
+                // Very first row.
+                currentRow.hold(inputRow);
+                return true;
+            }
+            ValueHolder inputValue = new ValueHolder();
+            for (int i = 0; i < nfields; i++) {
+                if (i == nvalid) {
+                    assert currentRow.isHolding();
+                    if (currentValues[i] == null)
+                        currentValues[i] = new ValueHolder();
+                    currentValues[i].copyFrom(currentRow.get().eval(i));
+                    nvalid++;
+                    if (nvalid == nfields)
+                        // Once we have copies of all fields, don't need row any more.
+                        currentRow.release();
+                }
+                inputValue.copyFrom(inputRow.eval(i));
+                if (!eq(i, currentValues[i], inputValue)) {
+                    currentValues[i] = inputValue;
+                    nvalid = i + 1;
+                    if (i < nfields - 1)
+                        // Might need later fields.
+                        currentRow.hold(inputRow);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean eq(int field, ValueSource x, ValueSource y)
+        {
+            if (collators == null) {
+                return currentValues[field].equals(y);
+            } else {
+                AkCollator collator = collators.get(field);
+                if (collator == null) {
+                    return currentValues[field].equals(y);
+                } else {
+                    return collator.compare(x, y) == 0;
+                }
+            }
+        }
+
+        private boolean eqP(PValueSource x, PValueSource y, TInstance tinst)
+        {
+            if (tinst.typeClass() instanceof TString) {
+                AkCollator collator = ((TString)tinst.typeClass()).getCollator(tinst);
+                if (collator != null) {
+                    return collator.compare(x, y) == 0;
+                }
+            }
+            return PValueSources.areEqual(x, y, tinst);
+        }
+
         // Object state
 
         private final Cursor input;
@@ -292,109 +352,9 @@ class Distinct_Partial extends Operator
         // currentValues contains copies of the first nvalid of currentRow's fields,
         // filled as needed.
         private int nvalid;
-        private final ValuesAdapter<?> valuesAdapter;
+        private final ValueHolder[] currentValues;
+        private final PValue[] currentPValues;
         private boolean idle = true;
         private boolean destroyed = false;
-    }
-
-    private interface ValuesAdapter<T> {
-        void copy(ShareHolder<Row> currentRow, int i);
-        void copy(Row inputRow, int i, T inputValue);
-        T createRegister();
-        void copy(T inputValue, int i);
-        boolean areEqual(int field, T inputValue);
-    }
-
-    private class OldValuesAdapter implements ValuesAdapter<ValueHolder> {
-
-        @Override
-        public void copy(ShareHolder<Row> currentRow, int i) {
-            if (values[i] == null)
-                values[i] = new ValueHolder();
-            values[i].copyFrom(currentRow.get().eval(i));
-        }
-
-        @Override
-        public void copy(Row inputRow, int i, ValueHolder inputValue) {
-            inputValue.copyFrom(inputRow.eval(i));
-        }
-
-        @Override
-        public void copy(ValueHolder inputValue, int i) {
-            values[i] = inputValue;
-        }
-
-        @Override
-        public ValueHolder createRegister() {
-            return new ValueHolder();
-        }
-
-        @Override
-        public boolean areEqual(int field, ValueHolder inputValue) {
-            if (collators == null) {
-                return values[field].equals(inputValue);
-            } else {
-                AkCollator collator = collators.get(field);
-                if (collator == null) {
-                    return values[field].equals(inputValue);
-                } else {
-                    return collator.compare(values[field], inputValue) == 0;
-                }
-            }
-
-        }
-
-        public OldValuesAdapter(int nfields) {
-            values = new ValueHolder[nfields];
-        }
-
-        private final ValueHolder[] values;
-    }
-
-    private class NewValuesAdapter implements ValuesAdapter<PValue> {
-
-        @Override
-        public void copy(ShareHolder<Row> currentRow, int i) {
-            PValueTargets.copyFrom(currentRow.get().pvalue(i), values[i]);
-        }
-
-        @Override
-        public void copy(Row inputRow, int i, PValue inputValue) {
-            PValueSource inputSource = inputRow.pvalue(i);
-            inputValue.underlying(inputSource.getUnderlyingType());
-            PValueTargets.copyFrom(inputSource, inputValue);
-        }
-
-        @Override
-        public PValue createRegister() {
-            return new PValue();
-        }
-
-        @Override
-        public void copy(PValue inputValue, int i) {
-            values[i] = inputValue;
-        }
-
-        @Override
-        public boolean areEqual(int field, PValue inputValue) {
-            TInstance tinst = rowType().typeInstanceAt(field);
-            if (tinst.typeClass() instanceof TString) {
-                AkCollator collator = ((TString)tinst.typeClass()).getCollator(tinst);
-                if (collator != null) {
-                    return collator.compare(values[field], inputValue) == 0;
-                }
-            }
-            return PValueSources.areEqual(values[field], inputValue, tinst);
-        }
-
-        public NewValuesAdapter(int nfields, RowType distinctType) {
-
-            values = new PValue[nfields];
-            for (int i = 0; i < nfields; ++i) {
-                values[i] = new PValue(distinctType.typeInstanceAt(i).typeClass().underlyingType());
-            }
-        }
-
-        private final PValue[] values;
     }
 }

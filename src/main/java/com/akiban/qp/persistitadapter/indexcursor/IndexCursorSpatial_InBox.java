@@ -39,9 +39,10 @@ import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.util.MultiCursor;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.api.dml.IndexRowPrefixSelector;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.geophile.BoxLatLon;
+import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -50,6 +51,9 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -107,8 +111,22 @@ class IndexCursorSpatial_InBox extends IndexCursor
         assert keyRange.spatial();
         this.multiCursor = new MultiCursor();
         this.iterationHelper = iterationHelper;
+        TableIndex spatialIndex = (TableIndex) keyRange.indexRowType().index();
+        assert spatialIndex.isSpatial() : spatialIndex;
+        this.space = spatialIndex.space();
+        this.latColumn = spatialIndex.firstSpatialArgument();
+        this.lonColumn = latColumn + 1;
         API.Ordering zOrdering = new API.Ordering();
-        zOrdering.append(Expressions.field(keyRange.indexRowType().physicalRowType(), 0), true);
+        IndexRowType rowType = keyRange.indexRowType().physicalRowType();
+        for (int f = 0; f < rowType.nFields(); f++) {
+            if (Types3Switch.ON) {
+                zOrdering.append(null, new TPreparedField(rowType.typeInstanceAt(f), f), true);
+            } else {
+                zOrdering.append(Expressions.field(rowType, f), null, true);
+            }
+        }
+        // The index column selector needs to select all the columns before the z column, and the z column itself.
+        this.indexColumnSelector = new IndexRowPrefixSelector(this.latColumn + 1);
         for (IndexKeyRange zKeyRange : zKeyRanges(context, keyRange)) {
             IndexScanRowState rowState = new IndexScanRowState(adapter, keyRange.indexRowType());
             if (Types3Switch.ON) {
@@ -132,7 +150,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
         }
     }
 
-    private static List<IndexKeyRange> zKeyRanges(QueryContext context, IndexKeyRange keyRange)
+    private List<IndexKeyRange> zKeyRanges(QueryContext context, IndexKeyRange keyRange)
     {
         List<IndexKeyRange> zKeyRanges = new ArrayList<IndexKeyRange>();
         Index index = keyRange.indexRowType().index();
@@ -140,22 +158,20 @@ class IndexCursorSpatial_InBox extends IndexCursor
         IndexBound hiBound = keyRange.hi();
         BoundExpressions loExpressions = loBound.boundExpressions(context);
         BoundExpressions hiExpressions = hiBound.boundExpressions(context);
-        SpaceLatLon space = (SpaceLatLon) ((TableIndex)index).space();
         // Only 2d, lat/lon supported for now
         BigDecimal xLo, xHi, yLo, yHi;
         if (Types3Switch.ON) {
-            TInstance xinst = index.getAllColumns().get(0).getColumn().tInstance();
-            TInstance yinst = index.getAllColumns().get(1).getColumn().tInstance();
-            xLo = MBigDecimal.getWrapper(loExpressions.pvalue(0), xinst).asBigDecimal();
-            xHi = MBigDecimal.getWrapper(hiExpressions.pvalue(0), xinst).asBigDecimal();
-            yLo = MBigDecimal.getWrapper(loExpressions.pvalue(1), yinst).asBigDecimal();
-            yHi = MBigDecimal.getWrapper(hiExpressions.pvalue(1), yinst).asBigDecimal();
-        }
-        else {
-            xLo = loExpressions.eval(0).getDecimal();
-            xHi = hiExpressions.eval(0).getDecimal();
-            yLo = loExpressions.eval(1).getDecimal();
-            yHi = hiExpressions.eval(1).getDecimal();
+            TInstance xinst = index.getAllColumns().get(latColumn).getColumn().tInstance();
+            TInstance yinst = index.getAllColumns().get(lonColumn).getColumn().tInstance();
+            xLo = MBigDecimal.getWrapper(loExpressions.pvalue(latColumn), xinst).asBigDecimal();
+            xHi = MBigDecimal.getWrapper(hiExpressions.pvalue(latColumn), xinst).asBigDecimal();
+            yLo = MBigDecimal.getWrapper(loExpressions.pvalue(lonColumn), yinst).asBigDecimal();
+            yHi = MBigDecimal.getWrapper(hiExpressions.pvalue(lonColumn), yinst).asBigDecimal();
+        } else {
+            xLo = loExpressions.eval(latColumn).getDecimal();
+            xHi = hiExpressions.eval(latColumn).getDecimal();
+            yLo = loExpressions.eval(lonColumn).getDecimal();
+            yHi = hiExpressions.eval(lonColumn).getDecimal();
         }
         BoxLatLon box = BoxLatLon.newBox(xLo, xHi, yLo, yHi);
         long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
@@ -164,28 +180,40 @@ class IndexCursorSpatial_InBox extends IndexCursor
             long z = zValues[i];
             if (z != -1L) {
                 IndexRowType rowType = keyRange.indexRowType();
-                // lo bound of z
                 ValuesHolderRow zLoRow = new ValuesHolderRow(rowType, Types3Switch.ON);
-                if (Types3Switch.ON) {
-                    zLoRow.pvalueAt(0).underlying(PUnderlying.INT_64);
-                    zLoRow.pvalueAt(0).putInt64(space.zLo(z));
-                }
-                else {
-                    zLoRow.holderAt(0).expectType(AkType.LONG);
-                    zLoRow.holderAt(0).putLong(space.zLo(z));
-                }
-                IndexBound zLo = new IndexBound(zLoRow, Z_SELECTOR);
-                // hi bound of z
                 ValuesHolderRow zHiRow = new ValuesHolderRow(rowType, Types3Switch.ON);
+                IndexBound zLo = new IndexBound(zLoRow, indexColumnSelector);
+                IndexBound zHi = new IndexBound(zHiRow, indexColumnSelector);
+                // Take care of any equality restrictions before the spatial fields
+                for (int f = 0; f < latColumn; f++) {
+                    if (Types3Switch.ON) {
+                        PValueSource eqValueSource = loExpressions.pvalue(f);
+                        PValueTargets.copyFrom(eqValueSource, zLoRow.pvalueAt(f));
+                        PValueTargets.copyFrom(eqValueSource, zHiRow.pvalueAt(f));
+                    } else {
+                        ValueSource eqValue = loExpressions.eval(f);
+                        zLoRow.holderAt(f).copyFrom(eqValue);
+                        zHiRow.holderAt(f).copyFrom(eqValue);
+                    }
+                }
+                // lo bound
                 if (Types3Switch.ON) {
-                    zHiRow.pvalueAt(0).underlying(PUnderlying.INT_64);
-                    zHiRow.pvalueAt(0).putInt64(space.zHi(z));
+                    zLoRow.pvalueAt(latColumn).underlying(PUnderlying.INT_64);
+                    zLoRow.pvalueAt(latColumn).putInt64(space.zLo(z));
                 }
                 else {
-                    zHiRow.holderAt(0).expectType(AkType.LONG);
-                    zHiRow.holderAt(0).putLong(space.zHi(z));
+                    zLoRow.holderAt(latColumn).expectType(AkType.LONG);
+                    zLoRow.holderAt(latColumn).putLong(space.zLo(z));
                 }
-                IndexBound zHi = new IndexBound(zHiRow, Z_SELECTOR);
+                // hi bound
+                if (Types3Switch.ON) {
+                    zHiRow.pvalueAt(latColumn).underlying(PUnderlying.INT_64);
+                    zHiRow.pvalueAt(latColumn).putInt64(space.zHi(z));
+                }
+                else {
+                    zHiRow.holderAt(latColumn).expectType(AkType.LONG);
+                    zHiRow.holderAt(latColumn).putLong(space.zHi(z));
+                }
                 IndexKeyRange zKeyRange = IndexKeyRange.bounded(rowType, zLo, true, zHi, true);
                 zKeyRanges.add(zKeyRange);
             }
@@ -195,10 +223,12 @@ class IndexCursorSpatial_InBox extends IndexCursor
 
     // Class state
 
-    private static final ColumnSelector Z_SELECTOR = new SetColumnSelector(0);
-
     // Object state
 
+    private final Space space;
+    private final ColumnSelector indexColumnSelector;
+    private final int latColumn;
+    private final int lonColumn;
     private final MultiCursor multiCursor;
     private final IterationHelper iterationHelper;
 }

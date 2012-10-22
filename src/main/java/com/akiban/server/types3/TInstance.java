@@ -43,10 +43,6 @@ public final class TInstance {
     public void writeCollating(PValueSource in, PValueTarget out) {
         tclass.writeCollating(in, this, out);
     }
-    
-    public void readCanonical(PValueSource in, PValueTarget out) {
-        tclass.readCanonical(in, this, out);
-    }
 
     public void format(PValueSource source, AkibanAppender out) {
         tclass.format(this, source, out);
