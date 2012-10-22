@@ -132,14 +132,16 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
         ResultSetMetaData metaData = resultSet.getMetaData();
         int ncols = metaData.getColumnCount();
         encoder.appendString("[");
+        boolean first = true;
         while (resultSet.next()) {
-            encoder.appendString("{");
+            encoder.appendString(first ? "{" : ",{");
             for (int i = 0; i < ncols; i++) {
                 String name = metaData.getColumnName(i+1);
                 Object value = resultSet.getObject(i+1);
                 outputValue(name, value, appender, (i == 0));
             }
             encoder.appendString("}");
+            first = false;
         }
         resultSet.close();
         encoder.appendString("]");
@@ -233,7 +235,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
                 }
             }
             DataTypeDescriptor sqlType;
-            if (typeId.isDecimalTypeId() || typeId.isNumericTypeId()) {
+            if (typeId.isDecimalTypeId()) {
                 sqlType = new DataTypeDescriptor(typeId,
                                                  metaData.getPrecision(i+1),
                                                  metaData.getScale(i+1),
@@ -257,7 +259,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
             encoder.appendString(",\"type\":");
             Quote.DOUBLE_QUOTE.append(appender, sqlType.toString());
             encoder.appendString("\"");
-            if (typeId.isDecimalTypeId() || typeId.isNumericTypeId()) {
+            if (typeId.isDecimalTypeId()) {
                 encoder.appendString(",\"precision\":");
                 encoder.getWriter().print(sqlType.getPrecision());
                 encoder.appendString(",\"scale\":");
