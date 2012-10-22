@@ -7,4 +7,4 @@ SelectQuery@6bed037a
             Select@6c69a130[orders.order_date != 2011-04-01]
               SingleIndexScan@ad58deb(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 859, cost = 89578.0)
             TableSource@14356788(customers - TableGroup@4a5844db(customers))
-            TableSource@3e201c15(orders - TableGroupJoin@6910abfe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@3e201c15(orders - TableGroupJoin@6910abfe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

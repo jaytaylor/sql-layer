@@ -3,5 +3,5 @@ DMLStatement@399b6363(t)
     Project@3c22d4f0[t2.id, Cast(charLength(t2.s) AS MCOMPAT_ INTEGER(11) NULL)]
       Select@12c9f768[]
         Flatten@6f55927f(t2)
-          GroupScan@5b0508f3(Group(t2 -> test.t2), rows = 1, cost = 0.00000)
+          GroupScan@5b0508f3(Group(test.t2), rows = 1, cost = 0.00000)
             TableSource@530df626(t2 - TableGroup@278eb834(t2))

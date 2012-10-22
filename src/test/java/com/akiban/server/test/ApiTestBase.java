@@ -178,6 +178,7 @@ public class ApiTestBase {
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
+    private boolean types3SwitchSave;
     
     @Rule
     public static final TestName testName = new TestName();
@@ -188,6 +189,7 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
+        types3SwitchSave = Types3Switch.ON;
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
@@ -259,6 +261,7 @@ public class ApiTestBase {
 
     @After
     public final void tearDownAllTables() throws Exception {
+        Types3Switch.ON = types3SwitchSave;
         if (lastStartupConfigProperties == null)
             return; // services never started up
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
