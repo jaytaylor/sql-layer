@@ -72,8 +72,9 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
         int index = 0;
         for (Parameter parameter : parameters) {
             if (parameter.getDirection() != Parameter.Direction.IN) {
-                result[index++] = new Object[1];
+                result[index] = new Object[1];
             }
+            index++;
         }
         for (int i = 0; i < dynamicResultSets; i++) {
             result[index++] = new Object[1];
