@@ -42,6 +42,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.io.IOException;
 
 public abstract class PostgresJavaRoutine extends PostgresDMLStatement
@@ -131,12 +132,14 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
+        Queue<ResultSet> dynamicResultSets = null;
         ServerJavaRoutine call = javaRoutine(context);
         call.push();
         boolean anyOutput = false, success = false;
         try {
             call.setInputs();
             call.invoke();
+            dynamicResultSets = call.getDynamicResultSets();
             if (getColumnTypes() != null) {
                 PostgresOutputter<ServerJavaRoutine> outputter = 
                     new PostgresJavaRoutineResultsOutputter(context, this);
@@ -144,11 +147,11 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                 nrows++;
                 anyOutput = true;
             }
-            List<ResultSet> dynamicResultSets = call.getDynamicResultSets();
             if (!dynamicResultSets.isEmpty()) {
                 PostgresDynamicResultSetOutputter outputter = 
                     new PostgresDynamicResultSetOutputter(context, this);
-                for (ResultSet rs : dynamicResultSets) {
+                while (!dynamicResultSets.isEmpty()) {
+                    ResultSet rs = dynamicResultSets.remove();
                     if (anyOutput) {
                         // Postgres protocol does not allow for
                         // multiple result sets, except as the result
@@ -171,12 +174,28 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                     catch (SQLException ex) {
                         throw new ExternalRoutineInvocationException(invocation.getRoutineName(), ex);
                     }
+                    finally {
+                        try {
+                            rs.close();
+                        }
+                        catch (SQLException ex) {
+                        }
+                    }
                     anyOutput = true;
                 }
             }
             success = true;
         }
         finally {
+            if (dynamicResultSets != null) {
+                while (!dynamicResultSets.isEmpty()) {
+                    try {
+                        dynamicResultSets.remove().close();
+                    }
+                    catch (SQLException ex) {
+                    }
+                }
+            }
             call.pop(success);
         }
         {        

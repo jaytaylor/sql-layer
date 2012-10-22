@@ -33,8 +33,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 public class ServerJavaMethod extends ServerJavaRoutine
 {
@@ -104,8 +104,8 @@ public class ServerJavaMethod extends ServerJavaRoutine
     }
     
     @Override
-    public List<ResultSet> getDynamicResultSets() {
-        List<ResultSet> result = new ArrayList<ResultSet>();
+    public Queue<ResultSet> getDynamicResultSets() {
+        Queue<ResultSet> result = new ArrayDeque<ResultSet>();
         for (int i = 0; i < parameterTypes.length; i++) {
             Class<?> outputType = parameterTypes[i].getComponentType();
             if ((outputType != null) && ResultSet.class.isAssignableFrom(outputType)) {

@@ -31,8 +31,8 @@ import com.akiban.sql.server.ServerJavaRoutine;
 import com.akiban.sql.server.ServerCallContextStack;
 
 import java.sql.ResultSet;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.sql.SQLException;
+import java.util.Queue;
 
 abstract class ExecutableJavaRoutine extends ExecutableCallStatement
 {
@@ -46,18 +46,27 @@ abstract class ExecutableJavaRoutine extends ExecutableCallStatement
 
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context) {
-        Deque<ResultSet> resultSets = null;
+        Queue<ResultSet> resultSets = null;
         ServerJavaRoutine call = javaRoutine(context);
         call.push();
         boolean success = false;
         try {
             call.setInputs();
             call.invoke();
+            resultSets = call.getDynamicResultSets();
             call.getOutputs();
-            resultSets = new ArrayDeque<ResultSet>(call.getDynamicResultSets());
             success = true;
         }
         finally {
+            if ((resultSets != null) && !success) {
+                while (!resultSets.isEmpty()) {
+                    try {
+                        resultSets.remove().close();
+                    }
+                    catch (SQLException ex) {
+                    }
+                }
+            }
             call.pop(success);
         }
         return new ExecuteResults(resultSets);

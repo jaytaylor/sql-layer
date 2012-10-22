@@ -38,8 +38,9 @@ import com.akiban.server.service.routines.ScriptPool;
 
 import java.sql.ResultSet;
 import java.lang.reflect.Array;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
 
 /** Implementation of the <code>SCRIPT_FUNCTION_JAVA</code> calling convention. 
  * Like standard <code>PARAMETER STYLE JAVA</code>, outputs are passed
@@ -114,8 +115,8 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
     }
     
     @Override
-    public List<ResultSet> getDynamicResultSets() {
-        List<ResultSet> result = new ArrayList<ResultSet>();
+    public Queue<ResultSet> getDynamicResultSets() {
+        Queue<ResultSet> result = new ArrayDeque<ResultSet>();
         for (int index = getInvocation().getRoutine().getParameters().size();
              index < functionArgs.length; index++) {
             ResultSet rs = (ResultSet)((Object[])functionArgs[index])[0];
