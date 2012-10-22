@@ -201,8 +201,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(SingleIndexScan index) {
-        if (index.getIndex().isSpatial()) return spatialUsable(index);
         int nequals = insertLeadingEqualities(index, conditions);
+        if (index.getIndex().isSpatial()) return spatialUsable(index, nequals);
         List<ExpressionNode> indexExpressions = index.getColumns();
         if (nequals < indexExpressions.size()) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
@@ -1463,16 +1463,18 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     /** For now, a spatial index is a special kind of table index on
      * Z-order of two coordinates.
      */
-    public boolean spatialUsable(SingleIndexScan index) {
-        setColumnsAndOrdering(index);
-
+    public boolean spatialUsable(SingleIndexScan index, int nequals) {
         // There are two cases to recognize:
         // ORDER BY znear(column_lat, column_lon, start_lat, start_lon), which
         // means fan out from that center in Z-order.
         // WHERE distance_lat_lon(column_lat, column_lon, start_lat, start_lon) <= radius
-
-        List<ExpressionNode> indexExpressions = index.getColumns();
-        assert (indexExpressions.size() > 2) : index; // lat, lon, hkey...
+        
+        ExpressionNode nextColumn = index.getColumns().get(nequals);
+        if (!(nextColumn instanceof SpecialIndexExpression)) 
+            return false;       // Did not have enough equalities to get to spatial part.
+        SpecialIndexExpression indexExpression = (SpecialIndexExpression)nextColumn;
+        assert (indexExpression.getFunction() == SpecialIndexExpression.Function.Z_ORDER_LAT_LON);
+        List<ExpressionNode> operands = indexExpression.getOperands();
 
         boolean matched = false;
         for (ConditionExpression condition : conditions) {
@@ -1482,13 +1484,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 switch (ccond.getOperation()) {
                 case LE:
                 case LT:
-                    centerRadius = matchDistanceLatLon(indexExpressions,
+                    centerRadius = matchDistanceLatLon(operands,
                                                        ccond.getLeft(), 
                                                        ccond.getRight());
                     break;
                 case GE:
                 case GT:
-                    centerRadius = matchDistanceLatLon(indexExpressions,
+                    centerRadius = matchDistanceLatLon(operands,
                                                        ccond.getRight(), 
                                                        ccond.getLeft());
                     break;
@@ -1505,7 +1507,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             if (sortAllowed && (queryGoal.getOrdering() != null)) {
                 List<OrderByExpression> orderBy = queryGoal.getOrdering().getOrderBy();
                 if (orderBy.size() == 1) {
-                    ExpressionNode center = matchZnear(indexExpressions,
+                    ExpressionNode center = matchZnear(operands,
                                                        orderBy.get(0));
                     if (center != null) {
                         index.setLowComparand(center, true);

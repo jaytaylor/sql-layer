@@ -42,6 +42,7 @@ public class SpecialIndexExpression extends BaseExpression
     public SpecialIndexExpression(Function function, List<ExpressionNode> operands) {
         super(null, AkType.LONG, null);
         this.function = function;
+        this.operands = operands;
     }
 
     public Function getFunction() {
