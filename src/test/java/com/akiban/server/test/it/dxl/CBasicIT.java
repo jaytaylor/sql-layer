@@ -44,6 +44,7 @@ import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
@@ -401,6 +402,7 @@ public final class CBasicIT extends ITBase {
 
     @Test(expected=InvalidCharToNumException.class)
     public void updateOldNewHasWrongType() throws InvalidOperationException {
+        Types3Switch.ON = false;
         final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
@@ -429,6 +431,7 @@ public final class CBasicIT extends ITBase {
 
     @Test(expected=InvalidCharToNumException.class)
     public void insertHasWrongType() throws InvalidOperationException {
+        Types3Switch.ON = false;
         final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");

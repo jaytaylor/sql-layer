@@ -142,8 +142,11 @@ public abstract class TClass {
         }
     }
 
-    protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        PValueTargets.copyFrom(in, out);
+    final void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        if (in.isNull())
+            out.putNull();
+        else
+            doWriteCanonical(in, typeInstance, out);
     }
 
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
@@ -185,12 +188,19 @@ public abstract class TClass {
         return createInstance(4, arg0, arg1, arg2, arg3, nullable);
     }
 
-    protected void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-        writeCanonical(inValue, inInstance, out);
+    final void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        if (inValue.isNull())
+            out.putNull();
+        else
+            writeCanonical(inValue, inInstance, out);
     }
 
-    protected void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        writeCanonical(inValue, typeInstance, out);
+    protected void doWriteCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        doWriteCanonical(inValue, inInstance, out);
+    }
+
+    protected void doWriteCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        PValueTargets.copyFrom(in, out);
     }
 
     public TInstance pickInstance(TInstance left, TInstance right) {
