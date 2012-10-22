@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -146,7 +145,7 @@ public abstract class TClass {
         if (in.isNull())
             out.putNull();
         else
-            doWriteCanonical(in, typeInstance, out);
+            getPValueIO().copyCanonical(in, typeInstance, out);
     }
 
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
@@ -158,6 +157,10 @@ public abstract class TClass {
             output.append(arrayIndex);
         else
             output.append(array[(int)arrayIndex]);
+    }
+
+    protected PValueIO getPValueIO() {
+        return defaultPValueIO;
     }
 
     public abstract void putSafety(TExecutionContext context,
@@ -192,25 +195,14 @@ public abstract class TClass {
         if (inValue.isNull())
             out.putNull();
         else
-            doWriteCollating(inValue, inInstance, out);
+            getPValueIO().writeCollating(inValue, inInstance, out);
     }
 
     final void readCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
         if (inValue.isNull())
             out.putNull();
         else
-            doReadCollating(inValue, inInstance, out);
-    }
-
-    protected void doWriteCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-        doWriteCanonical(inValue, inInstance, out);
-    }
-    protected void doReadCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-        doWriteCollating(inValue, inInstance, out);
-    }
-
-    protected void doWriteCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        PValueTargets.copyFrom(in, out);
+            getPValueIO().readCollating(inValue, inInstance, out);
     }
 
     public TInstance pickInstance(TInstance left, TInstance right) {
@@ -395,4 +387,11 @@ public abstract class TClass {
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
 
     private static final int EMPTY = -1;
+
+    private static final PValueIO defaultPValueIO = new SimplePValueIO() {
+        @Override
+        protected void copy(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            PValueTargets.copyFrom(in, out);
+        }
+    };
 }

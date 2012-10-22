@@ -150,16 +150,12 @@ public class MNumeric extends SimpleDtdTClass {
             = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.UINT_64, 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT)
     {
         @Override
-        protected void doWriteCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-            long raw = inValue.getInt64();
-            raw = raw ^ Long.MIN_VALUE;
-            out.putInt64(raw);
+        protected PValueIO getPValueIO() {
+            return bigintUnsignedIO;
         }
     };
 
-    public static final TClass DECIMAL = new MBigDecimal("decimal", 11);
     public static final TClass DECIMAL_UNSIGNED = new MBigDecimal("decimal unsigned", 10);
-
     public static long getAsLong(TClass tClass, PValueSource source) {
         assert tClass instanceof MNumeric : "not an MNumeric: " + tClass;
         long result;
@@ -216,4 +212,20 @@ public class MNumeric extends SimpleDtdTClass {
             throw new AssertionError(tClass.underlyingType() + ": " + tClass);
         }
     }
+
+    public static final TClass DECIMAL = new MBigDecimal("decimal", 11);
+
+    private static final PValueIO bigintUnsignedIO = new SymmetricPValueIO() {
+        @Override
+        protected void symmetricCollationCopy(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            long raw = in.getInt64();
+            raw = raw ^ Long.MIN_VALUE;
+            out.putInt64(raw);
+        }
+
+        @Override
+        public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            out.putInt64(in.getInt64());
+        }
+    };
 }
