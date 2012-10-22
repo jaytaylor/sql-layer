@@ -231,30 +231,33 @@ public class IndexDDL
         
         builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.getUniqueness(),
                       index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
-
-        int i = 0;
+        TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
         IndexColumnList indexColumns = index.getColumnList();
+        boolean indexIsSpatial = indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        if (indexIsSpatial) {
+            tableIndex.markSpatial(indexColumns.firstFunctionArg(),
+                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
+        }
+        int i = 0;
         for (IndexColumn col : indexColumns) {
             Column tableCol = ais.getTable(tableName).getColumn(col.getColumnName());
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
             }          
-            builder.indexColumn(tableName.getSchemaName(), tableName.getTableName(), indexName, tableCol.getName(), i, col.isAscending(), null);
+            builder.indexColumn(tableName.getSchemaName(),
+                                tableName.getTableName(),
+                                indexName,
+                                tableCol.getName(),
+                                i,
+                                col.isAscending(),
+                                null);
             i++;
         }
-        builder.basicSchemaIsComplete();
-        
-        TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
-
-        if (indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON) {
-            if (!Index.isSpatialCompatible(tableIndex)) {
-                throw new BadSpatialIndexException(indexName, index);
-            }
-            tableIndex.markSpatial(indexColumns.firstFunctionArg(),
-                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
-            assert tableIndex.isSpatial() : tableIndex;
+        // Can't check isSpatialCompatible before the index columns have been added.
+        if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
+            throw new BadSpatialIndexException(indexName, index);
         }
-
+        builder.basicSchemaIsComplete();
         return tableIndex;
     }
 
