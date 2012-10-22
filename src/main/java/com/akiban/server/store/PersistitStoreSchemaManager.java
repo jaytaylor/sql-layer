@@ -307,117 +307,18 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return false;
     }
     
-    public static Collection<Index> createIndexes(AkibanInformationSchema newAIS,
-                                                  Collection<? extends Index> indexesToAdd) {
-        final List<Index> newIndexes = new ArrayList<Index>();
-        final NameGenerator nameGen = new DefaultNameGenerator().setDefaultTreeNames(AISMerge.computeTreeNames(newAIS));
-
-        for(Index index : indexesToAdd) {
-            final IndexName indexName = index.getIndexName();
-            if(index.isPrimaryKey()) {
-                throw new ProtectedIndexException("PRIMARY", new TableName(indexName.getSchemaName(), indexName.getTableName()));
-            }
-
-            final Index curIndex;
-            final Index newIndex;
-            final Group newGroup;
-
-            switch(index.getIndexType()) {
-                case TABLE:
-                {
-                    final TableName tableName = new TableName(indexName.getSchemaName(), indexName.getTableName());
-                    final UserTable newTable = newAIS.getUserTable(tableName);
-                    if(newTable == null) {
-                        throw new NoSuchTableException(tableName);
-                    }
-                    curIndex = newTable.getIndex(indexName.getName());
-                    newGroup = newTable.getGroup();
-                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
-                    newIndex = TableIndex.create(newAIS, newTable, indexName.getName(), newId, index.isUnique(),
-                                                 index.getConstraint());
-                }
-                break;
-                case GROUP:
-                {
-                    GroupIndex gi = (GroupIndex)index;
-                    newGroup = newAIS.getGroup(gi.getGroup().getName());
-                    if(newGroup == null) {
-                        throw new NoSuchGroupException(indexName.getFullTableName());
-                    }
-                    curIndex = newGroup.getIndex(indexName.getName());
-                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
-                    newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                                 index.getConstraint(), index.getJoinType());
-                }
-                break;
-                default:
-                    throw new IllegalArgumentException("Unknown index type: " + index);
-            }
-
-            if(curIndex != null) {
-                throw new DuplicateIndexException(indexName);
-            }
-            if(index.getKeyColumns().isEmpty()) {
-                throw new IndexLacksColumnsException (
-                        new TableName(index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
-                        index.getIndexName().getName());
-            }
-
-            UserTable lastTable = null;
-            for(IndexColumn indexCol : index.getKeyColumns()) {
-                final TableName refTableName = indexCol.getColumn().getTable().getName();
-                final UserTable newRefTable = newAIS.getUserTable(refTableName);
-                if(newRefTable == null) {
-                    throw new NoSuchTableException(refTableName);
-                }
-                if(!newRefTable.getGroup().equals(newGroup)) {
-                    throw new TableNotInGroupException (refTableName);
-                }
-                // TODO: Checked in newIndex.addColumn(newIndexCol) ?
-                if(lastTable != null && !inSameBranch(lastTable, newRefTable)) {
-                    throw new BranchingGroupIndexException (
-                            index.getIndexName().getName(),
-                            lastTable.getName(), newRefTable.getName());
-                }
-                lastTable = newRefTable;
-
-                final Column column = indexCol.getColumn();
-                final Column newColumn = newRefTable.getColumn(column.getName());
-                if(newColumn == null) {
-                    throw new NoSuchColumnException (column.getName());
-                }
-                if(!column.getType().equals(newColumn.getType())) {
-                    throw new JoinColumnTypesMismatchException (
-                            new TableName (index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
-                            column.getName(),
-                            newRefTable.getName(), newColumn.getName());
-                }
-                IndexColumn.create(newIndex, newColumn, indexCol.getPosition(),
-                                   indexCol.isAscending(), indexCol.getIndexedLength());
-            }
-
-            newIndex.freezeColumns();
-            newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
-            if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-                TableIndex spatialIndex = (TableIndex) index;
-                ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
-            }
-            newIndexes.add(newIndex);
-        }
-        return newIndexes;
-    }
-    
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        final Set<String> schemas = new HashSet<String>();
-        final AkibanInformationSchema newAIS = AISCloner.clone(getAis(session));
-
-        Collection<Index> newIndexes = createIndexes(newAIS, indexesToAdd);
-        for(Index index : newIndexes) {
-            schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
+        AISMerge merge = new AISMerge(getAis(session));
+        Set<String> schemas = new HashSet<String>();
+        Collection<Index> newIndexes = new ArrayList<Index>(indexesToAdd.size());
+        for(Index proposed : indexesToAdd) {
+            Index newIndex = merge.mergeIndex(proposed);
+            newIndexes.add(newIndex);
+            schemas.add(DefaultNameGenerator.schemaNameForIndex(newIndex));
         }
-
-        saveAISChangeWithRowDefs(session, newAIS, schemas);
+        merge.merge();
+        saveAISChangeWithRowDefs(session, merge.getAIS(), schemas);
         return newIndexes;
     }
 
