@@ -135,7 +135,7 @@ public abstract class IndexRowType extends AisRowType
         @Override
         public IndexRowType physicalRowType()
         {
-            return spatialIndexRowType;
+            return spatialIndexRowType == null ? this : spatialIndexRowType;
         }
 
         public Conventional(Schema schema, UserTableRowType tableType, Index index)
