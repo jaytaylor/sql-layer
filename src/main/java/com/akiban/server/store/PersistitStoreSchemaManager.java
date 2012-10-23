@@ -334,7 +334,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             schemas.add(newName.getSchemaName());
         }
 
-        AISMerge merge = AISMerge.newForAlterTable(nameGenerator, getAis(session), alteredTables);
+        AISMerge merge = AISMerge.newForModifyTable(nameGenerator, getAis(session), alteredTables);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
 

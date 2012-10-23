@@ -97,31 +97,29 @@ public class AISMerge {
     private final List<JoinChange> changedJoins;
     private final Set<IndexName> indexesToFix;
 
-    /** Legacy test constructor. Constructs an AISMerge for ADD_TABLE with a DefaultNameGenerator **/
-    AISMerge(AkibanInformationSchema primaryAIS, UserTable newTable) {
-        this.nameGenerator = new DefaultNameGenerator(primaryAIS);
-        this.targetAIS = copyAISForAdd(primaryAIS);
-        this.sourceTable = newTable;
-        this.mergeType = MergeType.ADD_TABLE;
-        this.changedJoins = null;
-        this.indexesToFix = null;
+
+    /** Legacy test constructor. Creates an AISMerge for adding a table with a new {@link DefaultNameGenerator}. */
+    AISMerge(AkibanInformationSchema sourceAIS, UserTable newTable) {
+        this(new DefaultNameGenerator(sourceAIS), copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null);
     }
 
-
-    public static AISMerge newForAddTable(NameGenerator generator, AkibanInformationSchema ais, UserTable newTable) {
-        return new AISMerge(generator, copyAISForAdd(ais), newTable, MergeType.ADD_TABLE, null, null);
+    /** Create a new AISMerge to be used for adding a new table. */
+    public static AISMerge newForAddTable(NameGenerator generator, AkibanInformationSchema sourceAIS, UserTable newTable) {
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), newTable, MergeType.ADD_TABLE, null, null);
     }
 
-    public static AISMerge newForAlterTable(NameGenerator generator, AkibanInformationSchema ais,
-                                            Collection<ChangedTableDescription> alteredTables) {
+    /** Create a new AISMerge to be used for modifying a table. */
+    public static AISMerge newForModifyTable(NameGenerator generator, AkibanInformationSchema sourceAIS,
+                                             Collection<ChangedTableDescription> alteredTables) {
         List<JoinChange> changedJoins = new ArrayList<JoinChange>();
         Set<IndexName> indexesToFix = new HashSet<IndexName>();
-        return new AISMerge(generator, copyAISForModify(ais, indexesToFix, changedJoins, alteredTables), null,
-                            MergeType.MODIFY_TABLE, changedJoins, indexesToFix);
+        AkibanInformationSchema targetAIS = copyAISForModify(sourceAIS, indexesToFix, changedJoins, alteredTables);
+        return new AISMerge(generator, targetAIS, null, MergeType.MODIFY_TABLE, changedJoins, indexesToFix);
     }
 
-    public static AISMerge newForAddIndex(NameGenerator generator, AkibanInformationSchema ais) {
-        return new AISMerge(generator, copyAISForAdd(ais), null, MergeType.ADD_INDEX, null, null);
+    /** Create a new AISMerge to be used for adding one, or more, index to a table. Also see {@link #mergeIndex(Index)}. */
+    public static AISMerge newForAddIndex(NameGenerator generator, AkibanInformationSchema sourceAIS) {
+        return new AISMerge(generator, copyAISForAdd(sourceAIS), null, MergeType.ADD_INDEX, null, null);
     }
 
     private AISMerge(NameGenerator nameGenerator, AkibanInformationSchema targetAIS, UserTable sourceTable,
@@ -134,6 +132,7 @@ public class AISMerge {
         this.indexesToFix = indexesToFix;
     }
 
+    
     public static AkibanInformationSchema copyAISForAdd(AkibanInformationSchema oldAIS) {
         return AISCloner.clone(oldAIS);
     }
