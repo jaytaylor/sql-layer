@@ -100,7 +100,6 @@ public class ScriptCache
                     for (int i = 0; i < paths.length; i++) {
                         urls[i] = new File(paths[i]).toURL();
                     }
-                    System.out.println("??? " + java.util.Arrays.toString(urls));
                     classLoader = new URLClassLoader(urls, classLoader);
                 }
                 catch (MalformedURLException ex) {
