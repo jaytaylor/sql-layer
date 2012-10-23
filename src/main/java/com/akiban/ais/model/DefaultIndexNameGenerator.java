@@ -34,10 +34,6 @@ import java.util.Set;
 public class DefaultIndexNameGenerator implements IndexNameGenerator {
     private final Set<String> indexNames = new HashSet<String>();
 
-    public DefaultIndexNameGenerator() {
-        this(Collections.<String>emptyList());
-    }
-
     public DefaultIndexNameGenerator(Collection<String> initialIndexNames) {
         indexNames.addAll(initialIndexNames);
     }
