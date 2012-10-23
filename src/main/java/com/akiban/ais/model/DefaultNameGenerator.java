@@ -43,8 +43,8 @@ public class DefaultNameGenerator implements NameGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultNameGenerator.class);
 
     // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
-    private static final int USER_TABLE_ID_OFFSET = 1;
-    private static final int IS_TABLE_ID_OFFSET = 1000000000;
+    static final int USER_TABLE_ID_OFFSET = 1;
+    static final int IS_TABLE_ID_OFFSET = 1000000000;
     private static final String TREE_NAME_SEPARATOR = ".";
 
     private final Set<String> treeNames;
@@ -61,10 +61,10 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     public DefaultNameGenerator(AkibanInformationSchema ais) {
-        userTableIDSet = collectTableIDs(ais, false);
-        isTableIDSet = collectTableIDs(ais, true);
         treeNames = collectTreeNames(ais);
-        sequenceNames = ais.getSequences().keySet();
+        sequenceNames = new HashSet<TableName>(ais.getSequences().keySet());
+        isTableIDSet = collectTableIDs(ais, true);
+        userTableIDSet = collectTableIDs(ais, false);
     }
 
 
@@ -121,7 +121,11 @@ public class DefaultNameGenerator implements NameGenerator {
                 tableName = ((TableIndex)index).getTable().getName();
             break;
             case GROUP:
-                tableName = ((GroupIndex)index).getGroup().getRoot().getName();
+                UserTable root = ((GroupIndex)index).getGroup().getRoot();
+                if(root == null) {
+                    throw new IllegalArgumentException("Grouping incomplete (no root)");
+                }
+                tableName = root.getName();
             break;
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
