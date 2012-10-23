@@ -86,10 +86,13 @@ public class ScriptCache
         if (manager == null) {
             logger.debug("Initializing script engine manager");
             String classPath = configService.getProperty(CLASS_PATH);
-            // TODO: Everything is in the boot class loader presently, but the idea
-            // is to restrict scripts to standard Java classes without
-            // the rest of the Akiban server.
-            ClassLoader classLoader = java.math.BigDecimal.class.getClassLoader();
+            // TODO: The idea should be to restrict scripts to standard Java classes
+            // without the rest of the Akiban server. But note
+            // java.sql.DriverManager.isDriverAllowed(), which requires that a
+            // registered driver's class by accessible to its caller by name. May
+            // need a JDBCDriver proxy get just to register without putting all of
+            // com.akiban.sql.embedded into the parent.
+            ClassLoader classLoader = getClass().getClassLoader();
             if (!classPath.equals("")) {
                 try {
                     String[] paths = classPath.split(File.pathSeparator);
