@@ -26,31 +26,71 @@
 
 package com.akiban.ais.model;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import com.akiban.util.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DefaultNameGenerator implements NameGenerator {
-    public static final String TREE_NAME_SEPARATOR = ".";
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultNameGenerator.class);
 
-    private final Set<String> treeNames = new HashSet<String>();
-    private final Set<String> sequenceNames = new HashSet<String>();
+    // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
+    private static final int USER_TABLE_ID_OFFSET = 1;
+    private static final int IS_TABLE_ID_OFFSET = 1000000000;
+    private static final String TREE_NAME_SEPARATOR = ".";
 
-    public DefaultNameGenerator setDefaultTreeNames (Set<String> initialSet) {
-        treeNames.addAll(initialSet);
-        return this;
+    private final Set<String> treeNames;
+    private final Set<TableName> sequenceNames;
+    private final SortedSet<Integer> isTableIDSet;
+    private final SortedSet<Integer> userTableIDSet;
+
+
+    public DefaultNameGenerator() {
+        treeNames = new HashSet<String>();
+        sequenceNames = new HashSet<TableName>();
+        userTableIDSet = new TreeSet<Integer>();
+        isTableIDSet = new TreeSet<Integer>();
     }
 
-    public DefaultNameGenerator setDefaultSequenceNames (Set<String> initialSet) {
-        sequenceNames.addAll(initialSet);
-        return this;
+    public DefaultNameGenerator(AkibanInformationSchema ais) {
+        userTableIDSet = collectTableIDs(ais, false);
+        isTableIDSet = collectTableIDs(ais, true);
+        treeNames = collectTreeNames(ais);
+        sequenceNames = ais.getSequences().keySet();
     }
-    
+
+
     @Override
-    public String generateJoinName (TableName parentTable, TableName childTable, List<JoinColumn> columns) {
+    public TableName generateIdentitySequenceName(TableName tableName) {
+        TableName seqName = new TableName(tableName.getSchemaName(), "_sequence-" + tableName.hashCode());
+        return makeUnique(sequenceNames, seqName);
+    }
+
+    @Override
+    public int generateTableID(TableName name) {
+        final int offset;
+        if(TableName.INFORMATION_SCHEMA.equals(name.getSchemaName())) {
+            offset = getNextTableID(true);
+            assert offset >= IS_TABLE_ID_OFFSET : "Offset too small for IS table " + name + ": " + offset;
+        } else {
+            offset = getNextTableID(false);
+            if(offset >= IS_TABLE_ID_OFFSET) {
+                LOG.warn("Offset for table {} unexpectedly large: {}", name, offset);
+            }
+        }
+        return offset;
+    }
+
+    @Override
+    public String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> columns) {
         List<String> pkColNames = new LinkedList<String>();
         List<String> fkColNames = new LinkedList<String>();
         for (JoinColumn col : columns) {
@@ -81,11 +121,7 @@ public class DefaultNameGenerator implements NameGenerator {
                 tableName = ((TableIndex)index).getTable().getName();
             break;
             case GROUP:
-                UserTable root = ((GroupIndex)index).getGroup().getRoot();
-                if(root == null) {
-                    throw new IllegalArgumentException("Grouping incomplete (no root)");
-                }
-                tableName = root.getName();
+                tableName = ((GroupIndex)index).getGroup().getRoot().getName();
             break;
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
@@ -105,18 +141,85 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public String generateSequenceTreeName (Sequence sequence) {
+    public String generateSequenceTreeName(Sequence sequence) {
         TableName tableName = sequence.getSequenceName();
         String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
                           escapeForTreeName(tableName.getTableName());
         return makeUnique(treeNames, proposed);
     }
-    
-    @Override
-    public String generateIdentitySequenceName (TableName tableName) {
-        return makeUnique(sequenceNames, "_sequence-" + tableName.hashCode());
+
+
+    /**
+     * Get the next number that could be used for a table ID. The parameter indicates
+     * where to start the search, but the ID will be unique across ALL tables.
+     * @param isISTable Offset to start the search at.
+     * @return Unique ID value.
+     */
+    private int getNextTableID(boolean isISTable) {
+        int nextID;
+        if(isISTable) {
+            nextID = isTableIDSet.isEmpty() ? IS_TABLE_ID_OFFSET : isTableIDSet.last() + 1;
+        } else {
+            nextID = userTableIDSet.isEmpty() ? USER_TABLE_ID_OFFSET : userTableIDSet.last() + 1;
+        }
+        while(isTableIDSet.contains(nextID) || userTableIDSet.contains(nextID)) {
+            nextID += 1;
+        }
+        if(isISTable) {
+            isTableIDSet.add(nextID);
+        } else {
+            userTableIDSet.add(nextID);
+        }
+        return nextID;
     }
-    
+
+    private static SortedSet<Integer> collectTableIDs(AkibanInformationSchema ais, boolean onlyISTables) {
+        SortedSet<Integer> idSet = new TreeSet<Integer>();
+        Collection<Schema> schemas;
+        if(onlyISTables) {
+            Schema is = ais.getSchema(TableName.INFORMATION_SCHEMA);
+            schemas = (is != null) ? Collections.singleton(is) : Collections.<Schema>emptyList();
+        } else {
+            schemas = ais.getSchemas().values();
+        }
+        for(Schema schema : schemas) {
+            for(UserTable table : schema.getUserTables().values()) {
+                idSet.add(table.getTableId());
+            }
+        }
+        return idSet;
+    }
+
+    public static Set<String> collectTreeNames(AkibanInformationSchema ais) {
+        Set<String> treeNames = new HashSet<String>();
+        for(Group group : ais.getGroups().values()) {
+            treeNames.add(group.getTreeName());
+            for(Index index : group.getIndexes()) {
+                treeNames.add(index.getTreeName());
+            }
+        }
+        for(UserTable table : ais.getUserTables().values()) {
+            for(Index index : table.getIndexesIncludingInternal()) {
+                treeNames.add(index.getTreeName());
+            }
+        }
+        for (Sequence sequence : ais.getSequences().values()){
+            if(sequence.getTreeName() != null) {
+                treeNames.add(sequence.getTreeName());
+            }
+        }
+        return treeNames;
+    }
+
+    private static TableName makeUnique(Set<TableName> set, TableName original) {
+        int counter = 1;
+        TableName proposed = original;
+        while(!set.add(proposed)) {
+            proposed = new TableName(original.getSchemaName(), original.getTableName()  + "$" + counter++);
+        }
+        return proposed;
+    }
+
     private static String makeUnique(Set<String> set, String original) {
         int counter = 1;
         String proposed = original;

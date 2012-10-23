@@ -31,9 +31,12 @@ import java.util.List;
 public interface NameGenerator
 {
     // Object names
-    String generateIdentitySequenceName(TableName table);
+    TableName generateIdentitySequenceName(TableName table);
     String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
     String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
+
+    // Object IDs
+    int generateTableID(TableName name);
 
     // Tree names
     String generateIndexTreeName(Index index);

@@ -32,10 +32,6 @@ public class SynchronizedNameGenerator implements NameGenerator {
     private final Object LOCK = new Object();
     private final NameGenerator realNamer;
 
-    public SynchronizedNameGenerator() {
-        this(new DefaultNameGenerator());
-    }
-
     private SynchronizedNameGenerator(NameGenerator realNamer) {
         this.realNamer = realNamer;
     }
@@ -43,7 +39,14 @@ public class SynchronizedNameGenerator implements NameGenerator {
     public static SynchronizedNameGenerator wrap(NameGenerator wrapped) {
         return new SynchronizedNameGenerator(wrapped);
     }
-    
+
+
+    @Override
+    public TableName generateIdentitySequenceName(TableName table) {
+        synchronized(LOCK) {
+            return realNamer.generateIdentitySequenceName(table);
+        }
+    }
 
     @Override
     public String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex) {
@@ -60,6 +63,13 @@ public class SynchronizedNameGenerator implements NameGenerator {
     }
 
     @Override
+    public int generateTableID(TableName name) {
+        synchronized(LOCK) {
+            return realNamer.generateTableID(name);
+        }
+    }
+
+    @Override
     public String generateGroupTreeName(String schemaName, String groupName) {
         synchronized(LOCK) {
             return realNamer.generateGroupTreeName(schemaName, groupName);
@@ -70,13 +80,6 @@ public class SynchronizedNameGenerator implements NameGenerator {
     public String generateIndexTreeName(Index index) {
         synchronized(LOCK) {
             return realNamer.generateIndexTreeName(index);
-        }
-    }
-
-    @Override
-    public String generateIdentitySequenceName(TableName table) {
-        synchronized(LOCK) {
-            return realNamer.generateIdentitySequenceName(table);
         }
     }
 
