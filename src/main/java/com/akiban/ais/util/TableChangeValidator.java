@@ -432,7 +432,7 @@ public class TableChangeValidator {
                                                       droppedSequences));
 
         if(!isParentChanged() && !primaryKeyChanged) {
-            for(Index index : newTable.getIndexes()) {
+            for(Index index : newTable.getIndexesIncludingInternal()) {
                 String oldName = index.getIndexName().getName();
                 String newName = findNewName(indexChanges, oldName);
                 if(!containsOldOrNew(indexChanges, oldName)) {

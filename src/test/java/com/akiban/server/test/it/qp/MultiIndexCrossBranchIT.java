@@ -273,7 +273,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
 
     private String pKey(Long pid)
     {
-        return String.format("{%d,%s}", p, hKeyValue(pid));
+        return String.format("{%d,%s}", pRowType.userTable().rowDef().getOrdinal(), hKeyValue(pid));
     }
 
     private int p;
