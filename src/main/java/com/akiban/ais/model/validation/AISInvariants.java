@@ -26,16 +26,7 @@
 
 package com.akiban.ais.model.validation;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.*;
 import com.akiban.server.error.AISNullReferenceException;
 import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateGroupNameException;
@@ -47,6 +38,9 @@ import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateSQLJJarNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NameIsNullException;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class AISInvariants {
 
@@ -92,15 +86,25 @@ public class AISInvariants {
     
     public static void checkDuplicateColumnsInIndex(Index index, TableName columnarName, String columnName)
     {
+        int firstSpatialInput = Integer.MAX_VALUE;
+        int lastSpatialInput = Integer.MIN_VALUE;
+        if (index.isSpatial()) {
+            TableIndex spatialIndex = (TableIndex) index;
+            firstSpatialInput = spatialIndex.firstSpatialArgument();
+            lastSpatialInput = firstSpatialInput + spatialIndex.dimensions() - 1;
+        }
         for(IndexColumn icol : index.getKeyColumns()) {
-            Column column = icol.getColumn();
-            if(column.getName().equals(columnName) && column.getColumnar().getName().equals(columnarName)) {
-                throw new DuplicateIndexColumnException (index, columnName);
+            int indexColumnPosition = icol.getPosition();
+            if (indexColumnPosition < firstSpatialInput || indexColumnPosition > lastSpatialInput) {
+                Column column = icol.getColumn();
+                if (column.getName().equals(columnName) && column.getColumnar().getName().equals(columnarName)) {
+                    throw new DuplicateIndexColumnException (index, columnName);
+                }
             }
         }
     }
     
-    public static void checkDuplicateIndexesInTable(Table table, String indexName) 
+    public static void checkDuplicateIndexesInTable(Table table, String indexName)
     {
         if (isIndexInTable(table, indexName)) {
             throw new DuplicateIndexException (table.getName(), indexName);

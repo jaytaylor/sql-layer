@@ -101,9 +101,9 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     @Override
     public final PValueSource pvalue(int i)
     {
-        PUnderlying underlying = tInstances[i].typeClass().underlyingType();
-        PersistitKeyPValueSource keySource = keyPSource(i, underlying);
-        attach(keySource, i, underlying);
+        TInstance tInstance = tInstances[i];
+        PersistitKeyPValueSource keySource = keyPSource(i, tInstance);
+        attach(keySource, i, tInstance);
         return keySource;
     }
 
@@ -162,12 +162,12 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         return keySources[i];
     }
 
-    private PersistitKeyPValueSource keyPSource(int i, PUnderlying underlying)
+    private PersistitKeyPValueSource keyPSource(int i, TInstance tInstance)
     {
         if (keyPSources == null)
             keyPSources = new PersistitKeyPValueSource[nIndexFields];
         if (keyPSources[i] == null) {
-            keyPSources[i] = new PersistitKeyPValueSource(underlying);
+            keyPSources[i] = new PersistitKeyPValueSource(tInstance);
         }
         return keyPSources[i];
     }

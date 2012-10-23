@@ -331,6 +331,14 @@ public class AISMerge {
                 throw new IllegalArgumentException("Unknown index type: " + index);
         }
 
+        if(index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
+            if(!(index instanceof TableIndex) || !(newIndex instanceof TableIndex)) {
+                throw new IllegalStateException("Unexpected non-table spatial index: old=" + index + " new=" + newIndex);
+            }
+            TableIndex spatialIndex = (TableIndex)index;
+            ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
+        }
+
         if(curIndex != null) {
             throw new DuplicateIndexException(indexName);
         }
@@ -359,14 +367,6 @@ public class AISMerge {
             }
             // Calls (Group)Index.addColumn(), which checks all are in same branch
             IndexColumn.create(newIndex, newColumn, indexCol, indexCol.getPosition());
-        }
-
-        if(index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-            if(!(index instanceof TableIndex) || !(newIndex instanceof TableIndex)) {
-                throw new IllegalStateException("Unexpected non-table spatial index: old=" + index + " new=" + newIndex);
-            }
-            TableIndex spatialIndex = (TableIndex)index;
-            ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
         }
 
         newIndex.setTreeName(nameGenerator.generateIndexTreeName(newIndex));

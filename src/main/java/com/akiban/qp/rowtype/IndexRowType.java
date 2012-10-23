@@ -30,6 +30,7 @@ import com.akiban.ais.model.*;
 import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
 import java.util.*;
 
@@ -134,7 +135,7 @@ public abstract class IndexRowType extends AisRowType
         @Override
         public IndexRowType physicalRowType()
         {
-            return spatialIndexRowType;
+            return spatialIndexRowType == null ? this : spatialIndexRowType;
         }
 
         public Conventional(Schema schema, UserTableRowType tableType, Index index)
@@ -172,6 +173,14 @@ public abstract class IndexRowType extends AisRowType
                 Column column = indexColumns.get(i).getColumn();
                 akTypes[t++] = column.getType().akType();
             }
+        }
+
+        @Override
+        public TInstance typeInstanceAt(int i) {
+            if (i == 0)
+                return MNumeric.BIGINT.instance(false);
+            else
+                return super.typeInstanceAt(i + (index().getKeyColumns().size() - 1));
         }
     }
 }

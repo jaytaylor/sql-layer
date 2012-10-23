@@ -65,8 +65,10 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
     @Test
     public void alterToCompatible() {
         createAndLoadTable();
-        runAlter("ALTER TABLE t1 ALTER c2 SET DATA TYPE decimal(22,14)");
         final int tid = tableId(SCHEMA, TABLE);
+        TableIndex indexBefore = getUserTable(tid).getIndex(INDEX_NAME);
+        assertEquals("index row count before alter", ROW_COUNT, scanAllIndex(indexBefore).size());
+        runAlter("ALTER TABLE t1 ALTER c2 SET DATA TYPE decimal(22,14)");
         assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
         TableIndex index = getUserTable(tid).getIndex(INDEX_NAME);
         assertEquals("Index exists", true, index != null);

@@ -41,6 +41,11 @@ public class ObjectToKeyIT extends ITBase {
     private final String SCHEMA = "test";
     private final String TABLE = "t";
 
+    @Override
+    protected boolean testSupportsPValues() {
+        return false;
+    }
+
     private void testObjectToKey(FieldDef field, Object... testValues) throws PersistitException {
         Key key = persistitStore().getKey();
         PersistitKeyAppender appender = PersistitKeyAppender.create(key);
