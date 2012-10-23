@@ -1358,7 +1358,7 @@
 ---
 #command number: 148
 - Statement: SELECT time_field + INTERVAL 1 YEAR FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR],  newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 149
 - Statement: SELECT timestamp_field + INTERVAL 1 YEAR FROM all_types;
@@ -1378,7 +1378,7 @@
 ---
 #command number: 153
 - Statement: SELECT time_field + INTERVAL 1 MONTH FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 154
 - Statement: SELECT timestamp_field + INTERVAL 1 MONTH FROM all_types;
@@ -1398,7 +1398,7 @@
 ---
 #command number: 158
 - Statement: SELECT time_field + INTERVAL 1 QUARTER FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 159
 - Statement: SELECT timestamp_field + INTERVAL 1 QUARTER FROM all_types;
@@ -1418,7 +1418,7 @@
 ---
 #command number: 163
 - Statement: SELECT time_field + INTERVAL 1 WEEK FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 164
 - Statement: SELECT timestamp_field + INTERVAL 1 WEEK FROM all_types;
@@ -1438,7 +1438,7 @@
 ---
 #command number: 168
 - Statement: SELECT time_field + INTERVAL 1 DAY FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 169
 - Statement: SELECT timestamp_field + INTERVAL 1 DAY FROM all_types;
@@ -1458,7 +1458,7 @@
 ---
 #command number: 173
 - Statement: SELECT time_field + INTERVAL 1 HOUR FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 174
 - Statement: SELECT timestamp_field + INTERVAL 1 HOUR FROM all_types;
@@ -1478,7 +1478,7 @@
 ---
 #command number: 178
 - Statement: SELECT time_field + INTERVAL 1 MINUTE FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 179
 - Statement: SELECT timestamp_field + INTERVAL 1 MINUTE FROM all_types;
@@ -1498,7 +1498,7 @@
 ---
 #command number: 183
 - Statement: SELECT time_field + INTERVAL 1 SECOND FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME]}
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME]}
 ---
 #command number: 184
 - Statement: SELECT timestamp_field + INTERVAL 1 SECOND FROM all_types;
@@ -1518,7 +1518,7 @@
 ---
 #command number: 188
 - Statement: SELECT time_field - INTERVAL 1 YEAR FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 189
 - Statement: SELECT timestamp_field - INTERVAL 1 YEAR FROM all_types;
@@ -1538,7 +1538,7 @@
 ---
 #command number: 193
 - Statement: SELECT time_field - INTERVAL 1 MONTH FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 194
 - Statement: SELECT timestamp_field - INTERVAL 1 MONTH FROM all_types;
@@ -1558,7 +1558,7 @@
 ---
 #command number: 198
 - Statement: SELECT time_field - INTERVAL 1 QUARTER FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 199
 - Statement: SELECT timestamp_field - INTERVAL 1 QUARTER FROM all_types;
@@ -1578,7 +1578,7 @@
 ---
 #command number: 203
 - Statement: SELECT time_field - INTERVAL 1 WEEK FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 204
 - Statement: SELECT timestamp_field - INTERVAL 1 WEEK FROM all_types;
@@ -1598,7 +1598,7 @@
 ---
 #command number: 208
 - Statement: SELECT time_field - INTERVAL 1 DAY FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 209
 - Statement: SELECT timestamp_field - INTERVAL 1 DAY FROM all_types;
@@ -1618,7 +1618,7 @@
 ---
 #command number: 213
 - Statement: SELECT time_field - INTERVAL 1 HOUR FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 214
 - Statement: SELECT timestamp_field - INTERVAL 1 HOUR FROM all_types;
@@ -1638,7 +1638,7 @@
 ---
 #command number: 218
 - Statement: SELECT time_field - INTERVAL 1 MINUTE FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 219
 - Statement: SELECT timestamp_field - INTERVAL 1 MINUTE FROM all_types;
@@ -1658,7 +1658,7 @@
 ---
 #command number: 223
 - Statement: SELECT time_field - INTERVAL 1 SECOND FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 224
 - Statement: SELECT timestamp_field - INTERVAL 1 SECOND FROM all_types;
@@ -1682,11 +1682,11 @@
 ---
 #command number: 229
 - Statement: SELECT INTERVAL 1 YEAR - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 230
 - Statement: SELECT INTERVAL 1 YEAR - '2012-01-23 12:30:10' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 231
 - Statement: SELECT INTERVAL 1 YEAR + date_field FROM all_types;
@@ -1694,15 +1694,15 @@
 ---
 #command number: 232
 - Statement: SELECT INTERVAL 1 YEAR - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 233
 - Statement: SELECT INTERVAL 1 YEAR + time_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 234
 - Statement: SELECT INTERVAL 1 YEAR - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 235
 - Statement: SELECT INTERVAL 1 YEAR + timestamp_field FROM all_types;
@@ -1710,7 +1710,7 @@
 ---
 #command number: 236
 - Statement: SELECT INTERVAL 1 YEAR - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 237
 - Statement: SELECT INTERVAL 1 MONTH + '2012-01-23' FROM all_types;
@@ -1722,11 +1722,11 @@
 ---
 #command number: 239
 - Statement: SELECT INTERVAL 1 MONTH - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 240
 - Statement: SELECT INTERVAL 1 MONTH - '2012-01-23 12:30:10' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 241
 - Statement: SELECT INTERVAL 1 MONTH + date_field FROM all_types;
@@ -1734,15 +1734,15 @@
 ---
 #command number: 242
 - Statement: SELECT INTERVAL 1 MONTH - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 243
 - Statement: SELECT INTERVAL 1 MONTH + time_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 244
 - Statement: SELECT INTERVAL 1 MONTH - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 245
 - Statement: SELECT INTERVAL 1 MONTH + timestamp_field FROM all_types;
@@ -1750,7 +1750,7 @@
 ---
 #command number: 246
 - Statement: SELECT INTERVAL 1 MONTH - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 247
 - Statement: SELECT INTERVAL 1 QUARTER + '2012-01-23' FROM all_types;
@@ -1762,11 +1762,11 @@
 ---
 #command number: 249
 - Statement: SELECT INTERVAL 1 QUARTER - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 250
 - Statement: SELECT INTERVAL 1 QUARTER - '2012-01-23 12:30:10' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 251
 - Statement: SELECT INTERVAL 1 QUARTER + date_field FROM all_types;
@@ -1774,15 +1774,15 @@
 ---
 #command number: 252
 - Statement: SELECT INTERVAL 1 QUARTER - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 253
 - Statement: SELECT INTERVAL 1 QUARTER + time_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 254
 - Statement: SELECT INTERVAL 1 QUARTER - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 255
 - Statement: SELECT INTERVAL 1 QUARTER + timestamp_field FROM all_types;
@@ -1790,7 +1790,7 @@
 ---
 #command number: 256
 - Statement: SELECT INTERVAL 1 QUARTER - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 257
 - Statement: SELECT INTERVAL 1 WEEK + '2012-01-23' FROM all_types;
@@ -1802,11 +1802,11 @@
 ---
 #command number: 259
 - Statement: SELECT INTERVAL 1 WEEK - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 260
 - Statement: SELECT INTERVAL 1 WEEK - '2012-01-23 12:30:10' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 261
 - Statement: SELECT INTERVAL 1 WEEK + date_field FROM all_types;
@@ -1814,15 +1814,15 @@
 ---
 #command number: 262
 - Statement: SELECT INTERVAL 1 WEEK - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 263
 - Statement: SELECT INTERVAL 1 WEEK + time_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 264
 - Statement: SELECT INTERVAL 1 WEEK - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 265
 - Statement: SELECT INTERVAL 1 WEEK + timestamp_field FROM all_types;
@@ -1830,7 +1830,7 @@
 ---
 #command number: 266
 - Statement: SELECT INTERVAL 1 WEEK - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 267
 - Statement: SELECT INTERVAL 1 DAY + '2012-01-23' FROM all_types;
@@ -1842,11 +1842,11 @@
 ---
 #command number: 269
 - Statement: SELECT INTERVAL 1 DAY - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 270
 - Statement: SELECT INTERVAL 1 DAY - '2012-01-23 12:30:10' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 271
 - Statement: SELECT INTERVAL 1 DAY + date_field FROM all_types;
@@ -1854,15 +1854,15 @@
 ---
 #command number: 272
 - Statement: SELECT INTERVAL 1 DAY - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 273
 - Statement: SELECT INTERVAL 1 DAY + time_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 274
 - Statement: SELECT INTERVAL 1 DAY - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 275
 - Statement: SELECT INTERVAL 1 DAY + timestamp_field FROM all_types;
@@ -1870,7 +1870,7 @@
 ---
 #command number: 276
 - Statement: SELECT INTERVAL 1 DAY - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 277
 - Statement: SELECT INTERVAL 1 HOUR + '2012-01-23' FROM all_types;
@@ -1882,27 +1882,27 @@
 ---
 #command number: 279
 - Statement: SELECT INTERVAL 1 HOUR - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 280
 - Statement: SELECT INTERVAL 1 HOUR - '2012-01-23 12:30:10' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 281, bug 1067475
 - Statement: SELECT INTERVAL 1 HOUR + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [DATE], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 282
 - Statement: SELECT INTERVAL 1 HOUR - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 283
 - Statement: SELECT INTERVAL 1 HOUR + time_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 284
 - Statement: SELECT INTERVAL 1 HOUR - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 285
 - Statement: SELECT INTERVAL 1 HOUR + timestamp_field FROM all_types;
@@ -1910,7 +1910,7 @@
 ---
 #command number: 286
 - Statement: SELECT INTERVAL 1 HOUR - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 287
 - Statement: SELECT INTERVAL 1 MINUTE + '2012-01-23' FROM all_types;
@@ -1922,27 +1922,27 @@
 ---
 #command number: 289
 - Statement: SELECT INTERVAL 1 MINUTE - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 290
 - Statement: SELECT INTERVAL 1 MINUTE - '2012-01-23 12:30:10' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 291, bug 1067475
 - Statement: SELECT INTERVAL 1 MINUTE + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [DATE], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 292
 - Statement: SELECT INTERVAL 1 MINUTE - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 293
 - Statement: SELECT INTERVAL 1 MINUTE + time_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 294
 - Statement: SELECT INTERVAL 1 MINUTE - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 295
 - Statement: SELECT INTERVAL 1 MINUTE + timestamp_field FROM all_types;
@@ -1950,7 +1950,7 @@
 ---
 #command number: 296
 - Statement: SELECT INTERVAL 1 MINUTE - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 297
 - Statement: SELECT INTERVAL 1 SECOND + '2012-01-23' FROM all_types;
@@ -1962,27 +1962,27 @@
 ---
 #command number: 299
 - Statement: SELECT INTERVAL 1 SECOND - '2012-01-23' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 300
 - Statement: SELECT INTERVAL 1 SECOND - '2012-01-23 12:30:10' FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 301, bug 1067475
 - Statement: SELECT INTERVAL 1 SECOND + date_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [DATE], all: [DATE] }
+- output_types: !select-engine {sys-mysql: [DATETIME], newtypes: [TIMESTAMP], all: [DATE] }
 ---
 #command number: 302
 - Statement: SELECT INTERVAL 1 SECOND - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 303
 - Statement: SELECT INTERVAL 1 SECOND + time_field FROM all_types;
-- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [VARCHAR], all: [TIME] }
+- output_types: !select-engine {sys-mysql: [CHAR], newtypes: [TIME], all: [TIME] }
 ---
 #command number: 304
 - Statement: SELECT INTERVAL 1 SECOND - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 305
 - Statement: SELECT INTERVAL 1 SECOND + timestamp_field FROM all_types;
@@ -1990,391 +1990,391 @@
 ---
 #command number: 306
 - Statement: SELECT INTERVAL 1 SECOND - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 307
 - Statement: SELECT INTERVAL 1 YEAR * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 308
 - Statement: SELECT date_field * INTERVAL 1 YEAR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 309
 - Statement: SELECT INTERVAL 1 YEAR / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 310
 - Statement: SELECT date_field / INTERVAL 1 YEAR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 311
 - Statement: SELECT INTERVAL 1 YEAR * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 312
 - Statement: SELECT time_field * INTERVAL 1 YEAR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 313
 - Statement: SELECT INTERVAL 1 YEAR / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 314
 - Statement: SELECT time_field / INTERVAL 1 YEAR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 315
 - Statement: SELECT INTERVAL 1 YEAR * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 316
 - Statement: SELECT timestamp_field * INTERVAL 1 YEAR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 317
 - Statement: SELECT INTERVAL 1 YEAR / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 318
 - Statement: SELECT timestamp_field / INTERVAL 1 YEAR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 319
 - Statement: SELECT INTERVAL 1 MONTH * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 320
 - Statement: SELECT date_field * INTERVAL 1 MONTH FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 321
 - Statement: SELECT INTERVAL 1 MONTH / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 322
 - Statement: SELECT date_field / INTERVAL 1 MONTH FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 323
 - Statement: SELECT INTERVAL 1 MONTH * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 324
 - Statement: SELECT time_field * INTERVAL 1 MONTH FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 325
 - Statement: SELECT INTERVAL 1 MONTH / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 326
 - Statement: SELECT time_field / INTERVAL 1 MONTH FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 327
 - Statement: SELECT INTERVAL 1 MONTH * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 328
 - Statement: SELECT timestamp_field * INTERVAL 1 MONTH FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 329
 - Statement: SELECT INTERVAL 1 MONTH / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 330
 - Statement: SELECT timestamp_field / INTERVAL 1 MONTH FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 331
 - Statement: SELECT INTERVAL 1 QUARTER * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 332
 - Statement: SELECT date_field * INTERVAL 1 QUARTER FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 333
 - Statement: SELECT INTERVAL 1 QUARTER / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 334
 - Statement: SELECT date_field / INTERVAL 1 QUARTER FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 335
 - Statement: SELECT INTERVAL 1 QUARTER * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 336
 - Statement: SELECT time_field * INTERVAL 1 QUARTER FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 337
 - Statement: SELECT INTERVAL 1 QUARTER / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 338
 - Statement: SELECT time_field / INTERVAL 1 QUARTER FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 339
 - Statement: SELECT INTERVAL 1 QUARTER * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 340
 - Statement: SELECT timestamp_field * INTERVAL 1 QUARTER FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 341
 - Statement: SELECT INTERVAL 1 QUARTER / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 342
 - Statement: SELECT timestamp_field / INTERVAL 1 QUARTER FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 343
 - Statement: SELECT INTERVAL 1 WEEK * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 344
 - Statement: SELECT date_field * INTERVAL 1 WEEK FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 345
 - Statement: SELECT INTERVAL 1 WEEK / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 346
 - Statement: SELECT date_field / INTERVAL 1 WEEK FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 347
 - Statement: SELECT INTERVAL 1 WEEK * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 348
 - Statement: SELECT time_field * INTERVAL 1 WEEK FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 349
 - Statement: SELECT INTERVAL 1 WEEK / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 350
 - Statement: SELECT time_field / INTERVAL 1 WEEK FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 351
 - Statement: SELECT INTERVAL 1 WEEK * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 352
 - Statement: SELECT timestamp_field * INTERVAL 1 WEEK FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 353
 - Statement: SELECT INTERVAL 1 WEEK / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 354
 - Statement: SELECT timestamp_field / INTERVAL 1 WEEK FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 355
 - Statement: SELECT INTERVAL 1 DAY * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 356
 - Statement: SELECT date_field * INTERVAL 1 DAY FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 357
 - Statement: SELECT INTERVAL 1 DAY / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 358
 - Statement: SELECT date_field / INTERVAL 1 DAY FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 359
 - Statement: SELECT INTERVAL 1 DAY * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 360
 - Statement: SELECT time_field * INTERVAL 1 DAY FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 361
 - Statement: SELECT INTERVAL 1 DAY / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 362
 - Statement: SELECT time_field / INTERVAL 1 DAY FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 363
 - Statement: SELECT INTERVAL 1 DAY * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 364
 - Statement: SELECT timestamp_field * INTERVAL 1 DAY FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 365
 - Statement: SELECT INTERVAL 1 DAY / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 366
 - Statement: SELECT timestamp_field / INTERVAL 1 DAY FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 367
 - Statement: SELECT INTERVAL 1 HOUR * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 368
 - Statement: SELECT date_field * INTERVAL 1 HOUR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 369
 - Statement: SELECT INTERVAL 1 HOUR / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 370
 - Statement: SELECT date_field / INTERVAL 1 HOUR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 371
 - Statement: SELECT INTERVAL 1 HOUR * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 372
 - Statement: SELECT time_field * INTERVAL 1 HOUR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 373
 - Statement: SELECT INTERVAL 1 HOUR / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 374
 - Statement: SELECT time_field / INTERVAL 1 HOUR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 375
 - Statement: SELECT INTERVAL 1 HOUR * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 376
 - Statement: SELECT timestamp_field * INTERVAL 1 HOUR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 377
 - Statement: SELECT INTERVAL 1 HOUR / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 378
 - Statement: SELECT timestamp_field / INTERVAL 1 HOUR FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 379
 - Statement: SELECT INTERVAL 1 MINUTE * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 380
 - Statement: SELECT date_field * INTERVAL 1 MINUTE FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 381
 - Statement: SELECT INTERVAL 1 MINUTE / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 382
 - Statement: SELECT date_field / INTERVAL 1 MINUTE FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 383
 - Statement: SELECT INTERVAL 1 MINUTE * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 384
 - Statement: SELECT time_field * INTERVAL 1 MINUTE FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 385
 - Statement: SELECT INTERVAL 1 MINUTE / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 386
 - Statement: SELECT time_field / INTERVAL 1 MINUTE FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 387
 - Statement: SELECT INTERVAL 1 MINUTE * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 388
 - Statement: SELECT timestamp_field * INTERVAL 1 MINUTE FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 389
 - Statement: SELECT INTERVAL 1 MINUTE / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 390
 - Statement: SELECT timestamp_field / INTERVAL 1 MINUTE FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 391
 - Statement: SELECT INTERVAL 1 SECOND * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 392
 - Statement: SELECT date_field * INTERVAL 1 SECOND FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 393
 - Statement: SELECT INTERVAL 1 SECOND / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 394
 - Statement: SELECT date_field / INTERVAL 1 SECOND FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 395
 - Statement: SELECT INTERVAL 1 SECOND * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 396
 - Statement: SELECT time_field * INTERVAL 1 SECOND FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 397
 - Statement: SELECT INTERVAL 1 SECOND / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 398
 - Statement: SELECT time_field / INTERVAL 1 SECOND FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 399
 - Statement: SELECT INTERVAL 1 SECOND * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 400
 - Statement: SELECT timestamp_field * INTERVAL 1 SECOND FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 401
 - Statement: SELECT INTERVAL 1 SECOND / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 402
 - Statement: SELECT timestamp_field / INTERVAL 1 SECOND FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 403
 # This command used to be the one that's commented out. That expects a failure in types2, but it
@@ -2383,717 +2383,717 @@
 # all stay right, and all we lose is an incorrect test.
 - Statement: SET newtypes='false'
 #- Statement: SELECT numeric_field + date_field FROM all_types;
-#- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+#- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 404
 - Statement: SELECT date_field + numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 405
 - Statement: SELECT numeric_field - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 406
 - Statement: SELECT date_field - numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 407
 - Statement: SELECT numeric_field * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 408
 - Statement: SELECT date_field * numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 409
 - Statement: SELECT numeric_field % date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 410
 - Statement: SELECT date_field % numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 411
 - Statement: SELECT numeric_field mod date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 412
 - Statement: SELECT date_field mod numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 413
 - Statement: SELECT numeric_field / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 414
 - Statement: SELECT date_field / numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 415
 - Statement: SELECT numeric_field + time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 416
 - Statement: SELECT time_field + numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 417
 - Statement: SELECT numeric_field - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 418
 - Statement: SELECT time_field - numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 419
 - Statement: SELECT numeric_field * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 420
 - Statement: SELECT time_field * numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 421
 - Statement: SELECT numeric_field % time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 422
 - Statement: SELECT time_field % numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 423
 - Statement: SELECT numeric_field mod time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 424
 - Statement: SELECT time_field mod numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 425
 - Statement: SELECT numeric_field / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 426
 - Statement: SELECT time_field / numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 427
 - Statement: SELECT numeric_field + timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 428
 - Statement: SELECT timestamp_field + numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 429
 - Statement: SELECT numeric_field - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 430
 - Statement: SELECT timestamp_field - numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 431
 - Statement: SELECT numeric_field * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 432
 - Statement: SELECT timestamp_field * numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 433
 - Statement: SELECT numeric_field % timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 434
 - Statement: SELECT timestamp_field % numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 435
 - Statement: SELECT numeric_field mod timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 436
 - Statement: SELECT timestamp_field mod numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 437
 - Statement: SELECT numeric_field / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 438
 - Statement: SELECT timestamp_field / numeric_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 439
 - Statement: SELECT double_field + date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 440
 - Statement: SELECT date_field + double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 441
 - Statement: SELECT double_field - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 442
 - Statement: SELECT date_field - double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 443
 - Statement: SELECT double_field * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 444
 - Statement: SELECT date_field * double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 445
 - Statement: SELECT double_field % date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 446
 - Statement: SELECT date_field % double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 447
 - Statement: SELECT double_field mod date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 448
 - Statement: SELECT date_field mod double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 449
 - Statement: SELECT double_field / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 450
 - Statement: SELECT date_field / double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 451
 - Statement: SELECT double_field + time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 452
 - Statement: SELECT time_field + double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 453
 - Statement: SELECT double_field - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 454
 - Statement: SELECT time_field - double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 455
 - Statement: SELECT double_field * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 456
 - Statement: SELECT time_field * double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 457
 - Statement: SELECT double_field % time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 458
 - Statement: SELECT time_field % double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 459
 - Statement: SELECT double_field mod time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 460
 - Statement: SELECT time_field mod double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 461
 - Statement: SELECT double_field / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 462
 - Statement: SELECT time_field / double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 463
 - Statement: SELECT double_field + timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 464
 - Statement: SELECT timestamp_field + double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 465
 - Statement: SELECT double_field - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 466
 - Statement: SELECT timestamp_field - double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 467
 - Statement: SELECT double_field * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 468
 - Statement: SELECT timestamp_field * double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 469
 - Statement: SELECT double_field % timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 470
 - Statement: SELECT timestamp_field % double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 471
 - Statement: SELECT double_field mod timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 472
 - Statement: SELECT timestamp_field mod double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 473
 - Statement: SELECT double_field / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 474
 - Statement: SELECT timestamp_field / double_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 475
 - Statement: SELECT bigint_field + date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 476
 - Statement: SELECT date_field + bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 477
 - Statement: SELECT bigint_field - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 478
 - Statement: SELECT date_field - bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 479
 - Statement: SELECT bigint_field * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 480
 - Statement: SELECT date_field * bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 481
 - Statement: SELECT bigint_field % date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 482
 - Statement: SELECT date_field % bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 483
 - Statement: SELECT bigint_field mod date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 484
 - Statement: SELECT date_field mod bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 485
 - Statement: SELECT bigint_field / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 486
 - Statement: SELECT date_field / bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 487
 - Statement: SELECT bigint_field + time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 488
 - Statement: SELECT time_field + bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 489
 - Statement: SELECT bigint_field - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 490
 - Statement: SELECT time_field - bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 491
 - Statement: SELECT bigint_field * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 492
 - Statement: SELECT time_field * bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 493
 - Statement: SELECT bigint_field % time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 494
 - Statement: SELECT time_field % bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 495
 - Statement: SELECT bigint_field mod time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 496
 - Statement: SELECT time_field mod bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 497
 - Statement: SELECT bigint_field / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 498
 - Statement: SELECT time_field / bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 499
 - Statement: SELECT bigint_field + timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 500
 - Statement: SELECT timestamp_field + bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 501
 - Statement: SELECT bigint_field - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 502
 - Statement: SELECT timestamp_field - bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 503
 - Statement: SELECT bigint_field * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 504
 - Statement: SELECT timestamp_field * bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 505
 - Statement: SELECT bigint_field % timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 506
 - Statement: SELECT timestamp_field % bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 507
 - Statement: SELECT bigint_field mod timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 508
 - Statement: SELECT timestamp_field mod bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 509
 - Statement: SELECT bigint_field / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 510
 - Statement: SELECT timestamp_field / bigint_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 511
 - Statement: SELECT integer_field + date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 512
 - Statement: SELECT date_field + integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 513
 - Statement: SELECT integer_field - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 514
 - Statement: SELECT date_field - integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 515
 - Statement: SELECT integer_field * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 516
 - Statement: SELECT date_field * integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 517
 - Statement: SELECT integer_field % date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 518
 - Statement: SELECT date_field % integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 519
 - Statement: SELECT integer_field mod date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 520
 - Statement: SELECT date_field mod integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 521
 - Statement: SELECT integer_field / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 522
 - Statement: SELECT date_field / integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 523
 - Statement: SELECT integer_field + time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 524
 - Statement: SELECT time_field + integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 525
 - Statement: SELECT integer_field - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 526
 - Statement: SELECT time_field - integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 527
 - Statement: SELECT integer_field * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 528
 - Statement: SELECT time_field * integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 529
 - Statement: SELECT integer_field % time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 530
 - Statement: SELECT time_field % integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 531
 - Statement: SELECT integer_field mod time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 532
 - Statement: SELECT time_field mod integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 533
 - Statement: SELECT integer_field / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 534
 - Statement: SELECT time_field / integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 535
 - Statement: SELECT integer_field + timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 536
 - Statement: SELECT timestamp_field + integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 537
 - Statement: SELECT integer_field - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 538
 - Statement: SELECT timestamp_field - integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 539
 - Statement: SELECT integer_field * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 540
 - Statement: SELECT timestamp_field * integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 541
 - Statement: SELECT integer_field % timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 542
 - Statement: SELECT timestamp_field % integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 543
 - Statement: SELECT integer_field mod timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 544
 - Statement: SELECT timestamp_field mod integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 545
 - Statement: SELECT integer_field / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 546
 - Statement: SELECT timestamp_field / integer_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 547
 - Statement: SELECT date_field + date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 548
 - Statement: SELECT date_field * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 549
 - Statement: SELECT date_field / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 550
 - Statement: SELECT date_field + time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 551
 - Statement: SELECT date_field * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 552
 - Statement: SELECT date_field / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 553
 - Statement: SELECT date_field - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 554
 - Statement: SELECT date_field + timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 555
 - Statement: SELECT date_field * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 556
 - Statement: SELECT date_field / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 557
 - Statement: SELECT date_field - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 #---
 #- Statement: SELECT date_field - date_field FROM all_types;
 #- output_types: [INTERVAL_MILLIS]
 ---
 #command number: 558
 - Statement: SELECT time_field + date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 559
 - Statement: SELECT time_field * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 560
 - Statement: SELECT time_field / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 561
 - Statement: SELECT time_field - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 562
 - Statement: SELECT time_field + time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 563
 - Statement: SELECT time_field * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 564
 - Statement: SELECT time_field / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 565
 - Statement: SELECT time_field + timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 566
 - Statement: SELECT time_field * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 567
 - Statement: SELECT time_field / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 568
 - Statement: SELECT time_field - timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 #---
 #- Statement: SELECT time_field - time_field FROM all_types;
 #- output_types: [INTERVAL_MILLIS]
 ---
 #command number: 569
 - Statement: SELECT timestamp_field + date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 570
 - Statement: SELECT timestamp_field * date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 571
 - Statement: SELECT timestamp_field / date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 572
 - Statement: SELECT timestamp_field - date_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 573
 - Statement: SELECT timestamp_field + time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 574
 - Statement: SELECT timestamp_field * time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 575
 - Statement: SELECT timestamp_field / time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 576
 - Statement: SELECT timestamp_field - time_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 577
 - Statement: SELECT timestamp_field + timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 578
 - Statement: SELECT timestamp_field * timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
 #command number: 579
 - Statement: SELECT timestamp_field / timestamp_field FROM all_types;
-- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [70001] }
+- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 #---
 #- Statement: SELECT timestamp_field - timestamp_field FROM all_types;
 #- output_types: [INTERVAL_MILLIS]

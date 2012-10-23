@@ -2,7 +2,7 @@ SelectQuery@15384ed5
   ResultSet@23bf8cd5[order_date, sku]
     Project@74b70648[orders.order_date, items.sku]
       Select@1bfd9cd5[]
-        TableJoins@2743724e(TableGroup@3d057305(customers) - SingleIndexScan@30c26c8f(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/SORTED, <8888))
-          JoinNode@2c65394b(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@299481b2(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+        TableJoins@2743724e(TableGroup@3d057305(customers) - SingleIndexScan@30c26c8f(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/SORTED, <8888))
+          JoinNode@2c65394b(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@299481b2(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
             TableSource@5da631c2(orders - TableGroup@3d057305(customers))
-            TableSource@4a0ce796(items - TableGroupJoin@299481b2(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@4a0ce796(items - TableGroupJoin@299481b2(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

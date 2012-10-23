@@ -2,6 +2,8 @@
 # Related bug(s): 889300, 903215
 # Status: confirmed
 ---
+- Statement: SET newtypes to 'true'
+---
 - Statement: SELECT DATE_ADD('2000-12-31 23:59:59', INTERVAL 1 WEEK);
 - output: [[!re '2001-01-07 23:59:59([.]0)?']]
 ---

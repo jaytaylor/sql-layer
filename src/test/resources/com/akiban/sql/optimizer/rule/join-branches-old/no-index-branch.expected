@@ -4,9 +4,9 @@ SelectQuery@449fea8a
       Select@39a2f02e[]
         Product@78467991
           Flatten@5ad75c47(customers INNER orders)
-            GroupScan@70eb67e8(Group(customers -> test.customers))
+            GroupScan@70eb67e8(Group(test.customers))
               TableSource@2a48f675(customers - TableGroup@6ef2ea42(customers))
-              TableSource@31e46a68(orders - TableGroupJoin@df1cbf6(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@31e46a68(orders - TableGroupJoin@df1cbf6(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           Flatten@7d858aa0(customers INNER addresses)
             BranchLookup@4a504ec1(customers -> addresses)
-              TableSource@1c2c9103(addresses - TableGroupJoin@5e628704(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+              TableSource@1c2c9103(addresses - TableGroupJoin@5e628704(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))

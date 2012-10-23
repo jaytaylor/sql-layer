@@ -3,8 +3,8 @@ SelectQuery@d1f24bb
     Project@4eafccbe[customers.name, orders.order_date, items.sku, items.quan]
       Select@77aaf64d[orders.order_date > Cast(2011-01-01 AS DATE NOT NULL)]
         TableJoins@7910769b(TableGroup@27daf835(customers))
-          JoinNode@18dd7404(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@72ebbf5c(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
-            JoinNode@53606bf5(RIGHT/GROUP[orders.cid == customers.cid] - TableGroupJoin@5f4fcc96(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          JoinNode@18dd7404(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@72ebbf5c(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
+            JoinNode@53606bf5(RIGHT/GROUP[orders.cid == customers.cid] - TableGroupJoin@5f4fcc96(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@5d748654(customers - TableGroup@27daf835(customers))
-              TableSource@7e4ab8b9(orders - TableGroupJoin@5f4fcc96(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-            TableSource@5ba5ba75(items - TableGroupJoin@72ebbf5c(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+              TableSource@7e4ab8b9(orders - TableGroupJoin@5f4fcc96(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+            TableSource@5ba5ba75(items - TableGroupJoin@72ebbf5c(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

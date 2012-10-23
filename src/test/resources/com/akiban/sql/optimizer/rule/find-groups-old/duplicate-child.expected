@@ -4,8 +4,8 @@ SelectQuery@7a49182
       Select@55f713ed[c2.pid == p.id]
         JoinNode@503d58b2(INNER)
           TableJoins@6b8a3745(TableGroup@62e01873(parent))
-            JoinNode@3f32ca2b(INNER/GROUP[c1.pid == p.id] - TableGroupJoin@1f76ed77(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+            JoinNode@3f32ca2b(INNER/GROUP[c1.pid == p.id] - TableGroupJoin@1f76ed77(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
               TableSource@1775831e(p - TableGroup@62e01873(parent))
-              TableSource@23f3329a(c1 - TableGroupJoin@1f76ed77(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+              TableSource@23f3329a(c1 - TableGroupJoin@1f76ed77(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
           TableJoins@38e02fc4(TableGroup@666558bb(parent))
             TableSource@337f2ee6(c2 - TableGroup@666558bb(parent))

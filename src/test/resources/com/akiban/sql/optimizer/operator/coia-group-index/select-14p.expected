@@ -4,5 +4,5 @@ PhysicalSelect[VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHAR
       ValuesScan_Default(['1234'], [$1], [$2], [$3])
     Project_Default(orders.order_date, items.sku, items.quan)
       Flatten_HKeyOrdered(orders INNER items)
-        AncestorLookup_Default(Index(.customers.cname_and_sku) -> orders, items)
-          IndexScan_Default(Index(.customers.cname_and_sku), customers.name = 'Smith', items.sku = Bound(3, 0))
+        AncestorLookup_Default(Index(customers.cname_and_sku) -> orders, items)
+          IndexScan_Default(Index(customers.cname_and_sku), customers.name = 'Smith', items.sku = Bound(3, 0))

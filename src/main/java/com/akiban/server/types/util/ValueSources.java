@@ -428,6 +428,10 @@ public class ValueSources
     
     public static long compare (ValueSource left, ValueSource right, String charSet)
     {
+        if (left.isNull())
+            return right.isNull() ? 0 : -1;
+        if (right.isNull())
+            return 1;
         AkType l = left.getConversionType();
         AkType r = right.getConversionType();    
         

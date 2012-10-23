@@ -25,7 +25,10 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.explain.*;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
@@ -44,6 +47,7 @@ import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -54,6 +58,7 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TScalarBase;
 import com.google.common.primitives.Doubles;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class MArithmetic extends TArithmetic {
@@ -693,13 +698,25 @@ public abstract class MArithmetic extends TArithmetic {
      */
     static class AlwaysNull extends MArithmetic {
 
+        private final InvalidOperationException warningErr;
+
         AlwaysNull(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1) {
             super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR, 29);
+            warningErr = null;
         }
-
+        
+        AlwaysNull(String overloadName, String infix,
+                   boolean associative, TClass operand0,
+                   TClass operand1, InvalidOperationException err) {
+            super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR, 29);
+            this.warningErr = err;
+        }
+        
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
+            if (warningErr != null)
+                context.warnClient(warningErr);
             output.putNull();
         }
 
@@ -718,8 +735,56 @@ public abstract class MArithmetic extends TArithmetic {
 
     }
 
+    private static List<TScalar> generateReflexive(List<TScalar> ret, String name, String infix, boolean asso, TClass types[][])
+    {
+        for (TClass pair[] : types)
+        {
+            ret.add(new InvalidTypes(name, infix, asso, pair[0], pair[1]));
+            ret.add(new InvalidTypes(name, infix, asso, pair[1], pair[0]));
+        }
+        
+        return ret;
+    }
     
-    // multiplications
+    private static List<TScalar> getDateTimeErrorCases()
+    {
+        
+        String names[][] = new String[][]{ {"times", "*"},
+                                           {"divide", "/"},
+                                           {"div", "div"}};
+        
+        boolean assos[] = new boolean []{true, false, false};
+        assert assos.length == names.length : "names and assos differ in length!";
+        TClass types[][] = new TClass [][] {{MDatetimes.DATE, AkInterval.MONTHS},
+                                            {MDatetimes.DATETIME, AkInterval.MONTHS},
+                                            {MDatetimes.TIME, AkInterval.MONTHS},
+                                            {MDatetimes.TIMESTAMP, AkInterval.MONTHS},
+                                            {MDatetimes.YEAR, AkInterval.MONTHS},
+
+                                            {MDatetimes.DATE, AkInterval.SECONDS},
+                                            {MDatetimes.DATETIME, AkInterval.SECONDS},
+                                            {MDatetimes.TIME, AkInterval.SECONDS},
+                                            {MDatetimes.TIMESTAMP, AkInterval.SECONDS},
+                                            {MDatetimes.YEAR, AkInterval.SECONDS}
+                                           };
+        
+        List<TScalar> ret = new ArrayList<TScalar>(types.length);
+        
+        for (int n = 0, limit = assos.length; n < limit; ++n)
+            generateReflexive(ret, names[n][0], names[n][1], assos[n],types);
+        
+        
+        // <INTERVAL> minus <DATE/TIME>
+        for (TClass pair[] : types)
+            ret.add(new InvalidTypes("minus", "-", false, pair[1], pair[0]));
+        ret.add(new InvalidTypes("minus", "-", false, AkInterval.MONTHS, MString.VARCHAR));
+        ret.add(new InvalidTypes("minus", "-", false, AkInterval.SECONDS, MString.VARCHAR));
+
+        return ret;
+    }
+    public static final List<TScalar> ERRORS = getDateTimeErrorCases();
+    
+    //----------  multiplications
     public static final TScalar MULT_MONTH_DOUBLE 
             = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
     public static final TScalar MULT_DOUBLE_MONTH 
@@ -728,13 +793,13 @@ public abstract class MArithmetic extends TArithmetic {
             = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
     public static final TScalar MULT_DOUBLE_SECS 
             = new IntervalArith(AkInterval.SECONDS, 1, MApproximateNumber.DOUBLE, 0, IntervalOp.MULT);
-    
+
     // divisions
     public static final TScalar DIVIDE_MONTHS_DOUBLE 
             = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIVIDE);
     public static final TScalar DIVIDE_SECS_DOUBLE 
             = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIVIDE);
-    
+
     // additions
     public static final TScalar ADD_MONTH
             = new IntervalArith(AkInterval.MONTHS, 0, AkInterval.MONTHS, 1, IntervalOp.ADD);
@@ -755,6 +820,25 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar DIV_SECS
             = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIV);
     
+    static class InvalidTypes extends  AlwaysNull
+    {
+        private final InvalidArgumentTypeException error;
+        InvalidTypes(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1)
+        {
+            super(overloadName, infix, associative, operand0, operand1);
+            error = new InvalidArgumentTypeException(String.format("Invald Argument Types: %s(<%s>, <%s>)",
+                                                                   overloadName,
+                                                                   operand0,
+                                                                   operand1));
+        }
+        
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output)
+        {
+            throw error;
+        }
+    }
     private static enum IntervalOp
     {
         DIV("div") // integer division

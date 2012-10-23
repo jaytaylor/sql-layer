@@ -4,6 +4,6 @@ SelectQuery@1873eb2
       Select@1304043[]
         Flatten@cb07ef(customers LEFT orders)
           Select@176086d[orders.order_date > $0]
-            GroupScan@234265(Group(customers -> test.customers), rows = 1000, cost = 59716.0)
+            GroupScan@234265(Group(test.customers), rows = 1000, cost = 59716.0)
               TableSource@59e2afb2(customers - TableGroup@6aadae91(customers))
-              TableSource@317cfd38(orders - TableGroupJoin@265a2eaa(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@317cfd38(orders - TableGroupJoin@265a2eaa(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

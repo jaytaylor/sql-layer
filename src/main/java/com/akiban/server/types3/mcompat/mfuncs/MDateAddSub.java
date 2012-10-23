@@ -30,7 +30,6 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCommutativeOverloads;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
@@ -62,12 +61,16 @@ public class MDateAddSub extends TScalarBase
         new MDateAddSub(Helper.DO_ADD, FirstType.DATETIME, SecondType.DAY, "ADDDATE"),
         new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.DAY, "ADDDATE"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.DAY, "ADDDATE"),
+        
         new MDateAddSub(Helper.DO_ADD, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE", "plus"),
         new MDateAddSub(Helper.DO_ADD_MONTH, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE", "plus"),
+        
         new MDateAddSub(Helper.DO_ADD, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE", "plus"),
         new MDateAddSub(Helper.DO_ADD_MONTH, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE", "plus"),
+        
         new MDateAddSub(Helper.DO_ADD, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE", "plus"),
         new MDateAddSub(Helper.DO_ADD_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE", "plus"),
+        
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, "DATE_ADD", "ADDDATE", "plus"),
         new AddSubWithVarchar(Helper.DO_ADD_MONTH, SecondType.INTERVAL_MONTH, "DATE_ADD", "ADDDATE", "plus"),
 
@@ -76,56 +79,113 @@ public class MDateAddSub extends TScalarBase
         new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.DAY, "SUBDATE"),
         new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.DAY, "SUBDATE"),
         new AddSubWithVarchar(Helper.DO_SUB, SecondType.DAY, "SUBDATE"),
+        
         new MDateAddSub(Helper.DO_SUB, FirstType.DATE, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
         new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATE, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
+        
         new MDateAddSub(Helper.DO_SUB, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
         new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
+        
         new MDateAddSub(Helper.DO_SUB, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
         new MDateAddSub(Helper.DO_SUB_MONTH, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
+        
         new AddSubWithVarchar(Helper.DO_SUB, SecondType.INTERVAL_MILLIS, "DATE_SUB", "SUBDATE", "minus"),
         new AddSubWithVarchar(Helper.DO_SUB_MONTH, SecondType.INTERVAL_MONTH, "DATE_SUB", "SUBDATE", "minus"),
         
         // ADDTIME
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
-        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.INTERVAL_MILLIS, "plus"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
+        
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.INTERVAL_MILLIS, "plus", "addtime"),
+        
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.TIME, "TIME_ADD", "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
+        
+        //  SUBTIME
+        new MDateAddSub(Helper.DO_SUB, FirstType.TIME, SecondType.SECOND, "SUBTIME"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.SECOND, "SUBTIME"),
+        
         new MDateAddSub(Helper.DO_SUB, FirstType.TIME, SecondType.INTERVAL_MILLIS, "minus"),
         
-        new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
-        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
-        new AddSubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, "plus"),
-        new AddSubWithVarchar(Helper.DO_SUB, SecondType.INTERVAL_MILLIS, "minus"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.TIME, SecondType.TIME, "SUBTIME"),
+        new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME, "SUBTIME"),
         
-        new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS),
-        new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS),
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "SUBTIME"),
+
+        // additional date/time ariths
+        new AddSubWithVarchar(Helper.DO_ADD, SecondType.INTERVAL_MILLIS, 1, 0, "plus"),
+        new AddSubWithVarchar(Helper.DO_ADD_MONTH, SecondType.INTERVAL_MONTH, 1, 0, "plus"),
+        
+        new MDateAddSub(Helper.DO_ADD, 1, 0, FirstType.DATE, SecondType.INTERVAL_MILLIS, "plus"),
+        new MDateAddSub(Helper.DO_ADD_MONTH, 1, 0, FirstType.DATE, SecondType.INTERVAL_MONTH, "plus"),
+        
+        new MDateAddSub(Helper.DO_ADD, 1, 0, FirstType.DATETIME, SecondType.INTERVAL_MILLIS, "plus"),
+        new MDateAddSub(Helper.DO_ADD_MONTH, 1, 0, FirstType.DATETIME, SecondType.INTERVAL_MONTH, "plus"),
+        
+        new MDateAddSub(Helper.DO_ADD, 1, 0, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "plus"),
+        new MDateAddSub(Helper.DO_ADD_MONTH, 1, 0, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "plus"),
+
+        new MDateAddSub(Helper.DO_ADD, 1, 0, FirstType.TIME, SecondType.INTERVAL_MILLIS, "plus"),
+        
+        // nulls/error cases
+        new MArithmetic.AlwaysNull("plus", "+", true, AkInterval.MONTHS, MDatetimes.TIME)
+        {
+            @Override
+            public TOverloadResult resultType()
+            {
+                return TOverloadResult.fixed(MDatetimes.TIME);
+            }
+        },
+        new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS)
+        {
+            @Override
+            public TOverloadResult resultType()
+            {
+                return TOverloadResult.fixed(MDatetimes.TIME);
+            }
+        },
+        new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS)
+        {
+            @Override
+            public TOverloadResult resultType()
+            {
+                return TOverloadResult.fixed(MDatetimes.TIME);
+            }
+        }
     };
 
-    public static final TScalar[] NON_COMMUTATIVE = new TScalar[]
-    {
-        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.TIME, "TIME_ADD", "ADDTIME"),
-        new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
-        new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME_STRING, "SUBTIME"),
-    };
-
-    public static final TCommutativeOverloads COMMUTED = TCommutativeOverloads.createFrom(COMMUTATIVE);
 
     private static class AddSubWithVarchar extends MDateAddSub
     {
         AddSubWithVarchar (Helper h, SecondType sec, String...ns)
         {
-            super(h, FirstType.VARCHAR, sec, ns);
+            super(h, 0, 1, FirstType.VARCHAR, sec, ns);
+        }
+
+        AddSubWithVarchar (Helper h, SecondType sec, int pos0, int pos1, String...ns)
+        {
+            super(h, pos0, pos1, FirstType.VARCHAR, sec, ns);
         }
         
+     //   @Ove
+        @Override
+        public TOverloadResult resultType()
+        {
+            return TOverloadResult.fixed(MString.VARCHAR, 29);
+        }
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
         {
             long ymd[] = new long[6];
             StringType stType;
             long millis;
-            String arg0 = inputs.get(0).getString();
+            String arg0 = inputs.get(pos0).getString();
+   
             try
             {
                 stType = MDatetimes.parseDateOrTime(arg0, ymd);
-                millis = secondArg.toMillis(inputs.get(1));
+                millis = secondArg.toMillis(inputs.get(pos1));
             }
             catch (InvalidDateFormatException e)
             {
@@ -133,7 +193,7 @@ public class MDateAddSub extends TScalarBase
                 output.putNull();
                 return;
             }
-            
+
             MutableDateTime dt;
             switch (stType)
             {
@@ -409,19 +469,28 @@ public class MDateAddSub extends TScalarBase
     protected final FirstType firstArg;
     protected final SecondType secondArg;
     protected final String names[];
-
+    protected final int pos0;
+    protected final int pos1;
+    
     private MDateAddSub(Helper h, FirstType first, SecondType sec, String...ns)
+    {
+        this(h, 0, 1, first, sec, ns);
+    }
+    
+    private MDateAddSub(Helper h, int pos0, int pos1, FirstType first, SecondType sec, String...ns)
     {
         helper = h;
         firstArg = first;
         secondArg = sec;
         names = ns;
+        this.pos0 = pos0;
+        this.pos1 = pos1;
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        PValueSource arg0 = inputs.get(0);
+        PValueSource arg0 = inputs.get(pos0);
         long ymd[] = firstArg.decode(arg0, context);
         if (ymd == null)
         {
@@ -431,15 +500,15 @@ public class MDateAddSub extends TScalarBase
         else
         {
             MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, "UTC"); // calculations should be done
-            helper.compute(dt, secondArg.toMillis(inputs.get(1)));      // in UTC (to avoid daylight-saving side effects)
-            firstArg.adjustFirstArg(context.inputTInstanceAt(1)).putResult(output, dt, context);
+            helper.compute(dt, secondArg.toMillis(inputs.get(pos1)));      // in UTC (to avoid daylight-saving side effects)
+            firstArg.adjustFirstArg(context.inputTInstanceAt(pos1)).putResult(output, dt, context);
         }
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(firstArg.type, 0).covers(secondArg.type, 1);
+        builder.covers(firstArg.type, pos0).covers(secondArg.type, pos1);
     }
 
     @Override
@@ -462,7 +531,7 @@ public class MDateAddSub extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                FirstType adjusted = firstArg.adjustFirstArg(inputs.get(1).instance());
+                FirstType adjusted = firstArg.adjustFirstArg(inputs.get(pos1).instance());
                 return new TInstanceGenerator(adjusted.type, adjusted.attrs).setNullable(anyContaminatingNulls(inputs));
             }
         });

@@ -5,9 +5,9 @@ SelectQuery@4cd297c0
         Product@67a5fb5a(customers)
           Flatten@469695f(customers LEFT addresses)
             Select@2484de3c[addresses.city != Boston]
-              GroupScan@79123c5f(Group(customers -> test.customers), rows = 100000, cost = 4.06387e+06)
+              GroupScan@79123c5f(Group(test.customers), rows = 100000, cost = 4.06387e+06)
                 TableSource@67b14530(customers - TableGroup@1c39bf12(customers))
-                TableSource@2b52b6f5(addresses - TableGroupJoin@6648938(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+                TableSource@2b52b6f5(addresses - TableGroupJoin@6648938(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
           Flatten@421906df(customers LEFT orders)
             BranchLookup@f1a47df(customers -> orders)
-              TableSource@2735877f(orders - TableGroupJoin@132f4538(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@2735877f(orders - TableGroupJoin@132f4538(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

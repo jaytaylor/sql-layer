@@ -36,10 +36,12 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,8 +51,10 @@ import java.util.*;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.qp.operator.API.sort_InsertionLimited;
 import static java.lang.Math.abs;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class SpatialLatLonIndexScanIT extends OperatorITBase
@@ -61,20 +65,28 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
         point = createTable(
             "schema", "point",
             "id int not null",
+            "before int not null", // id mod 3
+            "after int not null", // id mod 5
             "lat decimal(11, 7)",
             "lon decimal(11, 7)",
             "primary key(id)");
-        TableIndex latLonIndex = createIndex("schema", "point", "latlon", "lat", "lon");
-        latLonIndex.setIndexMethod(Index.IndexMethod.Z_ORDER_LAT_LON);
+        TableIndex latLonIndex = createIndex("schema", "point", "lat_lon", "lat", "lon");
+        latLonIndex.markSpatial(0, Space.LAT_LON_DIMENSIONS);
+        TableIndex beforeLatLonIndex = createIndex("schema", "point", "before_lat_lon", "before", "lat", "lon");
+        beforeLatLonIndex.markSpatial(1, Space.LAT_LON_DIMENSIONS);
+        TableIndex latLonAfterIndex = createIndex("schema", "point", "lat_lon_after", "lat", "lon", "after");
+        latLonAfterIndex.markSpatial(0, Space.LAT_LON_DIMENSIONS);
+        TableIndex beforeLatLonAfterIndex = createIndex("schema", "point", "before_lat_lon_after", "before", "lat", "lon", "after");
+        beforeLatLonAfterIndex.markSpatial(1, Space.LAT_LON_DIMENSIONS);
         schema = new Schema(ais());
         pointRowType = schema.userTableRowType(userTable(point));
         latLonIndexRowType = indexType(point, "lat", "lon");
+        beforeLatLonIndexRowType = indexType(point, "before", "lat", "lon");
+        latLonAfterIndexRowType = indexType(point, "lat", "lon", "after");
+        beforeLatLonAfterIndexRowType = indexType(point, "before", "lat", "lon", "after");
         space = SpaceLatLon.create();
-        db = new NewRow[]{
-        };
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
-        use(db);
     }
 
     @Test
@@ -82,16 +94,52 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
     {
         loadDB();
         {
-            // Check index
+            // Check (lat, lon) index
             Operator plan = indexScan_Default(latLonIndexRowType);
-            RowBase[] expected = new RowBase[zToId.size()];
+            long[][] expected = new long[zToId.size()][];
             int r = 0;
             for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
                 long z = entry.getKey();
                 int id = entry.getValue();
-                expected[r++] = row(latLonIndexRowType, z, (long) id);
+                expected[r++] = new long[]{z, id};
             }
-            compareRows(expected, cursor(plan, queryContext));
+            compareRows(rows(latLonIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (before, lat, lon) index
+            Operator plan = indexScan_Default(beforeLatLonIndexRowType);
+            long[][] expected = new long[zToId.size()][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                expected[r++] = new long[]{before(id), z, id};
+            }
+            compareRows(rows(beforeLatLonIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (lat, lon, after) index
+            Operator plan = indexScan_Default(latLonAfterIndexRowType);
+            long[][] expected = new long[zToId.size()][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                expected[r++] = new long[]{z, after(id), id};
+            }
+            compareRows(rows(latLonAfterIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (before, lat, lon, after) index
+            Operator plan = indexScan_Default(beforeLatLonAfterIndexRowType);
+            long[][] expected = new long[zToId.size()][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                expected[r++] = new long[]{before(id), z, after(id), id};
+            }
+            compareRows(rows(beforeLatLonAfterIndexRowType, sort(expected)), cursor(plan, queryContext));
         }
     }
 
@@ -103,28 +151,90 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             // Delete rows with odd ids
             for (Integer id : zToId.values()) {
                 if ((id % 2) == 1) {
-                    dml().deleteRow(session(), createNewRow(point, id, lats.get(id), lons.get(id)));
+                    dml().deleteRow(session(), createNewRow(point,
+                                                            id,
+                                                            before(id),
+                                                            after(id),
+                                                            lats.get(id),
+                                                            lons.get(id)));
                 }
             }
         }
         {
-            // Check index
+            // Check (lat, lon) index
             Operator plan = indexScan_Default(latLonIndexRowType);
             int rowsRemaining = zToId.size() / 2;
             if ((zToId.size() % 2) == 1) {
                 rowsRemaining += 1;
             }
-            RowBase[] expected = new RowBase[rowsRemaining];
+            long[][] expected = new long[rowsRemaining][];
             int r = 0;
             for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
                 long z = entry.getKey();
                 int id = entry.getValue();
                 // Only even ids should remain
                 if ((id % 2) == 0) {
-                    expected[r++] = row(latLonIndexRowType, z, (long) id);
+                    expected[r++] = new long[]{z, id};
                 }
             }
-            compareRows(expected, cursor(plan, queryContext));
+            compareRows(rows(latLonIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (before, lat, lon) index
+            Operator plan = indexScan_Default(beforeLatLonIndexRowType);
+            int rowsRemaining = zToId.size() / 2;
+            if ((zToId.size() % 2) == 1) {
+                rowsRemaining += 1;
+            }
+            long[][] expected = new long[rowsRemaining][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                // Only even ids should remain
+                if ((id % 2) == 0) {
+                    expected[r++] = new long[]{before(id), z, id};
+                }
+            }
+            compareRows(rows(beforeLatLonIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (lat, lon, after) index
+            Operator plan = indexScan_Default(latLonAfterIndexRowType);
+            int rowsRemaining = zToId.size() / 2;
+            if ((zToId.size() % 2) == 1) {
+                rowsRemaining += 1;
+            }
+            long[][] expected = new long[rowsRemaining][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                // Only even ids should remain
+                if ((id % 2) == 0) {
+                    expected[r++] = new long[]{z, after(id), id};
+                }
+            }
+            compareRows(rows(latLonAfterIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (before, lat, lon, after) index
+            Operator plan = indexScan_Default(beforeLatLonAfterIndexRowType);
+            int rowsRemaining = zToId.size() / 2;
+            if ((zToId.size() % 2) == 1) {
+                rowsRemaining += 1;
+            }
+            long[][] expected = new long[rowsRemaining][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                // Only even ids should remain
+                if ((id % 2) == 0) {
+                    expected[r++] = new long[]{before(id), z, after(id), id};
+                }
+            }
+            compareRows(rows(beforeLatLonAfterIndexRowType, sort(expected)), cursor(plan, queryContext));
         }
     }
 
@@ -139,29 +249,65 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             for (int id = 0; id < n; id++) {
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
-                NewRow before = createNewRow(point, id, lat, lon);
-                NewRow after = createNewRow(point, id, lat, lon.add(BigDecimal.ONE));
+                NewRow before = createNewRow(point, id, before(id), after(id), lat, lon);
+                NewRow after = createNewRow(point, id, before(id), after(id), lat, lon.add(BigDecimal.ONE));
                 long z = space.shuffle(new BigDecimal[]{lat, lon.add(BigDecimal.ONE)});
                 zToId.put(z, id);
                 dml().updateRow(session(), before, after, null);
             }
         }
         {
-            // Check index
+            // Check (lat, lon) index
             Operator plan = indexScan_Default(latLonIndexRowType);
-            RowBase[] expected = new RowBase[zToId.size()];
+            long[][] expected = new long[zToId.size()][];
             int r = 0;
             for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
                 long z = entry.getKey();
                 int id = entry.getValue();
-                expected[r++] = row(latLonIndexRowType, z, (long) id);
+                expected[r++] = new long[]{z, id};
             }
-            compareRows(expected, cursor(plan, queryContext));
+            compareRows(rows(latLonIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (before, lat, lon) index
+            Operator plan = indexScan_Default(beforeLatLonIndexRowType);
+            long[][] expected = new long[zToId.size()][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                expected[r++] = new long[]{before(id), z, id};
+            }
+            compareRows(rows(beforeLatLonIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (lat, lon, after) index
+            Operator plan = indexScan_Default(latLonAfterIndexRowType);
+            long[][] expected = new long[zToId.size()][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                expected[r++] = new long[]{z, after(id), id};
+            }
+            compareRows(rows(latLonAfterIndexRowType, sort(expected)), cursor(plan, queryContext));
+        }
+        {
+            // Check (before, lat, lon, after) index
+            Operator plan = indexScan_Default(beforeLatLonAfterIndexRowType);
+            long[][] expected = new long[zToId.size()][];
+            int r = 0;
+            for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                long z = entry.getKey();
+                int id = entry.getValue();
+                expected[r++] = new long[]{before(id), z, after(id), id};
+            }
+            compareRows(rows(beforeLatLonAfterIndexRowType, sort(expected)), cursor(plan, queryContext));
         }
     }
 
     @Test
-    public void testSpatialQuery()
+    public void testSpatialQueryLatLon()
     {
         loadDB();
         final int N = 100;
@@ -196,7 +342,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                     expected.add(id);
                 }
             }
-            // Get the query result
+            // Get the query result using the (lat, lon) index
             Set<Integer> actual = new HashSet<Integer>();
             IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
                                                   new SetColumnSelector(0, 1));
@@ -208,7 +354,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
-                int id = (int) row.eval(1).getInt();
+                int id = getLong(row, 1).intValue();
                 actual.add(id);
             }
             // There should be no false negatives
@@ -265,11 +411,73 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
-                int id = (int) row.eval(1).getInt();
+                int id = getLong(row, 1).intValue();
                 actual.add(id);
             }
             // There should be no false negatives
             assertTrue(actual.containsAll(expected));
+        }
+    }
+
+    @Test
+    public void testHybridQueryLatLon()
+    {
+        loadDB();
+        final int N = 100;
+        BigDecimal latLo;
+        BigDecimal latHi;
+        BigDecimal lonLo;
+        BigDecimal lonHi;
+        for (int i = 0; i < N; i++) {
+            latLo = randomLat();
+            latHi = randomLat();
+            if (latLo.compareTo(latHi) > 0) {
+                BigDecimal swap = latLo;
+                latLo = latHi;
+                latHi = swap;
+            }
+            lonLo = randomLon();
+            lonHi = randomLon();
+            if (lonLo.compareTo(lonHi) > 0) {
+                BigDecimal swap = lonLo;
+                lonLo = lonHi;
+                lonHi = swap;
+            }
+            // before = id mod 3, so try before = 0, 1, 2
+            for (int before = 0; before <= 2; before++) {
+                // Get the right answer
+                Set<Integer> expected = new HashSet<Integer>();
+                for (int id = 0; id < lats.size(); id++) {
+                    BigDecimal lat = lats.get(id);
+                    BigDecimal lon = lons.get(id);
+                    if (before(id) == before &&
+                        latLo.compareTo(lat) <= 0 &&
+                        lat.compareTo(latHi) <= 0 &&
+                        lonLo.compareTo(lon) <= 0 &&
+                        lon.compareTo(lonHi) <= 0) {
+                        expected.add(id);
+                    }
+                }
+                // Get the query result using the (before, lat, lon) index
+                Set<Integer> actual = new HashSet<Integer>();
+                IndexBound lowerLeft = new IndexBound(row(beforeLatLonIndexRowType, before, latLo, lonLo),
+                                                      new SetColumnSelector(0, 1, 2));
+                IndexBound upperRight = new IndexBound(row(beforeLatLonIndexRowType, before, latHi, lonHi),
+                                                       new SetColumnSelector(0, 1, 2));
+                IndexKeyRange box = IndexKeyRange.spatial(beforeLatLonIndexRowType, lowerLeft, upperRight);
+                Operator plan = indexScan_Default(beforeLatLonIndexRowType, false, box);
+                Cursor cursor = API.cursor(plan, queryContext);
+                cursor.open();
+                Row row;
+                while ((row = cursor.next()) != null) {
+                    int rowBefore = (int) row.eval(0).getInt();
+                    int rowId = (int) row.eval(2).getInt();
+                    assertEquals(before, rowBefore);
+                    actual.add(rowId);
+                }
+                // There should be no false negatives
+                assertTrue(actual.containsAll(expected));
+            }
         }
     }
 
@@ -282,7 +490,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             BigDecimal queryLat = randomLat();
             BigDecimal queryLon = randomLon();
             long zStart = space.shuffle(queryLat, queryLon);
-            IndexBound zStartBound = new IndexBound(row(latLonIndexRowType.physicalRowType(), queryLat, queryLon),
+            IndexBound zStartBound = new IndexBound(row(latLonIndexRowType, queryLat, queryLon),
                                                     new SetColumnSelector(0, 1));
             IndexKeyRange zStartRange = IndexKeyRange.around(latLonIndexRowType, zStartBound);
             Operator plan = indexScan_Default(latLonIndexRowType, false, zStartRange);
@@ -293,7 +501,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             int count = 0;
             while ((row = cursor.next()) != null) {
                 long zActual = row.eval(0).getLong();
-                int id = (int) row.eval(1).getInt();
+                int id = getLong(row, 1).intValue();
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
                 long zExpected = space.shuffle(lat, lon);
@@ -307,6 +515,60 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
         }
     }
 
+    @Test
+    public void testHybridNearPoint()
+    {
+        loadDB();
+        final int N = 100;
+        for (int i = 0; i < N; i++) {
+            BigDecimal queryLat = randomLat();
+            BigDecimal queryLon = randomLon();
+            long zStart = space.shuffle(queryLat, queryLon);
+            for (int before = 0; before <= 2; before++) {
+                // Expected
+                SortedMap<Long, Integer> distanceToId = new TreeMap<Long, Integer>();
+                for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
+                    long z = entry.getKey();
+                    int id = entry.getValue();
+                    if (before(id) == before) {
+                        long distance = abs(z - zStart);
+                        Integer replaced = distanceToId.put(distance, id);
+                        // TODO: Duplicate distances are possible
+                        assertNull(replaced);
+                    }
+                }
+                Collection<Integer> expectedIdByDistance = distanceToId.values();
+                // Actual
+                IndexBound zStartBound =
+                    new IndexBound(row(beforeLatLonIndexRowType, before,  queryLat, queryLon),
+                                   new SetColumnSelector(0, 1, 2));
+                IndexKeyRange zStartRange = IndexKeyRange.around(beforeLatLonIndexRowType, zStartBound);
+                Operator plan = indexScan_Default(beforeLatLonIndexRowType, false, zStartRange);
+                Cursor cursor = API.cursor(plan, queryContext);
+                cursor.open();
+                Row row;
+                long previousDistance = Long.MIN_VALUE;
+                Collection<Integer> actualIdByDistance = new ArrayList<Integer>();
+                while ((row = cursor.next()) != null) {
+                    int beforeActual = (int) row.eval(0).getInt();
+                    assertEquals(before, beforeActual);
+                    long zActual = row.eval(1).getLong();
+                    int id = (int) row.eval(2).getInt();
+                    BigDecimal lat = lats.get(id);
+                    BigDecimal lon = lons.get(id);
+                    long zExpected = space.shuffle(lat, lon);
+                    assertEquals(zExpected, zActual);
+                    long distance = abs(zExpected - zStart);
+                    assertTrue(distance >= previousDistance);
+                    previousDistance = distance;
+                    actualIdByDistance.add(id);
+                }
+                assertEquals(new ArrayList<Integer>(expectedIdByDistance),
+                             new ArrayList<Integer>(actualIdByDistance));
+            }
+        }
+    }
+
     private void loadDB()
     {
         int id = 0;
@@ -314,7 +576,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             for (long x = LON_LO; x < LON_HI; x += DLON) {
                 BigDecimal lat = new BigDecimal(y);
                 BigDecimal lon = new BigDecimal(x);
-                dml().writeRow(session(), createNewRow(point, id, lat, lon));
+                dml().writeRow(session(), createNewRow(point, id, before(id),  after(id), lat, lon));
                 long z = space.shuffle(SpaceLatLon.scaleLat(lat), SpaceLatLon.scaleLon(lon));
                 zToId.put(z, id);
                 lats.add(lat);
@@ -335,6 +597,52 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
         return new BigDecimal(random.nextDouble() * LON_RANGE + LON_LO);
     }
 
+    private long before(long id)
+    {
+        return id % 3;
+    }
+
+    private long after(long id)
+    {
+        return id % 5;
+    }
+
+    private RowBase[] rows(RowType rowType, long[][] x)
+    {
+        RowBase[] rows = new RowBase[x.length];
+        for (int i = 0; i < x.length; i++) {
+            long[] a = x[i];
+            Object[] oa = new Object[a.length];
+            for (int j = 0; j < a.length; j++) {
+                oa[j] = a[j];
+            }
+            rows[i] = row(rowType, oa);
+        }
+        return rows;
+    }
+
+    private long[][] sort(long[][] a)
+    {
+        Arrays.sort(a,
+                    new Comparator<long[]>()
+                    {
+                        @Override
+                        public int compare(long[] x, long[] y)
+                        {
+                            for (int i = 0; i < x.length; i++) {
+                                if (x[i] < y[i]) {
+                                    return -1;
+                                }
+                                if (x[i] > y[i]) {
+                                    return 1;
+                                }
+                            }
+                            return 0;
+                        }
+                    });
+        return a;
+    }
+
     private static final int LAT_LO = -90;
     private static final int LAT_HI = 90;
     private static final int LON_LO = -180;
@@ -347,6 +655,9 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
     private int point;
     private UserTableRowType pointRowType;
     private IndexRowType latLonIndexRowType;
+    private IndexRowType beforeLatLonIndexRowType;
+    private IndexRowType latLonAfterIndexRowType;
+    private IndexRowType beforeLatLonAfterIndexRowType;
     private SpaceLatLon space;
     private Map<Long, Integer> zToId = new TreeMap<Long, Integer>();
     List<BigDecimal> lats = new ArrayList<BigDecimal>(); // indexed by id

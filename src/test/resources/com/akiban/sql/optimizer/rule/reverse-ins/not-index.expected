@@ -4,8 +4,8 @@ SelectQuery@64f007ad
       Flatten@5fa6fb3e(orders INNER items)
         BranchLookup@4bb8d481(customers -> customers)
           SingleIndexScan@538787fd(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 200, cost = 16450.7)
-          TableSource@246972f1(orders - TableGroupJoin@66f11de2(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-          TableSource@6f93ee4(items - TableGroupJoin@5fe1153a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+          TableSource@246972f1(orders - TableGroupJoin@66f11de2(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+          TableSource@6f93ee4(items - TableGroupJoin@5fe1153a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
       Project@2f995c9a[orders.order_date, items.sku, items.quan]
         Select@7d8e9adf[]
           Limit@3238c403(LIMIT 1)

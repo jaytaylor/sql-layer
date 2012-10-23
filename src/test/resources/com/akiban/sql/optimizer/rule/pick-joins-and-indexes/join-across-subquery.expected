@@ -13,4 +13,4 @@ Subquery@771094c4
           Select@43151434[]
             TableGroupJoinTree@4d8cc8e9(TableGroup@2df02fde(customers), orders INNER items - GroupLoopScan@423c753(customers - orders, rows = 10, cost = 24.8948))
               TableSource@4382d44b(orders - TableGroup@2df02fde(customers))
-                TableSource@423faa8d(items - TableGroupJoin@402771f8(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+                TableSource@423faa8d(items - TableGroupJoin@402771f8(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

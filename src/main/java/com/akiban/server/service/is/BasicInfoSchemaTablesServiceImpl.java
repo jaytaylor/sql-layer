@@ -152,7 +152,7 @@ public class BasicInfoSchemaTablesServiceImpl
     }
 
     private AkibanInformationSchema getDirtyAIS() {
-        return RowDefCache.latest().ais();
+        return RowDefCache.latestForDebugging().ais();
     }
 
     private AkibanInformationSchema getAIS(Session session) {

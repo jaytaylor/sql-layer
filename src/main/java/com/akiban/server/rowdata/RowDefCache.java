@@ -74,7 +74,7 @@ public class RowDefCache {
     }
 
     /** Should <b>only</b> be used for debugging (e.g. friendly toString). This view is not transaction safe. **/
-    public static RowDefCache latest() {
+    public static RowDefCache latestForDebugging() {
         return LATEST;
     }
 

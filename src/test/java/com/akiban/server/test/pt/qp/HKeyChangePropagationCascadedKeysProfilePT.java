@@ -174,7 +174,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                                        i = original.pvalue(0).getInt64();
                                    }
                                    else {
-                                       i = original.eval(0).getInt();
+                                       i = getLong(original, 0);
                                    }
                                    updatedRow.overlay(0, i - 1000000);
                                    return updatedRow;
