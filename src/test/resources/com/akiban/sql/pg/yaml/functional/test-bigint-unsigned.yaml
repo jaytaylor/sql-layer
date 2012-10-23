@@ -1,7 +1,7 @@
 ---
 - Statement: SET newtypes='true';
 ---
-- CreateTable: t(biu_field bigint unsigned)
+- CreateTable: t (biu_field bigint unsigned)
 ---
 - Statement: CREATE INDEX idx_biu ON t(biu_field)
 ---
