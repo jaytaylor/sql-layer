@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
@@ -261,12 +262,27 @@ public final class SingleIndexScan extends IndexScan {
 
     @Override
     public boolean isAscendingAt(int i) {
+        if (index.isSpatial()) {
+            TableIndex spatialIndex = (TableIndex)index;
+            int firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            if (i == firstSpatialColumn)
+                return true;
+            if (i > firstSpatialColumn)
+                i += spatialIndex.dimensions() - 1;
+        }
         return index.getAllColumns().get(i).isAscending();
     }
 
     @Override
     public boolean isRecoverableAt(int i) {
-        if (index.isSpatial()) return false;
+        if (index.isSpatial()) {
+            TableIndex spatialIndex = (TableIndex)index;
+            int firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            if (i == firstSpatialColumn)
+                return false;
+            if (i > firstSpatialColumn)
+                i += spatialIndex.dimensions() - 1;
+        }
         return index.getAllColumns().get(i).isRecoverable();
     }
 
