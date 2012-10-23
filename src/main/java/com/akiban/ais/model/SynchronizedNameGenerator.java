@@ -90,4 +90,18 @@ public class SynchronizedNameGenerator implements NameGenerator {
             return realNamer.generateSequenceTreeName(sequence);
         }
     }
+
+    @Override
+    public void removeTableID(int tableID) {
+        synchronized(LOCK) {
+            realNamer.removeTableID(tableID);
+        }
+    }
+
+    @Override
+    public void removeTreeName(String treeName) {
+        synchronized(LOCK) {
+            realNamer.removeTreeName(treeName);
+        }
+    }
 }

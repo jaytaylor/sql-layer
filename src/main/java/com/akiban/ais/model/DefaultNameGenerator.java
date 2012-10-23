@@ -26,8 +26,6 @@
 
 package com.akiban.ais.model;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,12 +67,6 @@ public class DefaultNameGenerator implements NameGenerator {
 
 
     @Override
-    public TableName generateIdentitySequenceName(TableName tableName) {
-        TableName seqName = new TableName(tableName.getSchemaName(), "_sequence-" + tableName.hashCode());
-        return makeUnique(sequenceNames, seqName);
-    }
-
-    @Override
     public int generateTableID(TableName name) {
         final int offset;
         if(TableName.INFORMATION_SCHEMA.equals(name.getSchemaName())) {
@@ -87,6 +79,12 @@ public class DefaultNameGenerator implements NameGenerator {
             }
         }
         return offset;
+    }
+
+    @Override
+    public TableName generateIdentitySequenceName(TableName tableName) {
+        TableName seqName = new TableName(tableName.getSchemaName(), "_sequence-" + tableName.hashCode());
+        return makeUnique(sequenceNames, seqName);
     }
 
     @Override
@@ -150,6 +148,17 @@ public class DefaultNameGenerator implements NameGenerator {
         String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
                           escapeForTreeName(tableName.getTableName());
         return makeUnique(treeNames, proposed);
+    }
+
+    @Override
+    public void removeTableID(int tableID) {
+        isTableIDSet.remove(tableID);
+        userTableIDSet.remove(tableID);
+    }
+
+    @Override
+    public void removeTreeName(String treeName) {
+        treeNames.remove(treeName);
     }
 
 

@@ -30,16 +30,16 @@ import java.util.List;
 
 public interface NameGenerator
 {
-    // Object names
+    // Generation
+    int generateTableID(TableName name);
     TableName generateIdentitySequenceName(TableName table);
     String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
     String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-
-    // Object IDs
-    int generateTableID(TableName name);
-
-    // Tree names
     String generateIndexTreeName(Index index);
     String generateGroupTreeName(String schemaName, String groupName);
     String generateSequenceTreeName(Sequence sequence);
+
+    // Removal
+    void removeTableID(int tableID);
+    void removeTreeName(String treeName);
 }

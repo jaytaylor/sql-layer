@@ -400,6 +400,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
         for(Integer id : tableIDs) {
             treeService.getTableStatusCache().drop(id);
+            nameGenerator.removeTableID(id);
         }
     }
 
@@ -662,6 +663,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         } catch(PersistitException e) {
             throw new PersistitAdapterException(e);
         }
+    }
+
+    @Override
+    public void treeWasRemoved(String treeName) {
+        nameGenerator.removeTreeName(treeName);
     }
 
     @Override
