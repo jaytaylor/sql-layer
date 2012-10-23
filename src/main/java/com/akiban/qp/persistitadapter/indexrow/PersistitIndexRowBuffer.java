@@ -353,7 +353,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
-    protected void attach(PersistitKeyPValueSource source, int position, PUnderlying type)
+    protected void attach(PersistitKeyPValueSource source, int position, TInstance type)
     {
         if (position < pKeyFields) {
             source.attach(pKey, position, type);

@@ -39,6 +39,7 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -93,7 +94,7 @@ public abstract class ITBase extends ApiTestBase {
         assertEquals(expected.length, actualRows.size());
     }
 
-    protected boolean equal(RowBase expected, RowBase actual, AkCollator[] collators)
+    private boolean equal(RowBase expected, RowBase actual, AkCollator[] collators)
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         if (!equal)
@@ -105,7 +106,8 @@ public abstract class ITBase extends ApiTestBase {
                 TInstance expectedType = expected.rowType().typeInstanceAt(i);
                 TInstance actualType = actual.rowType().typeInstanceAt(i);
                 assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
-                if (!PValueSources.areEqual(expectedField, actualField, expectedType))
+                int c = TClass.compare(expectedType, expectedField, actualType, actualField);
+                if (c != 0)
                     return false;
             }
             return true;
