@@ -57,10 +57,8 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
@@ -150,32 +148,31 @@ public class TableDDL
         if (createTable.getQueryExpression() != null)
             throw new UnsupportedCreateSelectException();
 
-        TableName fullName = DDLHelper.convertName(defaultSchemaName, createTable.getObjectName());
-        String schemaName = fullName.getSchemaName();
-        String tableName = fullName.getTableName();
-
+        com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
+        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
+        String tableName = parserName.getTableName();
         ExistenceCheck condition = createTable.getExistenceCheck();
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-        if (ais.getUserTable(schemaName, tableName) != null) {
-            InvalidOperationException dup = new DuplicateTableNameException(schemaName, tableName);
+
+        if (ais.getUserTable(schemaName, tableName) != null)
             switch(condition)
             {
                 case IF_NOT_EXISTS:
+                    // table already exists. does nothing
                     if (context != null)
-                        context.warnClient(dup);
+                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
                     return;
                 case NO_CONDITION:
-                    throw dup;
+                    throw new DuplicateTableNameException(schemaName, tableName);
                 default:
                     throw new IllegalStateException("Unexpected condition: " + condition);
             }
-        }
 
         AISBuilder builder = new AISBuilder();
         builder.userTable(schemaName, tableName);
-        UserTable newTable = builder.akibanInformationSchema().getUserTable(fullName);
-        IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(newTable);
+        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
+        IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);
 
         int colpos = 0;
         // first loop through table elements, add the columns
@@ -184,12 +181,11 @@ public class TableDDL
                 addColumn (builder, (ColumnDefinitionNode)tableElement, schemaName, tableName, colpos++);
             }
         }
-
         // second pass get the constraints (primary, FKs, and other keys)
         // This needs to be done in two passes as the parser may put the 
         // constraint before the column definition. For example:
         // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result. 
-        // The Builder complains if you try to do such a thing.
+        // The Builder complains if you try to do such a thing. 
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
@@ -204,10 +200,10 @@ public class TableDDL
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName);
             }
         }
-
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        ddlFunctions.createTable(session, newTable);
+        
+        ddlFunctions.createTable(session, table);
     }
     
     static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn,
@@ -450,6 +446,7 @@ public class TableDDL
         builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
         builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
     }
+
 
     private static String[] columnNamesFromListOrPK(ResultColumnList list, PrimaryKey pk) {
         String[] names = (list == null) ? null: list.getColumnNames();

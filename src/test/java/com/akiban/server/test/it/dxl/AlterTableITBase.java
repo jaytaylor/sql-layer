@@ -108,10 +108,11 @@ public class AlterTableITBase extends ITBase {
         storageTrees.addAll(Arrays.asList(treeService().getDb().getVolume(EXPECTED_VOLUME_NAME).getTreeNames()));
 
         // Collect all trees in AIS
-        Set<String> knownTrees = DefaultNameGenerator.collectTreeNames(ddl().getAIS(session()));
+        Set<String> knownTrees = DefaultNameGenerator.collectTreeNames(ais());
         knownTrees.add(TreeService.SCHEMA_TREE_NAME); // Used by SchemaManager
 
-        // Any difference is an error
+        // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
+        // weren't materialized (yet), for example.
         Set<String> difference = new TreeSet<String>(storageTrees);
         difference.removeAll(knownTrees);
 
