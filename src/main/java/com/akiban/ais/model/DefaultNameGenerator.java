@@ -179,14 +179,10 @@ public class DefaultNameGenerator implements NameGenerator {
 
     private static SortedSet<Integer> collectTableIDs(AkibanInformationSchema ais, boolean onlyISTables) {
         SortedSet<Integer> idSet = new TreeSet<Integer>();
-        Collection<Schema> schemas;
-        if(onlyISTables) {
-            Schema is = ais.getSchema(TableName.INFORMATION_SCHEMA);
-            schemas = (is != null) ? Collections.singleton(is) : Collections.<Schema>emptyList();
-        } else {
-            schemas = ais.getSchemas().values();
-        }
-        for(Schema schema : schemas) {
+        for(Schema schema : ais.getSchemas().values()) {
+            if(TableName.INFORMATION_SCHEMA.equals(schema.getName()) != onlyISTables) {
+                continue;
+            }
             for(UserTable table : schema.getUserTables().values()) {
                 idSet.add(table.getTableId());
             }

@@ -132,7 +132,7 @@ public class AISMerge {
         this.indexesToFix = indexesToFix;
     }
 
-    
+
     public static AkibanInformationSchema copyAISForAdd(AkibanInformationSchema oldAIS) {
         return AISCloner.clone(oldAIS);
     }
